@@ -1,0 +1,69 @@
+/// <reference types="vite/client" />
+
+interface ProjectAPI {
+  validate: (path: string) => Promise<{ valid: boolean; error?: string }>
+  load: (path: string) => Promise<import('./types/mz').MZProject>
+  getSwitches: (path: string) => Promise<import('./types/mz').MZSwitch[]>
+  getVariables: (path: string) => Promise<import('./types/mz').MZVariable[]>
+  getActors: (path: string) => Promise<import('./types/mz').MZActor[]>
+  getItems: (path: string) => Promise<import('./types/mz').MZItem[]>
+  getMaps: (path: string) => Promise<import('./types/mz').MZMapInfo[]>
+  getPlugins: (path: string) => Promise<import('./types/mz').MZPluginEntry[]>
+}
+
+interface PluginAPI {
+  save: (
+    projectPath: string,
+    filename: string,
+    content: string
+  ) => Promise<{ success: boolean; path: string }>
+  saveToPath: (
+    filePath: string,
+    content: string
+  ) => Promise<{ success: boolean; path: string }>
+  load: (projectPath: string, filename: string) => Promise<import('./types/plugin').PluginDefinition>
+  parse: (content: string) => Promise<import('./types/plugin').PluginDefinition>
+  readRaw: (projectPath: string, filename: string) => Promise<string>
+  list: (projectPath: string) => Promise<string[]>
+}
+
+interface DialogAPI {
+  openFolder: () => Promise<string | null>
+  saveFile: (options?: {
+    defaultPath?: string
+    filters?: { name: string; extensions: string[] }[]
+  }) => Promise<string | null>
+  openFile: (options?: {
+    filters?: { name: string; extensions: string[] }[]
+  }) => Promise<string | null>
+  message: (options: {
+    type?: 'none' | 'info' | 'error' | 'question' | 'warning'
+    title?: string
+    message: string
+    buttons?: string[]
+  }) => Promise<number>
+}
+
+interface WindowAPI {
+  minimize: () => void
+  maximize: () => void
+  close: () => void
+  forceClose: () => void
+  isMaximized: () => Promise<boolean>
+  onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
+}
+
+interface API {
+  project: ProjectAPI
+  plugin: PluginAPI
+  dialog: DialogAPI
+  window: WindowAPI
+}
+
+declare global {
+  interface Window {
+    api: API
+  }
+}
+
+export {}

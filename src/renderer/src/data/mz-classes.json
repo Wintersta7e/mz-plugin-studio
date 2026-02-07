@@ -1,0 +1,1859 @@
+{
+  "Bitmap": {
+    "name": "Bitmap",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Represents a bitmap image for drawing operations",
+    "methods": [
+      { "name": "initialize", "params": ["width", "height"], "description": "Creates a new bitmap" },
+      { "name": "load", "params": ["url"], "description": "Loads an image from URL" },
+      { "name": "clear", "params": [], "description": "Clears the entire bitmap" },
+      { "name": "fillRect", "params": ["x", "y", "width", "height", "color"], "description": "Fills a rectangle with color" },
+      { "name": "drawText", "params": ["text", "x", "y", "maxWidth", "lineHeight", "align"], "description": "Draws text on the bitmap" },
+      { "name": "blt", "params": ["source", "sx", "sy", "sw", "sh", "dx", "dy", "dw", "dh"], "description": "Block transfer from another bitmap" }
+    ]
+  },
+  "Graphics": {
+    "name": "Graphics",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Static class for graphics rendering and screen management",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the graphics system" },
+      { "name": "setStage", "params": ["stage"], "description": "Sets the current stage" },
+      { "name": "startGameLoop", "params": [], "description": "Starts the game loop" },
+      { "name": "render", "params": [], "description": "Renders the current stage" },
+      { "name": "resize", "params": ["width", "height"], "description": "Resizes the game screen" }
+    ]
+  },
+  "Input": {
+    "name": "Input",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Static class for handling keyboard and gamepad input",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the input system" },
+      { "name": "update", "params": [], "description": "Updates input state each frame" },
+      { "name": "isPressed", "params": ["keyName"], "description": "Checks if key is currently pressed" },
+      { "name": "isTriggered", "params": ["keyName"], "description": "Checks if key was just pressed" },
+      { "name": "isRepeated", "params": ["keyName"], "description": "Checks if key is in repeat state" }
+    ]
+  },
+  "TouchInput": {
+    "name": "TouchInput",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Static class for handling mouse and touch input",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes touch input system" },
+      { "name": "update", "params": [], "description": "Updates touch state each frame" },
+      { "name": "isPressed", "params": [], "description": "Checks if screen is being touched" },
+      { "name": "isTriggered", "params": [], "description": "Checks if touch just started" },
+      { "name": "isReleased", "params": [], "description": "Checks if touch just ended" }
+    ]
+  },
+  "JsonEx": {
+    "name": "JsonEx",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Static class for JSON serialization with circular reference support",
+    "methods": [
+      { "name": "stringify", "params": ["object"], "description": "Converts object to JSON string" },
+      { "name": "parse", "params": ["json"], "description": "Parses JSON string to object" },
+      { "name": "makeDeepCopy", "params": ["object"], "description": "Creates a deep copy of object" }
+    ]
+  },
+  "Utils": {
+    "name": "Utils",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "description": "Static class with utility functions",
+    "methods": [
+      { "name": "isNwjs", "params": [], "description": "Checks if running in NW.js" },
+      { "name": "isMobileDevice", "params": [], "description": "Checks if on mobile device" },
+      { "name": "canPlayOgg", "params": [], "description": "Checks OGG audio support" },
+      { "name": "canPlayWebm", "params": [], "description": "Checks WebM video support" },
+      { "name": "rgbToCssColor", "params": ["r", "g", "b"], "description": "Converts RGB to CSS color string" }
+    ]
+  },
+  "Point": {
+    "name": "Point",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Point",
+    "description": "Represents a point in 2D space",
+    "methods": [
+      { "name": "initialize", "params": ["x", "y"], "description": "Creates a new point" }
+    ]
+  },
+  "Rectangle": {
+    "name": "Rectangle",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Rectangle",
+    "description": "Represents a rectangle with position and size",
+    "methods": [
+      { "name": "initialize", "params": ["x", "y", "width", "height"], "description": "Creates a new rectangle" }
+    ]
+  },
+  "Stage": {
+    "name": "Stage",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Container",
+    "description": "Root container for the display tree",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the stage" },
+      { "name": "destroy", "params": [], "description": "Destroys the stage" }
+    ]
+  },
+  "Sprite": {
+    "name": "Sprite",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Sprite",
+    "description": "Basic sprite class for displaying images",
+    "methods": [
+      { "name": "initialize", "params": ["bitmap"], "description": "Creates sprite with optional bitmap" },
+      { "name": "update", "params": [], "description": "Updates the sprite each frame" },
+      { "name": "move", "params": ["x", "y"], "description": "Moves sprite to position" },
+      { "name": "setFrame", "params": ["x", "y", "width", "height"], "description": "Sets the source rectangle" },
+      { "name": "show", "params": [], "description": "Makes sprite visible" },
+      { "name": "hide", "params": [], "description": "Hides the sprite" }
+    ]
+  },
+  "Tilemap": {
+    "name": "Tilemap",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Container",
+    "description": "Displays tile-based maps",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the tilemap" },
+      { "name": "update", "params": [], "description": "Updates the tilemap each frame" },
+      { "name": "refresh", "params": [], "description": "Refreshes the tilemap display" },
+      { "name": "setData", "params": ["width", "height", "data"], "description": "Sets the map data" }
+    ]
+  },
+  "Window": {
+    "name": "Window",
+    "file": "rmmz_core.js",
+    "category": "core",
+    "parent": "PIXI.Container",
+    "description": "Base class for game windows with frame and contents",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the window" },
+      { "name": "update", "params": [], "description": "Updates the window each frame" },
+      { "name": "move", "params": ["x", "y", "width", "height"], "description": "Moves and resizes window" },
+      { "name": "setBackgroundType", "params": ["type"], "description": "Sets background transparency" },
+      { "name": "show", "params": [], "description": "Shows the window" },
+      { "name": "hide", "params": [], "description": "Hides the window" }
+    ]
+  },
+  "DataManager": {
+    "name": "DataManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing game data loading and saving",
+    "methods": [
+      { "name": "loadDatabase", "params": [], "description": "Loads all database files" },
+      { "name": "createGameObjects", "params": [], "description": "Creates new game objects" },
+      { "name": "setupNewGame", "params": [], "description": "Sets up a new game" },
+      { "name": "saveGame", "params": ["savefileId"], "description": "Saves game to slot" },
+      { "name": "loadGame", "params": ["savefileId"], "description": "Loads game from slot" },
+      { "name": "makeSaveContents", "params": [], "description": "Creates save data object" },
+      { "name": "extractSaveContents", "params": ["contents"], "description": "Restores from save data" }
+    ]
+  },
+  "ConfigManager": {
+    "name": "ConfigManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing game configuration",
+    "methods": [
+      { "name": "load", "params": [], "description": "Loads config from storage" },
+      { "name": "save", "params": [], "description": "Saves config to storage" },
+      { "name": "makeData", "params": [], "description": "Creates config data object" },
+      { "name": "applyData", "params": ["config"], "description": "Applies config data" }
+    ]
+  },
+  "StorageManager": {
+    "name": "StorageManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing save file storage",
+    "methods": [
+      { "name": "saveObject", "params": ["saveName", "object"], "description": "Saves object to storage" },
+      { "name": "loadObject", "params": ["saveName"], "description": "Loads object from storage" },
+      { "name": "exists", "params": ["saveName"], "description": "Checks if save exists" },
+      { "name": "remove", "params": ["saveName"], "description": "Removes a save file" }
+    ]
+  },
+  "SceneManager": {
+    "name": "SceneManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing scene transitions",
+    "methods": [
+      { "name": "run", "params": ["sceneClass"], "description": "Runs the game starting with scene" },
+      { "name": "initialize", "params": [], "description": "Initializes the scene manager" },
+      { "name": "update", "params": ["deltaTime"], "description": "Updates current scene" },
+      { "name": "goto", "params": ["sceneClass"], "description": "Transitions to new scene" },
+      { "name": "push", "params": ["sceneClass"], "description": "Pushes scene onto stack" },
+      { "name": "pop", "params": [], "description": "Pops scene from stack" }
+    ]
+  },
+  "BattleManager": {
+    "name": "BattleManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing battle flow",
+    "methods": [
+      { "name": "setup", "params": ["troopId", "canEscape", "canLose"], "description": "Sets up a battle" },
+      { "name": "initMembers", "params": [], "description": "Initializes battle members" },
+      { "name": "update", "params": ["timeActive"], "description": "Updates battle each frame" },
+      { "name": "startBattle", "params": [], "description": "Starts the battle" },
+      { "name": "processVictory", "params": [], "description": "Processes victory condition" },
+      { "name": "processDefeat", "params": [], "description": "Processes defeat condition" },
+      { "name": "endBattle", "params": ["result"], "description": "Ends the battle" }
+    ]
+  },
+  "AudioManager": {
+    "name": "AudioManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for playing audio",
+    "methods": [
+      { "name": "playBgm", "params": ["bgm", "pos"], "description": "Plays background music" },
+      { "name": "playBgs", "params": ["bgs", "pos"], "description": "Plays background sound" },
+      { "name": "playMe", "params": ["me"], "description": "Plays music effect" },
+      { "name": "playSe", "params": ["se"], "description": "Plays sound effect" },
+      { "name": "stopBgm", "params": [], "description": "Stops background music" },
+      { "name": "stopAll", "params": [], "description": "Stops all audio" }
+    ]
+  },
+  "SoundManager": {
+    "name": "SoundManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for playing system sounds",
+    "methods": [
+      { "name": "playSystemSound", "params": ["n"], "description": "Plays a system sound by index" },
+      { "name": "playCursor", "params": [], "description": "Plays cursor movement sound" },
+      { "name": "playOk", "params": [], "description": "Plays confirmation sound" },
+      { "name": "playCancel", "params": [], "description": "Plays cancel sound" },
+      { "name": "playBuzzer", "params": [], "description": "Plays buzzer sound" }
+    ]
+  },
+  "TextManager": {
+    "name": "TextManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing game text terms",
+    "methods": [
+      { "name": "basic", "params": ["basicId"], "description": "Gets basic term by ID" },
+      { "name": "param", "params": ["paramId"], "description": "Gets parameter name" },
+      { "name": "command", "params": ["commandId"], "description": "Gets command name" },
+      { "name": "message", "params": ["messageId"], "description": "Gets message text" }
+    ]
+  },
+  "ColorManager": {
+    "name": "ColorManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing colors",
+    "methods": [
+      { "name": "loadWindowskin", "params": [], "description": "Loads the windowskin" },
+      { "name": "textColor", "params": ["n"], "description": "Gets text color by index" },
+      { "name": "normalColor", "params": [], "description": "Gets normal text color" },
+      { "name": "systemColor", "params": [], "description": "Gets system text color" },
+      { "name": "hpColor", "params": ["actor"], "description": "Gets HP gauge color" }
+    ]
+  },
+  "EffectManager": {
+    "name": "EffectManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing Effekseer effects",
+    "methods": [
+      { "name": "load", "params": ["filename"], "description": "Loads an effect file" },
+      { "name": "startLoading", "params": [], "description": "Starts loading effects" },
+      { "name": "clear", "params": [], "description": "Clears loaded effects" },
+      { "name": "isReady", "params": [], "description": "Checks if effects are ready" }
+    ]
+  },
+  "ImageManager": {
+    "name": "ImageManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for loading and caching images",
+    "methods": [
+      { "name": "loadBitmap", "params": ["folder", "filename"], "description": "Loads a bitmap from folder" },
+      { "name": "loadFace", "params": ["filename"], "description": "Loads a face image" },
+      { "name": "loadCharacter", "params": ["filename"], "description": "Loads a character image" },
+      { "name": "loadPicture", "params": ["filename"], "description": "Loads a picture" },
+      { "name": "loadSystem", "params": ["filename"], "description": "Loads a system image" },
+      { "name": "clear", "params": [], "description": "Clears the image cache" }
+    ]
+  },
+  "PluginManager": {
+    "name": "PluginManager",
+    "file": "rmmz_managers.js",
+    "category": "manager",
+    "description": "Static class for managing plugins",
+    "methods": [
+      { "name": "setup", "params": ["plugins"], "description": "Sets up plugins list" },
+      { "name": "parameters", "params": ["name"], "description": "Gets plugin parameters" },
+      { "name": "registerCommand", "params": ["pluginName", "commandName", "func"], "description": "Registers plugin command" },
+      { "name": "callCommand", "params": ["self", "pluginName", "commandName", "args"], "description": "Calls a plugin command" }
+    ]
+  },
+  "Game_Temp": {
+    "name": "Game_Temp",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Temporary game data not saved",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes temporary data" },
+      { "name": "isPlaytest", "params": [], "description": "Checks if in playtest mode" },
+      { "name": "setDestination", "params": ["x", "y"], "description": "Sets player destination" },
+      { "name": "clearDestination", "params": [], "description": "Clears player destination" },
+      { "name": "reserveCommonEvent", "params": ["commonEventId"], "description": "Reserves common event" }
+    ]
+  },
+  "Game_System": {
+    "name": "Game_System",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "System data that gets saved",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes system data" },
+      { "name": "playtime", "params": [], "description": "Gets play time in seconds" },
+      { "name": "playtimeText", "params": [], "description": "Gets formatted play time" },
+      { "name": "saveBgm", "params": [], "description": "Saves current BGM" },
+      { "name": "replayBgm", "params": [], "description": "Replays saved BGM" }
+    ]
+  },
+  "Game_Timer": {
+    "name": "Game_Timer",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Game timer functionality",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes timer" },
+      { "name": "update", "params": ["sceneActive"], "description": "Updates timer each frame" },
+      { "name": "start", "params": ["count"], "description": "Starts the timer" },
+      { "name": "stop", "params": [], "description": "Stops the timer" },
+      { "name": "isWorking", "params": [], "description": "Checks if timer is active" }
+    ]
+  },
+  "Game_Message": {
+    "name": "Game_Message",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Message window state and content",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes message state" },
+      { "name": "clear", "params": [], "description": "Clears message content" },
+      { "name": "add", "params": ["text"], "description": "Adds text line" },
+      { "name": "setChoices", "params": ["choices", "defaultType", "cancelType"], "description": "Sets up choices" },
+      { "name": "isBusy", "params": [], "description": "Checks if message is showing" }
+    ]
+  },
+  "Game_Switches": {
+    "name": "Game_Switches",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Game switches container",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes switches" },
+      { "name": "clear", "params": [], "description": "Clears all switches" },
+      { "name": "value", "params": ["switchId"], "description": "Gets switch value" },
+      { "name": "setValue", "params": ["switchId", "value"], "description": "Sets switch value" }
+    ]
+  },
+  "Game_Variables": {
+    "name": "Game_Variables",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Game variables container",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes variables" },
+      { "name": "clear", "params": [], "description": "Clears all variables" },
+      { "name": "value", "params": ["variableId"], "description": "Gets variable value" },
+      { "name": "setValue", "params": ["variableId", "value"], "description": "Sets variable value" }
+    ]
+  },
+  "Game_SelfSwitches": {
+    "name": "Game_SelfSwitches",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Self switches for map events",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes self switches" },
+      { "name": "clear", "params": [], "description": "Clears all self switches" },
+      { "name": "value", "params": ["key"], "description": "Gets self switch value" },
+      { "name": "setValue", "params": ["key", "value"], "description": "Sets self switch value" }
+    ]
+  },
+  "Game_Screen": {
+    "name": "Game_Screen",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Screen effects like tint and shake",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes screen effects" },
+      { "name": "clear", "params": [], "description": "Clears all effects" },
+      { "name": "update", "params": [], "description": "Updates effects each frame" },
+      { "name": "startFadeIn", "params": ["duration"], "description": "Starts fade in" },
+      { "name": "startFadeOut", "params": ["duration"], "description": "Starts fade out" },
+      { "name": "startTint", "params": ["tone", "duration"], "description": "Starts screen tint" },
+      { "name": "startShake", "params": ["power", "speed", "duration"], "description": "Starts screen shake" }
+    ]
+  },
+  "Game_Picture": {
+    "name": "Game_Picture",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Picture display data",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes picture data" },
+      { "name": "show", "params": ["name", "origin", "x", "y", "scaleX", "scaleY", "opacity", "blendMode"], "description": "Shows a picture" },
+      { "name": "move", "params": ["origin", "x", "y", "scaleX", "scaleY", "opacity", "blendMode", "duration", "easingType"], "description": "Moves a picture" },
+      { "name": "erase", "params": [], "description": "Erases the picture" },
+      { "name": "update", "params": [], "description": "Updates picture animation" }
+    ]
+  },
+  "Game_Item": {
+    "name": "Game_Item",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Wrapper for items, weapons, armors, skills",
+    "methods": [
+      { "name": "initialize", "params": ["item"], "description": "Creates game item wrapper" },
+      { "name": "isSkill", "params": [], "description": "Checks if skill" },
+      { "name": "isItem", "params": [], "description": "Checks if item" },
+      { "name": "isWeapon", "params": [], "description": "Checks if weapon" },
+      { "name": "isArmor", "params": [], "description": "Checks if armor" },
+      { "name": "object", "params": [], "description": "Gets the database object" }
+    ]
+  },
+  "Game_Action": {
+    "name": "Game_Action",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Battle action with target and effects",
+    "methods": [
+      { "name": "initialize", "params": ["subject", "forcing"], "description": "Creates battle action" },
+      { "name": "clear", "params": [], "description": "Clears the action" },
+      { "name": "setSkill", "params": ["skillId"], "description": "Sets action to skill" },
+      { "name": "setItem", "params": ["itemId"], "description": "Sets action to item" },
+      { "name": "apply", "params": ["target"], "description": "Applies action to target" },
+      { "name": "makeDamageValue", "params": ["target", "critical"], "description": "Calculates damage value" }
+    ]
+  },
+  "Game_ActionResult": {
+    "name": "Game_ActionResult",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Result of a battle action",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes action result" },
+      { "name": "clear", "params": [], "description": "Clears the result" },
+      { "name": "isHit", "params": [], "description": "Checks if action hit" }
+    ]
+  },
+  "Game_BattlerBase": {
+    "name": "Game_BattlerBase",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Base class for battler stats and states",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes battler base" },
+      { "name": "initMembers", "params": [], "description": "Initializes member variables" },
+      { "name": "param", "params": ["paramId"], "description": "Gets parameter value" },
+      { "name": "paramBase", "params": ["paramId"], "description": "Gets base parameter" },
+      { "name": "paramPlus", "params": ["paramId"], "description": "Gets parameter bonus" },
+      { "name": "isStateAffected", "params": ["stateId"], "description": "Checks if state is active" },
+      { "name": "canMove", "params": [], "description": "Checks if can act" }
+    ]
+  },
+  "Game_Battler": {
+    "name": "Game_Battler",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_BattlerBase",
+    "description": "Battler with HP/MP and battle actions",
+    "methods": [
+      { "name": "initMembers", "params": [], "description": "Initializes battler members" },
+      { "name": "refresh", "params": [], "description": "Refreshes battler state" },
+      { "name": "addState", "params": ["stateId"], "description": "Adds a state" },
+      { "name": "removeState", "params": ["stateId"], "description": "Removes a state" },
+      { "name": "gainHp", "params": ["value"], "description": "Changes HP" },
+      { "name": "gainMp", "params": ["value"], "description": "Changes MP" },
+      { "name": "performAction", "params": ["action"], "description": "Performs battle action" }
+    ]
+  },
+  "Game_Actor": {
+    "name": "Game_Actor",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Battler",
+    "description": "Player character in battle and menus",
+    "methods": [
+      { "name": "initialize", "params": ["actorId"], "description": "Initializes actor" },
+      { "name": "setup", "params": ["actorId"], "description": "Sets up actor from database" },
+      { "name": "name", "params": [], "description": "Gets actor name" },
+      { "name": "setName", "params": ["name"], "description": "Sets actor name" },
+      { "name": "changeExp", "params": ["exp", "show"], "description": "Changes experience" },
+      { "name": "levelUp", "params": [], "description": "Levels up the actor" },
+      { "name": "changeEquip", "params": ["slotId", "item"], "description": "Changes equipment" }
+    ]
+  },
+  "Game_Enemy": {
+    "name": "Game_Enemy",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Battler",
+    "description": "Enemy battler in combat",
+    "methods": [
+      { "name": "initialize", "params": ["enemyId", "x", "y"], "description": "Initializes enemy" },
+      { "name": "setup", "params": ["enemyId", "x", "y"], "description": "Sets up enemy from database" },
+      { "name": "name", "params": [], "description": "Gets enemy name" },
+      { "name": "enemy", "params": [], "description": "Gets enemy database object" },
+      { "name": "exp", "params": [], "description": "Gets experience reward" },
+      { "name": "gold", "params": [], "description": "Gets gold reward" }
+    ]
+  },
+  "Game_Actors": {
+    "name": "Game_Actors",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Container for all Game_Actor instances",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes actors container" },
+      { "name": "actor", "params": ["actorId"], "description": "Gets actor by ID" }
+    ]
+  },
+  "Game_Unit": {
+    "name": "Game_Unit",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Base class for party and troop",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes unit" },
+      { "name": "members", "params": [], "description": "Gets all members" },
+      { "name": "aliveMembers", "params": [], "description": "Gets living members" },
+      { "name": "deadMembers", "params": [], "description": "Gets dead members" },
+      { "name": "clearActions", "params": [], "description": "Clears all actions" }
+    ]
+  },
+  "Game_Party": {
+    "name": "Game_Party",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Unit",
+    "description": "Player party with inventory",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes party" },
+      { "name": "setupStartingMembers", "params": [], "description": "Sets up initial party" },
+      { "name": "addActor", "params": ["actorId"], "description": "Adds actor to party" },
+      { "name": "removeActor", "params": ["actorId"], "description": "Removes actor from party" },
+      { "name": "gainItem", "params": ["item", "amount", "includeEquip"], "description": "Gains/loses items" },
+      { "name": "gainGold", "params": ["amount"], "description": "Gains/loses gold" },
+      { "name": "leader", "params": [], "description": "Gets party leader" }
+    ]
+  },
+  "Game_Troop": {
+    "name": "Game_Troop",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Unit",
+    "description": "Enemy troop in battle",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes troop" },
+      { "name": "setup", "params": ["troopId"], "description": "Sets up troop from database" },
+      { "name": "clear", "params": [], "description": "Clears the troop" },
+      { "name": "troop", "params": [], "description": "Gets troop database object" },
+      { "name": "expTotal", "params": [], "description": "Gets total experience" },
+      { "name": "goldTotal", "params": [], "description": "Gets total gold" }
+    ]
+  },
+  "Game_Map": {
+    "name": "Game_Map",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Current map data and events",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes map" },
+      { "name": "setup", "params": ["mapId"], "description": "Sets up map from database" },
+      { "name": "refresh", "params": [], "description": "Refreshes map events" },
+      { "name": "update", "params": ["sceneActive"], "description": "Updates map each frame" },
+      { "name": "event", "params": ["eventId"], "description": "Gets event by ID" },
+      { "name": "events", "params": [], "description": "Gets all events" },
+      { "name": "isPassable", "params": ["x", "y", "d"], "description": "Checks tile passability" }
+    ]
+  },
+  "Game_CommonEvent": {
+    "name": "Game_CommonEvent",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Common event that runs globally",
+    "methods": [
+      { "name": "initialize", "params": ["commonEventId"], "description": "Initializes common event" },
+      { "name": "event", "params": [], "description": "Gets event database object" },
+      { "name": "refresh", "params": [], "description": "Refreshes the event" },
+      { "name": "update", "params": [], "description": "Updates the event" }
+    ]
+  },
+  "Game_CharacterBase": {
+    "name": "Game_CharacterBase",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Base class for map characters",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes character" },
+      { "name": "initMembers", "params": [], "description": "Initializes member variables" },
+      { "name": "update", "params": [], "description": "Updates character each frame" },
+      { "name": "moveStraight", "params": ["d"], "description": "Moves in direction" },
+      { "name": "setPosition", "params": ["x", "y"], "description": "Sets map position" },
+      { "name": "screenX", "params": [], "description": "Gets screen X position" },
+      { "name": "screenY", "params": [], "description": "Gets screen Y position" }
+    ]
+  },
+  "Game_Character": {
+    "name": "Game_Character",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_CharacterBase",
+    "description": "Character with movement routes",
+    "methods": [
+      { "name": "initMembers", "params": [], "description": "Initializes character members" },
+      { "name": "setMoveRoute", "params": ["moveRoute"], "description": "Sets movement route" },
+      { "name": "forceMoveRoute", "params": ["moveRoute"], "description": "Forces movement route" },
+      { "name": "turnTowardCharacter", "params": ["character"], "description": "Faces another character" },
+      { "name": "turnTowardPlayer", "params": [], "description": "Faces the player" }
+    ]
+  },
+  "Game_Player": {
+    "name": "Game_Player",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Character",
+    "description": "Player character on the map",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes player" },
+      { "name": "initMembers", "params": [], "description": "Initializes player members" },
+      { "name": "update", "params": ["sceneActive"], "description": "Updates player each frame" },
+      { "name": "refresh", "params": [], "description": "Refreshes player appearance" },
+      { "name": "center", "params": ["x", "y"], "description": "Centers screen on position" },
+      { "name": "reserveTransfer", "params": ["mapId", "x", "y", "d", "fadeType"], "description": "Reserves map transfer" },
+      { "name": "performTransfer", "params": [], "description": "Performs reserved transfer" }
+    ]
+  },
+  "Game_Follower": {
+    "name": "Game_Follower",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Character",
+    "description": "Party follower on the map",
+    "methods": [
+      { "name": "initialize", "params": ["memberIndex"], "description": "Initializes follower" },
+      { "name": "refresh", "params": [], "description": "Refreshes follower appearance" },
+      { "name": "actor", "params": [], "description": "Gets the actor" },
+      { "name": "chaseCharacter", "params": ["character"], "description": "Follows another character" }
+    ]
+  },
+  "Game_Followers": {
+    "name": "Game_Followers",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Container for party followers",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes followers" },
+      { "name": "update", "params": [], "description": "Updates all followers" },
+      { "name": "refresh", "params": [], "description": "Refreshes all followers" },
+      { "name": "gather", "params": [], "description": "Gathers followers to player" }
+    ]
+  },
+  "Game_Vehicle": {
+    "name": "Game_Vehicle",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Character",
+    "description": "Vehicle on the map",
+    "methods": [
+      { "name": "initialize", "params": ["type"], "description": "Initializes vehicle" },
+      { "name": "initMembers", "params": [], "description": "Initializes vehicle members" },
+      { "name": "refresh", "params": [], "description": "Refreshes vehicle appearance" },
+      { "name": "getOn", "params": [], "description": "Player boards vehicle" },
+      { "name": "getOff", "params": [], "description": "Player exits vehicle" }
+    ]
+  },
+  "Game_Event": {
+    "name": "Game_Event",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "parent": "Game_Character",
+    "description": "Map event with pages and triggers",
+    "methods": [
+      { "name": "initialize", "params": ["mapId", "eventId"], "description": "Initializes event" },
+      { "name": "event", "params": [], "description": "Gets event database object" },
+      { "name": "refresh", "params": [], "description": "Refreshes active page" },
+      { "name": "start", "params": [], "description": "Starts event execution" },
+      { "name": "setupPage", "params": [], "description": "Sets up current page" },
+      { "name": "meetsConditions", "params": ["page"], "description": "Checks page conditions" }
+    ]
+  },
+  "Game_Interpreter": {
+    "name": "Game_Interpreter",
+    "file": "rmmz_objects.js",
+    "category": "object",
+    "description": "Event command interpreter",
+    "methods": [
+      { "name": "initialize", "params": ["depth"], "description": "Initializes interpreter" },
+      { "name": "setup", "params": ["list", "eventId"], "description": "Sets up command list" },
+      { "name": "update", "params": [], "description": "Updates execution" },
+      { "name": "executeCommand", "params": [], "description": "Executes current command" },
+      { "name": "command101", "params": ["params"], "description": "Show Text" },
+      { "name": "command102", "params": ["params"], "description": "Show Choices" },
+      { "name": "command111", "params": ["params"], "description": "Conditional Branch" },
+      { "name": "command355", "params": [], "description": "Script" }
+    ]
+  },
+  "Scene_Base": {
+    "name": "Scene_Base",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Stage",
+    "description": "Base class for all scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes the scene" },
+      { "name": "create", "params": [], "description": "Creates scene contents" },
+      { "name": "start", "params": [], "description": "Called when scene starts" },
+      { "name": "update", "params": [], "description": "Updates scene each frame" },
+      { "name": "stop", "params": [], "description": "Called when scene stops" },
+      { "name": "terminate", "params": [], "description": "Called when scene ends" },
+      { "name": "isActive", "params": [], "description": "Checks if scene is active" }
+    ]
+  },
+  "Scene_Boot": {
+    "name": "Scene_Boot",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Base",
+    "description": "Initial loading scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes boot scene" },
+      { "name": "create", "params": [], "description": "Creates boot contents" },
+      { "name": "start", "params": [], "description": "Starts after loading" },
+      { "name": "loadSystemImages", "params": [], "description": "Loads system images" },
+      { "name": "startNormalGame", "params": [], "description": "Starts normal game" }
+    ]
+  },
+  "Scene_Title": {
+    "name": "Scene_Title",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Base",
+    "description": "Title screen scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes title scene" },
+      { "name": "create", "params": [], "description": "Creates title contents" },
+      { "name": "start", "params": [], "description": "Starts title scene" },
+      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
+      { "name": "commandNewGame", "params": [], "description": "Handles New Game" },
+      { "name": "commandContinue", "params": [], "description": "Handles Continue" }
+    ]
+  },
+  "Scene_Message": {
+    "name": "Scene_Message",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Base",
+    "description": "Base for scenes with message window",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes message scene" },
+      { "name": "createMessageWindow", "params": [], "description": "Creates message window" },
+      { "name": "createScrollTextWindow", "params": [], "description": "Creates scroll text window" },
+      { "name": "isMessageWindowClosing", "params": [], "description": "Checks if closing" }
+    ]
+  },
+  "Scene_Map": {
+    "name": "Scene_Map",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Message",
+    "description": "Main map gameplay scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes map scene" },
+      { "name": "create", "params": [], "description": "Creates map contents" },
+      { "name": "start", "params": [], "description": "Starts map scene" },
+      { "name": "update", "params": [], "description": "Updates map scene" },
+      { "name": "updateMain", "params": [], "description": "Main update logic" },
+      { "name": "createDisplayObjects", "params": [], "description": "Creates display objects" },
+      { "name": "callMenu", "params": [], "description": "Opens menu" }
+    ]
+  },
+  "Scene_MenuBase": {
+    "name": "Scene_MenuBase",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Base",
+    "description": "Base for menu scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes menu base" },
+      { "name": "create", "params": [], "description": "Creates menu contents" },
+      { "name": "createBackground", "params": [], "description": "Creates background" },
+      { "name": "createHelpWindow", "params": [], "description": "Creates help window" },
+      { "name": "actor", "params": [], "description": "Gets current actor" }
+    ]
+  },
+  "Scene_Menu": {
+    "name": "Scene_Menu",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Main menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes menu scene" },
+      { "name": "create", "params": [], "description": "Creates menu contents" },
+      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
+      { "name": "createStatusWindow", "params": [], "description": "Creates status window" },
+      { "name": "commandItem", "params": [], "description": "Handles Item command" },
+      { "name": "commandSkill", "params": [], "description": "Handles Skill command" }
+    ]
+  },
+  "Scene_ItemBase": {
+    "name": "Scene_ItemBase",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Base for item/skill scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes item base" },
+      { "name": "createActorWindow", "params": [], "description": "Creates actor window" },
+      { "name": "item", "params": [], "description": "Gets selected item" },
+      { "name": "user", "params": [], "description": "Gets item user" },
+      { "name": "useItem", "params": [], "description": "Uses the item" }
+    ]
+  },
+  "Scene_Item": {
+    "name": "Scene_Item",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_ItemBase",
+    "description": "Item menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes item scene" },
+      { "name": "create", "params": [], "description": "Creates item contents" },
+      { "name": "createCategoryWindow", "params": [], "description": "Creates category window" },
+      { "name": "createItemWindow", "params": [], "description": "Creates item window" },
+      { "name": "onItemOk", "params": [], "description": "Handles item selection" }
+    ]
+  },
+  "Scene_Skill": {
+    "name": "Scene_Skill",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_ItemBase",
+    "description": "Skill menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes skill scene" },
+      { "name": "create", "params": [], "description": "Creates skill contents" },
+      { "name": "createSkillTypeWindow", "params": [], "description": "Creates skill type window" },
+      { "name": "createItemWindow", "params": [], "description": "Creates skill list window" },
+      { "name": "onItemOk", "params": [], "description": "Handles skill selection" }
+    ]
+  },
+  "Scene_Equip": {
+    "name": "Scene_Equip",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Equipment menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes equip scene" },
+      { "name": "create", "params": [], "description": "Creates equip contents" },
+      { "name": "createSlotWindow", "params": [], "description": "Creates slot window" },
+      { "name": "createItemWindow", "params": [], "description": "Creates item window" },
+      { "name": "onSlotOk", "params": [], "description": "Handles slot selection" },
+      { "name": "onItemOk", "params": [], "description": "Handles item selection" }
+    ]
+  },
+  "Scene_Status": {
+    "name": "Scene_Status",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Status screen scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes status scene" },
+      { "name": "create", "params": [], "description": "Creates status contents" },
+      { "name": "createStatusWindow", "params": [], "description": "Creates status window" },
+      { "name": "refreshActor", "params": [], "description": "Refreshes actor display" }
+    ]
+  },
+  "Scene_Options": {
+    "name": "Scene_Options",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Options menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes options scene" },
+      { "name": "create", "params": [], "description": "Creates options contents" },
+      { "name": "createOptionsWindow", "params": [], "description": "Creates options window" },
+      { "name": "maxCommands", "params": [], "description": "Gets max visible commands" }
+    ]
+  },
+  "Scene_File": {
+    "name": "Scene_File",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Base for save/load scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes file scene" },
+      { "name": "create", "params": [], "description": "Creates file contents" },
+      { "name": "createListWindow", "params": [], "description": "Creates save file list" },
+      { "name": "savefileId", "params": [], "description": "Gets selected save ID" }
+    ]
+  },
+  "Scene_Save": {
+    "name": "Scene_Save",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_File",
+    "description": "Save game scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes save scene" },
+      { "name": "onSavefileOk", "params": [], "description": "Handles save confirmation" },
+      { "name": "executeSave", "params": ["savefileId"], "description": "Executes save" }
+    ]
+  },
+  "Scene_Load": {
+    "name": "Scene_Load",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_File",
+    "description": "Load game scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes load scene" },
+      { "name": "onSavefileOk", "params": [], "description": "Handles load confirmation" },
+      { "name": "executeLoad", "params": ["savefileId"], "description": "Executes load" }
+    ]
+  },
+  "Scene_GameEnd": {
+    "name": "Scene_GameEnd",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Game end confirmation scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes game end scene" },
+      { "name": "create", "params": [], "description": "Creates game end contents" },
+      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
+      { "name": "commandToTitle", "params": [], "description": "Returns to title" }
+    ]
+  },
+  "Scene_Shop": {
+    "name": "Scene_Shop",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Shop scene for buying/selling",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes shop scene" },
+      { "name": "prepare", "params": ["goods", "purchaseOnly"], "description": "Prepares shop data" },
+      { "name": "create", "params": [], "description": "Creates shop contents" },
+      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
+      { "name": "commandBuy", "params": [], "description": "Handles buy command" },
+      { "name": "commandSell", "params": [], "description": "Handles sell command" }
+    ]
+  },
+  "Scene_Name": {
+    "name": "Scene_Name",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Name input scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes name scene" },
+      { "name": "prepare", "params": ["actorId", "maxLength"], "description": "Prepares name input" },
+      { "name": "create", "params": [], "description": "Creates name contents" },
+      { "name": "createEditWindow", "params": [], "description": "Creates edit window" },
+      { "name": "createInputWindow", "params": [], "description": "Creates input window" }
+    ]
+  },
+  "Scene_Debug": {
+    "name": "Scene_Debug",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_MenuBase",
+    "description": "Debug menu scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes debug scene" },
+      { "name": "create", "params": [], "description": "Creates debug contents" },
+      { "name": "createRangeWindow", "params": [], "description": "Creates range window" },
+      { "name": "createEditWindow", "params": [], "description": "Creates edit window" }
+    ]
+  },
+  "Scene_Battle": {
+    "name": "Scene_Battle",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Message",
+    "description": "Battle scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes battle scene" },
+      { "name": "create", "params": [], "description": "Creates battle contents" },
+      { "name": "start", "params": [], "description": "Starts battle scene" },
+      { "name": "update", "params": [], "description": "Updates battle scene" },
+      { "name": "createDisplayObjects", "params": [], "description": "Creates display objects" },
+      { "name": "createSpriteset", "params": [], "description": "Creates battle spriteset" },
+      { "name": "createAllWindows", "params": [], "description": "Creates all windows" }
+    ]
+  },
+  "Scene_Gameover": {
+    "name": "Scene_Gameover",
+    "file": "rmmz_scenes.js",
+    "category": "scene",
+    "parent": "Scene_Base",
+    "description": "Game over scene",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes gameover scene" },
+      { "name": "create", "params": [], "description": "Creates gameover contents" },
+      { "name": "start", "params": [], "description": "Starts gameover scene" },
+      { "name": "createBackground", "params": [], "description": "Creates background" },
+      { "name": "gotoTitle", "params": [], "description": "Returns to title" }
+    ]
+  },
+  "Sprite_Clickable": {
+    "name": "Sprite_Clickable",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite with click/touch handling",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes clickable sprite" },
+      { "name": "update", "params": [], "description": "Updates click detection" },
+      { "name": "onClick", "params": [], "description": "Called when clicked" },
+      { "name": "onPress", "params": [], "description": "Called when pressed" }
+    ]
+  },
+  "Sprite_Button": {
+    "name": "Sprite_Button",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite_Clickable",
+    "description": "Button sprite",
+    "methods": [
+      { "name": "initialize", "params": ["buttonType"], "description": "Creates button sprite" },
+      { "name": "setupFrames", "params": [], "description": "Sets up button frames" },
+      { "name": "update", "params": [], "description": "Updates button state" },
+      { "name": "checkBitmap", "params": [], "description": "Checks if bitmap loaded" }
+    ]
+  },
+  "Sprite_Character": {
+    "name": "Sprite_Character",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for map characters",
+    "methods": [
+      { "name": "initialize", "params": ["character"], "description": "Creates character sprite" },
+      { "name": "initMembers", "params": [], "description": "Initializes sprite members" },
+      { "name": "update", "params": [], "description": "Updates character sprite" },
+      { "name": "setCharacter", "params": ["character"], "description": "Sets the character" },
+      { "name": "setCharacterBitmap", "params": [], "description": "Sets character image" },
+      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
+    ]
+  },
+  "Sprite_Battler": {
+    "name": "Sprite_Battler",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite_Clickable",
+    "description": "Base sprite for battlers",
+    "methods": [
+      { "name": "initialize", "params": ["battler"], "description": "Creates battler sprite" },
+      { "name": "initMembers", "params": [], "description": "Initializes sprite members" },
+      { "name": "update", "params": [], "description": "Updates battler sprite" },
+      { "name": "setBattler", "params": ["battler"], "description": "Sets the battler" },
+      { "name": "updateMain", "params": [], "description": "Main update logic" }
+    ]
+  },
+  "Sprite_Actor": {
+    "name": "Sprite_Actor",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite_Battler",
+    "description": "Sprite for actor battlers",
+    "methods": [
+      { "name": "initialize", "params": ["battler"], "description": "Creates actor sprite" },
+      { "name": "initMembers", "params": [], "description": "Initializes actor members" },
+      { "name": "setActorHome", "params": ["index"], "description": "Sets home position" },
+      { "name": "updateMotion", "params": [], "description": "Updates motion" },
+      { "name": "startMotion", "params": ["motionType"], "description": "Starts a motion" }
+    ]
+  },
+  "Sprite_Enemy": {
+    "name": "Sprite_Enemy",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite_Battler",
+    "description": "Sprite for enemy battlers",
+    "methods": [
+      { "name": "initialize", "params": ["battler"], "description": "Creates enemy sprite" },
+      { "name": "initMembers", "params": [], "description": "Initializes enemy members" },
+      { "name": "loadBitmap", "params": ["name"], "description": "Loads enemy image" },
+      { "name": "updateEffect", "params": [], "description": "Updates visual effects" }
+    ]
+  },
+  "Sprite_Animation": {
+    "name": "Sprite_Animation",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for battle animations",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes animation sprite" },
+      { "name": "setup", "params": ["targets", "animation", "mirror", "delay"], "description": "Sets up animation" },
+      { "name": "update", "params": [], "description": "Updates animation" },
+      { "name": "isPlaying", "params": [], "description": "Checks if playing" }
+    ]
+  },
+  "Sprite_Damage": {
+    "name": "Sprite_Damage",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for damage numbers",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes damage sprite" },
+      { "name": "setup", "params": ["target"], "description": "Sets up damage display" },
+      { "name": "update", "params": [], "description": "Updates damage animation" },
+      { "name": "createDigits", "params": ["value"], "description": "Creates digit sprites" }
+    ]
+  },
+  "Sprite_StateIcon": {
+    "name": "Sprite_StateIcon",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for state icons",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes state icon sprite" },
+      { "name": "setup", "params": ["battler"], "description": "Sets up for battler" },
+      { "name": "update", "params": [], "description": "Updates icon display" },
+      { "name": "updateFrame", "params": [], "description": "Updates icon frame" }
+    ]
+  },
+  "Sprite_StateOverlay": {
+    "name": "Sprite_StateOverlay",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for state overlay animations",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes overlay sprite" },
+      { "name": "setup", "params": ["battler"], "description": "Sets up for battler" },
+      { "name": "update", "params": [], "description": "Updates overlay" },
+      { "name": "updatePattern", "params": [], "description": "Updates animation pattern" }
+    ]
+  },
+  "Sprite_Weapon": {
+    "name": "Sprite_Weapon",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for weapon attack animations",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes weapon sprite" },
+      { "name": "setup", "params": ["weaponImageId"], "description": "Sets up weapon image" },
+      { "name": "update", "params": [], "description": "Updates weapon animation" },
+      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
+    ]
+  },
+  "Sprite_Balloon": {
+    "name": "Sprite_Balloon",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for balloon icons",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes balloon sprite" },
+      { "name": "setup", "params": ["targetSprite", "balloonId"], "description": "Sets up balloon" },
+      { "name": "update", "params": [], "description": "Updates balloon animation" },
+      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
+    ]
+  },
+  "Sprite_Picture": {
+    "name": "Sprite_Picture",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite_Clickable",
+    "description": "Sprite for pictures",
+    "methods": [
+      { "name": "initialize", "params": ["pictureId"], "description": "Creates picture sprite" },
+      { "name": "picture", "params": [], "description": "Gets picture data" },
+      { "name": "update", "params": [], "description": "Updates picture sprite" },
+      { "name": "updateBitmap", "params": [], "description": "Updates picture image" }
+    ]
+  },
+  "Sprite_Timer": {
+    "name": "Sprite_Timer",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for game timer display",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes timer sprite" },
+      { "name": "update", "params": [], "description": "Updates timer display" },
+      { "name": "redraw", "params": [], "description": "Redraws timer text" },
+      { "name": "timerText", "params": [], "description": "Gets formatted time" }
+    ]
+  },
+  "Sprite_Destination": {
+    "name": "Sprite_Destination",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Sprite for touch destination indicator",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes destination sprite" },
+      { "name": "update", "params": [], "description": "Updates destination display" },
+      { "name": "updateAnimation", "params": [], "description": "Updates animation" }
+    ]
+  },
+  "Spriteset_Base": {
+    "name": "Spriteset_Base",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Sprite",
+    "description": "Base class for spritesets",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes spriteset" },
+      { "name": "update", "params": [], "description": "Updates all sprites" },
+      { "name": "createBaseSprite", "params": [], "description": "Creates base sprite" },
+      { "name": "createAnimation", "params": [], "description": "Creates animation sprites" }
+    ]
+  },
+  "Spriteset_Map": {
+    "name": "Spriteset_Map",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Spriteset_Base",
+    "description": "Spriteset for map scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes map spriteset" },
+      { "name": "update", "params": [], "description": "Updates map sprites" },
+      { "name": "createTilemap", "params": [], "description": "Creates the tilemap" },
+      { "name": "createCharacters", "params": [], "description": "Creates character sprites" },
+      { "name": "createPictures", "params": [], "description": "Creates picture sprites" }
+    ]
+  },
+  "Spriteset_Battle": {
+    "name": "Spriteset_Battle",
+    "file": "rmmz_sprites.js",
+    "category": "sprite",
+    "parent": "Spriteset_Base",
+    "description": "Spriteset for battle scenes",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Initializes battle spriteset" },
+      { "name": "update", "params": [], "description": "Updates battle sprites" },
+      { "name": "createBattleback", "params": [], "description": "Creates battleback sprites" },
+      { "name": "createEnemies", "params": [], "description": "Creates enemy sprites" },
+      { "name": "createActors", "params": [], "description": "Creates actor sprites" }
+    ]
+  },
+  "Window_Base": {
+    "name": "Window_Base",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window",
+    "description": "Base class for game windows with drawing",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates window with rectangle" },
+      { "name": "update", "params": [], "description": "Updates the window" },
+      { "name": "drawText", "params": ["text", "x", "y", "maxWidth", "align"], "description": "Draws text" },
+      { "name": "drawTextEx", "params": ["text", "x", "y", "width"], "description": "Draws text with codes" },
+      { "name": "drawIcon", "params": ["iconIndex", "x", "y"], "description": "Draws an icon" },
+      { "name": "drawFace", "params": ["faceName", "faceIndex", "x", "y", "width", "height"], "description": "Draws a face" },
+      { "name": "refresh", "params": [], "description": "Refreshes window contents" }
+    ]
+  },
+  "Window_Scrollable": {
+    "name": "Window_Scrollable",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Window with scrolling support",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates scrollable window" },
+      { "name": "update", "params": [], "description": "Updates scroll position" },
+      { "name": "scrollTo", "params": ["x", "y"], "description": "Scrolls to position" },
+      { "name": "smoothScrollTo", "params": ["x", "y"], "description": "Smooth scrolls to position" }
+    ]
+  },
+  "Window_Selectable": {
+    "name": "Window_Selectable",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Scrollable",
+    "description": "Window with item selection",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates selectable window" },
+      { "name": "update", "params": [], "description": "Updates selection" },
+      { "name": "select", "params": ["index"], "description": "Selects an item" },
+      { "name": "activate", "params": [], "description": "Activates the window" },
+      { "name": "deactivate", "params": [], "description": "Deactivates the window" },
+      { "name": "refresh", "params": [], "description": "Refreshes the window" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws an item" },
+      { "name": "maxItems", "params": [], "description": "Gets total item count" }
+    ]
+  },
+  "Window_Command": {
+    "name": "Window_Command",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Window with command list",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates command list" },
+      { "name": "addCommand", "params": ["name", "symbol", "enabled", "ext"], "description": "Adds a command" },
+      { "name": "currentSymbol", "params": [], "description": "Gets selected symbol" },
+      { "name": "refresh", "params": [], "description": "Refreshes command list" }
+    ]
+  },
+  "Window_HorzCommand": {
+    "name": "Window_HorzCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Horizontal command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates horizontal command window" },
+      { "name": "maxCols", "params": [], "description": "Gets column count" }
+    ]
+  },
+  "Window_Help": {
+    "name": "Window_Help",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Help text display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates help window" },
+      { "name": "setText", "params": ["text"], "description": "Sets help text" },
+      { "name": "setItem", "params": ["item"], "description": "Sets help from item" },
+      { "name": "refresh", "params": [], "description": "Refreshes help display" }
+    ]
+  },
+  "Window_Gold": {
+    "name": "Window_Gold",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Gold display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates gold window" },
+      { "name": "refresh", "params": [], "description": "Refreshes gold display" },
+      { "name": "value", "params": [], "description": "Gets gold value" },
+      { "name": "currencyUnit", "params": [], "description": "Gets currency unit" }
+    ]
+  },
+  "Window_StatusBase": {
+    "name": "Window_StatusBase",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Base for status windows",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates status window" },
+      { "name": "drawActorName", "params": ["actor", "x", "y", "width"], "description": "Draws actor name" },
+      { "name": "drawActorClass", "params": ["actor", "x", "y", "width"], "description": "Draws actor class" },
+      { "name": "drawActorLevel", "params": ["actor", "x", "y"], "description": "Draws actor level" },
+      { "name": "drawActorFace", "params": ["actor", "x", "y", "width", "height"], "description": "Draws actor face" }
+    ]
+  },
+  "Window_MenuCommand": {
+    "name": "Window_MenuCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Main menu command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates menu command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates menu commands" },
+      { "name": "addMainCommands", "params": [], "description": "Adds main commands" },
+      { "name": "addOriginalCommands", "params": [], "description": "Adds custom commands" }
+    ]
+  },
+  "Window_MenuStatus": {
+    "name": "Window_MenuStatus",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Menu status list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates menu status window" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws actor status" },
+      { "name": "drawItemImage", "params": ["index"], "description": "Draws actor image" },
+      { "name": "drawItemStatus", "params": ["index"], "description": "Draws actor stats" }
+    ]
+  },
+  "Window_MenuActor": {
+    "name": "Window_MenuActor",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_MenuStatus",
+    "description": "Actor selection window in menu",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates actor window" },
+      { "name": "selectForItem", "params": ["item"], "description": "Selects for item use" }
+    ]
+  },
+  "Window_ItemCategory": {
+    "name": "Window_ItemCategory",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_HorzCommand",
+    "description": "Item category selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates category window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates category commands" },
+      { "name": "setItemWindow", "params": ["itemWindow"], "description": "Links item window" }
+    ]
+  },
+  "Window_ItemList": {
+    "name": "Window_ItemList",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Item list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates item list window" },
+      { "name": "setCategory", "params": ["category"], "description": "Sets item category" },
+      { "name": "makeItemList", "params": [], "description": "Creates item list" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws an item" },
+      { "name": "includes", "params": ["item"], "description": "Checks if item included" }
+    ]
+  },
+  "Window_SkillType": {
+    "name": "Window_SkillType",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Skill type selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates skill type window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates skill type commands" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" }
+    ]
+  },
+  "Window_SkillStatus": {
+    "name": "Window_SkillStatus",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Skill screen status window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates skill status window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "refresh", "params": [], "description": "Refreshes status display" }
+    ]
+  },
+  "Window_SkillList": {
+    "name": "Window_SkillList",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Skill list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates skill list window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "setStypeId", "params": ["stypeId"], "description": "Sets skill type" },
+      { "name": "makeItemList", "params": [], "description": "Creates skill list" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws a skill" }
+    ]
+  },
+  "Window_EquipStatus": {
+    "name": "Window_EquipStatus",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Equipment status comparison window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates equip status window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "setTempActor", "params": ["tempActor"], "description": "Sets comparison actor" },
+      { "name": "refresh", "params": [], "description": "Refreshes status display" }
+    ]
+  },
+  "Window_EquipSlot": {
+    "name": "Window_EquipSlot",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Equipment slot selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates equip slot window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws equipment slot" },
+      { "name": "item", "params": [], "description": "Gets selected equipment" }
+    ]
+  },
+  "Window_EquipItem": {
+    "name": "Window_EquipItem",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_ItemList",
+    "description": "Equipment item list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates equip item window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "setSlotId", "params": ["slotId"], "description": "Sets equipment slot" },
+      { "name": "includes", "params": ["item"], "description": "Checks if equippable" }
+    ]
+  },
+  "Window_Status": {
+    "name": "Window_Status",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Full status display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates status window" },
+      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
+      { "name": "refresh", "params": [], "description": "Refreshes status display" },
+      { "name": "drawBlock1", "params": [], "description": "Draws first info block" },
+      { "name": "drawBlock2", "params": [], "description": "Draws second info block" }
+    ]
+  },
+  "Window_Options": {
+    "name": "Window_Options",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Options menu window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates options window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates option commands" },
+      { "name": "addGeneralOptions", "params": [], "description": "Adds general options" },
+      { "name": "addVolumeOptions", "params": [], "description": "Adds volume options" },
+      { "name": "changeValue", "params": ["symbol", "value"], "description": "Changes option value" }
+    ]
+  },
+  "Window_SavefileList": {
+    "name": "Window_SavefileList",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Save file list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates save list window" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws save file entry" },
+      { "name": "drawTitle", "params": ["savefileId", "x", "y"], "description": "Draws save title" },
+      { "name": "drawContents", "params": ["info", "rect"], "description": "Draws save info" }
+    ]
+  },
+  "Window_ShopCommand": {
+    "name": "Window_ShopCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_HorzCommand",
+    "description": "Shop command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates shop command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates shop commands" },
+      { "name": "setPurchaseOnly", "params": ["purchaseOnly"], "description": "Sets purchase only mode" }
+    ]
+  },
+  "Window_ShopBuy": {
+    "name": "Window_ShopBuy",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Shop buy list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates shop buy window" },
+      { "name": "setMoney", "params": ["money"], "description": "Sets available money" },
+      { "name": "setShopGoods", "params": ["shopGoods"], "description": "Sets goods list" },
+      { "name": "makeItemList", "params": [], "description": "Creates item list" },
+      { "name": "price", "params": ["item"], "description": "Gets item price" }
+    ]
+  },
+  "Window_ShopSell": {
+    "name": "Window_ShopSell",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_ItemList",
+    "description": "Shop sell list window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates shop sell window" },
+      { "name": "isEnabled", "params": ["item"], "description": "Checks if sellable" }
+    ]
+  },
+  "Window_ShopNumber": {
+    "name": "Window_ShopNumber",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Shop quantity selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates number window" },
+      { "name": "setup", "params": ["item", "max", "price"], "description": "Sets up number input" },
+      { "name": "number", "params": [], "description": "Gets selected number" },
+      { "name": "changeNumber", "params": ["amount"], "description": "Changes quantity" }
+    ]
+  },
+  "Window_ShopStatus": {
+    "name": "Window_ShopStatus",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Shop item status window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates shop status window" },
+      { "name": "setItem", "params": ["item"], "description": "Sets displayed item" },
+      { "name": "refresh", "params": [], "description": "Refreshes status display" }
+    ]
+  },
+  "Window_NameEdit": {
+    "name": "Window_NameEdit",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Name edit display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates name edit window" },
+      { "name": "setup", "params": ["actor", "maxLength"], "description": "Sets up name editing" },
+      { "name": "name", "params": [], "description": "Gets current name" },
+      { "name": "add", "params": ["ch"], "description": "Adds a character" },
+      { "name": "back", "params": [], "description": "Removes last character" }
+    ]
+  },
+  "Window_NameInput": {
+    "name": "Window_NameInput",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Name input character window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates name input window" },
+      { "name": "setEditWindow", "params": ["editWindow"], "description": "Links edit window" },
+      { "name": "character", "params": [], "description": "Gets selected character" },
+      { "name": "onNameAdd", "params": [], "description": "Handles character add" },
+      { "name": "onNameOk", "params": [], "description": "Handles name confirm" }
+    ]
+  },
+  "Window_ChoiceList": {
+    "name": "Window_ChoiceList",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Event choice selection window",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Creates choice window" },
+      { "name": "start", "params": [], "description": "Starts choice display" },
+      { "name": "makeCommandList", "params": [], "description": "Creates choice commands" },
+      { "name": "selectDefault", "params": [], "description": "Selects default choice" }
+    ]
+  },
+  "Window_NumberInput": {
+    "name": "Window_NumberInput",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Event number input window",
+    "methods": [
+      { "name": "initialize", "params": [], "description": "Creates number input window" },
+      { "name": "start", "params": [], "description": "Starts number input" },
+      { "name": "processOk", "params": [], "description": "Confirms the number" },
+      { "name": "changeDigit", "params": ["up"], "description": "Changes selected digit" }
+    ]
+  },
+  "Window_EventItem": {
+    "name": "Window_EventItem",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_ItemList",
+    "description": "Event item selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates event item window" },
+      { "name": "start", "params": [], "description": "Starts item selection" },
+      { "name": "includes", "params": ["item"], "description": "Checks if item included" },
+      { "name": "onOk", "params": [], "description": "Handles item selection" }
+    ]
+  },
+  "Window_Message": {
+    "name": "Window_Message",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Message display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates message window" },
+      { "name": "initMembers", "params": [], "description": "Initializes message members" },
+      { "name": "update", "params": [], "description": "Updates message display" },
+      { "name": "startMessage", "params": [], "description": "Starts message display" },
+      { "name": "terminateMessage", "params": [], "description": "Ends message display" },
+      { "name": "updateInput", "params": [], "description": "Updates input handling" }
+    ]
+  },
+  "Window_ScrollText": {
+    "name": "Window_ScrollText",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Scrolling text window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates scroll text window" },
+      { "name": "update", "params": [], "description": "Updates scroll animation" },
+      { "name": "startMessage", "params": [], "description": "Starts scroll text" },
+      { "name": "terminateMessage", "params": [], "description": "Ends scroll text" }
+    ]
+  },
+  "Window_MapName": {
+    "name": "Window_MapName",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Map name display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates map name window" },
+      { "name": "update", "params": [], "description": "Updates fade animation" },
+      { "name": "open", "params": [], "description": "Opens with map name" },
+      { "name": "refresh", "params": [], "description": "Refreshes display" }
+    ]
+  },
+  "Window_BattleLog": {
+    "name": "Window_BattleLog",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Base",
+    "description": "Battle log message window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle log window" },
+      { "name": "push", "params": ["methodName"], "description": "Pushes log method" },
+      { "name": "clear", "params": [], "description": "Clears the log" },
+      { "name": "addText", "params": ["text"], "description": "Adds text to log" },
+      { "name": "displayAction", "params": ["subject", "item"], "description": "Displays action" }
+    ]
+  },
+  "Window_PartyCommand": {
+    "name": "Window_PartyCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Battle party command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates party command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates party commands" },
+      { "name": "setup", "params": [], "description": "Sets up commands" }
+    ]
+  },
+  "Window_ActorCommand": {
+    "name": "Window_ActorCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Battle actor command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates actor command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates actor commands" },
+      { "name": "setup", "params": ["actor"], "description": "Sets up for actor" },
+      { "name": "addAttackCommand", "params": [], "description": "Adds attack command" },
+      { "name": "addSkillCommands", "params": [], "description": "Adds skill commands" }
+    ]
+  },
+  "Window_BattleStatus": {
+    "name": "Window_BattleStatus",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_StatusBase",
+    "description": "Battle status display window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle status window" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws actor status" },
+      { "name": "drawItemImage", "params": ["index"], "description": "Draws actor face" },
+      { "name": "drawItemStatus", "params": ["index"], "description": "Draws HP/MP/TP" }
+    ]
+  },
+  "Window_BattleActor": {
+    "name": "Window_BattleActor",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_BattleStatus",
+    "description": "Battle actor selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle actor window" },
+      { "name": "show", "params": [], "description": "Shows the window" },
+      { "name": "select", "params": ["index"], "description": "Selects an actor" }
+    ]
+  },
+  "Window_BattleEnemy": {
+    "name": "Window_BattleEnemy",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Selectable",
+    "description": "Battle enemy selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle enemy window" },
+      { "name": "refresh", "params": [], "description": "Refreshes enemy list" },
+      { "name": "enemy", "params": [], "description": "Gets selected enemy" },
+      { "name": "drawItem", "params": ["index"], "description": "Draws enemy name" }
+    ]
+  },
+  "Window_BattleSkill": {
+    "name": "Window_BattleSkill",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_SkillList",
+    "description": "Battle skill selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle skill window" },
+      { "name": "show", "params": [], "description": "Shows the window" },
+      { "name": "hide", "params": [], "description": "Hides the window" }
+    ]
+  },
+  "Window_BattleItem": {
+    "name": "Window_BattleItem",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_ItemList",
+    "description": "Battle item selection window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates battle item window" },
+      { "name": "includes", "params": ["item"], "description": "Checks if usable in battle" },
+      { "name": "show", "params": [], "description": "Shows the window" },
+      { "name": "hide", "params": [], "description": "Hides the window" }
+    ]
+  },
+  "Window_TitleCommand": {
+    "name": "Window_TitleCommand",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Title screen command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates title command window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates title commands" },
+      { "name": "isContinueEnabled", "params": [], "description": "Checks if continue available" }
+    ]
+  },
+  "Window_GameEnd": {
+    "name": "Window_GameEnd",
+    "file": "rmmz_windows.js",
+    "category": "window",
+    "parent": "Window_Command",
+    "description": "Game end command window",
+    "methods": [
+      { "name": "initialize", "params": ["rect"], "description": "Creates game end window" },
+      { "name": "makeCommandList", "params": [], "description": "Creates end commands" }
+    ]
+  }
+}

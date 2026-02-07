@@ -1,0 +1,36 @@
+node_modules
+dist
+out
+.DS_Store
+*.log
+.env
+.env.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Electron build output
+release
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Screenshots (local only)
+*.png
+
+# Example plugins (third-party, not redistributable)
+examples/
+
+# Internal planning docs
+docs/plans/
