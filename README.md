@@ -189,7 +189,7 @@ src/
     ├── lib/
     │   └── generator/
     │       ├── index.ts     # Code generation
-    │       └── templates/   # 38 code templates
+    │       └── templates/   # 36 code templates
     └── types/
         └── plugin.ts        # TypeScript interfaces
 ```

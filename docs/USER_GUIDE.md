@@ -61,11 +61,17 @@ Tabs for different aspects of your plugin:
 | **Structs** | Complex nested data structures |
 | **Code** | Generated JavaScript preview |
 
-### Code Editor (Right Panel)
-- Real-time JavaScript preview
-- Template insertion button (puzzle piece icon)
+### Code Editor (Left Panel - Code Tab)
+- **Monaco Editor** - Same editor used in VS Code
+- **MZ Autocomplete** - 139 RPG Maker MZ classes and 28 global objects with IntelliSense
+- **Code Snippets** - Type `alias`, `register`, `param`, or `window` for quick scaffolding
+- **Template Insertion** - Click the puzzle piece icon to browse and insert code templates
+
+### Generated Code Preview (Right Panel)
+- Real-time JavaScript preview (read-only)
 - Syntax highlighting
-- Validation messages
+- Validation errors and warnings
+- Copy and Export buttons
 
 ---
 
@@ -91,12 +97,15 @@ In the **Meta** tab, fill in:
 Click **Add Parameter** in the Parameters tab to add configuration options.
 
 ### Step 4: Add Commands (Optional)
-Click **Add Command** in the Commands tab to add plugin commands.
+Click **Add Command** in the Commands tab to add plugin commands. A code skeleton is automatically inserted into the Code tab so you can immediately write the implementation logic.
 
-### Step 5: Insert Code Templates
-In the Code tab, click the template icon to add boilerplate code.
+### Step 5: Write Custom Code
+Switch to the **Code** tab to write your plugin's implementation logic. Code skeletons for commands and parameter usage comments are auto-generated when you add them. The Monaco editor provides MZ-specific autocomplete — type a class name like `Game_Actor` to see available methods.
 
-### Step 6: Export
+### Step 6: Insert Code Templates (Optional)
+In the Code tab, click the template icon to add boilerplate code for common patterns.
+
+### Step 7: Export
 Click the export button or use **Ctrl+E** to save your plugin.
 
 ---
@@ -296,9 +305,25 @@ Arguments:
 3. y (type: number) - Y coordinate
 ```
 
+### Auto-Generated Code Skeletons
+
+When you add a command, a code skeleton is automatically inserted into the **Code** tab:
+
+```javascript
+// --- spawnEnemy ---
+PluginManager.registerCommand(PLUGIN_NAME, 'spawnEnemy', function(args) {
+    // TODO: Implement spawnEnemy logic
+});
+```
+
+You can immediately fill in the implementation. The Generated Code preview (right panel) will **not** duplicate `registerCommand` blocks that already exist in your custom code.
+
+When you rename a command, the skeleton in the Code tab is automatically updated to match the new name.
+
 ### Generated Code
 
-The command generates:
+The final generated output combines your custom code with auto-generated parameter parsing:
+
 ```javascript
 PluginManager.registerCommand("YourPlugin", "spawnEnemy", function(args) {
     const enemyId = Number(args.enemyId);
@@ -308,6 +333,19 @@ PluginManager.registerCommand("YourPlugin", "spawnEnemy", function(args) {
     // Your implementation here
 });
 ```
+
+---
+
+## Custom Code vs Generated Code
+
+Understanding the two panels is important:
+
+**Code Tab (left panel)** — Your editable custom code. This is where you write implementation logic, and where auto-generated skeletons appear when you add commands or parameters. This code is stored in the plugin and preserved across edits.
+
+**Generated Code Preview (right panel)** — The final plugin output (read-only). This combines the auto-generated header block (metadata, parameters, commands) with your custom code inside an IIFE wrapper. The generator automatically:
+- Parses parameters into variables
+- Registers commands (skipping any already in your custom code)
+- Wraps everything in an IIFE with `'use strict'`
 
 ---
 
@@ -367,10 +405,17 @@ Templates provide ready-to-use code patterns for common plugin tasks.
 
 1. Go to the **Code** tab
 2. Click the **template icon** (puzzle piece) in the toolbar
-3. Browse categories or search
+3. Browse categories, search by name, or check your **Favorites** and **Recently Used**
 4. Select a template
 5. Configure the template options
-6. Click **Insert**
+6. Preview the generated code
+7. Click **Insert Code** (or press **Ctrl+Enter**)
+
+### Favorites and Recently Used
+
+- Click the **star icon** on any template to add it to your Favorites
+- The **Recently Used** section shows templates you've inserted recently
+- Both appear at the top of the sidebar for quick access
 
 ### Template Categories
 
@@ -626,7 +671,7 @@ Configure the code preview panel:
 | Minimap | Off | Show the minimap scroll overview |
 | Line Numbers | On | Show line numbers |
 
-Changes apply immediately to the Generated Code preview panel.
+Changes apply immediately to both the Code tab editor and the Generated Code preview panel.
 
 ### Defaults Tab
 
@@ -743,6 +788,14 @@ Example: `1.2.3`
 1. Try importing a simpler plugin first
 2. Check the plugin opens in a text editor
 3. Create new plugin and manually copy settings
+
+### "Something went wrong" Error Screen
+
+If the app shows a red error screen with a stack trace, this is the built-in error recovery:
+
+**Solutions:**
+1. Click **Try Again** to reset and continue
+2. If the error persists, note the error message and file a GitHub issue
 
 ### Build Errors
 
