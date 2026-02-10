@@ -21,6 +21,8 @@ export type ParamType =
   | 'common_event'
   | 'file'
   | 'note'
+  | 'color'
+  | 'text'
   | 'struct'
   | 'array'
 
@@ -45,6 +47,7 @@ export interface PluginParameter {
   arrayType?: ParamType // For array types
   dir?: string // For file type, directory
   parent?: string // For nested parameters
+  rawType?: string // Original @type string for round-trip fidelity (e.g., 'color', 'nuumer', 'combo')
   // Boolean-specific labels
   onLabel?: string // @on label for booleans
   offLabel?: string // @off label for booleans

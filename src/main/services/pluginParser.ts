@@ -347,60 +347,90 @@ export class PluginParser {
 
     const header = headerMatch[1]
 
-    // Match @param blocks
-    const paramRegex = /@param\s+(\S+)([\s\S]*?)(?=@param\s+\S|@command\s+\S|$)/g
+    // Match @param blocks - capture full name (may include spaces) to end of line
+    // Uses [^\n\r]+ to handle both LF and CRLF line endings
+    const paramRegex = /@param\s+([^\n\r]+)([\s\S]*?)(?=\*\s*@param\s|\*\s*@command\s|$)/g
     let match
 
     while ((match = paramRegex.exec(header)) !== null) {
-      const paramName = match[1]
+      const rawParamName = match[1].replace(/\s*\*?\s*$/, '').trim()
+      // Skip empty @param lines (used as visual separators)
+      if (!rawParamName) continue
       const paramBlock = match[2]
+
+      // Detect single-line compact format (all attributes on one line with the @param)
+      const isCompact = this.isCompactFormat(rawParamName)
+      let paramName: string
+      let effectiveBlock: string
+
+      if (isCompact) {
+        // Parse name and attributes from the single line
+        const parsed = this.parseCompactParam(rawParamName)
+        paramName = parsed.name
+        effectiveBlock = parsed.block + '\n' + paramBlock
+      } else {
+        paramName = rawParamName
+        effectiveBlock = paramBlock
+      }
+
+      const rawTypeStr = this.extractTag(effectiveBlock, 'type') || 'string'
+      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeStr)
 
       const param: PluginParameter = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
         name: paramName,
-        text: this.extractTag(paramBlock, 'text') || paramName,
-        desc: this.extractTag(paramBlock, 'desc') || '',
-        type: this.parseParamType(this.extractTag(paramBlock, 'type') || 'string'),
-        default: this.parseDefault(paramBlock)
+        text: this.extractTag(effectiveBlock, 'text') || paramName,
+        desc: this.extractTag(effectiveBlock, 'desc') || '',
+        type,
+        default: this.parseDefault(effectiveBlock),
+        rawType: rawTypeStr !== type ? rawTypeStr : undefined
+      }
+
+      // Set array-specific fields
+      if (type === 'array') {
+        if (arrayType) param.arrayType = arrayType
+        if (arrayStructType) param.structType = arrayStructType
       }
 
       // Parse type-specific attributes
-      const minMatch = paramBlock.match(/@min\s+(-?\d+)/i)
-      if (minMatch) param.min = parseInt(minMatch[1], 10)
+      const minMatch = effectiveBlock.match(/@min\s+(-?[\d.]+)/i)
+      if (minMatch) param.min = parseFloat(minMatch[1])
 
-      const maxMatch = paramBlock.match(/@max\s+(-?\d+)/i)
-      if (maxMatch) param.max = parseInt(maxMatch[1], 10)
+      const maxMatch = effectiveBlock.match(/@max\s+(-?[\d.]+)/i)
+      if (maxMatch) param.max = parseFloat(maxMatch[1])
 
       // Parse @decimals
-      const decimalsMatch = paramBlock.match(/@decimals\s+(\d+)/i)
+      const decimalsMatch = effectiveBlock.match(/@decimals\s+(\d+)/i)
       if (decimalsMatch) param.decimals = parseInt(decimalsMatch[1], 10)
 
       // Parse @parent for nested parameters
-      const parentMatch = paramBlock.match(/@parent\s+(.+?)(?=\n|$)/i)
-      if (parentMatch) param.parent = parentMatch[1].trim()
+      const parentMatch = effectiveBlock.match(/@parent\s+([^\n\r]+)/i)
+      if (parentMatch) param.parent = parentMatch[1].replace(/\s*\*?\s*$/, '').trim()
 
       // Parse @dir for file type
-      const dirMatch = paramBlock.match(/@dir\s+(.+?)(?=\n|$)/i)
+      const dirMatch = effectiveBlock.match(/@dir\s+([^\n\r]+)/i)
       if (dirMatch) param.dir = dirMatch[1].trim()
 
       // Parse options for select type
-      const options = this.parseOptions(paramBlock)
+      const options = this.parseOptions(effectiveBlock)
       if (options.length > 0) {
         param.options = options
       }
 
-      // Parse struct reference
-      const structMatch = paramBlock.match(/@type\s+struct<(\w+)>/i)
-      if (structMatch) {
-        param.structType = structMatch[1]
+      // Parse struct reference (only if not already set by array type parsing)
+      if (!param.structType) {
+        const structMatch = effectiveBlock.match(/@type\s+struct<(\w+)>/i)
+        if (structMatch) {
+          param.structType = structMatch[1]
+        }
       }
 
       // Parse @on/@off for boolean types
       if (param.type === 'boolean') {
-        const onMatch = paramBlock.match(/@on\s+(.+?)(?=\n|$)/i)
+        const onMatch = effectiveBlock.match(/@on\s+([^\n\r]+)/i)
         if (onMatch) param.onLabel = onMatch[1].trim()
 
-        const offMatch = paramBlock.match(/@off\s+(.+?)(?=\n|$)/i)
+        const offMatch = effectiveBlock.match(/@off\s+([^\n\r]+)/i)
         if (offMatch) param.offLabel = offMatch[1].trim()
       }
 
@@ -442,38 +472,52 @@ export class PluginParser {
   private static parseArgs(block: string): PluginParameter[] {
     const args: PluginParameter[] = []
 
-    const argRegex = /@arg\s+(\S+)([\s\S]*?)(?=@arg\s+\S|@command\s+\S|$)/g
+    // Arg names can include spaces (same as param names)
+    const argRegex = /@arg\s+([^\n\r]+)([\s\S]*?)(?=\*\s*@arg\s|\*\s*@command\s|$)/g
     let match
 
     while ((match = argRegex.exec(block)) !== null) {
-      const argName = match[1]
+      const argName = match[1].replace(/\s*\*?\s*$/, '').trim()
+      if (!argName) continue
       const argBlock = match[2]
+
+      const rawTypeStr = this.extractTag(argBlock, 'type') || 'string'
+      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeStr)
 
       const arg: PluginParameter = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
         name: argName,
         text: this.extractTag(argBlock, 'text') || argName,
         desc: this.extractTag(argBlock, 'desc') || '',
-        type: this.parseParamType(this.extractTag(argBlock, 'type') || 'string'),
-        default: this.parseDefault(argBlock)
+        type,
+        default: this.parseDefault(argBlock),
+        rawType: rawTypeStr !== type ? rawTypeStr : undefined
+      }
+
+      // Set array-specific fields
+      if (type === 'array') {
+        if (arrayType) arg.arrayType = arrayType
+        if (arrayStructType) arg.structType = arrayStructType
       }
 
       // Parse type-specific attributes for args
-      const minMatch = argBlock.match(/@min\s+(-?\d+)/i)
-      if (minMatch) arg.min = parseInt(minMatch[1], 10)
+      const minMatch = argBlock.match(/@min\s+(-?[\d.]+)/i)
+      if (minMatch) arg.min = parseFloat(minMatch[1])
 
-      const maxMatch = argBlock.match(/@max\s+(-?\d+)/i)
-      if (maxMatch) arg.max = parseInt(maxMatch[1], 10)
+      const maxMatch = argBlock.match(/@max\s+(-?[\d.]+)/i)
+      if (maxMatch) arg.max = parseFloat(maxMatch[1])
 
       const decimalsMatch = argBlock.match(/@decimals\s+(\d+)/i)
       if (decimalsMatch) arg.decimals = parseInt(decimalsMatch[1], 10)
 
-      const dirMatch = argBlock.match(/@dir\s+(.+?)(?=\n|$)/i)
+      const dirMatch = argBlock.match(/@dir\s+([^\n\r]+)/i)
       if (dirMatch) arg.dir = dirMatch[1].trim()
 
-      // Parse struct reference for args
-      const structMatch = argBlock.match(/@type\s+struct<(\w+)>/i)
-      if (structMatch) arg.structType = structMatch[1]
+      // Parse struct reference for args (only if not set by array type)
+      if (!arg.structType) {
+        const structMatch = argBlock.match(/@type\s+struct<(\w+)>/i)
+        if (structMatch) arg.structType = structMatch[1]
+      }
 
       // Parse options for select type
       const options = this.parseOptions(argBlock)
@@ -481,10 +525,10 @@ export class PluginParser {
 
       // Parse @on/@off for boolean types
       if (arg.type === 'boolean') {
-        const onMatch = argBlock.match(/@on\s+(.+?)(?=\n|$)/i)
+        const onMatch = argBlock.match(/@on\s+([^\n\r]+)/i)
         if (onMatch) arg.onLabel = onMatch[1].trim()
 
-        const offMatch = argBlock.match(/@off\s+(.+?)(?=\n|$)/i)
+        const offMatch = argBlock.match(/@off\s+([^\n\r]+)/i)
         if (offMatch) arg.offLabel = offMatch[1].trim()
       }
 
@@ -518,14 +562,83 @@ export class PluginParser {
   }
 
   private static extractTag(block: string, tag: string): string | null {
-    const regex = new RegExp(`@${tag}\\s+(.+?)(?=\\n|$)`, 'i')
+    const regex = new RegExp(`@${tag}\\s+([^\\n\\r]+)`, 'i')
     const match = block.match(regex)
-    return match ? match[1].trim() : null
+    return match ? match[1].replace(/\s*\*?\s*$/, '').trim() : null
   }
 
-  private static parseParamType(typeStr: string): ParamType {
-    const normalizedType = typeStr.toLowerCase().trim()
+  /**
+   * Detect whether a raw param name line uses compact single-line format.
+   * e.g. "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
+   */
+  private static isCompactFormat(rawName: string): boolean {
+    // If the "name" contains @text, @type, @desc, etc., it's compact format
+    return /@(?:text|type|desc|default|min|max|dir|parent|on|off|option|decimals)\s/i.test(rawName)
+  }
 
+  /**
+   * Parse a compact single-line parameter definition into name + pseudo-block.
+   * Input: "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
+   * Output: { name: "disableLoggingSwitch", block: "@text ログ...\n@type switch\n@default 0" }
+   */
+  private static parseCompactParam(rawLine: string): { name: string; block: string } {
+    // Find the first @ tag to split name from attributes
+    const firstTagIdx = rawLine.search(/@(?:text|type|desc|default|min|max|dir|parent|on|off|option|value|decimals)\s/i)
+    if (firstTagIdx === -1) {
+      return { name: rawLine.trim(), block: '' }
+    }
+
+    const name = rawLine.slice(0, firstTagIdx).trim()
+    const attrsPart = rawLine.slice(firstTagIdx)
+
+    // Split inline attributes into separate lines for standard parsing.
+    // Matches @tag followed by value up to next @tag or end.
+    const block = attrsPart.replace(/@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s)/gi, '\n@').trim()
+
+    return { name, block }
+  }
+
+  /**
+   * Extended type parser that also handles arrays and returns structured info.
+   * Returns the ParamType, plus arrayType and structType for arrays.
+   */
+  private static parseParamTypeEx(typeStr: string): {
+    type: ParamType
+    arrayType?: ParamType
+    structType?: string
+  } {
+    const trimmed = typeStr.trim()
+    const normalized = trimmed.toLowerCase()
+
+    // Check for array types first (e.g., "struct<Gauge>[]", "select[]", "String[]")
+    if (normalized.includes('[]')) {
+      const baseStr = trimmed.replace(/\[\]$/, '')
+      const baseNormalized = baseStr.toLowerCase()
+
+      // Array of structs: struct<Name>[]
+      const structArrayMatch = baseStr.match(/^struct<(\w+)>$/i)
+      if (structArrayMatch) {
+        return { type: 'array', arrayType: 'struct', structType: structArrayMatch[1] }
+      }
+
+      // Array of other types
+      const baseType = this.parseSingleType(baseNormalized)
+      return { type: 'array', arrayType: baseType }
+    }
+
+    // Check for struct (non-array)
+    const structMatch = trimmed.match(/^struct<(\w+)>$/i)
+    if (structMatch) {
+      return { type: 'struct', structType: structMatch[1] }
+    }
+
+    return { type: this.parseSingleType(normalized) }
+  }
+
+  /**
+   * Parse a single (non-array, non-struct) type string into a ParamType.
+   */
+  private static parseSingleType(normalizedType: string): ParamType {
     if (normalizedType === 'number' || normalizedType === 'num') return 'number'
     if (normalizedType === 'boolean' || normalizedType === 'bool') return 'boolean'
     if (normalizedType === 'select' || normalizedType === 'combo') return 'select'
@@ -545,14 +658,14 @@ export class PluginParser {
     if (normalizedType === 'common_event') return 'common_event'
     if (normalizedType === 'file') return 'file'
     if (normalizedType === 'note' || normalizedType === 'multiline_string') return 'note'
-    if (normalizedType.startsWith('struct<')) return 'struct'
-    if (normalizedType.includes('[]')) return 'array'
+    if (normalizedType === 'color') return 'color'
+    if (normalizedType === 'text') return 'text'
 
     return 'string'
   }
 
   private static parseDefault(block: string): string | number | boolean {
-    const defaultMatch = block.match(/@default\s+(.+?)(?=\n|$)/i)
+    const defaultMatch = block.match(/@default\s+([^\n\r]+)/i)
     if (!defaultMatch) return ''
 
     const value = defaultMatch[1].trim()
@@ -572,13 +685,13 @@ export class PluginParser {
   private static parseOptions(block: string): { value: string; text: string }[] {
     const options: { value: string; text: string }[] = []
 
-    const optionRegex = /@option\s+(.+?)(?=\n|$)/gi
+    const optionRegex = /@option\s+([^\n\r]+)/gi
     let match
 
     while ((match = optionRegex.exec(block)) !== null) {
       const optText = match[1].trim()
       // Check for @value following this option
-      const valueMatch = block.slice(match.index).match(/@value\s+(.+?)(?=\n|$)/i)
+      const valueMatch = block.slice(match.index).match(/@value\s+([^\n\r]+)/i)
       const value = valueMatch ? valueMatch[1].trim() : optText
 
       options.push({ value, text: optText })

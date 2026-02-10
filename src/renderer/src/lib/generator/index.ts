@@ -170,6 +170,11 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
  * Format the @type value based on parameter type
  */
 function formatParamType(param: PluginParameter): string {
+  // Use rawType for round-trip fidelity when available
+  if (param.rawType) {
+    return param.rawType
+  }
+
   if (param.type === 'struct' && param.structType) {
     return `struct<${param.structType}>`
   }
@@ -179,6 +184,9 @@ function formatParamType(param: PluginParameter): string {
       return `struct<${param.structType}>[]`
     }
     if (param.arrayType) {
+      if (param.arrayType === 'struct' && param.structType) {
+        return `struct<${param.structType}>[]`
+      }
       return `${param.arrayType}[]`
     }
     return 'string[]'
@@ -446,6 +454,10 @@ function generateParamParser(param: PluginParameter): string {
     case 'common_event':
       return `Number(${accessor} || ${defaultVal})`
 
+    case 'color':
+    case 'text':
+      return `${accessor} || ${defaultVal}`
+
     default:
       return `${accessor} || ${defaultVal}`
   }
@@ -486,6 +498,10 @@ function generateArgParser(arg: PluginParameter): string {
     case 'tileset':
     case 'common_event':
       return `Number(${accessor} || ${defaultVal})`
+
+    case 'color':
+    case 'text':
+      return `${accessor} || ${defaultVal}`
 
     default:
       return `${accessor} || ${defaultVal}`

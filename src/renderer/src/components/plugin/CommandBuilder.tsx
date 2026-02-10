@@ -37,6 +37,8 @@ const ARG_TYPES: { value: ParamType; label: string }[] = [
   { value: 'tileset', label: 'Tileset' },
   { value: 'common_event', label: 'Common Event' },
   { value: 'file', label: 'File' },
+  { value: 'color', label: 'Color' },
+  { value: 'text', label: 'Text (Multiline)' },
   { value: 'struct', label: 'Struct' },
   { value: 'array', label: 'Array' }
 ]
