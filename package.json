@@ -1,6 +1,6 @@
 {
   "name": "mz-plugin-studio",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Visual plugin builder for RPG Maker MZ",
   "main": "./out/main/index.js",
   "author": "MZ Plugin Studio",
