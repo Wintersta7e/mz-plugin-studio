@@ -27,12 +27,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     editorMinimap,
     editorLineNumbers,
     defaultAuthor,
+    parameterPresets,
     setTheme,
     setEditorFontSize,
     setEditorWordWrap,
     setEditorMinimap,
     setEditorLineNumbers,
-    setDefaultAuthor
+    setDefaultAuthor,
+    deletePreset,
+    clearAllPresets
   } = useSettingsStore()
 
   const recentProjects = useProjectStore((s) => s.recentProjects)
@@ -42,6 +45,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [clearedRecent, setClearedRecent] = useState(false)
   const [clearedFavorites, setClearedFavorites] = useState(false)
   const [clearedRecentTemplates, setClearedRecentTemplates] = useState(false)
+  const [clearedPresets, setClearedPresets] = useState(false)
 
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   useEffect(() => {
@@ -64,6 +68,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     useTemplateStore.getState().clearRecent()
     setClearedRecentTemplates(true)
     timersRef.current.push(setTimeout(() => setClearedRecentTemplates(false), 2000))
+  }
+
+  const handleClearAllPresets = () => {
+    clearAllPresets()
+    setClearedPresets(true)
+    timersRef.current.push(setTimeout(() => setClearedPresets(false), 2000))
   }
 
   return (
@@ -239,6 +249,52 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </>
                 )}
               </Button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Parameter Presets</p>
+                  <p className="text-xs text-muted-foreground">
+                    {Object.keys(parameterPresets).length} preset(s) saved
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearAllPresets}
+                  disabled={Object.keys(parameterPresets).length === 0 || clearedPresets}
+                >
+                  {clearedPresets ? (
+                    'Cleared!'
+                  ) : (
+                    <>
+                      <Trash2 className="mr-1 h-3 w-3" />
+                      Clear All
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {Object.entries(parameterPresets).length > 0 && (
+                <div className="space-y-1 rounded border border-border p-2">
+                  {Object.entries(parameterPresets).map(([name, params]) => (
+                    <div key={name} className="flex items-center justify-between text-sm">
+                      <span>
+                        {name} ({params.length} params)
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => deletePreset(name)}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
