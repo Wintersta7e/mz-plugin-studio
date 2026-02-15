@@ -135,10 +135,30 @@ describe('validateDependencies', () => {
     expect(orderIssues.length).toBeGreaterThan(0)
   })
 
-  it('handles missing orderAfter dependency', () => {
+  it('treats missing orderAfter as warning not error', () => {
     const headers = [header('A', [], ['NonExistent'])]
     const report = validateDependencies(headers)
     const missing = report.issues.filter((i) => i.type === 'missing')
     expect(missing.length).toBeGreaterThan(0)
+    expect(missing[0].severity).toBe('warning')
+    expect(missing[0].message).toContain('should load after')
+  })
+
+  it('treats missing @base as error', () => {
+    const headers = [header('A', ['NonExistent'])]
+    const report = validateDependencies(headers)
+    const missing = report.issues.filter((i) => i.type === 'missing')
+    expect(missing[0].severity).toBe('error')
+    expect(missing[0].message).toContain('requires')
+  })
+
+  it('deduplicates load-order warnings when dep in both base and orderAfter', () => {
+    // A has both @base B and @orderAfter B, but A loads before B
+    const headers = [header('A', ['B'], ['B']), header('B')]
+    const report = validateDependencies(headers)
+    const orderIssues = report.issues.filter(
+      (i) => i.type === 'load-order' && i.pluginName === 'A'
+    )
+    expect(orderIssues).toHaveLength(1)
   })
 })

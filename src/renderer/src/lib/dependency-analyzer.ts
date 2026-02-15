@@ -73,7 +73,8 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
 
   // 2. Detect missing dependencies
   for (const header of headers) {
-    for (const dep of [...header.base, ...header.orderAfter]) {
+    // @base = hard dependency (error if missing)
+    for (const dep of header.base) {
       if (!graph.plugins.has(dep)) {
         issues.push({
           type: 'missing',
@@ -83,15 +84,27 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
         })
       }
     }
+    // @orderAfter = soft load order hint (warning if missing)
+    for (const dep of header.orderAfter) {
+      if (!graph.plugins.has(dep) && !header.base.includes(dep)) {
+        issues.push({
+          type: 'missing',
+          severity: 'warning',
+          pluginName: header.name,
+          message: `"${header.name}" should load after "${dep}" but it was not found in the project`
+        })
+      }
+    }
   }
 
   // 3. Detect circular dependencies
   issues.push(...detectCycles(graph))
 
-  // 4. Detect load order violations
+  // 4. Detect load order violations (deduplicate base+orderAfter)
   for (const header of headers) {
     const myPos = positionIndex.get(header.name)!
-    for (const dep of [...header.base, ...header.orderAfter]) {
+    const allDeps = [...new Set([...header.base, ...header.orderAfter])]
+    for (const dep of allDeps) {
       const depPos = positionIndex.get(dep)
       if (depPos !== undefined && depPos > myPos) {
         issues.push({
