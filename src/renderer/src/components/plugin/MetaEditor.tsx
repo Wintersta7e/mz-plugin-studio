@@ -1,8 +1,12 @@
+import { useCallback } from 'react'
+import { Sparkles } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
+import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { usePluginStore } from '../../stores'
+import { generateHelpText } from '../../lib/exportFormats'
 import type { LocalizedContent } from '../../types/plugin'
 
 export function MetaEditor() {
@@ -23,6 +27,18 @@ export function MetaEditor() {
   const getLocalization = (lang: string): LocalizedContent => {
     return plugin.meta.localizations?.[lang] || { description: '', help: '' }
   }
+
+  const handleAutoGenerateHelp = useCallback(() => {
+    const currentHelp = plugin.meta.help
+
+    if (currentHelp && currentHelp.trim()) {
+      const confirmed = window.confirm('This will replace the existing help text. Continue?')
+      if (!confirmed) return
+    }
+
+    const helpText = generateHelpText(plugin)
+    updateMeta({ help: helpText })
+  }, [plugin, updateMeta])
 
   return (
     <div className="space-y-4 p-4">
@@ -93,7 +109,19 @@ export function MetaEditor() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="help-en">Help Text</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="help-en">Help Text</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={handleAutoGenerateHelp}
+                    title="Auto-generate help text from plugin metadata"
+                  >
+                    <Sparkles className="mr-1 h-3 w-3" />
+                    Auto-generate
+                  </Button>
+                </div>
                 <Textarea
                   id="help-en"
                   value={plugin.meta.help}
