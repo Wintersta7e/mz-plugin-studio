@@ -96,24 +96,57 @@ describe('deserializeParams', () => {
     expect(result.parameters[0].id).not.toBe(originalId)
   })
 
-  it('rejects invalid JSON', () => {
+  it('rejects invalid JSON with specific message', () => {
     const result = deserializeParams('not json at all')
     expect(result.success).toBe(false)
-    expect(result.error).toBeTruthy()
+    expect(result.error).toContain('not valid JSON')
   })
 
   it('rejects missing version field', () => {
     const content = JSON.stringify({ parameters: [] })
     const result = deserializeParams(content)
     expect(result.success).toBe(false)
-    expect(result.error).toBe('Invalid .mzparams format')
+    expect(result.error).toContain('Invalid or unsupported')
+  })
+
+  it('rejects unsupported version', () => {
+    const content = JSON.stringify({ version: 2, parameters: [makeParam()] })
+    const result = deserializeParams(content)
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('Invalid or unsupported')
   })
 
   it('rejects missing parameters array', () => {
     const content = JSON.stringify({ version: 1 })
     const result = deserializeParams(content)
     expect(result.success).toBe(false)
-    expect(result.error).toBe('Invalid .mzparams format')
+    expect(result.error).toContain('Invalid or unsupported')
+  })
+
+  it('filters out malformed parameter entries', () => {
+    const content = JSON.stringify({
+      version: 1,
+      source: 'Test',
+      exportedAt: '2026-01-01',
+      parameters: [
+        makeParam({ name: 'valid' }),
+        { noName: true },
+        42,
+        null,
+        makeParam({ name: 'alsoValid' })
+      ]
+    })
+    const result = deserializeParams(content)
+    expect(result.success).toBe(true)
+    expect(result.parameters).toHaveLength(2)
+    expect(result.parameters[0].name).toBe('valid')
+    expect(result.parameters[1].name).toBe('alsoValid')
+  })
+
+  it('returns specific error for invalid JSON', () => {
+    const result = deserializeParams('not json at all {{{')
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('not valid JSON')
   })
 
   it('defaults source to Unknown when missing', () => {
@@ -163,6 +196,14 @@ describe('duplicateParams', () => {
 
   it('handles empty array', () => {
     expect(duplicateParams([])).toEqual([])
+  })
+
+  it('does not accumulate _copy suffixes on re-duplication', () => {
+    const params = [makeParam({ name: 'speed_copy' })]
+    const duped = duplicateParams(params)
+    expect(duped[0].name).toBe('speed_copy')
+    const duped2 = duplicateParams(duped)
+    expect(duped2[0].name).toBe('speed_copy')
   })
 
   it('preserves all other properties', () => {

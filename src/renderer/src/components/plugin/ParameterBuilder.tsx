@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Trash2,
@@ -93,6 +93,12 @@ export function ParameterBuilder() {
   const [importPickerParams, setImportPickerParams] = useState<PluginParameter[]>([])
   const [importPickerSelected, setImportPickerSelected] = useState<Set<string>>(new Set())
 
+  // Clear selection when plugin changes (e.g. open different file, undo/redo)
+  const pluginId = plugin.id
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [pluginId])
+
   const selectedParams = parameters.filter((p) => selectedIds.has(p.id))
   const hasSelection = selectedIds.size > 0
 
@@ -143,8 +149,16 @@ export function ParameterBuilder() {
       filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
     })
     if (!filePath) return
-    const content = serializeParams(selectedParams, plugin.meta.name)
-    await window.api.plugin.saveToPath(filePath, content)
+    try {
+      const content = serializeParams(selectedParams, plugin.meta.name)
+      await window.api.plugin.saveToPath(filePath, content)
+    } catch (error) {
+      await window.api.dialog.message({
+        type: 'error',
+        title: 'Export Failed',
+        message: error instanceof Error ? error.message : String(error)
+      })
+    }
   }
 
   const handleImportFromFile = async () => {
@@ -152,18 +166,26 @@ export function ParameterBuilder() {
       filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
     })
     if (!filePath) return
-    const content = await window.api.plugin.readByPath(filePath)
-    const result = deserializeParams(content)
-    if (!result.success) {
+    try {
+      const content = await window.api.plugin.readByPath(filePath)
+      const result = deserializeParams(content)
+      if (!result.success) {
+        await window.api.dialog.message({
+          type: 'error',
+          title: 'Import Failed',
+          message: result.error || 'Unknown error'
+        })
+        return
+      }
+      for (const p of result.parameters) {
+        addParameter(p)
+      }
+    } catch (error) {
       await window.api.dialog.message({
         type: 'error',
         title: 'Import Failed',
-        message: result.error || 'Unknown error'
+        message: 'Could not read the file. ' + (error instanceof Error ? error.message : String(error))
       })
-      return
-    }
-    for (const p of result.parameters) {
-      addParameter(p)
     }
   }
 
@@ -172,25 +194,43 @@ export function ParameterBuilder() {
       filters: [{ name: 'JavaScript Plugin', extensions: ['js'] }]
     })
     if (!filePath) return
-    const content = await window.api.plugin.readByPath(filePath)
-    const parsed = await window.api.plugin.parse(content)
-    if (!parsed.parameters || parsed.parameters.length === 0) {
+    try {
+      const content = await window.api.plugin.readByPath(filePath)
+      const parsed = await window.api.plugin.parse(content)
+      if (!parsed.parameters || parsed.parameters.length === 0) {
+        await window.api.dialog.message({
+          type: 'info',
+          title: 'No Parameters',
+          message: 'This plugin has no parameters to import.'
+        })
+        return
+      }
+      setImportPickerParams(parsed.parameters)
+      setImportPickerSelected(new Set(parsed.parameters.map((p) => p.id)))
+      setImportPickerOpen(true)
+    } catch (error) {
       await window.api.dialog.message({
-        type: 'info',
-        title: 'No Parameters',
-        message: 'This plugin has no parameters to import.'
+        type: 'error',
+        title: 'Import Failed',
+        message: 'Could not read or parse the plugin file. ' + (error instanceof Error ? error.message : String(error))
       })
-      return
     }
-    setImportPickerParams(parsed.parameters)
-    setImportPickerSelected(new Set(parsed.parameters.map((p) => p.id)))
-    setImportPickerOpen(true)
   }
 
-  const handleSavePreset = () => {
+  const handleSavePreset = async () => {
     const name = window.prompt('Preset name:')
     if (!name || !name.trim()) return
-    savePreset(name.trim(), selectedParams)
+    const trimmed = name.trim()
+    if (parameterPresets[trimmed]) {
+      const overwrite = await window.api.dialog.message({
+        type: 'question',
+        title: 'Overwrite Preset',
+        message: `A preset named "${trimmed}" already exists. Overwrite it?`,
+        buttons: ['Cancel', 'Overwrite']
+      })
+      if (overwrite !== 1) return
+    }
+    savePreset(trimmed, selectedParams)
   }
 
   const handleApplyPreset = (name: string) => {

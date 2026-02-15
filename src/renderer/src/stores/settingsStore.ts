@@ -45,13 +45,16 @@ export const useSettingsStore = create<SettingsState>()(
       setEditorLineNumbers: (lineNumbers) => set({ editorLineNumbers: lineNumbers }),
       setDefaultAuthor: (author) => set({ defaultAuthor: author }),
 
-      savePreset: (name, params) =>
+      savePreset: (name, params) => {
+        const trimmed = name.trim()
+        if (!trimmed || params.length === 0) return
         set((state) => ({
           parameterPresets: {
             ...state.parameterPresets,
-            [name]: params.map((p) => ({ ...p }))
+            [trimmed]: structuredClone(params)
           }
-        })),
+        }))
+      },
 
       deletePreset: (name) =>
         set((state) => {
@@ -63,7 +66,16 @@ export const useSettingsStore = create<SettingsState>()(
       clearAllPresets: () => set({ parameterPresets: {} })
     }),
     {
-      name: 'mz-plugin-studio-settings'
+      name: 'mz-plugin-studio-settings',
+      partialize: (state) => ({
+        theme: state.theme,
+        editorFontSize: state.editorFontSize,
+        editorWordWrap: state.editorWordWrap,
+        editorMinimap: state.editorMinimap,
+        editorLineNumbers: state.editorLineNumbers,
+        defaultAuthor: state.defaultAuthor,
+        parameterPresets: state.parameterPresets
+      })
     }
   )
 )

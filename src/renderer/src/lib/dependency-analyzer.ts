@@ -1,8 +1,8 @@
 // Dependency analyzer for MZ plugin projects
 // Builds dependency graphs and validates load order, missing deps, circular deps
 
-export type { ScannedPluginHeader } from '../../../shared/ipc-types'
 import type { ScannedPluginHeader } from '../../../shared/ipc-types'
+export type { ScannedPluginHeader }
 
 export interface DependencyIssue {
   type: 'missing' | 'circular' | 'load-order' | 'duplicate'

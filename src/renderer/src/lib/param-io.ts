@@ -19,6 +19,11 @@ export function serializeParams(params: PluginParameter[], sourceName: string): 
   return JSON.stringify(data, null, 2)
 }
 
+/** Minimal shape check for imported parameter objects */
+function isValidParam(p: unknown): p is Record<string, unknown> {
+  return typeof p === 'object' && p !== null && typeof (p as Record<string, unknown>).name === 'string' && typeof (p as Record<string, unknown>).type === 'string'
+}
+
 /** Deserialize imported parameters from .mzparams content */
 export function deserializeParams(content: string): {
   success: boolean
@@ -29,18 +34,22 @@ export function deserializeParams(content: string): {
   try {
     const data = JSON.parse(content)
 
-    if (!data.version || !Array.isArray(data.parameters)) {
-      return { success: false, parameters: [], source: '', error: 'Invalid .mzparams format' }
+    if (data.version !== 1 || !Array.isArray(data.parameters)) {
+      return { success: false, parameters: [], source: '', error: 'Invalid or unsupported .mzparams format' }
     }
 
-    const params = data.parameters.map((p: PluginParameter) => ({
-      ...p,
+    const params = data.parameters.filter(isValidParam).map((p) => ({
+      ...(p as PluginParameter),
       id: crypto.randomUUID()
     }))
 
     return { success: true, parameters: params, source: data.source || 'Unknown' }
   } catch (e) {
-    return { success: false, parameters: [], source: '', error: 'Failed to parse file: ' + String(e) }
+    const detail =
+      e instanceof SyntaxError
+        ? 'The file is not valid JSON.'
+        : 'Failed to process parameters: ' + (e instanceof Error ? e.message : String(e))
+    return { success: false, parameters: [], source: '', error: detail }
   }
 }
 
@@ -49,6 +58,6 @@ export function duplicateParams(params: PluginParameter[]): PluginParameter[] {
   return params.map((p) => ({
     ...p,
     id: crypto.randomUUID(),
-    name: p.name + '_copy'
+    name: p.name.replace(/_copy\d*$/, '') + '_copy'
   }))
 }
