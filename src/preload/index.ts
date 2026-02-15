@@ -16,6 +16,16 @@ export interface ProjectAPI {
   getPlugins: (
     path: string
   ) => Promise<import('../renderer/src/types/mz').MZPluginEntry[]>
+  getSkills: (path: string) => Promise<{ id: number; name: string }[]>
+  getWeapons: (path: string) => Promise<{ id: number; name: string }[]>
+  getArmors: (path: string) => Promise<{ id: number; name: string }[]>
+  getEnemies: (path: string) => Promise<{ id: number; name: string }[]>
+  getStates: (path: string) => Promise<{ id: number; name: string }[]>
+  getAnimations: (path: string) => Promise<{ id: number; name: string }[]>
+  getTilesets: (path: string) => Promise<{ id: number; name: string }[]>
+  getCommonEvents: (path: string) => Promise<{ id: number; name: string }[]>
+  getClasses: (path: string) => Promise<{ id: number; name: string }[]>
+  getTroops: (path: string) => Promise<{ id: number; name: string }[]>
 }
 
 export interface PluginAPI {
@@ -65,6 +75,15 @@ export interface WindowAPI {
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
 }
 
+export interface UpdateAPI {
+  onUpdateAvailable: (
+    callback: (info: { version: string; releaseNotes?: string }) => void
+  ) => () => void
+  onUpdateDownloaded: (callback: () => void) => () => void
+  downloadUpdate: () => Promise<void>
+  installUpdate: () => Promise<void>
+}
+
 const projectApi: ProjectAPI = {
   validate: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
   load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path),
@@ -73,7 +92,17 @@ const projectApi: ProjectAPI = {
   getActors: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ACTORS, path),
   getItems: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ITEMS, path),
   getMaps: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_MAPS, path),
-  getPlugins: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_PLUGINS, path)
+  getPlugins: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_PLUGINS, path),
+  getSkills: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_SKILLS, path),
+  getWeapons: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_WEAPONS, path),
+  getArmors: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ARMORS, path),
+  getEnemies: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ENEMIES, path),
+  getStates: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_STATES, path),
+  getAnimations: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ANIMATIONS, path),
+  getTilesets: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_TILESETS, path),
+  getCommonEvents: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_COMMON_EVENTS, path),
+  getClasses: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_CLASSES, path),
+  getTroops: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_TROOPS, path)
 }
 
 const pluginApi: PluginAPI = {
@@ -109,11 +138,28 @@ const windowApi: WindowAPI = {
   }
 }
 
+const updateApi: UpdateAPI = {
+  onUpdateAvailable: (callback) => {
+    const handler = (_event: unknown, info: { version: string; releaseNotes?: string }) =>
+      callback(info)
+    ipcRenderer.on('update:available', handler)
+    return () => ipcRenderer.removeListener('update:available', handler)
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = () => callback()
+    ipcRenderer.on('update:downloaded', handler)
+    return () => ipcRenderer.removeListener('update:downloaded', handler)
+  },
+  downloadUpdate: () => ipcRenderer.invoke('update:download'),
+  installUpdate: () => ipcRenderer.invoke('update:install')
+}
+
 contextBridge.exposeInMainWorld('api', {
   project: projectApi,
   plugin: pluginApi,
   dialog: dialogApi,
-  window: windowApi
+  window: windowApi,
+  update: updateApi
 })
 
 // Export types for renderer
@@ -122,4 +168,5 @@ export type API = {
   plugin: PluginAPI
   dialog: DialogAPI
   window: WindowAPI
+  update: UpdateAPI
 }

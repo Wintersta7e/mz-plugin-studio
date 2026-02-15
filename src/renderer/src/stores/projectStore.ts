@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { MZProject, MZSwitch, MZVariable, MZActor, MZItem } from '../types/mz'
+import type {
+  MZProject, MZSwitch, MZVariable, MZActor, MZItem,
+  MZSkill, MZWeapon, MZArmor, MZEnemy, MZState,
+  MZAnimation, MZTileset, MZCommonEvent, MZClass, MZTroop
+} from '../types/mz'
 
 interface ProjectState {
   project: MZProject | null
@@ -11,6 +15,16 @@ interface ProjectState {
   variables: MZVariable[]
   actors: MZActor[]
   items: MZItem[]
+  skills: MZSkill[]
+  weapons: MZWeapon[]
+  armors: MZArmor[]
+  enemies: MZEnemy[]
+  states: MZState[]
+  animations: MZAnimation[]
+  tilesets: MZTileset[]
+  commonEvents: MZCommonEvent[]
+  classes: MZClass[]
+  troops: MZTroop[]
 
   setProject: (project: MZProject | null) => void
   addRecentProject: (path: string) => void
@@ -20,6 +34,16 @@ interface ProjectState {
   setVariables: (variables: MZVariable[]) => void
   setActors: (actors: MZActor[]) => void
   setItems: (items: MZItem[]) => void
+  setSkills: (skills: MZSkill[]) => void
+  setWeapons: (weapons: MZWeapon[]) => void
+  setArmors: (armors: MZArmor[]) => void
+  setEnemies: (enemies: MZEnemy[]) => void
+  setStates: (states: MZState[]) => void
+  setAnimations: (animations: MZAnimation[]) => void
+  setTilesets: (tilesets: MZTileset[]) => void
+  setCommonEvents: (commonEvents: MZCommonEvent[]) => void
+  setClasses: (classes: MZClass[]) => void
+  setTroops: (troops: MZTroop[]) => void
   clearProject: () => void
 }
 
@@ -34,6 +58,16 @@ export const useProjectStore = create<ProjectState>()(
       variables: [],
       actors: [],
       items: [],
+      skills: [],
+      weapons: [],
+      armors: [],
+      enemies: [],
+      states: [],
+      animations: [],
+      tilesets: [],
+      commonEvents: [],
+      classes: [],
+      troops: [],
 
       setProject: (project) => set({ project, error: null }),
       addRecentProject: (path) =>
@@ -46,6 +80,16 @@ export const useProjectStore = create<ProjectState>()(
       setVariables: (variables) => set({ variables }),
       setActors: (actors) => set({ actors }),
       setItems: (items) => set({ items }),
+      setSkills: (skills) => set({ skills }),
+      setWeapons: (weapons) => set({ weapons }),
+      setArmors: (armors) => set({ armors }),
+      setEnemies: (enemies) => set({ enemies }),
+      setStates: (states) => set({ states }),
+      setAnimations: (animations) => set({ animations }),
+      setTilesets: (tilesets) => set({ tilesets }),
+      setCommonEvents: (commonEvents) => set({ commonEvents }),
+      setClasses: (classes) => set({ classes }),
+      setTroops: (troops) => set({ troops }),
       clearProject: () =>
         set({
           project: null,
@@ -53,6 +97,16 @@ export const useProjectStore = create<ProjectState>()(
           variables: [],
           actors: [],
           items: [],
+          skills: [],
+          weapons: [],
+          armors: [],
+          enemies: [],
+          states: [],
+          animations: [],
+          tilesets: [],
+          commonEvents: [],
+          classes: [],
+          troops: [],
           error: null
         })
     }),

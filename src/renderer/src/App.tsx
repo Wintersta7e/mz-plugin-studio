@@ -24,6 +24,16 @@ function App() {
   const setVariables = useProjectStore((s) => s.setVariables)
   const setActors = useProjectStore((s) => s.setActors)
   const setItems = useProjectStore((s) => s.setItems)
+  const setSkills = useProjectStore((s) => s.setSkills)
+  const setWeapons = useProjectStore((s) => s.setWeapons)
+  const setArmors = useProjectStore((s) => s.setArmors)
+  const setEnemies = useProjectStore((s) => s.setEnemies)
+  const setStates = useProjectStore((s) => s.setStates)
+  const setAnimations = useProjectStore((s) => s.setAnimations)
+  const setTilesets = useProjectStore((s) => s.setTilesets)
+  const setCommonEvents = useProjectStore((s) => s.setCommonEvents)
+  const setClasses = useProjectStore((s) => s.setClasses)
+  const setTroops = useProjectStore((s) => s.setTroops)
   const recentProjects = useProjectStore((s) => s.recentProjects)
 
   const plugin = usePluginStore((s) => s.plugin)
@@ -140,17 +150,41 @@ function App() {
       addRecentProject(path)
 
       // Load additional data
-      const [switches, variables, actors, items] = await Promise.all([
+      const [
+        switches, variables, actors, items,
+        skills, weapons, armors, enemies, states,
+        animations, tilesets, commonEvents, classes, troops
+      ] = await Promise.all([
         window.api.project.getSwitches(path),
         window.api.project.getVariables(path),
         window.api.project.getActors(path),
-        window.api.project.getItems(path)
+        window.api.project.getItems(path),
+        window.api.project.getSkills(path),
+        window.api.project.getWeapons(path),
+        window.api.project.getArmors(path),
+        window.api.project.getEnemies(path),
+        window.api.project.getStates(path),
+        window.api.project.getAnimations(path),
+        window.api.project.getTilesets(path),
+        window.api.project.getCommonEvents(path),
+        window.api.project.getClasses(path),
+        window.api.project.getTroops(path)
       ])
 
       setSwitches(switches)
       setVariables(variables)
       setActors(actors)
       setItems(items)
+      setSkills(skills)
+      setWeapons(weapons)
+      setArmors(armors)
+      setEnemies(enemies)
+      setStates(states)
+      setAnimations(animations)
+      setTilesets(tilesets)
+      setCommonEvents(commonEvents)
+      setClasses(classes)
+      setTroops(troops)
     } catch (error) {
       setError(String(error))
     } finally {
@@ -164,7 +198,17 @@ function App() {
     setSwitches,
     setVariables,
     setActors,
-    setItems
+    setItems,
+    setSkills,
+    setWeapons,
+    setArmors,
+    setEnemies,
+    setStates,
+    setAnimations,
+    setTilesets,
+    setCommonEvents,
+    setClasses,
+    setTroops
   ])
 
   const handleOpenRecentProject = useCallback(
@@ -184,17 +228,41 @@ function App() {
         setProject(projectData)
         addRecentProject(path)
 
-        const [switches, variables, actors, items] = await Promise.all([
+        const [
+          switches, variables, actors, items,
+          skills, weapons, armors, enemies, states,
+          animations, tilesets, commonEvents, classes, troops
+        ] = await Promise.all([
           window.api.project.getSwitches(path),
           window.api.project.getVariables(path),
           window.api.project.getActors(path),
-          window.api.project.getItems(path)
+          window.api.project.getItems(path),
+          window.api.project.getSkills(path),
+          window.api.project.getWeapons(path),
+          window.api.project.getArmors(path),
+          window.api.project.getEnemies(path),
+          window.api.project.getStates(path),
+          window.api.project.getAnimations(path),
+          window.api.project.getTilesets(path),
+          window.api.project.getCommonEvents(path),
+          window.api.project.getClasses(path),
+          window.api.project.getTroops(path)
         ])
 
         setSwitches(switches)
         setVariables(variables)
         setActors(actors)
         setItems(items)
+        setSkills(skills)
+        setWeapons(weapons)
+        setArmors(armors)
+        setEnemies(enemies)
+        setStates(states)
+        setAnimations(animations)
+        setTilesets(tilesets)
+        setCommonEvents(commonEvents)
+        setClasses(classes)
+        setTroops(troops)
       } catch (error) {
         setError(String(error))
       } finally {
@@ -209,7 +277,17 @@ function App() {
       setSwitches,
       setVariables,
       setActors,
-      setItems
+      setItems,
+      setSkills,
+      setWeapons,
+      setArmors,
+      setEnemies,
+      setStates,
+      setAnimations,
+      setTilesets,
+      setCommonEvents,
+      setClasses,
+      setTroops
     ]
   )
 

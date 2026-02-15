@@ -7,7 +7,17 @@ import type {
   MZMapInfo,
   MZPluginEntry,
   MZSwitch,
-  MZVariable
+  MZVariable,
+  MZSkill,
+  MZWeapon,
+  MZArmor,
+  MZEnemy,
+  MZState,
+  MZAnimation,
+  MZTileset,
+  MZCommonEvent,
+  MZClass,
+  MZTroop
 } from '../../renderer/src/types/mz'
 
 export class ProjectParser {
@@ -38,12 +48,28 @@ export class ProjectParser {
     const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
     const system = JSON.parse(systemContent)
 
-    const actors = await this.getActors(path)
-    const items = await this.getItems(path)
-    const maps = await this.getMaps(path)
-    const plugins = await this.getPlugins(path)
-    const switches = await this.getSwitches(path)
-    const variables = await this.getVariables(path)
+    const [
+      actors, items, maps, plugins, switches, variables,
+      skills, weapons, armors, enemies, states,
+      animations, tilesets, commonEvents, classes, troops
+    ] = await Promise.all([
+      this.getActors(path),
+      this.getItems(path),
+      this.getMaps(path),
+      this.getPlugins(path),
+      this.getSwitches(path),
+      this.getVariables(path),
+      this.getSkills(path),
+      this.getWeapons(path),
+      this.getArmors(path),
+      this.getEnemies(path),
+      this.getStates(path),
+      this.getAnimations(path),
+      this.getTilesets(path),
+      this.getCommonEvents(path),
+      this.getClasses(path),
+      this.getTroops(path)
+    ])
 
     return {
       path,
@@ -55,7 +81,33 @@ export class ProjectParser {
       actors,
       items,
       maps,
-      plugins
+      plugins,
+      skills,
+      weapons,
+      armors,
+      enemies,
+      states,
+      animations,
+      tilesets,
+      commonEvents,
+      classes,
+      troops
+    }
+  }
+
+  private static async loadDataArray(
+    projectPath: string,
+    filename: string
+  ): Promise<{ id: number; name: string }[]> {
+    try {
+      const content = await readFile(join(projectPath, 'data', filename), 'utf-8')
+      const data: ({ id: number; name: string } | null)[] = JSON.parse(content)
+      return data
+        .filter((d): d is { id: number; name: string } => d !== null)
+        .map((d) => ({ id: d.id, name: d.name }))
+    } catch {
+      console.error(`[ProjectParser] Failed to load ${filename} from ${projectPath}`)
+      return []
     }
   }
 
@@ -154,6 +206,17 @@ export class ProjectParser {
       return []
     }
   }
+
+  static getSkills = (p: string): Promise<MZSkill[]> => ProjectParser.loadDataArray(p, 'Skills.json')
+  static getWeapons = (p: string): Promise<MZWeapon[]> => ProjectParser.loadDataArray(p, 'Weapons.json')
+  static getArmors = (p: string): Promise<MZArmor[]> => ProjectParser.loadDataArray(p, 'Armors.json')
+  static getEnemies = (p: string): Promise<MZEnemy[]> => ProjectParser.loadDataArray(p, 'Enemies.json')
+  static getStates = (p: string): Promise<MZState[]> => ProjectParser.loadDataArray(p, 'States.json')
+  static getAnimations = (p: string): Promise<MZAnimation[]> => ProjectParser.loadDataArray(p, 'Animations.json')
+  static getTilesets = (p: string): Promise<MZTileset[]> => ProjectParser.loadDataArray(p, 'Tilesets.json')
+  static getCommonEvents = (p: string): Promise<MZCommonEvent[]> => ProjectParser.loadDataArray(p, 'CommonEvents.json')
+  static getClasses = (p: string): Promise<MZClass[]> => ProjectParser.loadDataArray(p, 'Classes.json')
+  static getTroops = (p: string): Promise<MZTroop[]> => ProjectParser.loadDataArray(p, 'Troops.json')
 
   static parseNoteTags(note: string): Record<string, string> {
     const tags: Record<string, string> = {}

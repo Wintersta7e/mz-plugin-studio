@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { X, ChevronDown, ChevronRight, ToggleLeft, Variable, User, Package } from 'lucide-react'
+import {
+  X, ChevronDown, ChevronRight, ToggleLeft, Variable, User, Package,
+  Zap, Sword, Shield, Skull, Activity, Sparkles, Grid3x3, Calendar,
+  GraduationCap, Users
+} from 'lucide-react'
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { useProjectStore } from '../../stores'
@@ -9,6 +13,8 @@ interface ProjectBrowserProps {
 }
 
 type TabType = 'switches' | 'variables' | 'actors' | 'items'
+  | 'skills' | 'weapons' | 'armors' | 'enemies' | 'states'
+  | 'animations' | 'tilesets' | 'commonEvents' | 'classes' | 'troops'
 
 interface CollapsibleSectionProps {
   title: string
@@ -79,12 +85,32 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
   const variables = useProjectStore((s) => s.variables)
   const actors = useProjectStore((s) => s.actors)
   const items = useProjectStore((s) => s.items)
+  const skills = useProjectStore((s) => s.skills)
+  const weapons = useProjectStore((s) => s.weapons)
+  const armors = useProjectStore((s) => s.armors)
+  const enemies = useProjectStore((s) => s.enemies)
+  const states = useProjectStore((s) => s.states)
+  const animations = useProjectStore((s) => s.animations)
+  const tilesets = useProjectStore((s) => s.tilesets)
+  const commonEvents = useProjectStore((s) => s.commonEvents)
+  const classes = useProjectStore((s) => s.classes)
+  const troops = useProjectStore((s) => s.troops)
 
   const [openSections, setOpenSections] = useState<Record<TabType, boolean>>({
     switches: true,
     variables: false,
     actors: false,
-    items: false
+    items: false,
+    skills: false,
+    weapons: false,
+    armors: false,
+    enemies: false,
+    states: false,
+    animations: false,
+    tilesets: false,
+    commonEvents: false,
+    classes: false,
+    troops: false
   })
 
   const toggleSection = (section: TabType) => {
@@ -96,6 +122,16 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
   const namedVariables = variables.filter((v) => v.name && v.name.trim() !== '')
   const namedActors = actors.filter((a) => a.name && a.name.trim() !== '')
   const namedItems = items.filter((i) => i.name && i.name.trim() !== '')
+  const namedSkills = skills.filter((s) => s.name && s.name.trim() !== '')
+  const namedWeapons = weapons.filter((w) => w.name && w.name.trim() !== '')
+  const namedArmors = armors.filter((a) => a.name && a.name.trim() !== '')
+  const namedEnemies = enemies.filter((e) => e.name && e.name.trim() !== '')
+  const namedStates = states.filter((s) => s.name && s.name.trim() !== '')
+  const namedAnimations = animations.filter((a) => a.name && a.name.trim() !== '')
+  const namedTilesets = tilesets.filter((t) => t.name && t.name.trim() !== '')
+  const namedCommonEvents = commonEvents.filter((c) => c.name && c.name.trim() !== '')
+  const namedClasses = classes.filter((c) => c.name && c.name.trim() !== '')
+  const namedTroops = troops.filter((t) => t.name && t.name.trim() !== '')
 
   if (!project) {
     return (
@@ -164,6 +200,106 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
           count={namedItems.length}
         >
           <DataList items={namedItems} emptyMessage="No items defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Skills"
+          icon={<Zap className="h-4 w-4 text-orange-500" />}
+          isOpen={openSections.skills}
+          onToggle={() => toggleSection('skills')}
+          count={namedSkills.length}
+        >
+          <DataList items={namedSkills} emptyMessage="No skills defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Weapons"
+          icon={<Sword className="h-4 w-4 text-red-500" />}
+          isOpen={openSections.weapons}
+          onToggle={() => toggleSection('weapons')}
+          count={namedWeapons.length}
+        >
+          <DataList items={namedWeapons} emptyMessage="No weapons defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Armors"
+          icon={<Shield className="h-4 w-4 text-blue-500" />}
+          isOpen={openSections.armors}
+          onToggle={() => toggleSection('armors')}
+          count={namedArmors.length}
+        >
+          <DataList items={namedArmors} emptyMessage="No armors defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Enemies"
+          icon={<Skull className="h-4 w-4 text-red-500" />}
+          isOpen={openSections.enemies}
+          onToggle={() => toggleSection('enemies')}
+          count={namedEnemies.length}
+        >
+          <DataList items={namedEnemies} emptyMessage="No enemies defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="States"
+          icon={<Activity className="h-4 w-4 text-green-500" />}
+          isOpen={openSections.states}
+          onToggle={() => toggleSection('states')}
+          count={namedStates.length}
+        >
+          <DataList items={namedStates} emptyMessage="No states defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Animations"
+          icon={<Sparkles className="h-4 w-4 text-yellow-500" />}
+          isOpen={openSections.animations}
+          onToggle={() => toggleSection('animations')}
+          count={namedAnimations.length}
+        >
+          <DataList items={namedAnimations} emptyMessage="No animations defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Tilesets"
+          icon={<Grid3x3 className="h-4 w-4 text-teal-500" />}
+          isOpen={openSections.tilesets}
+          onToggle={() => toggleSection('tilesets')}
+          count={namedTilesets.length}
+        >
+          <DataList items={namedTilesets} emptyMessage="No tilesets defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Common Events"
+          icon={<Calendar className="h-4 w-4 text-purple-500" />}
+          isOpen={openSections.commonEvents}
+          onToggle={() => toggleSection('commonEvents')}
+          count={namedCommonEvents.length}
+        >
+          <DataList items={namedCommonEvents} emptyMessage="No common events defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Classes"
+          icon={<GraduationCap className="h-4 w-4 text-indigo-500" />}
+          isOpen={openSections.classes}
+          onToggle={() => toggleSection('classes')}
+          count={namedClasses.length}
+        >
+          <DataList items={namedClasses} emptyMessage="No classes defined" />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="Troops"
+          icon={<Users className="h-4 w-4 text-red-500" />}
+          isOpen={openSections.troops}
+          onToggle={() => toggleSection('troops')}
+          count={namedTroops.length}
+        >
+          <DataList items={namedTroops} emptyMessage="No troops defined" />
         </CollapsibleSection>
       </ScrollArea>
     </div>
