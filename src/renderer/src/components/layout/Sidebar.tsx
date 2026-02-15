@@ -4,7 +4,7 @@ import {
   FilePlus,
   FileCode,
   Settings,
-  HelpCircle,
+  Keyboard,
   ChevronRight,
   X,
   Database,
@@ -15,15 +15,16 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
 import { useProjectStore, usePluginStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
-import { SettingsDialog } from '../settings/SettingsDialog'
 
 interface SidebarProps {
   onOpenProject: () => void
   onToggleProjectBrowser?: () => void
   projectBrowserOpen?: boolean
+  onOpenSettings: () => void
+  onOpenShortcuts: () => void
 }
 
-export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserOpen }: SidebarProps) {
+export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserOpen, onOpenSettings, onOpenShortcuts }: SidebarProps) {
   const project = useProjectStore((s) => s.project)
   const openPlugins = usePluginStore((s) => s.openPlugins)
   const activePluginId = usePluginStore((s) => s.activePluginId)
@@ -31,8 +32,6 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
   const openPlugin = usePluginStore((s) => s.openPlugin)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
-
-  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // State for all plugin files in the js/plugins folder
   const [allPluginFiles, setAllPluginFiles] = useState<string[]>([])
@@ -80,8 +79,6 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
     if (!project) return
     try {
       const plugin = await window.api.plugin.load(project.path, `${name}.js`)
-      console.log('[Sidebar] Loaded plugin:', plugin.meta.name, 'params:', plugin.parameters.length, 'commands:', plugin.commands.length)
-      console.log('[Sidebar] First 3 params:', plugin.parameters.slice(0, 3).map(p => p.name))
       openPlugin(plugin)
     } catch (error) {
       console.error('Failed to load plugin:', error)
@@ -222,14 +219,13 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground"
-                onClick={() => setSettingsOpen(true)}
+                onClick={onOpenSettings}
               >
                 <Settings className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Settings</TooltipContent>
+            <TooltipContent side="right">Settings (Ctrl+,)</TooltipContent>
           </Tooltip>
-          <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -237,15 +233,12 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
                 variant="ghost"
                 size="icon"
                 className="text-muted-foreground"
-                onClick={() => window.api.dialog.message({
-                  title: 'MZ Plugin Studio Help',
-                  message: '1. Open an RPG Maker MZ project\n2. Create a new plugin or load existing\n3. Add parameters and commands\n4. Export to your project'
-                })}
+                onClick={onOpenShortcuts}
               >
-                <HelpCircle className="h-5 w-5" />
+                <Keyboard className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Help</TooltipContent>
+            <TooltipContent side="right">Keyboard Shortcuts (F1)</TooltipContent>
           </Tooltip>
         </div>
       </div>
