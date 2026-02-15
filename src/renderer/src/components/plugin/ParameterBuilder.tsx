@@ -384,7 +384,15 @@ export function ParameterBuilder() {
                     }
                   }
                 }}
-                onDelete={() => removeParameter(param.id)}
+                onDelete={() => {
+                  removeParameter(param.id)
+                  setSelectedIds((prev) => {
+                    if (!prev.has(param.id)) return prev
+                    const next = new Set(prev)
+                    next.delete(param.id)
+                    return next
+                  })
+                }}
                 onDragStart={(e) => handleDragStart(e, param.id)}
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
