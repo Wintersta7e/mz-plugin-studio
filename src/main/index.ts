@@ -5,6 +5,7 @@ import { setupProjectHandlers } from './ipc/project'
 import { setupPluginHandlers } from './ipc/plugin'
 import { setupDialogHandlers } from './ipc/dialog'
 import { IPC_CHANNELS } from '../shared/ipc-types'
+import { setupAutoUpdater } from './updater'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -81,6 +82,19 @@ app.whenReady().then(() => {
   setupDialogHandlers(ipcMain, dialog)
 
   createWindow()
+
+  // Send maximize state changes to renderer
+  mainWindow?.on('maximize', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, true)
+  })
+  mainWindow?.on('unmaximize', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, false)
+  })
+
+  // Setup auto-updater (only in production)
+  if (mainWindow && !is.dev) {
+    setupAutoUpdater(mainWindow)
+  }
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
