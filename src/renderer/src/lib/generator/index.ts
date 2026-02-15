@@ -614,6 +614,40 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
     }
   }
 
+  // Unused struct definitions (warning)
+  const referencedStructs = new Set<string>()
+  for (const param of plugin.parameters) {
+    if (param.structType) referencedStructs.add(param.structType)
+  }
+  for (const cmd of plugin.commands) {
+    for (const arg of cmd.args) {
+      if (arg.structType) referencedStructs.add(arg.structType)
+    }
+  }
+  for (const struct of plugin.structs) {
+    if (!referencedStructs.has(struct.name)) {
+      warnings.push(`Struct "${struct.name}" is defined but not referenced by any parameter or command argument`)
+    }
+  }
+
+  // Parameters referencing nonexistent parent (error)
+  for (const param of plugin.parameters) {
+    if (param.parent && !paramNames.has(param.parent)) {
+      errors.push(`Parameter "${param.name}" references nonexistent parent "${param.parent}"`)
+    }
+  }
+
+  // Commands with no implementation in custom code (warning)
+  if (plugin.customCode) {
+    for (const cmd of plugin.commands) {
+      const hasImplementation = plugin.customCode.includes(`'${cmd.name}'`) ||
+                                plugin.customCode.includes(`"${cmd.name}"`)
+      if (!hasImplementation) {
+        warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
+      }
+    }
+  }
+
   return { valid: errors.length === 0, errors, warnings }
 }
 
