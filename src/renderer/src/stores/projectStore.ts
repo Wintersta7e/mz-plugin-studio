@@ -5,6 +5,8 @@ import type {
   MZSkill, MZWeapon, MZArmor, MZEnemy, MZState,
   MZAnimation, MZTileset, MZCommonEvent, MZClass, MZTroop
 } from '../types/mz'
+import type { DependencyReport } from '../lib/dependency-analyzer'
+import { validateDependencies } from '../lib/dependency-analyzer'
 
 interface ProjectState {
   project: MZProject | null
@@ -25,6 +27,8 @@ interface ProjectState {
   commonEvents: MZCommonEvent[]
   classes: MZClass[]
   troops: MZTroop[]
+  dependencyReport: DependencyReport | null
+  isScanning: boolean
 
   setProject: (project: MZProject | null) => void
   addRecentProject: (path: string) => void
@@ -45,11 +49,13 @@ interface ProjectState {
   setClasses: (classes: MZClass[]) => void
   setTroops: (troops: MZTroop[]) => void
   clearProject: () => void
+  scanDependencies: () => Promise<void>
+  clearDependencyReport: () => void
 }
 
 export const useProjectStore = create<ProjectState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       project: null,
       recentProjects: [],
       isLoading: false,
@@ -68,8 +74,18 @@ export const useProjectStore = create<ProjectState>()(
       commonEvents: [],
       classes: [],
       troops: [],
+      dependencyReport: null,
+      isScanning: false,
 
-      setProject: (project) => set({ project, error: null }),
+      setProject: (project) => {
+        set({ project, error: null })
+        // Auto-scan dependencies when project is loaded
+        if (project) {
+          setTimeout(() => get().scanDependencies(), 0)
+        } else {
+          set({ dependencyReport: null })
+        }
+      },
       addRecentProject: (path) =>
         set((state) => ({
           recentProjects: [path, ...state.recentProjects.filter((p) => p !== path)].slice(0, 10)
@@ -107,8 +123,25 @@ export const useProjectStore = create<ProjectState>()(
           commonEvents: [],
           classes: [],
           troops: [],
+          dependencyReport: null,
+          isScanning: false,
           error: null
-        })
+        }),
+      scanDependencies: async () => {
+        const project = get().project
+        if (!project) return
+
+        set({ isScanning: true })
+        try {
+          const headers = await window.api.plugin.scanHeaders(project.path)
+          const report = validateDependencies(headers)
+          set({ dependencyReport: report, isScanning: false })
+        } catch (error) {
+          console.error('Dependency scan failed:', error)
+          set({ isScanning: false })
+        }
+      },
+      clearDependencyReport: () => set({ dependencyReport: null })
     }),
     {
       name: 'mz-plugin-studio-project',

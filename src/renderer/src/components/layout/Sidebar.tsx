@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   FolderOpen,
   FilePlus,
@@ -15,6 +15,8 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
 import { useProjectStore, usePluginStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
+import type { DependencyIssue } from '../../lib/dependency-analyzer'
+import { cn } from '../../lib/utils'
 
 interface SidebarProps {
   onOpenProject: () => void
@@ -32,6 +34,20 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
   const openPlugin = usePluginStore((s) => s.openPlugin)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
+
+  const dependencyReport = useProjectStore((s) => s.dependencyReport)
+  const scanDependencies = useProjectStore((s) => s.scanDependencies)
+
+  const pluginIssues = useMemo(() => {
+    if (!dependencyReport) return new Map<string, DependencyIssue[]>()
+    const map = new Map<string, DependencyIssue[]>()
+    for (const issue of dependencyReport.issues) {
+      const existing = map.get(issue.pluginName) || []
+      existing.push(issue)
+      map.set(issue.pluginName, existing)
+    }
+    return map
+  }, [dependencyReport])
 
   // State for all plugin files in the js/plugins folder
   const [allPluginFiles, setAllPluginFiles] = useState<string[]>([])
@@ -51,6 +67,7 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
     if (project?.path) {
       const files = await window.api.plugin.list(project.path)
       setAllPluginFiles(files)
+      await scanDependencies()
     }
   }
 
@@ -172,21 +189,44 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
             </div>
             <ScrollArea className="max-h-60">
               <div className="flex flex-col items-center gap-1 p-2">
-                {allPluginFiles.map((filename) => {
+                {allPluginFiles.map((filename, index) => {
                   const name = filename.replace(/\.js$/, '')
+                  const issues = pluginIssues.get(name)
+                  const hasError = issues?.some((i) => i.severity === 'error')
                   return (
                     <Tooltip key={filename}>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground"
-                          onClick={() => handleLoadPlugin(name)}
-                        >
-                          <FileCode className="h-4 w-4" />
-                        </Button>
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={() => handleLoadPlugin(name)}
+                          >
+                            <FileCode className="h-4 w-4" />
+                          </Button>
+                          <span className="absolute -left-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[9px] font-medium">
+                            {index + 1}
+                          </span>
+                          {issues && (
+                            <span
+                              className={cn(
+                                'absolute -right-1 -bottom-1 h-2.5 w-2.5 rounded-full',
+                                hasError ? 'bg-red-500' : 'bg-amber-500'
+                              )}
+                            />
+                          )}
+                        </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right">{name}</TooltipContent>
+                      <TooltipContent side="right" className="whitespace-pre-line">
+                        {name}
+                        {issues && (
+                          <>
+                            {'\n'}
+                            {issues.map((i) => i.message).join('\n')}
+                          </>
+                        )}
+                      </TooltipContent>
                     </Tooltip>
                   )
                 })}

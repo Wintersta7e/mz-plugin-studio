@@ -36,6 +36,14 @@ interface PluginAPI {
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
   readByPath: (filePath: string) => Promise<string>
+  scanHeaders: (projectPath: string) => Promise<
+    {
+      filename: string
+      name: string
+      base: string[]
+      orderAfter: string[]
+    }[]
+  >
 }
 
 interface DialogAPI {

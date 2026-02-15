@@ -30,6 +30,7 @@ export const IPC_CHANNELS = {
   PLUGIN_READ_RAW: 'plugin:read-raw',
   PLUGIN_LIST: 'plugin:list',
   PLUGIN_READ_BY_PATH: 'plugin:read-by-path',
+  PLUGIN_SCAN_HEADERS: 'plugin:scan-headers',
 
   // Dialog
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',

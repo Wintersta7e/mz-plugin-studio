@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.2.0] - 2026-02-15
+
+### Added
+- Auto-generate help text for plugin documentation (sparkles button in MetaEditor)
+- Plugin dependency analysis: scans `@base` and `@orderAfter` headers across project plugins
+- Dependency health badge in status bar (green/yellow/red) with clickable issues dialog
+- Sidebar load-order number badges, warning dots, and issue tooltips for project plugins
+- Available plugin names hint toggle in MetaEditor below Dependencies/Order After fields
+- Cycle detection (DFS 3-color), missing dependency, and load-order violation checks
+- Plugin Dictionary: analysis pipeline studying 206 example plugins with popularity-weighted class/method sorting in template inserter
+- 154 tests across 7 test files (auto-documentation, dependency analyzer, plugin analysis, parser, generator, validation)
+
+### Changed
+- IPC header scanner targets `/*:` MZ annotation block instead of first `/*...*/` comment block
+- `@orderAfter` missing targets are warnings, not errors (soft hints vs hard dependencies)
+
+### Fixed
+- Header scanner skipping dependencies when plugin has a license comment before the MZ annotation block
+- Sidebar tooltip newlines not rendering (multiple issues ran together into one line)
+- Load-order deduplication when a dependency appears in both `@base` and `@orderAfter`
+- Validation warnings panel now collapsible (was showing count but no detail list)
+
 ## [1.1.1] - 2026-02-15
 
 ### Added
