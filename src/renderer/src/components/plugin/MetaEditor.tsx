@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -13,6 +13,7 @@ export function MetaEditor() {
   const plugin = usePluginStore((s) => s.plugin)
   const updateMeta = usePluginStore((s) => s.updateMeta)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
+  const [showPluginNames, setShowPluginNames] = useState(false)
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
     const currentLocalizations = plugin.meta.localizations || {}
@@ -199,9 +200,22 @@ export function MetaEditor() {
             className="font-mono text-sm"
           />
           {dependencyReport && dependencyReport.pluginNames.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Project plugins: {dependencyReport.pluginNames.join(', ')}
-            </p>
+            <div className="text-xs text-muted-foreground">
+              <button
+                type="button"
+                className="hover:text-foreground underline decoration-dotted"
+                onClick={() => setShowPluginNames(!showPluginNames)}
+              >
+                {dependencyReport.pluginNames.length} project plugins available
+              </button>
+              {showPluginNames && (
+                <div className="mt-1 max-h-32 overflow-y-auto rounded border border-border bg-muted/50 p-2 font-mono">
+                  {dependencyReport.pluginNames.map((name) => (
+                    <div key={name}>{name}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -222,11 +236,6 @@ export function MetaEditor() {
           <p className="text-xs text-muted-foreground">
             Plugins that must load before this one
           </p>
-          {dependencyReport && dependencyReport.pluginNames.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Project plugins: {dependencyReport.pluginNames.join(', ')}
-            </p>
-          )}
         </div>
 
         <div className="space-y-2">
