@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
-import { Download, CheckCircle } from 'lucide-react'
+import { Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 export function StatusBar() {
   const project = useProjectStore((s) => s.project)
   const isDirty = usePluginStore((s) => s.isDirty)
   const savedPath = usePluginStore((s) => s.savedPath)
   const plugin = usePluginStore((s) => s.plugin)
+  const dependencyReport = useProjectStore((s) => s.dependencyReport)
 
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null)
   const [updateDownloaded, setUpdateDownloaded] = useState(false)
@@ -47,6 +49,30 @@ export function StatusBar() {
           <span>
             Plugin: {plugin.meta.name}
             {isDirty && <span className="text-destructive"> (modified)</span>}
+          </span>
+        )}
+        {dependencyReport && (
+          <span
+            className={cn(
+              'flex items-center gap-1',
+              dependencyReport.health === 'healthy' && 'text-emerald-400',
+              dependencyReport.health === 'warnings' && 'text-amber-400',
+              dependencyReport.health === 'errors' && 'text-red-400'
+            )}
+            title={
+              dependencyReport.issues.length === 0
+                ? 'All dependencies satisfied'
+                : dependencyReport.issues.map((i) => i.message).join('\n')
+            }
+          >
+            {dependencyReport.health === 'healthy' && <CheckCircle className="h-3 w-3" />}
+            {dependencyReport.health === 'warnings' && <AlertTriangle className="h-3 w-3" />}
+            {dependencyReport.health === 'errors' && <XCircle className="h-3 w-3" />}
+            {dependencyReport.health === 'healthy'
+              ? 'Deps OK'
+              : dependencyReport.issues.length +
+                ' dep issue' +
+                (dependencyReport.issues.length > 1 ? 's' : '')}
           </span>
         )}
       </div>
