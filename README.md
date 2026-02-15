@@ -91,9 +91,6 @@ All 22 RPG Maker MZ parameter types are fully supported:
 - **Export Formats** - Export as .js, README.md, .d.ts type declarations, or plugins.json entry
 
 ### Project Integration
-
-![Project Browser](screenshots/project-browser.png)
-
 - **Load MZ Projects** - Select your project folder
 - **Auto-populate Dropdowns** - All 14 MZ database types (actors, classes, skills, items, weapons, armors, enemies, troops, states, animations, tilesets, common events, switches, variables)
 - **Direct Export** - Save plugins to `js/plugins/` folder
