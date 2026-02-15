@@ -408,6 +408,53 @@ function generateBody(plugin: PluginDefinition): string {
 }
 
 /**
+ * Generate plugin output in "raw mode": only regenerate the metadata header
+ * blocks (main header, localized headers, struct definitions) while preserving
+ * the original code body verbatim from rawSource.
+ *
+ * This ensures maximum round-trip fidelity for imported plugins — only the
+ * structured metadata that the UI can edit is regenerated; all code remains
+ * exactly as the original author wrote it.
+ */
+export function generateRawMode(plugin: PluginDefinition): string {
+  if (!plugin.rawSource) {
+    return generatePlugin(plugin)
+  }
+
+  const rawSource = plugin.rawSource
+
+  // Find the code body: everything after the last comment block (*/)
+  const lastCommentEnd = rawSource.lastIndexOf('*/')
+  let codeBody = ''
+  if (lastCommentEnd !== -1) {
+    codeBody = rawSource.slice(lastCommentEnd + 2)
+  } else {
+    // No comment blocks found — the entire file is code
+    codeBody = rawSource
+  }
+
+  // Regenerate header blocks from the plugin definition
+  const parts: string[] = []
+
+  // Main header
+  parts.push(generateHeader(plugin))
+
+  // Localized headers
+  const localizedHeaders = generateLocalizedHeaders(plugin)
+  if (localizedHeaders) {
+    parts.push(localizedHeaders)
+  }
+
+  // Struct definitions
+  for (const struct of plugin.structs) {
+    parts.push(generateStructDefinition(struct))
+  }
+
+  // Append original code body verbatim (preserving its leading whitespace/newlines)
+  return parts.join('\n\n') + codeBody
+}
+
+/**
  * Generate body using original codeBody (for plugins that shouldn't be regenerated)
  * Use this when you want to preserve the exact original implementation.
  */

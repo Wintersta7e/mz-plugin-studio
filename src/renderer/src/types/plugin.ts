@@ -93,6 +93,7 @@ export interface PluginDefinition {
   structs: PluginStruct[]
   codeBody?: string // Original full body (for reference/fallback)
   customCode?: string // User's custom implementation (extracted from body, always preserved)
+  rawSource?: string // Original full file content (for raw mode)
 }
 
 // Default empty plugin
