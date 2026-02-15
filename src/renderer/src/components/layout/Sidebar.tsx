@@ -218,7 +218,7 @@ export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserO
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="right">
+                      <TooltipContent side="right" className="whitespace-pre-line">
                         {name}
                         {issues && (
                           <>

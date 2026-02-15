@@ -97,8 +97,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
           const filePath = join(pluginsDir, file)
           const content = await readFile(filePath, 'utf-8')
 
-          // Only read the comment header block (first /*...*/ block)
-          const headerMatch = content.match(/\/\*[\s\S]*?\*\//)
+          // Only read the MZ annotation block (/*: ... */)
+          const headerMatch = content.match(/\/\*:[\s\S]*?\*\//)
           const header = headerMatch ? headerMatch[0] : ''
 
           const baseEntries: string[] = []
