@@ -128,8 +128,8 @@ export const useProjectStore = create<ProjectState>()(
           error: null
         }),
       scanDependencies: async () => {
-        const project = get().project
-        if (!project) return
+        const { project, isScanning } = get()
+        if (!project || isScanning) return
 
         set({ isScanning: true })
         try {
