@@ -1,14 +1,16 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
-import { Copy, Download, Check } from 'lucide-react'
+import { Copy, Download, Check, FileCode2, GitCompare, ChevronDown, FileText, FileType, FileJson } from 'lucide-react'
 import { Button } from '../ui/button'
 import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
-import { generatePlugin, validatePlugin } from '../../lib/generator'
-import { useState } from 'react'
+import { generatePlugin, generateRawMode, validatePlugin } from '../../lib/generator'
+import { generatePluginsJsonEntry, generateTypeDeclaration, generateReadme } from '../../lib/exportFormats'
+import { DiffView } from './DiffView'
 
 export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)
   const project = useProjectStore((s) => s.project)
+  const savedPath = usePluginStore((s) => s.savedPath)
   const setSavedPath = usePluginStore((s) => s.setSavedPath)
   const setDirty = usePluginStore((s) => s.setDirty)
 
@@ -19,15 +21,26 @@ export function CodePreview() {
   const theme = useSettingsStore((s) => s.theme)
 
   const [copied, setCopied] = useState(false)
+  const [rawMode, setRawMode] = useState(false)
+  const [showDiff, setShowDiff] = useState(false)
+  const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
+
+  const hasRawSource = Boolean(plugin.rawSource)
+  const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
 
   const code = useMemo(() => {
     try {
+      if (rawMode && hasRawSource) {
+        return generateRawMode(plugin)
+      }
       return generatePlugin(plugin)
     } catch (e) {
       console.error('Code generation error:', e)
       return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
     }
-  }, [plugin])
+  }, [plugin, rawMode, hasRawSource])
 
   const validation = useMemo(() => {
     try {
@@ -38,6 +51,18 @@ export function CodePreview() {
     }
   }, [plugin])
 
+  // Close export menu on outside click
+  useEffect(() => {
+    if (!exportMenuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [exportMenuOpen])
+
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(code)
     setCopied(true)
@@ -46,7 +71,6 @@ export function CodePreview() {
 
   const handleExport = useCallback(async () => {
     if (!project) {
-      // Use save dialog if no project
       const filePath = await window.api.dialog.saveFile({
         defaultPath: `${plugin.meta.name || 'NewPlugin'}.js`,
         filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
@@ -65,7 +89,6 @@ export function CodePreview() {
       return
     }
 
-    // Save to project plugins folder
     const filename = `${plugin.meta.name || 'NewPlugin'}.js`
     try {
       const result = await window.api.plugin.save(project.path, filename, code)
@@ -77,6 +100,61 @@ export function CodePreview() {
       console.error('Failed to save plugin:', error)
     }
   }, [code, plugin.meta.name, project, setSavedPath, setDirty])
+
+  const handleDiffToggle = useCallback(async () => {
+    if (showDiff) {
+      setShowDiff(false)
+      return
+    }
+
+    // Try to load on-disk version
+    try {
+      if (savedPath) {
+        const diskCode = await window.api.plugin.readByPath(savedPath)
+        setOnDiskCode(diskCode)
+      } else if (plugin.rawSource) {
+        setOnDiskCode(plugin.rawSource)
+      }
+      setShowDiff(true)
+    } catch (error) {
+      console.error('Failed to load on-disk version:', error)
+    }
+  }, [showDiff, savedPath, plugin.rawSource])
+
+  const handleExportFormat = useCallback(async (format: 'readme' | 'dts' | 'plugins-json') => {
+    setExportMenuOpen(false)
+
+    let content: string
+    let defaultName: string
+    let filters: { name: string; extensions: string[] }[]
+
+    switch (format) {
+      case 'readme':
+        content = generateReadme(plugin)
+        defaultName = `${plugin.meta.name || 'NewPlugin'}_README.md`
+        filters = [{ name: 'Markdown Files', extensions: ['md'] }]
+        break
+      case 'dts':
+        content = generateTypeDeclaration(plugin)
+        defaultName = `${plugin.meta.name || 'NewPlugin'}.d.ts`
+        filters = [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }]
+        break
+      case 'plugins-json':
+        content = generatePluginsJsonEntry(plugin)
+        defaultName = `${plugin.meta.name || 'NewPlugin'}_plugins-entry.json`
+        filters = [{ name: 'JSON Files', extensions: ['json'] }]
+        break
+    }
+
+    const filePath = await window.api.dialog.saveFile({ defaultPath: defaultName, filters })
+    if (filePath) {
+      try {
+        await window.api.plugin.saveToPath(filePath, content)
+      } catch (error) {
+        console.error('Failed to export:', error)
+      }
+    }
+  }, [plugin])
 
   return (
     <div className="flex h-full flex-col">
@@ -96,6 +174,36 @@ export function CodePreview() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant={rawMode && hasRawSource ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setRawMode(!rawMode)}
+            disabled={!hasRawSource}
+            title={
+              hasRawSource
+                ? 'Raw mode: regenerate headers only, preserve original code body'
+                : 'Raw mode unavailable: plugin was not imported from a file'
+            }
+          >
+            <FileCode2 className="mr-1 h-4 w-4" />
+            Raw
+          </Button>
+
+          <Button
+            variant={showDiff ? 'default' : 'outline'}
+            size="sm"
+            onClick={handleDiffToggle}
+            disabled={!hasSavedVersion}
+            title={
+              hasSavedVersion
+                ? 'Compare generated output with saved file'
+                : 'Diff unavailable: no saved version to compare'
+            }
+          >
+            <GitCompare className="mr-1 h-4 w-4" />
+            Diff
+          </Button>
+
           <Button variant="outline" size="sm" onClick={handleCopy}>
             {copied ? (
               <>
@@ -114,6 +222,45 @@ export function CodePreview() {
             <Download className="mr-1 h-4 w-4" />
             Export
           </Button>
+
+          {/* Export formats dropdown */}
+          <div className="relative" ref={exportMenuRef}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-1.5"
+              onClick={() => setExportMenuOpen(!exportMenuOpen)}
+              title="Export in other formats"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+
+            {exportMenuOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-popover p-1 shadow-md">
+                <button
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => handleExportFormat('readme')}
+                >
+                  <FileText className="h-4 w-4" />
+                  Export README.md
+                </button>
+                <button
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => handleExportFormat('dts')}
+                >
+                  <FileType className="h-4 w-4" />
+                  Export .d.ts
+                </button>
+                <button
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  onClick={() => handleExportFormat('plugins-json')}
+                >
+                  <FileJson className="h-4 w-4" />
+                  Export plugins.json entry
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -129,22 +276,26 @@ export function CodePreview() {
       )}
 
       <div className="flex-1">
-        <Editor
-          height="100%"
-          language="javascript"
-          value={code}
-          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-          options={{
-            readOnly: true,
-            minimap: { enabled: editorMinimap },
-            fontSize: editorFontSize,
-            lineNumbers: editorLineNumbers ? 'on' : 'off',
-            scrollBeyondLastLine: false,
-            wordWrap: editorWordWrap ? 'on' : 'off',
-            automaticLayout: true,
-            padding: { top: 16, bottom: 16 }
-          }}
-        />
+        {showDiff && onDiskCode !== null ? (
+          <DiffView original={onDiskCode} modified={code} />
+        ) : (
+          <Editor
+            height="100%"
+            language="javascript"
+            value={code}
+            theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+            options={{
+              readOnly: true,
+              minimap: { enabled: editorMinimap },
+              fontSize: editorFontSize,
+              lineNumbers: editorLineNumbers ? 'on' : 'off',
+              scrollBeyondLastLine: false,
+              wordWrap: editorWordWrap ? 'on' : 'off',
+              automaticLayout: true,
+              padding: { top: 16, bottom: 16 }
+            }}
+          />
+        )}
       </div>
     </div>
   )
