@@ -50,7 +50,7 @@ import {
   type TemplateCategory,
   type TemplateField
 } from '../../lib/generator/templates'
-import { getMethodOptions, getClassesGrouped } from '../../lib/generator/class-registry'
+import { getClassesGrouped, getClassMethods } from '../../lib/generator/class-registry'
 import { useTemplateStore } from '../../stores'
 
 // Import templates to register them
@@ -255,21 +255,39 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     return getTemplate(selectedTemplateId)
   }, [selectedTemplateId])
 
-  // Get class options grouped by category
+  // Get class options grouped by category, sorted by popularity (descending) then name
   const classOptionsGrouped = useMemo(() => {
     const grouped = getClassesGrouped()
     return Object.entries(grouped).map(([category, classes]) => ({
       category,
       label: category.charAt(0).toUpperCase() + category.slice(1),
-      options: classes.map((c) => ({ value: c.name, label: c.name }))
+      options: [...classes]
+        .sort((a, b) => {
+          const popA = (a as unknown as { popularity?: number }).popularity ?? 0
+          const popB = (b as unknown as { popularity?: number }).popularity ?? 0
+          if (popB !== popA) return popB - popA
+          return a.name.localeCompare(b.name)
+        })
+        .map((c) => ({ value: c.name, label: c.name }))
     }))
   }, [])
 
-  // Get method options for selected class
+  // Get method options for selected class, sorted by popularity (descending) then name
   const methodOptions = useMemo(() => {
     const className = fieldValues.className as string
     if (!className) return []
-    return getMethodOptions(className)
+    const methods = getClassMethods(className)
+    return [...methods]
+      .sort((a, b) => {
+        const popA = (a as unknown as { popularity?: number }).popularity ?? 0
+        const popB = (b as unknown as { popularity?: number }).popularity ?? 0
+        if (popB !== popA) return popB - popA
+        return a.name.localeCompare(b.name)
+      })
+      .map((method) => ({
+        value: method.name,
+        label: `${method.name}(${method.params.join(', ')})`
+      }))
   }, [fieldValues.className])
 
   // Update preview when template or field values change

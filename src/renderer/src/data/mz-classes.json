@@ -5,13 +5,72 @@
     "category": "core",
     "description": "Represents a bitmap image for drawing operations",
     "methods": [
-      { "name": "initialize", "params": ["width", "height"], "description": "Creates a new bitmap" },
-      { "name": "load", "params": ["url"], "description": "Loads an image from URL" },
-      { "name": "clear", "params": [], "description": "Clears the entire bitmap" },
-      { "name": "fillRect", "params": ["x", "y", "width", "height", "color"], "description": "Fills a rectangle with color" },
-      { "name": "drawText", "params": ["text", "x", "y", "maxWidth", "lineHeight", "align"], "description": "Draws text on the bitmap" },
-      { "name": "blt", "params": ["source", "sx", "sy", "sw", "sh", "dx", "dy", "dw", "dh"], "description": "Block transfer from another bitmap" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "width",
+          "height"
+        ],
+        "description": "Creates a new bitmap",
+        "popularity": 1
+      },
+      {
+        "name": "load",
+        "params": [
+          "url"
+        ],
+        "description": "Loads an image from URL",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the entire bitmap",
+        "popularity": 0
+      },
+      {
+        "name": "fillRect",
+        "params": [
+          "x",
+          "y",
+          "width",
+          "height",
+          "color"
+        ],
+        "description": "Fills a rectangle with color",
+        "popularity": 0
+      },
+      {
+        "name": "drawText",
+        "params": [
+          "text",
+          "x",
+          "y",
+          "maxWidth",
+          "lineHeight",
+          "align"
+        ],
+        "description": "Draws text on the bitmap",
+        "popularity": 1
+      },
+      {
+        "name": "blt",
+        "params": [
+          "source",
+          "sx",
+          "sy",
+          "sw",
+          "sh",
+          "dx",
+          "dy",
+          "dw",
+          "dh"
+        ],
+        "description": "Block transfer from another bitmap",
+        "popularity": 1
+      }
+    ],
+    "popularity": 9
   },
   "Graphics": {
     "name": "Graphics",
@@ -19,12 +78,43 @@
     "category": "core",
     "description": "Static class for graphics rendering and screen management",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the graphics system" },
-      { "name": "setStage", "params": ["stage"], "description": "Sets the current stage" },
-      { "name": "startGameLoop", "params": [], "description": "Starts the game loop" },
-      { "name": "render", "params": [], "description": "Renders the current stage" },
-      { "name": "resize", "params": ["width", "height"], "description": "Resizes the game screen" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the graphics system",
+        "popularity": 0
+      },
+      {
+        "name": "setStage",
+        "params": [
+          "stage"
+        ],
+        "description": "Sets the current stage",
+        "popularity": 0
+      },
+      {
+        "name": "startGameLoop",
+        "params": [],
+        "description": "Starts the game loop",
+        "popularity": 0
+      },
+      {
+        "name": "render",
+        "params": [],
+        "description": "Renders the current stage",
+        "popularity": 0
+      },
+      {
+        "name": "resize",
+        "params": [
+          "width",
+          "height"
+        ],
+        "description": "Resizes the game screen",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Input": {
     "name": "Input",
@@ -32,12 +122,44 @@
     "category": "core",
     "description": "Static class for handling keyboard and gamepad input",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the input system" },
-      { "name": "update", "params": [], "description": "Updates input state each frame" },
-      { "name": "isPressed", "params": ["keyName"], "description": "Checks if key is currently pressed" },
-      { "name": "isTriggered", "params": ["keyName"], "description": "Checks if key was just pressed" },
-      { "name": "isRepeated", "params": ["keyName"], "description": "Checks if key is in repeat state" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the input system",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates input state each frame",
+        "popularity": 0
+      },
+      {
+        "name": "isPressed",
+        "params": [
+          "keyName"
+        ],
+        "description": "Checks if key is currently pressed",
+        "popularity": 0
+      },
+      {
+        "name": "isTriggered",
+        "params": [
+          "keyName"
+        ],
+        "description": "Checks if key was just pressed",
+        "popularity": 0
+      },
+      {
+        "name": "isRepeated",
+        "params": [
+          "keyName"
+        ],
+        "description": "Checks if key is in repeat state",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "TouchInput": {
     "name": "TouchInput",
@@ -45,12 +167,38 @@
     "category": "core",
     "description": "Static class for handling mouse and touch input",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes touch input system" },
-      { "name": "update", "params": [], "description": "Updates touch state each frame" },
-      { "name": "isPressed", "params": [], "description": "Checks if screen is being touched" },
-      { "name": "isTriggered", "params": [], "description": "Checks if touch just started" },
-      { "name": "isReleased", "params": [], "description": "Checks if touch just ended" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes touch input system",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates touch state each frame",
+        "popularity": 0
+      },
+      {
+        "name": "isPressed",
+        "params": [],
+        "description": "Checks if screen is being touched",
+        "popularity": 0
+      },
+      {
+        "name": "isTriggered",
+        "params": [],
+        "description": "Checks if touch just started",
+        "popularity": 0
+      },
+      {
+        "name": "isReleased",
+        "params": [],
+        "description": "Checks if touch just ended",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "JsonEx": {
     "name": "JsonEx",
@@ -58,10 +206,32 @@
     "category": "core",
     "description": "Static class for JSON serialization with circular reference support",
     "methods": [
-      { "name": "stringify", "params": ["object"], "description": "Converts object to JSON string" },
-      { "name": "parse", "params": ["json"], "description": "Parses JSON string to object" },
-      { "name": "makeDeepCopy", "params": ["object"], "description": "Creates a deep copy of object" }
-    ]
+      {
+        "name": "stringify",
+        "params": [
+          "object"
+        ],
+        "description": "Converts object to JSON string",
+        "popularity": 0
+      },
+      {
+        "name": "parse",
+        "params": [
+          "json"
+        ],
+        "description": "Parses JSON string to object",
+        "popularity": 0
+      },
+      {
+        "name": "makeDeepCopy",
+        "params": [
+          "object"
+        ],
+        "description": "Creates a deep copy of object",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Utils": {
     "name": "Utils",
@@ -69,12 +239,42 @@
     "category": "core",
     "description": "Static class with utility functions",
     "methods": [
-      { "name": "isNwjs", "params": [], "description": "Checks if running in NW.js" },
-      { "name": "isMobileDevice", "params": [], "description": "Checks if on mobile device" },
-      { "name": "canPlayOgg", "params": [], "description": "Checks OGG audio support" },
-      { "name": "canPlayWebm", "params": [], "description": "Checks WebM video support" },
-      { "name": "rgbToCssColor", "params": ["r", "g", "b"], "description": "Converts RGB to CSS color string" }
-    ]
+      {
+        "name": "isNwjs",
+        "params": [],
+        "description": "Checks if running in NW.js",
+        "popularity": 0
+      },
+      {
+        "name": "isMobileDevice",
+        "params": [],
+        "description": "Checks if on mobile device",
+        "popularity": 0
+      },
+      {
+        "name": "canPlayOgg",
+        "params": [],
+        "description": "Checks OGG audio support",
+        "popularity": 0
+      },
+      {
+        "name": "canPlayWebm",
+        "params": [],
+        "description": "Checks WebM video support",
+        "popularity": 0
+      },
+      {
+        "name": "rgbToCssColor",
+        "params": [
+          "r",
+          "g",
+          "b"
+        ],
+        "description": "Converts RGB to CSS color string",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Point": {
     "name": "Point",
@@ -83,8 +283,17 @@
     "parent": "PIXI.Point",
     "description": "Represents a point in 2D space",
     "methods": [
-      { "name": "initialize", "params": ["x", "y"], "description": "Creates a new point" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Creates a new point",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Rectangle": {
     "name": "Rectangle",
@@ -93,8 +302,19 @@
     "parent": "PIXI.Rectangle",
     "description": "Represents a rectangle with position and size",
     "methods": [
-      { "name": "initialize", "params": ["x", "y", "width", "height"], "description": "Creates a new rectangle" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "description": "Creates a new rectangle",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Stage": {
     "name": "Stage",
@@ -103,9 +323,20 @@
     "parent": "PIXI.Container",
     "description": "Root container for the display tree",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the stage" },
-      { "name": "destroy", "params": [], "description": "Destroys the stage" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the stage",
+        "popularity": 0
+      },
+      {
+        "name": "destroy",
+        "params": [],
+        "description": "Destroys the stage",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Sprite": {
     "name": "Sprite",
@@ -114,13 +345,54 @@
     "parent": "PIXI.Sprite",
     "description": "Basic sprite class for displaying images",
     "methods": [
-      { "name": "initialize", "params": ["bitmap"], "description": "Creates sprite with optional bitmap" },
-      { "name": "update", "params": [], "description": "Updates the sprite each frame" },
-      { "name": "move", "params": ["x", "y"], "description": "Moves sprite to position" },
-      { "name": "setFrame", "params": ["x", "y", "width", "height"], "description": "Sets the source rectangle" },
-      { "name": "show", "params": [], "description": "Makes sprite visible" },
-      { "name": "hide", "params": [], "description": "Hides the sprite" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "bitmap"
+        ],
+        "description": "Creates sprite with optional bitmap",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates the sprite each frame",
+        "popularity": 0
+      },
+      {
+        "name": "move",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Moves sprite to position",
+        "popularity": 0
+      },
+      {
+        "name": "setFrame",
+        "params": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "description": "Sets the source rectangle",
+        "popularity": 0
+      },
+      {
+        "name": "show",
+        "params": [],
+        "description": "Makes sprite visible",
+        "popularity": 0
+      },
+      {
+        "name": "hide",
+        "params": [],
+        "description": "Hides the sprite",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Tilemap": {
     "name": "Tilemap",
@@ -129,11 +401,36 @@
     "parent": "PIXI.Container",
     "description": "Displays tile-based maps",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the tilemap" },
-      { "name": "update", "params": [], "description": "Updates the tilemap each frame" },
-      { "name": "refresh", "params": [], "description": "Refreshes the tilemap display" },
-      { "name": "setData", "params": ["width", "height", "data"], "description": "Sets the map data" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the tilemap",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates the tilemap each frame",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes the tilemap display",
+        "popularity": 0
+      },
+      {
+        "name": "setData",
+        "params": [
+          "width",
+          "height",
+          "data"
+        ],
+        "description": "Sets the map data",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window": {
     "name": "Window",
@@ -142,13 +439,51 @@
     "parent": "PIXI.Container",
     "description": "Base class for game windows with frame and contents",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the window" },
-      { "name": "update", "params": [], "description": "Updates the window each frame" },
-      { "name": "move", "params": ["x", "y", "width", "height"], "description": "Moves and resizes window" },
-      { "name": "setBackgroundType", "params": ["type"], "description": "Sets background transparency" },
-      { "name": "show", "params": [], "description": "Shows the window" },
-      { "name": "hide", "params": [], "description": "Hides the window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the window",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates the window each frame",
+        "popularity": 1
+      },
+      {
+        "name": "move",
+        "params": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "description": "Moves and resizes window",
+        "popularity": 0
+      },
+      {
+        "name": "setBackgroundType",
+        "params": [
+          "type"
+        ],
+        "description": "Sets background transparency",
+        "popularity": 0
+      },
+      {
+        "name": "show",
+        "params": [],
+        "description": "Shows the window",
+        "popularity": 0
+      },
+      {
+        "name": "hide",
+        "params": [],
+        "description": "Hides the window",
+        "popularity": 0
+      }
+    ],
+    "popularity": 4
   },
   "DataManager": {
     "name": "DataManager",
@@ -156,14 +491,56 @@
     "category": "manager",
     "description": "Static class for managing game data loading and saving",
     "methods": [
-      { "name": "loadDatabase", "params": [], "description": "Loads all database files" },
-      { "name": "createGameObjects", "params": [], "description": "Creates new game objects" },
-      { "name": "setupNewGame", "params": [], "description": "Sets up a new game" },
-      { "name": "saveGame", "params": ["savefileId"], "description": "Saves game to slot" },
-      { "name": "loadGame", "params": ["savefileId"], "description": "Loads game from slot" },
-      { "name": "makeSaveContents", "params": [], "description": "Creates save data object" },
-      { "name": "extractSaveContents", "params": ["contents"], "description": "Restores from save data" }
-    ]
+      {
+        "name": "loadDatabase",
+        "params": [],
+        "description": "Loads all database files",
+        "popularity": 0
+      },
+      {
+        "name": "createGameObjects",
+        "params": [],
+        "description": "Creates new game objects",
+        "popularity": 0
+      },
+      {
+        "name": "setupNewGame",
+        "params": [],
+        "description": "Sets up a new game",
+        "popularity": 0
+      },
+      {
+        "name": "saveGame",
+        "params": [
+          "savefileId"
+        ],
+        "description": "Saves game to slot",
+        "popularity": 0
+      },
+      {
+        "name": "loadGame",
+        "params": [
+          "savefileId"
+        ],
+        "description": "Loads game from slot",
+        "popularity": 0
+      },
+      {
+        "name": "makeSaveContents",
+        "params": [],
+        "description": "Creates save data object",
+        "popularity": 0
+      },
+      {
+        "name": "extractSaveContents",
+        "params": [
+          "contents"
+        ],
+        "description": "Restores from save data",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "ConfigManager": {
     "name": "ConfigManager",
@@ -171,11 +548,34 @@
     "category": "manager",
     "description": "Static class for managing game configuration",
     "methods": [
-      { "name": "load", "params": [], "description": "Loads config from storage" },
-      { "name": "save", "params": [], "description": "Saves config to storage" },
-      { "name": "makeData", "params": [], "description": "Creates config data object" },
-      { "name": "applyData", "params": ["config"], "description": "Applies config data" }
-    ]
+      {
+        "name": "load",
+        "params": [],
+        "description": "Loads config from storage",
+        "popularity": 0
+      },
+      {
+        "name": "save",
+        "params": [],
+        "description": "Saves config to storage",
+        "popularity": 0
+      },
+      {
+        "name": "makeData",
+        "params": [],
+        "description": "Creates config data object",
+        "popularity": 0
+      },
+      {
+        "name": "applyData",
+        "params": [
+          "config"
+        ],
+        "description": "Applies config data",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "StorageManager": {
     "name": "StorageManager",
@@ -183,11 +583,41 @@
     "category": "manager",
     "description": "Static class for managing save file storage",
     "methods": [
-      { "name": "saveObject", "params": ["saveName", "object"], "description": "Saves object to storage" },
-      { "name": "loadObject", "params": ["saveName"], "description": "Loads object from storage" },
-      { "name": "exists", "params": ["saveName"], "description": "Checks if save exists" },
-      { "name": "remove", "params": ["saveName"], "description": "Removes a save file" }
-    ]
+      {
+        "name": "saveObject",
+        "params": [
+          "saveName",
+          "object"
+        ],
+        "description": "Saves object to storage",
+        "popularity": 0
+      },
+      {
+        "name": "loadObject",
+        "params": [
+          "saveName"
+        ],
+        "description": "Loads object from storage",
+        "popularity": 0
+      },
+      {
+        "name": "exists",
+        "params": [
+          "saveName"
+        ],
+        "description": "Checks if save exists",
+        "popularity": 0
+      },
+      {
+        "name": "remove",
+        "params": [
+          "saveName"
+        ],
+        "description": "Removes a save file",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "SceneManager": {
     "name": "SceneManager",
@@ -195,13 +625,52 @@
     "category": "manager",
     "description": "Static class for managing scene transitions",
     "methods": [
-      { "name": "run", "params": ["sceneClass"], "description": "Runs the game starting with scene" },
-      { "name": "initialize", "params": [], "description": "Initializes the scene manager" },
-      { "name": "update", "params": ["deltaTime"], "description": "Updates current scene" },
-      { "name": "goto", "params": ["sceneClass"], "description": "Transitions to new scene" },
-      { "name": "push", "params": ["sceneClass"], "description": "Pushes scene onto stack" },
-      { "name": "pop", "params": [], "description": "Pops scene from stack" }
-    ]
+      {
+        "name": "run",
+        "params": [
+          "sceneClass"
+        ],
+        "description": "Runs the game starting with scene",
+        "popularity": 0
+      },
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the scene manager",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [
+          "deltaTime"
+        ],
+        "description": "Updates current scene",
+        "popularity": 0
+      },
+      {
+        "name": "goto",
+        "params": [
+          "sceneClass"
+        ],
+        "description": "Transitions to new scene",
+        "popularity": 0
+      },
+      {
+        "name": "push",
+        "params": [
+          "sceneClass"
+        ],
+        "description": "Pushes scene onto stack",
+        "popularity": 0
+      },
+      {
+        "name": "pop",
+        "params": [],
+        "description": "Pops scene from stack",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "BattleManager": {
     "name": "BattleManager",
@@ -209,14 +678,58 @@
     "category": "manager",
     "description": "Static class for managing battle flow",
     "methods": [
-      { "name": "setup", "params": ["troopId", "canEscape", "canLose"], "description": "Sets up a battle" },
-      { "name": "initMembers", "params": [], "description": "Initializes battle members" },
-      { "name": "update", "params": ["timeActive"], "description": "Updates battle each frame" },
-      { "name": "startBattle", "params": [], "description": "Starts the battle" },
-      { "name": "processVictory", "params": [], "description": "Processes victory condition" },
-      { "name": "processDefeat", "params": [], "description": "Processes defeat condition" },
-      { "name": "endBattle", "params": ["result"], "description": "Ends the battle" }
-    ]
+      {
+        "name": "setup",
+        "params": [
+          "troopId",
+          "canEscape",
+          "canLose"
+        ],
+        "description": "Sets up a battle",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes battle members",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [
+          "timeActive"
+        ],
+        "description": "Updates battle each frame",
+        "popularity": 0
+      },
+      {
+        "name": "startBattle",
+        "params": [],
+        "description": "Starts the battle",
+        "popularity": 0
+      },
+      {
+        "name": "processVictory",
+        "params": [],
+        "description": "Processes victory condition",
+        "popularity": 0
+      },
+      {
+        "name": "processDefeat",
+        "params": [],
+        "description": "Processes defeat condition",
+        "popularity": 0
+      },
+      {
+        "name": "endBattle",
+        "params": [
+          "result"
+        ],
+        "description": "Ends the battle",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "AudioManager": {
     "name": "AudioManager",
@@ -224,13 +737,54 @@
     "category": "manager",
     "description": "Static class for playing audio",
     "methods": [
-      { "name": "playBgm", "params": ["bgm", "pos"], "description": "Plays background music" },
-      { "name": "playBgs", "params": ["bgs", "pos"], "description": "Plays background sound" },
-      { "name": "playMe", "params": ["me"], "description": "Plays music effect" },
-      { "name": "playSe", "params": ["se"], "description": "Plays sound effect" },
-      { "name": "stopBgm", "params": [], "description": "Stops background music" },
-      { "name": "stopAll", "params": [], "description": "Stops all audio" }
-    ]
+      {
+        "name": "playBgm",
+        "params": [
+          "bgm",
+          "pos"
+        ],
+        "description": "Plays background music",
+        "popularity": 0
+      },
+      {
+        "name": "playBgs",
+        "params": [
+          "bgs",
+          "pos"
+        ],
+        "description": "Plays background sound",
+        "popularity": 0
+      },
+      {
+        "name": "playMe",
+        "params": [
+          "me"
+        ],
+        "description": "Plays music effect",
+        "popularity": 0
+      },
+      {
+        "name": "playSe",
+        "params": [
+          "se"
+        ],
+        "description": "Plays sound effect",
+        "popularity": 0
+      },
+      {
+        "name": "stopBgm",
+        "params": [],
+        "description": "Stops background music",
+        "popularity": 0
+      },
+      {
+        "name": "stopAll",
+        "params": [],
+        "description": "Stops all audio",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "SoundManager": {
     "name": "SoundManager",
@@ -238,12 +792,40 @@
     "category": "manager",
     "description": "Static class for playing system sounds",
     "methods": [
-      { "name": "playSystemSound", "params": ["n"], "description": "Plays a system sound by index" },
-      { "name": "playCursor", "params": [], "description": "Plays cursor movement sound" },
-      { "name": "playOk", "params": [], "description": "Plays confirmation sound" },
-      { "name": "playCancel", "params": [], "description": "Plays cancel sound" },
-      { "name": "playBuzzer", "params": [], "description": "Plays buzzer sound" }
-    ]
+      {
+        "name": "playSystemSound",
+        "params": [
+          "n"
+        ],
+        "description": "Plays a system sound by index",
+        "popularity": 0
+      },
+      {
+        "name": "playCursor",
+        "params": [],
+        "description": "Plays cursor movement sound",
+        "popularity": 0
+      },
+      {
+        "name": "playOk",
+        "params": [],
+        "description": "Plays confirmation sound",
+        "popularity": 0
+      },
+      {
+        "name": "playCancel",
+        "params": [],
+        "description": "Plays cancel sound",
+        "popularity": 0
+      },
+      {
+        "name": "playBuzzer",
+        "params": [],
+        "description": "Plays buzzer sound",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "TextManager": {
     "name": "TextManager",
@@ -251,11 +833,40 @@
     "category": "manager",
     "description": "Static class for managing game text terms",
     "methods": [
-      { "name": "basic", "params": ["basicId"], "description": "Gets basic term by ID" },
-      { "name": "param", "params": ["paramId"], "description": "Gets parameter name" },
-      { "name": "command", "params": ["commandId"], "description": "Gets command name" },
-      { "name": "message", "params": ["messageId"], "description": "Gets message text" }
-    ]
+      {
+        "name": "basic",
+        "params": [
+          "basicId"
+        ],
+        "description": "Gets basic term by ID",
+        "popularity": 0
+      },
+      {
+        "name": "param",
+        "params": [
+          "paramId"
+        ],
+        "description": "Gets parameter name",
+        "popularity": 0
+      },
+      {
+        "name": "command",
+        "params": [
+          "commandId"
+        ],
+        "description": "Gets command name",
+        "popularity": 0
+      },
+      {
+        "name": "message",
+        "params": [
+          "messageId"
+        ],
+        "description": "Gets message text",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "ColorManager": {
     "name": "ColorManager",
@@ -263,12 +874,42 @@
     "category": "manager",
     "description": "Static class for managing colors",
     "methods": [
-      { "name": "loadWindowskin", "params": [], "description": "Loads the windowskin" },
-      { "name": "textColor", "params": ["n"], "description": "Gets text color by index" },
-      { "name": "normalColor", "params": [], "description": "Gets normal text color" },
-      { "name": "systemColor", "params": [], "description": "Gets system text color" },
-      { "name": "hpColor", "params": ["actor"], "description": "Gets HP gauge color" }
-    ]
+      {
+        "name": "loadWindowskin",
+        "params": [],
+        "description": "Loads the windowskin",
+        "popularity": 0
+      },
+      {
+        "name": "textColor",
+        "params": [
+          "n"
+        ],
+        "description": "Gets text color by index",
+        "popularity": 0
+      },
+      {
+        "name": "normalColor",
+        "params": [],
+        "description": "Gets normal text color",
+        "popularity": 0
+      },
+      {
+        "name": "systemColor",
+        "params": [],
+        "description": "Gets system text color",
+        "popularity": 0
+      },
+      {
+        "name": "hpColor",
+        "params": [
+          "actor"
+        ],
+        "description": "Gets HP gauge color",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "EffectManager": {
     "name": "EffectManager",
@@ -276,11 +917,34 @@
     "category": "manager",
     "description": "Static class for managing Effekseer effects",
     "methods": [
-      { "name": "load", "params": ["filename"], "description": "Loads an effect file" },
-      { "name": "startLoading", "params": [], "description": "Starts loading effects" },
-      { "name": "clear", "params": [], "description": "Clears loaded effects" },
-      { "name": "isReady", "params": [], "description": "Checks if effects are ready" }
-    ]
+      {
+        "name": "load",
+        "params": [
+          "filename"
+        ],
+        "description": "Loads an effect file",
+        "popularity": 0
+      },
+      {
+        "name": "startLoading",
+        "params": [],
+        "description": "Starts loading effects",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears loaded effects",
+        "popularity": 0
+      },
+      {
+        "name": "isReady",
+        "params": [],
+        "description": "Checks if effects are ready",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "ImageManager": {
     "name": "ImageManager",
@@ -288,13 +952,55 @@
     "category": "manager",
     "description": "Static class for loading and caching images",
     "methods": [
-      { "name": "loadBitmap", "params": ["folder", "filename"], "description": "Loads a bitmap from folder" },
-      { "name": "loadFace", "params": ["filename"], "description": "Loads a face image" },
-      { "name": "loadCharacter", "params": ["filename"], "description": "Loads a character image" },
-      { "name": "loadPicture", "params": ["filename"], "description": "Loads a picture" },
-      { "name": "loadSystem", "params": ["filename"], "description": "Loads a system image" },
-      { "name": "clear", "params": [], "description": "Clears the image cache" }
-    ]
+      {
+        "name": "loadBitmap",
+        "params": [
+          "folder",
+          "filename"
+        ],
+        "description": "Loads a bitmap from folder",
+        "popularity": 0
+      },
+      {
+        "name": "loadFace",
+        "params": [
+          "filename"
+        ],
+        "description": "Loads a face image",
+        "popularity": 0
+      },
+      {
+        "name": "loadCharacter",
+        "params": [
+          "filename"
+        ],
+        "description": "Loads a character image",
+        "popularity": 0
+      },
+      {
+        "name": "loadPicture",
+        "params": [
+          "filename"
+        ],
+        "description": "Loads a picture",
+        "popularity": 0
+      },
+      {
+        "name": "loadSystem",
+        "params": [
+          "filename"
+        ],
+        "description": "Loads a system image",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the image cache",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "PluginManager": {
     "name": "PluginManager",
@@ -302,11 +1008,45 @@
     "category": "manager",
     "description": "Static class for managing plugins",
     "methods": [
-      { "name": "setup", "params": ["plugins"], "description": "Sets up plugins list" },
-      { "name": "parameters", "params": ["name"], "description": "Gets plugin parameters" },
-      { "name": "registerCommand", "params": ["pluginName", "commandName", "func"], "description": "Registers plugin command" },
-      { "name": "callCommand", "params": ["self", "pluginName", "commandName", "args"], "description": "Calls a plugin command" }
-    ]
+      {
+        "name": "setup",
+        "params": [
+          "plugins"
+        ],
+        "description": "Sets up plugins list",
+        "popularity": 0
+      },
+      {
+        "name": "parameters",
+        "params": [
+          "name"
+        ],
+        "description": "Gets plugin parameters",
+        "popularity": 0
+      },
+      {
+        "name": "registerCommand",
+        "params": [
+          "pluginName",
+          "commandName",
+          "func"
+        ],
+        "description": "Registers plugin command",
+        "popularity": 0
+      },
+      {
+        "name": "callCommand",
+        "params": [
+          "self",
+          "pluginName",
+          "commandName",
+          "args"
+        ],
+        "description": "Calls a plugin command",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_Temp": {
     "name": "Game_Temp",
@@ -314,12 +1054,43 @@
     "category": "object",
     "description": "Temporary game data not saved",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes temporary data" },
-      { "name": "isPlaytest", "params": [], "description": "Checks if in playtest mode" },
-      { "name": "setDestination", "params": ["x", "y"], "description": "Sets player destination" },
-      { "name": "clearDestination", "params": [], "description": "Clears player destination" },
-      { "name": "reserveCommonEvent", "params": ["commonEventId"], "description": "Reserves common event" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes temporary data",
+        "popularity": 6
+      },
+      {
+        "name": "isPlaytest",
+        "params": [],
+        "description": "Checks if in playtest mode",
+        "popularity": 1
+      },
+      {
+        "name": "setDestination",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Sets player destination",
+        "popularity": 1
+      },
+      {
+        "name": "clearDestination",
+        "params": [],
+        "description": "Clears player destination",
+        "popularity": 1
+      },
+      {
+        "name": "reserveCommonEvent",
+        "params": [
+          "commonEventId"
+        ],
+        "description": "Reserves common event",
+        "popularity": 0
+      }
+    ],
+    "popularity": 10
   },
   "Game_System": {
     "name": "Game_System",
@@ -327,12 +1098,38 @@
     "category": "object",
     "description": "System data that gets saved",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes system data" },
-      { "name": "playtime", "params": [], "description": "Gets play time in seconds" },
-      { "name": "playtimeText", "params": [], "description": "Gets formatted play time" },
-      { "name": "saveBgm", "params": [], "description": "Saves current BGM" },
-      { "name": "replayBgm", "params": [], "description": "Replays saved BGM" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes system data",
+        "popularity": 16
+      },
+      {
+        "name": "playtime",
+        "params": [],
+        "description": "Gets play time in seconds",
+        "popularity": 0
+      },
+      {
+        "name": "playtimeText",
+        "params": [],
+        "description": "Gets formatted play time",
+        "popularity": 0
+      },
+      {
+        "name": "saveBgm",
+        "params": [],
+        "description": "Saves current BGM",
+        "popularity": 0
+      },
+      {
+        "name": "replayBgm",
+        "params": [],
+        "description": "Replays saved BGM",
+        "popularity": 0
+      }
+    ],
+    "popularity": 27
   },
   "Game_Timer": {
     "name": "Game_Timer",
@@ -340,12 +1137,42 @@
     "category": "object",
     "description": "Game timer functionality",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes timer" },
-      { "name": "update", "params": ["sceneActive"], "description": "Updates timer each frame" },
-      { "name": "start", "params": ["count"], "description": "Starts the timer" },
-      { "name": "stop", "params": [], "description": "Stops the timer" },
-      { "name": "isWorking", "params": [], "description": "Checks if timer is active" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes timer",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [
+          "sceneActive"
+        ],
+        "description": "Updates timer each frame",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [
+          "count"
+        ],
+        "description": "Starts the timer",
+        "popularity": 0
+      },
+      {
+        "name": "stop",
+        "params": [],
+        "description": "Stops the timer",
+        "popularity": 0
+      },
+      {
+        "name": "isWorking",
+        "params": [],
+        "description": "Checks if timer is active",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_Message": {
     "name": "Game_Message",
@@ -353,12 +1180,44 @@
     "category": "object",
     "description": "Message window state and content",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes message state" },
-      { "name": "clear", "params": [], "description": "Clears message content" },
-      { "name": "add", "params": ["text"], "description": "Adds text line" },
-      { "name": "setChoices", "params": ["choices", "defaultType", "cancelType"], "description": "Sets up choices" },
-      { "name": "isBusy", "params": [], "description": "Checks if message is showing" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes message state",
+        "popularity": 1
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears message content",
+        "popularity": 3
+      },
+      {
+        "name": "add",
+        "params": [
+          "text"
+        ],
+        "description": "Adds text line",
+        "popularity": 0
+      },
+      {
+        "name": "setChoices",
+        "params": [
+          "choices",
+          "defaultType",
+          "cancelType"
+        ],
+        "description": "Sets up choices",
+        "popularity": 0
+      },
+      {
+        "name": "isBusy",
+        "params": [],
+        "description": "Checks if message is showing",
+        "popularity": 2
+      }
+    ],
+    "popularity": 7
   },
   "Game_Switches": {
     "name": "Game_Switches",
@@ -366,11 +1225,37 @@
     "category": "object",
     "description": "Game switches container",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes switches" },
-      { "name": "clear", "params": [], "description": "Clears all switches" },
-      { "name": "value", "params": ["switchId"], "description": "Gets switch value" },
-      { "name": "setValue", "params": ["switchId", "value"], "description": "Sets switch value" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes switches",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears all switches",
+        "popularity": 0
+      },
+      {
+        "name": "value",
+        "params": [
+          "switchId"
+        ],
+        "description": "Gets switch value",
+        "popularity": 0
+      },
+      {
+        "name": "setValue",
+        "params": [
+          "switchId",
+          "value"
+        ],
+        "description": "Sets switch value",
+        "popularity": 1
+      }
+    ],
+    "popularity": 3
   },
   "Game_Variables": {
     "name": "Game_Variables",
@@ -378,11 +1263,37 @@
     "category": "object",
     "description": "Game variables container",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes variables" },
-      { "name": "clear", "params": [], "description": "Clears all variables" },
-      { "name": "value", "params": ["variableId"], "description": "Gets variable value" },
-      { "name": "setValue", "params": ["variableId", "value"], "description": "Sets variable value" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes variables",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears all variables",
+        "popularity": 0
+      },
+      {
+        "name": "value",
+        "params": [
+          "variableId"
+        ],
+        "description": "Gets variable value",
+        "popularity": 0
+      },
+      {
+        "name": "setValue",
+        "params": [
+          "variableId",
+          "value"
+        ],
+        "description": "Sets variable value",
+        "popularity": 3
+      }
+    ],
+    "popularity": 4
   },
   "Game_SelfSwitches": {
     "name": "Game_SelfSwitches",
@@ -390,11 +1301,37 @@
     "category": "object",
     "description": "Self switches for map events",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes self switches" },
-      { "name": "clear", "params": [], "description": "Clears all self switches" },
-      { "name": "value", "params": ["key"], "description": "Gets self switch value" },
-      { "name": "setValue", "params": ["key", "value"], "description": "Sets self switch value" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes self switches",
+        "popularity": 1
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears all self switches",
+        "popularity": 0
+      },
+      {
+        "name": "value",
+        "params": [
+          "key"
+        ],
+        "description": "Gets self switch value",
+        "popularity": 0
+      },
+      {
+        "name": "setValue",
+        "params": [
+          "key",
+          "value"
+        ],
+        "description": "Sets self switch value",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Game_Screen": {
     "name": "Game_Screen",
@@ -402,14 +1339,61 @@
     "category": "object",
     "description": "Screen effects like tint and shake",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes screen effects" },
-      { "name": "clear", "params": [], "description": "Clears all effects" },
-      { "name": "update", "params": [], "description": "Updates effects each frame" },
-      { "name": "startFadeIn", "params": ["duration"], "description": "Starts fade in" },
-      { "name": "startFadeOut", "params": ["duration"], "description": "Starts fade out" },
-      { "name": "startTint", "params": ["tone", "duration"], "description": "Starts screen tint" },
-      { "name": "startShake", "params": ["power", "speed", "duration"], "description": "Starts screen shake" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes screen effects",
+        "popularity": 3
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears all effects",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates effects each frame",
+        "popularity": 3
+      },
+      {
+        "name": "startFadeIn",
+        "params": [
+          "duration"
+        ],
+        "description": "Starts fade in",
+        "popularity": 0
+      },
+      {
+        "name": "startFadeOut",
+        "params": [
+          "duration"
+        ],
+        "description": "Starts fade out",
+        "popularity": 0
+      },
+      {
+        "name": "startTint",
+        "params": [
+          "tone",
+          "duration"
+        ],
+        "description": "Starts screen tint",
+        "popularity": 0
+      },
+      {
+        "name": "startShake",
+        "params": [
+          "power",
+          "speed",
+          "duration"
+        ],
+        "description": "Starts screen shake",
+        "popularity": 0
+      }
+    ],
+    "popularity": 13
   },
   "Game_Picture": {
     "name": "Game_Picture",
@@ -417,12 +1401,57 @@
     "category": "object",
     "description": "Picture display data",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes picture data" },
-      { "name": "show", "params": ["name", "origin", "x", "y", "scaleX", "scaleY", "opacity", "blendMode"], "description": "Shows a picture" },
-      { "name": "move", "params": ["origin", "x", "y", "scaleX", "scaleY", "opacity", "blendMode", "duration", "easingType"], "description": "Moves a picture" },
-      { "name": "erase", "params": [], "description": "Erases the picture" },
-      { "name": "update", "params": [], "description": "Updates picture animation" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes picture data",
+        "popularity": 2
+      },
+      {
+        "name": "show",
+        "params": [
+          "name",
+          "origin",
+          "x",
+          "y",
+          "scaleX",
+          "scaleY",
+          "opacity",
+          "blendMode"
+        ],
+        "description": "Shows a picture",
+        "popularity": 3
+      },
+      {
+        "name": "move",
+        "params": [
+          "origin",
+          "x",
+          "y",
+          "scaleX",
+          "scaleY",
+          "opacity",
+          "blendMode",
+          "duration",
+          "easingType"
+        ],
+        "description": "Moves a picture",
+        "popularity": 1
+      },
+      {
+        "name": "erase",
+        "params": [],
+        "description": "Erases the picture",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates picture animation",
+        "popularity": 3
+      }
+    ],
+    "popularity": 9
   },
   "Game_Item": {
     "name": "Game_Item",
@@ -430,13 +1459,46 @@
     "category": "object",
     "description": "Wrapper for items, weapons, armors, skills",
     "methods": [
-      { "name": "initialize", "params": ["item"], "description": "Creates game item wrapper" },
-      { "name": "isSkill", "params": [], "description": "Checks if skill" },
-      { "name": "isItem", "params": [], "description": "Checks if item" },
-      { "name": "isWeapon", "params": [], "description": "Checks if weapon" },
-      { "name": "isArmor", "params": [], "description": "Checks if armor" },
-      { "name": "object", "params": [], "description": "Gets the database object" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "item"
+        ],
+        "description": "Creates game item wrapper",
+        "popularity": 0
+      },
+      {
+        "name": "isSkill",
+        "params": [],
+        "description": "Checks if skill",
+        "popularity": 0
+      },
+      {
+        "name": "isItem",
+        "params": [],
+        "description": "Checks if item",
+        "popularity": 0
+      },
+      {
+        "name": "isWeapon",
+        "params": [],
+        "description": "Checks if weapon",
+        "popularity": 0
+      },
+      {
+        "name": "isArmor",
+        "params": [],
+        "description": "Checks if armor",
+        "popularity": 0
+      },
+      {
+        "name": "object",
+        "params": [],
+        "description": "Gets the database object",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_Action": {
     "name": "Game_Action",
@@ -444,13 +1506,56 @@
     "category": "object",
     "description": "Battle action with target and effects",
     "methods": [
-      { "name": "initialize", "params": ["subject", "forcing"], "description": "Creates battle action" },
-      { "name": "clear", "params": [], "description": "Clears the action" },
-      { "name": "setSkill", "params": ["skillId"], "description": "Sets action to skill" },
-      { "name": "setItem", "params": ["itemId"], "description": "Sets action to item" },
-      { "name": "apply", "params": ["target"], "description": "Applies action to target" },
-      { "name": "makeDamageValue", "params": ["target", "critical"], "description": "Calculates damage value" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "subject",
+          "forcing"
+        ],
+        "description": "Creates battle action",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the action",
+        "popularity": 0
+      },
+      {
+        "name": "setSkill",
+        "params": [
+          "skillId"
+        ],
+        "description": "Sets action to skill",
+        "popularity": 0
+      },
+      {
+        "name": "setItem",
+        "params": [
+          "itemId"
+        ],
+        "description": "Sets action to item",
+        "popularity": 0
+      },
+      {
+        "name": "apply",
+        "params": [
+          "target"
+        ],
+        "description": "Applies action to target",
+        "popularity": 1
+      },
+      {
+        "name": "makeDamageValue",
+        "params": [
+          "target",
+          "critical"
+        ],
+        "description": "Calculates damage value",
+        "popularity": 1
+      }
+    ],
+    "popularity": 3
   },
   "Game_ActionResult": {
     "name": "Game_ActionResult",
@@ -458,10 +1563,26 @@
     "category": "object",
     "description": "Result of a battle action",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes action result" },
-      { "name": "clear", "params": [], "description": "Clears the result" },
-      { "name": "isHit", "params": [], "description": "Checks if action hit" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes action result",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the result",
+        "popularity": 0
+      },
+      {
+        "name": "isHit",
+        "params": [],
+        "description": "Checks if action hit",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Game_BattlerBase": {
     "name": "Game_BattlerBase",
@@ -469,14 +1590,58 @@
     "category": "object",
     "description": "Base class for battler stats and states",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes battler base" },
-      { "name": "initMembers", "params": [], "description": "Initializes member variables" },
-      { "name": "param", "params": ["paramId"], "description": "Gets parameter value" },
-      { "name": "paramBase", "params": ["paramId"], "description": "Gets base parameter" },
-      { "name": "paramPlus", "params": ["paramId"], "description": "Gets parameter bonus" },
-      { "name": "isStateAffected", "params": ["stateId"], "description": "Checks if state is active" },
-      { "name": "canMove", "params": [], "description": "Checks if can act" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes battler base",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes member variables",
+        "popularity": 1
+      },
+      {
+        "name": "param",
+        "params": [
+          "paramId"
+        ],
+        "description": "Gets parameter value",
+        "popularity": 0
+      },
+      {
+        "name": "paramBase",
+        "params": [
+          "paramId"
+        ],
+        "description": "Gets base parameter",
+        "popularity": 0
+      },
+      {
+        "name": "paramPlus",
+        "params": [
+          "paramId"
+        ],
+        "description": "Gets parameter bonus",
+        "popularity": 0
+      },
+      {
+        "name": "isStateAffected",
+        "params": [
+          "stateId"
+        ],
+        "description": "Checks if state is active",
+        "popularity": 0
+      },
+      {
+        "name": "canMove",
+        "params": [],
+        "description": "Checks if can act",
+        "popularity": 0
+      }
+    ],
+    "popularity": 7
   },
   "Game_Battler": {
     "name": "Game_Battler",
@@ -485,14 +1650,60 @@
     "parent": "Game_BattlerBase",
     "description": "Battler with HP/MP and battle actions",
     "methods": [
-      { "name": "initMembers", "params": [], "description": "Initializes battler members" },
-      { "name": "refresh", "params": [], "description": "Refreshes battler state" },
-      { "name": "addState", "params": ["stateId"], "description": "Adds a state" },
-      { "name": "removeState", "params": ["stateId"], "description": "Removes a state" },
-      { "name": "gainHp", "params": ["value"], "description": "Changes HP" },
-      { "name": "gainMp", "params": ["value"], "description": "Changes MP" },
-      { "name": "performAction", "params": ["action"], "description": "Performs battle action" }
-    ]
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes battler members",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes battler state",
+        "popularity": 0
+      },
+      {
+        "name": "addState",
+        "params": [
+          "stateId"
+        ],
+        "description": "Adds a state",
+        "popularity": 0
+      },
+      {
+        "name": "removeState",
+        "params": [
+          "stateId"
+        ],
+        "description": "Removes a state",
+        "popularity": 0
+      },
+      {
+        "name": "gainHp",
+        "params": [
+          "value"
+        ],
+        "description": "Changes HP",
+        "popularity": 0
+      },
+      {
+        "name": "gainMp",
+        "params": [
+          "value"
+        ],
+        "description": "Changes MP",
+        "popularity": 0
+      },
+      {
+        "name": "performAction",
+        "params": [
+          "action"
+        ],
+        "description": "Performs battle action",
+        "popularity": 1
+      }
+    ],
+    "popularity": 7
   },
   "Game_Actor": {
     "name": "Game_Actor",
@@ -501,14 +1712,62 @@
     "parent": "Game_Battler",
     "description": "Player character in battle and menus",
     "methods": [
-      { "name": "initialize", "params": ["actorId"], "description": "Initializes actor" },
-      { "name": "setup", "params": ["actorId"], "description": "Sets up actor from database" },
-      { "name": "name", "params": [], "description": "Gets actor name" },
-      { "name": "setName", "params": ["name"], "description": "Sets actor name" },
-      { "name": "changeExp", "params": ["exp", "show"], "description": "Changes experience" },
-      { "name": "levelUp", "params": [], "description": "Levels up the actor" },
-      { "name": "changeEquip", "params": ["slotId", "item"], "description": "Changes equipment" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "actorId"
+        ],
+        "description": "Initializes actor",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "actorId"
+        ],
+        "description": "Sets up actor from database",
+        "popularity": 1
+      },
+      {
+        "name": "name",
+        "params": [],
+        "description": "Gets actor name",
+        "popularity": 0
+      },
+      {
+        "name": "setName",
+        "params": [
+          "name"
+        ],
+        "description": "Sets actor name",
+        "popularity": 0
+      },
+      {
+        "name": "changeExp",
+        "params": [
+          "exp",
+          "show"
+        ],
+        "description": "Changes experience",
+        "popularity": 0
+      },
+      {
+        "name": "levelUp",
+        "params": [],
+        "description": "Levels up the actor",
+        "popularity": 1
+      },
+      {
+        "name": "changeEquip",
+        "params": [
+          "slotId",
+          "item"
+        ],
+        "description": "Changes equipment",
+        "popularity": 0
+      }
+    ],
+    "popularity": 12
   },
   "Game_Enemy": {
     "name": "Game_Enemy",
@@ -517,13 +1776,52 @@
     "parent": "Game_Battler",
     "description": "Enemy battler in combat",
     "methods": [
-      { "name": "initialize", "params": ["enemyId", "x", "y"], "description": "Initializes enemy" },
-      { "name": "setup", "params": ["enemyId", "x", "y"], "description": "Sets up enemy from database" },
-      { "name": "name", "params": [], "description": "Gets enemy name" },
-      { "name": "enemy", "params": [], "description": "Gets enemy database object" },
-      { "name": "exp", "params": [], "description": "Gets experience reward" },
-      { "name": "gold", "params": [], "description": "Gets gold reward" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "enemyId",
+          "x",
+          "y"
+        ],
+        "description": "Initializes enemy",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "enemyId",
+          "x",
+          "y"
+        ],
+        "description": "Sets up enemy from database",
+        "popularity": 1
+      },
+      {
+        "name": "name",
+        "params": [],
+        "description": "Gets enemy name",
+        "popularity": 0
+      },
+      {
+        "name": "enemy",
+        "params": [],
+        "description": "Gets enemy database object",
+        "popularity": 0
+      },
+      {
+        "name": "exp",
+        "params": [],
+        "description": "Gets experience reward",
+        "popularity": 0
+      },
+      {
+        "name": "gold",
+        "params": [],
+        "description": "Gets gold reward",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Game_Actors": {
     "name": "Game_Actors",
@@ -531,9 +1829,22 @@
     "category": "object",
     "description": "Container for all Game_Actor instances",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes actors container" },
-      { "name": "actor", "params": ["actorId"], "description": "Gets actor by ID" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes actors container",
+        "popularity": 0
+      },
+      {
+        "name": "actor",
+        "params": [
+          "actorId"
+        ],
+        "description": "Gets actor by ID",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_Unit": {
     "name": "Game_Unit",
@@ -541,12 +1852,38 @@
     "category": "object",
     "description": "Base class for party and troop",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes unit" },
-      { "name": "members", "params": [], "description": "Gets all members" },
-      { "name": "aliveMembers", "params": [], "description": "Gets living members" },
-      { "name": "deadMembers", "params": [], "description": "Gets dead members" },
-      { "name": "clearActions", "params": [], "description": "Clears all actions" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes unit",
+        "popularity": 0
+      },
+      {
+        "name": "members",
+        "params": [],
+        "description": "Gets all members",
+        "popularity": 0
+      },
+      {
+        "name": "aliveMembers",
+        "params": [],
+        "description": "Gets living members",
+        "popularity": 0
+      },
+      {
+        "name": "deadMembers",
+        "params": [],
+        "description": "Gets dead members",
+        "popularity": 0
+      },
+      {
+        "name": "clearActions",
+        "params": [],
+        "description": "Clears all actions",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_Party": {
     "name": "Game_Party",
@@ -555,14 +1892,60 @@
     "parent": "Game_Unit",
     "description": "Player party with inventory",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes party" },
-      { "name": "setupStartingMembers", "params": [], "description": "Sets up initial party" },
-      { "name": "addActor", "params": ["actorId"], "description": "Adds actor to party" },
-      { "name": "removeActor", "params": ["actorId"], "description": "Removes actor from party" },
-      { "name": "gainItem", "params": ["item", "amount", "includeEquip"], "description": "Gains/loses items" },
-      { "name": "gainGold", "params": ["amount"], "description": "Gains/loses gold" },
-      { "name": "leader", "params": [], "description": "Gets party leader" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes party",
+        "popularity": 1
+      },
+      {
+        "name": "setupStartingMembers",
+        "params": [],
+        "description": "Sets up initial party",
+        "popularity": 0
+      },
+      {
+        "name": "addActor",
+        "params": [
+          "actorId"
+        ],
+        "description": "Adds actor to party",
+        "popularity": 1
+      },
+      {
+        "name": "removeActor",
+        "params": [
+          "actorId"
+        ],
+        "description": "Removes actor from party",
+        "popularity": 0
+      },
+      {
+        "name": "gainItem",
+        "params": [
+          "item",
+          "amount",
+          "includeEquip"
+        ],
+        "description": "Gains/loses items",
+        "popularity": 1
+      },
+      {
+        "name": "gainGold",
+        "params": [
+          "amount"
+        ],
+        "description": "Gains/loses gold",
+        "popularity": 0
+      },
+      {
+        "name": "leader",
+        "params": [],
+        "description": "Gets party leader",
+        "popularity": 0
+      }
+    ],
+    "popularity": 8
   },
   "Game_Troop": {
     "name": "Game_Troop",
@@ -571,13 +1954,46 @@
     "parent": "Game_Unit",
     "description": "Enemy troop in battle",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes troop" },
-      { "name": "setup", "params": ["troopId"], "description": "Sets up troop from database" },
-      { "name": "clear", "params": [], "description": "Clears the troop" },
-      { "name": "troop", "params": [], "description": "Gets troop database object" },
-      { "name": "expTotal", "params": [], "description": "Gets total experience" },
-      { "name": "goldTotal", "params": [], "description": "Gets total gold" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes troop",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "troopId"
+        ],
+        "description": "Sets up troop from database",
+        "popularity": 2
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the troop",
+        "popularity": 0
+      },
+      {
+        "name": "troop",
+        "params": [],
+        "description": "Gets troop database object",
+        "popularity": 0
+      },
+      {
+        "name": "expTotal",
+        "params": [],
+        "description": "Gets total experience",
+        "popularity": 0
+      },
+      {
+        "name": "goldTotal",
+        "params": [],
+        "description": "Gets total gold",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Game_Map": {
     "name": "Game_Map",
@@ -585,14 +2001,60 @@
     "category": "object",
     "description": "Current map data and events",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes map" },
-      { "name": "setup", "params": ["mapId"], "description": "Sets up map from database" },
-      { "name": "refresh", "params": [], "description": "Refreshes map events" },
-      { "name": "update", "params": ["sceneActive"], "description": "Updates map each frame" },
-      { "name": "event", "params": ["eventId"], "description": "Gets event by ID" },
-      { "name": "events", "params": [], "description": "Gets all events" },
-      { "name": "isPassable", "params": ["x", "y", "d"], "description": "Checks tile passability" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes map",
+        "popularity": 3
+      },
+      {
+        "name": "setup",
+        "params": [
+          "mapId"
+        ],
+        "description": "Sets up map from database",
+        "popularity": 8
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes map events",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [
+          "sceneActive"
+        ],
+        "description": "Updates map each frame",
+        "popularity": 4
+      },
+      {
+        "name": "event",
+        "params": [
+          "eventId"
+        ],
+        "description": "Gets event by ID",
+        "popularity": 0
+      },
+      {
+        "name": "events",
+        "params": [],
+        "description": "Gets all events",
+        "popularity": 0
+      },
+      {
+        "name": "isPassable",
+        "params": [
+          "x",
+          "y",
+          "d"
+        ],
+        "description": "Checks tile passability",
+        "popularity": 1
+      }
+    ],
+    "popularity": 29
   },
   "Game_CommonEvent": {
     "name": "Game_CommonEvent",
@@ -600,11 +2062,34 @@
     "category": "object",
     "description": "Common event that runs globally",
     "methods": [
-      { "name": "initialize", "params": ["commonEventId"], "description": "Initializes common event" },
-      { "name": "event", "params": [], "description": "Gets event database object" },
-      { "name": "refresh", "params": [], "description": "Refreshes the event" },
-      { "name": "update", "params": [], "description": "Updates the event" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "commonEventId"
+        ],
+        "description": "Initializes common event",
+        "popularity": 0
+      },
+      {
+        "name": "event",
+        "params": [],
+        "description": "Gets event database object",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes the event",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates the event",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Game_CharacterBase": {
     "name": "Game_CharacterBase",
@@ -612,14 +2097,55 @@
     "category": "object",
     "description": "Base class for map characters",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes character" },
-      { "name": "initMembers", "params": [], "description": "Initializes member variables" },
-      { "name": "update", "params": [], "description": "Updates character each frame" },
-      { "name": "moveStraight", "params": ["d"], "description": "Moves in direction" },
-      { "name": "setPosition", "params": ["x", "y"], "description": "Sets map position" },
-      { "name": "screenX", "params": [], "description": "Gets screen X position" },
-      { "name": "screenY", "params": [], "description": "Gets screen Y position" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes character",
+        "popularity": 1
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes member variables",
+        "popularity": 6
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates character each frame",
+        "popularity": 1
+      },
+      {
+        "name": "moveStraight",
+        "params": [
+          "d"
+        ],
+        "description": "Moves in direction",
+        "popularity": 1
+      },
+      {
+        "name": "setPosition",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Sets map position",
+        "popularity": 0
+      },
+      {
+        "name": "screenX",
+        "params": [],
+        "description": "Gets screen X position",
+        "popularity": 0
+      },
+      {
+        "name": "screenY",
+        "params": [],
+        "description": "Gets screen Y position",
+        "popularity": 0
+      }
+    ],
+    "popularity": 15
   },
   "Game_Character": {
     "name": "Game_Character",
@@ -628,12 +2154,44 @@
     "parent": "Game_CharacterBase",
     "description": "Character with movement routes",
     "methods": [
-      { "name": "initMembers", "params": [], "description": "Initializes character members" },
-      { "name": "setMoveRoute", "params": ["moveRoute"], "description": "Sets movement route" },
-      { "name": "forceMoveRoute", "params": ["moveRoute"], "description": "Forces movement route" },
-      { "name": "turnTowardCharacter", "params": ["character"], "description": "Faces another character" },
-      { "name": "turnTowardPlayer", "params": [], "description": "Faces the player" }
-    ]
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes character members",
+        "popularity": 2
+      },
+      {
+        "name": "setMoveRoute",
+        "params": [
+          "moveRoute"
+        ],
+        "description": "Sets movement route",
+        "popularity": 0
+      },
+      {
+        "name": "forceMoveRoute",
+        "params": [
+          "moveRoute"
+        ],
+        "description": "Forces movement route",
+        "popularity": 0
+      },
+      {
+        "name": "turnTowardCharacter",
+        "params": [
+          "character"
+        ],
+        "description": "Faces another character",
+        "popularity": 0
+      },
+      {
+        "name": "turnTowardPlayer",
+        "params": [],
+        "description": "Faces the player",
+        "popularity": 0
+      }
+    ],
+    "popularity": 9
   },
   "Game_Player": {
     "name": "Game_Player",
@@ -642,14 +2200,61 @@
     "parent": "Game_Character",
     "description": "Player character on the map",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes player" },
-      { "name": "initMembers", "params": [], "description": "Initializes player members" },
-      { "name": "update", "params": ["sceneActive"], "description": "Updates player each frame" },
-      { "name": "refresh", "params": [], "description": "Refreshes player appearance" },
-      { "name": "center", "params": ["x", "y"], "description": "Centers screen on position" },
-      { "name": "reserveTransfer", "params": ["mapId", "x", "y", "d", "fadeType"], "description": "Reserves map transfer" },
-      { "name": "performTransfer", "params": [], "description": "Performs reserved transfer" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes player",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes player members",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [
+          "sceneActive"
+        ],
+        "description": "Updates player each frame",
+        "popularity": 5
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes player appearance",
+        "popularity": 2
+      },
+      {
+        "name": "center",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Centers screen on position",
+        "popularity": 0
+      },
+      {
+        "name": "reserveTransfer",
+        "params": [
+          "mapId",
+          "x",
+          "y",
+          "d",
+          "fadeType"
+        ],
+        "description": "Reserves map transfer",
+        "popularity": 1
+      },
+      {
+        "name": "performTransfer",
+        "params": [],
+        "description": "Performs reserved transfer",
+        "popularity": 3
+      }
+    ],
+    "popularity": 23
   },
   "Game_Follower": {
     "name": "Game_Follower",
@@ -658,11 +2263,36 @@
     "parent": "Game_Character",
     "description": "Party follower on the map",
     "methods": [
-      { "name": "initialize", "params": ["memberIndex"], "description": "Initializes follower" },
-      { "name": "refresh", "params": [], "description": "Refreshes follower appearance" },
-      { "name": "actor", "params": [], "description": "Gets the actor" },
-      { "name": "chaseCharacter", "params": ["character"], "description": "Follows another character" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "memberIndex"
+        ],
+        "description": "Initializes follower",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes follower appearance",
+        "popularity": 2
+      },
+      {
+        "name": "actor",
+        "params": [],
+        "description": "Gets the actor",
+        "popularity": 1
+      },
+      {
+        "name": "chaseCharacter",
+        "params": [
+          "character"
+        ],
+        "description": "Follows another character",
+        "popularity": 0
+      }
+    ],
+    "popularity": 7
   },
   "Game_Followers": {
     "name": "Game_Followers",
@@ -670,11 +2300,32 @@
     "category": "object",
     "description": "Container for party followers",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes followers" },
-      { "name": "update", "params": [], "description": "Updates all followers" },
-      { "name": "refresh", "params": [], "description": "Refreshes all followers" },
-      { "name": "gather", "params": [], "description": "Gathers followers to player" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes followers",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates all followers",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes all followers",
+        "popularity": 0
+      },
+      {
+        "name": "gather",
+        "params": [],
+        "description": "Gathers followers to player",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Game_Vehicle": {
     "name": "Game_Vehicle",
@@ -683,12 +2334,40 @@
     "parent": "Game_Character",
     "description": "Vehicle on the map",
     "methods": [
-      { "name": "initialize", "params": ["type"], "description": "Initializes vehicle" },
-      { "name": "initMembers", "params": [], "description": "Initializes vehicle members" },
-      { "name": "refresh", "params": [], "description": "Refreshes vehicle appearance" },
-      { "name": "getOn", "params": [], "description": "Player boards vehicle" },
-      { "name": "getOff", "params": [], "description": "Player exits vehicle" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "type"
+        ],
+        "description": "Initializes vehicle",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes vehicle members",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes vehicle appearance",
+        "popularity": 1
+      },
+      {
+        "name": "getOn",
+        "params": [],
+        "description": "Player boards vehicle",
+        "popularity": 0
+      },
+      {
+        "name": "getOff",
+        "params": [],
+        "description": "Player exits vehicle",
+        "popularity": 1
+      }
+    ],
+    "popularity": 5
   },
   "Game_Event": {
     "name": "Game_Event",
@@ -697,13 +2376,49 @@
     "parent": "Game_Character",
     "description": "Map event with pages and triggers",
     "methods": [
-      { "name": "initialize", "params": ["mapId", "eventId"], "description": "Initializes event" },
-      { "name": "event", "params": [], "description": "Gets event database object" },
-      { "name": "refresh", "params": [], "description": "Refreshes active page" },
-      { "name": "start", "params": [], "description": "Starts event execution" },
-      { "name": "setupPage", "params": [], "description": "Sets up current page" },
-      { "name": "meetsConditions", "params": ["page"], "description": "Checks page conditions" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "mapId",
+          "eventId"
+        ],
+        "description": "Initializes event",
+        "popularity": 4
+      },
+      {
+        "name": "event",
+        "params": [],
+        "description": "Gets event database object",
+        "popularity": 1
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes active page",
+        "popularity": 2
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts event execution",
+        "popularity": 2
+      },
+      {
+        "name": "setupPage",
+        "params": [],
+        "description": "Sets up current page",
+        "popularity": 5
+      },
+      {
+        "name": "meetsConditions",
+        "params": [
+          "page"
+        ],
+        "description": "Checks page conditions",
+        "popularity": 1
+      }
+    ],
+    "popularity": 24
   },
   "Game_Interpreter": {
     "name": "Game_Interpreter",
@@ -711,15 +2426,67 @@
     "category": "object",
     "description": "Event command interpreter",
     "methods": [
-      { "name": "initialize", "params": ["depth"], "description": "Initializes interpreter" },
-      { "name": "setup", "params": ["list", "eventId"], "description": "Sets up command list" },
-      { "name": "update", "params": [], "description": "Updates execution" },
-      { "name": "executeCommand", "params": [], "description": "Executes current command" },
-      { "name": "command101", "params": ["params"], "description": "Show Text" },
-      { "name": "command102", "params": ["params"], "description": "Show Choices" },
-      { "name": "command111", "params": ["params"], "description": "Conditional Branch" },
-      { "name": "command355", "params": [], "description": "Script" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "depth"
+        ],
+        "description": "Initializes interpreter",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "list",
+          "eventId"
+        ],
+        "description": "Sets up command list",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates execution",
+        "popularity": 0
+      },
+      {
+        "name": "executeCommand",
+        "params": [],
+        "description": "Executes current command",
+        "popularity": 0
+      },
+      {
+        "name": "command101",
+        "params": [
+          "params"
+        ],
+        "description": "Show Text",
+        "popularity": 2
+      },
+      {
+        "name": "command102",
+        "params": [
+          "params"
+        ],
+        "description": "Show Choices",
+        "popularity": 0
+      },
+      {
+        "name": "command111",
+        "params": [
+          "params"
+        ],
+        "description": "Conditional Branch",
+        "popularity": 0
+      },
+      {
+        "name": "command355",
+        "params": [],
+        "description": "Script",
+        "popularity": 0
+      }
+    ],
+    "popularity": 26
   },
   "Scene_Base": {
     "name": "Scene_Base",
@@ -728,14 +2495,50 @@
     "parent": "Stage",
     "description": "Base class for all scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes the scene" },
-      { "name": "create", "params": [], "description": "Creates scene contents" },
-      { "name": "start", "params": [], "description": "Called when scene starts" },
-      { "name": "update", "params": [], "description": "Updates scene each frame" },
-      { "name": "stop", "params": [], "description": "Called when scene stops" },
-      { "name": "terminate", "params": [], "description": "Called when scene ends" },
-      { "name": "isActive", "params": [], "description": "Checks if scene is active" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes the scene",
+        "popularity": 2
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates scene contents",
+        "popularity": 5
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Called when scene starts",
+        "popularity": 6
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates scene each frame",
+        "popularity": 16
+      },
+      {
+        "name": "stop",
+        "params": [],
+        "description": "Called when scene stops",
+        "popularity": 0
+      },
+      {
+        "name": "terminate",
+        "params": [],
+        "description": "Called when scene ends",
+        "popularity": 4
+      },
+      {
+        "name": "isActive",
+        "params": [],
+        "description": "Checks if scene is active",
+        "popularity": 0
+      }
+    ],
+    "popularity": 26
   },
   "Scene_Boot": {
     "name": "Scene_Boot",
@@ -744,12 +2547,38 @@
     "parent": "Scene_Base",
     "description": "Initial loading scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes boot scene" },
-      { "name": "create", "params": [], "description": "Creates boot contents" },
-      { "name": "start", "params": [], "description": "Starts after loading" },
-      { "name": "loadSystemImages", "params": [], "description": "Loads system images" },
-      { "name": "startNormalGame", "params": [], "description": "Starts normal game" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes boot scene",
+        "popularity": 1
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates boot contents",
+        "popularity": 2
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts after loading",
+        "popularity": 12
+      },
+      {
+        "name": "loadSystemImages",
+        "params": [],
+        "description": "Loads system images",
+        "popularity": 3
+      },
+      {
+        "name": "startNormalGame",
+        "params": [],
+        "description": "Starts normal game",
+        "popularity": 3
+      }
+    ],
+    "popularity": 23
   },
   "Scene_Title": {
     "name": "Scene_Title",
@@ -758,13 +2587,44 @@
     "parent": "Scene_Base",
     "description": "Title screen scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes title scene" },
-      { "name": "create", "params": [], "description": "Creates title contents" },
-      { "name": "start", "params": [], "description": "Starts title scene" },
-      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
-      { "name": "commandNewGame", "params": [], "description": "Handles New Game" },
-      { "name": "commandContinue", "params": [], "description": "Handles Continue" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes title scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates title contents",
+        "popularity": 2
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts title scene",
+        "popularity": 3
+      },
+      {
+        "name": "createCommandWindow",
+        "params": [],
+        "description": "Creates command window",
+        "popularity": 3
+      },
+      {
+        "name": "commandNewGame",
+        "params": [],
+        "description": "Handles New Game",
+        "popularity": 0
+      },
+      {
+        "name": "commandContinue",
+        "params": [],
+        "description": "Handles Continue",
+        "popularity": 2
+      }
+    ],
+    "popularity": 9
   },
   "Scene_Message": {
     "name": "Scene_Message",
@@ -773,11 +2633,32 @@
     "parent": "Scene_Base",
     "description": "Base for scenes with message window",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes message scene" },
-      { "name": "createMessageWindow", "params": [], "description": "Creates message window" },
-      { "name": "createScrollTextWindow", "params": [], "description": "Creates scroll text window" },
-      { "name": "isMessageWindowClosing", "params": [], "description": "Checks if closing" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes message scene",
+        "popularity": 0
+      },
+      {
+        "name": "createMessageWindow",
+        "params": [],
+        "description": "Creates message window",
+        "popularity": 0
+      },
+      {
+        "name": "createScrollTextWindow",
+        "params": [],
+        "description": "Creates scroll text window",
+        "popularity": 0
+      },
+      {
+        "name": "isMessageWindowClosing",
+        "params": [],
+        "description": "Checks if closing",
+        "popularity": 0
+      }
+    ],
+    "popularity": 4
   },
   "Scene_Map": {
     "name": "Scene_Map",
@@ -786,14 +2667,50 @@
     "parent": "Scene_Message",
     "description": "Main map gameplay scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes map scene" },
-      { "name": "create", "params": [], "description": "Creates map contents" },
-      { "name": "start", "params": [], "description": "Starts map scene" },
-      { "name": "update", "params": [], "description": "Updates map scene" },
-      { "name": "updateMain", "params": [], "description": "Main update logic" },
-      { "name": "createDisplayObjects", "params": [], "description": "Creates display objects" },
-      { "name": "callMenu", "params": [], "description": "Opens menu" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes map scene",
+        "popularity": 1
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates map contents",
+        "popularity": 2
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts map scene",
+        "popularity": 7
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates map scene",
+        "popularity": 13
+      },
+      {
+        "name": "updateMain",
+        "params": [],
+        "description": "Main update logic",
+        "popularity": 1
+      },
+      {
+        "name": "createDisplayObjects",
+        "params": [],
+        "description": "Creates display objects",
+        "popularity": 1
+      },
+      {
+        "name": "callMenu",
+        "params": [],
+        "description": "Opens menu",
+        "popularity": 3
+      }
+    ],
+    "popularity": 35
   },
   "Scene_MenuBase": {
     "name": "Scene_MenuBase",
@@ -802,12 +2719,38 @@
     "parent": "Scene_Base",
     "description": "Base for menu scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes menu base" },
-      { "name": "create", "params": [], "description": "Creates menu contents" },
-      { "name": "createBackground", "params": [], "description": "Creates background" },
-      { "name": "createHelpWindow", "params": [], "description": "Creates help window" },
-      { "name": "actor", "params": [], "description": "Gets current actor" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes menu base",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates menu contents",
+        "popularity": 2
+      },
+      {
+        "name": "createBackground",
+        "params": [],
+        "description": "Creates background",
+        "popularity": 2
+      },
+      {
+        "name": "createHelpWindow",
+        "params": [],
+        "description": "Creates help window",
+        "popularity": 0
+      },
+      {
+        "name": "actor",
+        "params": [],
+        "description": "Gets current actor",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Scene_Menu": {
     "name": "Scene_Menu",
@@ -816,13 +2759,44 @@
     "parent": "Scene_MenuBase",
     "description": "Main menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes menu scene" },
-      { "name": "create", "params": [], "description": "Creates menu contents" },
-      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
-      { "name": "createStatusWindow", "params": [], "description": "Creates status window" },
-      { "name": "commandItem", "params": [], "description": "Handles Item command" },
-      { "name": "commandSkill", "params": [], "description": "Handles Skill command" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes menu scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates menu contents",
+        "popularity": 3
+      },
+      {
+        "name": "createCommandWindow",
+        "params": [],
+        "description": "Creates command window",
+        "popularity": 2
+      },
+      {
+        "name": "createStatusWindow",
+        "params": [],
+        "description": "Creates status window",
+        "popularity": 0
+      },
+      {
+        "name": "commandItem",
+        "params": [],
+        "description": "Handles Item command",
+        "popularity": 0
+      },
+      {
+        "name": "commandSkill",
+        "params": [],
+        "description": "Handles Skill command",
+        "popularity": 0
+      }
+    ],
+    "popularity": 6
   },
   "Scene_ItemBase": {
     "name": "Scene_ItemBase",
@@ -831,12 +2805,38 @@
     "parent": "Scene_MenuBase",
     "description": "Base for item/skill scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes item base" },
-      { "name": "createActorWindow", "params": [], "description": "Creates actor window" },
-      { "name": "item", "params": [], "description": "Gets selected item" },
-      { "name": "user", "params": [], "description": "Gets item user" },
-      { "name": "useItem", "params": [], "description": "Uses the item" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes item base",
+        "popularity": 0
+      },
+      {
+        "name": "createActorWindow",
+        "params": [],
+        "description": "Creates actor window",
+        "popularity": 0
+      },
+      {
+        "name": "item",
+        "params": [],
+        "description": "Gets selected item",
+        "popularity": 1
+      },
+      {
+        "name": "user",
+        "params": [],
+        "description": "Gets item user",
+        "popularity": 0
+      },
+      {
+        "name": "useItem",
+        "params": [],
+        "description": "Uses the item",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Scene_Item": {
     "name": "Scene_Item",
@@ -845,12 +2845,38 @@
     "parent": "Scene_ItemBase",
     "description": "Item menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes item scene" },
-      { "name": "create", "params": [], "description": "Creates item contents" },
-      { "name": "createCategoryWindow", "params": [], "description": "Creates category window" },
-      { "name": "createItemWindow", "params": [], "description": "Creates item window" },
-      { "name": "onItemOk", "params": [], "description": "Handles item selection" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes item scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates item contents",
+        "popularity": 0
+      },
+      {
+        "name": "createCategoryWindow",
+        "params": [],
+        "description": "Creates category window",
+        "popularity": 0
+      },
+      {
+        "name": "createItemWindow",
+        "params": [],
+        "description": "Creates item window",
+        "popularity": 0
+      },
+      {
+        "name": "onItemOk",
+        "params": [],
+        "description": "Handles item selection",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Scene_Skill": {
     "name": "Scene_Skill",
@@ -859,12 +2885,38 @@
     "parent": "Scene_ItemBase",
     "description": "Skill menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes skill scene" },
-      { "name": "create", "params": [], "description": "Creates skill contents" },
-      { "name": "createSkillTypeWindow", "params": [], "description": "Creates skill type window" },
-      { "name": "createItemWindow", "params": [], "description": "Creates skill list window" },
-      { "name": "onItemOk", "params": [], "description": "Handles skill selection" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes skill scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates skill contents",
+        "popularity": 0
+      },
+      {
+        "name": "createSkillTypeWindow",
+        "params": [],
+        "description": "Creates skill type window",
+        "popularity": 0
+      },
+      {
+        "name": "createItemWindow",
+        "params": [],
+        "description": "Creates skill list window",
+        "popularity": 0
+      },
+      {
+        "name": "onItemOk",
+        "params": [],
+        "description": "Handles skill selection",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Scene_Equip": {
     "name": "Scene_Equip",
@@ -873,13 +2925,44 @@
     "parent": "Scene_MenuBase",
     "description": "Equipment menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes equip scene" },
-      { "name": "create", "params": [], "description": "Creates equip contents" },
-      { "name": "createSlotWindow", "params": [], "description": "Creates slot window" },
-      { "name": "createItemWindow", "params": [], "description": "Creates item window" },
-      { "name": "onSlotOk", "params": [], "description": "Handles slot selection" },
-      { "name": "onItemOk", "params": [], "description": "Handles item selection" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes equip scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates equip contents",
+        "popularity": 0
+      },
+      {
+        "name": "createSlotWindow",
+        "params": [],
+        "description": "Creates slot window",
+        "popularity": 0
+      },
+      {
+        "name": "createItemWindow",
+        "params": [],
+        "description": "Creates item window",
+        "popularity": 0
+      },
+      {
+        "name": "onSlotOk",
+        "params": [],
+        "description": "Handles slot selection",
+        "popularity": 0
+      },
+      {
+        "name": "onItemOk",
+        "params": [],
+        "description": "Handles item selection",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Scene_Status": {
     "name": "Scene_Status",
@@ -888,11 +2971,32 @@
     "parent": "Scene_MenuBase",
     "description": "Status screen scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes status scene" },
-      { "name": "create", "params": [], "description": "Creates status contents" },
-      { "name": "createStatusWindow", "params": [], "description": "Creates status window" },
-      { "name": "refreshActor", "params": [], "description": "Refreshes actor display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes status scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates status contents",
+        "popularity": 0
+      },
+      {
+        "name": "createStatusWindow",
+        "params": [],
+        "description": "Creates status window",
+        "popularity": 0
+      },
+      {
+        "name": "refreshActor",
+        "params": [],
+        "description": "Refreshes actor display",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Scene_Options": {
     "name": "Scene_Options",
@@ -901,11 +3005,32 @@
     "parent": "Scene_MenuBase",
     "description": "Options menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes options scene" },
-      { "name": "create", "params": [], "description": "Creates options contents" },
-      { "name": "createOptionsWindow", "params": [], "description": "Creates options window" },
-      { "name": "maxCommands", "params": [], "description": "Gets max visible commands" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes options scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates options contents",
+        "popularity": 1
+      },
+      {
+        "name": "createOptionsWindow",
+        "params": [],
+        "description": "Creates options window",
+        "popularity": 1
+      },
+      {
+        "name": "maxCommands",
+        "params": [],
+        "description": "Gets max visible commands",
+        "popularity": 2
+      }
+    ],
+    "popularity": 6
   },
   "Scene_File": {
     "name": "Scene_File",
@@ -914,11 +3039,32 @@
     "parent": "Scene_MenuBase",
     "description": "Base for save/load scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes file scene" },
-      { "name": "create", "params": [], "description": "Creates file contents" },
-      { "name": "createListWindow", "params": [], "description": "Creates save file list" },
-      { "name": "savefileId", "params": [], "description": "Gets selected save ID" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes file scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates file contents",
+        "popularity": 1
+      },
+      {
+        "name": "createListWindow",
+        "params": [],
+        "description": "Creates save file list",
+        "popularity": 0
+      },
+      {
+        "name": "savefileId",
+        "params": [],
+        "description": "Gets selected save ID",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Scene_Save": {
     "name": "Scene_Save",
@@ -927,10 +3073,28 @@
     "parent": "Scene_File",
     "description": "Save game scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes save scene" },
-      { "name": "onSavefileOk", "params": [], "description": "Handles save confirmation" },
-      { "name": "executeSave", "params": ["savefileId"], "description": "Executes save" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes save scene",
+        "popularity": 0
+      },
+      {
+        "name": "onSavefileOk",
+        "params": [],
+        "description": "Handles save confirmation",
+        "popularity": 1
+      },
+      {
+        "name": "executeSave",
+        "params": [
+          "savefileId"
+        ],
+        "description": "Executes save",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Scene_Load": {
     "name": "Scene_Load",
@@ -939,10 +3103,28 @@
     "parent": "Scene_File",
     "description": "Load game scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes load scene" },
-      { "name": "onSavefileOk", "params": [], "description": "Handles load confirmation" },
-      { "name": "executeLoad", "params": ["savefileId"], "description": "Executes load" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes load scene",
+        "popularity": 0
+      },
+      {
+        "name": "onSavefileOk",
+        "params": [],
+        "description": "Handles load confirmation",
+        "popularity": 1
+      },
+      {
+        "name": "executeLoad",
+        "params": [
+          "savefileId"
+        ],
+        "description": "Executes load",
+        "popularity": 0
+      }
+    ],
+    "popularity": 4
   },
   "Scene_GameEnd": {
     "name": "Scene_GameEnd",
@@ -951,11 +3133,32 @@
     "parent": "Scene_MenuBase",
     "description": "Game end confirmation scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes game end scene" },
-      { "name": "create", "params": [], "description": "Creates game end contents" },
-      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
-      { "name": "commandToTitle", "params": [], "description": "Returns to title" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes game end scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates game end contents",
+        "popularity": 0
+      },
+      {
+        "name": "createCommandWindow",
+        "params": [],
+        "description": "Creates command window",
+        "popularity": 3
+      },
+      {
+        "name": "commandToTitle",
+        "params": [],
+        "description": "Returns to title",
+        "popularity": 2
+      }
+    ],
+    "popularity": 5
   },
   "Scene_Shop": {
     "name": "Scene_Shop",
@@ -964,13 +3167,47 @@
     "parent": "Scene_MenuBase",
     "description": "Shop scene for buying/selling",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes shop scene" },
-      { "name": "prepare", "params": ["goods", "purchaseOnly"], "description": "Prepares shop data" },
-      { "name": "create", "params": [], "description": "Creates shop contents" },
-      { "name": "createCommandWindow", "params": [], "description": "Creates command window" },
-      { "name": "commandBuy", "params": [], "description": "Handles buy command" },
-      { "name": "commandSell", "params": [], "description": "Handles sell command" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes shop scene",
+        "popularity": 0
+      },
+      {
+        "name": "prepare",
+        "params": [
+          "goods",
+          "purchaseOnly"
+        ],
+        "description": "Prepares shop data",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates shop contents",
+        "popularity": 1
+      },
+      {
+        "name": "createCommandWindow",
+        "params": [],
+        "description": "Creates command window",
+        "popularity": 0
+      },
+      {
+        "name": "commandBuy",
+        "params": [],
+        "description": "Handles buy command",
+        "popularity": 1
+      },
+      {
+        "name": "commandSell",
+        "params": [],
+        "description": "Handles sell command",
+        "popularity": 1
+      }
+    ],
+    "popularity": 1
   },
   "Scene_Name": {
     "name": "Scene_Name",
@@ -979,12 +3216,41 @@
     "parent": "Scene_MenuBase",
     "description": "Name input scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes name scene" },
-      { "name": "prepare", "params": ["actorId", "maxLength"], "description": "Prepares name input" },
-      { "name": "create", "params": [], "description": "Creates name contents" },
-      { "name": "createEditWindow", "params": [], "description": "Creates edit window" },
-      { "name": "createInputWindow", "params": [], "description": "Creates input window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes name scene",
+        "popularity": 0
+      },
+      {
+        "name": "prepare",
+        "params": [
+          "actorId",
+          "maxLength"
+        ],
+        "description": "Prepares name input",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates name contents",
+        "popularity": 0
+      },
+      {
+        "name": "createEditWindow",
+        "params": [],
+        "description": "Creates edit window",
+        "popularity": 0
+      },
+      {
+        "name": "createInputWindow",
+        "params": [],
+        "description": "Creates input window",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Scene_Debug": {
     "name": "Scene_Debug",
@@ -993,11 +3259,32 @@
     "parent": "Scene_MenuBase",
     "description": "Debug menu scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes debug scene" },
-      { "name": "create", "params": [], "description": "Creates debug contents" },
-      { "name": "createRangeWindow", "params": [], "description": "Creates range window" },
-      { "name": "createEditWindow", "params": [], "description": "Creates edit window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes debug scene",
+        "popularity": 0
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates debug contents",
+        "popularity": 1
+      },
+      {
+        "name": "createRangeWindow",
+        "params": [],
+        "description": "Creates range window",
+        "popularity": 0
+      },
+      {
+        "name": "createEditWindow",
+        "params": [],
+        "description": "Creates edit window",
+        "popularity": 1
+      }
+    ],
+    "popularity": 2
   },
   "Scene_Battle": {
     "name": "Scene_Battle",
@@ -1006,14 +3293,50 @@
     "parent": "Scene_Message",
     "description": "Battle scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes battle scene" },
-      { "name": "create", "params": [], "description": "Creates battle contents" },
-      { "name": "start", "params": [], "description": "Starts battle scene" },
-      { "name": "update", "params": [], "description": "Updates battle scene" },
-      { "name": "createDisplayObjects", "params": [], "description": "Creates display objects" },
-      { "name": "createSpriteset", "params": [], "description": "Creates battle spriteset" },
-      { "name": "createAllWindows", "params": [], "description": "Creates all windows" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes battle scene",
+        "popularity": 1
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates battle contents",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts battle scene",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates battle scene",
+        "popularity": 3
+      },
+      {
+        "name": "createDisplayObjects",
+        "params": [],
+        "description": "Creates display objects",
+        "popularity": 0
+      },
+      {
+        "name": "createSpriteset",
+        "params": [],
+        "description": "Creates battle spriteset",
+        "popularity": 0
+      },
+      {
+        "name": "createAllWindows",
+        "params": [],
+        "description": "Creates all windows",
+        "popularity": 3
+      }
+    ],
+    "popularity": 18
   },
   "Scene_Gameover": {
     "name": "Scene_Gameover",
@@ -1022,12 +3345,38 @@
     "parent": "Scene_Base",
     "description": "Game over scene",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes gameover scene" },
-      { "name": "create", "params": [], "description": "Creates gameover contents" },
-      { "name": "start", "params": [], "description": "Starts gameover scene" },
-      { "name": "createBackground", "params": [], "description": "Creates background" },
-      { "name": "gotoTitle", "params": [], "description": "Returns to title" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes gameover scene",
+        "popularity": 1
+      },
+      {
+        "name": "create",
+        "params": [],
+        "description": "Creates gameover contents",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts gameover scene",
+        "popularity": 2
+      },
+      {
+        "name": "createBackground",
+        "params": [],
+        "description": "Creates background",
+        "popularity": 0
+      },
+      {
+        "name": "gotoTitle",
+        "params": [],
+        "description": "Returns to title",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Sprite_Clickable": {
     "name": "Sprite_Clickable",
@@ -1036,11 +3385,32 @@
     "parent": "Sprite",
     "description": "Sprite with click/touch handling",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes clickable sprite" },
-      { "name": "update", "params": [], "description": "Updates click detection" },
-      { "name": "onClick", "params": [], "description": "Called when clicked" },
-      { "name": "onPress", "params": [], "description": "Called when pressed" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes clickable sprite",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates click detection",
+        "popularity": 0
+      },
+      {
+        "name": "onClick",
+        "params": [],
+        "description": "Called when clicked",
+        "popularity": 0
+      },
+      {
+        "name": "onPress",
+        "params": [],
+        "description": "Called when pressed",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Sprite_Button": {
     "name": "Sprite_Button",
@@ -1049,11 +3419,34 @@
     "parent": "Sprite_Clickable",
     "description": "Button sprite",
     "methods": [
-      { "name": "initialize", "params": ["buttonType"], "description": "Creates button sprite" },
-      { "name": "setupFrames", "params": [], "description": "Sets up button frames" },
-      { "name": "update", "params": [], "description": "Updates button state" },
-      { "name": "checkBitmap", "params": [], "description": "Checks if bitmap loaded" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "buttonType"
+        ],
+        "description": "Creates button sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setupFrames",
+        "params": [],
+        "description": "Sets up button frames",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates button state",
+        "popularity": 0
+      },
+      {
+        "name": "checkBitmap",
+        "params": [],
+        "description": "Checks if bitmap loaded",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Sprite_Character": {
     "name": "Sprite_Character",
@@ -1062,13 +3455,48 @@
     "parent": "Sprite",
     "description": "Sprite for map characters",
     "methods": [
-      { "name": "initialize", "params": ["character"], "description": "Creates character sprite" },
-      { "name": "initMembers", "params": [], "description": "Initializes sprite members" },
-      { "name": "update", "params": [], "description": "Updates character sprite" },
-      { "name": "setCharacter", "params": ["character"], "description": "Sets the character" },
-      { "name": "setCharacterBitmap", "params": [], "description": "Sets character image" },
-      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "character"
+        ],
+        "description": "Creates character sprite",
+        "popularity": 5
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes sprite members",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates character sprite",
+        "popularity": 5
+      },
+      {
+        "name": "setCharacter",
+        "params": [
+          "character"
+        ],
+        "description": "Sets the character",
+        "popularity": 1
+      },
+      {
+        "name": "setCharacterBitmap",
+        "params": [],
+        "description": "Sets character image",
+        "popularity": 0
+      },
+      {
+        "name": "updateFrame",
+        "params": [],
+        "description": "Updates animation frame",
+        "popularity": 1
+      }
+    ],
+    "popularity": 13
   },
   "Sprite_Battler": {
     "name": "Sprite_Battler",
@@ -1077,12 +3505,42 @@
     "parent": "Sprite_Clickable",
     "description": "Base sprite for battlers",
     "methods": [
-      { "name": "initialize", "params": ["battler"], "description": "Creates battler sprite" },
-      { "name": "initMembers", "params": [], "description": "Initializes sprite members" },
-      { "name": "update", "params": [], "description": "Updates battler sprite" },
-      { "name": "setBattler", "params": ["battler"], "description": "Sets the battler" },
-      { "name": "updateMain", "params": [], "description": "Main update logic" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "battler"
+        ],
+        "description": "Creates battler sprite",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes sprite members",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates battler sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setBattler",
+        "params": [
+          "battler"
+        ],
+        "description": "Sets the battler",
+        "popularity": 0
+      },
+      {
+        "name": "updateMain",
+        "params": [],
+        "description": "Main update logic",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Sprite_Actor": {
     "name": "Sprite_Actor",
@@ -1091,12 +3549,44 @@
     "parent": "Sprite_Battler",
     "description": "Sprite for actor battlers",
     "methods": [
-      { "name": "initialize", "params": ["battler"], "description": "Creates actor sprite" },
-      { "name": "initMembers", "params": [], "description": "Initializes actor members" },
-      { "name": "setActorHome", "params": ["index"], "description": "Sets home position" },
-      { "name": "updateMotion", "params": [], "description": "Updates motion" },
-      { "name": "startMotion", "params": ["motionType"], "description": "Starts a motion" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "battler"
+        ],
+        "description": "Creates actor sprite",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes actor members",
+        "popularity": 2
+      },
+      {
+        "name": "setActorHome",
+        "params": [
+          "index"
+        ],
+        "description": "Sets home position",
+        "popularity": 1
+      },
+      {
+        "name": "updateMotion",
+        "params": [],
+        "description": "Updates motion",
+        "popularity": 0
+      },
+      {
+        "name": "startMotion",
+        "params": [
+          "motionType"
+        ],
+        "description": "Starts a motion",
+        "popularity": 0
+      }
+    ],
+    "popularity": 4
   },
   "Sprite_Enemy": {
     "name": "Sprite_Enemy",
@@ -1105,11 +3595,36 @@
     "parent": "Sprite_Battler",
     "description": "Sprite for enemy battlers",
     "methods": [
-      { "name": "initialize", "params": ["battler"], "description": "Creates enemy sprite" },
-      { "name": "initMembers", "params": [], "description": "Initializes enemy members" },
-      { "name": "loadBitmap", "params": ["name"], "description": "Loads enemy image" },
-      { "name": "updateEffect", "params": [], "description": "Updates visual effects" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "battler"
+        ],
+        "description": "Creates enemy sprite",
+        "popularity": 0
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes enemy members",
+        "popularity": 0
+      },
+      {
+        "name": "loadBitmap",
+        "params": [
+          "name"
+        ],
+        "description": "Loads enemy image",
+        "popularity": 1
+      },
+      {
+        "name": "updateEffect",
+        "params": [],
+        "description": "Updates visual effects",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Sprite_Animation": {
     "name": "Sprite_Animation",
@@ -1118,11 +3633,37 @@
     "parent": "Sprite",
     "description": "Sprite for battle animations",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes animation sprite" },
-      { "name": "setup", "params": ["targets", "animation", "mirror", "delay"], "description": "Sets up animation" },
-      { "name": "update", "params": [], "description": "Updates animation" },
-      { "name": "isPlaying", "params": [], "description": "Checks if playing" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes animation sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "targets",
+          "animation",
+          "mirror",
+          "delay"
+        ],
+        "description": "Sets up animation",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates animation",
+        "popularity": 0
+      },
+      {
+        "name": "isPlaying",
+        "params": [],
+        "description": "Checks if playing",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Sprite_Damage": {
     "name": "Sprite_Damage",
@@ -1131,11 +3672,36 @@
     "parent": "Sprite",
     "description": "Sprite for damage numbers",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes damage sprite" },
-      { "name": "setup", "params": ["target"], "description": "Sets up damage display" },
-      { "name": "update", "params": [], "description": "Updates damage animation" },
-      { "name": "createDigits", "params": ["value"], "description": "Creates digit sprites" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes damage sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "target"
+        ],
+        "description": "Sets up damage display",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates damage animation",
+        "popularity": 0
+      },
+      {
+        "name": "createDigits",
+        "params": [
+          "value"
+        ],
+        "description": "Creates digit sprites",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Sprite_StateIcon": {
     "name": "Sprite_StateIcon",
@@ -1144,11 +3710,34 @@
     "parent": "Sprite",
     "description": "Sprite for state icons",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes state icon sprite" },
-      { "name": "setup", "params": ["battler"], "description": "Sets up for battler" },
-      { "name": "update", "params": [], "description": "Updates icon display" },
-      { "name": "updateFrame", "params": [], "description": "Updates icon frame" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes state icon sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "battler"
+        ],
+        "description": "Sets up for battler",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates icon display",
+        "popularity": 0
+      },
+      {
+        "name": "updateFrame",
+        "params": [],
+        "description": "Updates icon frame",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Sprite_StateOverlay": {
     "name": "Sprite_StateOverlay",
@@ -1157,11 +3746,34 @@
     "parent": "Sprite",
     "description": "Sprite for state overlay animations",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes overlay sprite" },
-      { "name": "setup", "params": ["battler"], "description": "Sets up for battler" },
-      { "name": "update", "params": [], "description": "Updates overlay" },
-      { "name": "updatePattern", "params": [], "description": "Updates animation pattern" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes overlay sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "battler"
+        ],
+        "description": "Sets up for battler",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates overlay",
+        "popularity": 0
+      },
+      {
+        "name": "updatePattern",
+        "params": [],
+        "description": "Updates animation pattern",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Sprite_Weapon": {
     "name": "Sprite_Weapon",
@@ -1170,11 +3782,34 @@
     "parent": "Sprite",
     "description": "Sprite for weapon attack animations",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes weapon sprite" },
-      { "name": "setup", "params": ["weaponImageId"], "description": "Sets up weapon image" },
-      { "name": "update", "params": [], "description": "Updates weapon animation" },
-      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes weapon sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "weaponImageId"
+        ],
+        "description": "Sets up weapon image",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates weapon animation",
+        "popularity": 0
+      },
+      {
+        "name": "updateFrame",
+        "params": [],
+        "description": "Updates animation frame",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Sprite_Balloon": {
     "name": "Sprite_Balloon",
@@ -1183,11 +3818,35 @@
     "parent": "Sprite",
     "description": "Sprite for balloon icons",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes balloon sprite" },
-      { "name": "setup", "params": ["targetSprite", "balloonId"], "description": "Sets up balloon" },
-      { "name": "update", "params": [], "description": "Updates balloon animation" },
-      { "name": "updateFrame", "params": [], "description": "Updates animation frame" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes balloon sprite",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "targetSprite",
+          "balloonId"
+        ],
+        "description": "Sets up balloon",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates balloon animation",
+        "popularity": 1
+      },
+      {
+        "name": "updateFrame",
+        "params": [],
+        "description": "Updates animation frame",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Sprite_Picture": {
     "name": "Sprite_Picture",
@@ -1196,11 +3855,34 @@
     "parent": "Sprite_Clickable",
     "description": "Sprite for pictures",
     "methods": [
-      { "name": "initialize", "params": ["pictureId"], "description": "Creates picture sprite" },
-      { "name": "picture", "params": [], "description": "Gets picture data" },
-      { "name": "update", "params": [], "description": "Updates picture sprite" },
-      { "name": "updateBitmap", "params": [], "description": "Updates picture image" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "pictureId"
+        ],
+        "description": "Creates picture sprite",
+        "popularity": 3
+      },
+      {
+        "name": "picture",
+        "params": [],
+        "description": "Gets picture data",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates picture sprite",
+        "popularity": 3
+      },
+      {
+        "name": "updateBitmap",
+        "params": [],
+        "description": "Updates picture image",
+        "popularity": 2
+      }
+    ],
+    "popularity": 10
   },
   "Sprite_Timer": {
     "name": "Sprite_Timer",
@@ -1209,11 +3891,32 @@
     "parent": "Sprite",
     "description": "Sprite for game timer display",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes timer sprite" },
-      { "name": "update", "params": [], "description": "Updates timer display" },
-      { "name": "redraw", "params": [], "description": "Redraws timer text" },
-      { "name": "timerText", "params": [], "description": "Gets formatted time" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes timer sprite",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates timer display",
+        "popularity": 0
+      },
+      {
+        "name": "redraw",
+        "params": [],
+        "description": "Redraws timer text",
+        "popularity": 0
+      },
+      {
+        "name": "timerText",
+        "params": [],
+        "description": "Gets formatted time",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Sprite_Destination": {
     "name": "Sprite_Destination",
@@ -1222,10 +3925,26 @@
     "parent": "Sprite",
     "description": "Sprite for touch destination indicator",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes destination sprite" },
-      { "name": "update", "params": [], "description": "Updates destination display" },
-      { "name": "updateAnimation", "params": [], "description": "Updates animation" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes destination sprite",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates destination display",
+        "popularity": 0
+      },
+      {
+        "name": "updateAnimation",
+        "params": [],
+        "description": "Updates animation",
+        "popularity": 1
+      }
+    ],
+    "popularity": 1
   },
   "Spriteset_Base": {
     "name": "Spriteset_Base",
@@ -1234,11 +3953,32 @@
     "parent": "Sprite",
     "description": "Base class for spritesets",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes spriteset" },
-      { "name": "update", "params": [], "description": "Updates all sprites" },
-      { "name": "createBaseSprite", "params": [], "description": "Creates base sprite" },
-      { "name": "createAnimation", "params": [], "description": "Creates animation sprites" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes spriteset",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates all sprites",
+        "popularity": 1
+      },
+      {
+        "name": "createBaseSprite",
+        "params": [],
+        "description": "Creates base sprite",
+        "popularity": 0
+      },
+      {
+        "name": "createAnimation",
+        "params": [],
+        "description": "Creates animation sprites",
+        "popularity": 2
+      }
+    ],
+    "popularity": 10
   },
   "Spriteset_Map": {
     "name": "Spriteset_Map",
@@ -1247,12 +3987,38 @@
     "parent": "Spriteset_Base",
     "description": "Spriteset for map scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes map spriteset" },
-      { "name": "update", "params": [], "description": "Updates map sprites" },
-      { "name": "createTilemap", "params": [], "description": "Creates the tilemap" },
-      { "name": "createCharacters", "params": [], "description": "Creates character sprites" },
-      { "name": "createPictures", "params": [], "description": "Creates picture sprites" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes map spriteset",
+        "popularity": 3
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates map sprites",
+        "popularity": 5
+      },
+      {
+        "name": "createTilemap",
+        "params": [],
+        "description": "Creates the tilemap",
+        "popularity": 0
+      },
+      {
+        "name": "createCharacters",
+        "params": [],
+        "description": "Creates character sprites",
+        "popularity": 5
+      },
+      {
+        "name": "createPictures",
+        "params": [],
+        "description": "Creates picture sprites",
+        "popularity": 0
+      }
+    ],
+    "popularity": 16
   },
   "Spriteset_Battle": {
     "name": "Spriteset_Battle",
@@ -1261,12 +4027,38 @@
     "parent": "Spriteset_Base",
     "description": "Spriteset for battle scenes",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Initializes battle spriteset" },
-      { "name": "update", "params": [], "description": "Updates battle sprites" },
-      { "name": "createBattleback", "params": [], "description": "Creates battleback sprites" },
-      { "name": "createEnemies", "params": [], "description": "Creates enemy sprites" },
-      { "name": "createActors", "params": [], "description": "Creates actor sprites" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Initializes battle spriteset",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates battle sprites",
+        "popularity": 1
+      },
+      {
+        "name": "createBattleback",
+        "params": [],
+        "description": "Creates battleback sprites",
+        "popularity": 0
+      },
+      {
+        "name": "createEnemies",
+        "params": [],
+        "description": "Creates enemy sprites",
+        "popularity": 0
+      },
+      {
+        "name": "createActors",
+        "params": [],
+        "description": "Creates actor sprites",
+        "popularity": 1
+      }
+    ],
+    "popularity": 5
   },
   "Window_Base": {
     "name": "Window_Base",
@@ -1275,14 +4067,74 @@
     "parent": "Window",
     "description": "Base class for game windows with drawing",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates window with rectangle" },
-      { "name": "update", "params": [], "description": "Updates the window" },
-      { "name": "drawText", "params": ["text", "x", "y", "maxWidth", "align"], "description": "Draws text" },
-      { "name": "drawTextEx", "params": ["text", "x", "y", "width"], "description": "Draws text with codes" },
-      { "name": "drawIcon", "params": ["iconIndex", "x", "y"], "description": "Draws an icon" },
-      { "name": "drawFace", "params": ["faceName", "faceIndex", "x", "y", "width", "height"], "description": "Draws a face" },
-      { "name": "refresh", "params": [], "description": "Refreshes window contents" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates window with rectangle",
+        "popularity": 1
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates the window",
+        "popularity": 2
+      },
+      {
+        "name": "drawText",
+        "params": [
+          "text",
+          "x",
+          "y",
+          "maxWidth",
+          "align"
+        ],
+        "description": "Draws text",
+        "popularity": 0
+      },
+      {
+        "name": "drawTextEx",
+        "params": [
+          "text",
+          "x",
+          "y",
+          "width"
+        ],
+        "description": "Draws text with codes",
+        "popularity": 0
+      },
+      {
+        "name": "drawIcon",
+        "params": [
+          "iconIndex",
+          "x",
+          "y"
+        ],
+        "description": "Draws an icon",
+        "popularity": 1
+      },
+      {
+        "name": "drawFace",
+        "params": [
+          "faceName",
+          "faceIndex",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "description": "Draws a face",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes window contents",
+        "popularity": 0
+      }
+    ],
+    "popularity": 18
   },
   "Window_Scrollable": {
     "name": "Window_Scrollable",
@@ -1291,11 +4143,40 @@
     "parent": "Window_Base",
     "description": "Window with scrolling support",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates scrollable window" },
-      { "name": "update", "params": [], "description": "Updates scroll position" },
-      { "name": "scrollTo", "params": ["x", "y"], "description": "Scrolls to position" },
-      { "name": "smoothScrollTo", "params": ["x", "y"], "description": "Smooth scrolls to position" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates scrollable window",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates scroll position",
+        "popularity": 0
+      },
+      {
+        "name": "scrollTo",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Scrolls to position",
+        "popularity": 0
+      },
+      {
+        "name": "smoothScrollTo",
+        "params": [
+          "x",
+          "y"
+        ],
+        "description": "Smooth scrolls to position",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_Selectable": {
     "name": "Window_Selectable",
@@ -1304,15 +4185,62 @@
     "parent": "Window_Scrollable",
     "description": "Window with item selection",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates selectable window" },
-      { "name": "update", "params": [], "description": "Updates selection" },
-      { "name": "select", "params": ["index"], "description": "Selects an item" },
-      { "name": "activate", "params": [], "description": "Activates the window" },
-      { "name": "deactivate", "params": [], "description": "Deactivates the window" },
-      { "name": "refresh", "params": [], "description": "Refreshes the window" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws an item" },
-      { "name": "maxItems", "params": [], "description": "Gets total item count" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates selectable window",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates selection",
+        "popularity": 2
+      },
+      {
+        "name": "select",
+        "params": [
+          "index"
+        ],
+        "description": "Selects an item",
+        "popularity": 2
+      },
+      {
+        "name": "activate",
+        "params": [],
+        "description": "Activates the window",
+        "popularity": 1
+      },
+      {
+        "name": "deactivate",
+        "params": [],
+        "description": "Deactivates the window",
+        "popularity": 1
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes the window",
+        "popularity": 1
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws an item",
+        "popularity": 0
+      },
+      {
+        "name": "maxItems",
+        "params": [],
+        "description": "Gets total item count",
+        "popularity": 1
+      }
+    ],
+    "popularity": 5
   },
   "Window_Command": {
     "name": "Window_Command",
@@ -1321,12 +4249,45 @@
     "parent": "Window_Selectable",
     "description": "Window with command list",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates command list" },
-      { "name": "addCommand", "params": ["name", "symbol", "enabled", "ext"], "description": "Adds a command" },
-      { "name": "currentSymbol", "params": [], "description": "Gets selected symbol" },
-      { "name": "refresh", "params": [], "description": "Refreshes command list" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates command window",
+        "popularity": 1
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates command list",
+        "popularity": 1
+      },
+      {
+        "name": "addCommand",
+        "params": [
+          "name",
+          "symbol",
+          "enabled",
+          "ext"
+        ],
+        "description": "Adds a command",
+        "popularity": 1
+      },
+      {
+        "name": "currentSymbol",
+        "params": [],
+        "description": "Gets selected symbol",
+        "popularity": 1
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes command list",
+        "popularity": 1
+      }
+    ],
+    "popularity": 1
   },
   "Window_HorzCommand": {
     "name": "Window_HorzCommand",
@@ -1335,9 +4296,22 @@
     "parent": "Window_Command",
     "description": "Horizontal command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates horizontal command window" },
-      { "name": "maxCols", "params": [], "description": "Gets column count" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates horizontal command window",
+        "popularity": 0
+      },
+      {
+        "name": "maxCols",
+        "params": [],
+        "description": "Gets column count",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_Help": {
     "name": "Window_Help",
@@ -1346,11 +4320,38 @@
     "parent": "Window_Base",
     "description": "Help text display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates help window" },
-      { "name": "setText", "params": ["text"], "description": "Sets help text" },
-      { "name": "setItem", "params": ["item"], "description": "Sets help from item" },
-      { "name": "refresh", "params": [], "description": "Refreshes help display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates help window",
+        "popularity": 0
+      },
+      {
+        "name": "setText",
+        "params": [
+          "text"
+        ],
+        "description": "Sets help text",
+        "popularity": 0
+      },
+      {
+        "name": "setItem",
+        "params": [
+          "item"
+        ],
+        "description": "Sets help from item",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes help display",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_Gold": {
     "name": "Window_Gold",
@@ -1359,11 +4360,34 @@
     "parent": "Window_Selectable",
     "description": "Gold display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates gold window" },
-      { "name": "refresh", "params": [], "description": "Refreshes gold display" },
-      { "name": "value", "params": [], "description": "Gets gold value" },
-      { "name": "currencyUnit", "params": [], "description": "Gets currency unit" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates gold window",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes gold display",
+        "popularity": 0
+      },
+      {
+        "name": "value",
+        "params": [],
+        "description": "Gets gold value",
+        "popularity": 0
+      },
+      {
+        "name": "currencyUnit",
+        "params": [],
+        "description": "Gets currency unit",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_StatusBase": {
     "name": "Window_StatusBase",
@@ -1372,12 +4396,60 @@
     "parent": "Window_Selectable",
     "description": "Base for status windows",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates status window" },
-      { "name": "drawActorName", "params": ["actor", "x", "y", "width"], "description": "Draws actor name" },
-      { "name": "drawActorClass", "params": ["actor", "x", "y", "width"], "description": "Draws actor class" },
-      { "name": "drawActorLevel", "params": ["actor", "x", "y"], "description": "Draws actor level" },
-      { "name": "drawActorFace", "params": ["actor", "x", "y", "width", "height"], "description": "Draws actor face" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates status window",
+        "popularity": 1
+      },
+      {
+        "name": "drawActorName",
+        "params": [
+          "actor",
+          "x",
+          "y",
+          "width"
+        ],
+        "description": "Draws actor name",
+        "popularity": 0
+      },
+      {
+        "name": "drawActorClass",
+        "params": [
+          "actor",
+          "x",
+          "y",
+          "width"
+        ],
+        "description": "Draws actor class",
+        "popularity": 0
+      },
+      {
+        "name": "drawActorLevel",
+        "params": [
+          "actor",
+          "x",
+          "y"
+        ],
+        "description": "Draws actor level",
+        "popularity": 0
+      },
+      {
+        "name": "drawActorFace",
+        "params": [
+          "actor",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "description": "Draws actor face",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Window_MenuCommand": {
     "name": "Window_MenuCommand",
@@ -1386,11 +4458,34 @@
     "parent": "Window_Command",
     "description": "Main menu command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates menu command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates menu commands" },
-      { "name": "addMainCommands", "params": [], "description": "Adds main commands" },
-      { "name": "addOriginalCommands", "params": [], "description": "Adds custom commands" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates menu command window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates menu commands",
+        "popularity": 0
+      },
+      {
+        "name": "addMainCommands",
+        "params": [],
+        "description": "Adds main commands",
+        "popularity": 1
+      },
+      {
+        "name": "addOriginalCommands",
+        "params": [],
+        "description": "Adds custom commands",
+        "popularity": 1
+      }
+    ],
+    "popularity": 3
   },
   "Window_MenuStatus": {
     "name": "Window_MenuStatus",
@@ -1399,11 +4494,40 @@
     "parent": "Window_StatusBase",
     "description": "Menu status list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates menu status window" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws actor status" },
-      { "name": "drawItemImage", "params": ["index"], "description": "Draws actor image" },
-      { "name": "drawItemStatus", "params": ["index"], "description": "Draws actor stats" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates menu status window",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws actor status",
+        "popularity": 1
+      },
+      {
+        "name": "drawItemImage",
+        "params": [
+          "index"
+        ],
+        "description": "Draws actor image",
+        "popularity": 1
+      },
+      {
+        "name": "drawItemStatus",
+        "params": [
+          "index"
+        ],
+        "description": "Draws actor stats",
+        "popularity": 1
+      }
+    ],
+    "popularity": 1
   },
   "Window_MenuActor": {
     "name": "Window_MenuActor",
@@ -1412,9 +4536,24 @@
     "parent": "Window_MenuStatus",
     "description": "Actor selection window in menu",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates actor window" },
-      { "name": "selectForItem", "params": ["item"], "description": "Selects for item use" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates actor window",
+        "popularity": 0
+      },
+      {
+        "name": "selectForItem",
+        "params": [
+          "item"
+        ],
+        "description": "Selects for item use",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ItemCategory": {
     "name": "Window_ItemCategory",
@@ -1423,10 +4562,30 @@
     "parent": "Window_HorzCommand",
     "description": "Item category selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates category window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates category commands" },
-      { "name": "setItemWindow", "params": ["itemWindow"], "description": "Links item window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates category window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates category commands",
+        "popularity": 0
+      },
+      {
+        "name": "setItemWindow",
+        "params": [
+          "itemWindow"
+        ],
+        "description": "Links item window",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ItemList": {
     "name": "Window_ItemList",
@@ -1435,12 +4594,46 @@
     "parent": "Window_Selectable",
     "description": "Item list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates item list window" },
-      { "name": "setCategory", "params": ["category"], "description": "Sets item category" },
-      { "name": "makeItemList", "params": [], "description": "Creates item list" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws an item" },
-      { "name": "includes", "params": ["item"], "description": "Checks if item included" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates item list window",
+        "popularity": 0
+      },
+      {
+        "name": "setCategory",
+        "params": [
+          "category"
+        ],
+        "description": "Sets item category",
+        "popularity": 0
+      },
+      {
+        "name": "makeItemList",
+        "params": [],
+        "description": "Creates item list",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws an item",
+        "popularity": 0
+      },
+      {
+        "name": "includes",
+        "params": [
+          "item"
+        ],
+        "description": "Checks if item included",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_SkillType": {
     "name": "Window_SkillType",
@@ -1449,10 +4642,30 @@
     "parent": "Window_Command",
     "description": "Skill type selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates skill type window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates skill type commands" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates skill type window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates skill type commands",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_SkillStatus": {
     "name": "Window_SkillStatus",
@@ -1461,10 +4674,30 @@
     "parent": "Window_StatusBase",
     "description": "Skill screen status window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates skill status window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "refresh", "params": [], "description": "Refreshes status display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates skill status window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes status display",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_SkillList": {
     "name": "Window_SkillList",
@@ -1473,12 +4706,46 @@
     "parent": "Window_Selectable",
     "description": "Skill list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates skill list window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "setStypeId", "params": ["stypeId"], "description": "Sets skill type" },
-      { "name": "makeItemList", "params": [], "description": "Creates skill list" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws a skill" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates skill list window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "setStypeId",
+        "params": [
+          "stypeId"
+        ],
+        "description": "Sets skill type",
+        "popularity": 0
+      },
+      {
+        "name": "makeItemList",
+        "params": [],
+        "description": "Creates skill list",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws a skill",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_EquipStatus": {
     "name": "Window_EquipStatus",
@@ -1487,11 +4754,38 @@
     "parent": "Window_StatusBase",
     "description": "Equipment status comparison window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates equip status window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "setTempActor", "params": ["tempActor"], "description": "Sets comparison actor" },
-      { "name": "refresh", "params": [], "description": "Refreshes status display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates equip status window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "setTempActor",
+        "params": [
+          "tempActor"
+        ],
+        "description": "Sets comparison actor",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes status display",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_EquipSlot": {
     "name": "Window_EquipSlot",
@@ -1500,11 +4794,38 @@
     "parent": "Window_StatusBase",
     "description": "Equipment slot selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates equip slot window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws equipment slot" },
-      { "name": "item", "params": [], "description": "Gets selected equipment" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates equip slot window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws equipment slot",
+        "popularity": 0
+      },
+      {
+        "name": "item",
+        "params": [],
+        "description": "Gets selected equipment",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_EquipItem": {
     "name": "Window_EquipItem",
@@ -1513,11 +4834,40 @@
     "parent": "Window_ItemList",
     "description": "Equipment item list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates equip item window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "setSlotId", "params": ["slotId"], "description": "Sets equipment slot" },
-      { "name": "includes", "params": ["item"], "description": "Checks if equippable" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates equip item window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "setSlotId",
+        "params": [
+          "slotId"
+        ],
+        "description": "Sets equipment slot",
+        "popularity": 0
+      },
+      {
+        "name": "includes",
+        "params": [
+          "item"
+        ],
+        "description": "Checks if equippable",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_Status": {
     "name": "Window_Status",
@@ -1526,12 +4876,42 @@
     "parent": "Window_StatusBase",
     "description": "Full status display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates status window" },
-      { "name": "setActor", "params": ["actor"], "description": "Sets the actor" },
-      { "name": "refresh", "params": [], "description": "Refreshes status display" },
-      { "name": "drawBlock1", "params": [], "description": "Draws first info block" },
-      { "name": "drawBlock2", "params": [], "description": "Draws second info block" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates status window",
+        "popularity": 0
+      },
+      {
+        "name": "setActor",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets the actor",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes status display",
+        "popularity": 0
+      },
+      {
+        "name": "drawBlock1",
+        "params": [],
+        "description": "Draws first info block",
+        "popularity": 0
+      },
+      {
+        "name": "drawBlock2",
+        "params": [],
+        "description": "Draws second info block",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_Options": {
     "name": "Window_Options",
@@ -1540,12 +4920,43 @@
     "parent": "Window_Command",
     "description": "Options menu window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates options window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates option commands" },
-      { "name": "addGeneralOptions", "params": [], "description": "Adds general options" },
-      { "name": "addVolumeOptions", "params": [], "description": "Adds volume options" },
-      { "name": "changeValue", "params": ["symbol", "value"], "description": "Changes option value" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates options window",
+        "popularity": 1
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates option commands",
+        "popularity": 4
+      },
+      {
+        "name": "addGeneralOptions",
+        "params": [],
+        "description": "Adds general options",
+        "popularity": 2
+      },
+      {
+        "name": "addVolumeOptions",
+        "params": [],
+        "description": "Adds volume options",
+        "popularity": 1
+      },
+      {
+        "name": "changeValue",
+        "params": [
+          "symbol",
+          "value"
+        ],
+        "description": "Changes option value",
+        "popularity": 1
+      }
+    ],
+    "popularity": 8
   },
   "Window_SavefileList": {
     "name": "Window_SavefileList",
@@ -1554,11 +4965,43 @@
     "parent": "Window_Selectable",
     "description": "Save file list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates save list window" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws save file entry" },
-      { "name": "drawTitle", "params": ["savefileId", "x", "y"], "description": "Draws save title" },
-      { "name": "drawContents", "params": ["info", "rect"], "description": "Draws save info" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates save list window",
+        "popularity": 1
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws save file entry",
+        "popularity": 1
+      },
+      {
+        "name": "drawTitle",
+        "params": [
+          "savefileId",
+          "x",
+          "y"
+        ],
+        "description": "Draws save title",
+        "popularity": 0
+      },
+      {
+        "name": "drawContents",
+        "params": [
+          "info",
+          "rect"
+        ],
+        "description": "Draws save info",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_ShopCommand": {
     "name": "Window_ShopCommand",
@@ -1567,10 +5010,30 @@
     "parent": "Window_HorzCommand",
     "description": "Shop command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates shop command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates shop commands" },
-      { "name": "setPurchaseOnly", "params": ["purchaseOnly"], "description": "Sets purchase only mode" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates shop command window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates shop commands",
+        "popularity": 0
+      },
+      {
+        "name": "setPurchaseOnly",
+        "params": [
+          "purchaseOnly"
+        ],
+        "description": "Sets purchase only mode",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ShopBuy": {
     "name": "Window_ShopBuy",
@@ -1579,12 +5042,46 @@
     "parent": "Window_Selectable",
     "description": "Shop buy list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates shop buy window" },
-      { "name": "setMoney", "params": ["money"], "description": "Sets available money" },
-      { "name": "setShopGoods", "params": ["shopGoods"], "description": "Sets goods list" },
-      { "name": "makeItemList", "params": [], "description": "Creates item list" },
-      { "name": "price", "params": ["item"], "description": "Gets item price" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates shop buy window",
+        "popularity": 0
+      },
+      {
+        "name": "setMoney",
+        "params": [
+          "money"
+        ],
+        "description": "Sets available money",
+        "popularity": 0
+      },
+      {
+        "name": "setShopGoods",
+        "params": [
+          "shopGoods"
+        ],
+        "description": "Sets goods list",
+        "popularity": 0
+      },
+      {
+        "name": "makeItemList",
+        "params": [],
+        "description": "Creates item list",
+        "popularity": 0
+      },
+      {
+        "name": "price",
+        "params": [
+          "item"
+        ],
+        "description": "Gets item price",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ShopSell": {
     "name": "Window_ShopSell",
@@ -1593,9 +5090,24 @@
     "parent": "Window_ItemList",
     "description": "Shop sell list window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates shop sell window" },
-      { "name": "isEnabled", "params": ["item"], "description": "Checks if sellable" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates shop sell window",
+        "popularity": 0
+      },
+      {
+        "name": "isEnabled",
+        "params": [
+          "item"
+        ],
+        "description": "Checks if sellable",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ShopNumber": {
     "name": "Window_ShopNumber",
@@ -1604,11 +5116,40 @@
     "parent": "Window_Selectable",
     "description": "Shop quantity selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates number window" },
-      { "name": "setup", "params": ["item", "max", "price"], "description": "Sets up number input" },
-      { "name": "number", "params": [], "description": "Gets selected number" },
-      { "name": "changeNumber", "params": ["amount"], "description": "Changes quantity" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates number window",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "item",
+          "max",
+          "price"
+        ],
+        "description": "Sets up number input",
+        "popularity": 0
+      },
+      {
+        "name": "number",
+        "params": [],
+        "description": "Gets selected number",
+        "popularity": 0
+      },
+      {
+        "name": "changeNumber",
+        "params": [
+          "amount"
+        ],
+        "description": "Changes quantity",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ShopStatus": {
     "name": "Window_ShopStatus",
@@ -1617,10 +5158,30 @@
     "parent": "Window_StatusBase",
     "description": "Shop item status window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates shop status window" },
-      { "name": "setItem", "params": ["item"], "description": "Sets displayed item" },
-      { "name": "refresh", "params": [], "description": "Refreshes status display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates shop status window",
+        "popularity": 0
+      },
+      {
+        "name": "setItem",
+        "params": [
+          "item"
+        ],
+        "description": "Sets displayed item",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes status display",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_NameEdit": {
     "name": "Window_NameEdit",
@@ -1629,12 +5190,45 @@
     "parent": "Window_StatusBase",
     "description": "Name edit display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates name edit window" },
-      { "name": "setup", "params": ["actor", "maxLength"], "description": "Sets up name editing" },
-      { "name": "name", "params": [], "description": "Gets current name" },
-      { "name": "add", "params": ["ch"], "description": "Adds a character" },
-      { "name": "back", "params": [], "description": "Removes last character" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates name edit window",
+        "popularity": 0
+      },
+      {
+        "name": "setup",
+        "params": [
+          "actor",
+          "maxLength"
+        ],
+        "description": "Sets up name editing",
+        "popularity": 0
+      },
+      {
+        "name": "name",
+        "params": [],
+        "description": "Gets current name",
+        "popularity": 0
+      },
+      {
+        "name": "add",
+        "params": [
+          "ch"
+        ],
+        "description": "Adds a character",
+        "popularity": 0
+      },
+      {
+        "name": "back",
+        "params": [],
+        "description": "Removes last character",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_NameInput": {
     "name": "Window_NameInput",
@@ -1643,12 +5237,42 @@
     "parent": "Window_Selectable",
     "description": "Name input character window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates name input window" },
-      { "name": "setEditWindow", "params": ["editWindow"], "description": "Links edit window" },
-      { "name": "character", "params": [], "description": "Gets selected character" },
-      { "name": "onNameAdd", "params": [], "description": "Handles character add" },
-      { "name": "onNameOk", "params": [], "description": "Handles name confirm" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates name input window",
+        "popularity": 0
+      },
+      {
+        "name": "setEditWindow",
+        "params": [
+          "editWindow"
+        ],
+        "description": "Links edit window",
+        "popularity": 0
+      },
+      {
+        "name": "character",
+        "params": [],
+        "description": "Gets selected character",
+        "popularity": 0
+      },
+      {
+        "name": "onNameAdd",
+        "params": [],
+        "description": "Handles character add",
+        "popularity": 0
+      },
+      {
+        "name": "onNameOk",
+        "params": [],
+        "description": "Handles name confirm",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_ChoiceList": {
     "name": "Window_ChoiceList",
@@ -1657,11 +5281,32 @@
     "parent": "Window_Command",
     "description": "Event choice selection window",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Creates choice window" },
-      { "name": "start", "params": [], "description": "Starts choice display" },
-      { "name": "makeCommandList", "params": [], "description": "Creates choice commands" },
-      { "name": "selectDefault", "params": [], "description": "Selects default choice" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Creates choice window",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts choice display",
+        "popularity": 3
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates choice commands",
+        "popularity": 0
+      },
+      {
+        "name": "selectDefault",
+        "params": [],
+        "description": "Selects default choice",
+        "popularity": 0
+      }
+    ],
+    "popularity": 5
   },
   "Window_NumberInput": {
     "name": "Window_NumberInput",
@@ -1670,11 +5315,34 @@
     "parent": "Window_Selectable",
     "description": "Event number input window",
     "methods": [
-      { "name": "initialize", "params": [], "description": "Creates number input window" },
-      { "name": "start", "params": [], "description": "Starts number input" },
-      { "name": "processOk", "params": [], "description": "Confirms the number" },
-      { "name": "changeDigit", "params": ["up"], "description": "Changes selected digit" }
-    ]
+      {
+        "name": "initialize",
+        "params": [],
+        "description": "Creates number input window",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts number input",
+        "popularity": 1
+      },
+      {
+        "name": "processOk",
+        "params": [],
+        "description": "Confirms the number",
+        "popularity": 0
+      },
+      {
+        "name": "changeDigit",
+        "params": [
+          "up"
+        ],
+        "description": "Changes selected digit",
+        "popularity": 0
+      }
+    ],
+    "popularity": 4
   },
   "Window_EventItem": {
     "name": "Window_EventItem",
@@ -1683,11 +5351,36 @@
     "parent": "Window_ItemList",
     "description": "Event item selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates event item window" },
-      { "name": "start", "params": [], "description": "Starts item selection" },
-      { "name": "includes", "params": ["item"], "description": "Checks if item included" },
-      { "name": "onOk", "params": [], "description": "Handles item selection" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates event item window",
+        "popularity": 0
+      },
+      {
+        "name": "start",
+        "params": [],
+        "description": "Starts item selection",
+        "popularity": 1
+      },
+      {
+        "name": "includes",
+        "params": [
+          "item"
+        ],
+        "description": "Checks if item included",
+        "popularity": 0
+      },
+      {
+        "name": "onOk",
+        "params": [],
+        "description": "Handles item selection",
+        "popularity": 0
+      }
+    ],
+    "popularity": 3
   },
   "Window_Message": {
     "name": "Window_Message",
@@ -1696,13 +5389,46 @@
     "parent": "Window_Base",
     "description": "Message display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates message window" },
-      { "name": "initMembers", "params": [], "description": "Initializes message members" },
-      { "name": "update", "params": [], "description": "Updates message display" },
-      { "name": "startMessage", "params": [], "description": "Starts message display" },
-      { "name": "terminateMessage", "params": [], "description": "Ends message display" },
-      { "name": "updateInput", "params": [], "description": "Updates input handling" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates message window",
+        "popularity": 4
+      },
+      {
+        "name": "initMembers",
+        "params": [],
+        "description": "Initializes message members",
+        "popularity": 3
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates message display",
+        "popularity": 2
+      },
+      {
+        "name": "startMessage",
+        "params": [],
+        "description": "Starts message display",
+        "popularity": 6
+      },
+      {
+        "name": "terminateMessage",
+        "params": [],
+        "description": "Ends message display",
+        "popularity": 4
+      },
+      {
+        "name": "updateInput",
+        "params": [],
+        "description": "Updates input handling",
+        "popularity": 2
+      }
+    ],
+    "popularity": 20
   },
   "Window_ScrollText": {
     "name": "Window_ScrollText",
@@ -1711,11 +5437,34 @@
     "parent": "Window_Base",
     "description": "Scrolling text window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates scroll text window" },
-      { "name": "update", "params": [], "description": "Updates scroll animation" },
-      { "name": "startMessage", "params": [], "description": "Starts scroll text" },
-      { "name": "terminateMessage", "params": [], "description": "Ends scroll text" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates scroll text window",
+        "popularity": 0
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates scroll animation",
+        "popularity": 0
+      },
+      {
+        "name": "startMessage",
+        "params": [],
+        "description": "Starts scroll text",
+        "popularity": 0
+      },
+      {
+        "name": "terminateMessage",
+        "params": [],
+        "description": "Ends scroll text",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_MapName": {
     "name": "Window_MapName",
@@ -1724,11 +5473,34 @@
     "parent": "Window_Base",
     "description": "Map name display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates map name window" },
-      { "name": "update", "params": [], "description": "Updates fade animation" },
-      { "name": "open", "params": [], "description": "Opens with map name" },
-      { "name": "refresh", "params": [], "description": "Refreshes display" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates map name window",
+        "popularity": 2
+      },
+      {
+        "name": "update",
+        "params": [],
+        "description": "Updates fade animation",
+        "popularity": 0
+      },
+      {
+        "name": "open",
+        "params": [],
+        "description": "Opens with map name",
+        "popularity": 1
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes display",
+        "popularity": 1
+      }
+    ],
+    "popularity": 2
   },
   "Window_BattleLog": {
     "name": "Window_BattleLog",
@@ -1737,12 +5509,47 @@
     "parent": "Window_Base",
     "description": "Battle log message window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle log window" },
-      { "name": "push", "params": ["methodName"], "description": "Pushes log method" },
-      { "name": "clear", "params": [], "description": "Clears the log" },
-      { "name": "addText", "params": ["text"], "description": "Adds text to log" },
-      { "name": "displayAction", "params": ["subject", "item"], "description": "Displays action" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle log window",
+        "popularity": 0
+      },
+      {
+        "name": "push",
+        "params": [
+          "methodName"
+        ],
+        "description": "Pushes log method",
+        "popularity": 0
+      },
+      {
+        "name": "clear",
+        "params": [],
+        "description": "Clears the log",
+        "popularity": 0
+      },
+      {
+        "name": "addText",
+        "params": [
+          "text"
+        ],
+        "description": "Adds text to log",
+        "popularity": 1
+      },
+      {
+        "name": "displayAction",
+        "params": [
+          "subject",
+          "item"
+        ],
+        "description": "Displays action",
+        "popularity": 1
+      }
+    ],
+    "popularity": 4
   },
   "Window_PartyCommand": {
     "name": "Window_PartyCommand",
@@ -1751,10 +5558,28 @@
     "parent": "Window_Command",
     "description": "Battle party command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates party command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates party commands" },
-      { "name": "setup", "params": [], "description": "Sets up commands" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates party command window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates party commands",
+        "popularity": 1
+      },
+      {
+        "name": "setup",
+        "params": [],
+        "description": "Sets up commands",
+        "popularity": 0
+      }
+    ],
+    "popularity": 1
   },
   "Window_ActorCommand": {
     "name": "Window_ActorCommand",
@@ -1763,12 +5588,42 @@
     "parent": "Window_Command",
     "description": "Battle actor command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates actor command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates actor commands" },
-      { "name": "setup", "params": ["actor"], "description": "Sets up for actor" },
-      { "name": "addAttackCommand", "params": [], "description": "Adds attack command" },
-      { "name": "addSkillCommands", "params": [], "description": "Adds skill commands" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates actor command window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates actor commands",
+        "popularity": 2
+      },
+      {
+        "name": "setup",
+        "params": [
+          "actor"
+        ],
+        "description": "Sets up for actor",
+        "popularity": 0
+      },
+      {
+        "name": "addAttackCommand",
+        "params": [],
+        "description": "Adds attack command",
+        "popularity": 0
+      },
+      {
+        "name": "addSkillCommands",
+        "params": [],
+        "description": "Adds skill commands",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Window_BattleStatus": {
     "name": "Window_BattleStatus",
@@ -1777,11 +5632,40 @@
     "parent": "Window_StatusBase",
     "description": "Battle status display window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle status window" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws actor status" },
-      { "name": "drawItemImage", "params": ["index"], "description": "Draws actor face" },
-      { "name": "drawItemStatus", "params": ["index"], "description": "Draws HP/MP/TP" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle status window",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws actor status",
+        "popularity": 0
+      },
+      {
+        "name": "drawItemImage",
+        "params": [
+          "index"
+        ],
+        "description": "Draws actor face",
+        "popularity": 0
+      },
+      {
+        "name": "drawItemStatus",
+        "params": [
+          "index"
+        ],
+        "description": "Draws HP/MP/TP",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_BattleActor": {
     "name": "Window_BattleActor",
@@ -1790,10 +5674,30 @@
     "parent": "Window_BattleStatus",
     "description": "Battle actor selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle actor window" },
-      { "name": "show", "params": [], "description": "Shows the window" },
-      { "name": "select", "params": ["index"], "description": "Selects an actor" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle actor window",
+        "popularity": 0
+      },
+      {
+        "name": "show",
+        "params": [],
+        "description": "Shows the window",
+        "popularity": 0
+      },
+      {
+        "name": "select",
+        "params": [
+          "index"
+        ],
+        "description": "Selects an actor",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_BattleEnemy": {
     "name": "Window_BattleEnemy",
@@ -1802,11 +5706,36 @@
     "parent": "Window_Selectable",
     "description": "Battle enemy selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle enemy window" },
-      { "name": "refresh", "params": [], "description": "Refreshes enemy list" },
-      { "name": "enemy", "params": [], "description": "Gets selected enemy" },
-      { "name": "drawItem", "params": ["index"], "description": "Draws enemy name" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle enemy window",
+        "popularity": 0
+      },
+      {
+        "name": "refresh",
+        "params": [],
+        "description": "Refreshes enemy list",
+        "popularity": 0
+      },
+      {
+        "name": "enemy",
+        "params": [],
+        "description": "Gets selected enemy",
+        "popularity": 0
+      },
+      {
+        "name": "drawItem",
+        "params": [
+          "index"
+        ],
+        "description": "Draws enemy name",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_BattleSkill": {
     "name": "Window_BattleSkill",
@@ -1815,10 +5744,28 @@
     "parent": "Window_SkillList",
     "description": "Battle skill selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle skill window" },
-      { "name": "show", "params": [], "description": "Shows the window" },
-      { "name": "hide", "params": [], "description": "Hides the window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle skill window",
+        "popularity": 0
+      },
+      {
+        "name": "show",
+        "params": [],
+        "description": "Shows the window",
+        "popularity": 0
+      },
+      {
+        "name": "hide",
+        "params": [],
+        "description": "Hides the window",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_BattleItem": {
     "name": "Window_BattleItem",
@@ -1827,11 +5774,36 @@
     "parent": "Window_ItemList",
     "description": "Battle item selection window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates battle item window" },
-      { "name": "includes", "params": ["item"], "description": "Checks if usable in battle" },
-      { "name": "show", "params": [], "description": "Shows the window" },
-      { "name": "hide", "params": [], "description": "Hides the window" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates battle item window",
+        "popularity": 0
+      },
+      {
+        "name": "includes",
+        "params": [
+          "item"
+        ],
+        "description": "Checks if usable in battle",
+        "popularity": 0
+      },
+      {
+        "name": "show",
+        "params": [],
+        "description": "Shows the window",
+        "popularity": 0
+      },
+      {
+        "name": "hide",
+        "params": [],
+        "description": "Hides the window",
+        "popularity": 0
+      }
+    ],
+    "popularity": 0
   },
   "Window_TitleCommand": {
     "name": "Window_TitleCommand",
@@ -1840,10 +5812,28 @@
     "parent": "Window_Command",
     "description": "Title screen command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates title command window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates title commands" },
-      { "name": "isContinueEnabled", "params": [], "description": "Checks if continue available" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates title command window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates title commands",
+        "popularity": 2
+      },
+      {
+        "name": "isContinueEnabled",
+        "params": [],
+        "description": "Checks if continue available",
+        "popularity": 0
+      }
+    ],
+    "popularity": 2
   },
   "Window_GameEnd": {
     "name": "Window_GameEnd",
@@ -1852,8 +5842,21 @@
     "parent": "Window_Command",
     "description": "Game end command window",
     "methods": [
-      { "name": "initialize", "params": ["rect"], "description": "Creates game end window" },
-      { "name": "makeCommandList", "params": [], "description": "Creates end commands" }
-    ]
+      {
+        "name": "initialize",
+        "params": [
+          "rect"
+        ],
+        "description": "Creates game end window",
+        "popularity": 0
+      },
+      {
+        "name": "makeCommandList",
+        "params": [],
+        "description": "Creates end commands",
+        "popularity": 2
+      }
+    ],
+    "popularity": 2
   }
 }
