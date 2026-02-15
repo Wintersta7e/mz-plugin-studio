@@ -1,5 +1,16 @@
 import { useState } from 'react'
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  Plus,
+  Trash2,
+  GripVertical,
+  ChevronDown,
+  ChevronRight,
+  CheckSquare,
+  Copy,
+  Download,
+  Upload,
+  Bookmark
+} from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -7,9 +18,24 @@ import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
 import { ScrollArea } from '../ui/scroll-area'
-import { usePluginStore, useProjectStore } from '../../stores'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '../ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '../ui/dropdown-menu'
+import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
 import { createEmptyParameter, type PluginParameter, type ParamType } from '../../types/plugin'
 import { generateParameterComment } from '../../lib/generator'
+import { serializeParams, deserializeParams, duplicateParams } from '../../lib/param-io'
 import { cn } from '../../lib/utils'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
@@ -41,6 +67,7 @@ const PARAM_TYPES: { value: ParamType; label: string }[] = [
 
 export function ParameterBuilder() {
   const parameters = usePluginStore((s) => s.plugin.parameters)
+  const plugin = usePluginStore((s) => s.plugin)
   const structs = usePluginStore((s) => s.plugin.structs)
   const addParameter = usePluginStore((s) => s.addParameter)
   const updateParameter = usePluginStore((s) => s.updateParameter)
@@ -49,12 +76,134 @@ export function ParameterBuilder() {
   const variables = useProjectStore((s) => s.variables)
   const actors = useProjectStore((s) => s.actors)
   const items = useProjectStore((s) => s.items)
+  const parameterPresets = useSettingsStore((s) => s.parameterPresets)
+  const savePreset = useSettingsStore((s) => s.savePreset)
 
   const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Import picker state
+  const [importPickerOpen, setImportPickerOpen] = useState(false)
+  const [importPickerParams, setImportPickerParams] = useState<PluginParameter[]>([])
+  const [importPickerSelected, setImportPickerSelected] = useState<Set<string>>(new Set())
+
+  const selectedParams = parameters.filter((p) => selectedIds.has(p.id))
+  const hasSelection = selectedIds.size > 0
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    if (selectedIds.size === parameters.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(parameters.map((p) => p.id)))
+    }
+  }
+
+  const handleDuplicate = () => {
+    const duped = duplicateParams(selectedParams)
+    for (const p of duped) {
+      addParameter(p)
+    }
+    setSelectedIds(new Set())
+  }
+
+  const handleBulkDelete = async () => {
+    const count = selectedIds.size
+    const result = await window.api.dialog.message({
+      type: 'question',
+      title: 'Delete Parameters',
+      message: 'Delete ' + count + ' selected parameter' + (count > 1 ? 's' : '') + '?',
+      buttons: ['Cancel', 'Delete']
+    })
+    if (result === 1) {
+      for (const id of selectedIds) {
+        removeParameter(id)
+      }
+      setSelectedIds(new Set())
+    }
+  }
+
+  const handleExport = async () => {
+    const filePath = await window.api.dialog.saveFile({
+      defaultPath: plugin.meta.name + '-params.mzparams',
+      filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+    })
+    if (!filePath) return
+    const content = serializeParams(selectedParams, plugin.meta.name)
+    await window.api.plugin.saveToPath(filePath, content)
+  }
+
+  const handleImportFromFile = async () => {
+    const filePath = await window.api.dialog.openFile({
+      filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+    })
+    if (!filePath) return
+    const content = await window.api.plugin.readByPath(filePath)
+    const result = deserializeParams(content)
+    if (!result.success) {
+      await window.api.dialog.message({
+        type: 'error',
+        title: 'Import Failed',
+        message: result.error || 'Unknown error'
+      })
+      return
+    }
+    for (const p of result.parameters) {
+      addParameter(p)
+    }
+  }
+
+  const handleImportFromPlugin = async () => {
+    const filePath = await window.api.dialog.openFile({
+      filters: [{ name: 'JavaScript Plugin', extensions: ['js'] }]
+    })
+    if (!filePath) return
+    const content = await window.api.plugin.readByPath(filePath)
+    const parsed = await window.api.plugin.parse(content)
+    if (!parsed.parameters || parsed.parameters.length === 0) {
+      await window.api.dialog.message({
+        type: 'info',
+        title: 'No Parameters',
+        message: 'This plugin has no parameters to import.'
+      })
+      return
+    }
+    setImportPickerParams(parsed.parameters)
+    setImportPickerSelected(new Set(parsed.parameters.map((p) => p.id)))
+    setImportPickerOpen(true)
+  }
+
+  const handleSavePreset = () => {
+    const name = window.prompt('Preset name:')
+    if (!name || !name.trim()) return
+    savePreset(name.trim(), selectedParams)
+  }
+
+  const handleApplyPreset = (name: string) => {
+    const presetParams = parameterPresets[name]
+    if (!presetParams) return
+    const imported = presetParams.map((p) => ({
+      ...p,
+      id: crypto.randomUUID()
+    }))
+    for (const p of imported) {
+      addParameter(p)
+    }
+  }
 
   const handleAddParameter = () => {
     const param = createEmptyParameter()
@@ -101,12 +250,104 @@ export function ParameterBuilder() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border p-4">
-        <h2 className="text-lg font-semibold">Parameters</h2>
-        <Button size="sm" onClick={handleAddParameter}>
-          <Plus className="mr-1 h-4 w-4" />
-          Add Parameter
-        </Button>
+      <div className="flex flex-col border-b border-border">
+        <div className="flex items-center justify-between p-4">
+          <h2 className="text-lg font-semibold">Parameters</h2>
+          <Button size="sm" onClick={handleAddParameter}>
+            <Plus className="mr-1 h-4 w-4" />
+            Add Parameter
+          </Button>
+        </div>
+
+        {/* Toolbar - visible when parameters exist */}
+        {parameters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 border-t border-border px-4 py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={selectAll}
+              className="text-xs text-muted-foreground"
+            >
+              <CheckSquare className="mr-1 h-3.5 w-3.5" />
+              {selectedIds.size === parameters.length ? 'Deselect' : 'Select All'}
+            </Button>
+
+            <div className="mx-1 h-4 w-px bg-border" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDuplicate}
+              disabled={!hasSelection}
+              className="text-xs"
+            >
+              <Copy className="mr-1 h-3.5 w-3.5" /> Duplicate
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={!hasSelection}
+              className="text-xs text-destructive"
+            >
+              <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+            </Button>
+
+            <div className="mx-1 h-4 w-px bg-border" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExport}
+              disabled={!hasSelection}
+              className="text-xs"
+            >
+              <Download className="mr-1 h-3.5 w-3.5" /> Export
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs">
+                  <Upload className="mr-1 h-3.5 w-3.5" /> Import
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleImportFromFile}>
+                  From File (.mzparams)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleImportFromPlugin}>
+                  From Plugin (.js)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs">
+                  <Bookmark className="mr-1 h-3.5 w-3.5" /> Presets
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={handleSavePreset} disabled={!hasSelection}>
+                  Save Selection as Preset...
+                </DropdownMenuItem>
+                {Object.keys(parameterPresets).length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {Object.entries(parameterPresets).map(([name, params]) => (
+                      <DropdownMenuItem key={name} onClick={() => handleApplyPreset(name)}>
+                        {name} ({params.length} params)
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -122,17 +363,21 @@ export function ParameterBuilder() {
                 key={param.id}
                 param={param}
                 expanded={expandedId === param.id}
+                isSelected={selectedIds.has(param.id)}
+                onToggleSelect={() => toggleSelect(param.id)}
                 onToggle={() => setExpandedId(expandedId === param.id ? null : param.id)}
                 onUpdate={(updates) => {
                   updateParameter(param.id, updates)
-                  // Sync comment in customCode when parameter name or type changes
                   if (
                     (updates.name !== undefined && updates.name !== param.name) ||
                     (updates.type !== undefined && updates.type !== param.type)
                   ) {
                     const current = customCode || ''
                     const oldComment = generateParameterComment(param)
-                    const newComment = generateParameterComment({ ...param, ...updates } as PluginParameter)
+                    const newComment = generateParameterComment({
+                      ...param,
+                      ...updates
+                    } as PluginParameter)
                     const updated = current.replace(oldComment, newComment)
                     if (updated !== current) {
                       setCustomCode(updated)
@@ -155,6 +400,81 @@ export function ParameterBuilder() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Import from Plugin picker dialog */}
+      <Dialog open={importPickerOpen} onOpenChange={setImportPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Parameters from Plugin</DialogTitle>
+            <DialogDescription>
+              Select parameters to import ({importPickerParams.length} found)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 pb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => {
+                if (importPickerSelected.size === importPickerParams.length) {
+                  setImportPickerSelected(new Set())
+                } else {
+                  setImportPickerSelected(new Set(importPickerParams.map((p) => p.id)))
+                }
+              }}
+            >
+              {importPickerSelected.size === importPickerParams.length
+                ? 'Deselect All'
+                : 'Select All'}
+            </Button>
+          </div>
+          <ScrollArea className="max-h-80">
+            <div className="space-y-1 pr-4">
+              {importPickerParams.map((param) => (
+                <label
+                  key={param.id}
+                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"
+                >
+                  <input
+                    type="checkbox"
+                    checked={importPickerSelected.has(param.id)}
+                    onChange={() => {
+                      const next = new Set(importPickerSelected)
+                      if (next.has(param.id)) next.delete(param.id)
+                      else next.add(param.id)
+                      setImportPickerSelected(next)
+                    }}
+                    className="h-4 w-4"
+                  />
+                  <span className="font-medium">{param.text || param.name}</span>
+                  <span className="text-muted-foreground">({param.type})</span>
+                </label>
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setImportPickerOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={importPickerSelected.size === 0}
+              onClick={() => {
+                const toImport = importPickerParams
+                  .filter((p) => importPickerSelected.has(p.id))
+                  .map((p) => ({ ...p, id: crypto.randomUUID() }))
+                for (const p of toImport) addParameter(p)
+                setImportPickerOpen(false)
+                setImportPickerParams([])
+                setImportPickerSelected(new Set())
+              }}
+            >
+              Import {importPickerSelected.size} Parameter
+              {importPickerSelected.size !== 1 ? 's' : ''}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -162,6 +482,8 @@ export function ParameterBuilder() {
 interface ParameterCardProps {
   param: PluginParameter
   expanded: boolean
+  isSelected: boolean
+  onToggleSelect: () => void
   onToggle: () => void
   onUpdate: (updates: Partial<PluginParameter>) => void
   onDelete: () => void
@@ -180,6 +502,8 @@ interface ParameterCardProps {
 function ParameterCard({
   param,
   expanded,
+  isSelected,
+  onToggleSelect,
   onToggle,
   onUpdate,
   onDelete,
@@ -230,6 +554,16 @@ function ParameterCard({
         className="flex cursor-pointer items-center gap-2 p-3"
         onClick={onToggle}
       >
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation()
+            onToggleSelect()
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4 rounded border-muted-foreground"
+        />
         <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" />
         {expanded ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
