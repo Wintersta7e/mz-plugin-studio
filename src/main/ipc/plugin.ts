@@ -2,10 +2,11 @@ import { IpcMain, IpcMainInvokeEvent } from 'electron'
 import { readFile, writeFile, access, mkdir } from 'fs/promises'
 import { join, dirname } from 'path'
 import { PluginParser } from '../services/pluginParser'
+import { IPC_CHANNELS } from '../../shared/ipc-types'
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
-    'plugin:save',
+    IPC_CHANNELS.PLUGIN_SAVE,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string, content: string) => {
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const dir = dirname(pluginPath)
@@ -22,7 +23,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   )
 
   ipcMain.handle(
-    'plugin:load',
+    IPC_CHANNELS.PLUGIN_LOAD,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const content = await readFile(pluginPath, 'utf-8')
@@ -32,19 +33,19 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
     }
   )
 
-  ipcMain.handle('plugin:parse', async (_event: IpcMainInvokeEvent, content: string) => {
+  ipcMain.handle(IPC_CHANNELS.PLUGIN_PARSE, async (_event: IpcMainInvokeEvent, content: string) => {
     return PluginParser.parsePlugin(content)
   })
 
   ipcMain.handle(
-    'plugin:read-raw',
+    IPC_CHANNELS.PLUGIN_READ_RAW,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       return readFile(pluginPath, 'utf-8')
     }
   )
 
-  ipcMain.handle('plugin:list', async (_event: IpcMainInvokeEvent, projectPath: string) => {
+  ipcMain.handle(IPC_CHANNELS.PLUGIN_LIST, async (_event: IpcMainInvokeEvent, projectPath: string) => {
     const { readdir } = await import('fs/promises')
     const pluginsDir = join(projectPath, 'js', 'plugins')
     try {
@@ -56,7 +57,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   })
 
   ipcMain.handle(
-    'plugin:save-to-path',
+    IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
     async (_event: IpcMainInvokeEvent, filePath: string, content: string) => {
       const dir = dirname(filePath)
       try {

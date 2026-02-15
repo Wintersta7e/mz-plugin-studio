@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { IPC_CHANNELS } from '../shared/ipc-types'
 
 export interface ProjectAPI {
   validate: (path: string) => Promise<{ valid: boolean; error?: string }>
@@ -65,46 +66,46 @@ export interface WindowAPI {
 }
 
 const projectApi: ProjectAPI = {
-  validate: (path) => ipcRenderer.invoke('project:validate', path),
-  load: (path) => ipcRenderer.invoke('project:load', path),
-  getSwitches: (path) => ipcRenderer.invoke('project:get-switches', path),
-  getVariables: (path) => ipcRenderer.invoke('project:get-variables', path),
-  getActors: (path) => ipcRenderer.invoke('project:get-actors', path),
-  getItems: (path) => ipcRenderer.invoke('project:get-items', path),
-  getMaps: (path) => ipcRenderer.invoke('project:get-maps', path),
-  getPlugins: (path) => ipcRenderer.invoke('project:get-plugins', path)
+  validate: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
+  load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path),
+  getSwitches: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_SWITCHES, path),
+  getVariables: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_VARIABLES, path),
+  getActors: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ACTORS, path),
+  getItems: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ITEMS, path),
+  getMaps: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_MAPS, path),
+  getPlugins: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_PLUGINS, path)
 }
 
 const pluginApi: PluginAPI = {
   save: (projectPath, filename, content) =>
-    ipcRenderer.invoke('plugin:save', projectPath, filename, content),
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE, projectPath, filename, content),
   saveToPath: (filePath, content) =>
-    ipcRenderer.invoke('plugin:save-to-path', filePath, content),
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, filePath, content),
   load: (projectPath, filename) =>
-    ipcRenderer.invoke('plugin:load', projectPath, filename),
-  parse: (content) => ipcRenderer.invoke('plugin:parse', content),
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LOAD, projectPath, filename),
+  parse: (content) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_PARSE, content),
   readRaw: (projectPath, filename) =>
-    ipcRenderer.invoke('plugin:read-raw', projectPath, filename),
-  list: (projectPath) => ipcRenderer.invoke('plugin:list', projectPath)
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
+  list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath)
 }
 
 const dialogApi: DialogAPI = {
-  openFolder: () => ipcRenderer.invoke('dialog:open-folder'),
-  saveFile: (options = {}) => ipcRenderer.invoke('dialog:save-file', options),
-  openFile: (options = {}) => ipcRenderer.invoke('dialog:open-file', options),
-  message: (options) => ipcRenderer.invoke('dialog:message', options)
+  openFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
+  saveFile: (options = {}) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
+  openFile: (options = {}) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
+  message: (options) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_MESSAGE, options)
 }
 
 const windowApi: WindowAPI = {
-  minimize: () => ipcRenderer.send('window-minimize'),
-  maximize: () => ipcRenderer.send('window-maximize'),
-  close: () => ipcRenderer.send('window-close'),
-  forceClose: () => ipcRenderer.send('window-force-close'),
-  isMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+  minimize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
+  maximize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
+  close: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE),
+  forceClose: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_FORCE_CLOSE),
+  isMaximized: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED),
   onMaximizeChange: (callback) => {
     const handler = (_event: unknown, isMaximized: boolean) => callback(isMaximized)
-    ipcRenderer.on('window-maximized-changed', handler)
-    return () => ipcRenderer.removeListener('window-maximized-changed', handler)
+    ipcRenderer.on(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, handler)
   }
 }
 

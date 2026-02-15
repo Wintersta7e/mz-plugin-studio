@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupProjectHandlers } from './ipc/project'
 import { setupPluginHandlers } from './ipc/plugin'
 import { setupDialogHandlers } from './ipc/dialog'
+import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -43,11 +44,11 @@ function createWindow(): void {
 }
 
 // Window control handlers
-ipcMain.on('window-minimize', () => {
+ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, () => {
   mainWindow?.minimize()
 })
 
-ipcMain.on('window-maximize', () => {
+ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, () => {
   if (mainWindow?.isMaximized()) {
     mainWindow.unmaximize()
   } else {
@@ -55,15 +56,15 @@ ipcMain.on('window-maximize', () => {
   }
 })
 
-ipcMain.on('window-close', () => {
+ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {
   mainWindow?.close()
 })
 
-ipcMain.on('window-force-close', () => {
+ipcMain.on(IPC_CHANNELS.WINDOW_FORCE_CLOSE, () => {
   mainWindow?.destroy()
 })
 
-ipcMain.handle('window-is-maximized', () => {
+ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, () => {
   return mainWindow?.isMaximized()
 })
 
