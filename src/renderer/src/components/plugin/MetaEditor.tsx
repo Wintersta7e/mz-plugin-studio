@@ -5,13 +5,14 @@ import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
-import { usePluginStore } from '../../stores'
+import { usePluginStore, useProjectStore } from '../../stores'
 import { generateHelpText } from '../../lib/exportFormats'
 import type { LocalizedContent } from '../../types/plugin'
 
 export function MetaEditor() {
   const plugin = usePluginStore((s) => s.plugin)
   const updateMeta = usePluginStore((s) => s.updateMeta)
+  const dependencyReport = useProjectStore((s) => s.dependencyReport)
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
     const currentLocalizations = plugin.meta.localizations || {}
@@ -197,6 +198,11 @@ export function MetaEditor() {
             rows={3}
             className="font-mono text-sm"
           />
+          {dependencyReport && dependencyReport.pluginNames.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Project plugins: {dependencyReport.pluginNames.join(', ')}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -216,6 +222,11 @@ export function MetaEditor() {
           <p className="text-xs text-muted-foreground">
             Plugins that must load before this one
           </p>
+          {dependencyReport && dependencyReport.pluginNames.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Project plugins: {dependencyReport.pluginNames.join(', ')}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
