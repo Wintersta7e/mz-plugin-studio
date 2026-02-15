@@ -25,6 +25,7 @@ export function CodePreview() {
   const [showDiff, setShowDiff] = useState(false)
   const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
+  const [showValidation, setShowValidation] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
 
   const hasRawSource = Boolean(plugin.rawSource)
@@ -161,15 +162,19 @@ export function CodePreview() {
       <div className="flex items-center justify-between border-b border-border p-4">
         <div>
           <h2 className="text-lg font-semibold">Generated Code</h2>
-          {!validation.valid && (
-            <div className="mt-1 text-sm text-destructive">
-              {validation.errors.length} error(s)
-            </div>
-          )}
-          {validation.valid && validation.warnings && validation.warnings.length > 0 && (
-            <div className="mt-1 text-sm text-yellow-500">
-              {validation.warnings.length} warning(s)
-            </div>
+          {(!validation.valid || (validation.warnings && validation.warnings.length > 0)) && (
+            <button
+              className="mt-1 flex items-center gap-2 text-sm"
+              onClick={() => setShowValidation(!showValidation)}
+            >
+              {!validation.valid && (
+                <span className="text-destructive">{validation.errors.length} error(s)</span>
+              )}
+              {validation.warnings && validation.warnings.length > 0 && (
+                <span className="text-yellow-500">{validation.warnings.length} warning(s)</span>
+              )}
+              <span className="text-muted-foreground">{showValidation ? '▲' : '▼'}</span>
+            </button>
           )}
         </div>
 
@@ -264,15 +269,28 @@ export function CodePreview() {
         </div>
       </div>
 
-      {/* Validation errors */}
-      {!validation.valid && (
-        <div className="border-b border-border bg-destructive/10 p-3">
-          <ul className="space-y-1 text-sm text-destructive">
-            {validation.errors.map((error, i) => (
-              <li key={i}>{error}</li>
-            ))}
-          </ul>
-        </div>
+      {/* Validation errors & warnings (collapsible) */}
+      {showValidation && (
+        <>
+          {!validation.valid && (
+            <div className="border-b border-border bg-destructive/10 p-3">
+              <ul className="space-y-1 text-sm text-destructive">
+                {validation.errors.map((error, i) => (
+                  <li key={i}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {validation.warnings && validation.warnings.length > 0 && (
+            <div className="border-b border-border bg-yellow-500/10 p-3">
+              <ul className="space-y-1 text-sm text-yellow-500">
+                {validation.warnings.map((warning, i) => (
+                  <li key={i}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex-1">
