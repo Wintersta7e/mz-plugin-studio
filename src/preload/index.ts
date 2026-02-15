@@ -48,6 +48,14 @@ export interface PluginAPI {
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
   readByPath: (filePath: string) => Promise<string>
+  scanHeaders: (projectPath: string) => Promise<
+    {
+      filename: string
+      name: string
+      base: string[]
+      orderAfter: string[]
+    }[]
+  >
 }
 
 export interface DialogAPI {
@@ -117,7 +125,9 @@ const pluginApi: PluginAPI = {
   readRaw: (projectPath, filename) =>
     ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
   list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath),
-  readByPath: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath)
+  readByPath: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath),
+  scanHeaders: (projectPath) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
 }
 
 const dialogApi: DialogAPI = {

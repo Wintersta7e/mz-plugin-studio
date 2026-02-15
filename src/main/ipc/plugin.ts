@@ -1,8 +1,15 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron'
-import { readFile, writeFile, access, mkdir } from 'fs/promises'
+import { readFile, readdir, writeFile, access, mkdir } from 'fs/promises'
 import { join, dirname } from 'path'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
+
+interface ScannedPluginHeader {
+  filename: string
+  name: string
+  base: string[]
+  orderAfter: string[]
+}
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
@@ -46,7 +53,6 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   )
 
   ipcMain.handle(IPC_CHANNELS.PLUGIN_LIST, async (_event: IpcMainInvokeEvent, projectPath: string) => {
-    const { readdir } = await import('fs/promises')
     const pluginsDir = join(projectPath, 'js', 'plugins')
     try {
       const files = await readdir(pluginsDir)
@@ -74,6 +80,53 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
       }
       await writeFile(filePath, content, 'utf-8')
       return { success: true, path: filePath }
+    }
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.PLUGIN_SCAN_HEADERS,
+    async (_event: IpcMainInvokeEvent, projectPath: string): Promise<ScannedPluginHeader[]> => {
+      const pluginsDir = join(projectPath, 'js', 'plugins')
+      try {
+        const files = await readdir(pluginsDir)
+        const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+
+        const results: ScannedPluginHeader[] = []
+
+        for (const file of jsFiles) {
+          const filePath = join(pluginsDir, file)
+          const content = await readFile(filePath, 'utf-8')
+
+          // Only read the comment header block (first /*...*/ block)
+          const headerMatch = content.match(/\/\*[\s\S]*?\*\//)
+          const header = headerMatch ? headerMatch[0] : ''
+
+          const baseEntries: string[] = []
+          const orderAfterEntries: string[] = []
+
+          const baseRegex = /@base\s+(\S+)/g
+          let match
+          while ((match = baseRegex.exec(header)) !== null) {
+            baseEntries.push(match[1])
+          }
+
+          const orderRegex = /@orderAfter\s+(\S+)/g
+          while ((match = orderRegex.exec(header)) !== null) {
+            orderAfterEntries.push(match[1])
+          }
+
+          results.push({
+            filename: file,
+            name: file.replace(/\.js$/, ''),
+            base: baseEntries,
+            orderAfter: orderAfterEntries
+          })
+        }
+
+        return results
+      } catch {
+        return []
+      }
     }
   )
 }
