@@ -33,5 +33,9 @@ CLAUDE.md
 # Example plugins (third-party, not redistributable)
 examples/
 
+# Analysis output (generated, not shipped)
+tools/output/
+
 # Internal planning docs
 docs/plans/
+docs/claude-mz-reference.md
