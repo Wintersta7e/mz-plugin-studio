@@ -11,6 +11,16 @@ export interface MZProject {
   items: MZItem[]
   maps: MZMapInfo[]
   plugins: MZPluginEntry[]
+  skills: MZSkill[]
+  weapons: MZWeapon[]
+  armors: MZArmor[]
+  enemies: MZEnemy[]
+  states: MZState[]
+  animations: MZAnimation[]
+  tilesets: MZTileset[]
+  commonEvents: MZCommonEvent[]
+  classes: MZClass[]
+  troops: MZTroop[]
 }
 
 export interface MZSwitch {

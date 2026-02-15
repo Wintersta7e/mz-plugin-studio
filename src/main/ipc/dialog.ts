@@ -1,7 +1,8 @@
 import { IpcMain, IpcMainInvokeEvent, Dialog } from 'electron'
+import { IPC_CHANNELS } from '../../shared/ipc-types'
 
 export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
-  ipcMain.handle('dialog:open-folder', async (_event: IpcMainInvokeEvent) => {
+  ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async (_event: IpcMainInvokeEvent) => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory'],
       title: 'Select RPG Maker MZ Project Folder'
@@ -15,7 +16,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
   })
 
   ipcMain.handle(
-    'dialog:save-file',
+    IPC_CHANNELS.DIALOG_SAVE_FILE,
     async (
       _event: IpcMainInvokeEvent,
       options: { defaultPath?: string; filters?: { name: string; extensions: string[] }[] }
@@ -34,7 +35,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
   )
 
   ipcMain.handle(
-    'dialog:open-file',
+    IPC_CHANNELS.DIALOG_OPEN_FILE,
     async (
       _event: IpcMainInvokeEvent,
       options: { filters?: { name: string; extensions: string[] }[] }
@@ -53,7 +54,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
   )
 
   ipcMain.handle(
-    'dialog:message',
+    IPC_CHANNELS.DIALOG_MESSAGE,
     async (
       _event: IpcMainInvokeEvent,
       options: {

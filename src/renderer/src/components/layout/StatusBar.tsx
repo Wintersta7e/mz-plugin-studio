@@ -1,10 +1,39 @@
+import { useState, useEffect } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
+import { Download, CheckCircle } from 'lucide-react'
 
 export function StatusBar() {
   const project = useProjectStore((s) => s.project)
   const isDirty = usePluginStore((s) => s.isDirty)
   const savedPath = usePluginStore((s) => s.savedPath)
   const plugin = usePluginStore((s) => s.plugin)
+
+  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null)
+  const [updateDownloaded, setUpdateDownloaded] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  useEffect(() => {
+    const cleanupAvailable = window.api.update?.onUpdateAvailable((info) => {
+      setUpdateAvailable(info.version)
+    })
+    const cleanupDownloaded = window.api.update?.onUpdateDownloaded(() => {
+      setUpdateDownloaded(true)
+      setDownloading(false)
+    })
+    return () => {
+      cleanupAvailable?.()
+      cleanupDownloaded?.()
+    }
+  }, [])
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    await window.api.update?.downloadUpdate()
+  }
+
+  const handleInstall = () => {
+    window.api.update?.installUpdate()
+  }
 
   return (
     <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-xs text-muted-foreground">
@@ -23,8 +52,26 @@ export function StatusBar() {
       </div>
 
       <div className="flex items-center gap-4">
+        {updateDownloaded ? (
+          <button
+            onClick={handleInstall}
+            className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300"
+          >
+            <CheckCircle className="h-3 w-3" />
+            Restart to update
+          </button>
+        ) : updateAvailable ? (
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-1 text-blue-400 hover:text-blue-300 disabled:opacity-50"
+          >
+            <Download className="h-3 w-3" />
+            {downloading ? 'Downloading...' : `v${updateAvailable} available`}
+          </button>
+        ) : null}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
-        <span>MZ Plugin Studio v1.0.0</span>
+        <span>MZ Plugin Studio v1.1.0</span>
       </div>
     </div>
   )

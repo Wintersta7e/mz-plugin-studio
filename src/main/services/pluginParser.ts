@@ -54,7 +54,8 @@ export class PluginParser {
       commands,
       structs,
       codeBody,
-      customCode
+      customCode,
+      rawSource: content
     }
   }
 

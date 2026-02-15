@@ -10,7 +10,12 @@ import { CodeEditor } from './components/plugin/CodeEditor'
 import { CodePreview } from './components/preview/CodePreview'
 import { ProjectBrowser } from './components/project/ProjectBrowser'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
-import { useProjectStore, usePluginStore, useUIStore, useHistoryStore } from './stores'
+import { useProjectStore, usePluginStore, useUIStore, useHistoryStore, useSettingsStore } from './stores'
+import { SettingsDialog } from './components/settings/SettingsDialog'
+import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
+import { shouldHandleShortcut } from './lib/shortcuts'
+import { createEmptyPlugin } from './types/plugin'
+import { generatePlugin } from './lib/generator'
 import { FolderOpen } from 'lucide-react'
 import { Button } from './components/ui/button'
 
@@ -24,6 +29,16 @@ function App() {
   const setVariables = useProjectStore((s) => s.setVariables)
   const setActors = useProjectStore((s) => s.setActors)
   const setItems = useProjectStore((s) => s.setItems)
+  const setSkills = useProjectStore((s) => s.setSkills)
+  const setWeapons = useProjectStore((s) => s.setWeapons)
+  const setArmors = useProjectStore((s) => s.setArmors)
+  const setEnemies = useProjectStore((s) => s.setEnemies)
+  const setStates = useProjectStore((s) => s.setStates)
+  const setAnimations = useProjectStore((s) => s.setAnimations)
+  const setTilesets = useProjectStore((s) => s.setTilesets)
+  const setCommonEvents = useProjectStore((s) => s.setCommonEvents)
+  const setClasses = useProjectStore((s) => s.setClasses)
+  const setTroops = useProjectStore((s) => s.setTroops)
   const recentProjects = useProjectStore((s) => s.recentProjects)
 
   const plugin = usePluginStore((s) => s.plugin)
@@ -38,7 +53,16 @@ function App() {
   const previewWidth = useUIStore((s) => s.previewWidth)
   const setPreviewWidth = useUIStore((s) => s.setPreviewWidth)
 
+  const theme = useSettingsStore((s) => s.theme)
+
+  // Apply theme to document root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
   const [projectBrowserOpen, setProjectBrowserOpen] = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -101,25 +125,6 @@ function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) {
-          const next = redo()
-          if (next) setPlugin(next)
-        } else {
-          const prev = undo()
-          if (prev) setPlugin(prev)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [undo, redo, setPlugin])
-
   const handleOpenProject = useCallback(async () => {
     const path = await window.api.dialog.openFolder()
     if (!path) return
@@ -140,17 +145,41 @@ function App() {
       addRecentProject(path)
 
       // Load additional data
-      const [switches, variables, actors, items] = await Promise.all([
+      const [
+        switches, variables, actors, items,
+        skills, weapons, armors, enemies, states,
+        animations, tilesets, commonEvents, classes, troops
+      ] = await Promise.all([
         window.api.project.getSwitches(path),
         window.api.project.getVariables(path),
         window.api.project.getActors(path),
-        window.api.project.getItems(path)
+        window.api.project.getItems(path),
+        window.api.project.getSkills(path),
+        window.api.project.getWeapons(path),
+        window.api.project.getArmors(path),
+        window.api.project.getEnemies(path),
+        window.api.project.getStates(path),
+        window.api.project.getAnimations(path),
+        window.api.project.getTilesets(path),
+        window.api.project.getCommonEvents(path),
+        window.api.project.getClasses(path),
+        window.api.project.getTroops(path)
       ])
 
       setSwitches(switches)
       setVariables(variables)
       setActors(actors)
       setItems(items)
+      setSkills(skills)
+      setWeapons(weapons)
+      setArmors(armors)
+      setEnemies(enemies)
+      setStates(states)
+      setAnimations(animations)
+      setTilesets(tilesets)
+      setCommonEvents(commonEvents)
+      setClasses(classes)
+      setTroops(troops)
     } catch (error) {
       setError(String(error))
     } finally {
@@ -164,7 +193,17 @@ function App() {
     setSwitches,
     setVariables,
     setActors,
-    setItems
+    setItems,
+    setSkills,
+    setWeapons,
+    setArmors,
+    setEnemies,
+    setStates,
+    setAnimations,
+    setTilesets,
+    setCommonEvents,
+    setClasses,
+    setTroops
   ])
 
   const handleOpenRecentProject = useCallback(
@@ -184,17 +223,41 @@ function App() {
         setProject(projectData)
         addRecentProject(path)
 
-        const [switches, variables, actors, items] = await Promise.all([
+        const [
+          switches, variables, actors, items,
+          skills, weapons, armors, enemies, states,
+          animations, tilesets, commonEvents, classes, troops
+        ] = await Promise.all([
           window.api.project.getSwitches(path),
           window.api.project.getVariables(path),
           window.api.project.getActors(path),
-          window.api.project.getItems(path)
+          window.api.project.getItems(path),
+          window.api.project.getSkills(path),
+          window.api.project.getWeapons(path),
+          window.api.project.getArmors(path),
+          window.api.project.getEnemies(path),
+          window.api.project.getStates(path),
+          window.api.project.getAnimations(path),
+          window.api.project.getTilesets(path),
+          window.api.project.getCommonEvents(path),
+          window.api.project.getClasses(path),
+          window.api.project.getTroops(path)
         ])
 
         setSwitches(switches)
         setVariables(variables)
         setActors(actors)
         setItems(items)
+        setSkills(skills)
+        setWeapons(weapons)
+        setArmors(armors)
+        setEnemies(enemies)
+        setStates(states)
+        setAnimations(animations)
+        setTilesets(tilesets)
+        setCommonEvents(commonEvents)
+        setClasses(classes)
+        setTroops(troops)
       } catch (error) {
         setError(String(error))
       } finally {
@@ -209,9 +272,90 @@ function App() {
       setSwitches,
       setVariables,
       setActors,
-      setItems
+      setItems,
+      setSkills,
+      setWeapons,
+      setArmors,
+      setEnemies,
+      setStates,
+      setAnimations,
+      setTilesets,
+      setCommonEvents,
+      setClasses,
+      setTroops
     ]
   )
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const shortcut = shouldHandleShortcut(e)
+      if (!shortcut) return
+
+      e.preventDefault()
+
+      const TAB_MAP: Record<string, typeof activeTab> = {
+        'ctrl+1': 'meta',
+        'ctrl+2': 'parameters',
+        'ctrl+3': 'commands',
+        'ctrl+4': 'structs',
+        'ctrl+5': 'code'
+      }
+
+      switch (shortcut.key) {
+        case 'ctrl+z': {
+          const prev = undo()
+          if (prev) setPlugin(prev)
+          break
+        }
+        case 'ctrl+shift+z': {
+          const next = redo()
+          if (next) setPlugin(next)
+          break
+        }
+        case 'ctrl+s': {
+          const ps = usePluginStore.getState()
+          const proj = useProjectStore.getState().project
+          if (proj && ps.plugin.meta.name) {
+            const code = generatePlugin(ps.plugin)
+            const filename = `${ps.plugin.meta.name}.js`
+            window.api.plugin.save(proj.path, filename, code).then((result) => {
+              if (result.success) {
+                usePluginStore.getState().setSavedPath(result.path)
+                usePluginStore.getState().setDirty(false)
+              }
+            })
+          }
+          break
+        }
+        case 'ctrl+n': {
+          const newPlugin = createEmptyPlugin()
+          usePluginStore.getState().openPlugin(newPlugin)
+          break
+        }
+        case 'ctrl+o':
+          handleOpenProject()
+          break
+        case 'ctrl+,':
+          setSettingsOpen(true)
+          break
+        case 'f1':
+          setShortcutsOpen(true)
+          break
+        case 'f5':
+          setPlugin({ ...usePluginStore.getState().plugin })
+          break
+        default:
+          if (shortcut.key in TAB_MAP) {
+            setActiveTab(TAB_MAP[shortcut.key])
+          }
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo, redo, setPlugin, setActiveTab, handleOpenProject])
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -222,6 +366,8 @@ function App() {
           onOpenProject={handleOpenProject}
           onToggleProjectBrowser={() => setProjectBrowserOpen(!projectBrowserOpen)}
           projectBrowserOpen={projectBrowserOpen}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
         />
 
         <main className="flex flex-1 flex-col overflow-hidden">
@@ -292,6 +438,8 @@ function App() {
       </div>
 
       <StatusBar />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>
   )
 }

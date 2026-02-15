@@ -19,6 +19,7 @@ export function CodeEditor() {
   const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
   const editorMinimap = useSettingsStore((s) => s.editorMinimap)
   const editorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
+  const theme = useSettingsStore((s) => s.theme)
 
   const handleBeforeMount = useCallback((monaco: Monaco) => {
     if (!completionDisposableRef.current) {
@@ -116,7 +117,7 @@ export function CodeEditor() {
           height="100%"
           language="javascript"
           value={plugin.customCode || ''}
-          theme="vs-dark"
+          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
           beforeMount={handleBeforeMount}
           onMount={handleMount}
           onChange={handleChange}

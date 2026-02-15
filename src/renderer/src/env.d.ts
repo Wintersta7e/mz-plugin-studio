@@ -9,6 +9,16 @@ interface ProjectAPI {
   getItems: (path: string) => Promise<import('./types/mz').MZItem[]>
   getMaps: (path: string) => Promise<import('./types/mz').MZMapInfo[]>
   getPlugins: (path: string) => Promise<import('./types/mz').MZPluginEntry[]>
+  getSkills: (path: string) => Promise<import('./types/mz').MZSkill[]>
+  getWeapons: (path: string) => Promise<import('./types/mz').MZWeapon[]>
+  getArmors: (path: string) => Promise<import('./types/mz').MZArmor[]>
+  getEnemies: (path: string) => Promise<import('./types/mz').MZEnemy[]>
+  getStates: (path: string) => Promise<import('./types/mz').MZState[]>
+  getAnimations: (path: string) => Promise<import('./types/mz').MZAnimation[]>
+  getTilesets: (path: string) => Promise<import('./types/mz').MZTileset[]>
+  getCommonEvents: (path: string) => Promise<import('./types/mz').MZCommonEvent[]>
+  getClasses: (path: string) => Promise<import('./types/mz').MZClass[]>
+  getTroops: (path: string) => Promise<import('./types/mz').MZTroop[]>
 }
 
 interface PluginAPI {
@@ -25,6 +35,7 @@ interface PluginAPI {
   parse: (content: string) => Promise<import('./types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
+  readByPath: (filePath: string) => Promise<string>
 }
 
 interface DialogAPI {
@@ -53,11 +64,21 @@ interface WindowAPI {
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
 }
 
+interface UpdateAPI {
+  onUpdateAvailable: (
+    callback: (info: { version: string; releaseNotes?: string }) => void
+  ) => () => void
+  onUpdateDownloaded: (callback: () => void) => () => void
+  downloadUpdate: () => Promise<void>
+  installUpdate: () => Promise<void>
+}
+
 interface API {
   project: ProjectAPI
   plugin: PluginAPI
   dialog: DialogAPI
   window: WindowAPI
+  update: UpdateAPI
 }
 
 declare global {

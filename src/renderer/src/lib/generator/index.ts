@@ -408,6 +408,53 @@ function generateBody(plugin: PluginDefinition): string {
 }
 
 /**
+ * Generate plugin output in "raw mode": only regenerate the metadata header
+ * blocks (main header, localized headers, struct definitions) while preserving
+ * the original code body verbatim from rawSource.
+ *
+ * This ensures maximum round-trip fidelity for imported plugins — only the
+ * structured metadata that the UI can edit is regenerated; all code remains
+ * exactly as the original author wrote it.
+ */
+export function generateRawMode(plugin: PluginDefinition): string {
+  if (!plugin.rawSource) {
+    return generatePlugin(plugin)
+  }
+
+  const rawSource = plugin.rawSource
+
+  // Find the code body: everything after the last comment block (*/)
+  const lastCommentEnd = rawSource.lastIndexOf('*/')
+  let codeBody = ''
+  if (lastCommentEnd !== -1) {
+    codeBody = rawSource.slice(lastCommentEnd + 2)
+  } else {
+    // No comment blocks found — the entire file is code
+    codeBody = rawSource
+  }
+
+  // Regenerate header blocks from the plugin definition
+  const parts: string[] = []
+
+  // Main header
+  parts.push(generateHeader(plugin))
+
+  // Localized headers
+  const localizedHeaders = generateLocalizedHeaders(plugin)
+  if (localizedHeaders) {
+    parts.push(localizedHeaders)
+  }
+
+  // Struct definitions
+  for (const struct of plugin.structs) {
+    parts.push(generateStructDefinition(struct))
+  }
+
+  // Append original code body verbatim (preserving its leading whitespace/newlines)
+  return parts.join('\n\n') + codeBody
+}
+
+/**
  * Generate body using original codeBody (for plugins that shouldn't be regenerated)
  * Use this when you want to preserve the exact original implementation.
  */
@@ -611,6 +658,40 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
   for (const param of plugin.parameters) {
     if (param.type === 'struct' && param.structType && !structNames.has(param.structType)) {
       warnings.push(`Parameter "${param.name}" references struct "${param.structType}" which is not defined in this plugin`)
+    }
+  }
+
+  // Unused struct definitions (warning)
+  const referencedStructs = new Set<string>()
+  for (const param of plugin.parameters) {
+    if (param.structType) referencedStructs.add(param.structType)
+  }
+  for (const cmd of plugin.commands) {
+    for (const arg of cmd.args) {
+      if (arg.structType) referencedStructs.add(arg.structType)
+    }
+  }
+  for (const struct of plugin.structs) {
+    if (!referencedStructs.has(struct.name)) {
+      warnings.push(`Struct "${struct.name}" is defined but not referenced by any parameter or command argument`)
+    }
+  }
+
+  // Parameters referencing nonexistent parent (error)
+  for (const param of plugin.parameters) {
+    if (param.parent && !paramNames.has(param.parent)) {
+      errors.push(`Parameter "${param.name}" references nonexistent parent "${param.parent}"`)
+    }
+  }
+
+  // Commands with no implementation in custom code (warning)
+  if (plugin.customCode) {
+    for (const cmd of plugin.commands) {
+      const hasImplementation = plugin.customCode.includes(`'${cmd.name}'`) ||
+                                plugin.customCode.includes(`"${cmd.name}"`)
+      if (!hasImplementation) {
+        warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
+      }
     }
   }
 
