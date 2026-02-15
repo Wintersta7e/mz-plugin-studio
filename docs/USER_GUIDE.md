@@ -14,10 +14,14 @@ A comprehensive guide to creating RPG Maker MZ plugins with MZ Plugin Studio.
 8. [Multi-Language Support](#multi-language-support)
 9. [Project Integration](#project-integration)
 10. [Importing Existing Plugins](#importing-existing-plugins)
-11. [Exporting Plugins](#exporting-plugins)
-12. [Settings](#settings)
-13. [Best Practices](#best-practices)
-14. [Troubleshooting](#troubleshooting)
+11. [Raw Mode](#raw-mode)
+12. [Exporting Plugins](#exporting-plugins)
+13. [Diff View](#diff-view)
+14. [Settings](#settings)
+15. [Keyboard Shortcuts](#keyboard-shortcuts)
+16. [Auto-Update](#auto-update)
+17. [Best Practices](#best-practices)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -71,7 +75,10 @@ Tabs for different aspects of your plugin:
 - Real-time JavaScript preview (read-only)
 - Syntax highlighting
 - Validation errors and warnings
-- Copy and Export buttons
+- **Raw** button - Toggle raw mode for imported plugins (headers-only regeneration)
+- **Diff** button - Compare generated output against saved file
+- **Copy** and **Export** buttons
+- **Export dropdown** (chevron) - Export as README.md, .d.ts, or plugins.json entry
 
 ---
 
@@ -612,18 +619,46 @@ You can import existing .js plugins to edit them.
 - Plugin commands with arguments
 - Struct definitions
 - Multi-language blocks
+- Custom code (extracted from the plugin body using heuristics)
+- Raw source (the complete original file, for raw mode)
 
 ### Limitations
 
-- Only the header comment block is parsed
-- Custom code in the plugin body is not imported
 - Heavily customized plugin formats may not parse correctly
+- Custom code extraction uses heuristics and may not always find the exact boundary
 
 ### Tips for Importing
 
 - Make a backup of your original plugin
 - After importing, review all parameters for accuracy
-- Re-add any custom code using templates
+- Use **Raw Mode** to preserve the original code body exactly (see below)
+
+---
+
+## Raw Mode
+
+When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode lets you edit only the structured metadata (name, description, parameters, commands) while preserving the original code body verbatim.
+
+### When to Use Raw Mode
+
+- Editing metadata of complex third-party plugins
+- Updating parameter descriptions or defaults without touching code
+- Ensuring maximum round-trip fidelity for imported plugins
+
+### How It Works
+
+1. Import a plugin (the **Raw** button becomes available)
+2. Click **Raw** in the Generated Code preview toolbar
+3. The output regenerates only the header blocks (main header, localized headers, struct definitions)
+4. The code body remains exactly as the original author wrote it
+
+### Normal Mode vs Raw Mode
+
+| Aspect | Normal Mode | Raw Mode |
+|--------|-------------|----------|
+| Headers | Regenerated | Regenerated |
+| Code body | Generated from template + custom code | Preserved verbatim from original |
+| Best for | New plugins, plugins you own | Third-party plugins, metadata edits |
 
 ---
 
@@ -631,28 +666,48 @@ You can import existing .js plugins to edit them.
 
 ### Export Options
 
-**Export to File**
-1. Click the export button or **Ctrl+E**
-2. Choose a save location
-3. Enter a filename (or use the plugin name)
+**Export as .js Plugin**
+1. Click the **Export** button or **Ctrl+S**
+2. If a project is loaded, saves to `js/plugins/YourPlugin.js`
+3. If no project, opens a save dialog
 
-**Export to Project**
-1. Load your RPG Maker MZ project first
-2. Click **Export to Project**
-3. Plugin saves to `js/plugins/YourPlugin.js`
+**Export in Other Formats**
+Click the **chevron dropdown** next to the Export button:
+
+| Format | Description |
+|--------|-------------|
+| **README.md** | Markdown documentation with installation instructions, parameter table, and command reference |
+| **.d.ts** | TypeScript declaration file with parameter and command argument interfaces |
+| **plugins.json entry** | JSON entry for RPG Maker's plugins.js configuration file |
 
 ### Validation
 
 Before exporting, the studio validates your plugin:
 
 **Errors** (must fix)
-- Missing plugin name
-- Duplicate parameter names
-- Invalid type configurations
+- Missing or invalid plugin name
+- Duplicate parameter or command names
+- Parameters referencing nonexistent parent
 
 **Warnings** (review recommended)
-- Missing descriptions
-- Unusual configurations
+- Unused struct definitions (defined but not referenced)
+- Commands with no implementation in custom code
+- Parameter names that aren't valid JS identifiers
+
+---
+
+## Diff View
+
+The diff view shows a side-by-side comparison of the on-disk file vs your current generated output.
+
+### Using Diff View
+
+1. Click the **Diff** button in the Generated Code preview toolbar
+2. Left panel shows the saved version (on-disk file or original import)
+3. Right panel shows the current generated output
+4. Click **Diff** again to return to normal view
+
+The Diff button is disabled for new plugins that haven't been saved or imported yet.
 
 ---
 
@@ -662,16 +717,17 @@ Click the **gear icon** in the bottom of the sidebar to open the Settings dialog
 
 ### Editor Tab
 
-Configure the code preview panel:
+Configure the code editor and preview:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
+| Theme | Dark | Dark or Light mode (applies to entire app and Monaco editors) |
 | Font Size | 13 | Code font size (10-24) |
 | Word Wrap | On | Wrap long lines in the code preview |
 | Minimap | Off | Show the minimap scroll overview |
 | Line Numbers | On | Show line numbers |
 
-Changes apply immediately to both the Code tab editor and the Generated Code preview panel.
+Changes apply immediately to the Code tab editor, Generated Code preview, and Diff View.
 
 ### Defaults Tab
 
@@ -813,14 +869,57 @@ If the app shows a red error screen with a stack trace, this is the built-in err
 
 ## Keyboard Shortcuts
 
+Press **F1** at any time to open the Keyboard Shortcuts panel.
+
+### File
+
 | Action | Shortcut |
 |--------|----------|
-| New Plugin | Ctrl+N |
-| Open Plugin | Ctrl+O |
-| Save Plugin | Ctrl+S |
-| Export Plugin | Ctrl+E |
+| Save / Export plugin | Ctrl+S |
+| New plugin | Ctrl+N |
+| Open project | Ctrl+O |
+
+### Edit
+
+| Action | Shortcut |
+|--------|----------|
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Shift+Z |
+
+### View
+
+| Action | Shortcut |
+|--------|----------|
+| Regenerate preview | F5 |
+| Open settings | Ctrl+, |
+| Show keyboard shortcuts | F1 |
+
+### Navigation
+
+| Action | Shortcut |
+|--------|----------|
+| Switch to Meta tab | Ctrl+1 |
+| Switch to Parameters tab | Ctrl+2 |
+| Switch to Commands tab | Ctrl+3 |
+| Switch to Structs tab | Ctrl+4 |
+| Switch to Code tab | Ctrl+5 |
+
+**Note:** Ctrl+S, Ctrl+N, Ctrl+O, and F1 work even when the Monaco code editor is focused. Other shortcuts (like Ctrl+Z, Ctrl+1-5) are handled by Monaco when the editor is focused.
+
+---
+
+## Auto-Update
+
+MZ Plugin Studio checks for updates automatically on startup (production builds only).
+
+### How It Works
+
+1. On launch, the app checks GitHub Releases for newer versions
+2. If an update is available, a notification appears in the status bar
+3. Click **Download** to download the update in the background
+4. Once downloaded, click **Restart** to install and relaunch
+
+Updates are never forced - you can dismiss the notification and continue working.
 
 ---
 

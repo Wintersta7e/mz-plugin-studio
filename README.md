@@ -86,15 +86,24 @@ All 22 RPG Maker MZ parameter types are fully supported:
 - **Real-time Generation** - Code updates as you edit
 - **Template Insertion** - One-click template insertion
 - **Validation** - Real-time error and warning display
+- **Raw Mode** - Imported plugins can regenerate headers only, preserving original code body verbatim
+- **Diff View** - Side-by-side comparison of generated output vs saved file
+- **Export Formats** - Export as .js, README.md, .d.ts type declarations, or plugins.json entry
 
 ### Project Integration
 
 ![Project Browser](screenshots/project-browser.png)
 
 - **Load MZ Projects** - Select your project folder
-- **Auto-populate Dropdowns** - Switches, variables, actors, items from your project
+- **Auto-populate Dropdowns** - All 14 MZ database types (actors, classes, skills, items, weapons, armors, enemies, troops, states, animations, tilesets, common events, switches, variables)
 - **Direct Export** - Save plugins to `js/plugins/` folder
 - **Import Existing** - Parse and edit existing .js plugins
+
+### Additional Features
+- **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
+- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+1-5 tab switching, F5 regenerate)
+- **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
+- **Validation** - Warns about unused structs, orphaned parent references, and unimplemented commands
 
 ## Installation
 
@@ -123,6 +132,9 @@ npm run dev
 
 # Type check only
 npm run typecheck
+
+# Run tests (79 tests)
+npm test
 
 # Build for production
 npm run build
@@ -166,32 +178,36 @@ Output will be in the `dist/` folder.
 src/
 ├── main/                    # Electron main process
 │   ├── index.ts             # Window creation, app lifecycle
+│   ├── updater.ts           # Auto-update (GitHub Releases)
 │   ├── ipc/                 # IPC handlers
 │   │   ├── dialog.ts        # File dialogs
-│   │   ├── file.ts          # File operations
+│   │   ├── plugin.ts        # Plugin load/save/parse
 │   │   └── project.ts       # MZ project loading
 │   └── services/
 │       └── pluginParser.ts  # Parse existing plugins
 ├── preload/
 │   └── index.ts             # Context bridge (window.api)
+├── shared/
+│   └── ipc-types.ts         # Typed IPC channel constants
 └── renderer/src/            # React frontend
     ├── components/
     │   ├── plugin/          # Main editors
-    │   │   ├── MetaEditor.tsx
-    │   │   ├── ParameterBuilder.tsx
-    │   │   ├── CommandBuilder.tsx
-    │   │   ├── StructBuilder.tsx
-    │   │   ├── CodeEditor.tsx
-    │   │   └── TemplateInserter.tsx
+    │   ├── preview/         # CodePreview, DiffView
+    │   ├── settings/        # SettingsDialog, ShortcutsDialog
     │   └── ui/              # shadcn/ui components
-    ├── stores/
-    │   └── index.ts         # Zustand state management
+    ├── stores/              # Zustand stores (one per domain)
+    │   ├── pluginStore.ts
+    │   ├── projectStore.ts
+    │   ├── settingsStore.ts
+    │   └── ...
     ├── lib/
-    │   └── generator/
-    │       ├── index.ts     # Code generation
-    │       └── templates/   # 36 code templates
+    │   ├── generator/       # Code generation + validation
+    │   ├── exportFormats.ts  # README, .d.ts, plugins.json
+    │   ├── shortcuts.ts     # Keyboard shortcut definitions
+    │   └── mz-completions.ts # Monaco MZ autocomplete
     └── types/
         └── plugin.ts        # TypeScript interfaces
+tests/                       # Vitest unit tests (79 tests)
 ```
 
 ## Tech Stack
