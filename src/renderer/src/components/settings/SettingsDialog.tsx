@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Sun, Moon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -21,11 +21,13 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const {
+    theme,
     editorFontSize,
     editorWordWrap,
     editorMinimap,
     editorLineNumbers,
     defaultAuthor,
+    setTheme,
     setEditorFontSize,
     setEditorWordWrap,
     setEditorMinimap,
@@ -87,6 +89,26 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           {/* Editor Tab */}
           <TabsContent value="editor" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Theme</Label>
+              <div className="flex items-center gap-1 rounded-md border border-input p-0.5">
+                <button
+                  className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${theme === 'dark' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setTheme('dark')}
+                >
+                  <Moon className="h-3 w-3" />
+                  Dark
+                </button>
+                <button
+                  className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${theme === 'light' ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  onClick={() => setTheme('light')}
+                >
+                  <Sun className="h-3 w-3" />
+                  Light
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <Label htmlFor="fontSize">Font Size</Label>
               <Input

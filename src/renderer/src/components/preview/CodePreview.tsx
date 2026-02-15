@@ -16,6 +16,7 @@ export function CodePreview() {
   const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
   const editorMinimap = useSettingsStore((s) => s.editorMinimap)
   const editorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
+  const theme = useSettingsStore((s) => s.theme)
 
   const [copied, setCopied] = useState(false)
 
@@ -132,7 +133,7 @@ export function CodePreview() {
           height="100%"
           language="javascript"
           value={code}
-          theme="vs-dark"
+          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
           options={{
             readOnly: true,
             minimap: { enabled: editorMinimap },
