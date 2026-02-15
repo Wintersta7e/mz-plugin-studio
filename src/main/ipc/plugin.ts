@@ -3,13 +3,7 @@ import { readFile, readdir, writeFile, access, mkdir } from 'fs/promises'
 import { join, dirname } from 'path'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
-
-interface ScannedPluginHeader {
-  filename: string
-  name: string
-  base: string[]
-  orderAfter: string[]
-}
+import type { ScannedPluginHeader } from '../../shared/ipc-types'
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
