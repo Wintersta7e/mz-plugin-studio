@@ -29,6 +29,7 @@ export const IPC_CHANNELS = {
   PLUGIN_PARSE: 'plugin:parse',
   PLUGIN_READ_RAW: 'plugin:read-raw',
   PLUGIN_LIST: 'plugin:list',
+  PLUGIN_READ_BY_PATH: 'plugin:read-by-path',
 
   // Dialog
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',

@@ -47,6 +47,7 @@ export interface PluginAPI {
   ) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
+  readByPath: (filePath: string) => Promise<string>
 }
 
 export interface DialogAPI {
@@ -115,7 +116,8 @@ const pluginApi: PluginAPI = {
   parse: (content) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_PARSE, content),
   readRaw: (projectPath, filename) =>
     ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
-  list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath)
+  list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath),
+  readByPath: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath)
 }
 
 const dialogApi: DialogAPI = {

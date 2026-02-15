@@ -57,6 +57,13 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   })
 
   ipcMain.handle(
+    IPC_CHANNELS.PLUGIN_READ_BY_PATH,
+    async (_event: IpcMainInvokeEvent, filePath: string) => {
+      return readFile(filePath, 'utf-8')
+    }
+  )
+
+  ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
     async (_event: IpcMainInvokeEvent, filePath: string, content: string) => {
       const dir = dirname(filePath)

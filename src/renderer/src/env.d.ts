@@ -35,6 +35,7 @@ interface PluginAPI {
   parse: (content: string) => Promise<import('./types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
+  readByPath: (filePath: string) => Promise<string>
 }
 
 interface DialogAPI {
