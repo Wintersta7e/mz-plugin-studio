@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.0] - 2026-02-16
+
+### Added
+- Bulk parameter operations: multi-select toolbar with Select All, Duplicate, Delete, Export, Import, and Presets
+- Parameter I/O module for `.mzparams` file format (serialize, deserialize, duplicate with shape validation)
+- Parameter presets: save, apply, delete, and clear presets in Settings > Data tab
+- Import picker dialog: browse project plugins and select individual parameters to import
+- DropdownMenu UI component (shadcn/Radix)
+- 18 new unit tests for parameter I/O (172 total across 8 test files)
+
+### Changed
+- Raw mode auto-enabled for imported plugins (was manual toggle)
+- Diff view always uses raw mode output for imported plugins (shows meaningful metadata changes, not full regeneration noise)
+- `generateRawMode()` rewritten to replace MZ comment blocks in-place instead of reconstructing from parts
+- `ScannedPluginHeader` consolidated to single shared definition in `ipc-types.ts`
+
+### Fixed
+- Raw mode losing code body when plugin contained `*/` in code (replaced `lastIndexOf` with forward block parsing)
+- Raw mode dropping header preamble (license, version history, social links) from imported plugins
+- Stale `selectedIds` after individual parameter delete via per-card trash button
+- `scanDependencies` could run concurrently (added `isScanning` guard)
+
 ## [1.2.0] - 2026-02-15
 
 ### Added
