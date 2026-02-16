@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { setSettingsGetter } from '../types/plugin'
+import type { PluginParameter } from '../types/plugin'
 
 interface SettingsState {
   // Appearance
@@ -12,6 +13,8 @@ interface SettingsState {
   editorLineNumbers: boolean
   // Defaults
   defaultAuthor: string
+  // Parameter presets
+  parameterPresets: Record<string, PluginParameter[]>
   // Setters
   setTheme: (theme: 'dark' | 'light') => void
   setEditorFontSize: (size: number) => void
@@ -19,6 +22,9 @@ interface SettingsState {
   setEditorMinimap: (minimap: boolean) => void
   setEditorLineNumbers: (lineNumbers: boolean) => void
   setDefaultAuthor: (author: string) => void
+  savePreset: (name: string, params: PluginParameter[]) => void
+  deletePreset: (name: string) => void
+  clearAllPresets: () => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -30,16 +36,46 @@ export const useSettingsStore = create<SettingsState>()(
       editorMinimap: false,
       editorLineNumbers: true,
       defaultAuthor: '',
+      parameterPresets: {},
 
       setTheme: (theme) => set({ theme }),
       setEditorFontSize: (size) => set({ editorFontSize: Math.max(10, Math.min(24, size)) }),
       setEditorWordWrap: (wrap) => set({ editorWordWrap: wrap }),
       setEditorMinimap: (minimap) => set({ editorMinimap: minimap }),
       setEditorLineNumbers: (lineNumbers) => set({ editorLineNumbers: lineNumbers }),
-      setDefaultAuthor: (author) => set({ defaultAuthor: author })
+      setDefaultAuthor: (author) => set({ defaultAuthor: author }),
+
+      savePreset: (name, params) => {
+        const trimmed = name.trim()
+        if (!trimmed || params.length === 0) return
+        set((state) => ({
+          parameterPresets: {
+            ...state.parameterPresets,
+            [trimmed]: structuredClone(params)
+          }
+        }))
+      },
+
+      deletePreset: (name) =>
+        set((state) => {
+          const updated = { ...state.parameterPresets }
+          delete updated[name]
+          return { parameterPresets: updated }
+        }),
+
+      clearAllPresets: () => set({ parameterPresets: {} })
     }),
     {
-      name: 'mz-plugin-studio-settings'
+      name: 'mz-plugin-studio-settings',
+      partialize: (state) => ({
+        theme: state.theme,
+        editorFontSize: state.editorFontSize,
+        editorWordWrap: state.editorWordWrap,
+        editorMinimap: state.editorMinimap,
+        editorLineNumbers: state.editorLineNumbers,
+        defaultAuthor: state.defaultAuthor,
+        parameterPresets: state.parameterPresets
+      })
     }
   )
 )

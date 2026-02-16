@@ -21,7 +21,7 @@ export function CodePreview() {
   const theme = useSettingsStore((s) => s.theme)
 
   const [copied, setCopied] = useState(false)
-  const [rawMode, setRawMode] = useState(false)
+  const [rawMode, setRawMode] = useState(Boolean(plugin.rawSource))
   const [showDiff, setShowDiff] = useState(false)
   const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -30,6 +30,11 @@ export function CodePreview() {
 
   const hasRawSource = Boolean(plugin.rawSource)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
+
+  // Auto-enable raw mode for imported plugins, disable for new plugins
+  useEffect(() => {
+    setRawMode(hasRawSource)
+  }, [hasRawSource])
 
   const code = useMemo(() => {
     try {
@@ -42,6 +47,16 @@ export function CodePreview() {
       return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
     }
   }, [plugin, rawMode, hasRawSource])
+
+  // Diff always uses raw mode for imported plugins (shows meaningful metadata changes, not full regeneration noise)
+  const diffModifiedCode = useMemo(() => {
+    if (!hasRawSource) return code
+    try {
+      return generateRawMode(plugin)
+    } catch {
+      return code
+    }
+  }, [plugin, hasRawSource, code])
 
   const validation = useMemo(() => {
     try {
@@ -295,7 +310,7 @@ export function CodePreview() {
 
       <div className="flex-1">
         {showDiff && onDiskCode !== null ? (
-          <DiffView original={onDiskCode} modified={code} />
+          <DiffView original={onDiskCode} modified={diffModifiedCode} />
         ) : (
           <Editor
             height="100%"

@@ -48,3 +48,11 @@ export const IPC_CHANNELS = {
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
+
+/** Scanned plugin header from MZ annotation block — shared across main/renderer */
+export interface ScannedPluginHeader {
+  filename: string
+  name: string
+  base: string[]
+  orderAfter: string[]
+}
