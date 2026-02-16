@@ -421,37 +421,80 @@ export function generateRawMode(plugin: PluginDefinition): string {
     return generatePlugin(plugin)
   }
 
-  const rawSource = plugin.rawSource
+  let output = plugin.rawSource
 
-  // Find the code body: everything after the last comment block (*/)
-  const lastCommentEnd = rawSource.lastIndexOf('*/')
-  let codeBody = ''
-  if (lastCommentEnd !== -1) {
-    codeBody = rawSource.slice(lastCommentEnd + 2)
+  // 1. Replace the main /*: ... */ block with regenerated header
+  const mainStart = output.indexOf('/*:')
+  if (mainStart === -1) {
+    return generatePlugin(plugin)
+  }
+
+  // Skip localized blocks like /*:ja — check the char after the colon
+  const afterColon = output.slice(mainStart + 3, mainStart + 6)
+  if (/^[a-z]{2}[\s\r\n]/.test(afterColon)) {
+    return generatePlugin(plugin) // shouldn't happen — main header should come first
+  }
+
+  const mainEnd = output.indexOf('*/', mainStart + 3)
+  if (mainEnd === -1) {
+    return generatePlugin(plugin)
+  }
+
+  // Extract preamble (license, version history, etc.) from original block
+  const originalBlock = output.slice(mainStart, mainEnd + 2)
+  const preamble = extractHeaderPreamble(originalBlock)
+
+  // Build replacement header with preamble injected
+  const header = generateHeader(plugin)
+  let newMain: string
+  if (preamble) {
+    const firstNL = header.indexOf('\n')
+    newMain = header.slice(0, firstNL + 1) + preamble + header.slice(firstNL + 1)
   } else {
-    // No comment blocks found — the entire file is code
-    codeBody = rawSource
+    newMain = header
   }
 
-  // Regenerate header blocks from the plugin definition
-  const parts: string[] = []
+  output = output.slice(0, mainStart) + newMain + output.slice(mainEnd + 2)
 
-  // Main header
-  parts.push(generateHeader(plugin))
-
-  // Localized headers
-  const localizedHeaders = generateLocalizedHeaders(plugin)
-  if (localizedHeaders) {
-    parts.push(localizedHeaders)
-  }
-
-  // Struct definitions
+  // 2. Replace /*~struct~Name: ... */ blocks with regenerated versions
   for (const struct of plugin.structs) {
-    parts.push(generateStructDefinition(struct))
+    const tag = `/*~struct~${struct.name}:`
+    const sStart = output.indexOf(tag)
+    if (sStart !== -1) {
+      const sEnd = output.indexOf('*/', sStart + tag.length)
+      if (sEnd !== -1) {
+        const newStruct = generateStructDefinition(struct)
+        output = output.slice(0, sStart) + newStruct + output.slice(sEnd + 2)
+      }
+    }
   }
 
-  // Append original code body verbatim (preserving its leading whitespace/newlines)
-  return parts.join('\n\n') + codeBody
+  return output
+}
+
+/**
+ * Extract preamble text from a /*: ... *​/ block.
+ * Captures license text, version history, social links, etc. that appear
+ * before the first recognized MZ annotation (@target, @plugindesc, etc.).
+ */
+function extractHeaderPreamble(blockContent: string): string {
+  const lines = blockContent.split('\n')
+
+  // Line 0 is the /*: opener — only extract from main header, not /*:ja etc.
+  if (!/^\/\*:\s*$/.test(lines[0].replace(/\r$/, ''))) return ''
+
+  // Known MZ annotation tags that mark the end of the preamble
+  const mzAnnotation = /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|param|command|help|noteParam|requiredAssets)\b/
+
+  const preambleLines: string[] = []
+  for (let i = 1; i < lines.length; i++) {
+    if (mzAnnotation.test(lines[i])) break
+    preambleLines.push(lines[i])
+  }
+
+  if (preambleLines.length === 0) return ''
+
+  return preambleLines.join('\n') + '\n'
 }
 
 /**
