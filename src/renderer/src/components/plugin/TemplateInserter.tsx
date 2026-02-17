@@ -199,7 +199,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   const [previewCode, setPreviewCode] = useState<string>('')
   const [searchQuery, setSearchQuery] = useState('')
   const [copied, setCopied] = useState(false)
-  const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent'>('category')
+  const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent' | 'all'>('category')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const insertButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -234,10 +234,14 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
       .filter((t): t is NonNullable<typeof t> => t !== undefined)
   }, [recentlyUsed])
 
+  // All templates (for global search)
+  const allTemplates = useMemo(() => getAllTemplates(), [])
+
   // Filter templates by search
   const filteredTemplates = useMemo(() => {
     let baseTemplates = categoryTemplates
-    if (viewMode === 'favorites') baseTemplates = favoriteTemplates
+    if (viewMode === 'all') baseTemplates = allTemplates
+    else if (viewMode === 'favorites') baseTemplates = favoriteTemplates
     else if (viewMode === 'recent') baseTemplates = recentTemplates
 
     if (!searchQuery.trim()) return baseTemplates
@@ -247,7 +251,16 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
         t.name.toLowerCase().includes(query) ||
         t.description.toLowerCase().includes(query)
     )
-  }, [viewMode, categoryTemplates, favoriteTemplates, recentTemplates, searchQuery])
+  }, [viewMode, categoryTemplates, allTemplates, favoriteTemplates, recentTemplates, searchQuery])
+
+  // Build a category name lookup for badge display
+  const categoryNameMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const cat of CATEGORIES) {
+      map[cat.id] = cat.name
+    }
+    return map
+  }, [])
 
   // Get selected template
   const selectedTemplate = useMemo(() => {
@@ -707,7 +720,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
             <div>
               <h2 className="text-lg font-semibold">Code Templates</h2>
               <p className="text-sm text-muted-foreground">
-                {getAllTemplates().length} templates available
+                {allTemplates.length} templates available
               </p>
             </div>
           </div>
@@ -776,6 +789,28 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                   {recentlyUsed.length}
                 </span>
               </button>
+              <button
+                onClick={() => { setViewMode('all'); setSelectedTemplateId(null); setSearchQuery('') }}
+                className={cn(
+                  'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
+                  viewMode === 'all'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                <Search className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate">All</span>
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                    viewMode === 'all'
+                      ? 'bg-primary-foreground/20 text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  {allTemplates.length}
+                </span>
+              </button>
             </div>
             <div className="mx-3 my-1 border-t border-border" />
             <div className="space-y-0.5 px-2 pb-2">
@@ -822,10 +857,20 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                     <Input
                       ref={searchInputRef}
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setSearchQuery(val)
+                        if (val.trim() && viewMode === 'category') {
+                          setViewMode('all')
+                          setSelectedTemplateId(null)
+                        } else if (!val.trim() && viewMode === 'all') {
+                          setViewMode('category')
+                        }
+                      }}
                       placeholder={
                         viewMode === 'favorites' ? 'Search favorites...'
                         : viewMode === 'recent' ? 'Search recent...'
+                        : viewMode === 'all' ? 'Search all templates...'
                         : `Search ${selectedCategoryInfo?.name.toLowerCase()} templates...`
                       }
                       className="h-9 pl-9"
@@ -848,6 +893,12 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                   <div className="hidden items-center gap-2 text-sm text-blue-500 sm:flex">
                     <Clock className="h-4 w-4" />
                     <span>Recent</span>
+                  </div>
+                )}
+                {viewMode === 'all' && (
+                  <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+                    <Search className="h-4 w-4" />
+                    <span>All Templates</span>
                   </div>
                 )}
               </div>
@@ -884,6 +935,11 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                             <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                               {template.description}
                             </div>
+                            {viewMode === 'all' && (
+                              <span className="mt-1 inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                {categoryNameMap[template.category] || template.category}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <button
