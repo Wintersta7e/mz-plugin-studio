@@ -1,26 +1,27 @@
 import { autoUpdater } from 'electron-updater'
 import { BrowserWindow, ipcMain } from 'electron'
+import { IPC_CHANNELS } from '../shared/ipc-types'
 
 export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
 
   autoUpdater.on('update-available', (info) => {
-    mainWindow.webContents.send('update:available', {
+    mainWindow.webContents.send(IPC_CHANNELS.UPDATE_AVAILABLE, {
       version: info.version,
       releaseNotes: info.releaseNotes
     })
   })
 
   autoUpdater.on('update-downloaded', () => {
-    mainWindow.webContents.send('update:downloaded')
+    mainWindow.webContents.send(IPC_CHANNELS.UPDATE_DOWNLOADED)
   })
 
-  ipcMain.handle('update:download', async () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATE_DOWNLOAD, async () => {
     await autoUpdater.downloadUpdate()
   })
 
-  ipcMain.handle('update:install', () => {
+  ipcMain.handle(IPC_CHANNELS.UPDATE_INSTALL, () => {
     autoUpdater.quitAndInstall()
   })
 

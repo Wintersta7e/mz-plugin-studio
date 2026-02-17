@@ -1,14 +1,44 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron'
 import { readFile, readdir, writeFile, access, mkdir } from 'fs/promises'
-import { join, dirname } from 'path'
+import { join, dirname, resolve, normalize, basename, extname } from 'path'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import type { ScannedPluginHeader } from '../../shared/ipc-types'
+
+/** Allowed file extensions for read/write-by-path operations */
+const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json'])
+
+/**
+ * Validate that a file path is safe for read/write operations.
+ * - Normalizes the path to resolve traversal sequences
+ * - Rejects paths with remaining '..' components
+ * - Restricts to allowed file extensions
+ */
+function assertSafeFilePath(filePath: string): void {
+  const normalized = normalize(resolve(filePath))
+  if (normalized.includes('..')) {
+    throw new Error('Path traversal is not allowed')
+  }
+  const ext = extname(normalized).toLowerCase()
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    throw new Error(`File extension "${ext}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`)
+  }
+}
+
+/**
+ * Validate that a filename is a simple name (no path separators or traversal).
+ */
+function assertSafeFilename(filename: string): void {
+  if (filename !== basename(filename) || filename.includes('..')) {
+    throw new Error('Invalid filename: must not contain path separators or traversal')
+  }
+}
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string, content: string) => {
+      assertSafeFilename(filename)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const dir = dirname(pluginPath)
 
@@ -26,6 +56,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_LOAD,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
+      assertSafeFilename(filename)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const content = await readFile(pluginPath, 'utf-8')
       const result = PluginParser.parsePlugin(content, filename)
@@ -41,6 +72,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_READ_RAW,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
+      assertSafeFilename(filename)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       return readFile(pluginPath, 'utf-8')
     }
@@ -59,6 +91,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_READ_BY_PATH,
     async (_event: IpcMainInvokeEvent, filePath: string) => {
+      assertSafeFilePath(filePath)
       return readFile(filePath, 'utf-8')
     }
   )
@@ -66,6 +99,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
     async (_event: IpcMainInvokeEvent, filePath: string, content: string) => {
+      assertSafeFilePath(filePath)
       const dir = dirname(filePath)
       try {
         await access(dir)

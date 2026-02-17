@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupProjectHandlers } from './ipc/project'
@@ -22,7 +22,7 @@ function createWindow(): void {
     backgroundColor: '#1e1e2e',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -33,7 +33,14 @@ function createWindow(): void {
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    try {
+      const parsed = new URL(details.url)
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        shell.openExternal(details.url)
+      }
+    } catch {
+      // Ignore malformed URLs
+    }
     return { action: 'deny' }
   })
 
@@ -74,6 +81,22 @@ app.whenReady().then(() => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  // Content Security Policy — blocks injected scripts and unsafe content
+  // Dev mode needs 'unsafe-inline' and 'unsafe-eval' for Vite HMR
+  // Monaco editor loads from cdn.jsdelivr.net — must be allowed in script-src
+  const monacoCdn = 'https://cdn.jsdelivr.net'
+  const csp = is.dev
+    ? `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; connect-src 'self' ws: http://localhost:*; worker-src 'self' blob: ${monacoCdn}`
+    : `default-src 'self'; script-src 'self' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; worker-src 'self' blob: ${monacoCdn}`
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp]
+      }
+    })
   })
 
   // Setup IPC handlers

@@ -152,18 +152,22 @@ const windowApi: WindowAPI = {
 
 const updateApi: UpdateAPI = {
   onUpdateAvailable: (callback) => {
+    const channel = IPC_CHANNELS.UPDATE_AVAILABLE
+    ipcRenderer.removeAllListeners(channel)
     const handler = (_event: unknown, info: { version: string; releaseNotes?: string }) =>
       callback(info)
-    ipcRenderer.on('update:available', handler)
-    return () => ipcRenderer.removeListener('update:available', handler)
+    ipcRenderer.on(channel, handler)
+    return () => ipcRenderer.removeListener(channel, handler)
   },
   onUpdateDownloaded: (callback) => {
+    const channel = IPC_CHANNELS.UPDATE_DOWNLOADED
+    ipcRenderer.removeAllListeners(channel)
     const handler = () => callback()
-    ipcRenderer.on('update:downloaded', handler)
-    return () => ipcRenderer.removeListener('update:downloaded', handler)
+    ipcRenderer.on(channel, handler)
+    return () => ipcRenderer.removeListener(channel, handler)
   },
-  downloadUpdate: () => ipcRenderer.invoke('update:download'),
-  installUpdate: () => ipcRenderer.invoke('update:install')
+  downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DOWNLOAD),
+  installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL)
 }
 
 contextBridge.exposeInMainWorld('api', {
