@@ -22,6 +22,7 @@ interface PluginState {
   addParameter: (param: PluginParameter) => void
   updateParameter: (id: string, param: Partial<PluginParameter>) => void
   removeParameter: (id: string) => void
+  removeParameters: (ids: string[]) => void
   reorderParameters: (fromIndex: number, toIndex: number) => void
 
   // Commands
@@ -92,6 +93,17 @@ export const usePluginStore = create<PluginState>()(
           },
           isDirty: true
         })),
+      removeParameters: (ids) =>
+        set((state) => {
+          if (ids.length === 0) return {}
+          const idSet = new Set(ids)
+          const filtered = state.plugin.parameters.filter((p) => !idSet.has(p.id))
+          if (filtered.length === state.plugin.parameters.length) return {}
+          return {
+            plugin: { ...state.plugin, parameters: filtered },
+            isDirty: true
+          }
+        }),
       reorderParameters: (fromIndex, toIndex) =>
         set((state) => {
           const params = [...state.plugin.parameters]

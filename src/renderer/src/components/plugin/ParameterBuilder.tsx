@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Plus,
   Trash2,
@@ -72,6 +72,7 @@ export function ParameterBuilder() {
   const addParameter = usePluginStore((s) => s.addParameter)
   const updateParameter = usePluginStore((s) => s.updateParameter)
   const removeParameter = usePluginStore((s) => s.removeParameter)
+  const removeParameters = usePluginStore((s) => s.removeParameters)
   const switches = useProjectStore((s) => s.switches)
   const variables = useProjectStore((s) => s.variables)
   const actors = useProjectStore((s) => s.actors)
@@ -92,6 +93,11 @@ export function ParameterBuilder() {
   const [importPickerOpen, setImportPickerOpen] = useState(false)
   const [importPickerParams, setImportPickerParams] = useState<PluginParameter[]>([])
   const [importPickerSelected, setImportPickerSelected] = useState<Set<string>>(new Set())
+
+  // Preset name dialog state
+  const [presetNameOpen, setPresetNameOpen] = useState(false)
+  const [presetNameValue, setPresetNameValue] = useState('')
+  const presetSavingRef = useRef(false)
 
   // Clear selection when plugin changes (e.g. open different file, undo/redo)
   const pluginId = plugin.id
@@ -129,6 +135,7 @@ export function ParameterBuilder() {
 
   const handleBulkDelete = async () => {
     const count = selectedIds.size
+    const ids = Array.from(selectedIds)
     const result = await window.api.dialog.message({
       type: 'question',
       title: 'Delete Parameters',
@@ -136,9 +143,7 @@ export function ParameterBuilder() {
       buttons: ['Cancel', 'Delete']
     })
     if (result === 1) {
-      for (const id of selectedIds) {
-        removeParameter(id)
-      }
+      removeParameters(ids)
       setSelectedIds(new Set())
     }
   }
@@ -217,20 +222,31 @@ export function ParameterBuilder() {
     }
   }
 
-  const handleSavePreset = async () => {
-    const name = window.prompt('Preset name:')
-    if (!name || !name.trim()) return
-    const trimmed = name.trim()
-    if (parameterPresets[trimmed]) {
-      const overwrite = await window.api.dialog.message({
-        type: 'question',
-        title: 'Overwrite Preset',
-        message: `A preset named "${trimmed}" already exists. Overwrite it?`,
-        buttons: ['Cancel', 'Overwrite']
-      })
-      if (overwrite !== 1) return
+  const handleSavePreset = () => {
+    setPresetNameValue('')
+    setPresetNameOpen(true)
+  }
+
+  const handleConfirmSavePreset = async () => {
+    if (presetSavingRef.current) return
+    presetSavingRef.current = true
+    try {
+      const trimmed = presetNameValue.trim()
+      if (!trimmed) return
+      if (parameterPresets[trimmed]) {
+        const overwrite = await window.api.dialog.message({
+          type: 'question',
+          title: 'Overwrite Preset',
+          message: `A preset named "${trimmed}" already exists. Overwrite it?`,
+          buttons: ['Cancel', 'Overwrite']
+        })
+        if (overwrite !== 1) return
+      }
+      savePreset(trimmed, selectedParams)
+      setPresetNameOpen(false)
+    } finally {
+      presetSavingRef.current = false
     }
-    savePreset(trimmed, selectedParams)
   }
 
   const handleApplyPreset = (name: string) => {
@@ -448,6 +464,49 @@ export function ParameterBuilder() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Preset Name dialog */}
+      <Dialog open={presetNameOpen} onOpenChange={(open) => {
+        if (!open) setPresetNameValue('')
+        setPresetNameOpen(open)
+      }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Save Preset</DialogTitle>
+            <DialogDescription>
+              Enter a name for this parameter preset ({selectedParams.length} parameter{selectedParams.length !== 1 ? 's' : ''})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="preset-name">Preset Name</Label>
+            <Input
+              id="preset-name"
+              value={presetNameValue}
+              onChange={(e) => setPresetNameValue(e.target.value)}
+              placeholder="My Preset"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleConfirmSavePreset()
+                }
+              }}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setPresetNameOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!presetNameValue.trim()}
+              onClick={handleConfirmSavePreset}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Import from Plugin picker dialog */}
       <Dialog open={importPickerOpen} onOpenChange={setImportPickerOpen}>
