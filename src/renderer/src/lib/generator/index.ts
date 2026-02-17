@@ -484,7 +484,7 @@ function extractHeaderPreamble(blockContent: string): string {
   if (!/^\/\*:\s*$/.test(lines[0].replace(/\r$/, ''))) return ''
 
   // Known MZ annotation tags that mark the end of the preamble
-  const mzAnnotation = /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|param|command|help|noteParam|requiredAssets)\b/
+  const mzAnnotation = /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
 
   const preambleLines: string[] = []
   for (let i = 1; i < lines.length; i++) {
