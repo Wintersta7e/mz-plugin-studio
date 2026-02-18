@@ -2,10 +2,11 @@
 
 A visual no-code plugin builder for RPG Maker MZ. Create professional-quality plugins without writing JavaScript.
 
+[![CI](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml)
 ![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
-![License](https://img.shields.io/badge/License-MIT-green)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 ## Overview
 
