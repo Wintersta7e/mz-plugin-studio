@@ -70,6 +70,20 @@ function generateHeader(plugin: PluginDefinition): string {
     lines.push(` * @orderAfter ${order}`)
   }
 
+  // Order Before
+  for (const order of plugin.meta.orderBefore || []) {
+    lines.push(` * @orderBefore ${order}`)
+  }
+
+  // Note Parameters (deployment notetag groups)
+  for (const np of plugin.meta.noteParams || []) {
+    lines.push(` * @noteParam ${np.name}`)
+    lines.push(` * @noteType ${np.type}`)
+    if (np.dir) lines.push(` * @noteDir ${np.dir}`)
+    if (np.data) lines.push(` * @noteData ${np.data}`)
+    if (np.require) lines.push(` * @noteRequire 1`)
+  }
+
   lines.push(' *')
 
   // Parameters
@@ -139,12 +153,15 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
     }
   }
 
-  if (param.type === 'file' && param.dir) {
+  if ((param.type === 'file' || param.type === 'animation') && param.dir) {
     lines.push(`${prefix}@dir ${param.dir}`)
   }
+  if ((param.type === 'file' || param.type === 'animation') && param.require) {
+    lines.push(`${prefix}@require 1`)
+  }
 
-  // Options for select type
-  if (param.type === 'select' && param.options) {
+  // Options for select/combo type
+  if ((param.type === 'select' || param.type === 'combo') && param.options) {
     for (const opt of param.options) {
       lines.push(`${prefix}@option ${opt.text}`)
       if (opt.value !== opt.text) {
@@ -251,11 +268,14 @@ function generateCommandBlock(cmd: PluginCommand): string[] {
       if (arg.decimals !== undefined) lines.push(` * @decimals ${arg.decimals}`)
     }
 
-    if (arg.type === 'file' && arg.dir) {
+    if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
       lines.push(` * @dir ${arg.dir}`)
     }
+    if ((arg.type === 'file' || arg.type === 'animation') && arg.require) {
+      lines.push(` * @require 1`)
+    }
 
-    if (arg.type === 'select' && arg.options) {
+    if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
       for (const opt of arg.options) {
         lines.push(` * @option ${opt.text}`)
         if (opt.value !== opt.text) {
@@ -456,7 +476,7 @@ export function generateRawMode(plugin: PluginDefinition): string {
 
   output = output.slice(0, mainStart) + newMain + output.slice(mainEnd + 2)
 
-  // 2. Replace /*~struct~Name: ... */ blocks with regenerated versions
+  // 2. Replace existing /*~struct~Name: ... */ blocks and add new ones
   for (const struct of plugin.structs) {
     const tag = `/*~struct~${struct.name}:`
     const sStart = output.indexOf(tag)
@@ -466,6 +486,106 @@ export function generateRawMode(plugin: PluginDefinition): string {
         const newStruct = generateStructDefinition(struct)
         output = output.slice(0, sStart) + newStruct + output.slice(sEnd + 2)
       }
+    } else {
+      // New struct — insert before the IIFE or at end of header section
+      const newStruct = generateStructDefinition(struct)
+      const iifeMatch = output.match(/\(\s*\(\s*\)\s*(?:=>)?\s*\{/)
+      if (iifeMatch && iifeMatch.index !== undefined) {
+        output = output.slice(0, iifeMatch.index) + newStruct + '\n\n' + output.slice(iifeMatch.index)
+      } else {
+        output += '\n\n' + newStruct
+      }
+    }
+  }
+
+  // 3. Inject parameter parsing for new parameters not already in the body
+  if (plugin.parameters.length > 0) {
+    const newParams = plugin.parameters.filter(
+      (p) => !p.name.includes('---') && !p.name.includes('===') && !output.includes(`params['${p.name}']`)
+    )
+    if (newParams.length > 0) {
+      const pluginName = plugin.meta.name || 'NewPlugin'
+      const parsingLines: string[] = []
+
+      // Check if PluginManager.parameters() already exists in body
+      const hasParamsDecl = output.includes('PluginManager.parameters(')
+      if (!hasParamsDecl) {
+        parsingLines.push(`    const PLUGIN_NAME = '${pluginName}';`)
+        parsingLines.push(`    const params = PluginManager.parameters(PLUGIN_NAME);`)
+      }
+
+      parsingLines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
+      for (const param of newParams) {
+        parsingLines.push(`    const ${camelCase(param.name)} = ${generateParamParser(param)};`)
+      }
+      parsingLines.push(`    // --- End new parameters ---`)
+
+      // Find injection point: after existing params declaration, or after 'use strict', or after IIFE opening
+      const injection = '\n' + parsingLines.join('\n') + '\n'
+      const paramsIdx = output.indexOf('PluginManager.parameters(')
+      if (paramsIdx !== -1) {
+        // Inject after the line that contains PluginManager.parameters(...)
+        const lineEnd = output.indexOf('\n', paramsIdx)
+        if (lineEnd !== -1) {
+          output = output.slice(0, lineEnd + 1) + injection + output.slice(lineEnd + 1)
+        }
+      } else {
+        // No existing params — inject after 'use strict' or IIFE opening
+        const strictIdx = output.indexOf("'use strict'")
+        if (strictIdx !== -1) {
+          const lineEnd = output.indexOf('\n', strictIdx)
+          if (lineEnd !== -1) {
+            output = output.slice(0, lineEnd + 1) + injection + output.slice(lineEnd + 1)
+          }
+        } else {
+          const iifeMatch = output.match(/\(\s*\(\s*\)\s*(?:=>)?\s*\{/)
+          if (iifeMatch && iifeMatch.index !== undefined) {
+            const iifeEnd = iifeMatch.index + iifeMatch[0].length
+            const nextNL = output.indexOf('\n', iifeEnd)
+            if (nextNL !== -1) {
+              output = output.slice(0, nextNL + 1) + injection + output.slice(nextNL + 1)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 4. Inject command registration for new commands not already in the body
+  const newCommands = plugin.commands.filter(
+    (cmd) => !output.includes(`registerCommand(`) || !output.includes(`'${cmd.name}'`)
+  ).filter(
+    (cmd) => !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+             !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
+             !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
+  )
+  if (newCommands.length > 0) {
+    const pluginName = plugin.meta.name || 'NewPlugin'
+    const cmdLines: string[] = []
+
+    // Ensure PLUGIN_NAME exists
+    if (!output.includes('PLUGIN_NAME')) {
+      cmdLines.push(`    const PLUGIN_NAME = '${pluginName}';`)
+    }
+
+    cmdLines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
+    for (const cmd of newCommands) {
+      cmdLines.push(`    PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`)
+      for (const arg of cmd.args) {
+        cmdLines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
+      }
+      cmdLines.push('')
+      cmdLines.push(`        // TODO: Implement ${cmd.name} logic`)
+      cmdLines.push(`        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`)
+      cmdLines.push('    });')
+    }
+    cmdLines.push(`    // --- End new commands ---`)
+
+    // Find injection point: before closing })(); or at end of body
+    const closingIife = output.lastIndexOf('})();')
+    if (closingIife !== -1) {
+      const injection = '\n' + cmdLines.join('\n') + '\n'
+      output = output.slice(0, closingIife) + injection + '\n' + output.slice(closingIife)
     }
   }
 
@@ -542,10 +662,14 @@ function generateParamParser(param: PluginParameter): string {
     case 'animation':
     case 'tileset':
     case 'common_event':
+    case 'icon':
+    case 'map':
       return `Number(${accessor} || ${defaultVal})`
 
     case 'color':
     case 'text':
+    case 'combo':
+    case 'hidden':
       return `${accessor} || ${defaultVal}`
 
     default:
@@ -587,10 +711,14 @@ function generateArgParser(arg: PluginParameter): string {
     case 'animation':
     case 'tileset':
     case 'common_event':
+    case 'icon':
+    case 'map':
       return `Number(${accessor} || ${defaultVal})`
 
     case 'color':
     case 'text':
+    case 'combo':
+    case 'hidden':
       return `${accessor} || ${defaultVal}`
 
     default:
@@ -612,7 +740,8 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
       type === 'actor' || type === 'class' || type === 'skill' ||
       type === 'item' || type === 'weapon' || type === 'armor' ||
       type === 'enemy' || type === 'troop' || type === 'state' ||
-      type === 'animation' || type === 'tileset' || type === 'common_event') {
+      type === 'animation' || type === 'tileset' || type === 'common_event' ||
+      type === 'icon' || type === 'map') {
     return '0'
   }
   return `'${String(value ?? '').replace(/'/g, "\\'")}'`
@@ -623,13 +752,25 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
  */
 export function camelCase(str: string): string {
   if (!str) return 'unnamed'
-  return str
-    .replace(/[^a-zA-Z0-9]/g, ' ')
-    .split(' ')
-    .map((word, index) =>
-      index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    )
-    .join('') || 'unnamed'
+  // If already a valid JS identifier with no separators, preserve as-is (e.g. myCombo → myCombo)
+  if (/^[a-zA-Z$][a-zA-Z0-9$]*$/.test(str)) {
+    // Just lowercase the first character
+    return str.charAt(0).toLowerCase() + str.slice(1) || 'unnamed'
+  }
+  // Strip leading/trailing underscores, split on non-alphanumeric
+  const stripped = str.replace(/^_+|_+$/g, '')
+  const words = stripped.replace(/[^a-zA-Z0-9]/g, ' ').split(' ').filter(Boolean)
+  const result = words
+    .map((word, index) => {
+      if (index === 0) {
+        // First word: lowercase first char, preserve rest (keeps internal camelCase)
+        return word.charAt(0).toLowerCase() + word.slice(1)
+      }
+      // Subsequent words: uppercase first char, preserve rest
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
+    .join('')
+  return result || 'unnamed'
 }
 
 /**
