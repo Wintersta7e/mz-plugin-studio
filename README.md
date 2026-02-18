@@ -15,7 +15,7 @@ MZ Plugin Studio provides a complete visual development environment for creating
 - **Real-time Preview** - See generated JavaScript update as you make changes
 - **Code Templates** - 36 ready-to-use templates covering common plugin patterns
 - **Project Integration** - Load your MZ project for auto-populated dropdowns
-- **Full Format Support** - All 22 parameter types, multi-language, structs, and arrays
+- **Full Format Support** - All 26 parameter types, multi-language, structs, and arrays
 
 ![MZ Plugin Studio](screenshots/overview.png)
 
@@ -23,7 +23,7 @@ MZ Plugin Studio provides a complete visual development environment for creating
 
 ### Plugin Building
 - **Metadata Editor** - Name, version, author, description, help text, URL
-- **Parameter Builder** - All 22 MZ parameter types with drag-and-drop reordering
+- **Parameter Builder** - All 26 MZ parameter types with drag-and-drop reordering, bulk operations, and presets
 - **Command Builder** - Plugin commands with typed arguments
 - **Struct Definitions** - Complex nested data structures
 - **Multi-language** - Japanese (ja) and Chinese (zh) localization tabs
@@ -32,13 +32,13 @@ MZ Plugin Studio provides a complete visual development environment for creating
 
 ![Parameter Builder](screenshots/parameter-builder.png)
 
-All 22 RPG Maker MZ parameter types are fully supported:
+All 26 RPG Maker MZ parameter types are fully supported:
 
 | Category | Types |
 |----------|-------|
-| **Basic** | string, number, boolean, select, note |
-| **Game Data** | variable, switch, actor, class, skill, item, weapon, armor, enemy, troop, state, animation, tileset, common_event |
-| **Advanced** | file, struct, array |
+| **Basic** | string, number, boolean, select, combo, note, text, hidden |
+| **Game Data** | variable, switch, actor, class, skill, item, weapon, armor, enemy, troop, state, animation, tileset, common_event, map, icon |
+| **Advanced** | file (with @require), struct, array, color |
 
 ### Parameter Attributes
 | Attribute | Description |
@@ -97,6 +97,10 @@ All 22 RPG Maker MZ parameter types are fully supported:
 - **Import Existing** - Parse and edit existing .js plugins
 
 ### Additional Features
+- **Dependency Analysis** - Scans `@base`, `@orderAfter`, and `@orderBefore` across project plugins; detects missing deps, circular deps, and load-order violations
+- **Auto-Documentation** - Generate help text from plugin metadata with one click
+- **Bulk Parameter Operations** - Multi-select, duplicate, delete, export/import parameters, reusable presets
+- **Note Parameters** - Declare `@noteParam` groups for RPG Maker deployment packager
 - **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
 - **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+1-5 tab switching, F5 regenerate)
 - **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
@@ -130,7 +134,7 @@ npm run dev
 # Type check only
 npm run typecheck
 
-# Run tests (79 tests)
+# Run tests (200+ tests)
 npm test
 
 # Build for production
@@ -199,12 +203,14 @@ src/
     │   └── ...
     ├── lib/
     │   ├── generator/       # Code generation + validation
+    │   ├── dependency-analyzer.ts # Plugin dependency graph + validation
+    │   ├── param-io.ts      # Parameter import/export (.mzparams)
     │   ├── exportFormats.ts  # README, .d.ts, plugins.json
     │   ├── shortcuts.ts     # Keyboard shortcut definitions
     │   └── mz-completions.ts # Monaco MZ autocomplete
     └── types/
         └── plugin.ts        # TypeScript interfaces
-tests/                       # Vitest unit tests (79 tests)
+tests/                       # Vitest unit tests (200+ tests)
 ```
 
 ## Tech Stack
