@@ -253,7 +253,7 @@ describe('camelCase', () => {
 
   it('converts multi-word names', () => {
     expect(camelCase('battle speed')).toBe('battleSpeed')
-    expect(camelCase('Max HP')).toBe('maxHp')
+    expect(camelCase('Max HP')).toBe('maxHP')
   })
 
   it('handles special characters', () => {
