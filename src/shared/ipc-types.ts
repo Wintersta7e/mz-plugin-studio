@@ -61,4 +61,5 @@ export interface ScannedPluginHeader {
   name: string
   base: string[]
   orderAfter: string[]
+  orderBefore: string[]
 }

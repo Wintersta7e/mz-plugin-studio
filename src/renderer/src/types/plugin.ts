@@ -5,6 +5,7 @@ export type ParamType =
   | 'number'
   | 'boolean'
   | 'select'
+  | 'combo'
   | 'variable'
   | 'switch'
   | 'actor'
@@ -20,9 +21,12 @@ export type ParamType =
   | 'tileset'
   | 'common_event'
   | 'file'
+  | 'icon'
+  | 'map'
   | 'note'
   | 'color'
   | 'text'
+  | 'hidden'
   | 'struct'
   | 'array'
 
@@ -42,12 +46,13 @@ export interface PluginParameter {
   min?: number
   max?: number
   decimals?: number
-  options?: SelectOption[] // For select type
+  options?: SelectOption[] // For select/combo type
   structType?: string // Reference to struct name
   arrayType?: ParamType // For array types
   dir?: string // For file type, directory
+  require?: boolean // For file/animation type, @require 1
   parent?: string // For nested parameters
-  rawType?: string // Original @type string for round-trip fidelity (e.g., 'color', 'nuumer', 'combo')
+  rawType?: string // Original @type string for round-trip fidelity (e.g., 'color', 'nuumer')
   // Boolean-specific labels
   onLabel?: string // @on label for booleans
   offLabel?: string // @off label for booleans
@@ -72,6 +77,14 @@ export interface LocalizedContent {
   help?: string
 }
 
+export interface NoteParam {
+  name: string // @noteParam value
+  type: string // @noteType (usually 'file')
+  dir?: string // @noteDir
+  data?: string // @noteData (e.g. 'actors', 'enemies')
+  require?: boolean // @noteRequire 1
+}
+
 export interface PluginMeta {
   name: string
   version: string
@@ -82,6 +95,8 @@ export interface PluginMeta {
   target: string
   dependencies: string[]
   orderAfter?: string[] // @orderAfter entries (multiple allowed)
+  orderBefore?: string[] // @orderBefore entries (multiple allowed)
+  noteParams?: NoteParam[] // @noteParam groups for deployment
   localizations?: Record<string, LocalizedContent> // { 'ja': {...}, 'zh': {...} }
 }
 
@@ -118,6 +133,8 @@ export function createEmptyPlugin(): PluginDefinition {
       target: 'MZ',
       dependencies: [],
       orderAfter: [],
+      orderBefore: [],
+      noteParams: [],
       localizations: {}
     },
     parameters: [],

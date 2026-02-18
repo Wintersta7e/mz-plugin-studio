@@ -1,5 +1,34 @@
 # Changelog
 
+## [Unreleased] - Missing MZ Annotations
+
+### Added
+- `combo` parameter type — editable dropdown with free-text fallback
+- `icon` parameter type — icon index picker (MZ shows icon sheet browser)
+- `map` parameter type — map ID picker referencing MapInfos.json
+- `hidden` parameter type — invisible parameter for internal use
+- `@require` flag on `file` and `animation` parameters for deployment packager
+- `@orderBefore` support — counterpart to `@orderAfter` for load ordering
+- `@noteParam` / `@noteType` / `@noteDir` / `@noteData` / `@noteRequire` annotation group for deployment
+- Note Parameters section in MetaEditor for managing `@noteParam` groups
+- New parameter types available as array element types (combo, icon, map)
+- 31 new tests for MZ annotations, dependency analyzer @orderBefore, and generator (203 total across 9 test files)
+
+### Changed
+- `camelCase()` rewritten to preserve existing camelCase in variable names (e.g., `myCombo` stays `myCombo`, not `mycombo`)
+- Raw mode now injects parsing code for new parameters added via the UI
+- Raw mode now injects `registerCommand` calls for new commands added via the UI
+- Raw mode now adds new `/*~struct~` blocks for structs added via the UI
+- `extractHeaderPreamble()` regex updated with 6 missing MZ annotations
+- Dependency analyzer handles `@orderBefore` reverse edges
+- IPC header scanner extracts `@orderBefore` entries
+
+### Fixed
+- `camelCase()` destroying variable names (e.g., `myCombo` → `mycombo`, `_hidden` → `Hidden`)
+- Pipe character `|` being eaten in combo options textarea (round-trip parsing issue)
+- Raw mode not generating code for new parameters, commands, or structs
+- Load-order validation not considering `@orderBefore` reverse dependencies
+
 ## [1.3.0] - 2026-02-16
 
 ### Added

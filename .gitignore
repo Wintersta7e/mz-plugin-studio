@@ -35,6 +35,7 @@ examples/
 
 # Analysis output (generated, not shipped)
 tools/output/
+tools/reference-repos/
 
 # Internal planning docs
 docs/plans/

@@ -131,6 +131,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
 
           const baseEntries: string[] = []
           const orderAfterEntries: string[] = []
+          const orderBeforeEntries: string[] = []
 
           const baseRegex = /@base\s+(\S+)/g
           let match
@@ -138,16 +139,22 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
             baseEntries.push(match[1])
           }
 
-          const orderRegex = /@orderAfter\s+(\S+)/g
-          while ((match = orderRegex.exec(header)) !== null) {
+          const orderAfterRegex = /@orderAfter\s+(\S+)/g
+          while ((match = orderAfterRegex.exec(header)) !== null) {
             orderAfterEntries.push(match[1])
+          }
+
+          const orderBeforeRegex = /@orderBefore\s+(\S+)/g
+          while ((match = orderBeforeRegex.exec(header)) !== null) {
+            orderBeforeEntries.push(match[1])
           }
 
           results.push({
             filename: file,
             name: file.replace(/\.js$/, ''),
             base: baseEntries,
-            orderAfter: orderAfterEntries
+            orderAfter: orderAfterEntries,
+            orderBefore: orderBeforeEntries
           })
         }
 

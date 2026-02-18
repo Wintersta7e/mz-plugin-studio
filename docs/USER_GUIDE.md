@@ -8,20 +8,24 @@ A comprehensive guide to creating RPG Maker MZ plugins with MZ Plugin Studio.
 2. [Interface Overview](#interface-overview)
 3. [Creating Your First Plugin](#creating-your-first-plugin)
 4. [Working with Parameters](#working-with-parameters)
-5. [Creating Plugin Commands](#creating-plugin-commands)
-6. [Using Structs](#using-structs)
-7. [Code Templates](#code-templates)
-8. [Multi-Language Support](#multi-language-support)
-9. [Project Integration](#project-integration)
-10. [Importing Existing Plugins](#importing-existing-plugins)
-11. [Raw Mode](#raw-mode)
-12. [Exporting Plugins](#exporting-plugins)
-13. [Diff View](#diff-view)
-14. [Settings](#settings)
-15. [Keyboard Shortcuts](#keyboard-shortcuts)
-16. [Auto-Update](#auto-update)
-17. [Best Practices](#best-practices)
-18. [Troubleshooting](#troubleshooting)
+5. [Bulk Parameter Operations](#bulk-parameter-operations)
+6. [Creating Plugin Commands](#creating-plugin-commands)
+7. [Using Structs](#using-structs)
+8. [Code Templates](#code-templates)
+9. [Multi-Language Support](#multi-language-support)
+10. [Plugin Dependencies](#plugin-dependencies)
+11. [Note Parameters (Deployment)](#note-parameters-deployment)
+12. [Auto-Documentation](#auto-documentation)
+13. [Project Integration](#project-integration)
+14. [Importing Existing Plugins](#importing-existing-plugins)
+15. [Raw Mode](#raw-mode)
+16. [Exporting Plugins](#exporting-plugins)
+17. [Diff View](#diff-view)
+18. [Settings](#settings)
+19. [Keyboard Shortcuts](#keyboard-shortcuts)
+20. [Auto-Update](#auto-update)
+21. [Best Practices](#best-practices)
+22. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -59,7 +63,7 @@ Tabs for different aspects of your plugin:
 
 | Tab | Purpose |
 |-----|---------|
-| **Meta** | Plugin name, version, author, description |
+| **Meta** | Plugin name, version, author, description, dependencies, note parameters |
 | **Parameters** | Configuration options users can set |
 | **Commands** | Plugin commands callable from events |
 | **Structs** | Complex nested data structures |
@@ -67,7 +71,7 @@ Tabs for different aspects of your plugin:
 
 ### Code Editor (Left Panel - Code Tab)
 - **Monaco Editor** - Same editor used in VS Code
-- **MZ Autocomplete** - 139 RPG Maker MZ classes and 28 global objects with IntelliSense
+- **MZ Autocomplete** - 139 RPG Maker MZ classes and 28 global objects with IntelliSense, sorted by real-world popularity
 - **Code Snippets** - Type `alias`, `register`, `param`, or `window` for quick scaffolding
 - **Template Insertion** - Click the puzzle piece icon to browse and insert code templates
 
@@ -99,6 +103,9 @@ In the **Meta** tab, fill in:
 | URL | https://... | No |
 | Target | MZ | Yes (default) |
 | Help | Detailed instructions... | No |
+| Dependencies | PluginBase | No |
+| Order After | AnotherPlugin | No |
+| Order Before | LoadMeLater | No |
 
 ### Step 3: Add Parameters (Optional)
 Click **Add Parameter** in the Parameters tab to add configuration options.
@@ -182,6 +189,23 @@ Options:
 Default: normal
 ```
 
+**Combo (Editable Dropdown)**
+
+A dropdown with predefined options that also allows free-text input. Useful for providing suggestions while still allowing custom values.
+
+```
+Name: fontFamily
+Text: Font Family
+Type: combo
+Options:
+  - GameFont
+  - Arial
+  - Times New Roman
+Default: GameFont
+```
+
+Options are entered one per line. Use `value|Display Text` format for separate internal values and display labels.
+
 **Note (Multiline Text)**
 ```
 Name: customScript
@@ -210,12 +234,22 @@ These types create dropdowns populated with your game's data:
 | animation | Animations |
 | tileset | Tilesets |
 | common_event | Common events |
+| map | Maps |
+| icon | Icon index (MZ shows icon sheet browser) |
 
 **Example: Variable Selection**
 ```
 Name: targetVariable
 Text: Target Variable
 Type: variable
+Default: 1
+```
+
+**Example: Map Selection**
+```
+Name: targetMap
+Text: Target Map
+Type: map
 Default: 1
 ```
 
@@ -228,6 +262,8 @@ Text: Background Image
 Type: file
 Directory: img/pictures
 ```
+
+The **Require** checkbox (available for `file` and `animation` types) tells the RPG Maker MZ deployment packager to include the referenced file when exporting. Check this if the file is essential for the plugin to function.
 
 **Struct (Complex Object)**
 ```
@@ -243,6 +279,19 @@ Name: itemList
 Text: Item List
 Type: array
 Element Type: number
+```
+
+Arrays support all parameter types as their element type, including struct, combo, icon, and map.
+
+**Hidden**
+
+A parameter that exists in the plugin code but is invisible in the RPG Maker MZ Plugin Manager. Useful for internal version tracking or configuration that shouldn't be user-editable.
+
+```
+Name: _dataVersion
+Text: Data Version
+Type: hidden
+Default: 1
 ```
 
 ### Nested Parameters
@@ -273,6 +322,49 @@ This creates a "Display Settings" toggle that shows/hides the width and height o
 ### Reordering Parameters
 
 Drag parameters by their handle (grip icon) to reorder them.
+
+---
+
+## Bulk Parameter Operations
+
+When working with plugins that have many parameters, bulk operations save time.
+
+### Multi-Select
+
+Click the **checkbox** next to any parameter to select it. A toolbar appears with bulk actions:
+
+| Action | Description |
+|--------|-------------|
+| **Select All** | Select all parameters |
+| **Duplicate** | Copy selected parameters (adds `_copy` suffix) |
+| **Delete** | Delete all selected parameters |
+| **Export** | Save selected parameters to a `.mzparams` file |
+
+### Import Parameters
+
+Click the **Import** dropdown to import parameters from:
+
+| Source | Description |
+|--------|-------------|
+| **From File** | Load a `.mzparams` file previously exported |
+| **From Plugin** | Browse project plugins and pick individual parameters to import |
+
+The Import from Plugin option opens a picker dialog showing all plugins in your loaded MZ project. Select a plugin, check the parameters you want, and click Import.
+
+### Parameter Presets
+
+Save parameter sets as reusable presets:
+
+1. Select one or more parameters using the checkboxes
+2. Click **Presets > Save Selection as Preset...**
+3. Enter a name for the preset
+4. To apply a preset later, click **Presets > [preset name]**
+
+Presets are managed in **Settings > Data > Parameter Presets**.
+
+### .mzparams File Format
+
+Exported parameter files use a simple JSON format with a version field for forward compatibility. They can be shared between projects or with other users.
 
 ---
 
@@ -560,6 +652,111 @@ Parameter names and descriptions are typically kept in English for technical con
 
 ---
 
+## Plugin Dependencies
+
+MZ Plugin Studio tracks dependencies between plugins in your project.
+
+### Declaring Dependencies
+
+In the **Meta** tab, you can declare:
+
+| Field | Annotation | Meaning |
+|-------|-----------|---------|
+| **Dependencies** | `@base` | Hard dependency — plugin will not work without this. Shows as an error if missing. |
+| **Order After** | `@orderAfter` | Soft hint — plugin should load after this. Shows as a warning if missing. |
+| **Order Before** | `@orderBefore` | Soft hint — plugin should load before this. Shows as a warning if missing. |
+
+### Dependency Analysis
+
+When you load an MZ project, the studio scans all plugin files in `js/plugins/` and validates:
+
+- **Missing dependencies** — A `@base` plugin not found in the project (error)
+- **Missing order hints** — An `@orderAfter` or `@orderBefore` target not found (warning)
+- **Circular dependencies** — A depends on B, B depends on A (error)
+- **Load order violations** — Plugin loads before its dependency (warning)
+- **Duplicate plugin names** — Same plugin name in multiple files (warning)
+
+### Health Badge
+
+A colored badge appears in the status bar:
+
+| Color | Meaning |
+|-------|---------|
+| Green | All dependencies satisfied, correct load order |
+| Yellow | Warnings only (missing soft hints, load order issues) |
+| Red | Errors (missing hard dependencies, circular deps) |
+
+Click the badge to see the full issues list.
+
+### Sidebar Indicators
+
+Project plugins in the sidebar show:
+- **Load order number** — Position in the plugin list
+- **Warning dot** — Hover to see dependency issues
+
+### Available Plugins Hint
+
+Below the Dependencies and Order After fields in MetaEditor, toggle the "Available plugins" hint to see all plugin names found in your project. This helps you type the correct plugin name.
+
+---
+
+## Note Parameters (Deployment)
+
+Note parameters (`@noteParam` groups) tell RPG Maker MZ's deployment packager which database note fields reference files that should be included in the exported game.
+
+### Adding Note Parameters
+
+In the **Meta** tab, scroll to the **Note Parameters** section and click **Add Note Parameter**. Each entry has:
+
+| Field | Annotation | Description |
+|-------|-----------|-------------|
+| **Name** | `@noteParam` | The note tag name (e.g., `Portrait`) |
+| **Type** | `@noteType` | Usually `file` |
+| **Directory** | `@noteDir` | Asset directory (e.g., `img/pictures/`) |
+| **Data** | `@noteData` | Database target (e.g., `actors`, `enemies`) |
+| **Require** | `@noteRequire` | Check to include referenced files in deployment |
+
+### Example
+
+If your plugin adds a `<Portrait:filename>` note tag to actors that references images in `img/pictures/`:
+
+```
+Name: Portrait
+Type: file
+Directory: img/pictures/
+Data: actors
+Require: checked
+```
+
+This generates:
+```javascript
+ * @noteParam Portrait
+ * @noteType file
+ * @noteDir img/pictures/
+ * @noteData actors
+ * @noteRequire 1
+```
+
+---
+
+## Auto-Documentation
+
+The auto-doc feature generates help text from your plugin's metadata.
+
+### Generating Help Text
+
+1. In the **Meta** tab, click the **sparkles button** next to the Help field
+2. A complete help text is generated from your plugin's parameters, commands, and structs
+3. Review and edit the generated text as needed
+
+The generated help includes:
+- Plugin description
+- Parameter list with types and defaults
+- Command reference with argument details
+- Struct field documentation
+
+---
+
 ## Project Integration
 
 Loading your RPG Maker MZ project enables powerful features.
@@ -637,7 +834,11 @@ You can import existing .js plugins to edit them.
 
 ## Raw Mode
 
-When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode lets you edit only the structured metadata (name, description, parameters, commands) while preserving the original code body verbatim.
+When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode lets you edit structured metadata while preserving the original code body.
+
+### Auto-Enable
+
+Raw mode is **automatically enabled** when you import an existing plugin. This ensures imported plugins maintain maximum fidelity by default.
 
 ### When to Use Raw Mode
 
@@ -647,17 +848,24 @@ When you import an existing plugin, MZ Plugin Studio stores the complete origina
 
 ### How It Works
 
-1. Import a plugin (the **Raw** button becomes available)
-2. Click **Raw** in the Generated Code preview toolbar
-3. The output regenerates only the header blocks (main header, localized headers, struct definitions)
-4. The code body remains exactly as the original author wrote it
+1. Import a plugin (raw mode is auto-enabled, the **Raw** button is active)
+2. The output regenerates header blocks (main header, localized headers, struct definitions)
+3. The code body remains exactly as the original author wrote it
+4. **New parameters** added in the UI are automatically injected into the code body after the parameter loading section
+5. **New commands** added in the UI get `registerCommand` calls injected before the closing IIFE
+6. **New struct definitions** are added as new `/*~struct~` blocks
+
+### Header Preamble Preservation
+
+If the original plugin has text before the `/*:` annotation block (license headers, version history, social links), raw mode preserves this preamble verbatim.
 
 ### Normal Mode vs Raw Mode
 
 | Aspect | Normal Mode | Raw Mode |
 |--------|-------------|----------|
 | Headers | Regenerated | Regenerated |
-| Code body | Generated from template + custom code | Preserved verbatim from original |
+| Code body | Generated from template + custom code | Preserved from original + new params/commands injected |
+| Preamble | Not applicable | Preserved verbatim |
 | Best for | New plugins, plugins you own | Third-party plugins, metadata edits |
 
 ---
@@ -744,6 +952,7 @@ Manage persisted data stored in your browser:
 | Clear Recent Projects | Remove all entries from the recent projects list |
 | Clear Template Favorites | Remove all favorited templates |
 | Clear Recently Used Templates | Clear the recently used templates history |
+| **Parameter Presets** | Manage saved parameter presets (delete individual or clear all) |
 
 Each button shows the current count and confirms when cleared.
 

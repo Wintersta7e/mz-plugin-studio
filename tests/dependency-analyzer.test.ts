@@ -9,9 +9,10 @@ import type { ScannedPluginHeader } from '../src/renderer/src/lib/dependency-ana
 function header(
   name: string,
   base: string[] = [],
-  orderAfter: string[] = []
+  orderAfter: string[] = [],
+  orderBefore: string[] = []
 ): ScannedPluginHeader {
-  return { filename: name + '.js', name, base, orderAfter }
+  return { filename: name + '.js', name, base, orderAfter, orderBefore }
 }
 
 describe('buildDependencyGraph', () => {
@@ -95,8 +96,8 @@ describe('validateDependencies', () => {
 
   it('detects duplicate plugin names', () => {
     const headers = [
-      { filename: 'A.js', name: 'A', base: [], orderAfter: [] },
-      { filename: 'A_copy.js', name: 'A', base: [], orderAfter: [] }
+      { filename: 'A.js', name: 'A', base: [], orderAfter: [], orderBefore: [] },
+      { filename: 'A_copy.js', name: 'A', base: [], orderAfter: [], orderBefore: [] }
     ]
     const report = validateDependencies(headers)
     const dupes = report.issues.filter((i) => i.type === 'duplicate')
@@ -160,5 +161,41 @@ describe('validateDependencies', () => {
       (i) => i.type === 'load-order' && i.pluginName === 'A'
     )
     expect(orderIssues).toHaveLength(1)
+  })
+
+  it('creates reverse edges from @orderBefore', () => {
+    // A says orderBefore B → B depends on A (reverse edge)
+    const headers = [header('A', [], [], ['B']), header('B')]
+    const graph = buildDependencyGraph(headers)
+    expect(graph.edges.get('B')).toContain('A')
+  })
+
+  it('detects load-order violation from @orderBefore', () => {
+    // B loads first, A loads second with orderBefore: ['B']
+    // A must load before B, so B at position 0 is wrong
+    const headers = [header('B'), header('A', [], [], ['B'])]
+    const report = validateDependencies(headers)
+    const orderIssues = report.issues.filter(
+      (i) => i.type === 'load-order' && i.pluginName === 'B'
+    )
+    expect(orderIssues.length).toBeGreaterThan(0)
+    expect(orderIssues[0].message).toContain('B')
+  })
+
+  it('treats missing @orderBefore target as warning', () => {
+    const headers = [header('A', [], [], ['NonExistent'])]
+    const report = validateDependencies(headers)
+    const missing = report.issues.filter((i) => i.type === 'missing')
+    expect(missing.length).toBeGreaterThan(0)
+    expect(missing[0].severity).toBe('warning')
+    expect(missing[0].message).toContain('should load before')
+  })
+
+  it('accepts correct @orderBefore load order', () => {
+    // A loads first with orderBefore: ['B'], B loads second — correct
+    const headers = [header('A', [], [], ['B']), header('B')]
+    const report = validateDependencies(headers)
+    const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+    expect(orderIssues).toHaveLength(0)
   })
 })

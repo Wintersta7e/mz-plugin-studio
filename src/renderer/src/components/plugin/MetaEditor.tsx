@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Plus, Trash2 } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { usePluginStore, useProjectStore } from '../../stores'
 import { generateHelpText } from '../../lib/exportFormats'
-import type { LocalizedContent } from '../../types/plugin'
+import type { LocalizedContent, NoteParam } from '../../types/plugin'
 
 export function MetaEditor() {
   const plugin = usePluginStore((s) => s.plugin)
@@ -239,6 +240,69 @@ export function MetaEditor() {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="orderBefore">Order Before (one per line)</Label>
+          <Textarea
+            id="orderBefore"
+            value={(plugin.meta.orderBefore || []).join('\n')}
+            onChange={(e) =>
+              updateMeta({
+                orderBefore: e.target.value.split('\n').filter((s) => s.trim())
+              })
+            }
+            placeholder="PluginName (plugins that must load after this one)"
+            rows={2}
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Plugins that must load after this one
+          </p>
+        </div>
+
+        {/* Note Parameters for deployment */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Note Parameters (deployment)</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => {
+                const current = plugin.meta.noteParams || []
+                updateMeta({
+                  noteParams: [...current, { name: '', type: 'file' }]
+                })
+              }}
+            >
+              <Plus className="mr-1 h-3 w-3" />
+              Add
+            </Button>
+          </div>
+          {(plugin.meta.noteParams || []).length > 0 && (
+            <div className="space-y-3 rounded-md border border-border p-3">
+              {(plugin.meta.noteParams || []).map((np, idx) => (
+                <NoteParamRow
+                  key={idx}
+                  noteParam={np}
+                  onUpdate={(updates) => {
+                    const current = [...(plugin.meta.noteParams || [])]
+                    current[idx] = { ...current[idx], ...updates }
+                    updateMeta({ noteParams: current })
+                  }}
+                  onDelete={() => {
+                    const current = [...(plugin.meta.noteParams || [])]
+                    current.splice(idx, 1)
+                    updateMeta({ noteParams: current })
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Declares which notetags reference files for MZ deployment packaging
+          </p>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="target">Target</Label>
           <Input
             id="target"
@@ -247,6 +311,93 @@ export function MetaEditor() {
             placeholder="MZ"
           />
         </div>
+      </div>
+    </div>
+  )
+}
+
+const NOTE_DATA_OPTIONS = [
+  'actors', 'classes', 'skills', 'items', 'weapons', 'armors',
+  'enemies', 'troops', 'states', 'tilesets', 'animations', 'maps'
+]
+
+function NoteParamRow({
+  noteParam,
+  onUpdate,
+  onDelete
+}: {
+  noteParam: NoteParam
+  onUpdate: (updates: Partial<NoteParam>) => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] gap-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label className="text-xs">Tag Name</Label>
+          <Input
+            value={noteParam.name}
+            onChange={(e) => onUpdate({ name: e.target.value })}
+            placeholder="tagName"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Type</Label>
+          <Input
+            value={noteParam.type}
+            onChange={(e) => onUpdate({ type: e.target.value })}
+            placeholder="file"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Directory</Label>
+          <Input
+            value={noteParam.dir || ''}
+            onChange={(e) => onUpdate({ dir: e.target.value || undefined })}
+            placeholder="audio/bgm/"
+            className="h-8 text-sm"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Database</Label>
+          <Select
+            value={noteParam.data || 'none'}
+            onValueChange={(v) => onUpdate({ data: v === 'none' ? undefined : v })}
+          >
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {NOTE_DATA_OPTIONS.map((opt) => (
+                <SelectItem key={opt} value={opt}>
+                  {opt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-1 pt-5">
+        <label className="flex items-center gap-1 text-xs">
+          <input
+            type="checkbox"
+            checked={noteParam.require || false}
+            onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
+            className="h-3.5 w-3.5"
+          />
+          Req
+        </label>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   )

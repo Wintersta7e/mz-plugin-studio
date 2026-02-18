@@ -4,7 +4,8 @@ import type {
   PluginCommand,
   PluginStruct,
   ParamType,
-  LocalizedContent
+  LocalizedContent,
+  NoteParam
 } from '../../renderer/src/types/plugin'
 
 interface ParsedMeta {
@@ -17,6 +18,8 @@ interface ParsedMeta {
   target: string
   dependencies: string[]
   orderAfter: string[]
+  orderBefore: string[]
+  noteParams: NoteParam[]
   localizations: Record<string, LocalizedContent>
 }
 
@@ -48,6 +51,8 @@ export class PluginParser {
         target: meta.target,
         dependencies: meta.dependencies,
         orderAfter: meta.orderAfter,
+        orderBefore: meta.orderBefore,
+        noteParams: meta.noteParams,
         localizations: meta.localizations
       },
       parameters,
@@ -247,6 +252,8 @@ export class PluginParser {
       target: '',
       dependencies: [],
       orderAfter: [],
+      orderBefore: [],
+      noteParams: [],
       localizations: {}
     }
 
@@ -299,6 +306,42 @@ export class PluginParser {
     const orderMatches = header.matchAll(/@orderAfter\s+(.+?)(?=\n)/gi)
     for (const match of orderMatches) {
       meta.orderAfter.push(match[1].trim())
+    }
+
+    // Parse @orderBefore (same pattern as @orderAfter)
+    const orderBeforeMatches = header.matchAll(/@orderBefore\s+(.+?)(?=\n)/gi)
+    for (const match of orderBeforeMatches) {
+      meta.orderBefore.push(match[1].trim())
+    }
+
+    // Parse @noteParam groups
+    // Each @noteParam starts a new group; subsequent @noteType/@noteDir/@noteData/@noteRequire belong to it
+    const noteParamMatches = [...header.matchAll(/@noteParam\s+(.+?)(?=\n)/gi)]
+    for (let i = 0; i < noteParamMatches.length; i++) {
+      const npMatch = noteParamMatches[i]
+      // Get the text between this @noteParam and the next one (or end of header)
+      const startIdx = npMatch.index! + npMatch[0].length
+      const endIdx = i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index! : header.length
+      const groupBlock = header.slice(startIdx, endIdx)
+
+      const noteParam: NoteParam = {
+        name: npMatch[1].trim(),
+        type: 'file'
+      }
+
+      const noteTypeMatch = groupBlock.match(/@noteType\s+([^\n\r]+)/i)
+      if (noteTypeMatch) noteParam.type = noteTypeMatch[1].trim()
+
+      const noteDirMatch = groupBlock.match(/@noteDir\s+([^\n\r]+)/i)
+      if (noteDirMatch) noteParam.dir = noteDirMatch[1].trim()
+
+      const noteDataMatch = groupBlock.match(/@noteData\s+([^\n\r]+)/i)
+      if (noteDataMatch) noteParam.data = noteDataMatch[1].trim()
+
+      const noteRequireMatch = groupBlock.match(/@noteRequire\s+1/i)
+      if (noteRequireMatch) noteParam.require = true
+
+      meta.noteParams.push(noteParam)
     }
 
     // Infer name from filename comment or plugin structure
@@ -412,7 +455,11 @@ export class PluginParser {
       const dirMatch = effectiveBlock.match(/@dir\s+([^\n\r]+)/i)
       if (dirMatch) param.dir = dirMatch[1].trim()
 
-      // Parse options for select type
+      // Parse @require for file/animation type
+      const requireMatch = effectiveBlock.match(/@require\s+1/i)
+      if (requireMatch) param.require = true
+
+      // Parse options for select/combo type
       const options = this.parseOptions(effectiveBlock)
       if (options.length > 0) {
         param.options = options
@@ -514,13 +561,17 @@ export class PluginParser {
       const dirMatch = argBlock.match(/@dir\s+([^\n\r]+)/i)
       if (dirMatch) arg.dir = dirMatch[1].trim()
 
+      // Parse @require for file/animation type
+      const requireMatch = argBlock.match(/@require\s+1/i)
+      if (requireMatch) arg.require = true
+
       // Parse struct reference for args (only if not set by array type)
       if (!arg.structType) {
         const structMatch = argBlock.match(/@type\s+struct<(\w+)>/i)
         if (structMatch) arg.structType = structMatch[1]
       }
 
-      // Parse options for select type
+      // Parse options for select/combo type
       const options = this.parseOptions(argBlock)
       if (options.length > 0) arg.options = options
 
@@ -642,7 +693,8 @@ export class PluginParser {
   private static parseSingleType(normalizedType: string): ParamType {
     if (normalizedType === 'number' || normalizedType === 'num') return 'number'
     if (normalizedType === 'boolean' || normalizedType === 'bool') return 'boolean'
-    if (normalizedType === 'select' || normalizedType === 'combo') return 'select'
+    if (normalizedType === 'select') return 'select'
+    if (normalizedType === 'combo') return 'combo'
     if (normalizedType === 'variable') return 'variable'
     if (normalizedType === 'switch') return 'switch'
     if (normalizedType === 'actor') return 'actor'
@@ -658,9 +710,12 @@ export class PluginParser {
     if (normalizedType === 'tileset') return 'tileset'
     if (normalizedType === 'common_event') return 'common_event'
     if (normalizedType === 'file') return 'file'
+    if (normalizedType === 'icon') return 'icon'
+    if (normalizedType === 'map') return 'map'
     if (normalizedType === 'note' || normalizedType === 'multiline_string') return 'note'
     if (normalizedType === 'color') return 'color'
     if (normalizedType === 'text') return 'text'
+    if (normalizedType === 'hidden') return 'hidden'
 
     return 'string'
   }
