@@ -42,6 +42,7 @@ interface PluginAPI {
       name: string
       base: string[]
       orderAfter: string[]
+      orderBefore: string[]
     }[]
   >
 }

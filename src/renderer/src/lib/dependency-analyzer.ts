@@ -21,7 +21,7 @@ export interface DependencyReport {
 
 export interface DependencyGraph {
   plugins: Map<string, ScannedPluginHeader>
-  edges: Map<string, string[]> // plugin -> its dependencies (base + orderAfter)
+  edges: Map<string, string[]> // plugin -> its dependencies (base + orderAfter + reverse orderBefore)
 }
 
 /** Build a directed dependency graph from scanned headers */
@@ -32,6 +32,20 @@ export function buildDependencyGraph(headers: ScannedPluginHeader[]): Dependency
   for (const header of headers) {
     plugins.set(header.name, header)
     edges.set(header.name, [...header.base, ...header.orderAfter])
+  }
+
+  // @orderBefore creates reverse edges: if A has orderBefore: ['B'],
+  // then B must load after A, so B depends on A
+  for (const header of headers) {
+    for (const target of header.orderBefore) {
+      if (plugins.has(target)) {
+        const targetEdges = edges.get(target) || []
+        if (!targetEdges.includes(header.name)) {
+          targetEdges.push(header.name)
+          edges.set(target, targetEdges)
+        }
+      }
+    }
   }
 
   return { plugins, edges }
@@ -91,15 +105,26 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
         })
       }
     }
+    // @orderBefore = soft load order hint (warning if target missing)
+    for (const dep of header.orderBefore) {
+      if (!graph.plugins.has(dep)) {
+        issues.push({
+          type: 'missing',
+          severity: 'warning',
+          pluginName: header.name,
+          message: `"${header.name}" should load before "${dep}" but it was not found in the project`
+        })
+      }
+    }
   }
 
   // 3. Detect circular dependencies
   issues.push(...detectCycles(graph))
 
-  // 4. Detect load order violations (deduplicate base+orderAfter)
+  // 4. Detect load order violations (uses graph edges which include reverse @orderBefore)
   for (const header of headers) {
     const myPos = positionIndex.get(header.name)!
-    const allDeps = [...new Set([...header.base, ...header.orderAfter])]
+    const allDeps = [...new Set(graph.edges.get(header.name) || [])]
     for (const dep of allDeps) {
       const depPos = positionIndex.get(dep)
       if (depPos !== undefined && depPos > myPos) {
