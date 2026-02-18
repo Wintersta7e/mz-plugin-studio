@@ -42,7 +42,8 @@ const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
   { value: 'number', label: 'Number' },
   { value: 'boolean', label: 'Boolean' },
-  { value: 'select', label: 'Select/Combo' },
+  { value: 'select', label: 'Select' },
+  { value: 'combo', label: 'Combo (Editable Dropdown)' },
   { value: 'note', label: 'Note (Multiline)' },
   { value: 'variable', label: 'Variable' },
   { value: 'switch', label: 'Switch' },
@@ -59,8 +60,11 @@ const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'tileset', label: 'Tileset' },
   { value: 'common_event', label: 'Common Event' },
   { value: 'file', label: 'File' },
+  { value: 'icon', label: 'Icon' },
+  { value: 'map', label: 'Map' },
   { value: 'color', label: 'Color' },
   { value: 'text', label: 'Text (Multiline)' },
+  { value: 'hidden', label: 'Hidden (Internal)' },
   { value: 'struct', label: 'Struct' },
   { value: 'array', label: 'Array' }
 ]
@@ -606,6 +610,52 @@ interface ParameterCardProps {
   items: { id: number; name: string }[]
 }
 
+/** Options editor that uses local state to avoid value|label being eaten on keystroke */
+function OptionsEditor({
+  param,
+  onUpdate
+}: {
+  param: PluginParameter
+  onUpdate: (updates: Partial<PluginParameter>) => void
+}) {
+  const serialize = (opts: PluginParameter['options']) =>
+    opts?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
+
+  const [localText, setLocalText] = useState(() => serialize(param.options))
+
+  // Sync from store when options change externally (e.g. undo, import)
+  useEffect(() => {
+    setLocalText(serialize(param.options))
+  }, [param.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const commitOptions = (text: string) => {
+    const options = text.split('\n').filter(Boolean).map((line) => {
+      if (line.includes('|')) {
+        const pipeIdx = line.indexOf('|')
+        return { value: line.slice(0, pipeIdx).trim(), text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim() }
+      }
+      return { value: line.trim(), text: line.trim() }
+    })
+    onUpdate({ options })
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>Options (one per line, format: value|label or just label)</Label>
+      <Textarea
+        value={localText}
+        onChange={(e) => {
+          setLocalText(e.target.value)
+          commitOptions(e.target.value)
+        }}
+        placeholder={"option1|Option 1\noption2|Option 2"}
+        rows={4}
+        className="font-mono text-sm"
+      />
+    </div>
+  )
+}
+
 function ParameterCard({
   param,
   expanded,
@@ -642,6 +692,7 @@ function ParameterCard({
   }
 
   const isGameDataType = ['variable', 'switch', 'actor', 'item'].includes(param.type)
+  const isNumericIdType = ['icon', 'map'].includes(param.type)
   const gameDataOptions = getGameDataOptions()
   const hasProjectData = gameDataOptions.length > 0
   return (
@@ -680,6 +731,11 @@ function ParameterCard({
         <div className="flex-1">
           <span className="font-medium">{param.text || param.name}</span>
           <span className="ml-2 text-sm text-muted-foreground">({param.type})</span>
+          {param.type === 'hidden' && (
+            <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              hidden in MZ
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -747,7 +803,15 @@ function ParameterCard({
 
             <div className="space-y-2">
               <Label>Default Value</Label>
-              {isGameDataType ? (
+              {isNumericIdType ? (
+                <Input
+                  type="number"
+                  value={String(param.default ?? 0)}
+                  onChange={(e) => onUpdate({ default: Number(e.target.value) })}
+                  placeholder={param.type === 'icon' ? 'Icon index' : 'Map ID'}
+                  min={0}
+                />
+              ) : isGameDataType ? (
                 hasProjectData ? (
                   <Select
                     value={String(param.default ?? '')}
@@ -849,26 +913,9 @@ function ParameterCard({
             </div>
           )}
 
-          {/* Select options */}
-          {param.type === 'select' && (
-            <div className="space-y-2">
-              <Label>Options (one per line, format: value|label or just label)</Label>
-              <Textarea
-                value={
-                  param.options?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
-                }
-                onChange={(e) => {
-                  const options = e.target.value.split('\n').filter(Boolean).map((line) => {
-                    const [value, text] = line.includes('|') ? line.split('|') : [line, line]
-                    return { value: value.trim(), text: (text || value).trim() }
-                  })
-                  onUpdate({ options })
-                }}
-                placeholder={"option1|Option 1\noption2|Option 2"}
-                rows={4}
-                className="font-mono text-sm"
-              />
-            </div>
+          {/* Select/Combo options */}
+          {(param.type === 'select' || param.type === 'combo') && (
+            <OptionsEditor param={param} onUpdate={onUpdate} />
           )}
 
           {/* Struct reference */}
@@ -955,15 +1002,26 @@ function ParameterCard({
             </div>
           )}
 
-          {/* File directory */}
-          {param.type === 'file' && (
-            <div className="space-y-2">
-              <Label>Directory (relative to project)</Label>
-              <Input
-                value={param.dir || ''}
-                onChange={(e) => onUpdate({ dir: e.target.value })}
-                placeholder="img/pictures"
-              />
+          {/* File/Animation directory and require */}
+          {(param.type === 'file' || param.type === 'animation') && (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Directory (relative to project)</Label>
+                <Input
+                  value={param.dir || ''}
+                  onChange={(e) => onUpdate({ dir: e.target.value })}
+                  placeholder={param.type === 'animation' ? 'img/animations' : 'img/pictures'}
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={param.require || false}
+                  onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
+                  className="h-4 w-4"
+                />
+                Required for deployment (@require 1)
+              </label>
             </div>
           )}
         </div>
