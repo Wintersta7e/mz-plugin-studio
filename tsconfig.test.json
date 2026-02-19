@@ -1,0 +1,21 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": [
+    "tests/**/*",
+    "src/main/**/*",
+    "src/renderer/src/**/*",
+    "src/shared/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node", "vitest/globals"],
+    "jsx": "react-jsx",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["src/renderer/src/*"],
+      "@/*": ["src/renderer/src/*"]
+    }
+  }
+}
