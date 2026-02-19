@@ -1,8 +1,12 @@
 # Changelog
 
-## [Unreleased] - Missing MZ Annotations
+## [Unreleased]
 
 ### Added
+- **Plugin Conflict Detector** — scans project plugins for prototype method overrides and flags conflicts when 2+ plugins override the same method
+- **Analysis View** — dedicated Editor/Analysis view switch with Overview (stats), Conflicts (severity-sorted with plugin chains), and Dependencies (existing report) cards
+- Loading spinner during initial plugin analysis scan
+- 36 new tests for conflict detection (239 total across 10 test files)
 - `combo` parameter type — editable dropdown with free-text fallback
 - `icon` parameter type — icon index picker (MZ shows icon sheet browser)
 - `map` parameter type — map ID picker referencing MapInfos.json
@@ -15,6 +19,7 @@
 - 31 new tests for MZ annotations, dependency analyzer @orderBefore, and generator (203 total across 9 test files)
 
 ### Changed
+- Override extraction logic moved to shared module (`src/shared/override-extractor.ts`) — eliminates regex duplication between main and renderer processes
 - `camelCase()` rewritten to preserve existing camelCase in variable names (e.g., `myCombo` stays `myCombo`, not `mycombo`)
 - Raw mode now injects parsing code for new parameters added via the UI
 - Raw mode now injects `registerCommand` calls for new commands added via the UI
