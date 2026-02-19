@@ -28,3 +28,18 @@ jobs:
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract changelog and publish release
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk "/^## \\[${VERSION}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details." > release-notes.md
+          fi
+          gh release edit "$GITHUB_REF_NAME" \
+            --title "MZ Plugin Studio v${VERSION}" \
+            --notes-file release-notes.md \
+            --draft=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
