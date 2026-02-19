@@ -3,8 +3,8 @@
 A visual no-code plugin builder for RPG Maker MZ. Create professional-quality plugins without writing JavaScript.
 
 [![CI](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml)
-![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
@@ -18,7 +18,7 @@ MZ Plugin Studio provides a complete visual development environment for creating
 - **Project Integration** - Load your MZ project for auto-populated dropdowns
 - **Full Format Support** - All 26 parameter types, multi-language, structs, and arrays
 
-![MZ Plugin Studio](screenshots/overview.png)
+<img src="screenshots/overview.png" alt="MZ Plugin Studio" width="800">
 
 ## Features
 
@@ -31,7 +31,7 @@ MZ Plugin Studio provides a complete visual development environment for creating
 
 ### Parameter Types
 
-![Parameter Builder](screenshots/parameter-builder.png)
+<img src="screenshots/parameter-builder.png" alt="Parameter Builder" width="700">
 
 All 26 RPG Maker MZ parameter types are fully supported:
 
@@ -56,11 +56,11 @@ All 26 RPG Maker MZ parameter types are fully supported:
 
 ### Plugin Commands
 
-![Command Builder](screenshots/command-builder.png)
+<img src="screenshots/command-builder.png" alt="Command Builder" width="700">
 
 ### Code Template Library
 
-![Template Inserter](screenshots/template-inserter.png)
+<img src="screenshots/template-inserter.png" alt="Template Inserter" width="700">
 
 36 templates across 14 categories to jumpstart your plugins:
 
@@ -219,7 +219,7 @@ tests/                       # Vitest unit tests (200+ tests)
 | Technology | Purpose |
 |------------|---------|
 | [Electron](https://electronjs.org) | Desktop application shell |
-| [React 18](https://react.dev) | UI framework |
+| [React 19](https://react.dev) | UI framework |
 | [TypeScript](https://typescriptlang.org) | Type-safe development |
 | [electron-vite](https://electron-vite.org) | Build tooling |
 | [Tailwind CSS](https://tailwindcss.com) | Styling |
