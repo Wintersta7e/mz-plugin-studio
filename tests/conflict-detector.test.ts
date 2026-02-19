@@ -116,6 +116,15 @@ describe('extractOverrides', () => {
 
   // --- Edge cases ---
 
+  it('ignores comparison operators (==, !=, ===)', () => {
+    const code = [
+      'if (Game_Actor.prototype.setup == null) {}',
+      'if (Game_Map.prototype.update === originalUpdate) {}',
+      'if (Sprite.prototype.init != undefined) {}',
+    ].join('\n')
+    expect(extractOverrides(code)).toEqual([])
+  })
+
   it('captures only first two parts of nested property chain', () => {
     const code = `Game_Map.prototype.tileset.name = "test";`
     expect(extractOverrides(code)).toContain('Game_Map.prototype.tileset')

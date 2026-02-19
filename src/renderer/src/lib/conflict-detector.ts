@@ -54,7 +54,7 @@ export function extractOverrides(code: string): string[] {
   // Pattern 1: direct assignment — ClassName.prototype.method(…chain…) =
   // The optional (?:\.\w+)* allows nested chains like .tileset.name
   // while still capturing only the first property after prototype.
-  const directRe = /(\w+)\.prototype\.(\w+)(?:\.\w+)*\s*=/g
+  const directRe = /(\w+)\.prototype\.(\w+)(?:\.\w+)*\s*=(?![=>])/g
   let match: RegExpExecArray | null
   while ((match = directRe.exec(cleaned)) !== null) {
     seen.add(`${match[1]}.prototype.${match[2]}`)

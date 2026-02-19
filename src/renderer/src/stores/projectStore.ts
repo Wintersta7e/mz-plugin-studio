@@ -88,7 +88,7 @@ export const useProjectStore = create<ProjectState>()(
         if (project) {
           setTimeout(() => get().scanDependencies(), 0)
         } else {
-          set({ dependencyReport: null })
+          set({ dependencyReport: null, conflictReport: null })
         }
       },
       addRecentProject: (path) =>
