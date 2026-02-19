@@ -149,12 +149,29 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
             orderBeforeEntries.push(match[1])
           }
 
+          // Extract prototype overrides from code (outside comments/strings)
+          const overrideSet = new Set<string>()
+          const cleaned = content.replace(
+            /\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
+            (m) => ' '.repeat(m.length)
+          )
+          const overrideRegex = /(\w+)\.prototype\.(\w+)(?:\.\w+)*\s*=/g
+          let oMatch
+          while ((oMatch = overrideRegex.exec(cleaned)) !== null) {
+            overrideSet.add(`${oMatch[1]}.prototype.${oMatch[2]}`)
+          }
+          const aliasRegex = /(?:const|let|var)\s+\w+\s*=\s*(\w+)\.prototype\.(\w+)\s*[;,]/g
+          while ((oMatch = aliasRegex.exec(cleaned)) !== null) {
+            overrideSet.add(`${oMatch[1]}.prototype.${oMatch[2]}`)
+          }
+
           results.push({
             filename: file,
             name: file.replace(/\.js$/, ''),
             base: baseEntries,
             orderAfter: orderAfterEntries,
-            orderBefore: orderBeforeEntries
+            orderBefore: orderBeforeEntries,
+            overrides: [...overrideSet]
           })
         }
 
