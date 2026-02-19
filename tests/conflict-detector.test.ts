@@ -330,7 +330,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
     // All three are warning (popularity >= 10)
-    expect(report.conflicts.map((c) => c.method)).toEqual([
+    expect(report.conflicts.map((c: { method: string }) => c.method)).toEqual([
       'Game_Actor.prototype.setup',
       'Game_Map.prototype.update',
       'Scene_Battle.prototype.start',

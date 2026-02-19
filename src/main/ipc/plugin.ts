@@ -134,7 +134,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
           const orderBeforeEntries: string[] = []
 
           const baseRegex = /@base\s+(\S+)/g
-          let match
+          let match: RegExpExecArray | null
           while ((match = baseRegex.exec(header)) !== null) {
             baseEntries.push(match[1])
           }
@@ -156,7 +156,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
             (m) => ' '.repeat(m.length)
           )
           const overrideRegex = /(\w+)\.prototype\.(\w+)(?:\.\w+)*\s*=/g
-          let oMatch
+          let oMatch: RegExpExecArray | null
           while ((oMatch = overrideRegex.exec(cleaned)) !== null) {
             overrideSet.add(`${oMatch[1]}.prototype.${oMatch[2]}`)
           }
