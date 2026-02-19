@@ -84,9 +84,7 @@ const customTextCodeTemplate: CodeTemplate = {
     if (codeType === 'replace') {
       // Text replacement escape code (processed before display)
       lines.push(`// Custom Text Code: \\${escapeChar}${hasParameter ? '[n]' : ''}`)
-      lines.push(
-        '// Replaces the escape code with dynamic text during message processing'
-      )
+      lines.push('// Replaces the escape code with dynamic text during message processing')
       lines.push('')
       lines.push(
         'const _Window_Base_convertEscapeCharacters = Window_Base.prototype.convertEscapeCharacters;'
@@ -97,9 +95,7 @@ const customTextCodeTemplate: CodeTemplate = {
 
       if (hasParameter) {
         lines.push(`    // Process \\${escapeChar}[n] codes`)
-        lines.push(
-          `    text = text.replace(/\\\\${escapeChar}\\[(\\d+)\\]/gi, (_, param) => {`
-        )
+        lines.push(`    text = text.replace(/\\\\${escapeChar}\\[(\\d+)\\]/gi, (_, param) => {`)
         lines.push('        param = parseInt(param);')
         lines.push(`        // Return the replacement text based on the parameter`)
         lines.push(`        return ${replacementText};`)
@@ -122,9 +118,7 @@ const customTextCodeTemplate: CodeTemplate = {
       lines.push(
         'const _Window_Message_processEscapeCharacter = Window_Message.prototype.processEscapeCharacter;'
       )
-      lines.push(
-        'Window_Message.prototype.processEscapeCharacter = function(code, textState) {'
-      )
+      lines.push('Window_Message.prototype.processEscapeCharacter = function(code, textState) {')
 
       if (hasParameter) {
         lines.push(`    if (code === '${escapeChar}') {`)
@@ -171,9 +165,7 @@ const customTextCodeTemplate: CodeTemplate = {
       }
 
       lines.push('    } else {')
-      lines.push(
-        '        _Window_Message_processEscapeCharacter.call(this, code, textState);'
-      )
+      lines.push('        _Window_Message_processEscapeCharacter.call(this, code, textState);')
       lines.push('    }')
       lines.push('};')
     }
@@ -349,9 +341,7 @@ const messageWindowModTemplate: CodeTemplate = {
         const customY = (values.customY as number) || 0
 
         lines.push('// Message Window Position Modification')
-        lines.push(
-          '// Changes the default position of the message window'
-        )
+        lines.push('// Changes the default position of the message window')
         lines.push('')
 
         if (positionType === 'custom') {
@@ -379,10 +369,10 @@ const messageWindowModTemplate: CodeTemplate = {
             lines.push('    this.y = Graphics.boxHeight - this.height;')
           }
 
+          lines.push('    if (goldWindow) {')
           lines.push(
-            '    if (goldWindow) {'
+            '        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;'
           )
-          lines.push('        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;')
           lines.push('    }')
           lines.push('};')
         }
@@ -441,9 +431,7 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('};')
         } else {
           const bgValue = bgType === 'window' ? 0 : bgType === 'dim' ? 1 : 2
-          lines.push(
-            '// Override the background type for all messages'
-          )
+          lines.push('// Override the background type for all messages')
           lines.push(
             'const _Window_Message_setBackgroundType = Window_Message.prototype.setBackgroundType;'
           )
@@ -461,18 +449,14 @@ const messageWindowModTemplate: CodeTemplate = {
         lines.push('// Message Window Opacity Modification')
         lines.push('// Changes the transparency of the message window')
         lines.push('')
-        lines.push(
-          'const _Window_Message_initialize = Window_Message.prototype.initialize;'
-        )
+        lines.push('const _Window_Message_initialize = Window_Message.prototype.initialize;')
         lines.push('Window_Message.prototype.initialize = function(rect) {')
         lines.push('    _Window_Message_initialize.call(this, rect);')
         lines.push(`    this.opacity = ${opacityValue};`)
         lines.push('};')
         lines.push('')
         lines.push('// Also apply during updates to maintain opacity')
-        lines.push(
-          'const _Window_Message_update = Window_Message.prototype.update;'
-        )
+        lines.push('const _Window_Message_update = Window_Message.prototype.update;')
         lines.push('Window_Message.prototype.update = function() {')
         lines.push('    _Window_Message_update.call(this);')
         lines.push(`    this.opacity = ${opacityValue};`)
@@ -496,14 +480,10 @@ const messageWindowModTemplate: CodeTemplate = {
 
         if (nameBoxPosition === 'center') {
           lines.push('    // Center the name box above the message window')
-          lines.push(
-            '    this.x = messageWindow.x + (messageWindow.width - this.width) / 2;'
-          )
+          lines.push('    this.x = messageWindow.x + (messageWindow.width - this.width) / 2;')
         } else if (nameBoxPosition === 'right') {
           lines.push('    // Position name box on the right')
-          lines.push(
-            '    this.x = messageWindow.x + messageWindow.width - this.width;'
-          )
+          lines.push('    this.x = messageWindow.x + messageWindow.width - this.width;')
         } else {
           lines.push('    // Position name box on the left (default)')
           lines.push('    this.x = messageWindow.x;')
@@ -700,17 +680,13 @@ const choiceHandlerTemplate: CodeTemplate = {
             lines.push('    // Below message window')
             lines.push('    this.x = (Graphics.boxWidth - this.width) / 2;')
             lines.push('    this.y = messageWindow.y + messageWindow.height;')
-            lines.push(
-              '    if (this.y + this.height > Graphics.boxHeight) {'
-            )
+            lines.push('    if (this.y + this.height > Graphics.boxHeight) {')
             lines.push('        this.y = Graphics.boxHeight - this.height;')
             lines.push('    }')
             break
           default:
             lines.push('    // Right side (default)')
-            lines.push(
-              '    this.x = messageWindow.x + messageWindow.width - this.width;'
-            )
+            lines.push('    this.x = messageWindow.x + messageWindow.width - this.width;')
         }
 
         lines.push('};')
@@ -766,16 +742,12 @@ const choiceHandlerTemplate: CodeTemplate = {
         lines.push(`        this.changeTextColor(ColorManager.textColor(${normalColor}));`)
         lines.push('    }')
         lines.push('')
-        lines.push(
-          "    this.drawText(choiceName, rect.x, rect.y, rect.width, 'left');"
-        )
+        lines.push("    this.drawText(choiceName, rect.x, rect.y, rect.width, 'left');")
         lines.push('    this.resetTextColor();')
         lines.push('};')
         lines.push('')
         lines.push('// Redraw on selection change to update colors')
-        lines.push(
-          'const _Window_ChoiceList_select = Window_ChoiceList.prototype.select;'
-        )
+        lines.push('const _Window_ChoiceList_select = Window_ChoiceList.prototype.select;')
         lines.push('Window_ChoiceList.prototype.select = function(index) {')
         lines.push('    const lastIndex = this.index();')
         lines.push('    _Window_ChoiceList_select.call(this, index);')
@@ -785,9 +757,7 @@ const choiceHandlerTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push('// Set window opacity')
-        lines.push(
-          'const _Window_ChoiceList_initialize = Window_ChoiceList.prototype.initialize;'
-        )
+        lines.push('const _Window_ChoiceList_initialize = Window_ChoiceList.prototype.initialize;')
         lines.push('Window_ChoiceList.prototype.initialize = function() {')
         lines.push('    _Window_ChoiceList_initialize.apply(this, arguments);')
         lines.push(`    this.opacity = ${windowOpacity};`)
@@ -829,9 +799,7 @@ const choiceHandlerTemplate: CodeTemplate = {
           lines.push('(function() {')
           lines.push('    let _lastChoiceIndex = 0;')
           lines.push('')
-          lines.push(
-            '    const _Window_ChoiceList_start = Window_ChoiceList.prototype.start;'
-          )
+          lines.push('    const _Window_ChoiceList_start = Window_ChoiceList.prototype.start;')
           lines.push('    Window_ChoiceList.prototype.start = function() {')
           lines.push('        _Window_ChoiceList_start.call(this);')
           lines.push('        // Restore last choice if valid')

@@ -159,7 +159,7 @@ const basicCommandTemplate: CodeTemplate = {
     // Command body
     lines.push('    // Your command logic here')
     if (args.length > 0) {
-      const argList = args.map(a => a.name).join(', ')
+      const argList = args.map((a) => a.name).join(', ')
       lines.push(`    console.log('${commandName} called with:', ${argList});`)
     } else {
       lines.push(`    console.log('${commandName} called');`)
@@ -178,7 +178,9 @@ const basicCommandTemplate: CodeTemplate = {
     if (!commandName || !commandName.trim()) {
       errors.push('Command name is required')
     } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
-      errors.push('Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)')
+      errors.push(
+        'Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)'
+      )
     }
 
     if (!pluginName || !pluginName.trim()) {
@@ -272,7 +274,9 @@ const asyncCommandTemplate: CodeTemplate = {
       case 'setWaitMode':
         // setWaitMode approach - custom wait mode
         lines.push('// Custom wait mode for async operation')
-        lines.push(`const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;`)
+        lines.push(
+          `const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;`
+        )
         lines.push('Game_Interpreter.prototype.updateWaitMode = function() {')
         lines.push(`    if (this._waitMode === '${commandName}') {`)
         lines.push(`        if (!this._${commandName}Complete) {`)
@@ -285,7 +289,9 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('    return _Game_Interpreter_updateWaitMode.call(this);')
         lines.push('};')
         lines.push('')
-        lines.push(`PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`)
+        lines.push(
+          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+        )
         lines.push('    const interpreter = this;')
         lines.push(`    interpreter.setWaitMode('${commandName}');`)
         lines.push('')
@@ -300,10 +306,14 @@ const asyncCommandTemplate: CodeTemplate = {
 
       case 'waitCount':
         // Simple frame wait
-        lines.push(`PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`)
+        lines.push(
+          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+        )
         lines.push('    const interpreter = this;')
         lines.push('')
-        lines.push(`    // Wait for ${waitDuration} frames (${Math.round(waitDuration / 60 * 100) / 100} seconds at 60fps)`)
+        lines.push(
+          `    // Wait for ${waitDuration} frames (${Math.round((waitDuration / 60) * 100) / 100} seconds at 60fps)`
+        )
         lines.push(`    interpreter.wait(${waitDuration});`)
         lines.push('')
         lines.push('    // Your command logic here')
@@ -327,7 +337,9 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('    return _Game_Interpreter_updateWait.call(this);')
         lines.push('};')
         lines.push('')
-        lines.push(`PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`)
+        lines.push(
+          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+        )
         lines.push(`    _${commandName}Pending = true;`)
         lines.push('')
         lines.push('    // Your async operation here (e.g., fetch, image loading, etc.)')
@@ -509,10 +521,14 @@ const validatedCommandTemplate: CodeTemplate = {
       lines.push('    // Validate number range')
       lines.push('    const value = Number(args.value);')
       lines.push('    if (isNaN(value)) {')
-      lines.push(`        return ${commandName}_handleError('Value must be a number: ' + args.value);`)
+      lines.push(
+        `        return ${commandName}_handleError('Value must be a number: ' + args.value);`
+      )
       lines.push('    }')
       lines.push(`    if (value < ${minValue} || value > ${maxValue}) {`)
-      lines.push(`        return ${commandName}_handleError('Value out of range (${minValue}-${maxValue}): ' + value);`)
+      lines.push(
+        `        return ${commandName}_handleError('Value out of range (${minValue}-${maxValue}): ' + value);`
+      )
       lines.push('    }')
       lines.push('')
     }

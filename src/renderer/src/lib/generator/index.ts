@@ -215,7 +215,10 @@ function formatParamType(param: PluginParameter): string {
 /**
  * Format a default value for output
  */
-function formatDefaultValue(value: string | number | boolean | undefined, _type: ParamType): string {
+function formatDefaultValue(
+  value: string | number | boolean | undefined,
+  _type: ParamType
+): string {
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
   }
@@ -397,7 +400,9 @@ function generateBody(plugin: PluginDefinition): string {
 
       lines.push('')
       lines.push('        // TODO: Implement command logic')
-      lines.push(`        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`)
+      lines.push(
+        `        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
+      )
       lines.push('    });')
     }
 
@@ -491,7 +496,8 @@ export function generateRawMode(plugin: PluginDefinition): string {
       const newStruct = generateStructDefinition(struct)
       const iifeMatch = output.match(/\(\s*\(\s*\)\s*(?:=>)?\s*\{/)
       if (iifeMatch && iifeMatch.index !== undefined) {
-        output = output.slice(0, iifeMatch.index) + newStruct + '\n\n' + output.slice(iifeMatch.index)
+        output =
+          output.slice(0, iifeMatch.index) + newStruct + '\n\n' + output.slice(iifeMatch.index)
       } else {
         output += '\n\n' + newStruct
       }
@@ -501,7 +507,10 @@ export function generateRawMode(plugin: PluginDefinition): string {
   // 3. Inject parameter parsing for new parameters not already in the body
   if (plugin.parameters.length > 0) {
     const newParams = plugin.parameters.filter(
-      (p) => !p.name.includes('---') && !p.name.includes('===') && !output.includes(`params['${p.name}']`)
+      (p) =>
+        !p.name.includes('---') &&
+        !p.name.includes('===') &&
+        !output.includes(`params['${p.name}']`)
     )
     if (newParams.length > 0) {
       const pluginName = plugin.meta.name || 'NewPlugin'
@@ -552,13 +561,14 @@ export function generateRawMode(plugin: PluginDefinition): string {
   }
 
   // 4. Inject command registration for new commands not already in the body
-  const newCommands = plugin.commands.filter(
-    (cmd) => !output.includes(`registerCommand(`) || !output.includes(`'${cmd.name}'`)
-  ).filter(
-    (cmd) => !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-             !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
-             !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
-  )
+  const newCommands = plugin.commands
+    .filter((cmd) => !output.includes(`registerCommand(`) || !output.includes(`'${cmd.name}'`))
+    .filter(
+      (cmd) =>
+        !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+        !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
+        !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
+    )
   if (newCommands.length > 0) {
     const pluginName = plugin.meta.name || 'NewPlugin'
     const cmdLines: string[] = []
@@ -570,13 +580,17 @@ export function generateRawMode(plugin: PluginDefinition): string {
 
     cmdLines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
     for (const cmd of newCommands) {
-      cmdLines.push(`    PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`)
+      cmdLines.push(
+        `    PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`
+      )
       for (const arg of cmd.args) {
         cmdLines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
       }
       cmdLines.push('')
       cmdLines.push(`        // TODO: Implement ${cmd.name} logic`)
-      cmdLines.push(`        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`)
+      cmdLines.push(
+        `        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
+      )
       cmdLines.push('    });')
     }
     cmdLines.push(`    // --- End new commands ---`)
@@ -593,7 +607,7 @@ export function generateRawMode(plugin: PluginDefinition): string {
 }
 
 /**
- * Extract preamble text from a /*: ... *​/ block.
+ * Extract preamble text from an MZ annotation comment block (/*: ... ).
  * Captures license text, version history, social links, etc. that appear
  * before the first recognized MZ annotation (@target, @plugindesc, etc.).
  */
@@ -604,7 +618,8 @@ function extractHeaderPreamble(blockContent: string): string {
   if (!/^\/\*:\s*$/.test(lines[0].replace(/\r$/, ''))) return ''
 
   // Known MZ annotation tags that mark the end of the preamble
-  const mzAnnotation = /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
+  const mzAnnotation =
+    /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
 
   const preambleLines: string[] = []
   for (let i = 1; i < lines.length; i++) {
@@ -736,12 +751,25 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   if (typeof value === 'number') {
     return String(value)
   }
-  if (type === 'number' || type === 'variable' || type === 'switch' ||
-      type === 'actor' || type === 'class' || type === 'skill' ||
-      type === 'item' || type === 'weapon' || type === 'armor' ||
-      type === 'enemy' || type === 'troop' || type === 'state' ||
-      type === 'animation' || type === 'tileset' || type === 'common_event' ||
-      type === 'icon' || type === 'map') {
+  if (
+    type === 'number' ||
+    type === 'variable' ||
+    type === 'switch' ||
+    type === 'actor' ||
+    type === 'class' ||
+    type === 'skill' ||
+    type === 'item' ||
+    type === 'weapon' ||
+    type === 'armor' ||
+    type === 'enemy' ||
+    type === 'troop' ||
+    type === 'state' ||
+    type === 'animation' ||
+    type === 'tileset' ||
+    type === 'common_event' ||
+    type === 'icon' ||
+    type === 'map'
+  ) {
     return '0'
   }
   return `'${String(value ?? '').replace(/'/g, "\\'")}'`
@@ -759,7 +787,10 @@ export function camelCase(str: string): string {
   }
   // Strip leading/trailing underscores, split on non-alphanumeric
   const stripped = str.replace(/^_+|_+$/g, '')
-  const words = stripped.replace(/[^a-zA-Z0-9]/g, ' ').split(' ').filter(Boolean)
+  const words = stripped
+    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .split(' ')
+    .filter(Boolean)
   const result = words
     .map((word, index) => {
       if (index === 0) {
@@ -785,13 +816,19 @@ export function generateHeaderOnly(plugin: PluginDefinition): string {
  * Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
  * We only strictly validate plugin name and command names since those are used in code.
  */
-export function validatePlugin(plugin: PluginDefinition): { valid: boolean; errors: string[]; warnings: string[] } {
+export function validatePlugin(plugin: PluginDefinition): {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+} {
   const errors: string[] = []
   const warnings: string[] = []
 
   // Plugin name must be a valid identifier (used in PluginManager.parameters())
   if (!plugin.meta.name || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(plugin.meta.name)) {
-    errors.push('Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)')
+    errors.push(
+      'Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)'
+    )
   }
 
   // Check for duplicate parameter names (but allow any string - MZ supports it)
@@ -810,7 +847,9 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
       // Don't warn for obvious section dividers (contain dashes or are all caps with spaces)
       const isSectionDivider = param.name.includes('---') || param.name.includes('===')
       if (!isSectionDivider) {
-        warnings.push(`Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`)
+        warnings.push(
+          `Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`
+        )
       }
     }
   }
@@ -841,7 +880,9 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
   const structNames = new Set(plugin.structs.map((s) => s.name))
   for (const param of plugin.parameters) {
     if (param.type === 'struct' && param.structType && !structNames.has(param.structType)) {
-      warnings.push(`Parameter "${param.name}" references struct "${param.structType}" which is not defined in this plugin`)
+      warnings.push(
+        `Parameter "${param.name}" references struct "${param.structType}" which is not defined in this plugin`
+      )
     }
   }
 
@@ -857,7 +898,9 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
   }
   for (const struct of plugin.structs) {
     if (!referencedStructs.has(struct.name)) {
-      warnings.push(`Struct "${struct.name}" is defined but not referenced by any parameter or command argument`)
+      warnings.push(
+        `Struct "${struct.name}" is defined but not referenced by any parameter or command argument`
+      )
     }
   }
 
@@ -871,8 +914,8 @@ export function validatePlugin(plugin: PluginDefinition): { valid: boolean; erro
   // Commands with no implementation in custom code (warning)
   if (plugin.customCode) {
     for (const cmd of plugin.commands) {
-      const hasImplementation = plugin.customCode.includes(`'${cmd.name}'`) ||
-                                plugin.customCode.includes(`"${cmd.name}"`)
+      const hasImplementation =
+        plugin.customCode.includes(`'${cmd.name}'`) || plugin.customCode.includes(`"${cmd.name}"`)
       if (!hasImplementation) {
         warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
       }

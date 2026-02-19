@@ -1,10 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { SHORTCUTS, type ShortcutDef } from '../../lib/shortcuts'
 
 interface ShortcutsDialogProps {
@@ -36,10 +30,7 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
               </h3>
               <div className="space-y-1">
                 {shortcuts.map((shortcut: ShortcutDef) => (
-                  <div
-                    key={shortcut.key}
-                    className="flex items-center justify-between py-1"
-                  >
+                  <div key={shortcut.key} className="flex items-center justify-between py-1">
                     <span className="text-sm">{shortcut.description}</span>
                     <kbd className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-mono">
                       {shortcut.label}

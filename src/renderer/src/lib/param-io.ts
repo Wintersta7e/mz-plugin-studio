@@ -21,7 +21,12 @@ export function serializeParams(params: PluginParameter[], sourceName: string): 
 
 /** Minimal shape check for imported parameter objects */
 function isValidParam(p: unknown): p is Record<string, unknown> {
-  return typeof p === 'object' && p !== null && typeof (p as Record<string, unknown>).name === 'string' && typeof (p as Record<string, unknown>).type === 'string'
+  return (
+    typeof p === 'object' &&
+    p !== null &&
+    typeof (p as Record<string, unknown>).name === 'string' &&
+    typeof (p as Record<string, unknown>).type === 'string'
+  )
 }
 
 /** Deserialize imported parameters from .mzparams content */
@@ -35,7 +40,12 @@ export function deserializeParams(content: string): {
     const data = JSON.parse(content)
 
     if (data.version !== 1 || !Array.isArray(data.parameters)) {
-      return { success: false, parameters: [], source: '', error: 'Invalid or unsupported .mzparams format' }
+      return {
+        success: false,
+        parameters: [],
+        source: '',
+        error: 'Invalid or unsupported .mzparams format'
+      }
     }
 
     const params = data.parameters.filter(isValidParam).map((p) => ({

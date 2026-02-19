@@ -18,13 +18,7 @@ import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
 import { ScrollArea } from '../ui/scroll-area'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -193,7 +187,8 @@ export function ParameterBuilder() {
       await window.api.dialog.message({
         type: 'error',
         title: 'Import Failed',
-        message: 'Could not read the file. ' + (error instanceof Error ? error.message : String(error))
+        message:
+          'Could not read the file. ' + (error instanceof Error ? error.message : String(error))
       })
     }
   }
@@ -221,7 +216,9 @@ export function ParameterBuilder() {
       await window.api.dialog.message({
         type: 'error',
         title: 'Import Failed',
-        message: 'Could not read or parse the plugin file. ' + (error instanceof Error ? error.message : String(error))
+        message:
+          'Could not read or parse the plugin file. ' +
+          (error instanceof Error ? error.message : String(error))
       })
     }
   }
@@ -282,7 +279,8 @@ export function ParameterBuilder() {
     e.dataTransfer.setData('text/plain', id)
     // Create a minimal drag image
     const dragImage = document.createElement('div')
-    dragImage.style.cssText = 'position:absolute;top:-1000px;width:200px;height:40px;background:#333;border-radius:8px;'
+    dragImage.style.cssText =
+      'position:absolute;top:-1000px;width:200px;height:40px;background:#333;border-radius:8px;'
     document.body.appendChild(dragImage)
     e.dataTransfer.setDragImage(dragImage, 100, 20)
     setTimeout(() => document.body.removeChild(dragImage), 0)
@@ -415,7 +413,7 @@ export function ParameterBuilder() {
           {parameters.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <p>No parameters defined</p>
-              <p className="text-sm">Click "Add Parameter" to create one</p>
+              <p className="text-sm">Click &quot;Add Parameter&quot; to create one</p>
             </div>
           ) : (
             parameters.map((param) => (
@@ -470,15 +468,19 @@ export function ParameterBuilder() {
       </ScrollArea>
 
       {/* Preset Name dialog */}
-      <Dialog open={presetNameOpen} onOpenChange={(open) => {
-        if (!open) setPresetNameValue('')
-        setPresetNameOpen(open)
-      }}>
+      <Dialog
+        open={presetNameOpen}
+        onOpenChange={(open) => {
+          if (!open) setPresetNameValue('')
+          setPresetNameOpen(open)
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Save Preset</DialogTitle>
             <DialogDescription>
-              Enter a name for this parameter preset ({selectedParams.length} parameter{selectedParams.length !== 1 ? 's' : ''})
+              Enter a name for this parameter preset ({selectedParams.length} parameter
+              {selectedParams.length !== 1 ? 's' : ''})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
@@ -501,11 +503,7 @@ export function ParameterBuilder() {
             <Button variant="outline" size="sm" onClick={() => setPresetNameOpen(false)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              disabled={!presetNameValue.trim()}
-              onClick={handleConfirmSavePreset}
-            >
+            <Button size="sm" disabled={!presetNameValue.trim()} onClick={handleConfirmSavePreset}>
               Save
             </Button>
           </div>
@@ -626,16 +624,22 @@ function OptionsEditor({
   // Sync from store when options change externally (e.g. undo, import)
   useEffect(() => {
     setLocalText(serialize(param.options))
-  }, [param.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [param.id])
 
   const commitOptions = (text: string) => {
-    const options = text.split('\n').filter(Boolean).map((line) => {
-      if (line.includes('|')) {
-        const pipeIdx = line.indexOf('|')
-        return { value: line.slice(0, pipeIdx).trim(), text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim() }
-      }
-      return { value: line.trim(), text: line.trim() }
-    })
+    const options = text
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        if (line.includes('|')) {
+          const pipeIdx = line.indexOf('|')
+          return {
+            value: line.slice(0, pipeIdx).trim(),
+            text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim()
+          }
+        }
+        return { value: line.trim(), text: line.trim() }
+      })
     onUpdate({ options })
   }
 
@@ -648,7 +652,7 @@ function OptionsEditor({
           setLocalText(e.target.value)
           commitOptions(e.target.value)
         }}
-        placeholder={"option1|Option 1\noption2|Option 2"}
+        placeholder={'option1|Option 1\noption2|Option 2'}
         rows={4}
         className="font-mono text-sm"
       />
@@ -708,10 +712,7 @@ function ParameterCard({
       onDrop={onDrop}
     >
       {/* Header */}
-      <div
-        className="flex cursor-pointer items-center gap-2 p-3"
-        onClick={onToggle}
-      >
+      <div className="flex cursor-pointer items-center gap-2 p-3" onClick={onToggle}>
         <input
           type="checkbox"
           checked={isSelected}
@@ -887,7 +888,9 @@ function ParameterCard({
                 <Input
                   type="number"
                   value={param.min ?? ''}
-                  onChange={(e) => onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No min"
                 />
               </div>
@@ -896,7 +899,9 @@ function ParameterCard({
                 <Input
                   type="number"
                   value={param.max ?? ''}
-                  onChange={(e) => onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No max"
                 />
               </div>
@@ -905,7 +910,9 @@ function ParameterCard({
                 <Input
                   type="number"
                   value={param.decimals ?? ''}
-                  onChange={(e) => onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="0"
                   min={0}
                 />

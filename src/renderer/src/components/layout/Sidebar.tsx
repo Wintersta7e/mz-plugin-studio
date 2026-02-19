@@ -26,7 +26,13 @@ interface SidebarProps {
   onOpenShortcuts: () => void
 }
 
-export function Sidebar({ onOpenProject, onToggleProjectBrowser, projectBrowserOpen, onOpenSettings, onOpenShortcuts }: SidebarProps) {
+export function Sidebar({
+  onOpenProject,
+  onToggleProjectBrowser,
+  projectBrowserOpen,
+  onOpenSettings,
+  onOpenShortcuts
+}: SidebarProps) {
   const project = useProjectStore((s) => s.project)
   const openPlugins = usePluginStore((s) => s.openPlugins)
   const activePluginId = usePluginStore((s) => s.activePluginId)

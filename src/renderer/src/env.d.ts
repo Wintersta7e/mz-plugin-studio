@@ -27,11 +27,11 @@ interface PluginAPI {
     filename: string,
     content: string
   ) => Promise<{ success: boolean; path: string }>
-  saveToPath: (
-    filePath: string,
-    content: string
-  ) => Promise<{ success: boolean; path: string }>
-  load: (projectPath: string, filename: string) => Promise<import('./types/plugin').PluginDefinition>
+  saveToPath: (filePath: string, content: string) => Promise<{ success: boolean; path: string }>
+  load: (
+    projectPath: string,
+    filename: string
+  ) => Promise<import('./types/plugin').PluginDefinition>
   parse: (content: string) => Promise<import('./types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
@@ -43,6 +43,7 @@ interface PluginAPI {
       base: string[]
       orderAfter: string[]
       orderBefore: string[]
+      overrides: string[]
     }[]
   >
 }

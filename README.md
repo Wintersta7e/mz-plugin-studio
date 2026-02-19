@@ -98,7 +98,9 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Import Existing** - Parse and edit existing .js plugins
 
 ### Additional Features
+- **Plugin Conflict Detection** - Scans all project plugins for prototype method overrides; flags when 2+ plugins override the same method with severity based on class popularity
 - **Dependency Analysis** - Scans `@base`, `@orderAfter`, and `@orderBefore` across project plugins; detects missing deps, circular deps, and load-order violations
+- **Analysis View** - Dedicated view with overview stats, conflict details, and dependency issues — switch between Editor and Analysis tabs
 - **Auto-Documentation** - Generate help text from plugin metadata with one click
 - **Bulk Parameter Operations** - Multi-select, duplicate, delete, export/import parameters, reusable presets
 - **Note Parameters** - Declare `@noteParam` groups for RPG Maker deployment packager
@@ -135,7 +137,7 @@ npm run dev
 # Type check only
 npm run typecheck
 
-# Run tests (200+ tests)
+# Run tests (239 tests)
 npm test
 
 # Build for production
@@ -190,11 +192,13 @@ src/
 ├── preload/
 │   └── index.ts             # Context bridge (window.api)
 ├── shared/
-│   └── ipc-types.ts         # Typed IPC channel constants
+│   ├── ipc-types.ts         # Typed IPC channel constants
+│   └── override-extractor.ts # Prototype override extraction (shared main/renderer)
 └── renderer/src/            # React frontend
     ├── components/
     │   ├── plugin/          # Main editors
     │   ├── preview/         # CodePreview, DiffView
+    │   ├── analysis/        # AnalysisView (conflicts + dependencies)
     │   ├── settings/        # SettingsDialog, ShortcutsDialog
     │   └── ui/              # shadcn/ui components
     ├── stores/              # Zustand stores (one per domain)
@@ -204,6 +208,7 @@ src/
     │   └── ...
     ├── lib/
     │   ├── generator/       # Code generation + validation
+    │   ├── conflict-detector.ts   # Plugin conflict detection
     │   ├── dependency-analyzer.ts # Plugin dependency graph + validation
     │   ├── param-io.ts      # Parameter import/export (.mzparams)
     │   ├── exportFormats.ts  # README, .d.ts, plugins.json
@@ -211,7 +216,7 @@ src/
     │   └── mz-completions.ts # Monaco MZ autocomplete
     └── types/
         └── plugin.ts        # TypeScript interfaces
-tests/                       # Vitest unit tests (200+ tests)
+tests/                       # Vitest unit tests (239 tests)
 ```
 
 ## Tech Stack

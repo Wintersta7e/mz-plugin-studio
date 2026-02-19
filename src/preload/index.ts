@@ -4,18 +4,12 @@ import { IPC_CHANNELS } from '../shared/ipc-types'
 export interface ProjectAPI {
   validate: (path: string) => Promise<{ valid: boolean; error?: string }>
   load: (path: string) => Promise<import('../renderer/src/types/mz').MZProject>
-  getSwitches: (
-    path: string
-  ) => Promise<import('../renderer/src/types/mz').MZSwitch[]>
-  getVariables: (
-    path: string
-  ) => Promise<import('../renderer/src/types/mz').MZVariable[]>
+  getSwitches: (path: string) => Promise<import('../renderer/src/types/mz').MZSwitch[]>
+  getVariables: (path: string) => Promise<import('../renderer/src/types/mz').MZVariable[]>
   getActors: (path: string) => Promise<import('../renderer/src/types/mz').MZActor[]>
   getItems: (path: string) => Promise<import('../renderer/src/types/mz').MZItem[]>
   getMaps: (path: string) => Promise<import('../renderer/src/types/mz').MZMapInfo[]>
-  getPlugins: (
-    path: string
-  ) => Promise<import('../renderer/src/types/mz').MZPluginEntry[]>
+  getPlugins: (path: string) => Promise<import('../renderer/src/types/mz').MZPluginEntry[]>
   getSkills: (path: string) => Promise<{ id: number; name: string }[]>
   getWeapons: (path: string) => Promise<{ id: number; name: string }[]>
   getArmors: (path: string) => Promise<{ id: number; name: string }[]>
@@ -34,17 +28,12 @@ export interface PluginAPI {
     filename: string,
     content: string
   ) => Promise<{ success: boolean; path: string }>
-  saveToPath: (
-    filePath: string,
-    content: string
-  ) => Promise<{ success: boolean; path: string }>
+  saveToPath: (filePath: string, content: string) => Promise<{ success: boolean; path: string }>
   load: (
     projectPath: string,
     filename: string
   ) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
-  parse: (
-    content: string
-  ) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
+  parse: (content: string) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
   readByPath: (filePath: string) => Promise<string>
@@ -55,6 +44,7 @@ export interface PluginAPI {
       base: string[]
       orderAfter: string[]
       orderBefore: string[]
+      overrides: string[]
     }[]
   >
 }
@@ -127,8 +117,7 @@ const pluginApi: PluginAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
   list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath),
   readByPath: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath),
-  scanHeaders: (projectPath) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
+  scanHeaders: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
 }
 
 const dialogApi: DialogAPI = {

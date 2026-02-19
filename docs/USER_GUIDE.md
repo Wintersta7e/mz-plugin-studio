@@ -14,18 +14,19 @@ A comprehensive guide to creating RPG Maker MZ plugins with MZ Plugin Studio.
 8. [Code Templates](#code-templates)
 9. [Multi-Language Support](#multi-language-support)
 10. [Plugin Dependencies](#plugin-dependencies)
-11. [Note Parameters (Deployment)](#note-parameters-deployment)
-12. [Auto-Documentation](#auto-documentation)
-13. [Project Integration](#project-integration)
-14. [Importing Existing Plugins](#importing-existing-plugins)
-15. [Raw Mode](#raw-mode)
-16. [Exporting Plugins](#exporting-plugins)
-17. [Diff View](#diff-view)
-18. [Settings](#settings)
-19. [Keyboard Shortcuts](#keyboard-shortcuts)
-20. [Auto-Update](#auto-update)
-21. [Best Practices](#best-practices)
-22. [Troubleshooting](#troubleshooting)
+11. [Plugin Conflict Detection](#plugin-conflict-detection)
+12. [Note Parameters (Deployment)](#note-parameters-deployment)
+13. [Auto-Documentation](#auto-documentation)
+14. [Project Integration](#project-integration)
+15. [Importing Existing Plugins](#importing-existing-plugins)
+16. [Raw Mode](#raw-mode)
+17. [Exporting Plugins](#exporting-plugins)
+18. [Diff View](#diff-view)
+19. [Settings](#settings)
+20. [Keyboard Shortcuts](#keyboard-shortcuts)
+21. [Auto-Update](#auto-update)
+22. [Best Practices](#best-practices)
+23. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -697,6 +698,64 @@ Project plugins in the sidebar show:
 ### Available Plugins Hint
 
 Below the Dependencies and Order After fields in MetaEditor, toggle the "Available plugins" hint to see all plugin names found in your project. This helps you type the correct plugin name.
+
+---
+
+## Plugin Conflict Detection
+
+The conflict detector scans all plugins in your project for **prototype method overrides** and flags when two or more plugins override the same method — a common source of hard-to-debug compatibility issues.
+
+### Accessing the Analysis View
+
+1. Load an RPG Maker MZ project
+2. Click the **Analysis** tab at the top of the editor area (next to **Editor**)
+3. The Analysis view shows three sections: Overview, Conflicts, and Dependencies
+
+### Overview Card
+
+Shows quick stats at a glance:
+
+| Stat | Description |
+|------|-------------|
+| **Plugins** | Total plugins scanned in the project |
+| **Overrides** | Total prototype method overrides across all plugins |
+| **Conflicts** | Number of methods overridden by 2+ plugins |
+| **Dependency Issues** | Errors and warnings from dependency analysis |
+
+### Conflicts Card
+
+Each conflict shows:
+- **Method name** — e.g., `Game_Map.prototype.update`
+- **Severity badge** — `warning` (popular class, popularity >= 10) or `info` (unpopular/unknown class)
+- **Plugin chain** — Which plugins override this method, in load order
+
+Conflicts are sorted with warnings first, then alphabetically within the same severity.
+
+### What Gets Detected
+
+The detector looks for two patterns in plugin code (ignoring comments and strings):
+
+1. **Direct assignment:** `ClassName.prototype.method = function() { ... }`
+2. **Alias capture:** `const _old = ClassName.prototype.method;`
+
+### Severity Levels
+
+Severity is based on the class's popularity across the MZ plugin ecosystem:
+
+| Severity | Meaning |
+|----------|---------|
+| **Warning** | A frequently-overridden class (e.g., `Game_Map`, `Scene_Battle`) — conflicts here are more likely to cause issues |
+| **Info** | A rarely-overridden or custom class — conflicts may be intentional |
+
+### Rescanning
+
+Click the **Rescan** button to re-analyze after making changes. Scanning also runs automatically when you load or switch projects.
+
+### Limitations
+
+- Only detects prototype assignment patterns (not `Object.defineProperty`)
+- Alias pattern requires a semicolon or comma at the end of the line
+- Does not analyze whether conflicting overrides are actually incompatible (some conflicts are safe if both plugins call the original method)
 
 ---
 

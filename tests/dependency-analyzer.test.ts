@@ -12,7 +12,7 @@ function header(
   orderAfter: string[] = [],
   orderBefore: string[] = []
 ): ScannedPluginHeader {
-  return { filename: name + '.js', name, base, orderAfter, orderBefore }
+  return { filename: name + '.js', name, base, orderAfter, orderBefore, overrides: [] }
 }
 
 describe('buildDependencyGraph', () => {
@@ -96,8 +96,8 @@ describe('validateDependencies', () => {
 
   it('detects duplicate plugin names', () => {
     const headers = [
-      { filename: 'A.js', name: 'A', base: [], orderAfter: [], orderBefore: [] },
-      { filename: 'A_copy.js', name: 'A', base: [], orderAfter: [], orderBefore: [] }
+      { filename: 'A.js', name: 'A', base: [], orderAfter: [], orderBefore: [], overrides: [] },
+      { filename: 'A_copy.js', name: 'A', base: [], orderAfter: [], orderBefore: [], overrides: [] }
     ]
     const report = validateDependencies(headers)
     const dupes = report.issues.filter((i) => i.type === 'duplicate')
@@ -157,9 +157,7 @@ describe('validateDependencies', () => {
     // A has both @base B and @orderAfter B, but A loads before B
     const headers = [header('A', ['B'], ['B']), header('B')]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter(
-      (i) => i.type === 'load-order' && i.pluginName === 'A'
-    )
+    const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'A')
     expect(orderIssues).toHaveLength(1)
   })
 
@@ -175,9 +173,7 @@ describe('validateDependencies', () => {
     // A must load before B, so B at position 0 is wrong
     const headers = [header('B'), header('A', [], [], ['B'])]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter(
-      (i) => i.type === 'load-order' && i.pluginName === 'B'
-    )
+    const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'B')
     expect(orderIssues.length).toBeGreaterThan(0)
     expect(orderIssues[0].message).toContain('B')
   })

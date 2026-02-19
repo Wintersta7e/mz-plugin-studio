@@ -51,11 +51,20 @@ describe('A1: combo parameter type', () => {
 
   it('generator emits @type combo (not select)', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'myCombo', text: 'My Combo', desc: '',
-        type: 'combo', default: 'Opt1',
-        options: [{ value: 'Opt1', text: 'Opt1' }, { value: 'Opt2', text: 'Opt2' }]
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'myCombo',
+          text: 'My Combo',
+          desc: '',
+          type: 'combo',
+          default: 'Opt1',
+          options: [
+            { value: 'Opt1', text: 'Opt1' },
+            { value: 'Opt2', text: 'Opt2' }
+          ]
+        }
+      ]
     })
     const output = generateHeaderOnly(plugin)
     expect(output).toContain('@type combo')
@@ -136,10 +145,18 @@ describe('A2: @require on file/animation params', () => {
 
   it('generator emits @require 1 after @dir', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'bgImage', text: 'Background', desc: '',
-        type: 'file', default: '', dir: 'img/pictures', require: true
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'bgImage',
+          text: 'Background',
+          desc: '',
+          type: 'file',
+          default: '',
+          dir: 'img/pictures',
+          require: true
+        }
+      ]
     })
     const output = generateHeaderOnly(plugin)
     expect(output).toContain('@dir img/pictures')
@@ -152,10 +169,17 @@ describe('A2: @require on file/animation params', () => {
 
   it('generator omits @require when not set', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'bgImage', text: '', desc: '',
-        type: 'file', default: '', dir: 'img/pictures'
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'bgImage',
+          text: '',
+          desc: '',
+          type: 'file',
+          default: '',
+          dir: 'img/pictures'
+        }
+      ]
     })
     const output = generateHeaderOnly(plugin)
     expect(output).not.toContain('@require')
@@ -287,9 +311,15 @@ describe('A4: @noteParam annotation group', () => {
   it('generator emits noteParam group', () => {
     const plugin = createTestPlugin({
       meta: {
-        noteParams: [{
-          name: 'bgmTag', type: 'file', dir: 'audio/bgm/', data: 'actors', require: true
-        }]
+        noteParams: [
+          {
+            name: 'bgmTag',
+            type: 'file',
+            dir: 'audio/bgm/',
+            data: 'actors',
+            require: true
+          }
+        ]
       } as any
     })
     const output = generateHeaderOnly(plugin)
@@ -343,10 +373,16 @@ describe('A5: icon parameter type', () => {
 
   it('generator emits @type icon', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'iconIndex', text: 'Icon', desc: '',
-        type: 'icon', default: 16
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'iconIndex',
+          text: 'Icon',
+          desc: '',
+          type: 'icon',
+          default: 16
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@type icon')
@@ -375,10 +411,16 @@ describe('A6: map parameter type', () => {
 
   it('generator emits @type map and parses as Number', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'targetMap', text: 'Target Map', desc: '',
-        type: 'map', default: 1
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'targetMap',
+          text: 'Target Map',
+          desc: '',
+          type: 'map',
+          default: 1
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@type map')
@@ -404,10 +446,16 @@ describe('A7: hidden parameter type', () => {
 
   it('generator emits @type hidden', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: '_version', text: '', desc: '',
-        type: 'hidden', default: '1.0.0'
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: '_version',
+          text: '',
+          desc: '',
+          type: 'hidden',
+          default: '1.0.0'
+        }
+      ]
     })
     const output = generateHeaderOnly(plugin)
     expect(output).toContain('@type hidden')

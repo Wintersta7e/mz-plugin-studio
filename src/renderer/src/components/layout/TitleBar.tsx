@@ -39,11 +39,7 @@ export function TitleBar() {
           <span className="text-xs font-bold text-primary">MZ</span>
         </div>
         <span className="text-sm font-medium text-foreground">Plugin Studio</span>
-        {project && (
-          <span className="text-sm text-muted-foreground">
-            - {project.gameTitle}
-          </span>
-        )}
+        {project && <span className="text-sm text-muted-foreground">- {project.gameTitle}</span>}
       </div>
 
       <div className="flex titlebar-no-drag">
@@ -61,11 +57,7 @@ export function TitleBar() {
           className="h-8 w-10 rounded-none hover:bg-muted"
           onClick={handleMaximize}
         >
-          {isMaximized ? (
-            <Square className="h-3.5 w-3.5" />
-          ) : (
-            <Maximize2 className="h-4 w-4" />
-          )}
+          {isMaximized ? <Square className="h-3.5 w-3.5" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
         <Button
           variant="ghost"

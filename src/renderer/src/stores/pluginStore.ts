@@ -205,7 +205,10 @@ export const usePluginStore = create<PluginState>()(
             ...state.plugin,
             structs: state.plugin.structs.map((s) =>
               s.id === structId
-                ? { ...s, parameters: s.parameters.map((p) => (p.id === paramId ? { ...p, ...param } : p)) }
+                ? {
+                    ...s,
+                    parameters: s.parameters.map((p) => (p.id === paramId ? { ...p, ...param } : p))
+                  }
                 : s
             )
           },
@@ -216,7 +219,9 @@ export const usePluginStore = create<PluginState>()(
           plugin: {
             ...state.plugin,
             structs: state.plugin.structs.map((s) =>
-              s.id === structId ? { ...s, parameters: s.parameters.filter((p) => p.id !== paramId) } : s
+              s.id === structId
+                ? { ...s, parameters: s.parameters.filter((p) => p.id !== paramId) }
+                : s
             )
           },
           isDirty: true

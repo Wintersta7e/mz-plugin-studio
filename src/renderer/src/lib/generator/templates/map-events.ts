@@ -94,7 +94,9 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push(`    // Spawn an event at the specified position`)
     lines.push(`    Game_Map.prototype.${functionName} = function(x, y, options = {}) {`)
     lines.push('        // Check spawn limit')
-    lines.push('        if (this._spawnedEventIds && this._spawnedEventIds.length >= MAX_SPAWNED_EVENTS) {')
+    lines.push(
+      '        if (this._spawnedEventIds && this._spawnedEventIds.length >= MAX_SPAWNED_EVENTS) {'
+    )
     lines.push("            console.warn('Maximum spawned events reached');")
     lines.push('            return null;')
     lines.push('        }')
@@ -126,17 +128,23 @@ const eventSpawnTemplate: CodeTemplate = {
       lines.push('            name: options.name || "SpawnedEvent",')
       lines.push('            note: options.note || "",')
       lines.push('            pages: options.pages || [{')
-      lines.push('                conditions: { actorId: 0, actorValid: false, itemId: 0, itemValid: false,')
+      lines.push(
+        '                conditions: { actorId: 0, actorValid: false, itemId: 0, itemValid: false,'
+      )
       lines.push('                              selfSwitchCh: "A", selfSwitchValid: false,')
       lines.push('                              switch1Id: 0, switch1Valid: false,')
       lines.push('                              switch2Id: 0, switch2Valid: false,')
-      lines.push('                              variableId: 0, variableValid: false, variableValue: 0 },')
+      lines.push(
+        '                              variableId: 0, variableValid: false, variableValue: 0 },'
+      )
       lines.push('                directionFix: false,')
       lines.push('                image: { characterIndex: 0, characterName: "", direction: 2,')
       lines.push('                         pattern: 0, tileId: 0 },')
       lines.push('                list: [{ code: 0, indent: 0, parameters: [] }],')
       lines.push('                moveFrequency: 3,')
-      lines.push('                moveRoute: { list: [{ code: 0, parameters: [] }], repeat: true, skippable: false, wait: false },')
+      lines.push(
+        '                moveRoute: { list: [{ code: 0, parameters: [] }], repeat: true, skippable: false, wait: false },'
+      )
       lines.push('                moveSpeed: 3,')
       lines.push('                moveType: 0,')
       lines.push('                priorityType: 1,')
@@ -201,7 +209,9 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push('            const sprites = SceneManager._scene._spriteset._characterSprites;')
     lines.push('            for (let i = sprites.length - 1; i >= 0; i--) {')
     lines.push('                if (sprites[i]._character === this._events[eventId]) {')
-    lines.push('                    SceneManager._scene._spriteset._tilemap.removeChild(sprites[i]);')
+    lines.push(
+      '                    SceneManager._scene._spriteset._tilemap.removeChild(sprites[i]);'
+    )
     lines.push('                    sprites.splice(i, 1);')
     lines.push('                    break;')
     lines.push('                }')
@@ -408,7 +418,9 @@ const movementRouteTemplate: CodeTemplate = {
 
     if (waitForCompletion) {
       lines.push('    // Hook route completion to trigger callbacks')
-      lines.push('    const _Game_Character_processRouteEnd = Game_Character.prototype.processRouteEnd;')
+      lines.push(
+        '    const _Game_Character_processRouteEnd = Game_Character.prototype.processRouteEnd;'
+      )
       lines.push('    Game_Character.prototype.processRouteEnd = function() {')
       lines.push('        _Game_Character_processRouteEnd.call(this);')
       lines.push('        ')
@@ -492,7 +504,9 @@ const movementRouteTemplate: CodeTemplate = {
       lines.push('        for (let i = 0; i < steps; i++) {')
       lines.push('            commands.push({ code: ROUTE.MOVE_RANDOM, parameters: [] });')
       lines.push('            if (options.waitBetweenSteps) {')
-      lines.push('                commands.push({ code: ROUTE.WAIT, parameters: [options.waitBetweenSteps] });')
+      lines.push(
+        '                commands.push({ code: ROUTE.WAIT, parameters: [options.waitBetweenSteps] });'
+      )
       lines.push('            }')
       lines.push('        }')
       lines.push(`        return this.${functionName}(commands, { repeat: true, ...options });`)
@@ -610,7 +624,7 @@ const mapTransferHookTemplate: CodeTemplate = {
       lines.push('')
       lines.push('    // Override this method to add your before-transfer logic')
       lines.push('    Game_Player.prototype.onBeforeMapTransfer = function(fromMapId, toMapId) {')
-      lines.push("        // Your code here (before leaving the current map)")
+      lines.push('        // Your code here (before leaving the current map)')
       lines.push("        console.log('Leaving map', fromMapId, 'for map', toMapId);")
 
       if (includeFadeInfo) {
@@ -656,7 +670,7 @@ const mapTransferHookTemplate: CodeTemplate = {
       lines.push('')
       lines.push('    // Override this method to add your after-transfer logic')
       lines.push('    Scene_Map.prototype.onAfterMapTransfer = function(mapId) {')
-      lines.push("        // Your code here (after arriving at the new map)")
+      lines.push('        // Your code here (after arriving at the new map)')
       lines.push("        console.log('Arrived at map', mapId);")
       lines.push('')
       lines.push('        // Access map information')
@@ -797,7 +811,9 @@ const parallelProcessTemplate: CodeTemplate = {
 
     // Active condition check
     lines.push('    // Check if the parallel process should be active')
-    lines.push(`    function is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active() {`)
+    lines.push(
+      `    function is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active() {`
+    )
 
     switch (activeCondition) {
       case 'switch':
@@ -855,7 +871,7 @@ const parallelProcessTemplate: CodeTemplate = {
     lines.push(`    // Main parallel process logic - customize this!`)
     lines.push(`    function ${processName}() {`)
     lines.push('        // Your parallel process code here')
-    lines.push("        // This runs every frame (or at your specified interval) while active")
+    lines.push('        // This runs every frame (or at your specified interval) while active')
     lines.push('')
     lines.push('        // Example: Check player position')
     lines.push('        // const px = $gamePlayer.x;')
@@ -879,7 +895,9 @@ const parallelProcessTemplate: CodeTemplate = {
     lines.push('')
     lines.push('        // Skip if paused or inactive')
     lines.push('        if (shouldPauseProcess()) return;')
-    lines.push(`        if (!is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active()) return;`)
+    lines.push(
+      `        if (!is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active()) return;`
+    )
     lines.push('')
 
     if (updateInterval > 1) {
@@ -902,19 +920,27 @@ const parallelProcessTemplate: CodeTemplate = {
     lines.push(`    // Enable/disable the process via script call`)
 
     if (activeCondition === 'switch') {
-      lines.push(`    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`)
+      lines.push(
+        `    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+      )
       lines.push(`        $gameSwitches.setValue(${conditionId}, true);`)
       lines.push('    };')
       lines.push('')
-      lines.push(`    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`)
+      lines.push(
+        `    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+      )
       lines.push(`        $gameSwitches.setValue(${conditionId}, false);`)
       lines.push('    };')
     } else if (activeCondition === 'variable') {
-      lines.push(`    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function(value) {`)
+      lines.push(
+        `    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function(value) {`
+      )
       lines.push(`        $gameVariables.setValue(${conditionId}, value || ${conditionValue});`)
       lines.push('    };')
       lines.push('')
-      lines.push(`    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`)
+      lines.push(
+        `    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+      )
       lines.push(`        $gameVariables.setValue(${conditionId}, 0);`)
       lines.push('    };')
     } else {
@@ -944,8 +970,10 @@ const parallelProcessTemplate: CodeTemplate = {
     const activeCondition = values.activeCondition as string
     const conditionId = values.conditionId as number
 
-    if ((activeCondition === 'switch' || activeCondition === 'variable') &&
-        (conditionId === undefined || conditionId < 1)) {
+    if (
+      (activeCondition === 'switch' || activeCondition === 'variable') &&
+      (conditionId === undefined || conditionId < 1)
+    ) {
       errors.push('Switch/Variable ID must be a positive integer')
     }
 

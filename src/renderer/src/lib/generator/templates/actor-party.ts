@@ -619,7 +619,11 @@ const equipmentHookTemplate: CodeTemplate = {
 
     // Header comment
     const eventLabel =
-      eventType === 'both' ? 'Equip/Unequip' : eventType === 'change' ? 'Equipment Change' : toPascalCase(eventType)
+      eventType === 'both'
+        ? 'Equip/Unequip'
+        : eventType === 'change'
+          ? 'Equipment Change'
+          : toPascalCase(eventType)
     const timingLabel =
       timing === 'both' ? 'Before and After' : timing === 'before' ? 'Before' : 'After'
     const slotLabel = hasSlotFilter ? ` (${slotNames[slotFilter]} slot only)` : ''
@@ -664,9 +668,13 @@ const equipmentHookTemplate: CodeTemplate = {
 
       if (timing === 'before' || timing === 'both') {
         lines.push('// Called before equipment change - return false to prevent')
-        lines.push('Game_Actor.prototype.onBeforeEquipChange = function(slotId, oldItem, newItem) {')
+        lines.push(
+          'Game_Actor.prototype.onBeforeEquipChange = function(slotId, oldItem, newItem) {'
+        )
         lines.push('    // Your code here')
-        lines.push("    console.log(this.name() + ' is about to change equipment in slot ' + slotId);")
+        lines.push(
+          "    console.log(this.name() + ' is about to change equipment in slot ' + slotId);"
+        )
         lines.push("    console.log('Old:', oldItem ? oldItem.name : 'none');")
         lines.push("    console.log('New:', newItem ? newItem.name : 'none');")
         lines.push('    return true; // Return false to prevent the change')
@@ -699,7 +707,9 @@ const equipmentHookTemplate: CodeTemplate = {
         }
 
         lines.push('    const oldItem = this.equips()[slotId];')
-        lines.push('    const isEquipping = item !== null && (oldItem === null || oldItem.id !== item.id);')
+        lines.push(
+          '    const isEquipping = item !== null && (oldItem === null || oldItem.id !== item.id);'
+        )
 
         if (timing === 'before' || timing === 'both') {
           lines.push('')
@@ -772,7 +782,9 @@ const equipmentHookTemplate: CodeTemplate = {
           }
 
           lines.push('    const oldItem = this.equips()[slotId];')
-          lines.push('    const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);')
+          lines.push(
+            '    const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);'
+          )
 
           if (timing === 'before' || timing === 'both') {
             lines.push('')
@@ -798,7 +810,9 @@ const equipmentHookTemplate: CodeTemplate = {
           lines.push('};')
         } else {
           // For 'both', show as comments since we already have changeEquip hooked
-          lines.push('const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);')
+          lines.push(
+            'const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);'
+          )
           lines.push('if (isUnequipping) {')
           lines.push('    // Call onBeforeUnequip/onAfterUnequip as needed')
           lines.push('}')

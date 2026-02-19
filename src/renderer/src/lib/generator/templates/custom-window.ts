@@ -163,7 +163,9 @@ function generateSceneIntegration(
     lines.push(`    this.${windowPropertyName}.setHandler('command2', this.onCommand2.bind(this));`)
     lines.push(`    this.${windowPropertyName}.setHandler('command3', this.onCommand3.bind(this));`)
   } else if (parentClass === 'Window_Selectable') {
-    lines.push(`    this.${windowPropertyName}.setHandler('ok', this.on${windowName}Ok.bind(this));`)
+    lines.push(
+      `    this.${windowPropertyName}.setHandler('ok', this.on${windowName}Ok.bind(this));`
+    )
     lines.push(
       `    this.${windowPropertyName}.setHandler('cancel', this.on${windowName}Cancel.bind(this));`
     )
@@ -496,9 +498,11 @@ const hudOverlayWindowTemplate: CodeTemplate = {
       lines.push('    // Draw HP gauge')
       lines.push('    const gaugeY = this.lineHeight();')
       lines.push('    this.drawText("HP:", 0, gaugeY, 40);')
-      lines.push("    this.changeTextColor(ColorManager.hpColor(actor));")
-      lines.push('    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);')
-      lines.push("    this.resetTextColor();")
+      lines.push('    this.changeTextColor(ColorManager.hpColor(actor));')
+      lines.push(
+        '    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);'
+      )
+      lines.push('    this.resetTextColor();')
     } else if (hudType === 'status') {
       lines.push('    const actor = $gameParty.leader();')
       lines.push('    if (!actor) return;')
@@ -520,12 +524,16 @@ const hudOverlayWindowTemplate: CodeTemplate = {
       lines.push('    const cy = this.contentsHeight() / 2;')
       lines.push('    ')
       lines.push('    // Draw border')
-      lines.push("    this.contents.strokeRect(2, 2, this.contentsWidth() - 4, this.contentsHeight() - 4, '#ffffff');")
+      lines.push(
+        "    this.contents.strokeRect(2, 2, this.contentsWidth() - 4, this.contentsHeight() - 4, '#ffffff');"
+      )
       lines.push('    ')
       lines.push('    // Draw player position indicator')
       lines.push("    this.contents.fillRect(cx - 2, cy - 2, 4, 4, '#00ff00');")
       lines.push('    ')
-      lines.push("    this.drawText('Mini-Map', 0, cy - this.lineHeight()/2, this.contentsWidth(), 'center');")
+      lines.push(
+        "    this.drawText('Mini-Map', 0, cy - this.lineHeight()/2, this.contentsWidth(), 'center');"
+      )
     } else {
       lines.push('    // Custom HUD content - add your drawing code here')
       lines.push("    this.drawText('Custom HUD', 0, 0, this.contentsWidth(), 'center');")
@@ -536,7 +544,9 @@ const hudOverlayWindowTemplate: CodeTemplate = {
 
     // Scene_Map integration
     lines.push('// Add HUD to Scene_Map')
-    lines.push(`const _Scene_Map_createAllWindows_${windowName} = Scene_Map.prototype.createAllWindows;`)
+    lines.push(
+      `const _Scene_Map_createAllWindows_${windowName} = Scene_Map.prototype.createAllWindows;`
+    )
     lines.push('Scene_Map.prototype.createAllWindows = function() {')
     lines.push(`    _Scene_Map_createAllWindows_${windowName}.call(this);`)
     lines.push(`    this.create${windowName}Window();`)
@@ -695,7 +705,9 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`${fullClassName}.show = function(message, duration) {`)
     lines.push('    const scene = SceneManager._scene;')
     lines.push(`    if (scene && scene._${toCamelCase(windowName)}Window) {`)
-    lines.push(`        scene._${toCamelCase(windowName)}Window.showNotification(message, duration);`)
+    lines.push(
+      `        scene._${toCamelCase(windowName)}Window.showNotification(message, duration);`
+    )
     lines.push('    }')
     lines.push('};')
     lines.push('')
@@ -760,11 +772,15 @@ const popupNotificationTemplate: CodeTemplate = {
       lines.push('    }')
     } else if (fadeEffect === 'slide') {
       lines.push('    if (this._fadePhase === "in") {')
-      lines.push('        this._slideOffset = Math.min(0, (this._slideOffset || -this.height) + 8);')
+      lines.push(
+        '        this._slideOffset = Math.min(0, (this._slideOffset || -this.height) + 8);'
+      )
       lines.push('        this.y = this._baseY + this._slideOffset;')
       lines.push('        if (this._slideOffset >= 0) this._fadePhase = "none";')
       lines.push('    } else if (this._fadePhase === "out") {')
-      lines.push('        this._slideOffset = Math.max(-this.height, (this._slideOffset || 0) - 8);')
+      lines.push(
+        '        this._slideOffset = Math.max(-this.height, (this._slideOffset || 0) - 8);'
+      )
       lines.push('        this.y = this._baseY + this._slideOffset;')
       lines.push('        if (this._slideOffset <= -this.height) {')
       lines.push('            this._fadePhase = "none";')
@@ -1054,7 +1070,7 @@ const gaugeWindowTemplate: CodeTemplate = {
     // Calculate window height based on gauge count
     const lineHeight = 36
     const padding = 12
-    const windowHeight = (lineHeight * gaugeCount) + (padding * 2)
+    const windowHeight = lineHeight * gaugeCount + padding * 2
 
     const fullClassName = `Window_${windowName}`
     const lines: string[] = []
@@ -1092,12 +1108,18 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push(`${fullClassName}.prototype.initializeGauges = function() {`)
     lines.push('    // Initialize gauge configurations')
     lines.push('    this._gaugeData = [')
-    lines.push(`        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: 0, max: 100 },`)
+    lines.push(
+      `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: 0, max: 100 },`
+    )
     if (gaugeCount >= 2) {
-      lines.push(`        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: 0, max: 100 },`)
+      lines.push(
+        `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: 0, max: 100 },`
+      )
     }
     if (gaugeCount >= 3) {
-      lines.push(`        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: 0, max: 100 },`)
+      lines.push(
+        `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: 0, max: 100 },`
+      )
     }
     lines.push('    ];')
     lines.push('};')
@@ -1132,24 +1154,36 @@ const gaugeWindowTemplate: CodeTemplate = {
       lines.push('    if (!actor) return this._gaugeData;')
       lines.push('    ')
       lines.push('    return [')
-      lines.push(`        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: actor.hp, max: actor.mhp },`)
+      lines.push(
+        `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: actor.hp, max: actor.mhp },`
+      )
       if (gaugeCount >= 2) {
-        lines.push(`        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: actor.mp, max: actor.mmp },`)
+        lines.push(
+          `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: actor.mp, max: actor.mmp },`
+        )
       }
       if (gaugeCount >= 3) {
-        lines.push(`        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: actor.tp, max: actor.maxTp() },`)
+        lines.push(
+          `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: actor.tp, max: actor.maxTp() },`
+        )
       }
       lines.push('    ];')
     } else if (dataSource === 'variable') {
       lines.push('    // Using game variables for gauge values')
       lines.push('    // Customize variable IDs as needed')
       lines.push('    return [')
-      lines.push(`        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`)
+      lines.push(
+        `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
+      )
       if (gaugeCount >= 2) {
-        lines.push(`        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`)
+        lines.push(
+          `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
+        )
       }
       if (gaugeCount >= 3) {
-        lines.push(`        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`)
+        lines.push(
+          `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
+        )
       }
       lines.push('    ];')
     } else {
@@ -1210,13 +1244,17 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push('    // Draw gauge fill with gradient')
     lines.push('    const fillWidth = Math.floor(gaugeWidth * rate);')
     lines.push('    if (fillWidth > 0) {')
-    lines.push('        this.contents.gradientFillRect(gaugeX, gaugeY, fillWidth, gaugeHeight, gauge.color1, gauge.color2);')
+    lines.push(
+      '        this.contents.gradientFillRect(gaugeX, gaugeY, fillWidth, gaugeHeight, gauge.color1, gauge.color2);'
+    )
     lines.push('    }')
     if (showValues) {
       lines.push('    ')
       lines.push('    // Draw values')
       lines.push('    const valueText = gauge.current + "/" + gauge.max;')
-      lines.push("    this.drawText(valueText, gaugeX + gaugeWidth + 4, y, valueWidth - 4, 'left');")
+      lines.push(
+        "    this.drawText(valueText, gaugeX + gaugeWidth + 4, y, valueWidth - 4, 'left');"
+      )
     }
     lines.push('};')
     lines.push('')
@@ -1286,4 +1324,9 @@ registerTemplate(hudOverlayWindowTemplate)
 registerTemplate(popupNotificationTemplate)
 registerTemplate(gaugeWindowTemplate)
 
-export { customWindowTemplate, hudOverlayWindowTemplate, popupNotificationTemplate, gaugeWindowTemplate }
+export {
+  customWindowTemplate,
+  hudOverlayWindowTemplate,
+  popupNotificationTemplate,
+  gaugeWindowTemplate
+}

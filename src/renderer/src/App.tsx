@@ -8,9 +8,16 @@ import { CommandBuilder } from './components/plugin/CommandBuilder'
 import { StructBuilder } from './components/plugin/StructBuilder'
 import { CodeEditor } from './components/plugin/CodeEditor'
 import { CodePreview } from './components/preview/CodePreview'
+import { AnalysisView } from './components/analysis/AnalysisView'
 import { ProjectBrowser } from './components/project/ProjectBrowser'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
-import { useProjectStore, usePluginStore, useUIStore, useHistoryStore, useSettingsStore } from './stores'
+import {
+  useProjectStore,
+  usePluginStore,
+  useUIStore,
+  useHistoryStore,
+  useSettingsStore
+} from './stores'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { shouldHandleShortcut } from './lib/shortcuts'
@@ -18,6 +25,7 @@ import { createEmptyPlugin } from './types/plugin'
 import { generatePlugin } from './lib/generator'
 import { FolderOpen } from 'lucide-react'
 import { Button } from './components/ui/button'
+import { cn } from './lib/utils'
 
 function App() {
   const project = useProjectStore((s) => s.project)
@@ -52,6 +60,8 @@ function App() {
   const setActiveTab = useUIStore((s) => s.setActiveTab)
   const previewWidth = useUIStore((s) => s.previewWidth)
   const setPreviewWidth = useUIStore((s) => s.setPreviewWidth)
+  const mainView = useUIStore((s) => s.mainView)
+  const setMainView = useUIStore((s) => s.setMainView)
 
   const theme = useSettingsStore((s) => s.theme)
 
@@ -146,9 +156,20 @@ function App() {
 
       // Load additional data
       const [
-        switches, variables, actors, items,
-        skills, weapons, armors, enemies, states,
-        animations, tilesets, commonEvents, classes, troops
+        switches,
+        variables,
+        actors,
+        items,
+        skills,
+        weapons,
+        armors,
+        enemies,
+        states,
+        animations,
+        tilesets,
+        commonEvents,
+        classes,
+        troops
       ] = await Promise.all([
         window.api.project.getSwitches(path),
         window.api.project.getVariables(path),
@@ -224,9 +245,20 @@ function App() {
         addRecentProject(path)
 
         const [
-          switches, variables, actors, items,
-          skills, weapons, armors, enemies, states,
-          animations, tilesets, commonEvents, classes, troops
+          switches,
+          variables,
+          actors,
+          items,
+          skills,
+          weapons,
+          armors,
+          enemies,
+          states,
+          animations,
+          tilesets,
+          commonEvents,
+          classes,
+          troops
         ] = await Promise.all([
           window.api.project.getSwitches(path),
           window.api.project.getVariables(path),
@@ -380,53 +412,84 @@ function App() {
           ) : openPlugins.length === 0 ? (
             <NoPluginScreen />
           ) : (
-            <div className="flex flex-1 overflow-hidden">
-              {/* Editor panels */}
-              <div className="flex-1 overflow-hidden border-r border-border">
-                <Tabs
-                  value={activeTab}
-                  onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-                  className="flex h-full flex-col"
-                >
-                  <TabsList className="mx-4 mt-4 w-fit">
-                    <TabsTrigger value="meta">Metadata</TabsTrigger>
-                    <TabsTrigger value="parameters">Parameters</TabsTrigger>
-                    <TabsTrigger value="commands">Commands</TabsTrigger>
-                    <TabsTrigger value="structs">Structs</TabsTrigger>
-                    <TabsTrigger value="code">Code</TabsTrigger>
-                  </TabsList>
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {/* View switch tabs — only when project is loaded */}
+              {project && (
+                <div className="flex border-b border-border px-4 pt-2">
+                  <button
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium transition-colors',
+                      mainView === 'editor'
+                        ? 'border-b-2 border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    onClick={() => setMainView('editor')}
+                  >
+                    Editor
+                  </button>
+                  <button
+                    className={cn(
+                      'px-3 py-1.5 text-sm font-medium transition-colors',
+                      mainView === 'analysis'
+                        ? 'border-b-2 border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                    onClick={() => setMainView('analysis')}
+                  >
+                    Analysis
+                  </button>
+                </div>
+              )}
 
-                  <TabsContent value="meta" className="flex-1 overflow-auto">
-                    <MetaEditor />
-                  </TabsContent>
-                  <TabsContent value="parameters" className="flex-1 overflow-hidden">
-                    <ParameterBuilder />
-                  </TabsContent>
-                  <TabsContent value="commands" className="flex-1 overflow-hidden">
-                    <CommandBuilder />
-                  </TabsContent>
-                  <TabsContent value="structs" className="flex-1 overflow-hidden">
-                    <StructBuilder />
-                  </TabsContent>
-                  <TabsContent value="code" className="flex-1 overflow-hidden">
-                    <CodeEditor />
-                  </TabsContent>
-                </Tabs>
-              </div>
+              {mainView === 'analysis' && project ? (
+                <AnalysisView />
+              ) : (
+                <div className="flex flex-1 overflow-hidden">
+                  {/* Editor panels */}
+                  <div className="flex-1 overflow-hidden border-r border-border">
+                    <Tabs
+                      value={activeTab}
+                      onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+                      className="flex h-full flex-col"
+                    >
+                      <TabsList className="mx-4 mt-4 w-fit">
+                        <TabsTrigger value="meta">Metadata</TabsTrigger>
+                        <TabsTrigger value="parameters">Parameters</TabsTrigger>
+                        <TabsTrigger value="commands">Commands</TabsTrigger>
+                        <TabsTrigger value="structs">Structs</TabsTrigger>
+                        <TabsTrigger value="code">Code</TabsTrigger>
+                      </TabsList>
 
-              {/* Resize handle */}
-              <div
-                className="w-1 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
-                onMouseDown={handleResizeStart}
-              />
+                      <TabsContent value="meta" className="flex-1 overflow-auto">
+                        <MetaEditor />
+                      </TabsContent>
+                      <TabsContent value="parameters" className="flex-1 overflow-hidden">
+                        <ParameterBuilder />
+                      </TabsContent>
+                      <TabsContent value="commands" className="flex-1 overflow-hidden">
+                        <CommandBuilder />
+                      </TabsContent>
+                      <TabsContent value="structs" className="flex-1 overflow-hidden">
+                        <StructBuilder />
+                      </TabsContent>
+                      <TabsContent value="code" className="flex-1 overflow-hidden">
+                        <CodeEditor />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
 
-              {/* Code preview */}
-              <div
-                className="overflow-hidden"
-                style={{ width: previewWidth }}
-              >
-                <CodePreview />
-              </div>
+                  {/* Resize handle */}
+                  <div
+                    className="w-1 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
+                    onMouseDown={handleResizeStart}
+                  />
+
+                  {/* Code preview */}
+                  <div className="overflow-hidden" style={{ width: previewWidth }}>
+                    <CodePreview />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>

@@ -75,7 +75,7 @@ export function StructBuilder() {
           {structs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <p>No structs defined</p>
-              <p className="text-sm">Click "Add Struct" to create one</p>
+              <p className="text-sm">Click &quot;Add Struct&quot; to create one</p>
             </div>
           ) : (
             structs.map((struct) => (
@@ -125,10 +125,7 @@ function StructCard({
   return (
     <div className="rounded-lg border border-border bg-card">
       {/* Header */}
-      <div
-        className="flex cursor-pointer items-center gap-2 p-3"
-        onClick={onToggle}
-      >
+      <div className="flex cursor-pointer items-center gap-2 p-3" onClick={onToggle}>
         <GripVertical className="h-4 w-4 text-muted-foreground" />
         {expanded ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -217,11 +214,7 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
           className="h-6 w-6"
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? (
-            <ChevronDown className="h-3 w-3" />
-          ) : (
-            <ChevronRight className="h-3 w-3" />
-          )}
+          {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </Button>
 
         <Input
@@ -231,10 +224,7 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
           className="h-8 flex-1"
         />
 
-        <Select
-          value={param.type}
-          onValueChange={(value: ParamType) => onUpdate({ type: value })}
-        >
+        <Select value={param.type} onValueChange={(value: ParamType) => onUpdate({ type: value })}>
           <SelectTrigger className="h-8 w-32">
             <SelectValue />
           </SelectTrigger>
@@ -247,12 +237,7 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
           </SelectContent>
         </Select>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive"
-          onClick={onRemove}
-        >
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
@@ -311,7 +296,9 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
                 <Input
                   type="number"
                   value={param.min ?? ''}
-                  onChange={(e) => onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No min"
                   className="h-8"
                 />
@@ -321,7 +308,9 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
                 <Input
                   type="number"
                   value={param.max ?? ''}
-                  onChange={(e) => onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No max"
                   className="h-8"
                 />
@@ -331,7 +320,9 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
                 <Input
                   type="number"
                   value={param.decimals ?? ''}
-                  onChange={(e) => onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="0"
                   min={0}
                   className="h-8"
@@ -343,19 +334,26 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
           {/* Select options */}
           {param.type === 'select' && (
             <div className="space-y-1">
-              <Label className="text-xs">Options (one per line, format: value|label or just label)</Label>
+              <Label className="text-xs">
+                Options (one per line, format: value|label or just label)
+              </Label>
               <Textarea
                 value={
-                  param.options?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
+                  param.options
+                    ?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text))
+                    .join('\n') || ''
                 }
                 onChange={(e) => {
-                  const options = e.target.value.split('\n').filter(Boolean).map((line) => {
-                    const [value, text] = line.includes('|') ? line.split('|') : [line, line]
-                    return { value: value.trim(), text: (text || value).trim() }
-                  })
+                  const options = e.target.value
+                    .split('\n')
+                    .filter(Boolean)
+                    .map((line) => {
+                      const [value, text] = line.includes('|') ? line.split('|') : [line, line]
+                      return { value: value.trim(), text: (text || value).trim() }
+                    })
                   onUpdate({ options })
                 }}
-                placeholder={"option1|Option 1\noption2|Option 2"}
+                placeholder={'option1|Option 1\noption2|Option 2'}
                 rows={3}
                 className="font-mono text-sm"
               />

@@ -53,11 +53,7 @@ const TRIGGER_DESCRIPTIONS: Record<string, string> = {
 /**
  * Generates input handler code for a specific scene
  */
-function generateSceneHandler(
-  keyName: string,
-  triggerType: string,
-  sceneName: string
-): string {
+function generateSceneHandler(keyName: string, triggerType: string, sceneName: string): string {
   const keyCode = KEY_CODES[keyName]
   const keyDisplayName = KEY_DISPLAY_NAMES[keyName]
   const triggerDesc = TRIGGER_DESCRIPTIONS[triggerType]
@@ -70,7 +66,9 @@ function generateSceneHandler(
 
   // Register key mapping
   lines.push('// Register the key mapping')
-  lines.push(`Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`)
+  lines.push(
+    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`
+  )
   lines.push('')
 
   // Alias the scene's update method
@@ -109,7 +107,9 @@ function generateGlobalHandler(keyName: string, triggerType: string): string {
 
   // Register key mapping
   lines.push('// Register the key mapping')
-  lines.push(`Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`)
+  lines.push(
+    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`
+  )
   lines.push('')
 
   // Alias Scene_Base.update for global handling
