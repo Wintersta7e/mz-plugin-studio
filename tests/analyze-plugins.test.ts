@@ -8,7 +8,7 @@ import {
   extractRegisterCommands,
   extractParamTypes,
   detectNoteTagPattern,
-  detectNewClasses,
+  detectNewClasses
 } from '../tools/analyze-plugins'
 
 // ── detectIIFEStyle ────────────────────────────────────────────────────────

@@ -167,9 +167,7 @@ export class PluginParser {
    */
   private static unwrapIIFE(code: string): string | null {
     // Check for IIFE opening pattern
-    const iifeOpen = code.match(
-      /^\s*\(\s*(?:\(\s*\)\s*=>|function\s*\(\s*\))\s*\{/
-    )
+    const iifeOpen = code.match(/^\s*\(\s*(?:\(\s*\)\s*=>|function\s*\(\s*\))\s*\{/)
     if (!iifeOpen) return null
 
     // Check for IIFE closing pattern at the end
@@ -192,7 +190,10 @@ export class PluginParser {
       if (indent < minIndent) minIndent = indent
     }
     if (minIndent > 0 && minIndent < Infinity) {
-      return lines.map((line) => line.slice(minIndent)).join('\n').trim()
+      return lines
+        .map((line) => line.slice(minIndent))
+        .join('\n')
+        .trim()
     }
     return inner.trim()
   }
@@ -321,7 +322,8 @@ export class PluginParser {
       const npMatch = noteParamMatches[i]
       // Get the text between this @noteParam and the next one (or end of header)
       const startIdx = npMatch.index! + npMatch[0].length
-      const endIdx = i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index! : header.length
+      const endIdx =
+        i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index! : header.length
       const groupBlock = header.slice(startIdx, endIdx)
 
       const noteParam: NoteParam = {
@@ -635,7 +637,9 @@ export class PluginParser {
    */
   private static parseCompactParam(rawLine: string): { name: string; block: string } {
     // Find the first @ tag to split name from attributes
-    const firstTagIdx = rawLine.search(/@(?:text|type|desc|default|min|max|dir|parent|on|off|option|value|decimals)\s/i)
+    const firstTagIdx = rawLine.search(
+      /@(?:text|type|desc|default|min|max|dir|parent|on|off|option|value|decimals)\s/i
+    )
     if (firstTagIdx === -1) {
       return { name: rawLine.trim(), block: '' }
     }
@@ -645,7 +649,12 @@ export class PluginParser {
 
     // Split inline attributes into separate lines for standard parsing.
     // Matches @tag followed by value up to next @tag or end.
-    const block = attrsPart.replace(/@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s)/gi, '\n@').trim()
+    const block = attrsPart
+      .replace(
+        /@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s)/gi,
+        '\n@'
+      )
+      .trim()
 
     return { name, block }
   }

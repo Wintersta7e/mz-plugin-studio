@@ -31,7 +31,8 @@ export const useUIStore = create<UIState>()(
       mainView: 'editor',
 
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
-      setPreviewWidth: (previewWidth) => set({ previewWidth: Math.max(300, Math.min(1200, previewWidth)) }),
+      setPreviewWidth: (previewWidth) =>
+        set({ previewWidth: Math.max(300, Math.min(1200, previewWidth)) }),
       setActiveTab: (activeTab) => set({ activeTab }),
       setSelectedParameterId: (selectedParameterId) => set({ selectedParameterId }),
       setSelectedCommandId: (selectedCommandId) => set({ selectedCommandId }),
@@ -40,7 +41,10 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: 'mz-plugin-studio-ui',
-      partialize: (state) => ({ sidebarWidth: state.sidebarWidth, previewWidth: state.previewWidth })
+      partialize: (state) => ({
+        sidebarWidth: state.sidebarWidth,
+        previewWidth: state.previewWidth
+      })
     }
   )
 )

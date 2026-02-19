@@ -136,7 +136,7 @@ const customMenuSceneTemplate: CodeTemplate = {
     // Add type-specific methods
     if (windowType === 'command') {
       lines.push(`${windowClass}.prototype.makeCommandList = function() {`)
-      lines.push("    // Add your commands here")
+      lines.push('    // Add your commands here')
       lines.push("    this.addCommand('Command 1', 'command1');")
       lines.push("    this.addCommand('Command 2', 'command2');")
       lines.push("    this.addCommand('Cancel', 'cancel');")
@@ -157,7 +157,7 @@ const customMenuSceneTemplate: CodeTemplate = {
       // Base window
       lines.push(`${windowClass}.prototype.refresh = function() {`)
       lines.push('    this.contents.clear();')
-      lines.push("    // Draw your content here")
+      lines.push('    // Draw your content here')
       lines.push("    this.drawText('Custom Window Content', 0, 0, this.innerWidth, 'center');")
       lines.push('};')
       lines.push('')
@@ -204,12 +204,22 @@ const customMenuSceneTemplate: CodeTemplate = {
     lines.push(`    this._${windowName.toLowerCase()}Window = new ${windowClass}(rect);`)
 
     if (windowType === 'command') {
-      lines.push(`    this._${windowName.toLowerCase()}Window.setHandler('command1', this.onCommand1.bind(this));`)
-      lines.push(`    this._${windowName.toLowerCase()}Window.setHandler('command2', this.onCommand2.bind(this));`)
-      lines.push(`    this._${windowName.toLowerCase()}Window.setHandler('cancel', this.popScene.bind(this));`)
+      lines.push(
+        `    this._${windowName.toLowerCase()}Window.setHandler('command1', this.onCommand1.bind(this));`
+      )
+      lines.push(
+        `    this._${windowName.toLowerCase()}Window.setHandler('command2', this.onCommand2.bind(this));`
+      )
+      lines.push(
+        `    this._${windowName.toLowerCase()}Window.setHandler('cancel', this.popScene.bind(this));`
+      )
     } else if (windowType === 'selectable') {
-      lines.push(`    this._${windowName.toLowerCase()}Window.setHandler('ok', this.onItemOk.bind(this));`)
-      lines.push(`    this._${windowName.toLowerCase()}Window.setHandler('cancel', this.popScene.bind(this));`)
+      lines.push(
+        `    this._${windowName.toLowerCase()}Window.setHandler('ok', this.onItemOk.bind(this));`
+      )
+      lines.push(
+        `    this._${windowName.toLowerCase()}Window.setHandler('cancel', this.popScene.bind(this));`
+      )
     }
 
     if (includeHelp && windowType !== 'base') {
@@ -274,7 +284,9 @@ const customMenuSceneTemplate: CodeTemplate = {
     } else {
       const sceneName = values.sceneName as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sceneName)) {
-        errors.push('Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)')
+        errors.push(
+          'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
+        )
       }
     }
 
@@ -361,20 +373,28 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push(`// Title Screen Mod: Add "${commandName}" Command`)
         lines.push('')
         lines.push('// Add command to title command window')
-        lines.push('const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;')
+        lines.push(
+          'const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;'
+        )
         lines.push('Window_TitleCommand.prototype.makeCommandList = function() {')
         lines.push('    _Window_TitleCommand_makeCommandList.call(this);')
         lines.push(`    this.addCommand("${commandName}", "${commandSymbol}");`)
         lines.push('};')
         lines.push('')
         lines.push('// Create handler for the new command')
-        lines.push('const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;')
+        lines.push(
+          'const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;'
+        )
         lines.push('Scene_Title.prototype.createCommandWindow = function() {')
         lines.push('    _Scene_Title_createCommandWindow.call(this);')
-        lines.push(`    this._commandWindow.setHandler("${commandSymbol}", this.command${toValidIdentifier(commandSymbol)}.bind(this));`)
+        lines.push(
+          `    this._commandWindow.setHandler("${commandSymbol}", this.command${toValidIdentifier(commandSymbol)}.bind(this));`
+        )
         lines.push('};')
         lines.push('')
-        lines.push(`Scene_Title.prototype.command${toValidIdentifier(commandSymbol)} = function() {`)
+        lines.push(
+          `Scene_Title.prototype.command${toValidIdentifier(commandSymbol)} = function() {`
+        )
         lines.push(`    // Your code here when "${commandName}" is selected`)
         lines.push(`    console.log("${commandName} command selected");`)
         lines.push('    this._commandWindow.activate();')
@@ -395,7 +415,9 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('    // Add custom background elements here')
         lines.push('    // Example: Create an additional sprite layer')
         lines.push('    // this._customSprite = new Sprite();')
-        lines.push("    // this._customSprite.bitmap = ImageManager.loadTitle1('CustomBackground');")
+        lines.push(
+          "    // this._customSprite.bitmap = ImageManager.loadTitle1('CustomBackground');"
+        )
         lines.push('    // this.addChild(this._customSprite);')
         lines.push('};')
         lines.push('')
@@ -406,7 +428,9 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('    ')
         lines.push('    // Update custom background elements')
         lines.push('    // if (this._customSprite) {')
-        lines.push('    //     this._customSprite.opacity = 128 + Math.sin(Graphics.frameCount / 30) * 127;')
+        lines.push(
+          '    //     this._customSprite.opacity = 128 + Math.sin(Graphics.frameCount / 30) * 127;'
+        )
         lines.push('    // }')
         lines.push('};')
         break
@@ -437,12 +461,16 @@ const titleScreenModTemplate: CodeTemplate = {
 
         if (hideTarget === 'options') {
           // Options doesn't have a visibility check by default, need different approach
-          lines.push('const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;')
+          lines.push(
+            'const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;'
+          )
           lines.push('Window_TitleCommand.prototype.makeCommandList = function() {')
           lines.push('    // Manually add commands, skipping Options')
           lines.push("    this.addCommand(TextManager.newGame, 'newGame');")
-          lines.push("    this.addCommand(TextManager.continue_, 'continue', this.isContinueEnabled());")
-          lines.push("    // Options command removed")
+          lines.push(
+            "    this.addCommand(TextManager.continue_, 'continue', this.isContinueEnabled());"
+          )
+          lines.push('    // Options command removed')
           lines.push('};')
         } else {
           lines.push(`// Override visibility check for ${description}`)
@@ -624,10 +652,14 @@ const menuCommandAdditionTemplate: CodeTemplate = {
 
     // Add command to menu
     lines.push('// Add command to main menu')
-    lines.push('const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;')
+    lines.push(
+      'const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;'
+    )
     lines.push('Window_MenuCommand.prototype.addOriginalCommands = function() {')
     lines.push('    _Window_MenuCommand_addOriginalCommands.call(this);')
-    lines.push(`    this.addCommand("${commandName}", "${commandSymbol}", this.is${symbolId}Enabled());`)
+    lines.push(
+      `    this.addCommand("${commandName}", "${commandSymbol}", this.is${symbolId}Enabled());`
+    )
     lines.push('};')
     lines.push('')
 
@@ -654,7 +686,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     // If we need to control insertion position precisely, we override makeCommandList
     if (insertCode && insertPosition.startsWith('before')) {
       lines.push('// Override makeCommandList to control command position')
-      lines.push('const _Window_MenuCommand_makeCommandList = Window_MenuCommand.prototype.makeCommandList;')
+      lines.push(
+        'const _Window_MenuCommand_makeCommandList = Window_MenuCommand.prototype.makeCommandList;'
+      )
       lines.push('Window_MenuCommand.prototype.makeCommandList = function() {')
       lines.push('    _Window_MenuCommand_makeCommandList.call(this);')
       lines.push('    ')
@@ -673,7 +707,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push('const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;')
     lines.push('Scene_Menu.prototype.createCommandWindow = function() {')
     lines.push('    _Scene_Menu_createCommandWindow.call(this);')
-    lines.push(`    this._commandWindow.setHandler("${commandSymbol}", this.command${symbolId}.bind(this));`)
+    lines.push(
+      `    this._commandWindow.setHandler("${commandSymbol}", this.command${symbolId}.bind(this));`
+    )
     lines.push('};')
     lines.push('')
 
@@ -686,7 +722,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push('    this._statusWindow.selectLast();')
       lines.push('    this._statusWindow.activate();')
       lines.push('    this._statusWindow.setHandler("ok", this.on' + symbolId + 'Ok.bind(this));')
-      lines.push('    this._statusWindow.setHandler("cancel", this.on' + symbolId + 'Cancel.bind(this));')
+      lines.push(
+        '    this._statusWindow.setHandler("cancel", this.on' + symbolId + 'Cancel.bind(this));'
+      )
     } else {
       lines.push(`    // Your code here when "${commandName}" is selected`)
       lines.push(`    console.log("${commandName} command selected");`)
@@ -866,13 +904,17 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
 
       switch (optionType) {
         case 'boolean':
-          lines.push(`    this.${optionSymbol} = this.readFlag(config, "${optionSymbol}", ${defaultCode});`)
+          lines.push(
+            `    this.${optionSymbol} = this.readFlag(config, "${optionSymbol}", ${defaultCode});`
+          )
           break
         case 'volume':
           lines.push(`    this.${optionSymbol} = this.readVolume(config, "${optionSymbol}");`)
           break
         case 'select':
-          lines.push(`    this.${optionSymbol} = config.${optionSymbol} !== undefined ? config.${optionSymbol} : ${defaultCode};`)
+          lines.push(
+            `    this.${optionSymbol} = config.${optionSymbol} !== undefined ? config.${optionSymbol} : ${defaultCode};`
+          )
           break
       }
 
@@ -882,7 +924,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
 
     // Add command to options window
     lines.push('// Add option to options window')
-    lines.push('const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;')
+    lines.push(
+      'const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;'
+    )
     lines.push('Window_Options.prototype.addGeneralOptions = function() {')
     lines.push('    _Window_Options_addGeneralOptions.call(this);')
     lines.push(`    this.addCommand("${optionName}", "${optionSymbol}");`)
@@ -901,7 +945,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push(`// Access the value with: ConfigManager.${optionSymbol} (0-100)`)
         lines.push('')
         lines.push('// Mark as volume type')
-        lines.push('const _Window_Options_isVolumeSymbol = Window_Options.prototype.isVolumeSymbol;')
+        lines.push(
+          'const _Window_Options_isVolumeSymbol = Window_Options.prototype.isVolumeSymbol;'
+        )
         lines.push('Window_Options.prototype.isVolumeSymbol = function(symbol) {')
         lines.push(`    if (symbol === "${optionSymbol}") return true;`)
         lines.push('    return _Window_Options_isVolumeSymbol.call(this, symbol);')
@@ -909,14 +955,16 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         break
 
       case 'select': {
-        const choiceList = choices ? choices.split(',').map(c => c.trim()) : ['Option 1', 'Option 2', 'Option 3']
+        const choiceList = choices
+          ? choices.split(',').map((c) => c.trim())
+          : ['Option 1', 'Option 2', 'Option 3']
 
         lines.push('// Status text for select option')
         lines.push('const _Window_Options_statusText = Window_Options.prototype.statusText;')
         lines.push('Window_Options.prototype.statusText = function(index) {')
         lines.push('    const symbol = this.commandSymbol(index);')
         lines.push(`    if (symbol === "${optionSymbol}") {`)
-        lines.push(`        const choices = [${choiceList.map(c => `"${c}"`).join(', ')}];`)
+        lines.push(`        const choices = [${choiceList.map((c) => `"${c}"`).join(', ')}];`)
         lines.push(`        return choices[this.getConfigValue(symbol)] || choices[0];`)
         lines.push('    }')
         lines.push('    return _Window_Options_statusText.call(this, index);')
@@ -928,7 +976,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('Window_Options.prototype.processOk = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
         lines.push(`    if (symbol === "${optionSymbol}") {`)
-        lines.push(`        const choices = [${choiceList.map(c => `"${c}"`).join(', ')}];`)
+        lines.push(`        const choices = [${choiceList.map((c) => `"${c}"`).join(', ')}];`)
         lines.push('        let value = this.getConfigValue(symbol);')
         lines.push('        value = (value + 1) % choices.length;')
         lines.push('        this.changeValue(symbol, value);')
@@ -943,7 +991,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('Window_Options.prototype.cursorRight = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
         lines.push(`    if (symbol === "${optionSymbol}") {`)
-        lines.push(`        const choices = [${choiceList.map(c => `"${c}"`).join(', ')}];`)
+        lines.push(`        const choices = [${choiceList.map((c) => `"${c}"`).join(', ')}];`)
         lines.push('        let value = this.getConfigValue(symbol);')
         lines.push('        value = Math.min(value + 1, choices.length - 1);')
         lines.push('        this.changeValue(symbol, value);')
@@ -966,7 +1014,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
 
-        lines.push(`// Access the value with: ConfigManager.${optionSymbol} (index 0-${choiceList.length - 1})`)
+        lines.push(
+          `// Access the value with: ConfigManager.${optionSymbol} (index 0-${choiceList.length - 1})`
+        )
         lines.push(`// Choices: ${choiceList.join(', ')}`)
         break
       }

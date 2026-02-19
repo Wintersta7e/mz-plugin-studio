@@ -306,7 +306,8 @@ const sePlayerTemplate: CodeTemplate = {
     const wrapInFunction = values.wrapInFunction !== false
     const functionName = (values.functionName as string) || 'playCustomSE'
     const randomizePitch = values.randomizePitch === true
-    const pitchVariation = values.pitchVariation !== undefined ? (values.pitchVariation as number) : 10
+    const pitchVariation =
+      values.pitchVariation !== undefined ? (values.pitchVariation as number) : 10
 
     const lines: string[] = []
 
@@ -317,7 +318,9 @@ const sePlayerTemplate: CodeTemplate = {
       coreCode.push('// Play SE with randomized pitch for variation')
       coreCode.push(`const basePitch = ${pitch};`)
       coreCode.push(`const variation = ${pitchVariation};`)
-      coreCode.push('const randomPitch = basePitch + Math.floor(Math.random() * variation * 2) - variation;')
+      coreCode.push(
+        'const randomPitch = basePitch + Math.floor(Math.random() * variation * 2) - variation;'
+      )
       coreCode.push('const se = {')
       coreCode.push(`    name: '${filename}',`)
       coreCode.push(`    volume: ${volume},`)
@@ -484,9 +487,12 @@ const audioCrossfadeTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const crossfadeType = (values.crossfadeType as string) || 'crossfade'
-    const newBgmFilename = (values.newBgmFilename as string) || (values.fadeFromSilenceBgm as string)
-    const fadeOutDuration = values.fadeOutDuration !== undefined ? (values.fadeOutDuration as number) : 2
-    const fadeInDuration = values.fadeInDuration !== undefined ? (values.fadeInDuration as number) : 2
+    const newBgmFilename =
+      (values.newBgmFilename as string) || (values.fadeFromSilenceBgm as string)
+    const fadeOutDuration =
+      values.fadeOutDuration !== undefined ? (values.fadeOutDuration as number) : 2
+    const fadeInDuration =
+      values.fadeInDuration !== undefined ? (values.fadeInDuration as number) : 2
     const newBgmVolume = values.newBgmVolume !== undefined ? (values.newBgmVolume as number) : 90
     const newBgmPitch = values.newBgmPitch !== undefined ? (values.newBgmPitch as number) : 100
     const wrapInFunction = values.wrapInFunction !== false

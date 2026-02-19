@@ -49,9 +49,22 @@ export class ProjectParser {
     const system = JSON.parse(systemContent)
 
     const [
-      actors, items, maps, plugins, switches, variables,
-      skills, weapons, armors, enemies, states,
-      animations, tilesets, commonEvents, classes, troops
+      actors,
+      items,
+      maps,
+      plugins,
+      switches,
+      variables,
+      skills,
+      weapons,
+      armors,
+      enemies,
+      states,
+      animations,
+      tilesets,
+      commonEvents,
+      classes,
+      troops
     ] = await Promise.all([
       this.getActors(path),
       this.getItems(path),
@@ -207,16 +220,26 @@ export class ProjectParser {
     }
   }
 
-  static getSkills = (p: string): Promise<MZSkill[]> => ProjectParser.loadDataArray(p, 'Skills.json')
-  static getWeapons = (p: string): Promise<MZWeapon[]> => ProjectParser.loadDataArray(p, 'Weapons.json')
-  static getArmors = (p: string): Promise<MZArmor[]> => ProjectParser.loadDataArray(p, 'Armors.json')
-  static getEnemies = (p: string): Promise<MZEnemy[]> => ProjectParser.loadDataArray(p, 'Enemies.json')
-  static getStates = (p: string): Promise<MZState[]> => ProjectParser.loadDataArray(p, 'States.json')
-  static getAnimations = (p: string): Promise<MZAnimation[]> => ProjectParser.loadDataArray(p, 'Animations.json')
-  static getTilesets = (p: string): Promise<MZTileset[]> => ProjectParser.loadDataArray(p, 'Tilesets.json')
-  static getCommonEvents = (p: string): Promise<MZCommonEvent[]> => ProjectParser.loadDataArray(p, 'CommonEvents.json')
-  static getClasses = (p: string): Promise<MZClass[]> => ProjectParser.loadDataArray(p, 'Classes.json')
-  static getTroops = (p: string): Promise<MZTroop[]> => ProjectParser.loadDataArray(p, 'Troops.json')
+  static getSkills = (p: string): Promise<MZSkill[]> =>
+    ProjectParser.loadDataArray(p, 'Skills.json')
+  static getWeapons = (p: string): Promise<MZWeapon[]> =>
+    ProjectParser.loadDataArray(p, 'Weapons.json')
+  static getArmors = (p: string): Promise<MZArmor[]> =>
+    ProjectParser.loadDataArray(p, 'Armors.json')
+  static getEnemies = (p: string): Promise<MZEnemy[]> =>
+    ProjectParser.loadDataArray(p, 'Enemies.json')
+  static getStates = (p: string): Promise<MZState[]> =>
+    ProjectParser.loadDataArray(p, 'States.json')
+  static getAnimations = (p: string): Promise<MZAnimation[]> =>
+    ProjectParser.loadDataArray(p, 'Animations.json')
+  static getTilesets = (p: string): Promise<MZTileset[]> =>
+    ProjectParser.loadDataArray(p, 'Tilesets.json')
+  static getCommonEvents = (p: string): Promise<MZCommonEvent[]> =>
+    ProjectParser.loadDataArray(p, 'CommonEvents.json')
+  static getClasses = (p: string): Promise<MZClass[]> =>
+    ProjectParser.loadDataArray(p, 'Classes.json')
+  static getTroops = (p: string): Promise<MZTroop[]> =>
+    ProjectParser.loadDataArray(p, 'Troops.json')
 
   static parseNoteTags(note: string): Record<string, string> {
     const tags: Record<string, string> = {}

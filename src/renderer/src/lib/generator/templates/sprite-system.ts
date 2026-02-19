@@ -184,7 +184,9 @@ const customSpriteClassTemplate: CodeTemplate = {
       lines.push('    // Override this to update sprite based on this._pattern')
       lines.push('    // Example: Change frame for spritesheet')
       lines.push('    // const frameWidth = this.bitmap.width / 4;')
-      lines.push('    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);')
+      lines.push(
+        '    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);'
+      )
       lines.push('};')
     }
 
@@ -422,8 +424,12 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push(' * @param {number} [opacity=255] - Opacity (0-255)')
       lines.push(' * @param {number} [blendMode=0] - 0=Normal, 1=Additive, 2=Multiply, 3=Screen')
       lines.push(' */')
-      lines.push('function showPicture(pictureId, name, x, y, origin = 0, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0) {')
-      lines.push('    $gameScreen.showPicture(pictureId, name, origin, x, y, scaleX, scaleY, opacity, blendMode);')
+      lines.push(
+        'function showPicture(pictureId, name, x, y, origin = 0, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0) {'
+      )
+      lines.push(
+        '    $gameScreen.showPicture(pictureId, name, origin, x, y, scaleX, scaleY, opacity, blendMode);'
+      )
       lines.push('}')
       lines.push('')
 
@@ -439,11 +445,15 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push(' * @param {number} [blendMode=0] - Target blend mode')
       lines.push(' * @param {number} [easingType=0] - Easing type (MZ only)')
       lines.push(' */')
-      lines.push('function movePicture(pictureId, x, y, duration = 60, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0, easingType = 0) {')
+      lines.push(
+        'function movePicture(pictureId, x, y, duration = 60, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0, easingType = 0) {'
+      )
       lines.push('    const picture = $gameScreen.picture(pictureId);')
       lines.push('    if (picture) {')
       lines.push('        const origin = picture.origin();')
-      lines.push('        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, opacity, blendMode, duration, easingType);')
+      lines.push(
+        '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, opacity, blendMode, duration, easingType);'
+      )
       lines.push('    }')
       lines.push('}')
       lines.push('')
@@ -451,7 +461,9 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push('/**')
       lines.push(' * Rotate a picture continuously')
       lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' * @param {number} speed - Rotation speed (degrees per frame, positive = clockwise)')
+      lines.push(
+        ' * @param {number} speed - Rotation speed (degrees per frame, positive = clockwise)'
+      )
       lines.push(' */')
       lines.push('function rotatePicture(pictureId, speed) {')
       lines.push('    $gameScreen.rotatePicture(pictureId, speed);')
@@ -495,7 +507,9 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push('        const scaleX = picture.scaleX();')
       lines.push('        const scaleY = picture.scaleY();')
       lines.push('        const blendMode = picture.blendMode();')
-      lines.push('        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, 0, blendMode, duration);')
+      lines.push(
+        '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, 0, blendMode, duration);'
+      )
       lines.push('    }')
       lines.push('}')
     } else if (operation === 'show') {
@@ -512,7 +526,9 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push(`    ${scaleX},            // Scale X (%)`)
       lines.push(`    ${scaleY},            // Scale Y (%)`)
       lines.push(`    ${opacity},           // Opacity (0-255)`)
-      lines.push(`    ${blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`)
+      lines.push(
+        `    ${blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`
+      )
       lines.push(');')
     } else if (operation === 'move') {
       lines.push('// Move Picture')
@@ -548,7 +564,9 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push('')
       lines.push(`$gameScreen.tintPicture(`)
       lines.push(`    ${pictureId},                                   // Picture ID`)
-      lines.push(`    [${tintRed}, ${tintGreen}, ${tintBlue}, ${tintGray}],  // [Red, Green, Blue, Gray]`)
+      lines.push(
+        `    [${tintRed}, ${tintGreen}, ${tintBlue}, ${tintGray}],  // [Red, Green, Blue, Gray]`
+      )
       lines.push(`    ${duration}                                     // Duration (frames)`)
       lines.push(');')
       lines.push('')
@@ -752,9 +770,13 @@ const spriteAnimationTemplate: CodeTemplate = {
       if (columns > 1) {
         lines.push(`    const col = this._animPattern % ${columns};`)
         lines.push(`    const row = Math.floor(this._animPattern / ${columns});`)
-        lines.push(`    this.setFrame(col * ${frameWidth}, row * ${frameHeight}, ${frameWidth}, ${frameHeight});`)
+        lines.push(
+          `    this.setFrame(col * ${frameWidth}, row * ${frameHeight}, ${frameWidth}, ${frameHeight});`
+        )
       } else {
-        lines.push(`    this.setFrame(this._animPattern * ${frameWidth}, 0, ${frameWidth}, ${frameHeight});`)
+        lines.push(
+          `    this.setFrame(this._animPattern * ${frameWidth}, 0, ${frameWidth}, ${frameHeight});`
+        )
       }
       lines.push('};')
       lines.push('')

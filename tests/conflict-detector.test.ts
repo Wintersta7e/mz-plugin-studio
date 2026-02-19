@@ -1,7 +1,6 @@
 // Tests for conflict detector — override extraction + conflict detection
 import { describe, it, expect } from 'vitest'
 import { extractOverrides, detectConflicts } from '../src/renderer/src/lib/conflict-detector'
-import type { ConflictReport } from '../src/renderer/src/lib/conflict-detector'
 
 describe('extractOverrides', () => {
   // --- Basic extraction ---
@@ -95,10 +94,9 @@ describe('extractOverrides', () => {
   })
 
   it('ignores prototype refs in template literals', () => {
-    const code = [
-      'var desc = `Game_Actor.prototype.setup = function() {};`;',
-      'var x = 1;'
-    ].join('\n')
+    const code = ['var desc = `Game_Actor.prototype.setup = function() {};`;', 'var x = 1;'].join(
+      '\n'
+    )
     expect(extractOverrides(code)).toEqual([])
   })
 
@@ -120,7 +118,7 @@ describe('extractOverrides', () => {
     const code = [
       'if (Game_Actor.prototype.setup == null) {}',
       'if (Game_Map.prototype.update === originalUpdate) {}',
-      'if (Sprite.prototype.init != undefined) {}',
+      'if (Sprite.prototype.init != undefined) {}'
     ].join('\n')
     expect(extractOverrides(code)).toEqual([])
   })
@@ -155,9 +153,9 @@ describe('extractOverrides', () => {
     expect(result).toContain('Scene_Map.prototype.createDisplayObjects')
     // Deduplication: each should appear only once
     expect(result.filter((r: string) => r === 'Game_Player.prototype.update')).toHaveLength(1)
-    expect(result.filter((r: string) => r === 'Scene_Map.prototype.createDisplayObjects')).toHaveLength(
-      1
-    )
+    expect(
+      result.filter((r: string) => r === 'Scene_Map.prototype.createDisplayObjects')
+    ).toHaveLength(1)
     expect(result).toHaveLength(2)
   })
 })
@@ -174,17 +172,14 @@ const mockMzClasses: Record<string, { popularity?: number }> = {
   Game_Actor: { popularity: 22 },
   Scene_Map: { popularity: 53 },
   Sprite_Character: { popularity: 5 },
-  Game_Temp: { popularity: 3 },
+  Game_Temp: { popularity: 3 }
 }
 
 describe('detectConflicts', () => {
   // --- Core detection ---
 
   it('returns clean report when no plugins have overrides', () => {
-    const headers = [
-      pluginWithOverrides('PluginA', []),
-      pluginWithOverrides('PluginB', []),
-    ]
+    const headers = [pluginWithOverrides('PluginA', []), pluginWithOverrides('PluginB', [])]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toEqual([])
     expect(report.totalOverrides).toBe(0)
@@ -201,7 +196,7 @@ describe('detectConflicts', () => {
   it('returns clean when no methods overlap', () => {
     const headers = [
       pluginWithOverrides('PluginA', ['Game_Map.prototype.setup']),
-      pluginWithOverrides('PluginB', ['Game_Actor.prototype.update']),
+      pluginWithOverrides('PluginB', ['Game_Actor.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toEqual([])
@@ -214,8 +209,8 @@ describe('detectConflicts', () => {
       pluginWithOverrides('PluginA', [
         'Game_Map.prototype.setup',
         'Game_Map.prototype.update',
-        'Game_Actor.prototype.setup',
-      ]),
+        'Game_Actor.prototype.setup'
+      ])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toEqual([])
@@ -226,7 +221,7 @@ describe('detectConflicts', () => {
   it('detects simple two-plugin conflict', () => {
     const headers = [
       pluginWithOverrides('PluginA', ['Game_Map.prototype.update']),
-      pluginWithOverrides('PluginB', ['Game_Map.prototype.update']),
+      pluginWithOverrides('PluginB', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(1)
@@ -240,7 +235,7 @@ describe('detectConflicts', () => {
     const headers = [
       pluginWithOverrides('Alpha', ['Scene_Map.prototype.update']),
       pluginWithOverrides('Beta', ['Scene_Map.prototype.update']),
-      pluginWithOverrides('Gamma', ['Scene_Map.prototype.update']),
+      pluginWithOverrides('Gamma', ['Scene_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(1)
@@ -250,7 +245,7 @@ describe('detectConflicts', () => {
   it('detects multiple independent conflicts', () => {
     const headers = [
       pluginWithOverrides('PluginA', ['Game_Map.prototype.update', 'Game_Actor.prototype.setup']),
-      pluginWithOverrides('PluginB', ['Game_Map.prototype.update', 'Game_Actor.prototype.setup']),
+      pluginWithOverrides('PluginB', ['Game_Map.prototype.update', 'Game_Actor.prototype.setup'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(2)
@@ -259,7 +254,7 @@ describe('detectConflicts', () => {
   it('preserves load order in plugin list (not alphabetical)', () => {
     const headers = [
       pluginWithOverrides('Zebra', ['Game_Map.prototype.update']),
-      pluginWithOverrides('Alpha', ['Game_Map.prototype.update']),
+      pluginWithOverrides('Alpha', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts[0].plugins).toEqual(['Zebra', 'Alpha'])
@@ -269,7 +264,11 @@ describe('detectConflicts', () => {
     const headers = [
       pluginWithOverrides('PluginA', ['Game_Map.prototype.setup', 'Game_Map.prototype.update']),
       pluginWithOverrides('PluginB', ['Game_Actor.prototype.setup']),
-      pluginWithOverrides('PluginC', ['Scene_Map.prototype.start', 'Scene_Map.prototype.update', 'Scene_Map.prototype.stop']),
+      pluginWithOverrides('PluginC', [
+        'Scene_Map.prototype.start',
+        'Scene_Map.prototype.update',
+        'Scene_Map.prototype.stop'
+      ])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.totalOverrides).toBe(6)
@@ -280,7 +279,7 @@ describe('detectConflicts', () => {
   it('assigns warning severity for popular class (popularity >= 10)', () => {
     const headers = [
       pluginWithOverrides('A', ['Game_Map.prototype.update']),
-      pluginWithOverrides('B', ['Game_Map.prototype.update']),
+      pluginWithOverrides('B', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts[0].severity).toBe('warning')
@@ -289,7 +288,7 @@ describe('detectConflicts', () => {
   it('assigns info severity for unpopular class (popularity < 10)', () => {
     const headers = [
       pluginWithOverrides('A', ['Sprite_Character.prototype.update']),
-      pluginWithOverrides('B', ['Sprite_Character.prototype.update']),
+      pluginWithOverrides('B', ['Sprite_Character.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts[0].severity).toBe('info')
@@ -298,7 +297,7 @@ describe('detectConflicts', () => {
   it('assigns info severity for unknown class (not in mzClasses)', () => {
     const headers = [
       pluginWithOverrides('A', ['MyCustomClass.prototype.init']),
-      pluginWithOverrides('B', ['MyCustomClass.prototype.init']),
+      pluginWithOverrides('B', ['MyCustomClass.prototype.init'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts[0].severity).toBe('info')
@@ -307,7 +306,7 @@ describe('detectConflicts', () => {
   it('assigns all info severity when mzClasses is empty', () => {
     const headers = [
       pluginWithOverrides('A', ['Game_Map.prototype.update']),
-      pluginWithOverrides('B', ['Game_Map.prototype.update']),
+      pluginWithOverrides('B', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, {})
     expect(report.conflicts[0].severity).toBe('info')
@@ -316,7 +315,7 @@ describe('detectConflicts', () => {
   it('sorts warnings before info', () => {
     const headers = [
       pluginWithOverrides('A', ['Sprite_Character.prototype.update', 'Game_Map.prototype.update']),
-      pluginWithOverrides('B', ['Sprite_Character.prototype.update', 'Game_Map.prototype.update']),
+      pluginWithOverrides('B', ['Sprite_Character.prototype.update', 'Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(2)
@@ -329,20 +328,20 @@ describe('detectConflicts', () => {
       pluginWithOverrides('A', [
         'Scene_Battle.prototype.start',
         'Game_Actor.prototype.setup',
-        'Game_Map.prototype.update',
+        'Game_Map.prototype.update'
       ]),
       pluginWithOverrides('B', [
         'Scene_Battle.prototype.start',
         'Game_Actor.prototype.setup',
-        'Game_Map.prototype.update',
-      ]),
+        'Game_Map.prototype.update'
+      ])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     // All three are warning (popularity >= 10)
     expect(report.conflicts.map((c: { method: string }) => c.method)).toEqual([
       'Game_Actor.prototype.setup',
       'Game_Map.prototype.update',
-      'Scene_Battle.prototype.start',
+      'Scene_Battle.prototype.start'
     ])
   })
 
@@ -351,7 +350,7 @@ describe('detectConflicts', () => {
   it('handles plugin with empty name string', () => {
     const headers = [
       pluginWithOverrides('', ['Game_Map.prototype.update']),
-      pluginWithOverrides('PluginB', ['Game_Map.prototype.update']),
+      pluginWithOverrides('PluginB', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(1)
@@ -366,7 +365,7 @@ describe('detectConflicts', () => {
   it('health is conflicts when any conflicts exist', () => {
     const headers = [
       pluginWithOverrides('A', ['Game_Map.prototype.update']),
-      pluginWithOverrides('B', ['Game_Map.prototype.update']),
+      pluginWithOverrides('B', ['Game_Map.prototype.update'])
     ]
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.health).toBe('conflicts')

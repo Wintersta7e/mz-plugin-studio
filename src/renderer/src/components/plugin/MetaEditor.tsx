@@ -234,9 +234,7 @@ export function MetaEditor() {
             rows={2}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">
-            Plugins that must load before this one
-          </p>
+          <p className="text-xs text-muted-foreground">Plugins that must load before this one</p>
         </div>
 
         <div className="space-y-2">
@@ -253,9 +251,7 @@ export function MetaEditor() {
             rows={2}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-muted-foreground">
-            Plugins that must load after this one
-          </p>
+          <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
         </div>
 
         {/* Note Parameters for deployment */}
@@ -317,8 +313,18 @@ export function MetaEditor() {
 }
 
 const NOTE_DATA_OPTIONS = [
-  'actors', 'classes', 'skills', 'items', 'weapons', 'armors',
-  'enemies', 'troops', 'states', 'tilesets', 'animations', 'maps'
+  'actors',
+  'classes',
+  'skills',
+  'items',
+  'weapons',
+  'armors',
+  'enemies',
+  'troops',
+  'states',
+  'tilesets',
+  'animations',
+  'maps'
 ]
 
 function NoteParamRow({
@@ -390,12 +396,7 @@ function NoteParamRow({
           />
           Req
         </label>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive"
-          onClick={onDelete}
-        >
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>

@@ -183,7 +183,9 @@ function generateNotetagCode(
       lines.push(`            item.meta.${propName} = ${defaultLiteral};`)
       lines.push('            const match = item.note.match(regex);')
       lines.push('            if (match) {')
-      lines.push(`                item.meta.${propName} = ${generateValueParser(valueType, 'match[1]')};`)
+      lines.push(
+        `                item.meta.${propName} = ${generateValueParser(valueType, 'match[1]')};`
+      )
       lines.push('            }')
       lines.push('        }')
       lines.push('    }')
@@ -334,13 +336,17 @@ const databaseExtTemplate: CodeTemplate = {
 
       // Check for valid tag name (letters, numbers, underscores)
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tagName)) {
-        errors.push('Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores')
+        errors.push(
+          'Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores'
+        )
       }
 
       // Check for reserved/common names that might conflict
       const reservedNames = ['note', 'meta', 'id', 'name', 'description', 'iconIndex', 'price']
       if (reservedNames.includes(tagName.toLowerCase())) {
-        errors.push(`"${tagName}" may conflict with existing properties. Consider a more unique name.`)
+        errors.push(
+          `"${tagName}" may conflict with existing properties. Consider a more unique name.`
+        )
       }
     }
 

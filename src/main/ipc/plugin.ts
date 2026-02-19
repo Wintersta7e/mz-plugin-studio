@@ -22,7 +22,9 @@ function assertSafeFilePath(filePath: string): void {
   }
   const ext = extname(normalized).toLowerCase()
   if (!ALLOWED_EXTENSIONS.has(ext)) {
-    throw new Error(`File extension "${ext}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`)
+    throw new Error(
+      `File extension "${ext}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`
+    )
   }
 }
 
@@ -61,7 +63,9 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const content = await readFile(pluginPath, 'utf-8')
       const result = PluginParser.parsePlugin(content, filename)
-      console.log(`[plugin:load] ${filename} - params: ${result.parameters.length}, commands: ${result.commands.length}`)
+      console.log(
+        `[plugin:load] ${filename} - params: ${result.parameters.length}, commands: ${result.commands.length}`
+      )
       return result
     }
   )
@@ -79,15 +83,18 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
     }
   )
 
-  ipcMain.handle(IPC_CHANNELS.PLUGIN_LIST, async (_event: IpcMainInvokeEvent, projectPath: string) => {
-    const pluginsDir = join(projectPath, 'js', 'plugins')
-    try {
-      const files = await readdir(pluginsDir)
-      return files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
-    } catch {
-      return []
+  ipcMain.handle(
+    IPC_CHANNELS.PLUGIN_LIST,
+    async (_event: IpcMainInvokeEvent, projectPath: string) => {
+      const pluginsDir = join(projectPath, 'js', 'plugins')
+      try {
+        const files = await readdir(pluginsDir)
+        return files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+      } catch {
+        return []
+      }
     }
-  })
+  )
 
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_READ_BY_PATH,

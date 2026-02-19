@@ -1,8 +1,22 @@
 import { useState } from 'react'
 import {
-  X, ChevronDown, ChevronRight, ToggleLeft, Variable, User, Package,
-  Zap, Sword, Shield, Skull, Activity, Sparkles, Grid3x3, Calendar,
-  GraduationCap, Users
+  X,
+  ChevronDown,
+  ChevronRight,
+  ToggleLeft,
+  Variable,
+  User,
+  Package,
+  Zap,
+  Sword,
+  Shield,
+  Skull,
+  Activity,
+  Sparkles,
+  Grid3x3,
+  Calendar,
+  GraduationCap,
+  Users
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
@@ -12,9 +26,21 @@ interface ProjectBrowserProps {
   onClose: () => void
 }
 
-type TabType = 'switches' | 'variables' | 'actors' | 'items'
-  | 'skills' | 'weapons' | 'armors' | 'enemies' | 'states'
-  | 'animations' | 'tilesets' | 'commonEvents' | 'classes' | 'troops'
+type TabType =
+  | 'switches'
+  | 'variables'
+  | 'actors'
+  | 'items'
+  | 'skills'
+  | 'weapons'
+  | 'armors'
+  | 'enemies'
+  | 'states'
+  | 'animations'
+  | 'tilesets'
+  | 'commonEvents'
+  | 'classes'
+  | 'troops'
 
 interface CollapsibleSectionProps {
   title: string
@@ -25,7 +51,14 @@ interface CollapsibleSectionProps {
   count: number
 }
 
-function CollapsibleSection({ title, icon, isOpen, onToggle, children, count }: CollapsibleSectionProps) {
+function CollapsibleSection({
+  title,
+  icon,
+  isOpen,
+  onToggle,
+  children,
+  count
+}: CollapsibleSectionProps) {
   return (
     <div className="border-b border-border">
       <button
@@ -55,11 +88,7 @@ function DataList({ items, emptyMessage }: DataListProps) {
   const filteredItems = items.filter((item) => item.name && item.name.trim() !== '')
 
   if (filteredItems.length === 0) {
-    return (
-      <div className="px-4 py-2 text-sm text-muted-foreground italic">
-        {emptyMessage}
-      </div>
-    )
+    return <div className="px-4 py-2 text-sm text-muted-foreground italic">{emptyMessage}</div>
   }
 
   return (

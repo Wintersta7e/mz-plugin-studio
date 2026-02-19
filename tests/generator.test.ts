@@ -41,21 +41,23 @@ describe('generatePlugin', () => {
     expect(output).toContain('@plugindesc A test plugin')
     expect(output).toContain('@author TestAuthor')
     expect(output).toContain('*/')
-    expect(output).toContain("(() => {")
+    expect(output).toContain('(() => {')
     expect(output).toContain("'use strict';")
     expect(output).toContain('})();')
   })
 
   it('generates plugin with string parameter', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1',
-        name: 'greeting',
-        text: 'Greeting',
-        desc: 'The greeting message',
-        type: 'string',
-        default: 'Hello'
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'greeting',
+          text: 'Greeting',
+          desc: 'The greeting message',
+          type: 'string',
+          default: 'Hello'
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@param greeting')
@@ -68,17 +70,19 @@ describe('generatePlugin', () => {
 
   it('generates plugin with number parameter including min/max', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1',
-        name: 'speed',
-        text: 'Speed',
-        desc: 'Movement speed',
-        type: 'number',
-        default: 5,
-        min: 1,
-        max: 10,
-        decimals: 2
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'speed',
+          text: 'Speed',
+          desc: 'Movement speed',
+          type: 'number',
+          default: 5,
+          min: 1,
+          max: 10,
+          decimals: 2
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@type number')
@@ -90,16 +94,18 @@ describe('generatePlugin', () => {
 
   it('generates plugin with boolean parameter', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1',
-        name: 'enabled',
-        text: 'Enabled',
-        desc: 'Enable feature',
-        type: 'boolean',
-        default: true,
-        onLabel: 'Yes',
-        offLabel: 'No'
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'enabled',
+          text: 'Enabled',
+          desc: 'Enable feature',
+          type: 'boolean',
+          default: true,
+          onLabel: 'Yes',
+          offLabel: 'No'
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@type boolean')
@@ -110,18 +116,20 @@ describe('generatePlugin', () => {
 
   it('generates plugin with select parameter', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1',
-        name: 'mode',
-        text: 'Mode',
-        desc: 'Select mode',
-        type: 'select',
-        default: 'auto',
-        options: [
-          { value: 'auto', text: 'Automatic' },
-          { value: 'manual', text: 'Manual' }
-        ]
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'mode',
+          text: 'Mode',
+          desc: 'Select mode',
+          type: 'select',
+          default: 'auto',
+          options: [
+            { value: 'auto', text: 'Automatic' },
+            { value: 'manual', text: 'Manual' }
+          ]
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@type select')
@@ -133,20 +141,24 @@ describe('generatePlugin', () => {
 
   it('generates plugin with commands', () => {
     const plugin = createTestPlugin({
-      commands: [{
-        id: 'c1',
-        name: 'DoThing',
-        text: 'Do Thing',
-        desc: 'Does a thing',
-        args: [{
-          id: 'a1',
-          name: 'target',
-          text: 'Target',
-          desc: 'The target',
-          type: 'actor',
-          default: 1
-        }]
-      }]
+      commands: [
+        {
+          id: 'c1',
+          name: 'DoThing',
+          text: 'Do Thing',
+          desc: 'Does a thing',
+          args: [
+            {
+              id: 'a1',
+              name: 'target',
+              text: 'Target',
+              desc: 'The target',
+              type: 'actor',
+              default: 1
+            }
+          ]
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@command DoThing')
@@ -186,12 +198,25 @@ describe('generatePlugin', () => {
 
   it('generates syntactically valid JavaScript', () => {
     const plugin = createTestPlugin({
-      parameters: [{
-        id: 'p1', name: 'x', text: 'X', desc: '', type: 'number', default: 0
-      }],
-      commands: [{
-        id: 'c1', name: 'Cmd', text: 'Cmd', desc: '', args: []
-      }]
+      parameters: [
+        {
+          id: 'p1',
+          name: 'x',
+          text: 'X',
+          desc: '',
+          type: 'number',
+          default: 0
+        }
+      ],
+      commands: [
+        {
+          id: 'c1',
+          name: 'Cmd',
+          text: 'Cmd',
+          desc: '',
+          args: []
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     // Basic syntax check: matching braces, parens
@@ -203,14 +228,16 @@ describe('generatePlugin', () => {
 
   it('generates struct definition blocks', () => {
     const plugin = createTestPlugin({
-      structs: [{
-        id: 's1',
-        name: 'Position',
-        parameters: [
-          { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
-          { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
-        ]
-      }]
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
+            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('/*~struct~Position:')
@@ -220,17 +247,24 @@ describe('generatePlugin', () => {
 
   it('skips command body generation when command already in customCode', () => {
     const plugin = createTestPlugin({
-      commands: [{
-        id: 'c1', name: 'MyCmd', text: 'My Cmd', desc: '', args: []
-      }],
-      customCode: "PluginManager.registerCommand(PLUGIN_NAME, 'MyCmd', function(args) { /* custom */ });"
+      commands: [
+        {
+          id: 'c1',
+          name: 'MyCmd',
+          text: 'My Cmd',
+          desc: '',
+          args: []
+        }
+      ],
+      customCode:
+        "PluginManager.registerCommand(PLUGIN_NAME, 'MyCmd', function(args) { /* custom */ });"
     })
     const output = generatePlugin(plugin)
     // The header should have the @command
     expect(output).toContain('@command MyCmd')
     // But the body should not duplicate the registerCommand (it's in customCode)
     const bodySection = output.split('Custom Plugin Code')[0]
-    const registerCalls = (bodySection.match(/registerCommand\(PLUGIN_NAME, 'MyCmd'/g) || [])
+    const registerCalls = bodySection.match(/registerCommand\(PLUGIN_NAME, 'MyCmd'/g) || []
     expect(registerCalls).toHaveLength(0)
   })
 })
@@ -275,14 +309,40 @@ describe('validatePlugin', () => {
   })
 
   it('returns error for missing plugin name', () => {
-    const plugin = createTestPlugin({ meta: { name: '', version: '1.0.0', author: '', description: '', help: '', url: '', target: '', dependencies: [], orderAfter: [], localizations: {} } })
+    const plugin = createTestPlugin({
+      meta: {
+        name: '',
+        version: '1.0.0',
+        author: '',
+        description: '',
+        help: '',
+        url: '',
+        target: '',
+        dependencies: [],
+        orderAfter: [],
+        localizations: {}
+      }
+    })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('name'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('name'))).toBe(true)
   })
 
   it('returns error for invalid plugin name', () => {
-    const plugin = createTestPlugin({ meta: { name: '123bad', version: '1.0.0', author: '', description: '', help: '', url: '', target: '', dependencies: [], orderAfter: [], localizations: {} } })
+    const plugin = createTestPlugin({
+      meta: {
+        name: '123bad',
+        version: '1.0.0',
+        author: '',
+        description: '',
+        help: '',
+        url: '',
+        target: '',
+        dependencies: [],
+        orderAfter: [],
+        localizations: {}
+      }
+    })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
   })
@@ -296,7 +356,7 @@ describe('validatePlugin', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Duplicate parameter'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Duplicate parameter'))).toBe(true)
   })
 
   it('returns error for duplicate command names', () => {
@@ -308,41 +368,53 @@ describe('validatePlugin', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Duplicate command'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Duplicate command'))).toBe(true)
   })
 
   it('returns warning for undefined struct reference', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: '1', name: 'data', text: 'Data', desc: '', type: 'struct', default: '{}', structType: 'NonExistent' }
+        {
+          id: '1',
+          name: 'data',
+          text: 'Data',
+          desc: '',
+          type: 'struct',
+          default: '{}',
+          structType: 'NonExistent'
+        }
       ]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.some(w => w.includes('NonExistent'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('NonExistent'))).toBe(true)
   })
 
   it('returns error for invalid command name', () => {
     const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'bad command', text: 'Bad', desc: '', args: [] }
-      ]
+      commands: [{ id: '1', name: 'bad command', text: 'Bad', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Invalid command name'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Invalid command name'))).toBe(true)
   })
 
   it('returns error for duplicate command arg names', () => {
     const plugin = createTestPlugin({
-      commands: [{
-        id: '1', name: 'Cmd', text: 'Cmd', desc: '', args: [
-          { id: 'a1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
-          { id: 'a2', name: 'x', text: 'X2', desc: '', type: 'number', default: 0 }
-        ]
-      }]
+      commands: [
+        {
+          id: '1',
+          name: 'Cmd',
+          text: 'Cmd',
+          desc: '',
+          args: [
+            { id: 'a1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
+            { id: 'a2', name: 'x', text: 'X2', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Duplicate argument'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Duplicate argument'))).toBe(true)
   })
 })

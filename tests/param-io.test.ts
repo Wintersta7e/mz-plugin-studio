@@ -165,11 +165,7 @@ describe('deserializeParams', () => {
       version: 1,
       source: 'Multi',
       exportedAt: '2026-01-01',
-      parameters: [
-        makeParam({ name: 'a' }),
-        makeParam({ name: 'b' }),
-        makeParam({ name: 'c' })
-      ]
+      parameters: [makeParam({ name: 'a' }), makeParam({ name: 'b' }), makeParam({ name: 'c' })]
     })
     const result = deserializeParams(content)
     expect(result.success).toBe(true)

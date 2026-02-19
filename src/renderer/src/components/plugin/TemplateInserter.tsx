@@ -131,13 +131,28 @@ function highlightCode(code: string): React.ReactNode {
       // Collect all tokens
       let match
       while ((match = keywordRegex.exec(remaining)) !== null) {
-        tokens.push({ start: match.index, end: match.index + match[0].length, type: 'keyword', text: match[0] })
+        tokens.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          type: 'keyword',
+          text: match[0]
+        })
       }
       while ((match = stringRegex.exec(remaining)) !== null) {
-        tokens.push({ start: match.index, end: match.index + match[0].length, type: 'string', text: match[0] })
+        tokens.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          type: 'string',
+          text: match[0]
+        })
       }
       while ((match = numberRegex.exec(remaining)) !== null) {
-        tokens.push({ start: match.index, end: match.index + match[0].length, type: 'number', text: match[0] })
+        tokens.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          type: 'number',
+          text: match[0]
+        })
       }
 
       // Sort by position
@@ -147,7 +162,9 @@ function highlightCode(code: string): React.ReactNode {
       const filteredTokens: typeof tokens = []
       for (const token of tokens) {
         const overlaps = filteredTokens.some(
-          (t) => (token.start >= t.start && token.start < t.end) || (token.end > t.start && token.end <= t.end)
+          (t) =>
+            (token.start >= t.start && token.start < t.end) ||
+            (token.end > t.start && token.end <= t.end)
         )
         if (!overlaps) {
           filteredTokens.push(token)
@@ -158,7 +175,9 @@ function highlightCode(code: string): React.ReactNode {
       for (const token of filteredTokens) {
         if (token.start > lastIndex) {
           parts.unshift(
-            <span key={`text-${lineIndex}-${partIndex++}`}>{remaining.slice(lastIndex, token.start)}</span>
+            <span key={`text-${lineIndex}-${partIndex++}`}>
+              {remaining.slice(lastIndex, token.start)}
+            </span>
           )
         }
         const colorClass =
@@ -247,9 +266,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     if (!searchQuery.trim()) return baseTemplates
     const query = searchQuery.toLowerCase()
     return baseTemplates.filter(
-      (t) =>
-        t.name.toLowerCase().includes(query) ||
-        t.description.toLowerCase().includes(query)
+      (t) => t.name.toLowerCase().includes(query) || t.description.toLowerCase().includes(query)
     )
   }, [viewMode, categoryTemplates, allTemplates, favoriteTemplates, recentTemplates, searchQuery])
 
@@ -447,9 +464,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
               placeholder={field.placeholder}
               className="h-9"
             />
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -478,9 +493,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
               placeholder={field.placeholder}
               className="h-9"
             />
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -545,9 +558,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 ))}
               </SelectContent>
             </Select>
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -590,9 +601,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 ))}
               </SelectContent>
             </Select>
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -635,9 +644,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 ))}
               </SelectContent>
             </Select>
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -687,9 +694,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 </SelectGroup>
               </SelectContent>
             </Select>
-            {field.help && (
-              <p className="text-xs text-muted-foreground">{field.help}</p>
-            )}
+            {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
 
@@ -708,9 +713,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
       onClick={handleOverlayClick}
     >
-      <div
-        className="flex h-[85vh] w-full max-w-5xl flex-col rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200"
-      >
+      <div className="flex h-[85vh] w-full max-w-5xl flex-col rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
@@ -746,7 +749,11 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
             {/* Quick Access */}
             <div className="px-2 pb-1">
               <button
-                onClick={() => { setViewMode('favorites'); setSelectedTemplateId(null); setSearchQuery('') }}
+                onClick={() => {
+                  setViewMode('favorites')
+                  setSelectedTemplateId(null)
+                  setSearchQuery('')
+                }}
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                   viewMode === 'favorites'
@@ -768,7 +775,11 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 </span>
               </button>
               <button
-                onClick={() => { setViewMode('recent'); setSelectedTemplateId(null); setSearchQuery('') }}
+                onClick={() => {
+                  setViewMode('recent')
+                  setSelectedTemplateId(null)
+                  setSearchQuery('')
+                }}
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
                   viewMode === 'recent'
@@ -790,7 +801,11 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 </span>
               </button>
               <button
-                onClick={() => { setViewMode('all'); setSelectedTemplateId(null); setSearchQuery('') }}
+                onClick={() => {
+                  setViewMode('all')
+                  setSelectedTemplateId(null)
+                  setSearchQuery('')
+                }}
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
                   viewMode === 'all'
@@ -820,7 +835,10 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 return (
                   <button
                     key={category.id}
-                    onClick={() => { setSelectedCategory(category.id); setViewMode('category') }}
+                    onClick={() => {
+                      setSelectedCategory(category.id)
+                      setViewMode('category')
+                    }}
                     className={cn(
                       'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                       selectedCategory === category.id && viewMode === 'category'
@@ -868,10 +886,13 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                         }
                       }}
                       placeholder={
-                        viewMode === 'favorites' ? 'Search favorites...'
-                        : viewMode === 'recent' ? 'Search recent...'
-                        : viewMode === 'all' ? 'Search all templates...'
-                        : `Search ${selectedCategoryInfo?.name.toLowerCase()} templates...`
+                        viewMode === 'favorites'
+                          ? 'Search favorites...'
+                          : viewMode === 'recent'
+                            ? 'Search recent...'
+                            : viewMode === 'all'
+                              ? 'Search all templates...'
+                              : `Search ${selectedCategoryInfo?.name.toLowerCase()} templates...`
                       }
                       className="h-9 pl-9"
                     />
@@ -943,7 +964,10 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                           </div>
                         </div>
                         <button
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(template.id) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleFavorite(template.id)
+                          }}
                           className={cn(
                             'absolute top-2 right-2 p-1 rounded-md transition-colors',
                             isFavorite(template.id)
@@ -951,7 +975,9 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                               : 'text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100'
                           )}
                         >
-                          <Star className={cn('h-3.5 w-3.5', isFavorite(template.id) && 'fill-current')} />
+                          <Star
+                            className={cn('h-3.5 w-3.5', isFavorite(template.id) && 'fill-current')}
+                          />
                         </button>
                       </button>
                     ))}

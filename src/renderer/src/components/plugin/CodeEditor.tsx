@@ -59,9 +59,7 @@ export function CodeEditor() {
 
     if (!selection.isEmpty()) {
       // Replace selection
-      ed.executeEdits('template', [
-        { range: selection, text: code, forceMoveMarkers: true }
-      ])
+      ed.executeEdits('template', [{ range: selection, text: code, forceMoveMarkers: true }])
     } else if (model.getValue().trim()) {
       // Append with newlines at end
       const lastLine = model.getLineCount()
@@ -82,9 +80,7 @@ export function CodeEditor() {
     } else {
       // Replace empty content (use executeEdits to preserve undo stack)
       const fullRange = model.getFullModelRange()
-      ed.executeEdits('template', [
-        { range: fullRange, text: code, forceMoveMarkers: true }
-      ])
+      ed.executeEdits('template', [{ range: fullRange, text: code, forceMoveMarkers: true }])
     }
     ed.focus()
   }
@@ -97,7 +93,7 @@ export function CodeEditor() {
           <h2 className="text-lg font-semibold">Custom Code</h2>
           <p className="text-sm text-muted-foreground">
             Write your custom plugin implementation here. This code will be placed inside the
-            plugin's IIFE after the auto-generated parameter parsing and command registration.
+            plugin&apos;s IIFE after the auto-generated parameter parsing and command registration.
           </p>
         </div>
         <Button

@@ -74,14 +74,18 @@ function generateSaveLoadCode(
   lines.push('')
 
   // Generate getter method
-  lines.push(`// Getter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.get${pascalName}()`)
+  lines.push(
+    `// Getter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.get${pascalName}()`
+  )
   lines.push(`${storageLocation}.prototype.get${pascalName} = function() {`)
   lines.push(`    return this.${dataName};`)
   lines.push('};')
   lines.push('')
 
   // Generate setter method
-  lines.push(`// Setter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.set${pascalName}(value)`)
+  lines.push(
+    `// Setter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.set${pascalName}(value)`
+  )
   lines.push(`${storageLocation}.prototype.set${pascalName} = function(value) {`)
   lines.push(`    this.${dataName} = value;`)
   lines.push('};')
@@ -203,7 +207,9 @@ const saveLoadTemplate: CodeTemplate = {
 
       // Check for valid JavaScript identifier
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(dataName)) {
-        errors.push('Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
+        errors.push(
+          'Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
+        )
       }
 
       // Warn about reserved words
@@ -218,7 +224,9 @@ const saveLoadTemplate: CodeTemplate = {
         'load'
       ]
       if (reservedWords.includes(dataName.toLowerCase())) {
-        errors.push(`"${dataName}" may conflict with existing methods. Consider a more specific name.`)
+        errors.push(
+          `"${dataName}" may conflict with existing methods. Consider a more specific name.`
+        )
       }
     }
 

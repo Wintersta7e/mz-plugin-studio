@@ -2,13 +2,7 @@ import { useState, useEffect } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
 import { Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { ScrollArea } from '../ui/scroll-area'
 
 export function StatusBar() {
@@ -49,11 +43,7 @@ export function StatusBar() {
   return (
     <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
-        {project ? (
-          <span>Project: {project.gameTitle}</span>
-        ) : (
-          <span>No project loaded</span>
-        )}
+        {project ? <span>Project: {project.gameTitle}</span> : <span>No project loaded</span>}
         {plugin.meta.name && (
           <span>
             Plugin: {plugin.meta.name}
@@ -70,7 +60,11 @@ export function StatusBar() {
                 dependencyReport.health === 'errors' && 'text-red-400 hover:text-red-300'
               )}
               onClick={() => dependencyReport.issues.length > 0 && setShowIssues(true)}
-              title={dependencyReport.health === 'healthy' ? 'All dependencies satisfied' : 'Click to view issues'}
+              title={
+                dependencyReport.health === 'healthy'
+                  ? 'All dependencies satisfied'
+                  : 'Click to view issues'
+              }
             >
               {dependencyReport.health === 'healthy' && <CheckCircle className="h-3 w-3" />}
               {dependencyReport.health === 'warnings' && <AlertTriangle className="h-3 w-3" />}
@@ -86,7 +80,8 @@ export function StatusBar() {
                 <DialogHeader>
                   <DialogTitle>Dependency Issues</DialogTitle>
                   <DialogDescription>
-                    {dependencyReport.issues.length} issue{dependencyReport.issues.length > 1 ? 's' : ''} found in project plugins
+                    {dependencyReport.issues.length} issue
+                    {dependencyReport.issues.length > 1 ? 's' : ''} found in project plugins
                   </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-80">

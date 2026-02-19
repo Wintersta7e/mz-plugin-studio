@@ -21,7 +21,12 @@ export const SHORTCUTS: ShortcutDef[] = [
 
   // Navigation
   { key: 'ctrl+1', label: 'Ctrl+1', description: 'Switch to Meta tab', category: 'Navigation' },
-  { key: 'ctrl+2', label: 'Ctrl+2', description: 'Switch to Parameters tab', category: 'Navigation' },
+  {
+    key: 'ctrl+2',
+    label: 'Ctrl+2',
+    description: 'Switch to Parameters tab',
+    category: 'Navigation'
+  },
   { key: 'ctrl+3', label: 'Ctrl+3', description: 'Switch to Commands tab', category: 'Navigation' },
   { key: 'ctrl+4', label: 'Ctrl+4', description: 'Switch to Structs tab', category: 'Navigation' },
   { key: 'ctrl+5', label: 'Ctrl+5', description: 'Switch to Code tab', category: 'Navigation' },

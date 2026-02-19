@@ -1,10 +1,24 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
-import { Copy, Download, Check, FileCode2, GitCompare, ChevronDown, FileText, FileType, FileJson } from 'lucide-react'
+import {
+  Copy,
+  Download,
+  Check,
+  FileCode2,
+  GitCompare,
+  ChevronDown,
+  FileText,
+  FileType,
+  FileJson
+} from 'lucide-react'
 import { Button } from '../ui/button'
 import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
 import { generatePlugin, generateRawMode, validatePlugin } from '../../lib/generator'
-import { generatePluginsJsonEntry, generateTypeDeclaration, generateReadme } from '../../lib/exportFormats'
+import {
+  generatePluginsJsonEntry,
+  generateTypeDeclaration,
+  generateReadme
+} from '../../lib/exportFormats'
 import { DiffView } from './DiffView'
 
 export function CodePreview() {
@@ -137,40 +151,43 @@ export function CodePreview() {
     }
   }, [showDiff, savedPath, plugin.rawSource])
 
-  const handleExportFormat = useCallback(async (format: 'readme' | 'dts' | 'plugins-json') => {
-    setExportMenuOpen(false)
+  const handleExportFormat = useCallback(
+    async (format: 'readme' | 'dts' | 'plugins-json') => {
+      setExportMenuOpen(false)
 
-    let content: string
-    let defaultName: string
-    let filters: { name: string; extensions: string[] }[]
+      let content: string
+      let defaultName: string
+      let filters: { name: string; extensions: string[] }[]
 
-    switch (format) {
-      case 'readme':
-        content = generateReadme(plugin)
-        defaultName = `${plugin.meta.name || 'NewPlugin'}_README.md`
-        filters = [{ name: 'Markdown Files', extensions: ['md'] }]
-        break
-      case 'dts':
-        content = generateTypeDeclaration(plugin)
-        defaultName = `${plugin.meta.name || 'NewPlugin'}.d.ts`
-        filters = [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }]
-        break
-      case 'plugins-json':
-        content = generatePluginsJsonEntry(plugin)
-        defaultName = `${plugin.meta.name || 'NewPlugin'}_plugins-entry.json`
-        filters = [{ name: 'JSON Files', extensions: ['json'] }]
-        break
-    }
-
-    const filePath = await window.api.dialog.saveFile({ defaultPath: defaultName, filters })
-    if (filePath) {
-      try {
-        await window.api.plugin.saveToPath(filePath, content)
-      } catch (error) {
-        console.error('Failed to export:', error)
+      switch (format) {
+        case 'readme':
+          content = generateReadme(plugin)
+          defaultName = `${plugin.meta.name || 'NewPlugin'}_README.md`
+          filters = [{ name: 'Markdown Files', extensions: ['md'] }]
+          break
+        case 'dts':
+          content = generateTypeDeclaration(plugin)
+          defaultName = `${plugin.meta.name || 'NewPlugin'}.d.ts`
+          filters = [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }]
+          break
+        case 'plugins-json':
+          content = generatePluginsJsonEntry(plugin)
+          defaultName = `${plugin.meta.name || 'NewPlugin'}_plugins-entry.json`
+          filters = [{ name: 'JSON Files', extensions: ['json'] }]
+          break
       }
-    }
-  }, [plugin])
+
+      const filePath = await window.api.dialog.saveFile({ defaultPath: defaultName, filters })
+      if (filePath) {
+        try {
+          await window.api.plugin.saveToPath(filePath, content)
+        } catch (error) {
+          console.error('Failed to export:', error)
+        }
+      }
+    },
+    [plugin]
+  )
 
   return (
     <div className="flex h-full flex-col">

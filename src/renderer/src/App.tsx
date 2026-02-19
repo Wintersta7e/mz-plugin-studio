@@ -11,7 +11,13 @@ import { CodePreview } from './components/preview/CodePreview'
 import { AnalysisView } from './components/analysis/AnalysisView'
 import { ProjectBrowser } from './components/project/ProjectBrowser'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
-import { useProjectStore, usePluginStore, useUIStore, useHistoryStore, useSettingsStore } from './stores'
+import {
+  useProjectStore,
+  usePluginStore,
+  useUIStore,
+  useHistoryStore,
+  useSettingsStore
+} from './stores'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { shouldHandleShortcut } from './lib/shortcuts'
@@ -150,9 +156,20 @@ function App() {
 
       // Load additional data
       const [
-        switches, variables, actors, items,
-        skills, weapons, armors, enemies, states,
-        animations, tilesets, commonEvents, classes, troops
+        switches,
+        variables,
+        actors,
+        items,
+        skills,
+        weapons,
+        armors,
+        enemies,
+        states,
+        animations,
+        tilesets,
+        commonEvents,
+        classes,
+        troops
       ] = await Promise.all([
         window.api.project.getSwitches(path),
         window.api.project.getVariables(path),
@@ -228,9 +245,20 @@ function App() {
         addRecentProject(path)
 
         const [
-          switches, variables, actors, items,
-          skills, weapons, armors, enemies, states,
-          animations, tilesets, commonEvents, classes, troops
+          switches,
+          variables,
+          actors,
+          items,
+          skills,
+          weapons,
+          armors,
+          enemies,
+          states,
+          animations,
+          tilesets,
+          commonEvents,
+          classes,
+          troops
         ] = await Promise.all([
           window.api.project.getSwitches(path),
           window.api.project.getVariables(path),
@@ -457,10 +485,7 @@ function App() {
                   />
 
                   {/* Code preview */}
-                  <div
-                    className="overflow-hidden"
-                    style={{ width: previewWidth }}
-                  >
+                  <div className="overflow-hidden" style={{ width: previewWidth }}>
                     <CodePreview />
                   </div>
                 </div>

@@ -33,9 +33,7 @@ describe('validation - existing checks', () => {
       parameters: [
         { id: '1', name: 'hp', text: 'HP', desc: 'Health', type: 'number', default: 100 }
       ],
-      commands: [
-        { id: '1', name: 'Heal', text: 'Heal', desc: 'Heal actor', args: [] }
-      ]
+      commands: [{ id: '1', name: 'Heal', text: 'Heal', desc: 'Heal actor', args: [] }]
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(true)
@@ -44,7 +42,18 @@ describe('validation - existing checks', () => {
 
   it('empty name returns error', () => {
     const plugin = createTestPlugin({
-      meta: { name: '', version: '1.0.0', author: '', description: '', help: '', url: '', target: '', dependencies: [], orderAfter: [], localizations: {} }
+      meta: {
+        name: '',
+        version: '1.0.0',
+        author: '',
+        description: '',
+        help: '',
+        url: '',
+        target: '',
+        dependencies: [],
+        orderAfter: [],
+        localizations: {}
+      }
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
@@ -60,7 +69,7 @@ describe('validation - existing checks', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Duplicate parameter name: alpha'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Duplicate parameter name: alpha'))).toBe(true)
   })
 
   it('duplicate command names return error', () => {
@@ -72,30 +81,44 @@ describe('validation - existing checks', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('Duplicate command name: Action'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('Duplicate command name: Action'))).toBe(true)
   })
 
   it('undefined struct reference returns warning', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: '1', name: 'data', text: 'Data', desc: '', type: 'struct', default: '{}', structType: 'MissingStruct' }
+        {
+          id: '1',
+          name: 'data',
+          text: 'Data',
+          desc: '',
+          type: 'struct',
+          default: '{}',
+          structType: 'MissingStruct'
+        }
       ]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.some(w => w.includes('MissingStruct'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('MissingStruct'))).toBe(true)
   })
 
   it('defined struct reference does not return warning', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: '1', name: 'data', text: 'Data', desc: '', type: 'struct', default: '{}', structType: 'Position' }
+        {
+          id: '1',
+          name: 'data',
+          text: 'Data',
+          desc: '',
+          type: 'struct',
+          default: '{}',
+          structType: 'Position'
+        }
       ],
-      structs: [
-        { id: 's1', name: 'Position', parameters: [] }
-      ]
+      structs: [{ id: 's1', name: 'Position', parameters: [] }]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('Position'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('Position'))).toBe(true)
   })
 })
 
@@ -107,7 +130,7 @@ describe('validation - parameter name warnings', () => {
       ]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.some(w => w.includes('my param'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('my param'))).toBe(true)
   })
 
   it('does not warn for section divider parameters', () => {
@@ -117,113 +140,143 @@ describe('validation - parameter name warnings', () => {
       ]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('---Settings---'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('---Settings---'))).toBe(true)
   })
 })
 
 describe('validation - empty parameter name', () => {
   it('returns error for empty parameter name', () => {
     const plugin = createTestPlugin({
-      parameters: [
-        { id: '1', name: '', text: 'Empty', desc: '', type: 'string', default: '' }
-      ]
+      parameters: [{ id: '1', name: '', text: 'Empty', desc: '', type: 'string', default: '' }]
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('empty'))).toBe(true)
+    expect(result.errors.some((e) => e.includes('empty'))).toBe(true)
   })
 })
 
 describe('validation - new checks', () => {
   it('warns about unused struct definitions', () => {
     const plugin = createTestPlugin({
-      structs: [
-        { id: 's1', name: 'Orphan', parameters: [] }
-      ]
+      structs: [{ id: 's1', name: 'Orphan', parameters: [] }]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.some(w => w.includes('Orphan') && w.includes('not referenced'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('Orphan') && w.includes('not referenced'))).toBe(
+      true
+    )
   })
 
   it('does not warn about used struct definitions', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: '1', name: 'data', text: 'Data', desc: '', type: 'struct', default: '{}', structType: 'Used' }
+        {
+          id: '1',
+          name: 'data',
+          text: 'Data',
+          desc: '',
+          type: 'struct',
+          default: '{}',
+          structType: 'Used'
+        }
       ],
-      structs: [
-        { id: 's1', name: 'Used', parameters: [] }
-      ]
+      structs: [{ id: 's1', name: 'Used', parameters: [] }]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('Used'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('Used'))).toBe(true)
   })
 
   it('detects struct used in command args as referenced', () => {
     const plugin = createTestPlugin({
-      commands: [{
-        id: 'c1', name: 'Cmd', text: 'Cmd', desc: '', args: [
-          { id: 'a1', name: 'data', text: 'Data', desc: '', type: 'struct', default: '{}', structType: 'CmdStruct' }
-        ]
-      }],
-      structs: [
-        { id: 's1', name: 'CmdStruct', parameters: [] }
-      ]
+      commands: [
+        {
+          id: 'c1',
+          name: 'Cmd',
+          text: 'Cmd',
+          desc: '',
+          args: [
+            {
+              id: 'a1',
+              name: 'data',
+              text: 'Data',
+              desc: '',
+              type: 'struct',
+              default: '{}',
+              structType: 'CmdStruct'
+            }
+          ]
+        }
+      ],
+      structs: [{ id: 's1', name: 'CmdStruct', parameters: [] }]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('CmdStruct'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('CmdStruct'))).toBe(true)
   })
 
   it('errors on parameter referencing nonexistent parent', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: '1', name: 'child', text: 'Child', desc: '', type: 'string', default: '', parent: 'nonExistentParent' }
+        {
+          id: '1',
+          name: 'child',
+          text: 'Child',
+          desc: '',
+          type: 'string',
+          default: '',
+          parent: 'nonExistentParent'
+        }
       ]
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-    expect(result.errors.some(e => e.includes('nonexistent parent') && e.includes('nonExistentParent'))).toBe(true)
+    expect(
+      result.errors.some((e) => e.includes('nonexistent parent') && e.includes('nonExistentParent'))
+    ).toBe(true)
   })
 
   it('does not error on parameter with valid parent', () => {
     const plugin = createTestPlugin({
       parameters: [
         { id: '1', name: 'parentParam', text: 'Parent', desc: '', type: 'string', default: '' },
-        { id: '2', name: 'child', text: 'Child', desc: '', type: 'string', default: '', parent: 'parentParam' }
+        {
+          id: '2',
+          name: 'child',
+          text: 'Child',
+          desc: '',
+          type: 'string',
+          default: '',
+          parent: 'parentParam'
+        }
       ]
     })
     const result = validatePlugin(plugin)
-    expect(result.errors.every(e => !e.includes('nonexistent parent'))).toBe(true)
+    expect(result.errors.every((e) => !e.includes('nonexistent parent'))).toBe(true)
   })
 
   it('warns about commands with no implementation in custom code', () => {
     const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'Unimplemented', text: 'Test', desc: '', args: [] }
-      ],
+      commands: [{ id: '1', name: 'Unimplemented', text: 'Test', desc: '', args: [] }],
       customCode: '// some code that does not mention the command'
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.some(w => w.includes('Unimplemented') && w.includes('no implementation'))).toBe(true)
+    expect(
+      result.warnings.some((w) => w.includes('Unimplemented') && w.includes('no implementation'))
+    ).toBe(true)
   })
 
   it('does not warn about implemented commands', () => {
     const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'Implemented', text: 'Test', desc: '', args: [] }
-      ],
+      commands: [{ id: '1', name: 'Implemented', text: 'Test', desc: '', args: [] }],
       customCode: "PluginManager.registerCommand(PLUGIN_NAME, 'Implemented', function(args) {});"
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('Implemented'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('Implemented'))).toBe(true)
   })
 
   it('does not warn about unimplemented commands when no custom code exists', () => {
     const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'NoCode', text: 'Test', desc: '', args: [] }
-      ]
+      commands: [{ id: '1', name: 'NoCode', text: 'Test', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
-    expect(result.warnings.every(w => !w.includes('no implementation'))).toBe(true)
+    expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
   })
 })

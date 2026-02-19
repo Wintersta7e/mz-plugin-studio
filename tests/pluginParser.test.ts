@@ -328,7 +328,7 @@ describe('PluginParser', () => {
     console.log('hello');
 })();`
       const result = PluginParser.parsePlugin(content)
-      expect(result.codeBody).toContain("(() => {")
+      expect(result.codeBody).toContain('(() => {')
       expect(result.customCode).toBeTruthy()
     })
 

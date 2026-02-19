@@ -308,7 +308,8 @@ Scene_Title.prototype.drawGameTitle = function() {
     };
 })();`
 
-      const rawSource = `/*:
+      const rawSource =
+        `/*:
  * @target MZ
  * @plugindesc Old description
  * @author OldAuthor
@@ -334,7 +335,7 @@ Scene_Title.prototype.drawGameTitle = function() {
       // Code body should be preserved verbatim
       expect(result).toContain('const MAGIC_NUMBER = 42;')
       expect(result).toContain('Game_Actor.prototype.customMethod')
-      expect(result).toContain("return MAGIC_NUMBER;")
+      expect(result).toContain('return MAGIC_NUMBER;')
     })
 
     it('regenerates struct definition blocks', () => {

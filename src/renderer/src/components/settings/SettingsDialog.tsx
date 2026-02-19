@@ -1,12 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Trash2, Sun, Moon } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
@@ -134,20 +128,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             <div className="flex items-center justify-between">
               <Label htmlFor="wordWrap">Word Wrap</Label>
-              <Switch
-                id="wordWrap"
-                checked={editorWordWrap}
-                onCheckedChange={setEditorWordWrap}
-              />
+              <Switch id="wordWrap" checked={editorWordWrap} onCheckedChange={setEditorWordWrap} />
             </div>
 
             <div className="flex items-center justify-between">
               <Label htmlFor="minimap">Minimap</Label>
-              <Switch
-                id="minimap"
-                checked={editorMinimap}
-                onCheckedChange={setEditorMinimap}
-              />
+              <Switch id="minimap" checked={editorMinimap} onCheckedChange={setEditorMinimap} />
             </div>
 
             <div className="flex items-center justify-between">
@@ -174,7 +160,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 Pre-fills the author field when creating new plugins.
               </p>
             </div>
-
           </TabsContent>
 
           {/* Data Tab */}

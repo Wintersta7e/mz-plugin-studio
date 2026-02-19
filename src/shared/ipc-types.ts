@@ -50,7 +50,7 @@ export const IPC_CHANNELS = {
   UPDATE_AVAILABLE: 'update:available',
   UPDATE_DOWNLOADED: 'update:downloaded',
   UPDATE_DOWNLOAD: 'update:download',
-  UPDATE_INSTALL: 'update:install',
+  UPDATE_INSTALL: 'update:install'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

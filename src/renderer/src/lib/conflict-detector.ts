@@ -82,6 +82,6 @@ export function detectConflicts(
   return {
     conflicts,
     totalOverrides,
-    health: conflicts.length > 0 ? 'conflicts' : 'clean',
+    health: conflicts.length > 0 ? 'conflicts' : 'clean'
   }
 }

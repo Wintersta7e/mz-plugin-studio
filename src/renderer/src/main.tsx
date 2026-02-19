@@ -20,7 +20,15 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div style={{ padding: 32, fontFamily: 'monospace', color: '#ff6b6b', background: '#1a1a2e', height: '100vh' }}>
+        <div
+          style={{
+            padding: 32,
+            fontFamily: 'monospace',
+            color: '#ff6b6b',
+            background: '#1a1a2e',
+            height: '100vh'
+          }}
+        >
           <h1 style={{ color: '#ff6b6b' }}>Something went wrong</h1>
           <pre style={{ whiteSpace: 'pre-wrap', marginTop: 16, color: '#e0e0e0' }}>
             {this.state.error.message}
@@ -30,7 +38,15 @@ class ErrorBoundary extends React.Component<
           </pre>
           <button
             onClick={() => this.setState({ error: null })}
-            style={{ marginTop: 16, padding: '8px 16px', background: '#4a4a8a', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+            style={{
+              marginTop: 16,
+              padding: '8px 16px',
+              background: '#4a4a8a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 4,
+              cursor: 'pointer'
+            }}
           >
             Try Again
           </button>

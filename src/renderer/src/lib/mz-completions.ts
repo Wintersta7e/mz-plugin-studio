@@ -152,7 +152,7 @@ export function registerMZCompletions(monaco: Monaco): IDisposable {
           documentation: 'Parse a custom note tag from database item notes',
           insertText: [
             "const note = ${1:item}.note || '';",
-            "const match = note.match(/<${2:TagName}:\\s*(.+?)>/i);",
+            'const match = note.match(/<${2:TagName}:\\s*(.+?)>/i);',
             'if (match) {',
             '\tconst value = ${3:match[1]};',
             '\t$0',

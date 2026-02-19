@@ -83,7 +83,7 @@ export function CommandBuilder() {
           {commands.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <p>No commands defined</p>
-              <p className="text-sm">Click "Add Command" to create one</p>
+              <p className="text-sm">Click &quot;Add Command&quot; to create one</p>
             </div>
           ) : (
             commands.map((cmd) => (
@@ -99,8 +99,14 @@ export function CommandBuilder() {
                     const current = customCode || ''
                     const updated = current
                       .replace(`// --- ${cmd.name} ---`, `// --- ${updates.name} ---`)
-                      .replace(`registerCommand(PLUGIN_NAME, '${cmd.name}'`, `registerCommand(PLUGIN_NAME, '${updates.name}'`)
-                      .replace(`// TODO: Implement ${cmd.name} logic`, `// TODO: Implement ${updates.name} logic`)
+                      .replace(
+                        `registerCommand(PLUGIN_NAME, '${cmd.name}'`,
+                        `registerCommand(PLUGIN_NAME, '${updates.name}'`
+                      )
+                      .replace(
+                        `// TODO: Implement ${cmd.name} logic`,
+                        `// TODO: Implement ${updates.name} logic`
+                      )
                     if (updated !== current) {
                       setCustomCode(updated)
                     }
@@ -143,10 +149,7 @@ function CommandCard({
   return (
     <div className="rounded-lg border border-border bg-card">
       {/* Header */}
-      <div
-        className="flex cursor-pointer items-center gap-2 p-3"
-        onClick={onToggle}
-      >
+      <div className="flex cursor-pointer items-center gap-2 p-3" onClick={onToggle}>
         <GripVertical className="h-4 w-4 text-muted-foreground" />
         {expanded ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -252,11 +255,7 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
           className="h-6 w-6"
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? (
-            <ChevronDown className="h-3 w-3" />
-          ) : (
-            <ChevronRight className="h-3 w-3" />
-          )}
+          {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </Button>
 
         <Input
@@ -266,10 +265,7 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
           className="h-8 flex-1"
         />
 
-        <Select
-          value={arg.type}
-          onValueChange={(value: ParamType) => onUpdate({ type: value })}
-        >
+        <Select value={arg.type} onValueChange={(value: ParamType) => onUpdate({ type: value })}>
           <SelectTrigger className="h-8 w-32">
             <SelectValue />
           </SelectTrigger>
@@ -282,12 +278,7 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
           </SelectContent>
         </Select>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive"
-          onClick={onRemove}
-        >
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
@@ -367,7 +358,9 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
                 <Input
                   type="number"
                   value={arg.min ?? ''}
-                  onChange={(e) => onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No min"
                   className="h-8"
                 />
@@ -377,7 +370,9 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
                 <Input
                   type="number"
                   value={arg.max ?? ''}
-                  onChange={(e) => onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="No max"
                   className="h-8"
                 />
@@ -387,7 +382,9 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
                 <Input
                   type="number"
                   value={arg.decimals ?? ''}
-                  onChange={(e) => onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })}
+                  onChange={(e) =>
+                    onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
+                  }
                   placeholder="0"
                   min={0}
                   className="h-8"

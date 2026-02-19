@@ -1,9 +1,21 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
-  MZProject, MZSwitch, MZVariable, MZActor, MZItem,
-  MZSkill, MZWeapon, MZArmor, MZEnemy, MZState,
-  MZAnimation, MZTileset, MZCommonEvent, MZClass, MZTroop
+  MZProject,
+  MZSwitch,
+  MZVariable,
+  MZActor,
+  MZItem,
+  MZSkill,
+  MZWeapon,
+  MZArmor,
+  MZEnemy,
+  MZState,
+  MZAnimation,
+  MZTileset,
+  MZCommonEvent,
+  MZClass,
+  MZTroop
 } from '../types/mz'
 import type { DependencyReport } from '../lib/dependency-analyzer'
 import { validateDependencies } from '../lib/dependency-analyzer'
@@ -141,7 +153,10 @@ export const useProjectStore = create<ProjectState>()(
         try {
           const headers = await window.api.plugin.scanHeaders(project.path)
           const report = validateDependencies(headers)
-          const conflicts = detectConflicts(headers, mzClasses as Record<string, { popularity?: number }>)
+          const conflicts = detectConflicts(
+            headers,
+            mzClasses as Record<string, { popularity?: number }>
+          )
           set({ dependencyReport: report, conflictReport: conflicts, isScanning: false })
         } catch (error) {
           console.error('Dependency scan failed:', error)
