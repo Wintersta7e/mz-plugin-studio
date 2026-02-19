@@ -8,6 +8,7 @@ interface UIState {
   selectedParameterId: string | null
   selectedCommandId: string | null
   selectedStructId: string | null
+  mainView: 'editor' | 'analysis'
 
   setSidebarWidth: (width: number) => void
   setPreviewWidth: (width: number) => void
@@ -15,6 +16,7 @@ interface UIState {
   setSelectedParameterId: (id: string | null) => void
   setSelectedCommandId: (id: string | null) => void
   setSelectedStructId: (id: string | null) => void
+  setMainView: (view: UIState['mainView']) => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -26,13 +28,15 @@ export const useUIStore = create<UIState>()(
       selectedParameterId: null,
       selectedCommandId: null,
       selectedStructId: null,
+      mainView: 'editor',
 
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
       setPreviewWidth: (previewWidth) => set({ previewWidth: Math.max(300, Math.min(1200, previewWidth)) }),
       setActiveTab: (activeTab) => set({ activeTab }),
       setSelectedParameterId: (selectedParameterId) => set({ selectedParameterId }),
       setSelectedCommandId: (selectedCommandId) => set({ selectedCommandId }),
-      setSelectedStructId: (selectedStructId) => set({ selectedStructId })
+      setSelectedStructId: (selectedStructId) => set({ selectedStructId }),
+      setMainView: (mainView) => set({ mainView })
     }),
     {
       name: 'mz-plugin-studio-ui',
