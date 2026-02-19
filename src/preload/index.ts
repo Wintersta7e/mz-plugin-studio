@@ -55,6 +55,7 @@ export interface PluginAPI {
       base: string[]
       orderAfter: string[]
       orderBefore: string[]
+      overrides: string[]
     }[]
   >
 }
