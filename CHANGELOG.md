@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.0] - 2026-02-19
 
 ### Added
 - **Plugin Conflict Detector** — scans project plugins for prototype method overrides and flags conflicts when 2+ plugins override the same method
