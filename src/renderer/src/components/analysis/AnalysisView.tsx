@@ -7,7 +7,8 @@ import {
   Info,
   CheckCircle,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
@@ -33,6 +34,7 @@ export function AnalysisView() {
     )
   }
 
+  const initialScan = isScanning && !conflictReport && !dependencyReport
   const conflictCount = conflictReport?.conflicts.length ?? 0
   const depIssueCount = dependencyReport?.issues.length ?? 0
   const pluginCount = dependencyReport?.pluginNames.length ?? 0
@@ -54,6 +56,18 @@ export function AnalysisView() {
         </Button>
       </div>
 
+      {/* Loading state during initial scan */}
+      {initialScan && (
+        <div className="flex items-center justify-center py-16">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Scanning plugins...</span>
+          </div>
+        </div>
+      )}
+
+      {!initialScan && (
+        <>
       {/* Overview card */}
       <div className="mb-4 rounded-lg border border-border bg-card p-4">
         <div className="flex gap-8">
@@ -95,6 +109,7 @@ export function AnalysisView() {
         <button
           className="flex w-full items-center gap-2 px-4 py-3 text-left font-medium"
           onClick={() => setConflictsOpen(!conflictsOpen)}
+          aria-expanded={conflictsOpen}
         >
           {conflictsOpen ? (
             <ChevronDown className="h-4 w-4" />
@@ -153,6 +168,7 @@ export function AnalysisView() {
         <button
           className="flex w-full items-center gap-2 px-4 py-3 text-left font-medium"
           onClick={() => setDepsOpen(!depsOpen)}
+          aria-expanded={depsOpen}
         >
           {depsOpen ? (
             <ChevronDown className="h-4 w-4" />
@@ -214,6 +230,8 @@ export function AnalysisView() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }

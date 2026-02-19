@@ -4,6 +4,7 @@ import { join, dirname, resolve, normalize, basename, extname } from 'path'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import type { ScannedPluginHeader } from '../../shared/ipc-types'
+import { extractOverrides } from '../../shared/override-extractor'
 
 /** Allowed file extensions for read/write-by-path operations */
 const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json'])
@@ -149,29 +150,13 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
             orderBeforeEntries.push(match[1])
           }
 
-          // Extract prototype overrides from code (outside comments/strings)
-          const overrideSet = new Set<string>()
-          const cleaned = content.replace(
-            /\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
-            (m) => ' '.repeat(m.length)
-          )
-          const overrideRegex = /(\w+)\.prototype\.(\w+)(?:\.\w+)*\s*=(?![=>])/g
-          let oMatch: RegExpExecArray | null
-          while ((oMatch = overrideRegex.exec(cleaned)) !== null) {
-            overrideSet.add(`${oMatch[1]}.prototype.${oMatch[2]}`)
-          }
-          const aliasRegex = /(?:const|let|var)\s+\w+\s*=\s*(\w+)\.prototype\.(\w+)\s*[;,]/g
-          while ((oMatch = aliasRegex.exec(cleaned)) !== null) {
-            overrideSet.add(`${oMatch[1]}.prototype.${oMatch[2]}`)
-          }
-
           results.push({
             filename: file,
             name: file.replace(/\.js$/, ''),
             base: baseEntries,
             orderAfter: orderAfterEntries,
             orderBefore: orderBeforeEntries,
-            overrides: [...overrideSet]
+            overrides: extractOverrides(content)
           })
         }
 
