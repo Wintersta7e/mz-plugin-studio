@@ -26,9 +26,10 @@ Desktop.ini
 .claude/
 CLAUDE.md
 
-# PNGs (except screenshots/)
+# PNGs (except screenshots/ and resources/)
 *.png
 !screenshots/*.png
+!resources/*.png
 
 # Example plugins (third-party, not redistributable)
 examples/
