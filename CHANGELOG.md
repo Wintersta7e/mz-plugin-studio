@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1] - 2026-02-20
+
+### Added
+- App icon — puzzle-gear-braces design for window, taskbar, and build output
+- Automatic cleanup of old GitHub releases (keeps latest 3)
+
+### Changed
+- Windows build switched from NSIS installer to portable exe for simpler distribution
+
 ## [1.4.0] - 2026-02-19
 
 ### Added
