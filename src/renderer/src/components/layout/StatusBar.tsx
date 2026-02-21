@@ -132,7 +132,7 @@ export function StatusBar() {
           </button>
         ) : null}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
-        <span>MZ Plugin Studio v1.3.0</span>
+        <span>MZ Plugin Studio v{__APP_VERSION__}</span>
       </div>
     </div>
   )

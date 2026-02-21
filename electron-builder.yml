@@ -1,5 +1,6 @@
 appId: com.mzpluginstudio.app
 productName: MZ Plugin Studio
+copyright: "Copyright (c) 2026 MZ Plugin Studio Contributors"
 directories:
   buildResources: build
 files:

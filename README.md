@@ -250,6 +250,12 @@ Contributions are welcome! Please:
 
 MIT License - see [LICENSE](./LICENSE) for details.
 
+Third-party dependency licenses are listed in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
+
+## Disclaimer
+
+"RPG Maker" and "RPG Maker MZ" are trademarks of Gotcha Gotcha Games / Kadokawa Corporation. MZ Plugin Studio is an independent, community-developed tool and is not affiliated with, endorsed by, or sponsored by Gotcha Gotcha Games or Kadokawa Corporation.
+
 ## Support
 
 If you find this tool useful, consider supporting its development:
