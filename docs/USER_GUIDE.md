@@ -495,6 +495,27 @@ Element Type: struct
 Struct Type: CharacterInfo
 ```
 
+### Setting Struct Default Values
+
+When a parameter uses a struct type, an inline default value editor appears below the struct type selector. This lets you set the initial values for each struct field without writing JSON by hand.
+
+**Using the editor:**
+1. Select a struct type for your parameter
+2. The editor displays each struct field with a type-appropriate input (number fields, boolean toggles, select dropdowns, text inputs)
+3. Fill in the values you want as defaults
+4. The generated `@default` annotation is updated automatically
+
+**Buttons:**
+- **Fill from struct defaults** — populates each field with its own `@default` value from the struct definition
+- **Clear** — removes the default value entirely
+
+**Validation:**
+- A green checkmark indicates valid JSON
+- A yellow warning appears for unknown field names
+- A red error appears for malformed JSON (rare when using the form)
+
+**MZ format note:** All values in struct defaults are stored as strings per RPG Maker MZ convention, even numbers and booleans (e.g., `{"x":"100","visible":"true"}`).
+
 ---
 
 ## Code Templates
@@ -958,6 +979,7 @@ Before exporting, the studio validates your plugin:
 
 **Warnings** (review recommended)
 - Unused struct definitions (defined but not referenced)
+- Invalid JSON in struct parameter defaults
 - Commands with no implementation in custom code
 - Parameter names that aren't valid JS identifiers
 
@@ -993,8 +1015,18 @@ Configure the code editor and preview:
 | Word Wrap | On | Wrap long lines in the code preview |
 | Minimap | Off | Show the minimap scroll overview |
 | Line Numbers | On | Show line numbers |
+| Debug Logging | Off | Enable verbose logging for troubleshooting |
 
 Changes apply immediately to the Code tab editor, Generated Code preview, and Diff View.
+
+The **Diagnostics** section at the bottom of the Editor tab provides:
+- **Debug Logging** toggle — enables verbose debug-level logging (default: info level in production, debug in dev mode)
+- **Open Log Folder** button — opens the folder containing `main.log` for easy access when reporting bugs
+
+**Log file locations:**
+- Windows: `%APPDATA%\mz-plugin-studio\logs\main.log`
+- Linux: `~/.config/mz-plugin-studio/logs/main.log`
+- macOS: `~/Library/Logs/mz-plugin-studio/main.log`
 
 ### Defaults Tab
 

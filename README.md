@@ -107,7 +107,9 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
 - **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+1-5 tab switching, F5 regenerate)
 - **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
-- **Validation** - Warns about unused structs, orphaned parent references, and unimplemented commands
+- **Struct Default Editor** - Visual inline form for struct parameter defaults with real-time JSON validation, "Fill from struct defaults" button, and type-appropriate inputs
+- **Validation** - Warns about unused structs, orphaned parent references, unimplemented commands, and invalid struct default JSON
+- **Logging** - Structured logging via electron-log with debug toggle in Settings; logs to file for troubleshooting
 
 ## Installation
 

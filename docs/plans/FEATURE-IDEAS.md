@@ -20,8 +20,8 @@ These are features defined in the MZ plugin spec that we don't yet support.
 
 ## B. Usability & Quality of Life
 
-- [ ] **B1. Struct default value editor** — When a param is `struct<Name>`, the default must be valid JSON. Replace raw text input with a form that renders the struct's fields and serializes to JSON. Prevents malformed defaults that crash at runtime. _Medium effort, high impact._
-- [ ] **B2. Struct default JSON validation** — Real-time validation on the `@default` field for struct params. Red border + error message if JSON is invalid. Lighter alternative to B1. _Low effort._
+- [x] **B1. Struct default value editor** — Inline form that renders struct fields as type-appropriate inputs, serializes to JSON. _(Shipped in session 20)_
+- [x] **B2. Struct default JSON validation** — Real-time validation with green/yellow/red status + warnings in plugin validation panel. _(Shipped in session 20)_
 - [ ] **B3. Parameter reorder via drag handle** — Already have drag-to-reorder, but could improve with visible grip handles and drop zone indicators. _Low effort._
 - [ ] **B4. Command argument reordering** — Parameters can be reordered but command args currently cannot. Add drag-to-reorder for args within a command. _Low effort._
 - [ ] **B5. Duplicate parameter detection across structs** — Warn when struct field names collide with top-level param names (causes confusion in generated code). _Low effort._
