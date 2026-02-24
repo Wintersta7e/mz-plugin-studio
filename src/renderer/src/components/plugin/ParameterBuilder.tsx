@@ -27,10 +27,16 @@ import {
   DropdownMenuSeparator
 } from '../ui/dropdown-menu'
 import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
-import { createEmptyParameter, type PluginParameter, type ParamType } from '../../types/plugin'
+import {
+  createEmptyParameter,
+  type PluginParameter,
+  type ParamType,
+  type PluginStruct
+} from '../../types/plugin'
 import { generateParameterComment } from '../../lib/generator'
 import { serializeParams, deserializeParams, duplicateParams } from '../../lib/param-io'
 import { cn } from '../../lib/utils'
+import { StructDefaultEditor } from './StructDefaultEditor'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -457,6 +463,7 @@ export function ParameterBuilder() {
                 onDrop={(e) => handleDrop(e, param.id)}
                 isDragging={draggedId === param.id}
                 structs={structs.map((s) => s.name)}
+                allStructs={structs}
                 switches={switches}
                 variables={variables}
                 actors={actors}
@@ -602,6 +609,7 @@ interface ParameterCardProps {
   onDrop: (e: React.DragEvent) => void
   isDragging: boolean
   structs: string[]
+  allStructs: PluginStruct[]
   switches: { id: number; name: string }[]
   variables: { id: number; name: string }[]
   actors: { id: number; name: string }[]
@@ -674,6 +682,7 @@ function ParameterCard({
   onDrop,
   isDragging,
   structs,
+  allStructs,
   switches,
   variables,
   actors,
@@ -802,60 +811,62 @@ function ParameterCard({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Default Value</Label>
-              {isNumericIdType ? (
-                <Input
-                  type="number"
-                  value={String(param.default ?? 0)}
-                  onChange={(e) => onUpdate({ default: Number(e.target.value) })}
-                  placeholder={param.type === 'icon' ? 'Icon index' : 'Map ID'}
-                  min={0}
-                />
-              ) : isGameDataType ? (
-                hasProjectData ? (
-                  <Select
-                    value={String(param.default ?? '')}
-                    onValueChange={(v) => onUpdate({ default: Number(v) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${param.type}...`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">None (0)</SelectItem>
-                      {gameDataOptions.map((opt) => (
-                        <SelectItem key={opt.id} value={String(opt.id)}>
-                          {opt.id}: {opt.name || `(unnamed ${param.type})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {param.type !== 'struct' && (
+              <div className="space-y-2">
+                <Label>Default Value</Label>
+                {isNumericIdType ? (
+                  <Input
+                    type="number"
+                    value={String(param.default ?? 0)}
+                    onChange={(e) => onUpdate({ default: Number(e.target.value) })}
+                    placeholder={param.type === 'icon' ? 'Icon index' : 'Map ID'}
+                    min={0}
+                  />
+                ) : isGameDataType ? (
+                  hasProjectData ? (
+                    <Select
+                      value={String(param.default ?? '')}
+                      onValueChange={(v) => onUpdate({ default: Number(v) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select ${param.type}...`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">None (0)</SelectItem>
+                        {gameDataOptions.map((opt) => (
+                          <SelectItem key={opt.id} value={String(opt.id)}>
+                            {opt.id}: {opt.name || `(unnamed ${param.type})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      disabled
+                      placeholder="Load project first"
+                      className="text-muted-foreground"
+                    />
+                  )
+                ) : param.type === 'boolean' ? (
+                  <div className="flex items-center h-10">
+                    <Switch
+                      checked={param.default === true || param.default === 'true'}
+                      onCheckedChange={(checked) => onUpdate({ default: checked })}
+                    />
+                  </div>
                 ) : (
                   <Input
-                    disabled
-                    placeholder="Load project first"
-                    className="text-muted-foreground"
+                    value={String(param.default || '')}
+                    onChange={(e) => {
+                      const val = param.type === 'number' ? Number(e.target.value) : e.target.value
+                      onUpdate({ default: val })
+                    }}
+                    type={param.type === 'number' ? 'number' : 'text'}
+                    placeholder="Default value"
                   />
-                )
-              ) : param.type === 'boolean' ? (
-                <div className="flex items-center h-10">
-                  <Switch
-                    checked={param.default === true || param.default === 'true'}
-                    onCheckedChange={(checked) => onUpdate({ default: checked })}
-                  />
-                </div>
-              ) : (
-                <Input
-                  value={String(param.default || '')}
-                  onChange={(e) => {
-                    const val = param.type === 'number' ? Number(e.target.value) : e.target.value
-                    onUpdate({ default: val })
-                  }}
-                  type={param.type === 'number' ? 'number' : 'text'}
-                  placeholder="Default value"
-                />
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Boolean-specific fields: @on/@off labels */}
@@ -925,25 +936,40 @@ function ParameterCard({
             <OptionsEditor param={param} onUpdate={onUpdate} />
           )}
 
-          {/* Struct reference */}
+          {/* Struct reference + default editor */}
           {param.type === 'struct' && (
-            <div className="space-y-2">
-              <Label>Struct Type</Label>
-              <Select
-                value={param.structType || ''}
-                onValueChange={(value) => onUpdate({ structType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select struct..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {structs.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Struct Type</Label>
+                <Select
+                  value={param.structType || ''}
+                  onValueChange={(value) => onUpdate({ structType: value, default: '' })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select struct..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {structs.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {param.structType &&
+                (() => {
+                  const structDef = allStructs.find((s) => s.name === param.structType)
+                  if (!structDef) return null
+                  return (
+                    <StructDefaultEditor
+                      struct={structDef}
+                      value={typeof param.default === 'string' ? param.default : ''}
+                      onChange={(jsonStr) => onUpdate({ default: jsonStr })}
+                    />
+                  )
+                })()}
             </div>
           )}
 

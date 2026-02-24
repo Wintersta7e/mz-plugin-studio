@@ -299,7 +299,7 @@ describe('generatePlugin', () => {
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain("JSON.parse(params['settings'] || '{\"x\":\"100\",\"y\":\"200\"}')")
+    expect(output).toContain('JSON.parse(params[\'settings\'] || \'{"x":"100","y":"200"}\')')
   })
 
   it('falls back to empty object when struct has no default', () => {
@@ -319,9 +319,7 @@ describe('generatePlugin', () => {
         {
           id: 's1',
           name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
-          ]
+          parameters: [{ id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
         }
       ]
     })

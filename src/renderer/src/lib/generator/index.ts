@@ -658,9 +658,10 @@ function generateParamParser(param: PluginParameter): string {
       return `${accessor} === 'true'`
 
     case 'struct': {
-      const fallback = param.default && typeof param.default === 'string' && param.default !== ''
-        ? param.default.replace(/'/g, "\\'")
-        : '{}'
+      const fallback =
+        param.default && typeof param.default === 'string' && param.default !== ''
+          ? param.default.replace(/'/g, "\\'")
+          : '{}'
       return `JSON.parse(${accessor} || '${fallback}')`
     }
 
@@ -711,9 +712,10 @@ function generateArgParser(arg: PluginParameter): string {
       return `${accessor} === 'true'`
 
     case 'struct': {
-      const fallback = arg.default && typeof arg.default === 'string' && arg.default !== ''
-        ? arg.default.replace(/'/g, "\\'")
-        : '{}'
+      const fallback =
+        arg.default && typeof arg.default === 'string' && arg.default !== ''
+          ? arg.default.replace(/'/g, "\\'")
+          : '{}'
       return `JSON.parse(${accessor} || '${fallback}')`
     }
 
