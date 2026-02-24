@@ -15,6 +15,9 @@ interface SettingsState {
   defaultAuthor: string
   // Parameter presets
   parameterPresets: Record<string, PluginParameter[]>
+  // Logging
+  debugLogging: boolean
+  setDebugLogging: (debug: boolean) => void
   // Setters
   setTheme: (theme: 'dark' | 'light') => void
   setEditorFontSize: (size: number) => void
@@ -37,6 +40,7 @@ export const useSettingsStore = create<SettingsState>()(
       editorLineNumbers: true,
       defaultAuthor: '',
       parameterPresets: {},
+      debugLogging: false,
 
       setTheme: (theme) => set({ theme }),
       setEditorFontSize: (size) => set({ editorFontSize: Math.max(10, Math.min(24, size)) }),
@@ -63,7 +67,12 @@ export const useSettingsStore = create<SettingsState>()(
           return { parameterPresets: updated }
         }),
 
-      clearAllPresets: () => set({ parameterPresets: {} })
+      clearAllPresets: () => set({ parameterPresets: {} }),
+
+      setDebugLogging: (debug) => {
+        set({ debugLogging: debug })
+        window.api.log.setLevel(debug)
+      }
     }),
     {
       name: 'mz-plugin-studio-settings',
@@ -74,11 +83,18 @@ export const useSettingsStore = create<SettingsState>()(
         editorMinimap: state.editorMinimap,
         editorLineNumbers: state.editorLineNumbers,
         defaultAuthor: state.defaultAuthor,
-        parameterPresets: state.parameterPresets
+        parameterPresets: state.parameterPresets,
+        debugLogging: state.debugLogging
       })
     }
   )
 )
+
+// Sync persisted debug logging state to main process on startup
+const initialDebug = useSettingsStore.getState().debugLogging
+if (initialDebug) {
+  window.api.log.setLevel(true)
+}
 
 // Wire up settings getter so createEmptyPlugin() can use defaults
 setSettingsGetter(() => {

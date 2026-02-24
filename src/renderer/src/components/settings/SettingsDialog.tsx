@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Sun, Moon } from 'lucide-react'
+import { Trash2, Sun, Moon, FolderOpen } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Label } from '../ui/label'
@@ -28,6 +28,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setEditorMinimap,
     setEditorLineNumbers,
     setDefaultAuthor,
+    debugLogging,
+    setDebugLogging,
     deletePreset,
     clearAllPresets
   } = useSettingsStore()
@@ -143,6 +145,39 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 checked={editorLineNumbers}
                 onCheckedChange={setEditorLineNumbers}
               />
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <p className="text-xs font-medium text-muted-foreground mb-3">Diagnostics</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="debugLogging">Debug Logging</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable verbose logging for troubleshooting
+                  </p>
+                </div>
+                <Switch
+                  id="debugLogging"
+                  checked={debugLogging}
+                  onCheckedChange={setDebugLogging}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <div>
+                  <p className="text-sm font-medium">Log Files</p>
+                  <p className="text-xs text-muted-foreground">
+                    Open the folder containing application logs
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.api.log.openFolder()}
+                >
+                  <FolderOpen className="mr-1 h-3 w-3" />
+                  Open Folder
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
