@@ -657,8 +657,12 @@ function generateParamParser(param: PluginParameter): string {
     case 'boolean':
       return `${accessor} === 'true'`
 
-    case 'struct':
-      return `JSON.parse(${accessor} || '{}')`
+    case 'struct': {
+      const fallback = param.default && typeof param.default === 'string' && param.default !== ''
+        ? param.default.replace(/'/g, "\\'")
+        : '{}'
+      return `JSON.parse(${accessor} || '${fallback}')`
+    }
 
     case 'array':
       return `JSON.parse(${accessor} || '[]')`
@@ -706,8 +710,12 @@ function generateArgParser(arg: PluginParameter): string {
     case 'boolean':
       return `${accessor} === 'true'`
 
-    case 'struct':
-      return `JSON.parse(${accessor} || '{}')`
+    case 'struct': {
+      const fallback = arg.default && typeof arg.default === 'string' && arg.default !== ''
+        ? arg.default.replace(/'/g, "\\'")
+        : '{}'
+      return `JSON.parse(${accessor} || '${fallback}')`
+    }
 
     case 'array':
       return `JSON.parse(${accessor} || '[]')`

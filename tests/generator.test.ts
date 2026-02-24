@@ -245,6 +245,90 @@ describe('generatePlugin', () => {
     expect(output).toContain('@param y')
   })
 
+  it('emits @default for struct parameter with JSON default', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'settings',
+          text: 'Settings',
+          desc: '',
+          type: 'struct',
+          default: '{"x":"100","y":"200"}',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
+            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain('@type struct<Position>')
+    expect(output).toContain('@default {"x":"100","y":"200"}')
+  })
+
+  it('uses struct default as JSON.parse fallback in body', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'settings',
+          text: 'Settings',
+          desc: '',
+          type: 'struct',
+          default: '{"x":"100","y":"200"}',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
+            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain("JSON.parse(params['settings'] || '{\"x\":\"100\",\"y\":\"200\"}')")
+  })
+
+  it('falls back to empty object when struct has no default', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'pos',
+          text: 'Pos',
+          desc: '',
+          type: 'struct',
+          default: '',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain("JSON.parse(params['pos'] || '{}')")
+  })
+
   it('skips command body generation when command already in customCode', () => {
     const plugin = createTestPlugin({
       commands: [
