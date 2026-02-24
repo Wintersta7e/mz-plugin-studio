@@ -1,5 +1,6 @@
 import { readFile, access } from 'fs/promises'
 import { join } from 'path'
+import log from 'electron-log/main'
 import type {
   MZProject,
   MZActor,
@@ -119,7 +120,7 @@ export class ProjectParser {
         .filter((d): d is { id: number; name: string } => d !== null)
         .map((d) => ({ id: d.id, name: d.name }))
     } catch {
-      console.error(`[ProjectParser] Failed to load ${filename} from ${projectPath}`)
+      log.error(`[ProjectParser] Failed to load ${filename} from ${projectPath}`)
       return []
     }
   }

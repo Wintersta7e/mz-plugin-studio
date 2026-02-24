@@ -1,4 +1,5 @@
 import { IpcMain, IpcMainInvokeEvent, Dialog } from 'electron'
+import log from 'electron-log/main'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 
 export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
@@ -9,9 +10,11 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
     })
 
     if (result.canceled || result.filePaths.length === 0) {
+      log.debug('[dialog:open-folder] Cancelled')
       return null
     }
 
+    log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
     return result.filePaths[0]
   })
 
@@ -27,9 +30,11 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
       })
 
       if (result.canceled || !result.filePath) {
+        log.debug('[dialog:save-file] Cancelled')
         return null
       }
 
+      log.info(`[dialog:save-file] Selected: ${result.filePath}`)
       return result.filePath
     }
   )
@@ -46,9 +51,11 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
       })
 
       if (result.canceled || result.filePaths.length === 0) {
+        log.debug('[dialog:open-file] Cancelled')
         return null
       }
 
+      log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
       return result.filePaths[0]
     }
   )
@@ -64,6 +71,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
         buttons?: string[]
       }
     ) => {
+      log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
       const result = await dialog.showMessageBox({
         type: options.type || 'info',
         title: options.title || 'MZ Plugin Studio',

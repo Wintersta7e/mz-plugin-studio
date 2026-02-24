@@ -1,4 +1,5 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron'
+import log from 'electron-log/main'
 import { ProjectParser } from '../services/projectParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 
@@ -6,12 +7,17 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_VALIDATE,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      log.debug(`[project:validate] ${path}`)
       return ProjectParser.validateProject(path)
     }
   )
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_LOAD, async (_event: IpcMainInvokeEvent, path: string) => {
-    return ProjectParser.parseProject(path)
+    const result = await ProjectParser.parseProject(path)
+    log.info(
+      `[project:load] "${result.gameTitle}" — ${result.actors.length} actors, ${result.items.length} items, ${result.maps.length} maps`
+    )
+    return result
   })
 
   ipcMain.handle(
@@ -72,6 +78,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
   for (const { channel, method } of DATA_CHANNELS) {
     ipcMain.handle(channel, async (_event: IpcMainInvokeEvent, path: string) => {
+      log.debug(`[${channel}] ${path}`)
       return ProjectParser[method](path)
     })
   }
