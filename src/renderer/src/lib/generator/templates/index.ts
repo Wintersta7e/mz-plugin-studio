@@ -3,6 +3,7 @@
  * Central registry for code generation templates
  */
 
+import log from 'electron-log/renderer'
 import type { CodeTemplate, TemplateCategory } from './types'
 
 // Re-export all types
@@ -17,7 +18,7 @@ const templates: Map<string, CodeTemplate> = new Map()
  */
 export function registerTemplate(template: CodeTemplate): void {
   if (templates.has(template.id)) {
-    console.warn(`Template with id "${template.id}" is being overwritten`)
+    log.warn(`Template with id "${template.id}" is being overwritten`)
   }
   templates.set(template.id, template)
 }
@@ -86,7 +87,7 @@ export function generateFromTemplate(
 ): string | null {
   const template = templates.get(templateId)
   if (!template) {
-    console.error(`Template "${templateId}" not found`)
+    log.error(`Template "${templateId}" not found`)
     return null
   }
 
@@ -94,7 +95,7 @@ export function generateFromTemplate(
   if (template.validate) {
     const validation = template.validate(values)
     if (!validation.valid) {
-      console.error('Template validation failed:', validation.errors)
+      log.error('Template validation failed:', validation.errors)
       return null
     }
   }
@@ -102,7 +103,7 @@ export function generateFromTemplate(
   try {
     return template.generate(values)
   } catch (error) {
-    console.error(`Error generating code from template "${templateId}":`, error)
+    log.error(`Error generating code from template "${templateId}":`, error)
     return null
   }
 }

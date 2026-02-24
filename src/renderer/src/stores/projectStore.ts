@@ -1,3 +1,4 @@
+import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
@@ -159,7 +160,7 @@ export const useProjectStore = create<ProjectState>()(
           )
           set({ dependencyReport: report, conflictReport: conflicts, isScanning: false })
         } catch (error) {
-          console.error('Dependency scan failed:', error)
+          log.error('Dependency scan failed:', error)
           set({ isScanning: false })
         }
       },

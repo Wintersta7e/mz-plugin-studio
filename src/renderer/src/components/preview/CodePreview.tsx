@@ -20,6 +20,7 @@ import {
   generateReadme
 } from '../../lib/exportFormats'
 import { DiffView } from './DiffView'
+import log from 'electron-log/renderer'
 
 export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)
@@ -57,7 +58,7 @@ export function CodePreview() {
       }
       return generatePlugin(plugin)
     } catch (e) {
-      console.error('Code generation error:', e)
+      log.error('Code generation error:', e)
       return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
     }
   }, [plugin, rawMode, hasRawSource])
@@ -76,7 +77,7 @@ export function CodePreview() {
     try {
       return validatePlugin(plugin)
     } catch (e) {
-      console.error('Validation error:', e)
+      log.error('Validation error:', e)
       return { valid: false, errors: [String(e)], warnings: [] }
     }
   }, [plugin])
@@ -111,9 +112,10 @@ export function CodePreview() {
           if (result.success) {
             setSavedPath(result.path)
             setDirty(false)
+            log.info('[save] Plugin saved successfully')
           }
         } catch (error) {
-          console.error('Failed to save plugin:', error)
+          log.error('Failed to save plugin:', error)
         }
       }
       return
@@ -125,9 +127,10 @@ export function CodePreview() {
       if (result.success) {
         setSavedPath(result.path)
         setDirty(false)
+        log.info('[save] Plugin saved successfully')
       }
     } catch (error) {
-      console.error('Failed to save plugin:', error)
+      log.error('Failed to save plugin:', error)
     }
   }, [code, plugin.meta.name, project, setSavedPath, setDirty])
 
@@ -147,7 +150,7 @@ export function CodePreview() {
       }
       setShowDiff(true)
     } catch (error) {
-      console.error('Failed to load on-disk version:', error)
+      log.error('Failed to load on-disk version:', error)
     }
   }, [showDiff, savedPath, plugin.rawSource])
 
@@ -181,8 +184,9 @@ export function CodePreview() {
       if (filePath) {
         try {
           await window.api.plugin.saveToPath(filePath, content)
+          log.info('[export] Plugin exported')
         } catch (error) {
-          console.error('Failed to export:', error)
+          log.error('Failed to export:', error)
         }
       }
     },

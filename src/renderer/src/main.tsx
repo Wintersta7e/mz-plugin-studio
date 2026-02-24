@@ -1,3 +1,4 @@
+import log from 'electron-log/renderer'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
@@ -14,7 +15,7 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('React Error Boundary caught:', error, info.componentStack)
+    log.error('React Error Boundary caught:', error, info.componentStack)
   }
 
   render() {

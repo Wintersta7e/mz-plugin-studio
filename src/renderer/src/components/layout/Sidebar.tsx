@@ -17,6 +17,7 @@ import { useProjectStore, usePluginStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
 import { cn } from '../../lib/utils'
+import log from 'electron-log/renderer'
 
 interface SidebarProps {
   onOpenProject: () => void
@@ -104,7 +105,7 @@ export function Sidebar({
       const plugin = await window.api.plugin.load(project.path, `${name}.js`)
       openPlugin(plugin)
     } catch (error) {
-      console.error('Failed to load plugin:', error)
+      log.error('Failed to load plugin:', error)
     }
   }
 
