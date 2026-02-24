@@ -1,3 +1,8 @@
+import log from 'electron-log/main'
+
+// Initialize electron-log — sets up file transport and IPC for renderer
+log.initialize()
+
 import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -80,6 +85,18 @@ ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, () => {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.mzpluginstudio')
 
+  // Configure log levels based on environment
+  if (is.dev) {
+    log.transports.file.level = 'debug'
+    log.transports.console.level = 'debug'
+  } else {
+    log.transports.file.level = 'info'
+    log.transports.console.level = 'info'
+  }
+
+  log.info(`MZ Plugin Studio v${app.getVersion()} starting (${is.dev ? 'dev' : 'production'})`)
+  log.info(`Platform: ${process.platform} ${process.arch}`)
+
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -106,6 +123,7 @@ app.whenReady().then(() => {
   setupDialogHandlers(ipcMain, dialog)
 
   createWindow()
+  log.info('Main window created')
 
   // Send maximize state changes to renderer
   mainWindow?.on('maximize', () => {
@@ -126,6 +144,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  log.info('All windows closed, quitting')
   if (process.platform !== 'darwin') {
     app.quit()
   }
