@@ -83,12 +83,18 @@ interface UpdateAPI {
   installUpdate: () => Promise<void>
 }
 
+interface LogAPI {
+  openFolder: () => Promise<void>
+  setLevel: (debug: boolean) => void
+}
+
 interface API {
   project: ProjectAPI
   plugin: PluginAPI
   dialog: DialogAPI
   window: WindowAPI
   update: UpdateAPI
+  log: LogAPI
 }
 
 declare global {

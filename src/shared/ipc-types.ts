@@ -50,7 +50,11 @@ export const IPC_CHANNELS = {
   UPDATE_AVAILABLE: 'update:available',
   UPDATE_DOWNLOADED: 'update:downloaded',
   UPDATE_DOWNLOAD: 'update:download',
-  UPDATE_INSTALL: 'update:install'
+  UPDATE_INSTALL: 'update:install',
+
+  // Logging
+  LOG_OPEN_FOLDER: 'log:open-folder',
+  LOG_SET_LEVEL: 'log:set-level'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

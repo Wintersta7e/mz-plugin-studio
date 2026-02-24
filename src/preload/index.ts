@@ -84,6 +84,11 @@ export interface UpdateAPI {
   installUpdate: () => Promise<void>
 }
 
+export interface LogAPI {
+  openFolder: () => Promise<void>
+  setLevel: (debug: boolean) => void
+}
+
 const projectApi: ProjectAPI = {
   validate: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
   load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path),
@@ -160,12 +165,18 @@ const updateApi: UpdateAPI = {
   installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL)
 }
 
+const logApi: LogAPI = {
+  openFolder: () => ipcRenderer.invoke(IPC_CHANNELS.LOG_OPEN_FOLDER),
+  setLevel: (debug) => ipcRenderer.send(IPC_CHANNELS.LOG_SET_LEVEL, debug)
+}
+
 contextBridge.exposeInMainWorld('api', {
   project: projectApi,
   plugin: pluginApi,
   dialog: dialogApi,
   window: windowApi,
-  update: updateApi
+  update: updateApi,
+  log: logApi
 })
 
 // Export types for renderer
@@ -175,4 +186,5 @@ export type API = {
   dialog: DialogAPI
   window: WindowAPI
   update: UpdateAPI
+  log: LogAPI
 }

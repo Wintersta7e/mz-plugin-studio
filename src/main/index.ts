@@ -4,7 +4,7 @@ import log from 'electron-log/main'
 log.initialize()
 
 import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
-import { join } from 'path'
+import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupProjectHandlers } from './ipc/project'
 import { setupPluginHandlers } from './ipc/plugin'
@@ -121,6 +121,19 @@ app.whenReady().then(() => {
   setupProjectHandlers(ipcMain)
   setupPluginHandlers(ipcMain)
   setupDialogHandlers(ipcMain, dialog)
+
+  // Log management handlers
+  ipcMain.handle(IPC_CHANNELS.LOG_OPEN_FOLDER, async () => {
+    const logPath = log.transports.file.getFile().path
+    shell.openPath(dirname(logPath))
+  })
+
+  ipcMain.on(IPC_CHANNELS.LOG_SET_LEVEL, (_event, debugEnabled: boolean) => {
+    const level = debugEnabled ? 'debug' : 'info'
+    log.transports.file.level = level
+    log.transports.console.level = level
+    log.info(`Log level changed to: ${level}`)
+  })
 
   createWindow()
   log.info('Main window created')
