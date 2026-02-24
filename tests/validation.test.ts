@@ -297,9 +297,7 @@ describe('validation - new checks', () => {
         {
           id: 's1',
           name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
-          ]
+          parameters: [{ id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
         }
       ]
     })
@@ -324,9 +322,7 @@ describe('validation - new checks', () => {
         {
           id: 's1',
           name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
-          ]
+          parameters: [{ id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
         }
       ]
     })

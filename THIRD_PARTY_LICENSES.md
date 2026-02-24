@@ -166,6 +166,7 @@ listed with its license type and source repository.
 | mimic-response | 3.1.0 | MIT | [Link](https://github.com/sindresorhus/mimic-response) |
 | monaco-editor | 0.55.1 | MIT | [Link](https://github.com/microsoft/monaco-editor) |
 | ms | 2.1.3 | MIT | [Link](https://github.com/vercel/ms) |
+| mz-plugin-studio | 1.4.1 | MIT |  |
 | mz | 2.7.0 | MIT | [Link](https://github.com/normalize/mz) |
 | nanoid | 3.3.11 | MIT | [Link](https://github.com/ai/nanoid) |
 | normalize-path | 3.0.0 | MIT | [Link](https://github.com/jonschlinkert/normalize-path) |
@@ -219,7 +220,7 @@ listed with its license type and source repository.
 | sumchecker | 3.0.1 | Apache-2.0 | [Link](https://github.com/malept/sumchecker) |
 | supports-preserve-symlinks-flag | 1.0.0 | MIT | [Link](https://github.com/inspect-js/node-supports-preserve-symlinks-flag) |
 | tailwind-merge | 3.4.1 | MIT | [Link](https://github.com/dcastil/tailwind-merge) |
-| tailwindcss-animate | 1.0.7 | MIT | - |
+| tailwindcss-animate | 1.0.7 | MIT |  |
 | tailwindcss | 3.4.19 | MIT | [Link](https://github.com/tailwindlabs/tailwindcss.git#v3) |
 | thenify-all | 1.6.0 | MIT | [Link](https://github.com/thenables/thenify-all) |
 | thenify | 3.3.1 | MIT | [Link](https://github.com/thenables/thenify) |
@@ -239,3 +240,5 @@ listed with its license type and source repository.
 | wrappy | 1.0.2 | ISC | [Link](https://github.com/npm/wrappy) |
 | yauzl | 2.10.0 | MIT | [Link](https://github.com/thejoshwolfe/yauzl) |
 | zustand | 5.0.11 | MIT | [Link](https://github.com/pmndrs/zustand) |
+
+*235 production dependencies. Generated on 2026-02-24 via `npx license-checker --production --csv`.*
