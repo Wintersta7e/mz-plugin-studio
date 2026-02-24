@@ -1,5 +1,24 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- **Struct Default Value Editor** — inline form renders struct fields as type-appropriate inputs (number, boolean toggle, select, text) when editing struct parameter defaults
+- **Struct Default Validation** — real-time JSON validation with green/yellow/red status indicator in the editor, plus warnings in the plugin validation panel for invalid struct defaults
+- "Fill from struct defaults" button populates struct default from each field's own `@default` value
+- Generator now uses the struct default as `JSON.parse()` fallback instead of empty `'{}'`
+- **Structured Logging** — `electron-log` integration across main and renderer processes with file + console transports
+- Debug logging toggle in Settings > Editor > Diagnostics
+- "Open Log Folder" button for easy access to log files
+- App lifecycle logging (startup, version, platform)
+- IPC handler logging (plugin save/load, project open, header scan, dialogs)
+- Auto-updater lifecycle logging
+- 21 new tests (260 total across 11 test files)
+
+### Changed
+- All `console.error`/`console.warn` calls replaced with structured `log.error`/`log.warn`
+- Regenerated THIRD_PARTY_LICENSES.md (235 production dependencies)
+
 ## [1.4.1] - 2026-02-20
 
 ### Added

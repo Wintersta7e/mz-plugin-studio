@@ -169,11 +169,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     Open the folder containing application logs
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.api.log.openFolder()}
-                >
+                <Button variant="outline" size="sm" onClick={() => window.api.log.openFolder()}>
                   <FolderOpen className="mr-1 h-3 w-3" />
                   Open Folder
                 </Button>
