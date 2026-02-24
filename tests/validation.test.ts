@@ -279,4 +279,58 @@ describe('validation - new checks', () => {
     const result = validatePlugin(plugin)
     expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
   })
+
+  it('warns when struct param has invalid JSON default', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'pos',
+          text: 'Position',
+          desc: '',
+          type: 'struct',
+          default: '{bad json',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('pos') && w.includes('JSON'))).toBe(true)
+  })
+
+  it('no warning for struct param with valid JSON default', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'pos',
+          text: 'Position',
+          desc: '',
+          type: 'struct',
+          default: '{"x":"100"}',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [
+            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }
+          ]
+        }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.filter((w) => w.includes('JSON'))).toHaveLength(0)
+  })
 })

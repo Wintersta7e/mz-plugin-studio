@@ -896,6 +896,25 @@ export function validatePlugin(plugin: PluginDefinition): {
     }
   }
 
+  // Validate struct param defaults are valid JSON
+  for (const param of plugin.parameters) {
+    if (
+      param.type === 'struct' &&
+      typeof param.default === 'string' &&
+      param.default.trim() !== '' &&
+      param.default.trim() !== '{}'
+    ) {
+      try {
+        const parsed = JSON.parse(param.default)
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          warnings.push(`Parameter "${param.name}" struct default is not a valid JSON object`)
+        }
+      } catch {
+        warnings.push(`Parameter "${param.name}" has invalid JSON in struct default`)
+      }
+    }
+  }
+
   // Unused struct definitions (warning)
   const referencedStructs = new Set<string>()
   for (const param of plugin.parameters) {
