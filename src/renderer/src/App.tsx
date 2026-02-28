@@ -20,6 +20,7 @@ import {
 } from './stores'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
+import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { generatePlugin } from './lib/generator'
@@ -503,6 +504,7 @@ function App() {
       <StatusBar />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <ToastContainer />
     </div>
   )
 }
