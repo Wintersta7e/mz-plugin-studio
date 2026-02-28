@@ -125,3 +125,68 @@
   height: 100%;
   width: 100%;
 }
+
+/* === Animation Keyframes === */
+
+/* Subtle background gradient shift */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Loading shimmer sweep */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Gentle pulse for unsaved indicator */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Save confirmation flash */
+@keyframes save-flash {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Badge count bounce */
+@keyframes badge-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+/* Ambient background gradient */
+.animated-bg {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--background)) 40%,
+    hsl(var(--primary) / 0.03) 60%,
+    hsl(var(--background)) 80%,
+    hsl(var(--background)) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 30s ease infinite;
+}
+
+/* Shimmer skeleton loading */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.06) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s ease-in-out infinite;
+}
