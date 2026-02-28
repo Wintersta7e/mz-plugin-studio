@@ -139,7 +139,7 @@ npm run dev
 # Type check only
 npm run typecheck
 
-# Run tests (239 tests)
+# Run tests (281 tests)
 npm test
 
 # Build for production
@@ -218,7 +218,7 @@ src/
     │   └── mz-completions.ts # Monaco MZ autocomplete
     └── types/
         └── plugin.ts        # TypeScript interfaces
-tests/                       # Vitest unit tests (239 tests)
+tests/                       # Vitest unit tests (281 tests)
 ```
 
 ## Tech Stack
