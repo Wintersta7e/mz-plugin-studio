@@ -12,7 +12,7 @@ import {
   FileJson
 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
+import { usePluginStore, useProjectStore, useSettingsStore, useToastStore } from '../../stores'
 import { generatePlugin, generateRawMode, validatePlugin } from '../../lib/generator'
 import {
   generatePluginsJsonEntry,
@@ -20,6 +20,7 @@ import {
   generateReadme
 } from '../../lib/exportFormats'
 import { DiffView } from './DiffView'
+import { cn } from '../../lib/utils'
 import log from 'electron-log/renderer'
 
 export function CodePreview() {
@@ -35,13 +36,17 @@ export function CodePreview() {
   const editorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
   const theme = useSettingsStore((s) => s.theme)
 
+  const addToast = useToastStore((s) => s.addToast)
+
   const [copied, setCopied] = useState(false)
   const [rawMode, setRawMode] = useState(Boolean(plugin.rawSource))
   const [showDiff, setShowDiff] = useState(false)
   const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
+  const [badgeBounce, setBadgeBounce] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
+  const prevCountRef = useRef({ errors: 0, warnings: 0 })
 
   const hasRawSource = Boolean(plugin.rawSource)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
@@ -82,6 +87,21 @@ export function CodePreview() {
     }
   }, [plugin])
 
+  // Badge bounce when validation counts change
+  useEffect(() => {
+    const prevErrors = prevCountRef.current.errors
+    const prevWarnings = prevCountRef.current.warnings
+    let timer: ReturnType<typeof setTimeout> | undefined
+    if (validation.errors.length !== prevErrors || (validation.warnings?.length ?? 0) !== prevWarnings) {
+      setBadgeBounce(true)
+      timer = setTimeout(() => setBadgeBounce(false), 300)
+    }
+    prevCountRef.current = { errors: validation.errors.length, warnings: validation.warnings?.length ?? 0 }
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [validation.errors.length, validation.warnings?.length])
+
   // Close export menu on outside click
   useEffect(() => {
     if (!exportMenuOpen) return
@@ -97,8 +117,9 @@ export function CodePreview() {
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(code)
     setCopied(true)
+    addToast({ type: 'success', message: 'Code copied to clipboard' })
     setTimeout(() => setCopied(false), 2000)
-  }, [code])
+  }, [code, addToast])
 
   const handleExport = useCallback(async () => {
     if (!project) {
@@ -112,10 +133,12 @@ export function CodePreview() {
           if (result.success) {
             setSavedPath(result.path)
             setDirty(false)
+            addToast({ type: 'success', message: 'Plugin exported successfully' })
             log.info('[save] Plugin saved successfully')
           }
         } catch (error) {
           log.error('Failed to save plugin:', error)
+          addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
         }
       }
       return
@@ -127,12 +150,14 @@ export function CodePreview() {
       if (result.success) {
         setSavedPath(result.path)
         setDirty(false)
+        addToast({ type: 'success', message: 'Plugin exported successfully' })
         log.info('[save] Plugin saved successfully')
       }
     } catch (error) {
       log.error('Failed to save plugin:', error)
+      addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
     }
-  }, [code, plugin.meta.name, project, setSavedPath, setDirty])
+  }, [code, plugin.meta.name, project, setSavedPath, setDirty, addToast])
 
   const handleDiffToggle = useCallback(async () => {
     if (showDiff) {
@@ -184,13 +209,15 @@ export function CodePreview() {
       if (filePath) {
         try {
           await window.api.plugin.saveToPath(filePath, content)
+          addToast({ type: 'success', message: 'Plugin exported successfully' })
           log.info('[export] Plugin exported')
         } catch (error) {
           log.error('Failed to export:', error)
+          addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
         }
       }
     },
-    [plugin]
+    [plugin, addToast]
   )
 
   return (
@@ -204,10 +231,20 @@ export function CodePreview() {
               onClick={() => setShowValidation(!showValidation)}
             >
               {!validation.valid && (
-                <span className="text-destructive">{validation.errors.length} error(s)</span>
+                <span className={cn(
+                  'text-destructive',
+                  badgeBounce && validation.errors.length > 0 && 'animate-badge-bounce'
+                )}>
+                  {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''}
+                </span>
               )}
               {validation.warnings && validation.warnings.length > 0 && (
-                <span className="text-yellow-500">{validation.warnings.length} warning(s)</span>
+                <span className={cn(
+                  'text-yellow-500',
+                  badgeBounce && validation.warnings.length > 0 && 'animate-badge-bounce'
+                )}>
+                  {validation.warnings.length} warning{validation.warnings.length !== 1 ? 's' : ''}
+                </span>
               )}
               <span className="text-muted-foreground">{showValidation ? '▲' : '▼'}</span>
             </button>

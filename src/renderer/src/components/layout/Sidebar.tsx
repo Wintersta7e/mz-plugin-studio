@@ -152,7 +152,7 @@ export function Sidebar({
                       )}
                       {/* Dirty indicator */}
                       {isDirty && activePluginId === plugin.id && (
-                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500" />
+                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
                       )}
                     </Button>
                     {/* Close button (visible on hover) */}

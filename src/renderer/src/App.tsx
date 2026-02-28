@@ -16,7 +16,8 @@ import {
   usePluginStore,
   useUIStore,
   useHistoryStore,
-  useSettingsStore
+  useSettingsStore,
+  useToastStore
 } from './stores'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
@@ -358,7 +359,10 @@ function App() {
               if (result.success) {
                 usePluginStore.getState().setSavedPath(result.path)
                 usePluginStore.getState().setDirty(false)
+                useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
               }
+            }).catch((error: unknown) => {
+              useToastStore.getState().addToast({ type: 'error', message: `Save failed: ${error instanceof Error ? error.message : String(error)}` })
             })
           }
           break

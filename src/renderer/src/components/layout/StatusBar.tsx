@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
 import { Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
@@ -16,6 +16,20 @@ export function StatusBar() {
   const [updateAvailable, setUpdateAvailable] = useState<string | null>(null)
   const [updateDownloaded, setUpdateDownloaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [showSaved, setShowSaved] = useState(false)
+  const prevDirtyRef = useRef(isDirty)
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    if (prevDirtyRef.current && !isDirty) {
+      setShowSaved(true)
+      timer = setTimeout(() => setShowSaved(false), 1500)
+    }
+    prevDirtyRef.current = isDirty
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [isDirty])
 
   useEffect(() => {
     const cleanupAvailable = window.api.update?.onUpdateAvailable((info) => {
@@ -131,6 +145,9 @@ export function StatusBar() {
             {downloading ? 'Downloading...' : `v${updateAvailable} available`}
           </button>
         ) : null}
+        {showSaved && (
+          <span className="text-green-400 animate-save-flash">Saved</span>
+        )}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
         <span>MZ Plugin Studio v{__APP_VERSION__}</span>
       </div>
