@@ -26,9 +26,13 @@ import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { generatePlugin } from './lib/generator'
 import { FolderOpen } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Button } from './components/ui/button'
 import { cn } from './lib/utils'
+
+const pluginFade = { duration: 0.12 }
+const viewFade = { duration: 0.1 }
+const tabTransition = { duration: 0.1, ease: [0.25, 0.46, 0.45, 0.94] as const }
 
 function App() {
   const project = useProjectStore((s) => s.project)
@@ -77,7 +81,6 @@ function App() {
   const [projectBrowserOpen, setProjectBrowserOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [focusedPanel, setFocusedPanel] = useState<'editor' | 'preview'>('editor')
   const [isResizing, setIsResizing] = useState(false)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -404,166 +407,156 @@ function App() {
   }, [undo, redo, setPlugin, setActiveTab, handleOpenProject])
 
   return (
-    <div className="animated-bg flex h-screen flex-col">
-      <TitleBar />
+    <MotionConfig reducedMotion="user">
+      <div className="animated-bg flex h-screen flex-col">
+        <TitleBar />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          onOpenProject={handleOpenProject}
-          onToggleProjectBrowser={() => setProjectBrowserOpen(!projectBrowserOpen)}
-          projectBrowserOpen={projectBrowserOpen}
-          onOpenSettings={() => setSettingsOpen(true)}
-          onOpenShortcuts={() => setShortcutsOpen(true)}
-        />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar
+            onOpenProject={handleOpenProject}
+            onToggleProjectBrowser={() => setProjectBrowserOpen(!projectBrowserOpen)}
+            projectBrowserOpen={projectBrowserOpen}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenShortcuts={() => setShortcutsOpen(true)}
+          />
 
-        <main className="flex flex-1 flex-col overflow-hidden">
-          {openPlugins.length === 0 && !project ? (
-            <WelcomeScreen
-              onOpenProject={handleOpenProject}
-              recentProjects={recentProjects}
-              onOpenRecentProject={handleOpenRecentProject}
-            />
-          ) : openPlugins.length === 0 ? (
-            <NoPluginScreen />
-          ) : (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activePluginId ?? 'none'}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.12 }}
-                className="flex flex-1 flex-col overflow-hidden"
-              >
-                {/* View switch tabs — only when project is loaded */}
-                {project && (
-                  <div className="flex border-b border-border px-4 pt-2">
-                    <button
-                      className={cn(
-                        'px-3 py-1.5 text-sm font-medium transition-colors',
-                        mainView === 'editor'
-                          ? 'border-b-2 border-primary text-primary'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                      onClick={() => setMainView('editor')}
-                    >
-                      Editor
-                    </button>
-                    <button
-                      className={cn(
-                        'px-3 py-1.5 text-sm font-medium transition-colors',
-                        mainView === 'analysis'
-                          ? 'border-b-2 border-primary text-primary'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                      onClick={() => setMainView('analysis')}
-                    >
-                      Analysis
-                    </button>
-                  </div>
-                )}
-
-                <AnimatePresence mode="wait">
-                  {mainView === 'analysis' && project ? (
-                    <motion.div
-                      key="analysis"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex-1 overflow-hidden"
-                    >
-                      <AnalysisView />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="editor"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex flex-1 overflow-hidden"
-                    >
-                      {/* Editor panels */}
-                      <div
+          <main className="flex flex-1 flex-col overflow-hidden">
+            {openPlugins.length === 0 && !project ? (
+              <WelcomeScreen
+                onOpenProject={handleOpenProject}
+                recentProjects={recentProjects}
+                onOpenRecentProject={handleOpenRecentProject}
+              />
+            ) : openPlugins.length === 0 ? (
+              <NoPluginScreen />
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activePluginId ?? 'none'}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={pluginFade}
+                  className="flex flex-1 flex-col overflow-hidden"
+                >
+                  {/* View switch tabs — only when project is loaded */}
+                  {project && (
+                    <div className="flex border-b border-border px-4 pt-2">
+                      <button
                         className={cn(
-                          'flex-1 overflow-hidden border-r border-border transition-shadow duration-300',
-                          focusedPanel === 'editor' &&
-                            'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                          'px-3 py-1.5 text-sm font-medium transition-colors',
+                          mainView === 'editor'
+                            ? 'border-b-2 border-primary text-primary'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
-                        onFocus={() => setFocusedPanel('editor')}
+                        onClick={() => setMainView('editor')}
                       >
-                        <Tabs
-                          value={activeTab}
-                          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-                          className="flex h-full flex-col"
-                        >
-                          <TabsList className="mx-4 mt-4 w-fit">
-                            <TabsTrigger value="meta">Metadata</TabsTrigger>
-                            <TabsTrigger value="parameters">Parameters</TabsTrigger>
-                            <TabsTrigger value="commands">Commands</TabsTrigger>
-                            <TabsTrigger value="structs">Structs</TabsTrigger>
-                            <TabsTrigger value="code">Code</TabsTrigger>
-                          </TabsList>
-
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={activeTab}
-                              initial={{ opacity: 0, x: 8 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -8 }}
-                              transition={{ duration: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-                              className="flex-1 overflow-hidden"
-                            >
-                              <TabsContent value={activeTab} forceMount className="mt-0 h-full">
-                                {activeTab === 'meta' && <MetaEditor />}
-                                {activeTab === 'parameters' && <ParameterBuilder />}
-                                {activeTab === 'commands' && <CommandBuilder />}
-                                {activeTab === 'structs' && <StructBuilder />}
-                                {activeTab === 'code' && <CodeEditor />}
-                              </TabsContent>
-                            </motion.div>
-                          </AnimatePresence>
-                        </Tabs>
-                      </div>
-
-                      {/* Resize handle */}
-                      <div
-                        className="w-1 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
-                        onMouseDown={handleResizeStart}
-                      />
-
-                      {/* Code preview */}
-                      <div
+                        Editor
+                      </button>
+                      <button
                         className={cn(
-                          'overflow-hidden transition-shadow duration-300',
-                          focusedPanel === 'preview' &&
-                            'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                          'px-3 py-1.5 text-sm font-medium transition-colors',
+                          mainView === 'analysis'
+                            ? 'border-b-2 border-primary text-primary'
+                            : 'text-muted-foreground hover:text-foreground'
                         )}
-                        style={{ width: previewWidth }}
-                        onFocus={() => setFocusedPanel('preview')}
+                        onClick={() => setMainView('analysis')}
                       >
-                        <CodePreview />
-                      </div>
-                    </motion.div>
+                        Analysis
+                      </button>
+                    </div>
                   )}
-                </AnimatePresence>
-              </motion.div>
-            </AnimatePresence>
+
+                  <AnimatePresence mode="popLayout">
+                    {mainView === 'analysis' && project ? (
+                      <motion.div
+                        key="analysis"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={viewFade}
+                        className="flex-1 overflow-hidden"
+                      >
+                        <AnalysisView />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="editor"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={viewFade}
+                        className="flex flex-1 overflow-hidden"
+                      >
+                        {/* Editor panels */}
+                        <div className="flex-1 overflow-hidden border-r border-border transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]">
+                          <Tabs
+                            value={activeTab}
+                            onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+                            className="flex h-full flex-col"
+                          >
+                            <TabsList className="mx-4 mt-4 w-fit">
+                              <TabsTrigger value="meta">Metadata</TabsTrigger>
+                              <TabsTrigger value="parameters">Parameters</TabsTrigger>
+                              <TabsTrigger value="commands">Commands</TabsTrigger>
+                              <TabsTrigger value="structs">Structs</TabsTrigger>
+                              <TabsTrigger value="code">Code</TabsTrigger>
+                            </TabsList>
+
+                            <AnimatePresence mode="popLayout">
+                              <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -8 }}
+                                transition={tabTransition}
+                                className="flex-1 overflow-hidden"
+                              >
+                                <TabsContent value={activeTab} forceMount className="mt-0 h-full">
+                                  {activeTab === 'meta' && <MetaEditor />}
+                                  {activeTab === 'parameters' && <ParameterBuilder />}
+                                  {activeTab === 'commands' && <CommandBuilder />}
+                                  {activeTab === 'structs' && <StructBuilder />}
+                                  {activeTab === 'code' && <CodeEditor />}
+                                </TabsContent>
+                              </motion.div>
+                            </AnimatePresence>
+                          </Tabs>
+                        </div>
+
+                        {/* Resize handle */}
+                        <div
+                          className="w-1 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
+                          onMouseDown={handleResizeStart}
+                        />
+
+                        {/* Code preview */}
+                        <div
+                          className="overflow-hidden transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]"
+                          style={{ width: previewWidth }}
+                        >
+                          <CodePreview />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </main>
+
+          {/* Project Data Browser */}
+          {projectBrowserOpen && project && (
+            <ProjectBrowser onClose={() => setProjectBrowserOpen(false)} />
           )}
-        </main>
+        </div>
 
-        {/* Project Data Browser */}
-        {projectBrowserOpen && project && (
-          <ProjectBrowser onClose={() => setProjectBrowserOpen(false)} />
-        )}
+        <StatusBar />
+        <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+        <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+        <ToastContainer />
       </div>
-
-      <StatusBar />
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
-      <ToastContainer />
-    </div>
+    </MotionConfig>
   )
 }
 
@@ -584,11 +577,17 @@ function WelcomeScreen({
   recentProjects,
   onOpenRecentProject
 }: WelcomeScreenProps): React.ReactElement {
+  const hasPlayed = useRef(false)
+
+  useEffect(() => {
+    hasPlayed.current = true
+  }, [])
+
   return (
     <div className="flex flex-1 items-center justify-center">
       <motion.div
         className="flex max-w-md flex-col items-center gap-6 text-center"
-        initial="hidden"
+        initial={hasPlayed.current ? false : 'hidden'}
         animate="visible"
         variants={{
           hidden: {},

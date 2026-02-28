@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { useToastStore, type ToastType } from '../../stores/toastStore'
@@ -25,12 +24,13 @@ const progressColors: Record<ToastType, string> = {
   warning: 'bg-yellow-500'
 }
 
+const toastSpring = { type: 'spring' as const, stiffness: 400, damping: 30 }
+
 function ToastItem({
   id,
   type,
   message,
-  duration,
-  createdAt
+  duration
 }: {
   id: string
   type: ToastType
@@ -40,26 +40,13 @@ function ToastItem({
 }): React.ReactElement {
   const dismiss = useToastStore((s) => s.dismiss)
   const Icon = icons[type]
-  const [progress, setProgress] = useState(100)
-
-  useEffect(() => {
-    if (duration <= 0) return
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - createdAt
-      const remaining = Math.max(0, 100 - (elapsed / duration) * 100)
-      setProgress(remaining)
-      if (remaining <= 0) clearInterval(interval)
-    }, 50)
-    return () => clearInterval(interval)
-  }, [duration, createdAt])
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      transition={toastSpring}
       className={cn(
         'pointer-events-auto relative flex items-start gap-3 rounded-lg border border-border border-l-4 bg-card p-3 pr-8 shadow-lg',
         accentColors[type]
@@ -76,8 +63,13 @@ function ToastItem({
       {duration > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 overflow-hidden rounded-b-lg">
           <div
-            className={cn('h-full transition-all duration-100 ease-linear', progressColors[type])}
-            style={{ width: `${progress}%` }}
+            className={cn('h-full', progressColors[type])}
+            style={{
+              animationName: 'progress-shrink',
+              animationDuration: `${duration}ms`,
+              animationTimingFunction: 'linear',
+              animationFillMode: 'forwards'
+            }}
           />
         </div>
       )}

@@ -47,6 +47,15 @@ export function CodePreview() {
   const [badgeBounce, setBadgeBounce] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef({ errors: 0, warnings: 0 })
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Clean up copy timer on unmount
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    },
+    []
+  )
 
   const hasRawSource = Boolean(plugin.rawSource)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
@@ -124,7 +133,8 @@ export function CodePreview() {
     await navigator.clipboard.writeText(code)
     setCopied(true)
     addToast({ type: 'success', message: 'Code copied to clipboard' })
-    setTimeout(() => setCopied(false), 2000)
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
   }, [code, addToast])
 
   const handleExport = useCallback(async () => {

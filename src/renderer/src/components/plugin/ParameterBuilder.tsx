@@ -39,6 +39,8 @@ import { serializeParams, deserializeParams, duplicateParams } from '../../lib/p
 import { cn } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
+const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
+
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
   { value: 'number', label: 'Number' },
@@ -424,11 +426,7 @@ export function ParameterBuilder() {
             </div>
           ) : (
             parameters.map((param) => (
-              <motion.div
-                key={param.id}
-                layout
-                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-              >
+              <motion.div key={param.id} layout={draggedId !== null} transition={paramCardSpring}>
                 <ParameterCard
                   param={param}
                   expanded={expandedId === param.id}
