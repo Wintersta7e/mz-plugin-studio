@@ -565,27 +565,52 @@ interface WelcomeScreenProps {
   onOpenRecentProject: (path: string) => void
 }
 
-function WelcomeScreen({ onOpenProject, recentProjects, onOpenRecentProject }: WelcomeScreenProps) {
+const staggerChild = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0 }
+}
+const staggerSpring = { type: 'spring' as const, stiffness: 300, damping: 25 }
+
+function WelcomeScreen({ onOpenProject, recentProjects, onOpenRecentProject }: WelcomeScreenProps): React.ReactElement {
   return (
     <div className="flex flex-1 items-center justify-center">
-      <div className="max-w-md text-center">
-        <div className="mb-6 flex justify-center">
+      <motion.div
+        className="flex max-w-md flex-col items-center gap-6 text-center"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.08 } }
+        }}
+      >
+        {/* MZ logo */}
+        <motion.div variants={staggerChild} transition={staggerSpring} className="flex justify-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
             <span className="text-4xl font-bold text-primary">MZ</span>
           </div>
-        </div>
-        <h1 className="mb-2 text-2xl font-bold">MZ Plugin Studio</h1>
-        <p className="mb-6 text-muted-foreground">
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1 variants={staggerChild} transition={staggerSpring} className="text-2xl font-bold">
+          MZ Plugin Studio
+        </motion.h1>
+
+        {/* Description */}
+        <motion.p variants={staggerChild} transition={staggerSpring} className="text-muted-foreground">
           Create RPG Maker MZ plugins without writing code
-        </p>
+        </motion.p>
 
-        <Button size="lg" onClick={onOpenProject} className="mb-4">
-          <FolderOpen className="mr-2 h-5 w-5" />
-          Open MZ Project
-        </Button>
+        {/* Open Project button */}
+        <motion.div variants={staggerChild} transition={staggerSpring}>
+          <Button size="lg" onClick={onOpenProject}>
+            <FolderOpen className="mr-2 h-5 w-5" />
+            Open MZ Project
+          </Button>
+        </motion.div>
 
+        {/* Recent projects */}
         {recentProjects.length > 0 && (
-          <div className="mt-8">
+          <motion.div variants={staggerChild} transition={staggerSpring} className="mt-2 w-full">
             <h3 className="mb-3 text-sm font-medium text-muted-foreground">Recent Projects</h3>
             <div className="space-y-2">
               {recentProjects.slice(0, 5).map((path) => (
@@ -599,9 +624,9 @@ function WelcomeScreen({ onOpenProject, recentProjects, onOpenRecentProject }: W
                 </button>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }

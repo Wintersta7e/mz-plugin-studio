@@ -7,8 +7,7 @@ import {
   Info,
   CheckCircle,
   AlertCircle,
-  RefreshCw,
-  Loader2
+  RefreshCw
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
@@ -58,11 +57,16 @@ export function AnalysisView() {
 
       {/* Loading state during initial scan */}
       {initialScan && (
-        <div className="flex items-center justify-center py-16">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Scanning plugins...</span>
+        <div className="space-y-4 p-6">
+          <div className="shimmer h-8 w-48 rounded-lg bg-muted" />
+          <div className="flex gap-4">
+            <div className="shimmer h-24 flex-1 rounded-lg bg-muted" />
+            <div className="shimmer h-24 flex-1 rounded-lg bg-muted" />
+            <div className="shimmer h-24 flex-1 rounded-lg bg-muted" />
+            <div className="shimmer h-24 flex-1 rounded-lg bg-muted" />
           </div>
+          <div className="shimmer h-48 rounded-lg bg-muted" />
+          <div className="shimmer h-48 rounded-lg bg-muted" />
         </div>
       )}
 
