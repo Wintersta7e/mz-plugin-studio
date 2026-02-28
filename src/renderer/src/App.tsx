@@ -77,6 +77,7 @@ function App() {
   const [projectBrowserOpen, setProjectBrowserOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [focusedPanel, setFocusedPanel] = useState<'editor' | 'preview'>('editor')
   const [isResizing, setIsResizing] = useState(false)
   const resizeRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -397,7 +398,7 @@ function App() {
   }, [undo, redo, setPlugin, setActiveTab, handleOpenProject])
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="animated-bg flex h-screen flex-col">
       <TitleBar />
 
       <div className="flex flex-1 overflow-hidden">
@@ -478,7 +479,13 @@ function App() {
                       className="flex flex-1 overflow-hidden"
                     >
                       {/* Editor panels */}
-                      <div className="flex-1 overflow-hidden border-r border-border">
+                      <div
+                        className={cn(
+                          'flex-1 overflow-hidden border-r border-border transition-shadow duration-300',
+                          focusedPanel === 'editor' && 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                        )}
+                        onFocus={() => setFocusedPanel('editor')}
+                      >
                         <Tabs
                           value={activeTab}
                           onValueChange={(v) => setActiveTab(v as typeof activeTab)}
@@ -520,7 +527,14 @@ function App() {
                       />
 
                       {/* Code preview */}
-                      <div className="overflow-hidden" style={{ width: previewWidth }}>
+                      <div
+                        className={cn(
+                          'overflow-hidden transition-shadow duration-300',
+                          focusedPanel === 'preview' && 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                        )}
+                        style={{ width: previewWidth }}
+                        onFocus={() => setFocusedPanel('preview')}
+                      >
                         <CodePreview />
                       </div>
                     </motion.div>

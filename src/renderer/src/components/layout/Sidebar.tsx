@@ -116,7 +116,12 @@ export function Sidebar({
         <div className="flex flex-col items-center gap-1 border-b border-border p-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={onOpenProject}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
+                onClick={onOpenProject}
+              >
                 <FolderOpen className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -125,7 +130,12 @@ export function Sidebar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={handleNewPlugin}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
+                onClick={handleNewPlugin}
+              >
                 <FilePlus className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
@@ -144,7 +154,10 @@ export function Sidebar({
                       variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
                       size="icon"
                       onClick={() => setActivePlugin(plugin.id)}
-                      className="relative"
+                      className={cn(
+                        'relative h-9 w-9 transition-all duration-200 hover:scale-110',
+                        activePluginId === plugin.id && 'shadow-[0_0_8px_hsl(var(--primary)/0.3)]'
+                      )}
                     >
                       <FileCode className="h-5 w-5" />
                       {activePluginId === plugin.id && (
@@ -250,7 +263,10 @@ export function Sidebar({
                 <Button
                   variant={projectBrowserOpen ? 'secondary' : 'ghost'}
                   size="icon"
-                  className={projectBrowserOpen ? '' : 'text-muted-foreground'}
+                  className={cn(
+                    'h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]',
+                    !projectBrowserOpen && 'text-muted-foreground'
+                  )}
                   onClick={onToggleProjectBrowser}
                 >
                   <Database className="h-5 w-5" />
@@ -265,7 +281,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground"
+                className="h-9 w-9 text-muted-foreground transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenSettings}
               >
                 <Settings className="h-5 w-5" />
@@ -279,7 +295,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground"
+                className="h-9 w-9 text-muted-foreground transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenShortcuts}
               >
                 <Keyboard className="h-5 w-5" />
