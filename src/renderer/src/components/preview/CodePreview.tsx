@@ -92,11 +92,17 @@ export function CodePreview() {
     const prevErrors = prevCountRef.current.errors
     const prevWarnings = prevCountRef.current.warnings
     let timer: ReturnType<typeof setTimeout> | undefined
-    if (validation.errors.length !== prevErrors || (validation.warnings?.length ?? 0) !== prevWarnings) {
+    if (
+      validation.errors.length !== prevErrors ||
+      (validation.warnings?.length ?? 0) !== prevWarnings
+    ) {
       setBadgeBounce(true)
       timer = setTimeout(() => setBadgeBounce(false), 300)
     }
-    prevCountRef.current = { errors: validation.errors.length, warnings: validation.warnings?.length ?? 0 }
+    prevCountRef.current = {
+      errors: validation.errors.length,
+      warnings: validation.warnings?.length ?? 0
+    }
     return () => {
       if (timer) clearTimeout(timer)
     }
@@ -138,7 +144,10 @@ export function CodePreview() {
           }
         } catch (error) {
           log.error('Failed to save plugin:', error)
-          addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
+          addToast({
+            type: 'error',
+            message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+          })
         }
       }
       return
@@ -155,7 +164,10 @@ export function CodePreview() {
       }
     } catch (error) {
       log.error('Failed to save plugin:', error)
-      addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
+      addToast({
+        type: 'error',
+        message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+      })
     }
   }, [code, plugin.meta.name, project, setSavedPath, setDirty, addToast])
 
@@ -213,7 +225,10 @@ export function CodePreview() {
           log.info('[export] Plugin exported')
         } catch (error) {
           log.error('Failed to export:', error)
-          addToast({ type: 'error', message: `Export failed: ${error instanceof Error ? error.message : String(error)}` })
+          addToast({
+            type: 'error',
+            message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+          })
         }
       }
     },
@@ -231,18 +246,22 @@ export function CodePreview() {
               onClick={() => setShowValidation(!showValidation)}
             >
               {!validation.valid && (
-                <span className={cn(
-                  'text-destructive',
-                  badgeBounce && validation.errors.length > 0 && 'animate-badge-bounce'
-                )}>
+                <span
+                  className={cn(
+                    'text-destructive',
+                    badgeBounce && validation.errors.length > 0 && 'animate-badge-bounce'
+                  )}
+                >
                   {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''}
                 </span>
               )}
               {validation.warnings && validation.warnings.length > 0 && (
-                <span className={cn(
-                  'text-yellow-500',
-                  badgeBounce && validation.warnings.length > 0 && 'animate-badge-bounce'
-                )}>
+                <span
+                  className={cn(
+                    'text-yellow-500',
+                    badgeBounce && validation.warnings.length > 0 && 'animate-badge-bounce'
+                  )}
+                >
                   {validation.warnings.length} warning{validation.warnings.length !== 1 ? 's' : ''}
                 </span>
               )}

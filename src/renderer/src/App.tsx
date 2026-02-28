@@ -356,15 +356,21 @@ function App() {
           if (proj && ps.plugin.meta.name) {
             const code = generatePlugin(ps.plugin)
             const filename = `${ps.plugin.meta.name}.js`
-            window.api.plugin.save(proj.path, filename, code).then((result) => {
-              if (result.success) {
-                usePluginStore.getState().setSavedPath(result.path)
-                usePluginStore.getState().setDirty(false)
-                useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
-              }
-            }).catch((error: unknown) => {
-              useToastStore.getState().addToast({ type: 'error', message: `Save failed: ${error instanceof Error ? error.message : String(error)}` })
-            })
+            window.api.plugin
+              .save(proj.path, filename, code)
+              .then((result) => {
+                if (result.success) {
+                  usePluginStore.getState().setSavedPath(result.path)
+                  usePluginStore.getState().setDirty(false)
+                  useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
+                }
+              })
+              .catch((error: unknown) => {
+                useToastStore.getState().addToast({
+                  type: 'error',
+                  message: `Save failed: ${error instanceof Error ? error.message : String(error)}`
+                })
+              })
           }
           break
         }
@@ -482,7 +488,8 @@ function App() {
                       <div
                         className={cn(
                           'flex-1 overflow-hidden border-r border-border transition-shadow duration-300',
-                          focusedPanel === 'editor' && 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                          focusedPanel === 'editor' &&
+                            'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
                         )}
                         onFocus={() => setFocusedPanel('editor')}
                       >
@@ -530,7 +537,8 @@ function App() {
                       <div
                         className={cn(
                           'overflow-hidden transition-shadow duration-300',
-                          focusedPanel === 'preview' && 'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
+                          focusedPanel === 'preview' &&
+                            'shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]'
                         )}
                         style={{ width: previewWidth }}
                         onFocus={() => setFocusedPanel('preview')}
@@ -571,7 +579,11 @@ const staggerChild = {
 }
 const staggerSpring = { type: 'spring' as const, stiffness: 300, damping: 25 }
 
-function WelcomeScreen({ onOpenProject, recentProjects, onOpenRecentProject }: WelcomeScreenProps): React.ReactElement {
+function WelcomeScreen({
+  onOpenProject,
+  recentProjects,
+  onOpenRecentProject
+}: WelcomeScreenProps): React.ReactElement {
   return (
     <div className="flex flex-1 items-center justify-center">
       <motion.div
@@ -584,19 +596,31 @@ function WelcomeScreen({ onOpenProject, recentProjects, onOpenRecentProject }: W
         }}
       >
         {/* MZ logo */}
-        <motion.div variants={staggerChild} transition={staggerSpring} className="flex justify-center">
+        <motion.div
+          variants={staggerChild}
+          transition={staggerSpring}
+          className="flex justify-center"
+        >
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/20">
             <span className="text-4xl font-bold text-primary">MZ</span>
           </div>
         </motion.div>
 
         {/* Title */}
-        <motion.h1 variants={staggerChild} transition={staggerSpring} className="text-2xl font-bold">
+        <motion.h1
+          variants={staggerChild}
+          transition={staggerSpring}
+          className="text-2xl font-bold"
+        >
           MZ Plugin Studio
         </motion.h1>
 
         {/* Description */}
-        <motion.p variants={staggerChild} transition={staggerSpring} className="text-muted-foreground">
+        <motion.p
+          variants={staggerChild}
+          transition={staggerSpring}
+          className="text-muted-foreground"
+        >
           Create RPG Maker MZ plugins without writing code
         </motion.p>
 

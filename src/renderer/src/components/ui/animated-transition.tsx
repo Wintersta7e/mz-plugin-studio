@@ -55,9 +55,7 @@ export function AnimatedTransition({
   layout
 }: AnimatedTransitionProps): ReactElement {
   const variants = presets[preset]
-  const transition = duration
-    ? { ...defaultTransition, duration }
-    : defaultTransition
+  const transition = duration ? { ...defaultTransition, duration } : defaultTransition
 
   return (
     <motion.div

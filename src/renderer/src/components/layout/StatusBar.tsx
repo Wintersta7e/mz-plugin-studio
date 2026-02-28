@@ -145,9 +145,7 @@ export function StatusBar() {
             {downloading ? 'Downloading...' : `v${updateAvailable} available`}
           </button>
         ) : null}
-        {showSaved && (
-          <span className="text-green-400 animate-save-flash">Saved</span>
-        )}
+        {showSaved && <span className="text-green-400 animate-save-flash">Saved</span>}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
         <span>MZ Plugin Studio v{__APP_VERSION__}</span>
       </div>
