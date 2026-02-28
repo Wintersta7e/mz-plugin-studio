@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-02-28
+
 ### Added
 - **Struct Default Value Editor** — inline form renders struct fields as type-appropriate inputs (number, boolean toggle, select, text) when editing struct parameter defaults
 - **Struct Default Validation** — real-time JSON validation with green/yellow/red status indicator in the editor, plus warnings in the plugin validation panel for invalid struct defaults
@@ -13,10 +15,19 @@
 - App lifecycle logging (startup, version, platform)
 - IPC handler logging (plugin save/load, project open, header scan, dialogs)
 - Auto-updater lifecycle logging
-- 21 new tests (260 total across 11 test files)
+- Staggered welcome screen entrance and shimmer loading skeleton
+- Ambient background gradient, sidebar hover glow, and focus panel glow
+- Toast notifications, dirty pulse, save flash, and validation badge bounce
+- 33 new tests (281 total across 13 test files)
+
+### Fixed
+- Dialog positioning — Settings and Keyboard Shortcuts dialogs now appear centered instead of offset to bottom-right (framer-motion inline transforms were overriding CSS centering)
 
 ### Changed
 - All `console.error`/`console.warn` calls replaced with structured `log.error`/`log.warn`
+- Animation architecture: Framer Motion for enter animations, CSS `data-[state=closed]` for Radix dialog exit
+- `MotionConfig reducedMotion="user"` wraps app root for accessibility
+- Toast progress bar uses pure CSS animation instead of React state polling
 - Regenerated THIRD_PARTY_LICENSES.md (235 production dependencies)
 
 ## [1.4.1] - 2026-02-20

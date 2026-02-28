@@ -35,8 +35,9 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content ref={ref} asChild {...props}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: -8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        style={{ x: '-50%' }}
+        initial={{ opacity: 0, scale: 0.95, y: 'calc(-50% - 8px)' }}
+        animate={{ opacity: 1, scale: 1, y: '-50%' }}
         transition={{
           type: 'spring',
           stiffness: 500,
@@ -44,7 +45,7 @@ const DialogContent = React.forwardRef<
           mass: 0.8
         }}
         className={cn(
-          'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg sm:rounded-lg data-[state=closed]:animate-[fade-out_150ms_ease-out]',
+          'fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg data-[state=closed]:animate-[fade-out_150ms_ease-out]',
           className
         )}
       >
