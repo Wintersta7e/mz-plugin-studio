@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -176,63 +177,73 @@ function CommandCard({
       </div>
 
       {/* Expanded content */}
-      {expanded && (
-        <div className="border-t border-border p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Command Name</Label>
-              <Input
-                value={command.name}
-                onChange={(e) => onUpdate({ name: e.target.value })}
-                placeholder="myCommand"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Display Label</Label>
-              <Input
-                value={command.text}
-                onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="My Command"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Input
-              value={command.desc}
-              onChange={(e) => onUpdate({ desc: e.target.value })}
-              placeholder="What this command does"
-            />
-          </div>
-
-          {/* Arguments */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Arguments</Label>
-              <Button variant="outline" size="sm" onClick={onAddArg}>
-                <Plus className="mr-1 h-3 w-3" />
-                Add Argument
-              </Button>
-            </div>
-
-            {command.args.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No arguments defined</p>
-            ) : (
-              <div className="space-y-2">
-                {command.args.map((arg) => (
-                  <ArgumentRow
-                    key={arg.id}
-                    arg={arg}
-                    onUpdate={(updates) => onUpdateArg(arg.id, updates)}
-                    onRemove={() => onRemoveArg(arg.id)}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Command Name</Label>
+                  <Input
+                    value={command.name}
+                    onChange={(e) => onUpdate({ name: e.target.value })}
+                    placeholder="myCommand"
                   />
-                ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Display Label</Label>
+                  <Input
+                    value={command.text}
+                    onChange={(e) => onUpdate({ text: e.target.value })}
+                    placeholder="My Command"
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={command.desc}
+                  onChange={(e) => onUpdate({ desc: e.target.value })}
+                  placeholder="What this command does"
+                />
+              </div>
+
+              {/* Arguments */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Arguments</Label>
+                  <Button variant="outline" size="sm" onClick={onAddArg}>
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add Argument
+                  </Button>
+                </div>
+
+                {command.args.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No arguments defined</p>
+                ) : (
+                  <div className="space-y-2">
+                    {command.args.map((arg) => (
+                      <ArgumentRow
+                        key={arg.id}
+                        arg={arg}
+                        onUpdate={(updates) => onUpdateArg(arg.id, updates)}
+                        onRemove={() => onRemoveArg(arg.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

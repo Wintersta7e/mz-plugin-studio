@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -152,45 +153,55 @@ function StructCard({
       </div>
 
       {/* Expanded content */}
-      {expanded && (
-        <div className="border-t border-border p-4 space-y-4">
-          <div className="space-y-2">
-            <Label>Struct Name</Label>
-            <Input
-              value={struct.name}
-              onChange={(e) => onUpdate({ name: e.target.value })}
-              placeholder="StructName"
-            />
-          </div>
-
-          {/* Parameters */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Fields</Label>
-              <Button variant="outline" size="sm" onClick={onAddParam}>
-                <Plus className="mr-1 h-3 w-3" />
-                Add Field
-              </Button>
-            </div>
-
-            {struct.parameters.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">No fields defined</p>
-            ) : (
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border p-4 space-y-4">
               <div className="space-y-2">
-                {struct.parameters.map((param) => (
-                  <StructParamRow
-                    key={param.id}
-                    param={param}
-                    onUpdate={(updates) => onUpdateParam(param.id, updates)}
-                    onRemove={() => onRemoveParam(param.id)}
-                    allStructs={allStructs}
-                  />
-                ))}
+                <Label>Struct Name</Label>
+                <Input
+                  value={struct.name}
+                  onChange={(e) => onUpdate({ name: e.target.value })}
+                  placeholder="StructName"
+                />
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              {/* Parameters */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Fields</Label>
+                  <Button variant="outline" size="sm" onClick={onAddParam}>
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add Field
+                  </Button>
+                </div>
+
+                {struct.parameters.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">No fields defined</p>
+                ) : (
+                  <div className="space-y-2">
+                    {struct.parameters.map((param) => (
+                      <StructParamRow
+                        key={param.id}
+                        param={param}
+                        onUpdate={(updates) => onUpdateParam(param.id, updates)}
+                        onRemove={() => onRemoveParam(param.id)}
+                        allStructs={allStructs}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

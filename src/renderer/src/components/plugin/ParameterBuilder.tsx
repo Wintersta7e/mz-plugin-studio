@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
   Trash2,
@@ -423,52 +424,57 @@ export function ParameterBuilder() {
             </div>
           ) : (
             parameters.map((param) => (
-              <ParameterCard
+              <motion.div
                 key={param.id}
-                param={param}
-                expanded={expandedId === param.id}
-                isSelected={selectedIds.has(param.id)}
-                onToggleSelect={() => toggleSelect(param.id)}
-                onToggle={() => setExpandedId(expandedId === param.id ? null : param.id)}
-                onUpdate={(updates) => {
-                  updateParameter(param.id, updates)
-                  if (
-                    (updates.name !== undefined && updates.name !== param.name) ||
-                    (updates.type !== undefined && updates.type !== param.type)
-                  ) {
-                    const current = customCode || ''
-                    const oldComment = generateParameterComment(param)
-                    const newComment = generateParameterComment({
-                      ...param,
-                      ...updates
-                    } as PluginParameter)
-                    const updated = current.replace(oldComment, newComment)
-                    if (updated !== current) {
-                      setCustomCode(updated)
+                layout
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              >
+                <ParameterCard
+                  param={param}
+                  expanded={expandedId === param.id}
+                  isSelected={selectedIds.has(param.id)}
+                  onToggleSelect={() => toggleSelect(param.id)}
+                  onToggle={() => setExpandedId(expandedId === param.id ? null : param.id)}
+                  onUpdate={(updates) => {
+                    updateParameter(param.id, updates)
+                    if (
+                      (updates.name !== undefined && updates.name !== param.name) ||
+                      (updates.type !== undefined && updates.type !== param.type)
+                    ) {
+                      const current = customCode || ''
+                      const oldComment = generateParameterComment(param)
+                      const newComment = generateParameterComment({
+                        ...param,
+                        ...updates
+                      } as PluginParameter)
+                      const updated = current.replace(oldComment, newComment)
+                      if (updated !== current) {
+                        setCustomCode(updated)
+                      }
                     }
-                  }
-                }}
-                onDelete={() => {
-                  removeParameter(param.id)
-                  setSelectedIds((prev) => {
-                    if (!prev.has(param.id)) return prev
-                    const next = new Set(prev)
-                    next.delete(param.id)
-                    return next
-                  })
-                }}
-                onDragStart={(e) => handleDragStart(e, param.id)}
-                onDragEnd={handleDragEnd}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, param.id)}
-                isDragging={draggedId === param.id}
-                structs={structs.map((s) => s.name)}
-                allStructs={structs}
-                switches={switches}
-                variables={variables}
-                actors={actors}
-                items={items}
-              />
+                  }}
+                  onDelete={() => {
+                    removeParameter(param.id)
+                    setSelectedIds((prev) => {
+                      if (!prev.has(param.id)) return prev
+                      const next = new Set(prev)
+                      next.delete(param.id)
+                      return next
+                    })
+                  }}
+                  onDragStart={(e) => handleDragStart(e, param.id)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, param.id)}
+                  isDragging={draggedId === param.id}
+                  structs={structs.map((s) => s.name)}
+                  allStructs={structs}
+                  switches={switches}
+                  variables={variables}
+                  actors={actors}
+                  items={items}
+                />
+              </motion.div>
             ))
           )}
         </div>
@@ -711,8 +717,8 @@ function ParameterCard({
   return (
     <div
       className={cn(
-        'rounded-lg border border-border bg-card transition-colors',
-        isDragging && 'opacity-50'
+        'rounded-lg border border-border bg-card transition-all',
+        isDragging && 'opacity-60 shadow-lg scale-[1.02] z-10'
       )}
       draggable
       onDragStart={onDragStart}
@@ -761,304 +767,315 @@ function ParameterCard({
       </div>
 
       {/* Expanded content */}
-      {expanded && (
-        <div className="border-t border-border p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Internal Name</Label>
-              <Input
-                value={param.name}
-                onChange={(e) => onUpdate({ name: e.target.value })}
-                placeholder="paramName"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Display Label</Label>
-              <Input
-                value={param.text}
-                onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Parameter Label"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Input
-              value={param.desc}
-              onChange={(e) => onUpdate({ desc: e.target.value })}
-              placeholder="Help text for this parameter"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select
-                value={param.type}
-                onValueChange={(value: ParamType) => onUpdate({ type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PARAM_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {param.type !== 'struct' && (
-              <div className="space-y-2">
-                <Label>Default Value</Label>
-                {isNumericIdType ? (
-                  <Input
-                    type="number"
-                    value={String(param.default ?? 0)}
-                    onChange={(e) => onUpdate({ default: Number(e.target.value) })}
-                    placeholder={param.type === 'icon' ? 'Icon index' : 'Map ID'}
-                    min={0}
-                  />
-                ) : isGameDataType ? (
-                  hasProjectData ? (
-                    <Select
-                      value={String(param.default ?? '')}
-                      onValueChange={(v) => onUpdate({ default: Number(v) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={`Select ${param.type}...`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">None (0)</SelectItem>
-                        {gameDataOptions.map((opt) => (
-                          <SelectItem key={opt.id} value={String(opt.id)}>
-                            {opt.id}: {opt.name || `(unnamed ${param.type})`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      disabled
-                      placeholder="Load project first"
-                      className="text-muted-foreground"
-                    />
-                  )
-                ) : param.type === 'boolean' ? (
-                  <div className="flex items-center h-10">
-                    <Switch
-                      checked={param.default === true || param.default === 'true'}
-                      onCheckedChange={(checked) => onUpdate({ default: checked })}
-                    />
-                  </div>
-                ) : (
-                  <Input
-                    value={String(param.default || '')}
-                    onChange={(e) => {
-                      const val = param.type === 'number' ? Number(e.target.value) : e.target.value
-                      onUpdate({ default: val })
-                    }}
-                    type={param.type === 'number' ? 'number' : 'text'}
-                    placeholder="Default value"
-                  />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Boolean-specific fields: @on/@off labels */}
-          {param.type === 'boolean' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>On Label</Label>
-                <Input
-                  value={param.onLabel || ''}
-                  onChange={(e) => onUpdate({ onLabel: e.target.value || undefined })}
-                  placeholder="ON"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Off Label</Label>
-                <Input
-                  value={param.offLabel || ''}
-                  onChange={(e) => onUpdate({ offLabel: e.target.value || undefined })}
-                  placeholder="OFF"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Number-specific fields */}
-          {param.type === 'number' && (
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Min</Label>
-                <Input
-                  type="number"
-                  value={param.min ?? ''}
-                  onChange={(e) =>
-                    onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                  placeholder="No min"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Max</Label>
-                <Input
-                  type="number"
-                  value={param.max ?? ''}
-                  onChange={(e) =>
-                    onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                  placeholder="No max"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Decimals</Label>
-                <Input
-                  type="number"
-                  value={param.decimals ?? ''}
-                  onChange={(e) =>
-                    onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                  placeholder="0"
-                  min={0}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Select/Combo options */}
-          {(param.type === 'select' || param.type === 'combo') && (
-            <OptionsEditor param={param} onUpdate={onUpdate} />
-          )}
-
-          {/* Struct reference + default editor */}
-          {param.type === 'struct' && (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Struct Type</Label>
-                <Select
-                  value={param.structType || ''}
-                  onValueChange={(value) => onUpdate({ structType: value, default: '' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select struct..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {structs.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {param.structType &&
-                (() => {
-                  const structDef = allStructs.find((s) => s.name === param.structType)
-                  if (!structDef) return null
-                  return (
-                    <StructDefaultEditor
-                      struct={structDef}
-                      value={typeof param.default === 'string' ? param.default : ''}
-                      onChange={(jsonStr) => onUpdate({ default: jsonStr })}
-                    />
-                  )
-                })()}
-            </div>
-          )}
-
-          {/* Array element type */}
-          {param.type === 'array' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Array Element Type</Label>
-                <Select
-                  value={param.arrayType || 'string'}
-                  onValueChange={(value) => onUpdate({ arrayType: value as ParamType })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="string">String</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="boolean">Boolean</SelectItem>
-                    <SelectItem value="note">Note (Multiline)</SelectItem>
-                    <SelectItem value="select">Select/Combo</SelectItem>
-                    <SelectItem value="variable">Variable</SelectItem>
-                    <SelectItem value="switch">Switch</SelectItem>
-                    <SelectItem value="actor">Actor</SelectItem>
-                    <SelectItem value="class">Class</SelectItem>
-                    <SelectItem value="skill">Skill</SelectItem>
-                    <SelectItem value="item">Item</SelectItem>
-                    <SelectItem value="weapon">Weapon</SelectItem>
-                    <SelectItem value="armor">Armor</SelectItem>
-                    <SelectItem value="enemy">Enemy</SelectItem>
-                    <SelectItem value="troop">Troop</SelectItem>
-                    <SelectItem value="state">State</SelectItem>
-                    <SelectItem value="animation">Animation</SelectItem>
-                    <SelectItem value="tileset">Tileset</SelectItem>
-                    <SelectItem value="common_event">Common Event</SelectItem>
-                    <SelectItem value="file">File</SelectItem>
-                    <SelectItem value="struct">Struct</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* If array of structs, show struct type selector */}
-              {param.arrayType === 'struct' && (
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-border p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Struct Type</Label>
+                  <Label>Internal Name</Label>
+                  <Input
+                    value={param.name}
+                    onChange={(e) => onUpdate({ name: e.target.value })}
+                    placeholder="paramName"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Display Label</Label>
+                  <Input
+                    value={param.text}
+                    onChange={(e) => onUpdate({ text: e.target.value })}
+                    placeholder="Parameter Label"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Input
+                  value={param.desc}
+                  onChange={(e) => onUpdate({ desc: e.target.value })}
+                  placeholder="Help text for this parameter"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Type</Label>
                   <Select
-                    value={param.structType || ''}
-                    onValueChange={(value) => onUpdate({ structType: value })}
+                    value={param.type}
+                    onValueChange={(value: ParamType) => onUpdate({ type: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select struct..." />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {structs.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
+                      {PARAM_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
+                {param.type !== 'struct' && (
+                  <div className="space-y-2">
+                    <Label>Default Value</Label>
+                    {isNumericIdType ? (
+                      <Input
+                        type="number"
+                        value={String(param.default ?? 0)}
+                        onChange={(e) => onUpdate({ default: Number(e.target.value) })}
+                        placeholder={param.type === 'icon' ? 'Icon index' : 'Map ID'}
+                        min={0}
+                      />
+                    ) : isGameDataType ? (
+                      hasProjectData ? (
+                        <Select
+                          value={String(param.default ?? '')}
+                          onValueChange={(v) => onUpdate({ default: Number(v) })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${param.type}...`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">None (0)</SelectItem>
+                            {gameDataOptions.map((opt) => (
+                              <SelectItem key={opt.id} value={String(opt.id)}>
+                                {opt.id}: {opt.name || `(unnamed ${param.type})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          disabled
+                          placeholder="Load project first"
+                          className="text-muted-foreground"
+                        />
+                      )
+                    ) : param.type === 'boolean' ? (
+                      <div className="flex items-center h-10">
+                        <Switch
+                          checked={param.default === true || param.default === 'true'}
+                          onCheckedChange={(checked) => onUpdate({ default: checked })}
+                        />
+                      </div>
+                    ) : (
+                      <Input
+                        value={String(param.default || '')}
+                        onChange={(e) => {
+                          const val =
+                            param.type === 'number' ? Number(e.target.value) : e.target.value
+                          onUpdate({ default: val })
+                        }}
+                        type={param.type === 'number' ? 'number' : 'text'}
+                        placeholder="Default value"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Boolean-specific fields: @on/@off labels */}
+              {param.type === 'boolean' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>On Label</Label>
+                    <Input
+                      value={param.onLabel || ''}
+                      onChange={(e) => onUpdate({ onLabel: e.target.value || undefined })}
+                      placeholder="ON"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Off Label</Label>
+                    <Input
+                      value={param.offLabel || ''}
+                      onChange={(e) => onUpdate({ offLabel: e.target.value || undefined })}
+                      placeholder="OFF"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Number-specific fields */}
+              {param.type === 'number' && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Min</Label>
+                    <Input
+                      type="number"
+                      value={param.min ?? ''}
+                      onChange={(e) =>
+                        onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      placeholder="No min"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max</Label>
+                    <Input
+                      type="number"
+                      value={param.max ?? ''}
+                      onChange={(e) =>
+                        onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      placeholder="No max"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Decimals</Label>
+                    <Input
+                      type="number"
+                      value={param.decimals ?? ''}
+                      onChange={(e) =>
+                        onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
+                      }
+                      placeholder="0"
+                      min={0}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Select/Combo options */}
+              {(param.type === 'select' || param.type === 'combo') && (
+                <OptionsEditor param={param} onUpdate={onUpdate} />
+              )}
+
+              {/* Struct reference + default editor */}
+              {param.type === 'struct' && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Struct Type</Label>
+                    <Select
+                      value={param.structType || ''}
+                      onValueChange={(value) => onUpdate({ structType: value, default: '' })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select struct..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {structs.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {param.structType &&
+                    (() => {
+                      const structDef = allStructs.find((s) => s.name === param.structType)
+                      if (!structDef) return null
+                      return (
+                        <StructDefaultEditor
+                          struct={structDef}
+                          value={typeof param.default === 'string' ? param.default : ''}
+                          onChange={(jsonStr) => onUpdate({ default: jsonStr })}
+                        />
+                      )
+                    })()}
+                </div>
+              )}
+
+              {/* Array element type */}
+              {param.type === 'array' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Array Element Type</Label>
+                    <Select
+                      value={param.arrayType || 'string'}
+                      onValueChange={(value) => onUpdate({ arrayType: value as ParamType })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">String</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="boolean">Boolean</SelectItem>
+                        <SelectItem value="note">Note (Multiline)</SelectItem>
+                        <SelectItem value="select">Select/Combo</SelectItem>
+                        <SelectItem value="variable">Variable</SelectItem>
+                        <SelectItem value="switch">Switch</SelectItem>
+                        <SelectItem value="actor">Actor</SelectItem>
+                        <SelectItem value="class">Class</SelectItem>
+                        <SelectItem value="skill">Skill</SelectItem>
+                        <SelectItem value="item">Item</SelectItem>
+                        <SelectItem value="weapon">Weapon</SelectItem>
+                        <SelectItem value="armor">Armor</SelectItem>
+                        <SelectItem value="enemy">Enemy</SelectItem>
+                        <SelectItem value="troop">Troop</SelectItem>
+                        <SelectItem value="state">State</SelectItem>
+                        <SelectItem value="animation">Animation</SelectItem>
+                        <SelectItem value="tileset">Tileset</SelectItem>
+                        <SelectItem value="common_event">Common Event</SelectItem>
+                        <SelectItem value="file">File</SelectItem>
+                        <SelectItem value="struct">Struct</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* If array of structs, show struct type selector */}
+                  {param.arrayType === 'struct' && (
+                    <div className="space-y-2">
+                      <Label>Struct Type</Label>
+                      <Select
+                        value={param.structType || ''}
+                        onValueChange={(value) => onUpdate({ structType: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select struct..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {structs.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* File/Animation directory and require */}
+              {(param.type === 'file' || param.type === 'animation') && (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Directory (relative to project)</Label>
+                    <Input
+                      value={param.dir || ''}
+                      onChange={(e) => onUpdate({ dir: e.target.value })}
+                      placeholder={param.type === 'animation' ? 'img/animations' : 'img/pictures'}
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={param.require || false}
+                      onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
+                      className="h-4 w-4"
+                    />
+                    Required for deployment (@require 1)
+                  </label>
+                </div>
               )}
             </div>
-          )}
-
-          {/* File/Animation directory and require */}
-          {(param.type === 'file' || param.type === 'animation') && (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Directory (relative to project)</Label>
-                <Input
-                  value={param.dir || ''}
-                  onChange={(e) => onUpdate({ dir: e.target.value })}
-                  placeholder={param.type === 'animation' ? 'img/animations' : 'img/pictures'}
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={param.require || false}
-                  onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
-                  className="h-4 w-4"
-                />
-                Required for deployment (@require 1)
-              </label>
-            </div>
-          )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
