@@ -1,47 +1,22 @@
 import { IpcMain, IpcMainInvokeEvent } from 'electron'
 import { readFile, readdir, writeFile, access, mkdir } from 'fs/promises'
-import { join, dirname, resolve, normalize, basename, extname } from 'path'
+import { join, dirname } from 'path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import type { ScannedPluginHeader } from '../../shared/ipc-types'
 import { extractOverrides } from '../../shared/override-extractor'
-
-/** Allowed file extensions for read/write-by-path operations */
-const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json'])
-
-/**
- * Validate that a file path is safe for read/write operations.
- * - Normalizes the path to resolve traversal sequences
- * - Rejects paths with remaining '..' components
- * - Restricts to allowed file extensions
- */
-function assertSafeFilePath(filePath: string): void {
-  const normalized = normalize(resolve(filePath))
-  if (normalized.includes('..')) {
-    throw new Error('Path traversal is not allowed')
-  }
-  const ext = extname(normalized).toLowerCase()
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
-    throw new Error(
-      `File extension "${ext}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`
-    )
-  }
-}
-
-/**
- * Validate that a filename is a simple name (no path separators or traversal).
- */
-function assertSafeFilename(filename: string): void {
-  if (filename !== basename(filename) || filename.includes('..')) {
-    throw new Error('Invalid filename: must not contain path separators or traversal')
-  }
-}
+import {
+  assertSafeFilePath,
+  assertSafeFilename,
+  assertSafeProjectPath
+} from '../../shared/path-safety'
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string, content: string) => {
+      assertSafeProjectPath(projectPath)
       assertSafeFilename(filename)
       log.debug(`[plugin:save] ${filename} to ${projectPath}`)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
@@ -62,6 +37,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_LOAD,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
+      assertSafeProjectPath(projectPath)
       assertSafeFilename(filename)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
       const content = await readFile(pluginPath, 'utf-8')
@@ -81,6 +57,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_READ_RAW,
     async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
+      assertSafeProjectPath(projectPath)
       assertSafeFilename(filename)
       log.debug(`[plugin:read-raw] ${filename}`)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
@@ -91,6 +68,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_LIST,
     async (_event: IpcMainInvokeEvent, projectPath: string) => {
+      assertSafeProjectPath(projectPath)
       const pluginsDir = join(projectPath, 'js', 'plugins')
       try {
         const files = await readdir(pluginsDir)
@@ -133,6 +111,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SCAN_HEADERS,
     async (_event: IpcMainInvokeEvent, projectPath: string): Promise<ScannedPluginHeader[]> => {
+      assertSafeProjectPath(projectPath)
       const pluginsDir = join(projectPath, 'js', 'plugins')
       try {
         const files = await readdir(pluginsDir)
@@ -180,8 +159,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
 
         log.info(`[plugin:scan-headers] Scanned ${results.length} plugins in ${projectPath}`)
         return results
-      } catch {
-        log.error(`[plugin:scan-headers] Failed to scan ${projectPath}`)
+      } catch (error) {
+        log.error(`[plugin:scan-headers] Failed to scan ${projectPath}:`, error)
         return []
       }
     }
