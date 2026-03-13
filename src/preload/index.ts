@@ -148,7 +148,6 @@ const windowApi: WindowAPI = {
 const updateApi: UpdateAPI = {
   onUpdateAvailable: (callback) => {
     const channel = IPC_CHANNELS.UPDATE_AVAILABLE
-    ipcRenderer.removeAllListeners(channel)
     const handler = (_event: unknown, info: { version: string; releaseNotes?: string }) =>
       callback(info)
     ipcRenderer.on(channel, handler)
@@ -156,7 +155,6 @@ const updateApi: UpdateAPI = {
   },
   onUpdateDownloaded: (callback) => {
     const channel = IPC_CHANNELS.UPDATE_DOWNLOADED
-    ipcRenderer.removeAllListeners(channel)
     const handler = () => callback()
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
