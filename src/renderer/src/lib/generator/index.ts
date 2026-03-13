@@ -561,14 +561,12 @@ export function generateRawMode(plugin: PluginDefinition): string {
   }
 
   // 4. Inject command registration for new commands not already in the body
-  const newCommands = plugin.commands
-    .filter((cmd) => !output.includes(`registerCommand(`) || !output.includes(`'${cmd.name}'`))
-    .filter(
-      (cmd) =>
-        !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-        !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
-        !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
-    )
+  const newCommands = plugin.commands.filter(
+    (cmd) =>
+      !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+      !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
+      !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
+  )
   if (newCommands.length > 0) {
     const pluginName = plugin.meta.name || 'NewPlugin'
     const cmdLines: string[] = []
