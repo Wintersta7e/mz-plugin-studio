@@ -65,6 +65,23 @@ interface ProjectState {
   setCommonEvents: (commonEvents: MZCommonEvent[]) => void
   setClasses: (classes: MZClass[]) => void
   setTroops: (troops: MZTroop[]) => void
+  /** Batch-set all game data in a single store update (avoids 14 re-renders) */
+  setAllGameData: (data: {
+    switches: MZSwitch[]
+    variables: MZVariable[]
+    actors: MZActor[]
+    items: MZItem[]
+    skills: MZSkill[]
+    weapons: MZWeapon[]
+    armors: MZArmor[]
+    enemies: MZEnemy[]
+    states: MZState[]
+    animations: MZAnimation[]
+    tilesets: MZTileset[]
+    commonEvents: MZCommonEvent[]
+    classes: MZClass[]
+    troops: MZTroop[]
+  }) => void
   clearProject: () => void
   scanDependencies: () => Promise<void>
   clearDependencyReport: () => void
@@ -124,6 +141,7 @@ export const useProjectStore = create<ProjectState>()(
       setCommonEvents: (commonEvents) => set({ commonEvents }),
       setClasses: (classes) => set({ classes }),
       setTroops: (troops) => set({ troops }),
+      setAllGameData: (data) => set(data),
       clearProject: () =>
         set({
           project: null,

@@ -40,20 +40,7 @@ function App() {
   const addRecentProject = useProjectStore((s) => s.addRecentProject)
   const setLoading = useProjectStore((s) => s.setLoading)
   const setError = useProjectStore((s) => s.setError)
-  const setSwitches = useProjectStore((s) => s.setSwitches)
-  const setVariables = useProjectStore((s) => s.setVariables)
-  const setActors = useProjectStore((s) => s.setActors)
-  const setItems = useProjectStore((s) => s.setItems)
-  const setSkills = useProjectStore((s) => s.setSkills)
-  const setWeapons = useProjectStore((s) => s.setWeapons)
-  const setArmors = useProjectStore((s) => s.setArmors)
-  const setEnemies = useProjectStore((s) => s.setEnemies)
-  const setStates = useProjectStore((s) => s.setStates)
-  const setAnimations = useProjectStore((s) => s.setAnimations)
-  const setTilesets = useProjectStore((s) => s.setTilesets)
-  const setCommonEvents = useProjectStore((s) => s.setCommonEvents)
-  const setClasses = useProjectStore((s) => s.setClasses)
-  const setTroops = useProjectStore((s) => s.setTroops)
+  const setAllGameData = useProjectStore((s) => s.setAllGameData)
   const recentProjects = useProjectStore((s) => s.recentProjects)
 
   const plugin = usePluginStore((s) => s.plugin)
@@ -143,99 +130,7 @@ function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [])
 
-  const handleOpenProject = useCallback(async () => {
-    const path = await window.api.dialog.openFolder()
-    if (!path) return
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const validation = await window.api.project.validate(path)
-      if (!validation.valid) {
-        setError(validation.error || 'Invalid project')
-        setLoading(false)
-        return
-      }
-
-      const projectData = await window.api.project.load(path)
-      setProject(projectData)
-      addRecentProject(path)
-
-      // Load additional data
-      const [
-        switches,
-        variables,
-        actors,
-        items,
-        skills,
-        weapons,
-        armors,
-        enemies,
-        states,
-        animations,
-        tilesets,
-        commonEvents,
-        classes,
-        troops
-      ] = await Promise.all([
-        window.api.project.getSwitches(path),
-        window.api.project.getVariables(path),
-        window.api.project.getActors(path),
-        window.api.project.getItems(path),
-        window.api.project.getSkills(path),
-        window.api.project.getWeapons(path),
-        window.api.project.getArmors(path),
-        window.api.project.getEnemies(path),
-        window.api.project.getStates(path),
-        window.api.project.getAnimations(path),
-        window.api.project.getTilesets(path),
-        window.api.project.getCommonEvents(path),
-        window.api.project.getClasses(path),
-        window.api.project.getTroops(path)
-      ])
-
-      setSwitches(switches)
-      setVariables(variables)
-      setActors(actors)
-      setItems(items)
-      setSkills(skills)
-      setWeapons(weapons)
-      setArmors(armors)
-      setEnemies(enemies)
-      setStates(states)
-      setAnimations(animations)
-      setTilesets(tilesets)
-      setCommonEvents(commonEvents)
-      setClasses(classes)
-      setTroops(troops)
-    } catch (error) {
-      setError(String(error))
-    } finally {
-      setLoading(false)
-    }
-  }, [
-    setLoading,
-    setError,
-    setProject,
-    addRecentProject,
-    setSwitches,
-    setVariables,
-    setActors,
-    setItems,
-    setSkills,
-    setWeapons,
-    setArmors,
-    setEnemies,
-    setStates,
-    setAnimations,
-    setTilesets,
-    setCommonEvents,
-    setClasses,
-    setTroops
-  ])
-
-  const handleOpenRecentProject = useCallback(
+  const loadProject = useCallback(
     async (path: string) => {
       setLoading(true)
       setError(null)
@@ -284,46 +179,42 @@ function App() {
           window.api.project.getTroops(path)
         ])
 
-        setSwitches(switches)
-        setVariables(variables)
-        setActors(actors)
-        setItems(items)
-        setSkills(skills)
-        setWeapons(weapons)
-        setArmors(armors)
-        setEnemies(enemies)
-        setStates(states)
-        setAnimations(animations)
-        setTilesets(tilesets)
-        setCommonEvents(commonEvents)
-        setClasses(classes)
-        setTroops(troops)
+        setAllGameData({
+          switches,
+          variables,
+          actors,
+          items,
+          skills,
+          weapons,
+          armors,
+          enemies,
+          states,
+          animations,
+          tilesets,
+          commonEvents,
+          classes,
+          troops
+        })
       } catch (error) {
         setError(String(error))
       } finally {
         setLoading(false)
       }
     },
-    [
-      setLoading,
-      setError,
-      setProject,
-      addRecentProject,
-      setSwitches,
-      setVariables,
-      setActors,
-      setItems,
-      setSkills,
-      setWeapons,
-      setArmors,
-      setEnemies,
-      setStates,
-      setAnimations,
-      setTilesets,
-      setCommonEvents,
-      setClasses,
-      setTroops
-    ]
+    [setLoading, setError, setProject, addRecentProject, setAllGameData]
+  )
+
+  const handleOpenProject = useCallback(async () => {
+    const path = await window.api.dialog.openFolder()
+    if (!path) return
+    await loadProject(path)
+  }, [loadProject])
+
+  const handleOpenRecentProject = useCallback(
+    async (path: string) => {
+      await loadProject(path)
+    },
+    [loadProject]
   )
 
   // Keyboard shortcuts
