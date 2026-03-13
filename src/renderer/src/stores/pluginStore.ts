@@ -339,6 +339,14 @@ export const usePluginStore = create<PluginState>()(
         }),
       closePlugin: (id) =>
         set((state) => {
+          // Clean up raw mode and history for the closed plugin
+          import('./uiStore').then(({ useUIStore }) => {
+            useUIStore.getState().clearRawModeForPlugin(id)
+          })
+          import('./historyStore').then(({ useHistoryStore }) => {
+            const hist = useHistoryStore.getState()
+            if (hist.activePluginId === id) hist.clear()
+          })
           const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
           const dirtyByPluginId = markPluginDirty(state.dirtyByPluginId, id, false)
           const savedPathsByPluginId = setPluginSavedPath(state.savedPathsByPluginId, id, null)
@@ -370,6 +378,10 @@ export const usePluginStore = create<PluginState>()(
               : state.openPlugins
           const plugin = syncedOpenPlugins.find((p) => p.id === id)
           if (plugin) {
+            // Clear undo history when switching plugins (imported lazily to avoid circular deps)
+            import('./historyStore').then(({ useHistoryStore }) => {
+              useHistoryStore.getState().setActivePluginId(id)
+            })
             return {
               openPlugins: syncedOpenPlugins,
               activePluginId: id,
@@ -419,8 +431,8 @@ export const usePluginStore = create<PluginState>()(
     {
       name: 'mz-plugin-studio-plugin',
       partialize: (state) => ({
-        plugin: state.plugin,
-        openPlugins: state.openPlugins,
+        plugin: { ...state.plugin, rawSource: undefined },
+        openPlugins: state.openPlugins.map((p) => ({ ...p, rawSource: undefined })),
         activePluginId: state.activePluginId,
         isDirty: state.isDirty,
         savedPath: state.savedPath,
