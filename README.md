@@ -139,7 +139,7 @@ npm run dev
 # Type check only
 npm run typecheck
 
-# Run tests (281 tests)
+# Run tests (411 tests)
 npm test
 
 # Build for production
@@ -195,7 +195,8 @@ src/
 │   └── index.ts             # Context bridge (window.api)
 ├── shared/
 │   ├── ipc-types.ts         # Typed IPC channel constants
-│   └── override-extractor.ts # Prototype override extraction (shared main/renderer)
+│   ├── override-extractor.ts # Prototype override extraction (shared main/renderer)
+│   └── path-safety.ts      # Path validation for IPC handlers
 └── renderer/src/            # React frontend
     ├── components/
     │   ├── plugin/          # Main editors
@@ -218,7 +219,7 @@ src/
     │   └── mz-completions.ts # Monaco MZ autocomplete
     └── types/
         └── plugin.ts        # TypeScript interfaces
-tests/                       # Vitest unit tests (281 tests)
+tests/                       # Vitest unit tests (411 tests, 22 suites)
 ```
 
 ## Tech Stack
