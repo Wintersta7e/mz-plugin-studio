@@ -91,9 +91,12 @@ export const useSettingsStore = create<SettingsState>()(
 )
 
 // Sync persisted debug logging state to main process on startup
-const initialDebug = useSettingsStore.getState().debugLogging
-if (initialDebug) {
-  window.api.log.setLevel(true)
+// Guarded to avoid crashes in test environments where window.api is unavailable
+if (typeof window !== 'undefined' && window.api?.log?.setLevel) {
+  const initialDebug = useSettingsStore.getState().debugLogging
+  if (initialDebug) {
+    window.api.log.setLevel(true)
+  }
 }
 
 // Wire up settings getter so createEmptyPlugin() can use defaults
