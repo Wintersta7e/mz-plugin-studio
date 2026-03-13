@@ -13,7 +13,7 @@ import {
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
-import { useProjectStore, usePluginStore } from '../../stores'
+import { useProjectStore, usePluginStore, useUIStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
 import { cn } from '../../lib/utils'
@@ -37,10 +37,11 @@ export function Sidebar({
   const project = useProjectStore((s) => s.project)
   const openPlugins = usePluginStore((s) => s.openPlugins)
   const activePluginId = usePluginStore((s) => s.activePluginId)
-  const isDirty = usePluginStore((s) => s.isDirty)
+  const dirtyByPluginId = usePluginStore((s) => s.dirtyByPluginId)
   const openPlugin = usePluginStore((s) => s.openPlugin)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
+  const clearRawModeForPlugin = useUIStore((s) => s.clearRawModeForPlugin)
 
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
   const scanDependencies = useProjectStore((s) => s.scanDependencies)
@@ -86,8 +87,7 @@ export function Sidebar({
   const handleClosePlugin = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent triggering setActivePlugin
 
-    // Check if closing the active plugin with unsaved changes
-    if (isDirty && activePluginId === id) {
+    if (dirtyByPluginId[id]) {
       const result = await window.api.dialog.message({
         type: 'question',
         title: 'Unsaved Changes',
@@ -97,6 +97,7 @@ export function Sidebar({
       if (result === 0) return // Cancel
     }
     closePlugin(id)
+    clearRawModeForPlugin(id)
   }
 
   const handleLoadPlugin = async (name: string) => {
@@ -146,44 +147,48 @@ export function Sidebar({
         {/* Open plugins list */}
         <ScrollArea className="flex-1">
           <div className="flex flex-col items-center gap-1 p-2">
-            {openPlugins.map((plugin) => (
-              <Tooltip key={plugin.id}>
-                <TooltipTrigger asChild>
-                  <div className="group relative">
-                    <Button
-                      variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
-                      size="icon"
-                      onClick={() => setActivePlugin(plugin.id)}
-                      className={cn(
-                        'relative h-9 w-9 transition-all duration-200 hover:scale-110',
-                        activePluginId === plugin.id && 'shadow-[0_0_8px_hsl(var(--primary)/0.3)]'
-                      )}
-                    >
-                      <FileCode className="h-5 w-5" />
-                      {activePluginId === plugin.id && (
-                        <ChevronRight className="absolute -right-1 h-3 w-3 text-primary" />
-                      )}
-                      {/* Dirty indicator */}
-                      {isDirty && activePluginId === plugin.id && (
-                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
-                      )}
-                    </Button>
-                    {/* Close button (visible on hover) */}
-                    <button
-                      onClick={(e) => handleClosePlugin(plugin.id, e)}
-                      className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
-                      title="Close plugin"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  {plugin.meta.name || 'Untitled'}
-                  {isDirty && activePluginId === plugin.id && ' (unsaved)'}
-                </TooltipContent>
-              </Tooltip>
-            ))}
+            {openPlugins.map((plugin) => {
+              const pluginIsDirty = Boolean(dirtyByPluginId[plugin.id])
+
+              return (
+                <Tooltip key={plugin.id}>
+                  <TooltipTrigger asChild>
+                    <div className="group relative">
+                      <Button
+                        variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
+                        size="icon"
+                        onClick={() => setActivePlugin(plugin.id)}
+                        className={cn(
+                          'relative h-9 w-9 transition-all duration-200 hover:scale-110',
+                          activePluginId === plugin.id && 'shadow-[0_0_8px_hsl(var(--primary)/0.3)]'
+                        )}
+                      >
+                        <FileCode className="h-5 w-5" />
+                        {activePluginId === plugin.id && (
+                          <ChevronRight className="absolute -right-1 h-3 w-3 text-primary" />
+                        )}
+                        {/* Dirty state is tracked per open plugin so switching tabs does not hide unsaved edits. */}
+                        {pluginIsDirty && (
+                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
+                        )}
+                      </Button>
+                      {/* Close button (visible on hover) */}
+                      <button
+                        onClick={(e) => handleClosePlugin(plugin.id, e)}
+                        className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
+                        title="Close plugin"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {plugin.meta.name || 'Untitled'}
+                    {pluginIsDirty && ' (unsaved)'}
+                  </TooltipContent>
+                </Tooltip>
+              )
+            })}
           </div>
         </ScrollArea>
 

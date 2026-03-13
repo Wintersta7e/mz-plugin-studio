@@ -12,13 +12,20 @@ import {
   FileJson
 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { usePluginStore, useProjectStore, useSettingsStore, useToastStore } from '../../stores'
-import { generatePlugin, generateRawMode, validatePlugin } from '../../lib/generator'
+import {
+  usePluginStore,
+  useProjectStore,
+  useSettingsStore,
+  useToastStore,
+  useUIStore
+} from '../../stores'
+import { generateRawMode, validatePlugin } from '../../lib/generator'
 import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
   generateReadme
 } from '../../lib/exportFormats'
+import { generatePluginOutput } from '../../lib/plugin-output'
 import { DiffView } from './DiffView'
 import { cn } from '../../lib/utils'
 import log from 'electron-log/renderer'
@@ -37,9 +44,12 @@ export function CodePreview() {
   const theme = useSettingsStore((s) => s.theme)
 
   const addToast = useToastStore((s) => s.addToast)
+  const previewRawMode = useUIStore((s) =>
+    s.getRawModeForPlugin(plugin.id, Boolean(plugin.rawSource))
+  )
+  const setRawModeForPlugin = useUIStore((s) => s.setRawModeForPlugin)
 
   const [copied, setCopied] = useState(false)
-  const [rawMode, setRawMode] = useState(Boolean(plugin.rawSource))
   const [showDiff, setShowDiff] = useState(false)
   const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
@@ -60,22 +70,29 @@ export function CodePreview() {
   const hasRawSource = Boolean(plugin.rawSource)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
 
-  // Auto-enable raw mode for imported plugins, disable for new plugins
+  // Preserve the user's raw-mode choice per plugin while keeping imported plugins in raw mode by default.
   useEffect(() => {
-    setRawMode(hasRawSource)
-  }, [hasRawSource])
+    const currentRawMode = useUIStore.getState().rawModeByPluginId[plugin.id]
+    if (hasRawSource) {
+      if (currentRawMode === undefined) {
+        setRawModeForPlugin(plugin.id, true)
+      }
+      return
+    }
+
+    if (currentRawMode) {
+      setRawModeForPlugin(plugin.id, false)
+    }
+  }, [plugin.id, hasRawSource, setRawModeForPlugin])
 
   const code = useMemo(() => {
     try {
-      if (rawMode && hasRawSource) {
-        return generateRawMode(plugin)
-      }
-      return generatePlugin(plugin)
+      return generatePluginOutput(plugin, previewRawMode)
     } catch (e) {
       log.error('Code generation error:', e)
       return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
     }
-  }, [plugin, rawMode, hasRawSource])
+  }, [plugin, previewRawMode])
 
   // Diff always uses raw mode for imported plugins (shows meaningful metadata changes, not full regeneration noise)
   const diffModifiedCode = useMemo(() => {
@@ -282,9 +299,9 @@ export function CodePreview() {
 
         <div className="flex items-center gap-2">
           <Button
-            variant={rawMode && hasRawSource ? 'default' : 'outline'}
+            variant={previewRawMode && hasRawSource ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setRawMode(!rawMode)}
+            onClick={() => setRawModeForPlugin(plugin.id, !previewRawMode)}
             disabled={!hasRawSource}
             title={
               hasRawSource

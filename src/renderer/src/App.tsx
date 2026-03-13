@@ -24,7 +24,7 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
-import { generatePlugin } from './lib/generator'
+import { generatePluginOutput } from './lib/plugin-output'
 import { FolderOpen } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { Button } from './components/ui/button'
@@ -355,9 +355,12 @@ function App() {
         }
         case 'ctrl+s': {
           const ps = usePluginStore.getState()
+          const rawMode = useUIStore
+            .getState()
+            .getRawModeForPlugin(ps.plugin.id, Boolean(ps.plugin.rawSource))
           const proj = useProjectStore.getState().project
           if (proj && ps.plugin.meta.name) {
-            const code = generatePlugin(ps.plugin)
+            const code = generatePluginOutput(ps.plugin, rawMode)
             const filename = `${ps.plugin.meta.name}.js`
             window.api.plugin
               .save(proj.path, filename, code)
