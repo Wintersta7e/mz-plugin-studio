@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -74,7 +74,8 @@ const PARAM_TYPES: { value: ParamType; label: string }[] = [
 
 export function ParameterBuilder() {
   const parameters = usePluginStore((s) => s.plugin.parameters)
-  const plugin = usePluginStore((s) => s.plugin)
+  const pluginId = usePluginStore((s) => s.plugin.id)
+  const pluginName = usePluginStore((s) => s.plugin.meta.name)
   const structs = usePluginStore((s) => s.plugin.structs)
   const addParameter = usePluginStore((s) => s.addParameter)
   const updateParameter = usePluginStore((s) => s.updateParameter)
@@ -89,6 +90,8 @@ export function ParameterBuilder() {
 
   const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
+
+  const structNames = useMemo(() => structs.map((s) => s.name), [structs])
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
@@ -107,7 +110,6 @@ export function ParameterBuilder() {
   const presetSavingRef = useRef(false)
 
   // Clear selection when plugin changes (e.g. open different file, undo/redo)
-  const pluginId = plugin.id
   useEffect(() => {
     setSelectedIds(new Set())
   }, [pluginId])
@@ -157,12 +159,12 @@ export function ParameterBuilder() {
 
   const handleExport = async () => {
     const filePath = await window.api.dialog.saveFile({
-      defaultPath: plugin.meta.name + '-params.mzparams',
+      defaultPath: pluginName + '-params.mzparams',
       filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
     })
     if (!filePath) return
     try {
-      const content = serializeParams(selectedParams, plugin.meta.name)
+      const content = serializeParams(selectedParams, pluginName)
       await window.api.plugin.saveToPath(filePath, content)
     } catch (error) {
       await window.api.dialog.message({
@@ -311,6 +313,7 @@ export function ParameterBuilder() {
     const fromIndex = parameters.findIndex((p) => p.id === draggedId)
     const toIndex = parameters.findIndex((p) => p.id === targetId)
 
+    if (fromIndex === -1 || toIndex === -1) return
     usePluginStore.getState().reorderParameters(fromIndex, toIndex)
     setDraggedId(null)
   }
@@ -465,7 +468,7 @@ export function ParameterBuilder() {
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, param.id)}
                   isDragging={draggedId === param.id}
-                  structs={structs.map((s) => s.name)}
+                  structs={structNames}
                   allStructs={structs}
                   switches={switches}
                   variables={variables}

@@ -216,6 +216,10 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({})
   const [previewCode, setPreviewCode] = useState<string>('')
+  const highlightedPreview = useMemo(
+    () => (previewCode ? highlightCode(previewCode) : null),
+    [previewCode]
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [copied, setCopied] = useState(false)
   const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent' | 'all'>('category')
@@ -1075,7 +1079,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
               <div className="h-44 overflow-auto bg-[#1e1e2e] p-4">
                 {previewCode ? (
                   <code className="font-mono text-[13px] leading-relaxed text-gray-300">
-                    {highlightCode(previewCode)}
+                    {highlightedPreview}
                   </code>
                 ) : (
                   <p className="font-mono text-sm text-gray-500">
