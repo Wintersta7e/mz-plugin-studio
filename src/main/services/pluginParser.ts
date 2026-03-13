@@ -755,8 +755,12 @@ export class PluginParser {
 
     while ((match = optionRegex.exec(block)) !== null) {
       const optText = match[1].trim()
-      // Check for @value following this option
-      const valueMatch = block.slice(match.index).match(/@value\s+([^\n\r]+)/i)
+      // Only look for @value between this @option and the next @option (or end of block)
+      const afterOption = match.index + match[0].length
+      const nextOptionMatch = block.slice(afterOption).search(/@option\s/i)
+      const searchEnd = nextOptionMatch !== -1 ? afterOption + nextOptionMatch : block.length
+      const searchSlice = block.slice(afterOption, searchEnd)
+      const valueMatch = searchSlice.match(/@value\s+([^\n\r]+)/i)
       const value = valueMatch ? valueMatch[1].trim() : optText
 
       options.push({ value, text: optText })
