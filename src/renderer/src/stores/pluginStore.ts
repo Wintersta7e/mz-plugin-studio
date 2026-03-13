@@ -14,6 +14,8 @@ interface PluginState {
   activePluginId: string | null
   isDirty: boolean
   savedPath: string | null
+  dirtyByPluginId: Record<string, boolean>
+  savedPathsByPluginId: Record<string, string>
 
   setPlugin: (plugin: PluginDefinition) => void
   updateMeta: (meta: Partial<PluginDefinition['meta']>) => void
@@ -55,6 +57,87 @@ interface PluginState {
   resetPlugin: () => void
 }
 
+function upsertOpenPlugin(
+  openPlugins: PluginDefinition[],
+  plugin: PluginDefinition
+): PluginDefinition[] {
+  const index = openPlugins.findIndex((candidate) => candidate.id === plugin.id)
+  if (index === -1) {
+    return [...openPlugins, plugin]
+  }
+
+  const next = [...openPlugins]
+  next[index] = plugin
+  return next
+}
+
+function getPluginDirty(
+  dirtyByPluginId: Record<string, boolean>,
+  pluginId: string | null,
+  fallback = false
+): boolean {
+  if (!pluginId) return false
+  return dirtyByPluginId[pluginId] ?? fallback
+}
+
+function getPluginSavedPath(
+  savedPathsByPluginId: Record<string, string>,
+  pluginId: string | null,
+  fallback: string | null = null
+): string | null {
+  if (!pluginId) return null
+  return savedPathsByPluginId[pluginId] ?? fallback
+}
+
+function markPluginDirty(
+  dirtyByPluginId: Record<string, boolean>,
+  pluginId: string,
+  isDirty: boolean
+): Record<string, boolean> {
+  if (isDirty) {
+    return { ...dirtyByPluginId, [pluginId]: true }
+  }
+
+  if (!(pluginId in dirtyByPluginId)) {
+    return dirtyByPluginId
+  }
+
+  const next = { ...dirtyByPluginId }
+  delete next[pluginId]
+  return next
+}
+
+function setPluginSavedPath(
+  savedPathsByPluginId: Record<string, string>,
+  pluginId: string,
+  savedPath: string | null
+): Record<string, string> {
+  if (savedPath) {
+    return { ...savedPathsByPluginId, [pluginId]: savedPath }
+  }
+
+  if (!(pluginId in savedPathsByPluginId)) {
+    return savedPathsByPluginId
+  }
+
+  const next = { ...savedPathsByPluginId }
+  delete next[pluginId]
+  return next
+}
+
+function updateActivePluginState(
+  state: PluginState,
+  update: (plugin: PluginDefinition) => PluginDefinition
+): Partial<PluginState> {
+  const nextPlugin = update(state.plugin)
+  return {
+    plugin: nextPlugin,
+    openPlugins: upsertOpenPlugin(state.openPlugins, nextPlugin),
+    isDirty: true,
+    dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, nextPlugin.id, true)
+  }
+}
+
 export const usePluginStore = create<PluginState>()(
   persist(
     (set) => ({
@@ -63,147 +146,165 @@ export const usePluginStore = create<PluginState>()(
       activePluginId: null,
       isDirty: false,
       savedPath: null,
+      dirtyByPluginId: {},
+      savedPathsByPluginId: {},
 
-      setPlugin: (plugin) => set({ plugin, isDirty: false }),
-      updateMeta: (meta) =>
+      setPlugin: (plugin) =>
         set((state) => ({
-          plugin: { ...state.plugin, meta: { ...state.plugin.meta, ...meta } },
-          isDirty: true
+          plugin,
+          activePluginId: plugin.id,
+          openPlugins: upsertOpenPlugin(state.openPlugins, plugin),
+          isDirty: getPluginDirty(
+            state.dirtyByPluginId,
+            plugin.id,
+            state.activePluginId === plugin.id ? state.isDirty : false
+          ),
+          savedPath: getPluginSavedPath(
+            state.savedPathsByPluginId,
+            plugin.id,
+            state.activePluginId === plugin.id ? state.savedPath : null
+          )
         })),
+      updateMeta: (meta) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            meta: { ...plugin.meta, ...meta }
+          }))
+        ),
 
       // Parameters
       addParameter: (param) =>
-        set((state) => ({
-          plugin: { ...state.plugin, parameters: [...state.plugin.parameters, param] },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            parameters: [...plugin.parameters, param]
+          }))
+        ),
       updateParameter: (id, param) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            parameters: state.plugin.parameters.map((p) => (p.id === id ? { ...p, ...param } : p))
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            parameters: plugin.parameters.map((p) => (p.id === id ? { ...p, ...param } : p))
+          }))
+        ),
       removeParameter: (id) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            parameters: state.plugin.parameters.filter((p) => p.id !== id)
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            parameters: plugin.parameters.filter((p) => p.id !== id)
+          }))
+        ),
       removeParameters: (ids) =>
         set((state) => {
           if (ids.length === 0) return {}
           const idSet = new Set(ids)
           const filtered = state.plugin.parameters.filter((p) => !idSet.has(p.id))
           if (filtered.length === state.plugin.parameters.length) return {}
-          return {
-            plugin: { ...state.plugin, parameters: filtered },
-            isDirty: true
-          }
+          return updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            parameters: filtered
+          }))
         }),
       reorderParameters: (fromIndex, toIndex) =>
         set((state) => {
           const params = [...state.plugin.parameters]
           const [moved] = params.splice(fromIndex, 1)
           params.splice(toIndex, 0, moved)
-          return { plugin: { ...state.plugin, parameters: params }, isDirty: true }
+          return updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            parameters: params
+          }))
         }),
 
       // Commands
       addCommand: (cmd) =>
-        set((state) => ({
-          plugin: { ...state.plugin, commands: [...state.plugin.commands, cmd] },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: [...plugin.commands, cmd]
+          }))
+        ),
       updateCommand: (id, cmd) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            commands: state.plugin.commands.map((c) => (c.id === id ? { ...c, ...cmd } : c))
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: plugin.commands.map((c) => (c.id === id ? { ...c, ...cmd } : c))
+          }))
+        ),
       removeCommand: (id) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            commands: state.plugin.commands.filter((c) => c.id !== id)
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: plugin.commands.filter((c) => c.id !== id)
+          }))
+        ),
       addCommandArg: (cmdId, arg) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            commands: state.plugin.commands.map((c) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: plugin.commands.map((c) =>
               c.id === cmdId ? { ...c, args: [...c.args, arg] } : c
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
       updateCommandArg: (cmdId, argId, arg) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            commands: state.plugin.commands.map((c) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: plugin.commands.map((c) =>
               c.id === cmdId
                 ? { ...c, args: c.args.map((a) => (a.id === argId ? { ...a, ...arg } : a)) }
                 : c
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
       removeCommandArg: (cmdId, argId) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            commands: state.plugin.commands.map((c) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            commands: plugin.commands.map((c) =>
               c.id === cmdId ? { ...c, args: c.args.filter((a) => a.id !== argId) } : c
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
 
       // Structs
       addStruct: (struct) =>
-        set((state) => ({
-          plugin: { ...state.plugin, structs: [...state.plugin.structs, struct] },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: [...plugin.structs, struct]
+          }))
+        ),
       updateStruct: (id, struct) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            structs: state.plugin.structs.map((s) => (s.id === id ? { ...s, ...struct } : s))
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: plugin.structs.map((s) => (s.id === id ? { ...s, ...struct } : s))
+          }))
+        ),
       removeStruct: (id) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            structs: state.plugin.structs.filter((s) => s.id !== id)
-          },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: plugin.structs.filter((s) => s.id !== id)
+          }))
+        ),
       addStructParam: (structId, param) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            structs: state.plugin.structs.map((s) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: plugin.structs.map((s) =>
               s.id === structId ? { ...s, parameters: [...s.parameters, param] } : s
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
       updateStructParam: (structId, paramId, param) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            structs: state.plugin.structs.map((s) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: plugin.structs.map((s) =>
               s.id === structId
                 ? {
                     ...s,
@@ -211,38 +312,36 @@ export const usePluginStore = create<PluginState>()(
                   }
                 : s
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
       removeStructParam: (structId, paramId) =>
-        set((state) => ({
-          plugin: {
-            ...state.plugin,
-            structs: state.plugin.structs.map((s) =>
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            structs: plugin.structs.map((s) =>
               s.id === structId
                 ? { ...s, parameters: s.parameters.filter((p) => p.id !== paramId) }
                 : s
             )
-          },
-          isDirty: true
-        })),
+          }))
+        ),
 
       // Multi-plugin
       openPlugin: (plugin) =>
         set((state) => {
-          const existing = state.openPlugins.find((p) => p.id === plugin.id)
-          if (existing) {
-            return { activePluginId: plugin.id, plugin }
-          }
           return {
-            openPlugins: [...state.openPlugins, plugin],
+            openPlugins: upsertOpenPlugin(state.openPlugins, plugin),
             activePluginId: plugin.id,
-            plugin
+            plugin,
+            isDirty: getPluginDirty(state.dirtyByPluginId, plugin.id),
+            savedPath: getPluginSavedPath(state.savedPathsByPluginId, plugin.id)
           }
         }),
       closePlugin: (id) =>
         set((state) => {
           const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
+          const dirtyByPluginId = markPluginDirty(state.dirtyByPluginId, id, false)
+          const savedPathsByPluginId = setPluginSavedPath(state.savedPathsByPluginId, id, null)
           const newActive =
             state.activePluginId === id
               ? newOpenPlugins.length > 0
@@ -257,29 +356,65 @@ export const usePluginStore = create<PluginState>()(
             openPlugins: newOpenPlugins,
             activePluginId: newActive,
             plugin: newPlugin,
-            isDirty: false
+            isDirty: getPluginDirty(dirtyByPluginId, newActive),
+            savedPath: getPluginSavedPath(savedPathsByPluginId, newActive),
+            dirtyByPluginId,
+            savedPathsByPluginId
           }
         }),
       setActivePlugin: (id) =>
         set((state) => {
-          const plugin = state.openPlugins.find((p) => p.id === id)
+          const syncedOpenPlugins =
+            state.activePluginId && state.plugin.id === state.activePluginId
+              ? upsertOpenPlugin(state.openPlugins, state.plugin)
+              : state.openPlugins
+          const plugin = syncedOpenPlugins.find((p) => p.id === id)
           if (plugin) {
-            return { activePluginId: id, plugin }
+            return {
+              openPlugins: syncedOpenPlugins,
+              activePluginId: id,
+              plugin,
+              isDirty: getPluginDirty(state.dirtyByPluginId, id),
+              savedPath: getPluginSavedPath(state.savedPathsByPluginId, id)
+            }
           }
           return {}
         }),
 
       // Code
       setCustomCode: (code) =>
-        set((state) => ({
-          plugin: { ...state.plugin, customCode: code },
-          isDirty: true
-        })),
+        set((state) =>
+          updateActivePluginState(state, (plugin) => ({
+            ...plugin,
+            customCode: code
+          }))
+        ),
 
       // State
-      setDirty: (isDirty) => set({ isDirty }),
-      setSavedPath: (savedPath) => set({ savedPath }),
-      resetPlugin: () => set({ plugin: createEmptyPlugin(), isDirty: false, savedPath: null })
+      setDirty: (isDirty) =>
+        set((state) => ({
+          isDirty,
+          dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, state.plugin.id, isDirty)
+        })),
+      setSavedPath: (savedPath) =>
+        set((state) => ({
+          savedPath,
+          savedPathsByPluginId: setPluginSavedPath(
+            state.savedPathsByPluginId,
+            state.plugin.id,
+            savedPath
+          )
+        })),
+      resetPlugin: () =>
+        set({
+          plugin: createEmptyPlugin(),
+          openPlugins: [],
+          activePluginId: null,
+          isDirty: false,
+          savedPath: null,
+          dirtyByPluginId: {},
+          savedPathsByPluginId: {}
+        })
     }),
     {
       name: 'mz-plugin-studio-plugin',
@@ -287,7 +422,10 @@ export const usePluginStore = create<PluginState>()(
         plugin: state.plugin,
         openPlugins: state.openPlugins,
         activePluginId: state.activePluginId,
-        savedPath: state.savedPath
+        isDirty: state.isDirty,
+        savedPath: state.savedPath,
+        dirtyByPluginId: state.dirtyByPluginId,
+        savedPathsByPluginId: state.savedPathsByPluginId
       })
     }
   )

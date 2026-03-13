@@ -44,7 +44,20 @@ export const useToastStore = create<ToastState>((set, get) => ({
 
     set((state) => {
       const next = [...state.toasts, toast]
-      return { toasts: next.length > MAX_TOASTS ? next.slice(-MAX_TOASTS) : next }
+      if (next.length <= MAX_TOASTS) {
+        return { toasts: next }
+      }
+
+      const evictedToasts = next.slice(0, next.length - MAX_TOASTS)
+      for (const evictedToast of evictedToasts) {
+        const timer = timerMap.get(evictedToast.id)
+        if (timer) {
+          clearTimeout(timer)
+          timerMap.delete(evictedToast.id)
+        }
+      }
+
+      return { toasts: next.slice(-MAX_TOASTS) }
     })
 
     if (duration > 0) {

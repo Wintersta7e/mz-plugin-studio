@@ -148,4 +148,30 @@ describe('toastStore', () => {
     vi.advanceTimersByTime(5000)
     expect(useToastStore.getState().toasts).toHaveLength(0)
   })
+
+  it('clears timers for evicted toasts when the max limit is exceeded', () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+
+    for (let i = 0; i < 6; i++) {
+      useToastStore.getState().addToast({ type: 'info', message: `Toast ${i}`, duration: 3000 })
+    }
+
+    expect(useToastStore.getState().toasts).toHaveLength(5)
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1)
+
+    clearTimeoutSpy.mockRestore()
+  })
+
+  it('does not attempt timer cleanup when evicting persistent toasts', () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+
+    for (let i = 0; i < 6; i++) {
+      useToastStore.getState().addToast({ type: 'info', message: `Toast ${i}`, duration: 0 })
+    }
+
+    expect(useToastStore.getState().toasts).toHaveLength(5)
+    expect(clearTimeoutSpy).not.toHaveBeenCalled()
+
+    clearTimeoutSpy.mockRestore()
+  })
 })

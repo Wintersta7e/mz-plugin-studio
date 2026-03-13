@@ -9,6 +9,7 @@ interface UIState {
   selectedCommandId: string | null
   selectedStructId: string | null
   mainView: 'editor' | 'analysis'
+  rawModeByPluginId: Record<string, boolean>
 
   setSidebarWidth: (width: number) => void
   setPreviewWidth: (width: number) => void
@@ -17,11 +18,14 @@ interface UIState {
   setSelectedCommandId: (id: string | null) => void
   setSelectedStructId: (id: string | null) => void
   setMainView: (view: UIState['mainView']) => void
+  getRawModeForPlugin: (pluginId: string, fallback?: boolean) => boolean
+  setRawModeForPlugin: (pluginId: string, enabled: boolean) => void
+  clearRawModeForPlugin: (pluginId: string) => void
 }
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sidebarWidth: 280,
       previewWidth: 500,
       activeTab: 'meta',
@@ -29,6 +33,7 @@ export const useUIStore = create<UIState>()(
       selectedCommandId: null,
       selectedStructId: null,
       mainView: 'editor',
+      rawModeByPluginId: {},
 
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
       setPreviewWidth: (previewWidth) =>
@@ -37,13 +42,37 @@ export const useUIStore = create<UIState>()(
       setSelectedParameterId: (selectedParameterId) => set({ selectedParameterId }),
       setSelectedCommandId: (selectedCommandId) => set({ selectedCommandId }),
       setSelectedStructId: (selectedStructId) => set({ selectedStructId }),
-      setMainView: (mainView) => set({ mainView })
+      setMainView: (mainView) => set({ mainView }),
+      getRawModeForPlugin: (pluginId, fallback = false) =>
+        get().rawModeByPluginId[pluginId] ?? fallback,
+      setRawModeForPlugin: (pluginId, enabled) =>
+        set((state) => {
+          if (state.rawModeByPluginId[pluginId] === enabled) {
+            return {}
+          }
+          return {
+            rawModeByPluginId: {
+              ...state.rawModeByPluginId,
+              [pluginId]: enabled
+            }
+          }
+        }),
+      clearRawModeForPlugin: (pluginId) =>
+        set((state) => {
+          if (!(pluginId in state.rawModeByPluginId)) {
+            return {}
+          }
+          const next = { ...state.rawModeByPluginId }
+          delete next[pluginId]
+          return { rawModeByPluginId: next }
+        })
     }),
     {
       name: 'mz-plugin-studio-ui',
       partialize: (state) => ({
         sidebarWidth: state.sidebarWidth,
-        previewWidth: state.previewWidth
+        previewWidth: state.previewWidth,
+        rawModeByPluginId: state.rawModeByPluginId
       })
     }
   )
