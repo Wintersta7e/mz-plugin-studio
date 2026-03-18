@@ -44,12 +44,12 @@
     "clsx": "^2.1.1",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.3",
-    "framer-motion": "^12.35.2",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^13.0.0",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
