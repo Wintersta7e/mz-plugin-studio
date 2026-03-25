@@ -4,7 +4,28 @@ import { usePluginStore } from './pluginStore'
 
 /** Lightweight fingerprint to detect duplicate consecutive pushes */
 function pluginFingerprint(plugin: PluginDefinition): string {
-  return `${plugin.id}:${plugin.meta.name}:${plugin.parameters.length}:${plugin.commands.length}:${plugin.structs.length}:${plugin.customCode?.length ?? 0}:${plugin.meta.description?.length ?? 0}`
+  return JSON.stringify({
+    id: plugin.id,
+    meta: plugin.meta,
+    params: plugin.parameters.map((p) => ({
+      n: p.name,
+      t: p.type,
+      d: p.default,
+      desc: p.desc,
+      parent: p.parent,
+      options: p.options
+    })),
+    cmds: plugin.commands.map((c) => ({
+      n: c.name,
+      d: c.desc,
+      args: c.args.map((a) => ({ n: a.name, t: a.type, d: a.default }))
+    })),
+    structs: plugin.structs.map((s) => ({
+      n: s.name,
+      params: s.parameters.map((p) => ({ n: p.name, t: p.type, d: p.default }))
+    })),
+    code: plugin.customCode?.length ?? 0
+  })
 }
 
 interface HistoryEntry {
@@ -42,10 +63,15 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
   push: (plugin) =>
     set((state) => {
+      // Strip rawSource to avoid retaining large strings in history
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { rawSource: _raw, ...pluginSnapshot } = plugin
+      const entry = { plugin: pluginSnapshot as PluginDefinition, timestamp: Date.now() }
+
       // If plugin switched without explicit setActivePluginId, clear history
       if (state.activePluginId !== null && plugin.id !== state.activePluginId) {
         return {
-          past: [{ plugin, timestamp: Date.now() }],
+          past: [entry],
           future: [],
           activePluginId: plugin.id
         }
@@ -56,7 +82,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
         return {}
       }
       return {
-        past: [...state.past.slice(-49), { plugin, timestamp: Date.now() }],
+        past: [...state.past.slice(-49), entry],
         future: [],
         activePluginId: plugin.id
       }
@@ -92,7 +118,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     return next.plugin
   },
 
-  clear: () => set({ past: [], future: [] }),
+  clear: () => set({ past: [], future: [], activePluginId: null }),
   canUndo: () => get().past.length > 0,
   canRedo: () => get().future.length > 0
 }))

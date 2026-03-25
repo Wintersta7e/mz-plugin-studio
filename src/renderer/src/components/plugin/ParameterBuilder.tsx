@@ -636,10 +636,11 @@ function OptionsEditor({
 
   const [localText, setLocalText] = useState(() => serialize(param.options))
 
-  // Sync from store when options change externally (e.g. undo, import)
+  // Sync from store when param or options change externally (e.g. undo, import, preset apply)
+  const serializedOptions = JSON.stringify(param.options)
   useEffect(() => {
     setLocalText(serialize(param.options))
-  }, [param.id])
+  }, [param.id, serializedOptions])
 
   const commitOptions = (text: string) => {
     const options = text

@@ -71,7 +71,9 @@ export const useSettingsStore = create<SettingsState>()(
 
       setDebugLogging: (debug) => {
         set({ debugLogging: debug })
-        window.api.log.setLevel(debug)
+        if (typeof window !== 'undefined' && window.api?.log?.setLevel) {
+          window.api.log.setLevel(debug)
+        }
       }
     }),
     {

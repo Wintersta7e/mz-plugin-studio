@@ -337,16 +337,15 @@ export const usePluginStore = create<PluginState>()(
             savedPath: getPluginSavedPath(state.savedPathsByPluginId, plugin.id)
           }
         }),
-      closePlugin: (id) =>
+      closePlugin: (id) => {
+        // Clean up raw mode and history BEFORE state switch (avoids async race)
+        import('./uiStore').then(({ useUIStore }) => {
+          useUIStore.getState().clearRawModeForPlugin(id)
+        })
+        import('./historyStore').then(({ useHistoryStore }) => {
+          useHistoryStore.getState().clear()
+        })
         set((state) => {
-          // Clean up raw mode and history for the closed plugin
-          import('./uiStore').then(({ useUIStore }) => {
-            useUIStore.getState().clearRawModeForPlugin(id)
-          })
-          import('./historyStore').then(({ useHistoryStore }) => {
-            const hist = useHistoryStore.getState()
-            if (hist.activePluginId === id) hist.clear()
-          })
           const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
           const dirtyByPluginId = markPluginDirty(state.dirtyByPluginId, id, false)
           const savedPathsByPluginId = setPluginSavedPath(state.savedPathsByPluginId, id, null)
@@ -369,7 +368,8 @@ export const usePluginStore = create<PluginState>()(
             dirtyByPluginId,
             savedPathsByPluginId
           }
-        }),
+        })
+      },
       setActivePlugin: (id) =>
         set((state) => {
           const syncedOpenPlugins =
