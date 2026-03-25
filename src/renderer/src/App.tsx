@@ -41,6 +41,7 @@ function App() {
   const setLoading = useProjectStore((s) => s.setLoading)
   const setError = useProjectStore((s) => s.setError)
   const setAllGameData = useProjectStore((s) => s.setAllGameData)
+  const scanDependencies = useProjectStore((s) => s.scanDependencies)
   const recentProjects = useProjectStore((s) => s.recentProjects)
 
   const plugin = usePluginStore((s) => s.plugin)
@@ -195,13 +196,16 @@ function App() {
           classes,
           troops
         })
+
+        // Scan after all game data is loaded (not via setTimeout in setProject)
+        await scanDependencies()
       } catch (error) {
         setError(String(error))
       } finally {
         setLoading(false)
       }
     },
-    [setLoading, setError, setProject, addRecentProject, setAllGameData]
+    [setLoading, setError, setProject, addRecentProject, setAllGameData, scanDependencies]
   )
 
   const handleOpenProject = useCallback(async () => {

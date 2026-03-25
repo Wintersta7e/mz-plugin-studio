@@ -114,10 +114,7 @@ export const useProjectStore = create<ProjectState>()(
 
       setProject: (project) => {
         set({ project, error: null })
-        // Auto-scan dependencies when project is loaded
-        if (project) {
-          setTimeout(() => get().scanDependencies(), 0)
-        } else {
+        if (!project) {
           set({ dependencyReport: null, conflictReport: null })
         }
       },
