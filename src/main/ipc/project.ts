@@ -2,17 +2,20 @@ import { IpcMain, IpcMainInvokeEvent } from 'electron'
 import log from 'electron-log/main'
 import { ProjectParser } from '../services/projectParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
+import { assertSafeProjectPath } from '../../shared/path-safety'
 
 export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_VALIDATE,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       log.debug(`[project:validate] ${path}`)
       return ProjectParser.validateProject(path)
     }
   )
 
   ipcMain.handle(IPC_CHANNELS.PROJECT_LOAD, async (_event: IpcMainInvokeEvent, path: string) => {
+    assertSafeProjectPath(path)
     const result = await ProjectParser.parseProject(path)
     log.info(
       `[project:load] "${result.gameTitle}" — ${result.actors.length} actors, ${result.items.length} items, ${result.maps.length} maps`
@@ -23,6 +26,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_SWITCHES,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getSwitches(path)
     }
   )
@@ -30,6 +34,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_VARIABLES,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getVariables(path)
     }
   )
@@ -37,6 +42,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_ACTORS,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getActors(path)
     }
   )
@@ -44,6 +50,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_ITEMS,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getItems(path)
     }
   )
@@ -51,6 +58,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_MAPS,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getMaps(path)
     }
   )
@@ -58,6 +66,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PROJECT_GET_PLUGINS,
     async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       return ProjectParser.getPlugins(path)
     }
   )
@@ -78,6 +87,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
   for (const { channel, method } of DATA_CHANNELS) {
     ipcMain.handle(channel, async (_event: IpcMainInvokeEvent, path: string) => {
+      assertSafeProjectPath(path)
       log.debug(`[${channel}] ${path}`)
       return ProjectParser[method](path)
     })

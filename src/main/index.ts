@@ -42,7 +42,7 @@ function createWindow(): void {
     try {
       const parsed = new URL(details.url)
       if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-        shell.openExternal(details.url)
+        shell.openExternal(parsed.href)
       }
     } catch {
       // Ignore malformed URLs
@@ -106,7 +106,7 @@ app.whenReady().then(() => {
   // Monaco editor loads from cdn.jsdelivr.net — must be allowed in script-src
   const monacoCdn = 'https://cdn.jsdelivr.net'
   const csp = is.dev
-    ? `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; connect-src 'self' ws: http://localhost:*; worker-src 'self' blob: ${monacoCdn}`
+    ? `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:*; worker-src 'self' blob: ${monacoCdn}`
     : `default-src 'self'; script-src 'self' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; worker-src 'self' blob: ${monacoCdn}`
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

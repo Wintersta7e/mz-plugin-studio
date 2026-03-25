@@ -1,7 +1,7 @@
 import { normalize, resolve, basename, extname } from 'path'
 
 /** Allowed file extensions for read/write-by-path operations */
-const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json'])
+const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json', '.md', '.ts'])
 
 /**
  * Validate that a file path is safe for read/write operations.
@@ -28,6 +28,9 @@ export function assertSafeFilePath(filePath: string): void {
 export function assertSafeFilename(filename: string): void {
   if (filename !== basename(filename) || filename.includes('..')) {
     throw new Error('Invalid filename: must not contain path separators or traversal')
+  }
+  if (!filename.endsWith('.js')) {
+    throw new Error('Invalid filename: must have .js extension')
   }
 }
 
