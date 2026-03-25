@@ -19,7 +19,7 @@ import type {
   MZCommonEvent,
   MZClass,
   MZTroop
-} from '../../renderer/src/types/mz'
+} from '../../shared/types/mz'
 
 export class ProjectParser {
   static async validateProject(path: string): Promise<{ valid: boolean; error?: string }> {

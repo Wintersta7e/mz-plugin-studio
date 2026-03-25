@@ -3,13 +3,13 @@ import { IPC_CHANNELS } from '../shared/ipc-types'
 
 export interface ProjectAPI {
   validate: (path: string) => Promise<{ valid: boolean; error?: string }>
-  load: (path: string) => Promise<import('../renderer/src/types/mz').MZProject>
-  getSwitches: (path: string) => Promise<import('../renderer/src/types/mz').MZSwitch[]>
-  getVariables: (path: string) => Promise<import('../renderer/src/types/mz').MZVariable[]>
-  getActors: (path: string) => Promise<import('../renderer/src/types/mz').MZActor[]>
-  getItems: (path: string) => Promise<import('../renderer/src/types/mz').MZItem[]>
-  getMaps: (path: string) => Promise<import('../renderer/src/types/mz').MZMapInfo[]>
-  getPlugins: (path: string) => Promise<import('../renderer/src/types/mz').MZPluginEntry[]>
+  load: (path: string) => Promise<import('../shared/types/mz').MZProject>
+  getSwitches: (path: string) => Promise<import('../shared/types/mz').MZSwitch[]>
+  getVariables: (path: string) => Promise<import('../shared/types/mz').MZVariable[]>
+  getActors: (path: string) => Promise<import('../shared/types/mz').MZActor[]>
+  getItems: (path: string) => Promise<import('../shared/types/mz').MZItem[]>
+  getMaps: (path: string) => Promise<import('../shared/types/mz').MZMapInfo[]>
+  getPlugins: (path: string) => Promise<import('../shared/types/mz').MZPluginEntry[]>
   getSkills: (path: string) => Promise<{ id: number; name: string }[]>
   getWeapons: (path: string) => Promise<{ id: number; name: string }[]>
   getArmors: (path: string) => Promise<{ id: number; name: string }[]>
@@ -32,8 +32,8 @@ export interface PluginAPI {
   load: (
     projectPath: string,
     filename: string
-  ) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
-  parse: (content: string) => Promise<import('../renderer/src/types/plugin').PluginDefinition>
+  ) => Promise<import('../shared/types/plugin').PluginDefinition>
+  parse: (content: string) => Promise<import('../shared/types/plugin').PluginDefinition>
   readRaw: (projectPath: string, filename: string) => Promise<string>
   list: (projectPath: string) => Promise<string[]>
   readByPath: (filePath: string) => Promise<string>
