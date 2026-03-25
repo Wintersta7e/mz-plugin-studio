@@ -1,4 +1,4 @@
-import { IpcMain, IpcMainInvokeEvent } from 'electron'
+import { type IpcMain, type IpcMainInvokeEvent } from 'electron'
 import { readFile, readdir, writeFile, access, mkdir } from 'fs/promises'
 import { join, dirname } from 'path'
 import log from 'electron-log/main'

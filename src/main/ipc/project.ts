@@ -1,4 +1,4 @@
-import { IpcMain, IpcMainInvokeEvent } from 'electron'
+import { type IpcMain, type IpcMainInvokeEvent } from 'electron'
 import log from 'electron-log/main'
 import { ProjectParser } from '../services/projectParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'

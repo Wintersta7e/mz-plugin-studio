@@ -1,4 +1,4 @@
-import { IpcMain, IpcMainInvokeEvent, Dialog } from 'electron'
+import { type IpcMain, type IpcMainInvokeEvent, type Dialog } from 'electron'
 import log from 'electron-log/main'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 

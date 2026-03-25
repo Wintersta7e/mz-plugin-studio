@@ -64,7 +64,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
   push: (plugin) =>
     set((state) => {
       // Strip rawSource to avoid retaining large strings in history
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
       const { rawSource: _raw, ...pluginSnapshot } = plugin
       const entry = { plugin: pluginSnapshot as PluginDefinition, timestamp: Date.now() }
 

@@ -45,7 +45,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   useEffect(() => {
-    return () => timersRef.current.forEach(clearTimeout)
+    const timers = timersRef.current
+    return () => timers.forEach(clearTimeout)
   }, [])
 
   const handleClearRecentProjects = () => {

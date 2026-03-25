@@ -734,6 +734,7 @@ function OptionsEditor({
   const serializedOptions = JSON.stringify(param.options)
   useEffect(() => {
     setLocalText(serialize(param.options))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serializedOptions tracks param.options
   }, [param.id, serializedOptions])
 
   const commitOptions = (text: string) => {

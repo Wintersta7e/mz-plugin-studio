@@ -1,5 +1,5 @@
 import { autoUpdater } from 'electron-updater'
-import { BrowserWindow, ipcMain } from 'electron'
+import { type BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
