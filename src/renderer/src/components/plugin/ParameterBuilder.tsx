@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -429,53 +429,30 @@ export function ParameterBuilder() {
             </div>
           ) : (
             parameters.map((param) => (
-              <motion.div key={param.id} layout={draggedId !== null} transition={paramCardSpring}>
-                <ParameterCard
-                  param={param}
-                  expanded={expandedId === param.id}
-                  isSelected={selectedIds.has(param.id)}
-                  onToggleSelect={() => toggleSelect(param.id)}
-                  onToggle={() => setExpandedId(expandedId === param.id ? null : param.id)}
-                  onUpdate={(updates) => {
-                    updateParameter(param.id, updates)
-                    if (
-                      (updates.name !== undefined && updates.name !== param.name) ||
-                      (updates.type !== undefined && updates.type !== param.type)
-                    ) {
-                      const current = customCode || ''
-                      const oldComment = generateParameterComment(param)
-                      const newComment = generateParameterComment({
-                        ...param,
-                        ...updates
-                      } as PluginParameter)
-                      const updated = current.replace(oldComment, newComment)
-                      if (updated !== current) {
-                        setCustomCode(updated)
-                      }
-                    }
-                  }}
-                  onDelete={() => {
-                    removeParameter(param.id)
-                    setSelectedIds((prev) => {
-                      if (!prev.has(param.id)) return prev
-                      const next = new Set(prev)
-                      next.delete(param.id)
-                      return next
-                    })
-                  }}
-                  onDragStart={(e) => handleDragStart(e, param.id)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, param.id)}
-                  isDragging={draggedId === param.id}
-                  structs={structNames}
-                  allStructs={structs}
-                  switches={switches}
-                  variables={variables}
-                  actors={actors}
-                  items={items}
-                />
-              </motion.div>
+              <MemoizedParamRow
+                key={param.id}
+                param={param}
+                expandedId={expandedId}
+                selectedIds={selectedIds}
+                draggedId={draggedId}
+                customCode={customCode}
+                toggleSelect={toggleSelect}
+                setExpandedId={setExpandedId}
+                updateParameter={updateParameter}
+                removeParameter={removeParameter}
+                setCustomCode={setCustomCode}
+                setSelectedIds={setSelectedIds}
+                handleDragStart={handleDragStart}
+                handleDragEnd={handleDragEnd}
+                handleDragOver={handleDragOver}
+                handleDrop={handleDrop}
+                structNames={structNames}
+                structs={structs}
+                switches={switches}
+                variables={variables}
+                actors={actors}
+                items={items}
+              />
             ))
           )}
         </div>
@@ -602,6 +579,123 @@ export function ParameterBuilder() {
   )
 }
 
+/** Thin wrapper that binds param.id into stable callbacks for ParameterCard memo */
+const MemoizedParamRow = memo(function MemoizedParamRow({
+  param,
+  expandedId,
+  selectedIds,
+  draggedId,
+  customCode,
+  toggleSelect,
+  setExpandedId,
+  updateParameter,
+  removeParameter,
+  setCustomCode,
+  setSelectedIds,
+  handleDragStart,
+  handleDragEnd,
+  handleDragOver,
+  handleDrop,
+  structNames,
+  structs,
+  switches,
+  variables,
+  actors,
+  items
+}: {
+  param: PluginParameter
+  expandedId: string | null
+  selectedIds: Set<string>
+  draggedId: string | null
+  customCode: string | undefined
+  toggleSelect: (id: string) => void
+  setExpandedId: (id: string | null) => void
+  updateParameter: (id: string, updates: Partial<PluginParameter>) => void
+  removeParameter: (id: string) => void
+  setCustomCode: (code: string) => void
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>
+  handleDragStart: (e: React.DragEvent, id: string) => void
+  handleDragEnd: () => void
+  handleDragOver: (e: React.DragEvent) => void
+  handleDrop: (e: React.DragEvent, id: string) => void
+  structNames: string[]
+  structs: PluginStruct[]
+  switches: { id: number; name: string }[]
+  variables: { id: number; name: string }[]
+  actors: { id: number; name: string }[]
+  items: { id: number; name: string }[]
+}) {
+  const onUpdate = useCallback(
+    (updates: Partial<PluginParameter>) => {
+      updateParameter(param.id, updates)
+      if (
+        (updates.name !== undefined && updates.name !== param.name) ||
+        (updates.type !== undefined && updates.type !== param.type)
+      ) {
+        const current = customCode || ''
+        const oldComment = generateParameterComment(param)
+        const newComment = generateParameterComment({ ...param, ...updates } as PluginParameter)
+        const updated = current.replace(oldComment, newComment)
+        if (updated !== current) {
+          setCustomCode(updated)
+        }
+      }
+    },
+    [param, customCode, updateParameter, setCustomCode]
+  )
+
+  const onDelete = useCallback(() => {
+    removeParameter(param.id)
+    setSelectedIds((prev) => {
+      if (!prev.has(param.id)) return prev
+      const next = new Set(prev)
+      next.delete(param.id)
+      return next
+    })
+  }, [param.id, removeParameter, setSelectedIds])
+
+  const onDragStart = useCallback(
+    (e: React.DragEvent) => handleDragStart(e, param.id),
+    [param.id, handleDragStart]
+  )
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => handleDrop(e, param.id),
+    [param.id, handleDrop]
+  )
+
+  const onToggleSelect = useCallback(() => toggleSelect(param.id), [param.id, toggleSelect])
+  const onToggle = useCallback(
+    () => setExpandedId(expandedId === param.id ? null : param.id),
+    [param.id, expandedId, setExpandedId]
+  )
+
+  return (
+    <motion.div layout={draggedId !== null} transition={paramCardSpring}>
+      <ParameterCard
+        param={param}
+        expanded={expandedId === param.id}
+        isSelected={selectedIds.has(param.id)}
+        onToggleSelect={onToggleSelect}
+        onToggle={onToggle}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onDragStart={onDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDrop={onDrop}
+        isDragging={draggedId === param.id}
+        structs={structNames}
+        allStructs={structs}
+        switches={switches}
+        variables={variables}
+        actors={actors}
+        items={items}
+      />
+    </motion.div>
+  )
+})
+
 interface ParameterCardProps {
   param: PluginParameter
   expanded: boolean
@@ -676,7 +770,7 @@ function OptionsEditor({
   )
 }
 
-function ParameterCard({
+const ParameterCard = memo(function ParameterCard({
   param,
   expanded,
   isSelected,
@@ -1080,4 +1174,4 @@ function ParameterCard({
       </AnimatePresence>
     </div>
   )
-}
+})
