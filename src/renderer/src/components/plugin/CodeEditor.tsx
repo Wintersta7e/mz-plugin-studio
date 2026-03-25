@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import type { editor, IDisposable } from 'monaco-editor'
 import { Wand2 } from 'lucide-react'
@@ -8,7 +8,7 @@ import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
 
 export function CodeEditor() {
-  const plugin = usePluginStore((s) => s.plugin)
+  const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
 
@@ -45,11 +45,25 @@ export function CodeEditor() {
     [setCustomCode]
   )
 
+  const editorOptions = useMemo(
+    () => ({
+      readOnly: false,
+      minimap: { enabled: editorMinimap },
+      fontSize: editorFontSize,
+      lineNumbers: editorLineNumbers ? ('on' as const) : ('off' as const),
+      wordWrap: editorWordWrap ? ('on' as const) : ('off' as const),
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
+      padding: { top: 16, bottom: 16 }
+    }),
+    [editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
+  )
+
   const handleInsertTemplate = (code: string) => {
     const ed = editorRef.current
     if (!ed) {
       // Fallback: append to store value
-      setCustomCode((plugin.customCode?.trim() ? plugin.customCode + '\n\n' : '') + code)
+      setCustomCode((customCode?.trim() ? customCode + '\n\n' : '') + code)
       return
     }
 
@@ -112,21 +126,12 @@ export function CodeEditor() {
         <Editor
           height="100%"
           language="javascript"
-          value={plugin.customCode || ''}
+          value={customCode || ''}
           theme={theme === 'dark' ? 'vs-dark' : 'vs'}
           beforeMount={handleBeforeMount}
           onMount={handleMount}
           onChange={handleChange}
-          options={{
-            readOnly: false,
-            minimap: { enabled: editorMinimap },
-            fontSize: editorFontSize,
-            lineNumbers: editorLineNumbers ? 'on' : 'off',
-            wordWrap: editorWordWrap ? 'on' : 'off',
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
-            padding: { top: 16, bottom: 16 }
-          }}
+          options={editorOptions}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   X,
   ChevronDown,
@@ -146,21 +146,23 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
   }
 
-  // Count named items only
-  const namedSwitches = switches.filter((s) => s.name && s.name.trim() !== '')
-  const namedVariables = variables.filter((v) => v.name && v.name.trim() !== '')
-  const namedActors = actors.filter((a) => a.name && a.name.trim() !== '')
-  const namedItems = items.filter((i) => i.name && i.name.trim() !== '')
-  const namedSkills = skills.filter((s) => s.name && s.name.trim() !== '')
-  const namedWeapons = weapons.filter((w) => w.name && w.name.trim() !== '')
-  const namedArmors = armors.filter((a) => a.name && a.name.trim() !== '')
-  const namedEnemies = enemies.filter((e) => e.name && e.name.trim() !== '')
-  const namedStates = states.filter((s) => s.name && s.name.trim() !== '')
-  const namedAnimations = animations.filter((a) => a.name && a.name.trim() !== '')
-  const namedTilesets = tilesets.filter((t) => t.name && t.name.trim() !== '')
-  const namedCommonEvents = commonEvents.filter((c) => c.name && c.name.trim() !== '')
-  const namedClasses = classes.filter((c) => c.name && c.name.trim() !== '')
-  const namedTroops = troops.filter((t) => t.name && t.name.trim() !== '')
+  // Count named items only (memoized to avoid O(n) scans on unrelated re-renders)
+  const filterNamed = <T extends { name: string }>(arr: T[]): T[] =>
+    arr.filter((x) => x.name?.trim())
+  const namedSwitches = useMemo(() => filterNamed(switches), [switches])
+  const namedVariables = useMemo(() => filterNamed(variables), [variables])
+  const namedActors = useMemo(() => filterNamed(actors), [actors])
+  const namedItems = useMemo(() => filterNamed(items), [items])
+  const namedSkills = useMemo(() => filterNamed(skills), [skills])
+  const namedWeapons = useMemo(() => filterNamed(weapons), [weapons])
+  const namedArmors = useMemo(() => filterNamed(armors), [armors])
+  const namedEnemies = useMemo(() => filterNamed(enemies), [enemies])
+  const namedStates = useMemo(() => filterNamed(states), [states])
+  const namedAnimations = useMemo(() => filterNamed(animations), [animations])
+  const namedTilesets = useMemo(() => filterNamed(tilesets), [tilesets])
+  const namedCommonEvents = useMemo(() => filterNamed(commonEvents), [commonEvents])
+  const namedClasses = useMemo(() => filterNamed(classes), [classes])
+  const namedTroops = useMemo(() => filterNamed(troops), [troops])
 
   if (!project) {
     return (

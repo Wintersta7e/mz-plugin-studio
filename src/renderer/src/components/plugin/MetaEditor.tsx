@@ -11,13 +11,13 @@ import { generateHelpText } from '../../lib/exportFormats'
 import type { LocalizedContent, NoteParam } from '../../types/plugin'
 
 export function MetaEditor() {
-  const plugin = usePluginStore((s) => s.plugin)
+  const meta = usePluginStore((s) => s.plugin.meta)
   const updateMeta = usePluginStore((s) => s.updateMeta)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
   const [showPluginNames, setShowPluginNames] = useState(false)
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
-    const currentLocalizations = plugin.meta.localizations || {}
+    const currentLocalizations = meta.localizations || {}
     const currentLang = currentLocalizations[lang] || {}
     updateMeta({
       localizations: {
@@ -28,20 +28,21 @@ export function MetaEditor() {
   }
 
   const getLocalization = (lang: string): LocalizedContent => {
-    return plugin.meta.localizations?.[lang] || { description: '', help: '' }
+    return meta.localizations?.[lang] || { description: '', help: '' }
   }
 
   const handleAutoGenerateHelp = useCallback(() => {
-    const currentHelp = plugin.meta.help
+    const currentHelp = meta.help
 
     if (currentHelp && currentHelp.trim()) {
       const confirmed = window.confirm('This will replace the existing help text. Continue?')
       if (!confirmed) return
     }
 
-    const helpText = generateHelpText(plugin)
+    const fullPlugin = usePluginStore.getState().plugin
+    const helpText = generateHelpText(fullPlugin)
     updateMeta({ help: helpText })
-  }, [plugin, updateMeta])
+  }, [meta.help, updateMeta])
 
   return (
     <div className="space-y-4 p-4">
@@ -53,7 +54,7 @@ export function MetaEditor() {
             <Label htmlFor="name">Plugin Name</Label>
             <Input
               id="name"
-              value={plugin.meta.name}
+              value={meta.name}
               onChange={(e) => updateMeta({ name: e.target.value })}
               placeholder="MyPlugin"
             />
@@ -63,7 +64,7 @@ export function MetaEditor() {
             <Label htmlFor="version">Version</Label>
             <Input
               id="version"
-              value={plugin.meta.version}
+              value={meta.version}
               onChange={(e) => updateMeta({ version: e.target.value })}
               placeholder="1.0.0"
             />
@@ -74,7 +75,7 @@ export function MetaEditor() {
           <Label htmlFor="author">Author</Label>
           <Input
             id="author"
-            value={plugin.meta.author}
+            value={meta.author}
             onChange={(e) => updateMeta({ author: e.target.value })}
             placeholder="Your name"
           />
@@ -84,7 +85,7 @@ export function MetaEditor() {
           <Label htmlFor="url">URL</Label>
           <Input
             id="url"
-            value={plugin.meta.url}
+            value={meta.url}
             onChange={(e) => updateMeta({ url: e.target.value })}
             placeholder="https://example.com"
           />
@@ -105,7 +106,7 @@ export function MetaEditor() {
                 <Label htmlFor="description-en">Description</Label>
                 <Textarea
                   id="description-en"
-                  value={plugin.meta.description}
+                  value={meta.description}
                   onChange={(e) => updateMeta({ description: e.target.value })}
                   placeholder="A brief description of your plugin"
                   rows={2}
@@ -127,7 +128,7 @@ export function MetaEditor() {
                 </div>
                 <Textarea
                   id="help-en"
-                  value={plugin.meta.help}
+                  value={meta.help}
                   onChange={(e) => updateMeta({ help: e.target.value })}
                   placeholder="Detailed help and usage instructions"
                   rows={6}
@@ -190,7 +191,7 @@ export function MetaEditor() {
           <Label htmlFor="dependencies">Dependencies (one per line)</Label>
           <Textarea
             id="dependencies"
-            value={plugin.meta.dependencies.join('\n')}
+            value={meta.dependencies.join('\n')}
             onChange={(e) =>
               updateMeta({
                 dependencies: e.target.value.split('\n').filter((s) => s.trim())
@@ -224,7 +225,7 @@ export function MetaEditor() {
           <Label htmlFor="orderAfter">Order After (one per line)</Label>
           <Textarea
             id="orderAfter"
-            value={(plugin.meta.orderAfter || []).join('\n')}
+            value={(meta.orderAfter || []).join('\n')}
             onChange={(e) =>
               updateMeta({
                 orderAfter: e.target.value.split('\n').filter((s) => s.trim())
@@ -241,7 +242,7 @@ export function MetaEditor() {
           <Label htmlFor="orderBefore">Order Before (one per line)</Label>
           <Textarea
             id="orderBefore"
-            value={(plugin.meta.orderBefore || []).join('\n')}
+            value={(meta.orderBefore || []).join('\n')}
             onChange={(e) =>
               updateMeta({
                 orderBefore: e.target.value.split('\n').filter((s) => s.trim())
@@ -263,7 +264,7 @@ export function MetaEditor() {
               size="sm"
               className="h-6 px-2 text-xs"
               onClick={() => {
-                const current = plugin.meta.noteParams || []
+                const current = meta.noteParams || []
                 updateMeta({
                   noteParams: [...current, { name: '', type: 'file' }]
                 })
@@ -273,19 +274,19 @@ export function MetaEditor() {
               Add
             </Button>
           </div>
-          {(plugin.meta.noteParams || []).length > 0 && (
+          {(meta.noteParams || []).length > 0 && (
             <div className="space-y-3 rounded-md border border-border p-3">
-              {(plugin.meta.noteParams || []).map((np, idx) => (
+              {(meta.noteParams || []).map((np, idx) => (
                 <NoteParamRow
                   key={idx}
                   noteParam={np}
                   onUpdate={(updates) => {
-                    const current = [...(plugin.meta.noteParams || [])]
+                    const current = [...(meta.noteParams || [])]
                     current[idx] = { ...current[idx], ...updates }
                     updateMeta({ noteParams: current })
                   }}
                   onDelete={() => {
-                    const current = [...(plugin.meta.noteParams || [])]
+                    const current = [...(meta.noteParams || [])]
                     current.splice(idx, 1)
                     updateMeta({ noteParams: current })
                   }}
@@ -302,7 +303,7 @@ export function MetaEditor() {
           <Label htmlFor="target">Target</Label>
           <Input
             id="target"
-            value={plugin.meta.target}
+            value={meta.target}
             onChange={(e) => updateMeta({ target: e.target.value })}
             placeholder="MZ"
           />

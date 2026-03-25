@@ -174,7 +174,7 @@ function highlightCode(code: string): React.ReactNode {
       // Build highlighted line
       for (const token of filteredTokens) {
         if (token.start > lastIndex) {
-          parts.unshift(
+          parts.push(
             <span key={`text-${lineIndex}-${partIndex++}`}>
               {remaining.slice(lastIndex, token.start)}
             </span>
@@ -186,7 +186,7 @@ function highlightCode(code: string): React.ReactNode {
             : token.type === 'string'
               ? 'text-amber-400'
               : 'text-blue-400'
-        parts.unshift(
+        parts.push(
           <span key={`${token.type}-${lineIndex}-${partIndex++}`} className={colorClass}>
             {token.text}
           </span>
@@ -195,17 +195,17 @@ function highlightCode(code: string): React.ReactNode {
       }
 
       if (lastIndex < remaining.length) {
-        parts.unshift(<span key={`rest-${lineIndex}`}>{remaining.slice(lastIndex)}</span>)
+        parts.push(<span key={`rest-${lineIndex}`}>{remaining.slice(lastIndex)}</span>)
       }
 
       if (parts.length === 0 && remaining) {
-        parts.unshift(<span key={`line-${lineIndex}`}>{remaining}</span>)
+        parts.push(<span key={`line-${lineIndex}`}>{remaining}</span>)
       }
     }
 
     return (
       <div key={lineIndex} className="whitespace-pre">
-        {parts.length > 0 ? parts.reverse() : ' '}
+        {parts.length > 0 ? parts : ' '}
       </div>
     )
   })
@@ -222,6 +222,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   )
   const [searchQuery, setSearchQuery] = useState('')
   const [copied, setCopied] = useState(false)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent' | 'all'>('category')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const insertButtonRef = useRef<HTMLButtonElement>(null)
@@ -419,7 +420,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     if (previewCode) {
       await navigator.clipboard.writeText(previewCode)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
     }
   }
 

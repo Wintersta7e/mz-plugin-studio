@@ -55,6 +55,20 @@ export function CodePreview() {
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
   const [badgeBounce, setBadgeBounce] = useState(false)
+
+  const previewOptions = useMemo(
+    () => ({
+      readOnly: true,
+      minimap: { enabled: editorMinimap },
+      fontSize: editorFontSize,
+      lineNumbers: editorLineNumbers ? ('on' as const) : ('off' as const),
+      scrollBeyondLastLine: false,
+      wordWrap: editorWordWrap ? ('on' as const) : ('off' as const),
+      automaticLayout: true,
+      padding: { top: 16, bottom: 16 }
+    }),
+    [editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
+  )
   const exportMenuRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef({ errors: 0, warnings: 0 })
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -421,16 +435,7 @@ export function CodePreview() {
             language="javascript"
             value={code}
             theme={theme === 'dark' ? 'vs-dark' : 'vs'}
-            options={{
-              readOnly: true,
-              minimap: { enabled: editorMinimap },
-              fontSize: editorFontSize,
-              lineNumbers: editorLineNumbers ? 'on' : 'off',
-              scrollBeyondLastLine: false,
-              wordWrap: editorWordWrap ? 'on' : 'off',
-              automaticLayout: true,
-              padding: { top: 16, bottom: 16 }
-            }}
+            options={previewOptions}
           />
         )}
       </div>

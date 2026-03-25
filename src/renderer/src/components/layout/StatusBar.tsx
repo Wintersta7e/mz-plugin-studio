@@ -9,7 +9,7 @@ export function StatusBar() {
   const project = useProjectStore((s) => s.project)
   const isDirty = usePluginStore((s) => s.isDirty)
   const savedPath = usePluginStore((s) => s.savedPath)
-  const plugin = usePluginStore((s) => s.plugin)
+  const pluginName = usePluginStore((s) => s.plugin.meta.name)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
 
   const [showIssues, setShowIssues] = useState(false)
@@ -58,9 +58,9 @@ export function StatusBar() {
     <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-xs text-muted-foreground">
       <div className="flex items-center gap-4">
         {project ? <span>Project: {project.gameTitle}</span> : <span>No project loaded</span>}
-        {plugin.meta.name && (
+        {pluginName && (
           <span>
-            Plugin: {plugin.meta.name}
+            Plugin: {pluginName}
             {isDirty && <span className="text-destructive"> (modified)</span>}
           </span>
         )}
