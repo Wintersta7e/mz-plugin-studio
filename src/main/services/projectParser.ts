@@ -49,13 +49,19 @@ export class ProjectParser {
     const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
     const system = JSON.parse(systemContent)
 
+    // Extract switches/variables directly from already-loaded system (avoids re-reading System.json)
+    const switches: MZSwitch[] = (system.switches || [])
+      .map((name: string | null, index: number) => ({ id: index, name: name || '' }))
+      .filter((s: MZSwitch) => s.id > 0 && s.name)
+    const variables: MZVariable[] = (system.variables || [])
+      .map((name: string | null, index: number) => ({ id: index, name: name || '' }))
+      .filter((v: MZVariable) => v.id > 0 && v.name)
+
     const [
       actors,
       items,
       maps,
       plugins,
-      switches,
-      variables,
       skills,
       weapons,
       armors,
@@ -71,8 +77,6 @@ export class ProjectParser {
       this.getItems(path),
       this.getMaps(path),
       this.getPlugins(path),
-      this.getSwitches(path),
-      this.getVariables(path),
       this.getSkills(path),
       this.getWeapons(path),
       this.getArmors(path),
@@ -89,8 +93,8 @@ export class ProjectParser {
       path,
       gameTitle: system.gameTitle || 'Untitled',
       system: {
-        switches: switches.map((s) => s.name),
-        variables: variables.map((v) => v.name)
+        switches: switches.map((s: MZSwitch) => s.name),
+        variables: variables.map((v: MZVariable) => v.name)
       },
       actors,
       items,

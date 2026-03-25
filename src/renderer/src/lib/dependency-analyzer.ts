@@ -148,7 +148,7 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
     issues,
     health,
     loadOrder: headers.map((h) => h.name),
-    pluginNames: headers.map((h) => h.name)
+    pluginNames: headers.map((h) => h.name) // Same as loadOrder; kept for backward compat
   }
 }
 
