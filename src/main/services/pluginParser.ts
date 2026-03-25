@@ -6,7 +6,7 @@ import type {
   ParamType,
   LocalizedContent,
   NoteParam
-} from '../../renderer/src/types/plugin'
+} from '../../shared/types/plugin'
 
 interface ParsedMeta {
   name: string
@@ -208,10 +208,14 @@ export class PluginParser {
 
     for (let i = 0; i < code.length; i++) {
       const char = code[i]
-      const prevChar = i > 0 ? code[i - 1] : ''
+
+      // Count consecutive backslashes before this character
+      let backslashes = 0
+      for (let j = i - 1; j >= 0 && code[j] === '\\'; j--) backslashes++
+      const isEscaped = backslashes % 2 !== 0
 
       // Handle string literals
-      if ((char === '"' || char === "'" || char === '`') && prevChar !== '\\') {
+      if ((char === '"' || char === "'" || char === '`') && !isEscaped) {
         if (!inString) {
           inString = true
           stringChar = char
