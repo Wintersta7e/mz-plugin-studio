@@ -69,8 +69,8 @@ describe('assertSafeFilePath', () => {
     expect(() => assertSafeFilePath('/home/user/noextension')).toThrow('not allowed')
   })
 
-  it('rejects .ts extension', () => {
-    expect(() => assertSafeFilePath('/home/user/code.ts')).toThrow('not allowed')
+  it('allows .ts extension (for .d.ts exports)', () => {
+    expect(() => assertSafeFilePath('/home/user/code.ts')).not.toThrow()
   })
 
   it('rejects .html extension', () => {
@@ -101,8 +101,8 @@ describe('assertSafeFilename', () => {
     expect(() => assertSafeFilename('my.plugin.v2.js')).not.toThrow()
   })
 
-  it('accepts filename without extension', () => {
-    expect(() => assertSafeFilename('README')).not.toThrow()
+  it('rejects filename without .js extension', () => {
+    expect(() => assertSafeFilename('README')).toThrow('must have .js extension')
   })
 
   it('accepts filename with spaces', () => {
@@ -158,9 +158,8 @@ describe('assertSafeFilename', () => {
 
   // --- Empty string ---
 
-  it('accepts empty string (basename of empty is empty, no ..)', () => {
-    // basename('') === '', and '' does not include '..'
-    expect(() => assertSafeFilename('')).not.toThrow()
+  it('rejects empty string (no .js extension)', () => {
+    expect(() => assertSafeFilename('')).toThrow('must have .js extension')
   })
 })
 

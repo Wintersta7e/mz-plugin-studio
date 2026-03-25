@@ -27,7 +27,8 @@ describe('historyStore', () => {
       useHistoryStore.getState().push(plugin)
 
       expect(useHistoryStore.getState().past).toHaveLength(1)
-      expect(useHistoryStore.getState().past[0].plugin).toBe(plugin)
+      expect(useHistoryStore.getState().past[0].plugin.id).toBe(plugin.id)
+      expect(useHistoryStore.getState().past[0].plugin.meta.name).toBe(plugin.meta.name)
       expect(useHistoryStore.getState().activePluginId).toBe(plugin.id)
     })
 
@@ -112,7 +113,7 @@ describe('historyStore', () => {
       usePluginStore.getState().openPlugin(pluginV2)
 
       const result = useHistoryStore.getState().undo()
-      expect(result).toBe(pluginV2) // last entry in past
+      expect(result?.id).toBe(pluginV2.id) // last entry in past (rawSource stripped)
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future).toHaveLength(1)
       expect(useHistoryStore.getState().future[0].plugin.id).toBe(pluginV2.id)
