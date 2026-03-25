@@ -510,7 +510,8 @@ export function generateRawMode(plugin: PluginDefinition): string {
       (p) =>
         !p.name.includes('---') &&
         !p.name.includes('===') &&
-        !output.includes(`params['${p.name}']`)
+        !output.includes(`params['${p.name}']`) &&
+        !output.includes(`params["${p.name}"]`)
     )
     if (newParams.length > 0) {
       const pluginName = plugin.meta.name || 'NewPlugin'
@@ -564,6 +565,7 @@ export function generateRawMode(plugin: PluginDefinition): string {
   const newCommands = plugin.commands.filter(
     (cmd) =>
       !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+      !output.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
       !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
       !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
   )
@@ -642,10 +644,9 @@ export function generateBodyPreserved(plugin: PluginDefinition): string {
 }
 
 /**
- * Generate parameter parsing expression
+ * Generate a parsing expression for a parameter/argument accessor.
  */
-function generateParamParser(param: PluginParameter): string {
-  const accessor = `params['${param.name}']`
+function generateAccessorParser(accessor: string, param: PluginParameter): string {
   const defaultVal = formatJSDefault(param.default, param.type)
 
   switch (param.type) {
@@ -695,58 +696,12 @@ function generateParamParser(param: PluginParameter): string {
   }
 }
 
-/**
- * Generate command argument parsing expression
- */
+function generateParamParser(param: PluginParameter): string {
+  return generateAccessorParser(`params['${param.name}']`, param)
+}
+
 function generateArgParser(arg: PluginParameter): string {
-  const accessor = `args['${arg.name}']`
-  const defaultVal = formatJSDefault(arg.default, arg.type)
-
-  switch (arg.type) {
-    case 'number':
-      return `Number(${accessor} || ${defaultVal})`
-
-    case 'boolean':
-      return `${accessor} === 'true'`
-
-    case 'struct': {
-      const fallback =
-        arg.default && typeof arg.default === 'string' && arg.default !== ''
-          ? arg.default.replace(/'/g, "\\'")
-          : '{}'
-      return `JSON.parse(${accessor} || '${fallback}')`
-    }
-
-    case 'array':
-      return `JSON.parse(${accessor} || '[]')`
-
-    case 'variable':
-    case 'switch':
-    case 'actor':
-    case 'class':
-    case 'skill':
-    case 'item':
-    case 'weapon':
-    case 'armor':
-    case 'enemy':
-    case 'troop':
-    case 'state':
-    case 'animation':
-    case 'tileset':
-    case 'common_event':
-    case 'icon':
-    case 'map':
-      return `Number(${accessor} || ${defaultVal})`
-
-    case 'color':
-    case 'text':
-    case 'combo':
-    case 'hidden':
-      return `${accessor} || ${defaultVal}`
-
-    default:
-      return `${accessor} || ${defaultVal}`
-  }
+  return generateAccessorParser(`args['${arg.name}']`, arg)
 }
 
 /**
