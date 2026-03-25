@@ -37,7 +37,7 @@ export function deserializeParams(content: string): {
   error?: string
 } {
   try {
-    const data = JSON.parse(content)
+    const data: { version?: number; parameters?: unknown[]; source?: string } = JSON.parse(content)
 
     if (data.version !== 1 || !Array.isArray(data.parameters)) {
       return {
@@ -49,7 +49,7 @@ export function deserializeParams(content: string): {
     }
 
     const params = data.parameters.filter(isValidParam).map((p) => ({
-      ...(p as PluginParameter),
+      ...(p as unknown as PluginParameter),
       id: crypto.randomUUID()
     }))
 

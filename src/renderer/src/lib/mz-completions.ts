@@ -6,7 +6,7 @@
  */
 
 import type { Monaco } from '@monaco-editor/react'
-import type { IDisposable, languages } from 'monaco-editor'
+import type { IDisposable, languages, editor, Position } from 'monaco-editor'
 import { getAllClassNames, getClassInfo } from './generator/class-registry'
 
 // Pre-computed class data (static, built once on first use)
@@ -60,7 +60,7 @@ const MZ_GLOBALS: { name: string; description: string }[] = [
 
 export function registerMZCompletions(monaco: Monaco): IDisposable {
   return monaco.languages.registerCompletionItemProvider('javascript', {
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: (model: editor.ITextModel, position: Position) => {
       const word = model.getWordUntilPosition(position)
       const range = {
         startLineNumber: position.lineNumber,
