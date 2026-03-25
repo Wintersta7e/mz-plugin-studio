@@ -183,42 +183,51 @@ Output will be in the `dist/` folder.
 ```
 src/
 ├── main/                    # Electron main process
-│   ├── index.ts             # Window creation, app lifecycle
+│   ├── index.ts             # Window creation, app lifecycle, CSP
 │   ├── updater.ts           # Auto-update (GitHub Releases)
 │   ├── ipc/                 # IPC handlers
 │   │   ├── dialog.ts        # File dialogs
 │   │   ├── plugin.ts        # Plugin load/save/parse
 │   │   └── project.ts       # MZ project loading
 │   └── services/
-│       └── pluginParser.ts  # Parse existing plugins
+│       ├── pluginParser.ts  # Parse existing .js plugins
+│       └── projectParser.ts # Parse MZ project data
 ├── preload/
-│   └── index.ts             # Context bridge (window.api)
-├── shared/
+│   └── index.ts             # Context bridge (window.api), API type exports
+├── shared/                  # Shared across main, preload, and renderer
+│   ├── types/
+│   │   ├── plugin.ts        # Plugin definition types + factory functions
+│   │   └── mz.ts            # RPG Maker MZ project types
 │   ├── ipc-types.ts         # Typed IPC channel constants
-│   ├── override-extractor.ts # Prototype override extraction (shared main/renderer)
-│   └── path-safety.ts      # Path validation for IPC handlers
+│   ├── override-extractor.ts # Prototype override extraction
+│   └── path-safety.ts       # Path validation for IPC handlers
 └── renderer/src/            # React frontend
     ├── components/
-    │   ├── plugin/          # Main editors
+    │   ├── plugin/          # Main editors (ParameterBuilder, CodeEditor, etc.)
     │   ├── preview/         # CodePreview, DiffView
+    │   ├── project/         # ProjectBrowser
     │   ├── analysis/        # AnalysisView (conflicts + dependencies)
+    │   ├── layout/          # Sidebar, StatusBar, TitleBar
     │   ├── settings/        # SettingsDialog, ShortcutsDialog
     │   └── ui/              # shadcn/ui components
     ├── stores/              # Zustand stores (one per domain)
     │   ├── pluginStore.ts
     │   ├── projectStore.ts
     │   ├── settingsStore.ts
-    │   └── ...
+    │   ├── historyStore.ts
+    │   ├── uiStore.ts
+    │   ├── toastStore.ts
+    │   └── templateStore.ts
     ├── lib/
     │   ├── generator/       # Code generation + validation
     │   ├── conflict-detector.ts   # Plugin conflict detection
     │   ├── dependency-analyzer.ts # Plugin dependency graph + validation
+    │   ├── plugin-output.ts # Unified output facade (raw/generated)
     │   ├── param-io.ts      # Parameter import/export (.mzparams)
     │   ├── exportFormats.ts  # README, .d.ts, plugins.json
     │   ├── shortcuts.ts     # Keyboard shortcut definitions
     │   └── mz-completions.ts # Monaco MZ autocomplete
-    └── types/
-        └── plugin.ts        # TypeScript interfaces
+    └── types/               # Re-exports from src/shared/types/
 tests/                       # Vitest unit tests (411 tests, 22 suites)
 ```
 

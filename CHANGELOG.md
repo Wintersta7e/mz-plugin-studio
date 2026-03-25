@@ -2,6 +2,48 @@
 
 ## [Unreleased]
 
+### Added
+- Per-plugin dirty/saved/rawMode state tracking — switching tabs preserves unsaved indicators and raw mode toggles
+- `generatePluginOutput()` facade for unified raw/generated code switching
+- `MemoizedParamRow` wrapper for stable ParameterCard callback bindings
+- `eslint-plugin-react-hooks` with `rules-of-hooks` (error) and `exhaustive-deps` (warn)
+- `consistent-type-imports` ESLint rule (error) — enforces `import type` syntax
+- 14 new tests: plugin-store (6), ui-store (3), plugin-output (3), toast-store (2) — 411 total
+
+### Fixed
+- **Security**: `assertSafeProjectPath()` added to all 16 project IPC handlers (was missing)
+- **Security**: `assertSafeFilename()` now enforces `.js` extension for plugin directory writes
+- **Security**: Dev CSP `ws:` restricted to `ws://localhost:*` (was open to any host)
+- **Security**: `shell.openExternal` uses normalized `parsed.href` instead of raw URL
+- Raw mode new-parameter detection now checks both `params['name']` and `params["name"]` (fixes duplicate declarations)
+- Raw mode new-command detection now checks all 4 quote combinations including `PLUGIN_NAME` + double-quote (fixes duplicate registrations)
+- History fingerprint now content-aware (parameter renames, type changes, and edits are properly captured in undo history)
+- `closePlugin` history cleanup race condition — cleanup now fires before state switch
+- `historyStore.clear()` now resets `activePluginId` to null
+- `OptionsEditor` local state now syncs on external option changes (undo, preset apply)
+- `findBlockEnd` escaped backslash handling (`\\` before quote no longer incorrectly treated as escape)
+- `scanDependencies` now called explicitly after `setAllGameData` (removed fragile `setTimeout(0)` ordering)
+- `setDebugLogging` guarded with `window.api` check for test environments
+- `.md` and `.d.ts` added to `ALLOWED_EXTENSIONS` (README and TypeScript declaration exports were broken)
+- Toast eviction timer cleanup prevents stale timer fires
+- SettingsDialog ref capture in useEffect cleanup
+
+### Changed
+- **TypeScript**: `noImplicitAny: true` enabled in both web and node tsconfigs
+- **ESLint**: `no-unused-vars` upgraded from warn to error, `no-non-null-assertion` added as warn, `no-console` added as warn
+- Shared types moved to `src/shared/types/` as canonical location (renderer re-exports, main/preload import directly)
+- `env.d.ts` imports `API` type from preload instead of redeclaring all interfaces
+- `generateParamParser`/`generateArgParser` unified into shared `generateAccessorParser`
+- `parseProject` reads `System.json` once (was 3 times per call)
+- `DependencyReport.pluginNames` annotated as alias of `loadOrder`
+- Monaco `options` memoized in CodeEditor, CodePreview, and DiffView
+- Store selectors narrowed: CodeEditor subscribes to `customCode` only, MetaEditor to `meta`, StatusBar to `meta.name`
+- ProjectBrowser filter calls wrapped in `useMemo`
+- `highlightCode` uses `push()` instead of O(n) `unshift()` + `.reverse()`
+- TemplateInserter copy timer uses ref-based cleanup pattern
+- ParameterCard wrapped in `React.memo`
+- `rawSource` stripped from history entries to reduce memory retention
+
 ## [1.4.2] - 2026-02-28
 
 ### Added
