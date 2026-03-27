@@ -56,6 +56,7 @@ function ToastItem({
       <p className="text-sm text-foreground">{message}</p>
       <button
         onClick={() => dismiss(id)}
+        aria-label="Dismiss notification"
         className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:text-foreground"
       >
         <X className="h-3 w-3" />
@@ -81,7 +82,12 @@ export function ToastContainer(): React.ReactElement {
   const toasts = useToastStore((s) => s.toasts)
 
   return (
-    <div className="pointer-events-none fixed bottom-10 right-4 z-[100] flex flex-col gap-2">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Notifications"
+      className="pointer-events-none fixed bottom-10 right-4 z-[100] flex flex-col gap-2"
+    >
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <ToastItem key={toast.id} {...toast} />

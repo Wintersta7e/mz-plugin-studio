@@ -120,6 +120,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Open Project"
                 className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenProject}
               >
@@ -134,6 +135,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="New Plugin"
                 className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={handleNewPlugin}
               >
@@ -157,6 +159,7 @@ export function Sidebar({
                       <Button
                         variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
                         size="icon"
+                        aria-label={`${plugin.meta.name || 'Untitled'}${pluginIsDirty ? ' (unsaved changes)' : ''}`}
                         onClick={() => setActivePlugin(plugin.id)}
                         className={cn(
                           'relative h-9 w-9 transition-all duration-200 hover:scale-110',
@@ -169,14 +172,17 @@ export function Sidebar({
                         )}
                         {/* Dirty state is tracked per open plugin so switching tabs does not hide unsaved edits. */}
                         {pluginIsDirty && (
-                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
+                          <>
+                            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
+                            <span className="sr-only">unsaved changes</span>
+                          </>
                         )}
                       </Button>
                       {/* Close button (visible on hover) */}
                       <button
                         onClick={(e) => handleClosePlugin(plugin.id, e)}
+                        aria-label={`Close ${plugin.meta.name || 'Untitled'}`}
                         className="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
-                        title="Close plugin"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -201,6 +207,7 @@ export function Sidebar({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={`Refresh Plugins (${allPluginFiles.length})`}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={refreshPluginList}
                   >
@@ -225,6 +232,7 @@ export function Sidebar({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Load ${name}`}
                             className="h-8 w-8 text-muted-foreground"
                             onClick={() => handleLoadPlugin(name)}
                           >
@@ -268,6 +276,7 @@ export function Sidebar({
                 <Button
                   variant={projectBrowserOpen ? 'secondary' : 'ghost'}
                   size="icon"
+                  aria-label="Project Data Browser"
                   className={cn(
                     'h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]',
                     !projectBrowserOpen && 'text-muted-foreground'
@@ -286,6 +295,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Settings"
                 className="h-9 w-9 text-muted-foreground transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenSettings}
               >
@@ -300,6 +310,7 @@ export function Sidebar({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Keyboard Shortcuts"
                 className="h-9 w-9 text-muted-foreground transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenShortcuts}
               >

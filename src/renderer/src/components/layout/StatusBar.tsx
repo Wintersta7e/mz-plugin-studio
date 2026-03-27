@@ -67,6 +67,11 @@ export function StatusBar() {
         {dependencyReport && (
           <>
             <button
+              aria-label={
+                dependencyReport.health === 'healthy'
+                  ? 'All dependencies satisfied'
+                  : `${dependencyReport.issues.length} dependency issue${dependencyReport.issues.length > 1 ? 's' : ''}`
+              }
               className={cn(
                 'flex items-center gap-1',
                 dependencyReport.health === 'healthy' && 'text-emerald-400',
@@ -74,11 +79,6 @@ export function StatusBar() {
                 dependencyReport.health === 'errors' && 'text-red-400 hover:text-red-300'
               )}
               onClick={() => dependencyReport.issues.length > 0 && setShowIssues(true)}
-              title={
-                dependencyReport.health === 'healthy'
-                  ? 'All dependencies satisfied'
-                  : 'Click to view issues'
-              }
             >
               {dependencyReport.health === 'healthy' && <CheckCircle className="h-3 w-3" />}
               {dependencyReport.health === 'warnings' && <AlertTriangle className="h-3 w-3" />}
