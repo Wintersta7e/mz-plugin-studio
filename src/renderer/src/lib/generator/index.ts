@@ -774,6 +774,38 @@ export function generateHeaderOnly(plugin: PluginDefinition): string {
   return generateHeader(plugin)
 }
 
+const MZ_BUILTIN_COMMANDS = new Set([
+  'ShowText',
+  'ShowChoices',
+  'InputNumber',
+  'SelectItem',
+  'ShowScrollingText',
+  'Wait',
+  'FadeoutScreen',
+  'FadeinScreen',
+  'TintScreen',
+  'FlashScreen',
+  'ShakeScreen',
+  'SetWeatherEffect',
+  'PlayBGM',
+  'FadeoutBGM',
+  'SaveBGM',
+  'ResumeBGM',
+  'PlayBGS',
+  'FadeoutBGS',
+  'PlayME',
+  'PlaySE',
+  'StopSE',
+  'PlayMovie',
+  'ChangeTransparency',
+  'ShowAnimation',
+  'ShowBalloonIcon',
+  'EraseEvent',
+  'ChangePlayerFollowers',
+  'GatherFollowers',
+  'FreezeGame'
+])
+
 /**
  * Validate a plugin definition
  * Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
@@ -836,6 +868,10 @@ export function validatePlugin(plugin: PluginDefinition): {
         errors.push(`Duplicate argument name in command ${cmd.name}: ${arg.name}`)
       }
       argNames.add(arg.name)
+    }
+
+    if (MZ_BUILTIN_COMMANDS.has(cmd.name)) {
+      warnings.push(`Command "${cmd.name}" shadows a built-in RPG Maker MZ command`)
     }
   }
 
