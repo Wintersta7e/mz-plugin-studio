@@ -16,7 +16,9 @@ import {
   Grid3x3,
   Calendar,
   GraduationCap,
-  Users
+  Users,
+  Copy,
+  Check
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
@@ -86,9 +88,16 @@ interface DataListProps {
 
 function DataList({ items, emptyMessage }: DataListProps) {
   const filteredItems = items.filter((item) => item.name && item.name.trim() !== '')
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   if (filteredItems.length === 0) {
     return <div className="px-4 py-2 text-sm text-muted-foreground italic">{emptyMessage}</div>
+  }
+
+  const handleCopy = (id: number) => {
+    navigator.clipboard.writeText(String(id))
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 1500)
   }
 
   return (
@@ -96,12 +105,24 @@ function DataList({ items, emptyMessage }: DataListProps) {
       {filteredItems.map((item) => (
         <div
           key={item.id}
-          className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted/50"
+          className="group flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted/50"
         >
           <span className="w-10 text-right font-mono text-xs text-muted-foreground">
             {item.id}:
           </span>
-          <span className="truncate">{item.name}</span>
+          <span className="flex-1 truncate">{item.name}</span>
+          <button
+            onClick={() => handleCopy(item.id)}
+            className="hidden h-5 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground group-hover:flex"
+            aria-label={`Copy ID ${item.id}`}
+            title="Copy ID"
+          >
+            {copiedId === item.id ? (
+              <Check className="h-3 w-3 text-green-400" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
         </div>
       ))}
     </div>
