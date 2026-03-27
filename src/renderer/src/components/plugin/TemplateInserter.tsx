@@ -51,7 +51,7 @@ import {
   type TemplateField
 } from '../../lib/generator/templates'
 import { getClassesGrouped, getClassMethods } from '../../lib/generator/class-registry'
-import { useTemplateStore } from '../../stores'
+import { useTemplateStore, useUIStore } from '../../stores'
 
 // Import templates to register them
 import '../../lib/generator/templates/method-alias'
@@ -212,7 +212,11 @@ function highlightCode(code: string): React.ReactNode {
 }
 
 export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterProps) {
-  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>('method-alias')
+  const lastTemplateCategory = useUIStore((s) => s.lastTemplateCategory)
+  const persistCategory = useUIStore((s) => s.setLastTemplateCategory)
+  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>(
+    lastTemplateCategory as TemplateCategory
+  )
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({})
   const [previewCode, setPreviewCode] = useState<string>('')
@@ -226,6 +230,10 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent' | 'all'>('category')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const insertButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    persistCategory(selectedCategory)
+  }, [selectedCategory, persistCategory])
 
   const { favorites, recentlyUsed, toggleFavorite, addToRecent, isFavorite } = useTemplateStore()
 

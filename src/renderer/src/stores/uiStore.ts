@@ -11,6 +11,7 @@ interface UIState {
   mainView: 'editor' | 'analysis'
   rawModeByPluginId: Record<string, boolean>
   previewCollapsed: boolean
+  lastTemplateCategory: string
 
   setSidebarWidth: (width: number) => void
   setPreviewWidth: (width: number) => void
@@ -19,6 +20,7 @@ interface UIState {
   setSelectedCommandId: (id: string | null) => void
   setSelectedStructId: (id: string | null) => void
   setMainView: (view: UIState['mainView']) => void
+  setLastTemplateCategory: (cat: string) => void
   setPreviewCollapsed: (collapsed: boolean) => void
   togglePreview: () => void
   getRawModeForPlugin: (pluginId: string, fallback?: boolean) => boolean
@@ -38,6 +40,7 @@ export const useUIStore = create<UIState>()(
       mainView: 'editor',
       rawModeByPluginId: {},
       previewCollapsed: false,
+      lastTemplateCategory: 'method-alias',
 
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
       setPreviewWidth: (previewWidth) =>
@@ -47,6 +50,7 @@ export const useUIStore = create<UIState>()(
       setSelectedCommandId: (selectedCommandId) => set({ selectedCommandId }),
       setSelectedStructId: (selectedStructId) => set({ selectedStructId }),
       setMainView: (mainView) => set({ mainView }),
+      setLastTemplateCategory: (lastTemplateCategory) => set({ lastTemplateCategory }),
       setPreviewCollapsed: (previewCollapsed) => set({ previewCollapsed }),
       togglePreview: () => set((state) => ({ previewCollapsed: !state.previewCollapsed })),
       getRawModeForPlugin: (pluginId, fallback = false) =>
@@ -79,6 +83,7 @@ export const useUIStore = create<UIState>()(
         sidebarWidth: state.sidebarWidth,
         previewWidth: state.previewWidth,
         previewCollapsed: state.previewCollapsed,
+        lastTemplateCategory: state.lastTemplateCategory,
         rawModeByPluginId: state.rawModeByPluginId
       })
     }
