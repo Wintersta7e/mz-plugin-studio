@@ -830,6 +830,15 @@ const ParameterCard = memo(function ParameterCard({
   actors,
   items
 }: ParameterCardProps) {
+  const hasAdvancedValues =
+    Boolean(param.desc) ||
+    (param.type === 'boolean' && (param.onLabel || param.offLabel)) ||
+    (param.type === 'number' &&
+      (param.min !== undefined || param.max !== undefined || param.decimals !== undefined)) ||
+    ((param.type === 'file' || param.type === 'animation') && (param.dir || param.require))
+
+  const [showAdvanced, setShowAdvanced] = useState(hasAdvancedValues)
+
   // Helper to get the appropriate game data array based on param type
   const getGameDataOptions = () => {
     switch (param.type) {
@@ -913,6 +922,7 @@ const ParameterCard = memo(function ParameterCard({
             className="overflow-hidden"
           >
             <div className="border-t border-border p-4 space-y-4">
+              {/* Essential: Internal Name + Display Label */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Internal Name</Label>
@@ -932,15 +942,7 @@ const ParameterCard = memo(function ParameterCard({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Input
-                  value={param.desc}
-                  onChange={(e) => onUpdate({ desc: e.target.value })}
-                  placeholder="Help text for this parameter"
-                />
-              </div>
-
+              {/* Essential: Type + Default Value */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Type</Label>
@@ -1030,74 +1032,12 @@ const ParameterCard = memo(function ParameterCard({
                 )}
               </div>
 
-              {/* Boolean-specific fields: @on/@off labels */}
-              {param.type === 'boolean' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>On Label</Label>
-                    <Input
-                      value={param.onLabel || ''}
-                      onChange={(e) => onUpdate({ onLabel: e.target.value || undefined })}
-                      placeholder="ON"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Off Label</Label>
-                    <Input
-                      value={param.offLabel || ''}
-                      onChange={(e) => onUpdate({ offLabel: e.target.value || undefined })}
-                      placeholder="OFF"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Number-specific fields */}
-              {param.type === 'number' && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Min</Label>
-                    <Input
-                      type="number"
-                      value={param.min ?? ''}
-                      onChange={(e) =>
-                        onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
-                      }
-                      placeholder="No min"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Max</Label>
-                    <Input
-                      type="number"
-                      value={param.max ?? ''}
-                      onChange={(e) =>
-                        onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
-                      }
-                      placeholder="No max"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Decimals</Label>
-                    <Input
-                      type="number"
-                      value={param.decimals ?? ''}
-                      onChange={(e) =>
-                        onUpdate({ decimals: e.target.value ? Number(e.target.value) : undefined })
-                      }
-                      placeholder="0"
-                      min={0}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Select/Combo options */}
+              {/* Essential: Select/Combo options */}
               {(param.type === 'select' || param.type === 'combo') && (
                 <OptionsEditor param={param} onUpdate={onUpdate} />
               )}
 
-              {/* Struct reference + default editor */}
+              {/* Essential: Struct reference + default editor */}
               {param.type === 'struct' && (
                 <div className="space-y-3">
                   <div className="space-y-2">
@@ -1134,7 +1074,7 @@ const ParameterCard = memo(function ParameterCard({
                 </div>
               )}
 
-              {/* Array element type */}
+              {/* Essential: Array element type */}
               {param.type === 'array' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -1196,27 +1136,125 @@ const ParameterCard = memo(function ParameterCard({
                 </div>
               )}
 
-              {/* File/Animation directory and require */}
-              {(param.type === 'file' || param.type === 'animation') && (
-                <div className="space-y-3">
+              {/* Advanced fields toggle */}
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showAdvanced ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                {showAdvanced ? 'Hide details' : 'Show details'}
+                {param.desc && !showAdvanced && (
+                  <span className="text-muted-foreground/60">— has description</span>
+                )}
+              </button>
+
+              {/* Advanced fields */}
+              {showAdvanced && (
+                <>
+                  {/* Description */}
                   <div className="space-y-2">
-                    <Label>Directory (relative to project)</Label>
+                    <Label>Description</Label>
                     <Input
-                      value={param.dir || ''}
-                      onChange={(e) => onUpdate({ dir: e.target.value })}
-                      placeholder={param.type === 'animation' ? 'img/animations' : 'img/pictures'}
+                      value={param.desc}
+                      onChange={(e) => onUpdate({ desc: e.target.value })}
+                      placeholder="Help text for this parameter"
                     />
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={param.require || false}
-                      onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
-                      className="h-4 w-4"
-                    />
-                    Required for deployment (@require 1)
-                  </label>
-                </div>
+
+                  {/* Boolean-specific fields: @on/@off labels */}
+                  {param.type === 'boolean' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>On Label</Label>
+                        <Input
+                          value={param.onLabel || ''}
+                          onChange={(e) => onUpdate({ onLabel: e.target.value || undefined })}
+                          placeholder="ON"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Off Label</Label>
+                        <Input
+                          value={param.offLabel || ''}
+                          onChange={(e) => onUpdate({ offLabel: e.target.value || undefined })}
+                          placeholder="OFF"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Number-specific fields */}
+                  {param.type === 'number' && (
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Min</Label>
+                        <Input
+                          type="number"
+                          value={param.min ?? ''}
+                          onChange={(e) =>
+                            onUpdate({ min: e.target.value ? Number(e.target.value) : undefined })
+                          }
+                          placeholder="No min"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Max</Label>
+                        <Input
+                          type="number"
+                          value={param.max ?? ''}
+                          onChange={(e) =>
+                            onUpdate({ max: e.target.value ? Number(e.target.value) : undefined })
+                          }
+                          placeholder="No max"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Decimals</Label>
+                        <Input
+                          type="number"
+                          value={param.decimals ?? ''}
+                          onChange={(e) =>
+                            onUpdate({
+                              decimals: e.target.value ? Number(e.target.value) : undefined
+                            })
+                          }
+                          placeholder="0"
+                          min={0}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* File/Animation directory and require */}
+                  {(param.type === 'file' || param.type === 'animation') && (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label>Directory (relative to project)</Label>
+                        <Input
+                          value={param.dir || ''}
+                          onChange={(e) => onUpdate({ dir: e.target.value })}
+                          placeholder={
+                            param.type === 'animation' ? 'img/animations' : 'img/pictures'
+                          }
+                        />
+                      </div>
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={param.require || false}
+                          onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
+                          className="h-4 w-4"
+                        />
+                        Required for deployment (@require 1)
+                      </label>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>
