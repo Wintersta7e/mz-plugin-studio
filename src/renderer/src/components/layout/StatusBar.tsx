@@ -55,7 +55,7 @@ export function StatusBar() {
   }
 
   return (
-    <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-xs text-muted-foreground">
+    <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-[13px] text-muted-foreground">
       <div className="flex items-center gap-4">
         {project ? <span>Project: {project.gameTitle}</span> : <span>No project loaded</span>}
         {pluginName && (
@@ -84,9 +84,9 @@ export function StatusBar() {
               {dependencyReport.health === 'warnings' && <AlertTriangle className="h-3 w-3" />}
               {dependencyReport.health === 'errors' && <XCircle className="h-3 w-3" />}
               {dependencyReport.health === 'healthy'
-                ? 'Deps OK'
+                ? 'Dependencies OK'
                 : dependencyReport.issues.length +
-                  ' dep issue' +
+                  ' dependency issue' +
                   (dependencyReport.issues.length > 1 ? 's' : '')}
             </button>
             <Dialog open={showIssues} onOpenChange={setShowIssues}>
