@@ -28,6 +28,7 @@ interface SettingsState {
   savePreset: (name: string, params: PluginParameter[]) => void
   deletePreset: (name: string) => void
   clearAllPresets: () => void
+  resetEditorSettings: () => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -68,6 +69,16 @@ export const useSettingsStore = create<SettingsState>()(
         }),
 
       clearAllPresets: () => set({ parameterPresets: {} }),
+
+      resetEditorSettings: () =>
+        set({
+          theme: 'dark',
+          editorFontSize: 13,
+          editorWordWrap: true,
+          editorMinimap: false,
+          editorLineNumbers: true,
+          debugLogging: false
+        }),
 
       setDebugLogging: (debug) => {
         set({ debugLogging: debug })

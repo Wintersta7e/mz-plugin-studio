@@ -31,7 +31,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     debugLogging,
     setDebugLogging,
     deletePreset,
-    clearAllPresets
+    clearAllPresets,
+    resetEditorSettings
   } = useSettingsStore()
 
   const recentProjects = useProjectStore((s) => s.recentProjects)
@@ -42,6 +43,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [clearedFavorites, setClearedFavorites] = useState(false)
   const [clearedRecentTemplates, setClearedRecentTemplates] = useState(false)
   const [clearedPresets, setClearedPresets] = useState(false)
+  const [clearedSettings, setClearedSettings] = useState(false)
 
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   useEffect(() => {
@@ -173,6 +175,29 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <Button variant="outline" size="sm" onClick={() => window.api.log.openFolder()}>
                   <FolderOpen className="mr-1 h-3 w-3" />
                   Open Folder
+                </Button>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Reset Editor Settings</p>
+                  <p className="text-xs text-muted-foreground">
+                    Restore all editor settings to defaults
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    resetEditorSettings()
+                    setClearedSettings(true)
+                    timersRef.current.push(setTimeout(() => setClearedSettings(false), 2000))
+                  }}
+                  disabled={clearedSettings}
+                >
+                  {clearedSettings ? 'Reset!' : 'Reset to Defaults'}
                 </Button>
               </div>
             </div>
