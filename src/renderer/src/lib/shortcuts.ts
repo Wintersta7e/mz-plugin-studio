@@ -10,6 +10,12 @@ export const SHORTCUTS: ShortcutDef[] = [
   { key: 'ctrl+s', label: 'Ctrl+S', description: 'Save / Export plugin', category: 'File' },
   { key: 'ctrl+n', label: 'Ctrl+N', description: 'New plugin', category: 'File' },
   { key: 'ctrl+o', label: 'Ctrl+O', description: 'Open project', category: 'File' },
+  {
+    key: 'ctrl+shift+s',
+    label: 'Ctrl+Shift+S',
+    description: 'Save all open plugins',
+    category: 'File'
+  },
 
   // Edit
   { key: 'ctrl+z', label: 'Ctrl+Z', description: 'Undo', category: 'Edit' },
@@ -18,6 +24,7 @@ export const SHORTCUTS: ShortcutDef[] = [
   // View
   { key: 'f5', label: 'F5', description: 'Regenerate preview', category: 'View' },
   { key: 'ctrl+,', label: 'Ctrl+,', description: 'Open settings', category: 'View' },
+  { key: 'ctrl+b', label: 'Ctrl+B', description: 'Toggle code preview', category: 'View' },
 
   // Navigation
   { key: 'ctrl+1', label: 'Ctrl+1', description: 'Switch to Meta tab', category: 'Navigation' },
@@ -36,7 +43,7 @@ export const SHORTCUTS: ShortcutDef[] = [
 ]
 
 // Shortcuts that override even when Monaco editor is focused
-const GLOBAL_OVERRIDE_SHORTCUTS = ['ctrl+s', 'ctrl+n', 'ctrl+o', 'f1']
+const GLOBAL_OVERRIDE_SHORTCUTS = ['ctrl+s', 'ctrl+shift+s', 'ctrl+n', 'ctrl+o', 'ctrl+b', 'f1']
 
 export function matchShortcut(e: KeyboardEvent): ShortcutDef | null {
   if (e.altKey) return null

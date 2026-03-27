@@ -58,6 +58,7 @@ function App() {
   const setPreviewWidth = useUIStore((s) => s.setPreviewWidth)
   const mainView = useUIStore((s) => s.mainView)
   const setMainView = useUIStore((s) => s.setMainView)
+  const previewCollapsed = useUIStore((s) => s.previewCollapsed)
 
   const theme = useSettingsStore((s) => s.theme)
 
@@ -275,6 +276,54 @@ function App() {
           }
           break
         }
+        case 'ctrl+shift+s': {
+          const ps = usePluginStore.getState()
+          const proj = useProjectStore.getState().project
+          if (!proj) break
+          let savedCount = 0
+          let failCount = 0
+          const savePromises = ps.openPlugins
+            .filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
+            .map(async (p) => {
+              const rawMode = useUIStore.getState().getRawModeForPlugin(p.id, Boolean(p.rawSource))
+              const code = generatePluginOutput(p, rawMode)
+              const filename = `${p.meta.name}.js`
+              try {
+                const result = await window.api.plugin.save(proj.path, filename, code)
+                if (result.success) {
+                  usePluginStore.setState((state) => {
+                    const isActive = state.activePluginId === p.id
+                    const nextDirty = { ...state.dirtyByPluginId }
+                    delete nextDirty[p.id]
+                    const nextPaths = { ...state.savedPathsByPluginId, [p.id]: result.path }
+                    return {
+                      dirtyByPluginId: nextDirty,
+                      savedPathsByPluginId: nextPaths,
+                      ...(isActive ? { isDirty: false, savedPath: result.path } : {})
+                    }
+                  })
+                  savedCount++
+                }
+              } catch {
+                failCount++
+              }
+            })
+          void Promise.all(savePromises).then(() => {
+            if (savedCount > 0 || failCount > 0) {
+              useToastStore.getState().addToast({
+                type: failCount > 0 ? 'warning' : 'success',
+                message:
+                  failCount > 0
+                    ? `Saved ${savedCount}, failed ${failCount}`
+                    : `${savedCount} plugin${savedCount > 1 ? 's' : ''} saved`
+              })
+            }
+          })
+          break
+        }
+        case 'ctrl+b':
+          useUIStore.getState().togglePreview()
+          break
         case 'ctrl+n': {
           const newPlugin = createEmptyPlugin()
           usePluginStore.getState().openPlugin(newPlugin)
@@ -423,18 +472,22 @@ function App() {
                         </div>
 
                         {/* Resize handle */}
-                        <div
-                          className="w-1 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
-                          onMouseDown={handleResizeStart}
-                        />
+                        {!previewCollapsed && (
+                          <div
+                            className="w-1.5 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
+                            onMouseDown={handleResizeStart}
+                          />
+                        )}
 
                         {/* Code preview */}
-                        <div
-                          className="overflow-hidden transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]"
-                          style={{ width: previewWidth }}
-                        >
-                          <CodePreview />
-                        </div>
+                        {!previewCollapsed && (
+                          <div
+                            className="overflow-hidden transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]"
+                            style={{ width: previewWidth }}
+                          >
+                            <CodePreview />
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
