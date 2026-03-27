@@ -111,6 +111,22 @@ const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
   }
 ]
 
+function getParamNameError(
+  name: string,
+  allParams: PluginParameter[],
+  selfId: string
+): string | null {
+  if (!name.trim()) return 'Name is required'
+  // Allow section dividers (--- or ===)
+  if (/^-{3,}$/.test(name) || /^={3,}$/.test(name)) return null
+  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+    return 'Must be a valid identifier (letters, numbers, _, $)'
+  }
+  const isDuplicate = allParams.some((p) => p.id !== selfId && p.name === name)
+  if (isDuplicate) return 'Duplicate parameter name'
+  return null
+}
+
 export function ParameterBuilder() {
   const parameters = usePluginStore((s) => s.plugin.parameters)
   const pluginId = usePluginStore((s) => s.plugin.id)
@@ -487,6 +503,7 @@ export function ParameterBuilder() {
                 handleDrop={handleDrop}
                 structNames={structNames}
                 structs={structs}
+                parameters={parameters}
                 switches={switches}
                 variables={variables}
                 actors={actors}
@@ -637,6 +654,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDrop,
   structNames,
   structs,
+  parameters,
   switches,
   variables,
   actors,
@@ -659,6 +677,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDrop: (e: React.DragEvent, id: string) => void
   structNames: string[]
   structs: PluginStruct[]
+  parameters: PluginParameter[]
   switches: { id: number; name: string }[]
   variables: { id: number; name: string }[]
   actors: { id: number; name: string }[]
@@ -726,6 +745,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         isDragging={draggedId === param.id}
         structs={structNames}
         allStructs={structs}
+        allParams={parameters}
         switches={switches}
         variables={variables}
         actors={actors}
@@ -750,6 +770,7 @@ interface ParameterCardProps {
   isDragging: boolean
   structs: string[]
   allStructs: PluginStruct[]
+  allParams: PluginParameter[]
   switches: { id: number; name: string }[]
   variables: { id: number; name: string }[]
   actors: { id: number; name: string }[]
@@ -825,11 +846,13 @@ const ParameterCard = memo(function ParameterCard({
   isDragging,
   structs,
   allStructs,
+  allParams,
   switches,
   variables,
   actors,
   items
 }: ParameterCardProps) {
+  const nameError = getParamNameError(param.name, allParams, param.id)
   const hasAdvancedValues =
     Boolean(param.desc) ||
     (param.type === 'boolean' && (param.onLabel || param.offLabel)) ||
@@ -930,7 +953,9 @@ const ParameterCard = memo(function ParameterCard({
                     value={param.name}
                     onChange={(e) => onUpdate({ name: e.target.value })}
                     placeholder="paramName"
+                    className={nameError ? 'border-destructive' : ''}
                   />
+                  {nameError && <p className="text-xs text-destructive">{nameError}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Display Label</Label>
