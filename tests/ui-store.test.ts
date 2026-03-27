@@ -41,6 +41,8 @@ describe('uiStore raw mode state', () => {
     expect(persisted.state).toEqual({
       sidebarWidth: 360,
       previewWidth: 1200,
+      previewCollapsed: false,
+      lastTemplateCategory: 'method-alias',
       rawModeByPluginId: { 'plugin-a': true }
     })
     expect(persisted.state).not.toHaveProperty('activeTab')
