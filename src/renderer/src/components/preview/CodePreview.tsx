@@ -319,12 +319,14 @@ export function CodePreview() {
             disabled={!hasRawSource}
             title={
               hasRawSource
-                ? 'Raw mode: regenerate headers only, preserve original code body'
+                ? previewRawMode
+                  ? 'Raw mode ON: only headers are regenerated, your code body is preserved'
+                  : 'Raw mode OFF: full plugin is generated from visual editor'
                 : 'Raw mode unavailable: plugin was not imported from a file'
             }
           >
             <FileCode2 className="mr-1 h-4 w-4" />
-            Raw
+            {previewRawMode && hasRawSource ? 'Raw ON' : 'Raw'}
           </Button>
 
           <Button
@@ -374,27 +376,38 @@ export function CodePreview() {
             </Button>
 
             {exportMenuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-popover p-1 shadow-md">
+              <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-md border border-border bg-popover p-1 shadow-md">
                 <button
                   className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                   onClick={() => handleExportFormat('readme')}
                 >
-                  <FileText className="h-4 w-4" />
-                  Export README.md
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <div className="text-left">
+                    <div>Export README.md</div>
+                    <div className="text-xs text-muted-foreground">
+                      Auto-generated documentation
+                    </div>
+                  </div>
                 </button>
                 <button
                   className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                   onClick={() => handleExportFormat('dts')}
                 >
-                  <FileType className="h-4 w-4" />
-                  Export .d.ts
+                  <FileType className="h-4 w-4 shrink-0" />
+                  <div className="text-left">
+                    <div>Export .d.ts</div>
+                    <div className="text-xs text-muted-foreground">TypeScript type definitions</div>
+                  </div>
                 </button>
                 <button
                   className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
                   onClick={() => handleExportFormat('plugins-json')}
                 >
-                  <FileJson className="h-4 w-4" />
-                  Export plugins.json entry
+                  <FileJson className="h-4 w-4 shrink-0" />
+                  <div className="text-left">
+                    <div>Export plugins.json entry</div>
+                    <div className="text-xs text-muted-foreground">PluginManager configuration</div>
+                  </div>
                 </button>
               </div>
             )}
