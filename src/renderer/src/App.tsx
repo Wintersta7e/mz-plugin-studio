@@ -25,9 +25,8 @@ import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { generatePluginOutput } from './lib/plugin-output'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import { Button } from './components/ui/button'
 import { cn } from './lib/utils'
 
 const pluginFade = { duration: 0.12 }
@@ -371,6 +370,7 @@ function App() {
             {openPlugins.length === 0 && !project ? (
               <WelcomeScreen
                 onOpenProject={handleOpenProject}
+                onNewPlugin={() => usePluginStore.getState().openPlugin(createEmptyPlugin())}
                 recentProjects={recentProjects}
                 onOpenRecentProject={handleOpenRecentProject}
               />
@@ -513,6 +513,7 @@ function App() {
 
 interface WelcomeScreenProps {
   onOpenProject: () => void
+  onNewPlugin: () => void
   recentProjects: string[]
   onOpenRecentProject: (path: string) => void
 }
@@ -525,6 +526,7 @@ const staggerSpring = { type: 'spring' as const, stiffness: 300, damping: 25 }
 
 function WelcomeScreen({
   onOpenProject,
+  onNewPlugin,
   recentProjects,
   onOpenRecentProject
 }: WelcomeScreenProps): React.ReactElement {
@@ -537,7 +539,7 @@ function WelcomeScreen({
   return (
     <div className="flex flex-1 items-center justify-center">
       <motion.div
-        className="flex max-w-md flex-col items-center gap-6 text-center"
+        className="flex max-w-lg flex-col items-center gap-6 text-center"
         initial={hasPlayed.current ? false : 'hidden'}
         animate="visible"
         variants={{
@@ -574,12 +576,28 @@ function WelcomeScreen({
           Create RPG Maker MZ plugins without writing code
         </motion.p>
 
-        {/* Open Project button */}
-        <motion.div variants={staggerChild} transition={staggerSpring}>
-          <Button size="lg" onClick={onOpenProject}>
-            <FolderOpen className="mr-2 h-5 w-5" />
-            Open MZ Project
-          </Button>
+        {/* Action cards */}
+        <motion.div
+          variants={staggerChild}
+          transition={staggerSpring}
+          className="grid w-full grid-cols-2 gap-3"
+        >
+          <button
+            onClick={onOpenProject}
+            className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-sm transition-colors hover:bg-accent"
+          >
+            <FolderOpen className="h-6 w-6 text-primary" />
+            <span className="font-medium">Open Project</span>
+            <span className="text-xs text-muted-foreground">Load an existing MZ project</span>
+          </button>
+          <button
+            onClick={onNewPlugin}
+            className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-sm transition-colors hover:bg-accent"
+          >
+            <FilePlus className="h-6 w-6 text-primary" />
+            <span className="font-medium">New Plugin</span>
+            <span className="text-xs text-muted-foreground">Start with a blank plugin</span>
+          </button>
         </motion.div>
 
         {/* Recent projects */}
