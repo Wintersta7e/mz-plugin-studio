@@ -150,6 +150,7 @@ export function ParameterBuilder() {
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null)
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -354,11 +355,17 @@ export function ParameterBuilder() {
 
   const handleDragEnd = () => {
     setDraggedId(null)
+    setDropTargetId(null)
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    if (dropTargetId !== targetId) setDropTargetId(targetId)
+  }
+
+  const handleDragLeave = () => {
+    setDropTargetId(null)
   }
 
   const handleDrop = (e: React.DragEvent, targetId: string) => {
@@ -371,6 +378,7 @@ export function ParameterBuilder() {
     if (fromIndex === -1 || toIndex === -1) return
     usePluginStore.getState().reorderParameters(fromIndex, toIndex)
     setDraggedId(null)
+    setDropTargetId(null)
   }
 
   return (
@@ -500,7 +508,9 @@ export function ParameterBuilder() {
                 handleDragStart={handleDragStart}
                 handleDragEnd={handleDragEnd}
                 handleDragOver={handleDragOver}
+                handleDragLeave={handleDragLeave}
                 handleDrop={handleDrop}
+                dropTargetId={dropTargetId}
                 structNames={structNames}
                 structs={structs}
                 parameters={parameters}
@@ -651,7 +661,9 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDragStart,
   handleDragEnd,
   handleDragOver,
+  handleDragLeave,
   handleDrop,
+  dropTargetId,
   structNames,
   structs,
   parameters,
@@ -673,8 +685,10 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>
   handleDragStart: (e: React.DragEvent, id: string) => void
   handleDragEnd: () => void
-  handleDragOver: (e: React.DragEvent) => void
+  handleDragOver: (e: React.DragEvent, id: string) => void
+  handleDragLeave: () => void
   handleDrop: (e: React.DragEvent, id: string) => void
+  dropTargetId: string | null
   structNames: string[]
   structs: PluginStruct[]
   parameters: PluginParameter[]
@@ -717,6 +731,13 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
     [param.id, handleDragStart]
   )
 
+  const onDragOver = useCallback(
+    (e: React.DragEvent) => handleDragOver(e, param.id),
+    [param.id, handleDragOver]
+  )
+
+  const onDragLeave = useCallback(() => handleDragLeave(), [handleDragLeave])
+
   const onDrop = useCallback(
     (e: React.DragEvent) => handleDrop(e, param.id),
     [param.id, handleDrop]
@@ -740,9 +761,11 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         onDelete={onDelete}
         onDragStart={onDragStart}
         onDragEnd={handleDragEnd}
-        onDragOver={handleDragOver}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
         onDrop={onDrop}
         isDragging={draggedId === param.id}
+        isDropTarget={dropTargetId === param.id}
         structs={structNames}
         allStructs={structs}
         allParams={parameters}
@@ -766,8 +789,10 @@ interface ParameterCardProps {
   onDragStart: (e: React.DragEvent) => void
   onDragEnd: () => void
   onDragOver: (e: React.DragEvent) => void
+  onDragLeave: () => void
   onDrop: (e: React.DragEvent) => void
   isDragging: boolean
+  isDropTarget: boolean
   structs: string[]
   allStructs: PluginStruct[]
   allParams: PluginParameter[]
@@ -842,8 +867,10 @@ const ParameterCard = memo(function ParameterCard({
   onDragStart,
   onDragEnd,
   onDragOver,
+  onDragLeave,
   onDrop,
   isDragging,
+  isDropTarget,
   structs,
   allStructs,
   allParams,
@@ -886,12 +913,14 @@ const ParameterCard = memo(function ParameterCard({
     <div
       className={cn(
         'rounded-lg border border-border bg-card transition-all',
-        isDragging && 'opacity-60 shadow-lg scale-[1.02] z-10'
+        isDragging && 'opacity-60 shadow-lg scale-[1.02] z-10 ring-2 ring-primary/50',
+        isDropTarget && !isDragging && 'border-primary border-dashed bg-primary/5'
       )}
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       {/* Header */}
@@ -906,7 +935,7 @@ const ParameterCard = memo(function ParameterCard({
           onClick={(e) => e.stopPropagation()}
           className="h-4 w-4 rounded border-muted-foreground"
         />
-        <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" />
+        <GripVertical className="h-5 w-5 cursor-grab text-muted-foreground transition-colors hover:text-foreground" />
         {expanded ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         ) : (
