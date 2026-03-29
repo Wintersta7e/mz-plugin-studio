@@ -2,7 +2,22 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-29
+
 ### Added
+- **Grouped Parameter Type Dropdown** — 6 logical groups (Basic, Text, Lists, Game Data, Files, Structure) with inline descriptions
+- **Progressive Disclosure** — advanced parameter fields collapsed by default, auto-expand when populated
+- **Inline Parameter Name Validation** — real-time error feedback for empty, invalid, and duplicate names
+- **Drag-and-Drop Target Indicators** — visual border + background highlight on drop target during parameter reorder
+- **Actionable Welcome Screen** — "New Plugin" card on the landing page for immediate onboarding
+- **Copy ID Button** — one-click ID copy on project browser items (actors, items, switches, etc.)
+- **Template Category Persistence** — last-selected template category remembered across opens
+- **Save All (Ctrl+Shift+S)** — save all dirty open plugins in parallel with toast summary
+- **Toggle Preview (Ctrl+B)** — collapse/expand the code preview panel
+- **Command Name Collision Warning** — warns when command names shadow MZ built-in commands (28 names)
+- **Settings Reset to Defaults** — one-click button to restore all settings
+- **Export Format Descriptions** — explanatory text for each export option
+- **Accessibility** — aria-labels on sidebar, status bar, and toast notifications; aria-live regions for dynamic content
 - Per-plugin dirty/saved/rawMode state tracking — switching tabs preserves unsaved indicators and raw mode toggles
 - `generatePluginOutput()` facade for unified raw/generated code switching
 - `MemoizedParamRow` wrapper for stable ParameterCard callback bindings
@@ -27,21 +42,22 @@
 - `.md` and `.d.ts` added to `ALLOWED_EXTENSIONS` (README and TypeScript declaration exports were broken)
 - Toast eviction timer cleanup prevents stale timer fires
 - SettingsDialog ref capture in useEffect cleanup
+- 6 npm audit vulnerabilities resolved (flatted, minimatch, picomatch)
 
 ### Changed
 - **TypeScript**: `noImplicitAny: true` enabled in both web and node tsconfigs
 - **ESLint**: `no-unused-vars` upgraded from warn to error, `no-non-null-assertion` added as warn, `no-console` added as warn
+- Status bar abbreviations expanded and font size bumped for readability
+- Raw mode toggle relabeled with clearer on/off states
+- Sidebar divider widened to 6px for easier grab targeting
 - Shared types moved to `src/shared/types/` as canonical location (renderer re-exports, main/preload import directly)
 - `env.d.ts` imports `API` type from preload instead of redeclaring all interfaces
 - `generateParamParser`/`generateArgParser` unified into shared `generateAccessorParser`
 - `parseProject` reads `System.json` once (was 3 times per call)
-- `DependencyReport.pluginNames` annotated as alias of `loadOrder`
 - Monaco `options` memoized in CodeEditor, CodePreview, and DiffView
 - Store selectors narrowed: CodeEditor subscribes to `customCode` only, MetaEditor to `meta`, StatusBar to `meta.name`
 - ProjectBrowser filter calls wrapped in `useMemo`
-- `highlightCode` uses `push()` instead of O(n) `unshift()` + `.reverse()`
-- TemplateInserter copy timer uses ref-based cleanup pattern
-- ParameterCard wrapped in `React.memo`
+- ParameterCard wrapped in `React.memo` with stable callback bindings
 - `rawSource` stripped from history entries to reduce memory retention
 
 ## [1.4.2] - 2026-02-28

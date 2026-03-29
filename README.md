@@ -24,7 +24,7 @@ MZ Plugin Studio provides a complete visual development environment for creating
 
 ### Plugin Building
 - **Metadata Editor** - Name, version, author, description, help text, URL
-- **Parameter Builder** - All 26 MZ parameter types with drag-and-drop reordering, bulk operations, and presets
+- **Parameter Builder** - All 26 MZ parameter types with grouped dropdown, progressive disclosure, drag-and-drop reordering, inline validation, bulk operations, and presets
 - **Command Builder** - Plugin commands with typed arguments
 - **Struct Definitions** - Complex nested data structures
 - **Multi-language** - Japanese (ja) and Chinese (zh) localization tabs
@@ -105,8 +105,9 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Bulk Parameter Operations** - Multi-select, duplicate, delete, export/import parameters, reusable presets
 - **Note Parameters** - Declare `@noteParam` groups for RPG Maker deployment packager
 - **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
-- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+1-5 tab switching, F5 regenerate)
+- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+Shift+S save all, Ctrl+B toggle preview, Ctrl+1-5 tab switching, F5 regenerate)
 - **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
+- **Accessibility** - ARIA labels and live regions across sidebar, status bar, and toasts
 - **Struct Default Editor** - Visual inline form for struct parameter defaults with real-time JSON validation, "Fill from struct defaults" button, and type-appropriate inputs
 - **Validation** - Warns about unused structs, orphaned parent references, unimplemented commands, and invalid struct default JSON
 - **Logging** - Structured logging via electron-log with debug toggle in Settings; logs to file for troubleshooting
