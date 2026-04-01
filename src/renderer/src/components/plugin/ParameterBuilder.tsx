@@ -111,9 +111,12 @@ const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
   }
 ]
 
+/** Map from param id to param name — lightweight alternative to passing full array (R3-03) */
+type ParamNameMap = ReadonlyMap<string, string>
+
 function getParamNameError(
   name: string,
-  allParams: PluginParameter[],
+  paramNames: ParamNameMap,
   selfId: string
 ): string | null {
   if (!name.trim()) return 'Name is required'
@@ -122,8 +125,9 @@ function getParamNameError(
   if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
     return 'Must be a valid identifier (letters, numbers, _, $)'
   }
-  const isDuplicate = allParams.some((p) => p.id !== selfId && p.name === name)
-  if (isDuplicate) return 'Duplicate parameter name'
+  for (const [id, n] of paramNames) {
+    if (id !== selfId && n === name) return 'Duplicate parameter name'
+  }
   return null
 }
 
@@ -143,13 +147,18 @@ export function ParameterBuilder() {
   const parameterPresets = useSettingsStore((s) => s.parameterPresets)
   const savePreset = useSettingsStore((s) => s.savePreset)
 
-  const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
 
   const structNames = useMemo(() => structs.map((s) => s.name), [structs])
+  // Lightweight map for duplicate name checking — stable ref when names don't change (R3-03)
+  const paramNameMap: ParamNameMap = useMemo(
+    () => new Map(parameters.map((p) => [p.id, p.name])),
+    [parameters]
+  )
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
+  const draggedIdRef = useRef<string | null>(null)
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
 
   // Multi-select state
@@ -170,17 +179,20 @@ export function ParameterBuilder() {
     setSelectedIds(new Set())
   }, [pluginId])
 
-  const selectedParams = parameters.filter((p) => selectedIds.has(p.id))
+  const selectedParams = useMemo(
+    () => parameters.filter((p) => selectedIds.has(p.id)),
+    [parameters, selectedIds]
+  )
   const hasSelection = selectedIds.size > 0
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }
+  }, [])
 
   const selectAll = () => {
     if (selectedIds.size === parameters.length) {
@@ -333,15 +345,11 @@ export function ParameterBuilder() {
     const param = createEmptyParameter()
     addParameter(param)
     setExpandedId(param.id)
-
-    // Inject parameter usage comment into customCode
-    const comment = generateParameterComment(param)
-    const current = customCode || ''
-    setCustomCode(current ? `${current}\n\n${comment}` : comment)
   }
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     setDraggedId(id)
+    draggedIdRef.current = id
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', id)
     // Create a minimal drag image
@@ -351,35 +359,38 @@ export function ParameterBuilder() {
     document.body.appendChild(dragImage)
     e.dataTransfer.setDragImage(dragImage, 100, 20)
     setTimeout(() => document.body.removeChild(dragImage), 0)
-  }
+  }, [])
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
+    draggedIdRef.current = null
     setDraggedId(null)
     setDropTargetId(null)
-  }
+  }, [])
 
-  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    if (dropTargetId !== targetId) setDropTargetId(targetId)
-  }
+    setDropTargetId((prev) => (prev !== targetId ? targetId : prev))
+  }, [])
 
-  const handleDragLeave = () => {
+  const handleDragLeave = useCallback(() => {
     setDropTargetId(null)
-  }
+  }, [])
 
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
+  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault()
-    if (!draggedId || draggedId === targetId) return
-
-    const fromIndex = parameters.findIndex((p) => p.id === draggedId)
-    const toIndex = parameters.findIndex((p) => p.id === targetId)
-
-    if (fromIndex === -1 || toIndex === -1) return
-    usePluginStore.getState().reorderParameters(fromIndex, toIndex)
+    const currentDraggedId = draggedIdRef.current
+    if (!currentDraggedId || currentDraggedId === targetId) return
+    const params = usePluginStore.getState().plugin.parameters
+    const fromIndex = params.findIndex((p) => p.id === currentDraggedId)
+    const toIndex = params.findIndex((p) => p.id === targetId)
+    if (fromIndex !== -1 && toIndex !== -1) {
+      usePluginStore.getState().reorderParameters(fromIndex, toIndex)
+    }
+    draggedIdRef.current = null
     setDraggedId(null)
     setDropTargetId(null)
-  }
+  }, [])
 
   return (
     <div className="flex h-full flex-col">
@@ -495,10 +506,11 @@ export function ParameterBuilder() {
               <MemoizedParamRow
                 key={param.id}
                 param={param}
-                expandedId={expandedId}
-                selectedIds={selectedIds}
-                draggedId={draggedId}
-                customCode={customCode}
+                isExpanded={expandedId === param.id}
+                isSelected={selectedIds.has(param.id)}
+                isDragging={draggedId === param.id}
+                isDropTarget={dropTargetId === param.id}
+                anyDragging={draggedId !== null}
                 toggleSelect={toggleSelect}
                 setExpandedId={setExpandedId}
                 updateParameter={updateParameter}
@@ -510,10 +522,9 @@ export function ParameterBuilder() {
                 handleDragOver={handleDragOver}
                 handleDragLeave={handleDragLeave}
                 handleDrop={handleDrop}
-                dropTargetId={dropTargetId}
                 structNames={structNames}
                 structs={structs}
-                parameters={parameters}
+                paramNameMap={paramNameMap}
                 switches={switches}
                 variables={variables}
                 actors={actors}
@@ -648,10 +659,11 @@ export function ParameterBuilder() {
 /** Thin wrapper that binds param.id into stable callbacks for ParameterCard memo */
 const MemoizedParamRow = memo(function MemoizedParamRow({
   param,
-  expandedId,
-  selectedIds,
-  draggedId,
-  customCode,
+  isExpanded,
+  isSelected,
+  isDragging,
+  isDropTarget,
+  anyDragging,
   toggleSelect,
   setExpandedId,
   updateParameter,
@@ -663,22 +675,22 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDragOver,
   handleDragLeave,
   handleDrop,
-  dropTargetId,
   structNames,
   structs,
-  parameters,
+  paramNameMap,
   switches,
   variables,
   actors,
   items
 }: {
   param: PluginParameter
-  expandedId: string | null
-  selectedIds: Set<string>
-  draggedId: string | null
-  customCode: string | undefined
+  isExpanded: boolean
+  isSelected: boolean
+  isDragging: boolean
+  isDropTarget: boolean
+  anyDragging: boolean
   toggleSelect: (id: string) => void
-  setExpandedId: (id: string | null) => void
+  setExpandedId: React.Dispatch<React.SetStateAction<string | null>>
   updateParameter: (id: string, updates: Partial<PluginParameter>) => void
   removeParameter: (id: string) => void
   setCustomCode: (code: string) => void
@@ -688,10 +700,9 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDragOver: (e: React.DragEvent, id: string) => void
   handleDragLeave: () => void
   handleDrop: (e: React.DragEvent, id: string) => void
-  dropTargetId: string | null
   structNames: string[]
   structs: PluginStruct[]
-  parameters: PluginParameter[]
+  paramNameMap: ParamNameMap
   switches: { id: number; name: string }[]
   variables: { id: number; name: string }[]
   actors: { id: number; name: string }[]
@@ -704,16 +715,19 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         (updates.name !== undefined && updates.name !== param.name) ||
         (updates.type !== undefined && updates.type !== param.type)
       ) {
-        const current = customCode || ''
-        const oldComment = generateParameterComment(param)
-        const newComment = generateParameterComment({ ...param, ...updates } as PluginParameter)
+        // Read full param + customCode from store at call time (R3-04 — narrow deps)
+        const store = usePluginStore.getState()
+        const current = store.plugin.customCode || ''
+        const fullParam = store.plugin.parameters.find((p) => p.id === param.id) ?? param
+        const oldComment = generateParameterComment(fullParam)
+        const newComment = generateParameterComment({ ...fullParam, ...updates } as PluginParameter)
         const updated = current.replace(oldComment, newComment)
         if (updated !== current) {
           setCustomCode(updated)
         }
       }
     },
-    [param, customCode, updateParameter, setCustomCode]
+    [param.id, param.name, param.type, updateParameter, setCustomCode]
   )
 
   const onDelete = useCallback(() => {
@@ -745,16 +759,16 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
 
   const onToggleSelect = useCallback(() => toggleSelect(param.id), [param.id, toggleSelect])
   const onToggle = useCallback(
-    () => setExpandedId(expandedId === param.id ? null : param.id),
-    [param.id, expandedId, setExpandedId]
+    () => setExpandedId((prev) => (prev === param.id ? null : param.id)),
+    [param.id, setExpandedId]
   )
 
   return (
-    <motion.div layout={draggedId !== null} transition={paramCardSpring}>
+    <motion.div layout={anyDragging} transition={paramCardSpring}>
       <ParameterCard
         param={param}
-        expanded={expandedId === param.id}
-        isSelected={selectedIds.has(param.id)}
+        expanded={isExpanded}
+        isSelected={isSelected}
         onToggleSelect={onToggleSelect}
         onToggle={onToggle}
         onUpdate={onUpdate}
@@ -764,11 +778,11 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        isDragging={draggedId === param.id}
-        isDropTarget={dropTargetId === param.id}
+        isDragging={isDragging}
+        isDropTarget={isDropTarget}
         structs={structNames}
         allStructs={structs}
-        allParams={parameters}
+        paramNameMap={paramNameMap}
         switches={switches}
         variables={variables}
         actors={actors}
@@ -795,7 +809,7 @@ interface ParameterCardProps {
   isDropTarget: boolean
   structs: string[]
   allStructs: PluginStruct[]
-  allParams: PluginParameter[]
+  paramNameMap: ParamNameMap
   switches: { id: number; name: string }[]
   variables: { id: number; name: string }[]
   actors: { id: number; name: string }[]
@@ -873,13 +887,13 @@ const ParameterCard = memo(function ParameterCard({
   isDropTarget,
   structs,
   allStructs,
-  allParams,
+  paramNameMap,
   switches,
   variables,
   actors,
   items
 }: ParameterCardProps) {
-  const nameError = getParamNameError(param.name, allParams, param.id)
+  const nameError = getParamNameError(param.name, paramNameMap, param.id)
   const hasAdvancedValues =
     Boolean(param.desc) ||
     (param.type === 'boolean' && (param.onLabel || param.offLabel)) ||
