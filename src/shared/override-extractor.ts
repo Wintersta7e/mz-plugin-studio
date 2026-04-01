@@ -10,7 +10,7 @@
  * prototype references inside them are not matched by the
  * extraction regexes.
  */
-function stripCommentsAndStrings(code: string): string {
+export function stripCommentsAndStrings(code: string): string {
   // Order matters: block comments, single-line comments,
   // template literals, double-quoted strings, single-quoted strings
   return code.replace(

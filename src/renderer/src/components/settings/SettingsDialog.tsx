@@ -45,34 +45,48 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [clearedPresets, setClearedPresets] = useState(false)
   const [clearedSettings, setClearedSettings] = useState(false)
 
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+  // Individual timer refs per button to avoid memory leak (LEAK-03)
+  const recentTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const favoritesTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const templatesTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const presetsTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const settingsTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => {
-    const timers = timersRef.current
-    return () => timers.forEach(clearTimeout)
+    return () => {
+      if (recentTimerRef.current) clearTimeout(recentTimerRef.current)
+      if (favoritesTimerRef.current) clearTimeout(favoritesTimerRef.current)
+      if (templatesTimerRef.current) clearTimeout(templatesTimerRef.current)
+      if (presetsTimerRef.current) clearTimeout(presetsTimerRef.current)
+      if (settingsTimerRef.current) clearTimeout(settingsTimerRef.current)
+    }
   }, [])
 
   const handleClearRecentProjects = () => {
     useProjectStore.setState({ recentProjects: [] })
     setClearedRecent(true)
-    timersRef.current.push(setTimeout(() => setClearedRecent(false), 2000))
+    if (recentTimerRef.current) clearTimeout(recentTimerRef.current)
+    recentTimerRef.current = setTimeout(() => setClearedRecent(false), 2000)
   }
 
   const handleClearFavorites = () => {
     useTemplateStore.setState({ favorites: [] })
     setClearedFavorites(true)
-    timersRef.current.push(setTimeout(() => setClearedFavorites(false), 2000))
+    if (favoritesTimerRef.current) clearTimeout(favoritesTimerRef.current)
+    favoritesTimerRef.current = setTimeout(() => setClearedFavorites(false), 2000)
   }
 
   const handleClearRecentTemplates = () => {
     useTemplateStore.getState().clearRecent()
     setClearedRecentTemplates(true)
-    timersRef.current.push(setTimeout(() => setClearedRecentTemplates(false), 2000))
+    if (templatesTimerRef.current) clearTimeout(templatesTimerRef.current)
+    templatesTimerRef.current = setTimeout(() => setClearedRecentTemplates(false), 2000)
   }
 
   const handleClearAllPresets = () => {
     clearAllPresets()
     setClearedPresets(true)
-    timersRef.current.push(setTimeout(() => setClearedPresets(false), 2000))
+    if (presetsTimerRef.current) clearTimeout(presetsTimerRef.current)
+    presetsTimerRef.current = setTimeout(() => setClearedPresets(false), 2000)
   }
 
   return (
@@ -193,7 +207,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   onClick={() => {
                     resetEditorSettings()
                     setClearedSettings(true)
-                    timersRef.current.push(setTimeout(() => setClearedSettings(false), 2000))
+                    if (settingsTimerRef.current) clearTimeout(settingsTimerRef.current)
+                    settingsTimerRef.current = setTimeout(() => setClearedSettings(false), 2000)
                   }}
                   disabled={clearedSettings}
                 >
