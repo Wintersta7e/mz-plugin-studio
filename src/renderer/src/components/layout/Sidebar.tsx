@@ -13,7 +13,7 @@ import {
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
-import { useProjectStore, usePluginStore, useUIStore } from '../../stores'
+import { useProjectStore, usePluginStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
 import { cn } from '../../lib/utils'
@@ -41,7 +41,6 @@ export function Sidebar({
   const openPlugin = usePluginStore((s) => s.openPlugin)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
-  const clearRawModeForPlugin = useUIStore((s) => s.clearRawModeForPlugin)
 
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
   const scanDependencies = useProjectStore((s) => s.scanDependencies)
@@ -62,12 +61,21 @@ export function Sidebar({
 
   // Fetch all plugin files when project changes
   useEffect(() => {
+    let cancelled = false
     if (project?.path) {
-      window.api.plugin.list(project.path).then((files) => {
-        setAllPluginFiles(files)
-      })
+      window.api.plugin.list(project.path).then(
+        (files) => {
+          if (!cancelled) setAllPluginFiles(files)
+        },
+        () => {
+          if (!cancelled) setAllPluginFiles([])
+        }
+      )
     } else {
       setAllPluginFiles([])
+    }
+    return () => {
+      cancelled = true
     }
   }, [project?.path])
 
@@ -97,7 +105,6 @@ export function Sidebar({
       if (result === 0) return // Cancel
     }
     closePlugin(id)
-    clearRawModeForPlugin(id)
   }
 
   const handleLoadPlugin = async (name: string) => {

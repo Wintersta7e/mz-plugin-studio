@@ -7,6 +7,11 @@ import type {
   PluginStruct
 } from '../types/plugin'
 import { createEmptyPlugin } from '../types/plugin'
+// Cross-store imports — safe because getState() is only called at runtime (inside
+// store actions), never during module initialization. ESM circular bindings resolve
+// by the time any user interaction triggers these actions.
+import { useUIStore } from './uiStore'
+import { useHistoryStore } from './historyStore'
 
 interface PluginState {
   plugin: PluginDefinition
@@ -208,7 +213,15 @@ export const usePluginStore = create<PluginState>()(
         }),
       reorderParameters: (fromIndex, toIndex) =>
         set((state) => {
-          const params = [...state.plugin.parameters]
+          const { parameters } = state.plugin
+          if (
+            fromIndex < 0 ||
+            fromIndex >= parameters.length ||
+            toIndex < 0 ||
+            toIndex >= parameters.length
+          )
+            return {}
+          const params = [...parameters]
           const [moved] = params.splice(fromIndex, 1)
           params.splice(toIndex, 0, moved)
           return updateActivePluginState(state, (plugin) => ({
@@ -338,13 +351,9 @@ export const usePluginStore = create<PluginState>()(
           }
         }),
       closePlugin: (id) => {
-        // Clean up raw mode and history BEFORE state switch (avoids async race)
-        import('./uiStore').then(({ useUIStore }) => {
-          useUIStore.getState().clearRawModeForPlugin(id)
-        })
-        import('./historyStore').then(({ useHistoryStore }) => {
-          useHistoryStore.getState().clear()
-        })
+        // Clean up raw mode and history BEFORE state switch (synchronous)
+        useUIStore.getState().clearRawModeForPlugin(id)
+        useHistoryStore.getState().clear()
         set((state) => {
           const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
           const dirtyByPluginId = markPluginDirty(state.dirtyByPluginId, id, false)
@@ -378,10 +387,8 @@ export const usePluginStore = create<PluginState>()(
               : state.openPlugins
           const plugin = syncedOpenPlugins.find((p) => p.id === id)
           if (plugin) {
-            // Clear undo history when switching plugins (imported lazily to avoid circular deps)
-            import('./historyStore').then(({ useHistoryStore }) => {
-              useHistoryStore.getState().setActivePluginId(id)
-            })
+            // Sync history to new plugin context before state switch
+            useHistoryStore.getState().setActivePluginId(id)
             return {
               openPlugins: syncedOpenPlugins,
               activePluginId: id,
@@ -438,7 +445,34 @@ export const usePluginStore = create<PluginState>()(
         savedPath: state.savedPath,
         dirtyByPluginId: state.dirtyByPluginId,
         savedPathsByPluginId: state.savedPathsByPluginId
-      })
+      }),
+      // Prune stale map entries for plugins no longer in openPlugins (LEAK-05)
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        const liveIds = new Set(state.openPlugins.map((p) => p.id))
+        let dirtyChanged = false
+        let pathsChanged = false
+        const nextDirty = { ...state.dirtyByPluginId }
+        const nextPaths = { ...state.savedPathsByPluginId }
+        for (const key of Object.keys(nextDirty)) {
+          if (!liveIds.has(key)) {
+            delete nextDirty[key]
+            dirtyChanged = true
+          }
+        }
+        for (const key of Object.keys(nextPaths)) {
+          if (!liveIds.has(key)) {
+            delete nextPaths[key]
+            pathsChanged = true
+          }
+        }
+        if (dirtyChanged || pathsChanged) {
+          usePluginStore.setState({
+            ...(dirtyChanged ? { dirtyByPluginId: nextDirty } : {}),
+            ...(pathsChanged ? { savedPathsByPluginId: nextPaths } : {})
+          })
+        }
+      }
     }
   )
 )
