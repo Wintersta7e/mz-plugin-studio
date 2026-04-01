@@ -7,6 +7,8 @@ export interface MZProject {
     switches: string[]
     variables: string[]
   }
+  switches: MZSwitch[]
+  variables: MZVariable[]
   actors: MZActor[]
   items: MZItem[]
   maps: MZMapInfo[]

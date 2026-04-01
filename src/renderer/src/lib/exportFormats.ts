@@ -2,6 +2,7 @@
 // Generates plugins.json entries, TypeScript declarations, and README files
 
 import type { PluginDefinition, PluginParameter, ParamType } from '../types/plugin'
+import { ID_BASED_PARAM_TYPES } from '../types/plugin'
 
 /**
  * Generates a JSON entry for plugins.js
@@ -32,32 +33,11 @@ export function generatePluginsJsonEntry(plugin: PluginDefinition): string {
  * Converts a parameter type to TypeScript type
  */
 function paramTypeToTS(type: ParamType): string {
-  switch (type) {
-    case 'number':
-    case 'variable':
-    case 'switch':
-    case 'actor':
-    case 'class':
-    case 'skill':
-    case 'item':
-    case 'weapon':
-    case 'armor':
-    case 'enemy':
-    case 'troop':
-    case 'state':
-    case 'animation':
-    case 'tileset':
-    case 'common_event':
-      return 'number'
-    case 'boolean':
-      return 'boolean'
-    case 'struct':
-      return 'Record<string, unknown>'
-    case 'array':
-      return 'unknown[]'
-    default:
-      return 'string'
-  }
+  if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) return 'number'
+  if (type === 'boolean') return 'boolean'
+  if (type === 'struct') return 'Record<string, unknown>'
+  if (type === 'array') return 'unknown[]'
+  return 'string'
 }
 
 /**

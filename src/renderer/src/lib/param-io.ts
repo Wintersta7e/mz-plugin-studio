@@ -1,4 +1,5 @@
 import type { PluginParameter } from '../types/plugin'
+import { ALL_PARAM_TYPES } from '../types/plugin'
 
 /** File format for .mzparams export */
 export interface ParameterExport {
@@ -48,10 +49,21 @@ export function deserializeParams(content: string): {
       }
     }
 
-    const params = data.parameters.filter(isValidParam).map((p) => ({
-      ...(p as unknown as PluginParameter),
-      id: crypto.randomUUID()
-    }))
+    const params = data.parameters
+      .filter(isValidParam)
+      .filter((p) => {
+        // Validate that type is a recognized ParamType value (ARCH-09)
+        const type = (p as Record<string, unknown>).type as string
+        if (!ALL_PARAM_TYPES.has(type)) {
+          // Silently skip unknown param types rather than importing corrupt data
+          return false
+        }
+        return true
+      })
+      .map((p) => ({
+        ...(p as unknown as PluginParameter),
+        id: crypto.randomUUID()
+      }))
 
     return { success: true, parameters: params, source: data.source || 'Unknown' }
   } catch (e) {

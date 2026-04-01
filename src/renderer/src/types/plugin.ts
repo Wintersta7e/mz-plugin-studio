@@ -9,6 +9,8 @@ export {
   type NoteParam,
   type PluginMeta,
   type PluginDefinition,
+  ID_BASED_PARAM_TYPES,
+  ALL_PARAM_TYPES,
   setSettingsGetter,
   createEmptyPlugin,
   createEmptyParameter,

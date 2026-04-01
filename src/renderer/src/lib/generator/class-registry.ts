@@ -18,6 +18,8 @@ export interface MZMethodInfo {
   params: string[]
   description: string
   returnType?: string
+  /** Popularity weight from plugin dictionary analysis (higher = more commonly overridden) */
+  popularity?: number
 }
 
 export interface MZClassInfo {
@@ -27,6 +29,8 @@ export interface MZClassInfo {
   parent?: string
   description: string
   methods: MZMethodInfo[]
+  /** Popularity weight from plugin dictionary analysis (higher = more commonly used) */
+  popularity?: number
 }
 
 export interface SearchResult {

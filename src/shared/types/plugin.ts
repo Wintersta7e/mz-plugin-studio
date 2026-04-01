@@ -119,6 +119,63 @@ export function setSettingsGetter(getter: () => { defaultAuthor: string }): void
   _getSettings = getter
 }
 
+/**
+ * Parameter types that represent numeric database IDs in RPG Maker MZ.
+ * Used by the generator (accessor parser, formatJSDefault) and export formats (paramTypeToTS).
+ */
+export const ID_BASED_PARAM_TYPES: ReadonlySet<ParamType> = new Set<ParamType>([
+  'variable',
+  'switch',
+  'actor',
+  'class',
+  'skill',
+  'item',
+  'weapon',
+  'armor',
+  'enemy',
+  'troop',
+  'state',
+  'animation',
+  'tileset',
+  'common_event',
+  'icon',
+  'map'
+])
+
+/**
+ * All valid ParamType values, for runtime validation of imported data.
+ */
+export const ALL_PARAM_TYPES: ReadonlySet<string> = new Set<string>([
+  'string',
+  'number',
+  'boolean',
+  'select',
+  'combo',
+  'variable',
+  'switch',
+  'actor',
+  'class',
+  'skill',
+  'item',
+  'weapon',
+  'armor',
+  'enemy',
+  'troop',
+  'state',
+  'animation',
+  'tileset',
+  'common_event',
+  'file',
+  'icon',
+  'map',
+  'note',
+  'color',
+  'text',
+  'hidden',
+  'struct',
+  'array'
+])
+
 export function createEmptyPlugin(): PluginDefinition {
   const settings = _getSettings?.()
   return {
