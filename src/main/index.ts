@@ -38,6 +38,16 @@ function createWindow(): void {
     mainWindow?.show()
   })
 
+  // Block all navigation away from the app origin — prevents renderer compromise escalation
+  mainWindow.webContents.on('will-navigate', (event) => {
+    // The app is a single-page app — it should never navigate away from its initial URL.
+    // In dev, Vite HMR may trigger same-origin navigations which are safe.
+    // In production, block ALL navigation unconditionally.
+    if (!is.dev) {
+      event.preventDefault()
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {
       const parsed = new URL(details.url)

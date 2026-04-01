@@ -47,7 +47,13 @@ export class ProjectParser {
 
   static async parseProject(path: string): Promise<MZProject> {
     const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
-    const system = JSON.parse(systemContent)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let system: any
+    try {
+      system = JSON.parse(systemContent)
+    } catch {
+      throw new Error(`Failed to parse data/System.json — file may be corrupted or incomplete`)
+    }
 
     // Extract switches/variables directly from already-loaded system (avoids re-reading System.json)
     const switches: MZSwitch[] = (system.switches || [])
@@ -96,6 +102,8 @@ export class ProjectParser {
         switches: switches.map((s: MZSwitch) => s.name),
         variables: variables.map((v: MZVariable) => v.name)
       },
+      switches,
+      variables,
       actors,
       items,
       maps,

@@ -40,18 +40,32 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
       assertSafeProjectPath(projectPath)
       assertSafeFilename(filename)
       const pluginPath = join(projectPath, 'js', 'plugins', filename)
-      const content = await readFile(pluginPath, 'utf-8')
-      const result = PluginParser.parsePlugin(content, filename)
-      log.info(
-        `[plugin:load] ${filename} — params: ${result.parameters.length}, commands: ${result.commands.length}`
-      )
-      return result
+      try {
+        const content = await readFile(pluginPath, 'utf-8')
+        const result = PluginParser.parsePlugin(content, filename)
+        log.info(
+          `[plugin:load] ${filename} — params: ${result.parameters.length}, commands: ${result.commands.length}`
+        )
+        return result
+      } catch (error) {
+        log.error(`[plugin:load] Failed to load ${filename}:`, error)
+        throw new Error(
+          `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
     }
   )
 
   ipcMain.handle(IPC_CHANNELS.PLUGIN_PARSE, async (_event: IpcMainInvokeEvent, content: string) => {
     log.debug('[plugin:parse] Parsing plugin content')
-    return PluginParser.parsePlugin(content)
+    try {
+      return PluginParser.parsePlugin(content)
+    } catch (error) {
+      log.error('[plugin:parse] Failed to parse plugin:', error)
+      throw new Error(
+        `Failed to parse plugin: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
   })
 
   ipcMain.handle(
@@ -117,45 +131,46 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
         const files = await readdir(pluginsDir)
         const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
 
-        const results: ScannedPluginHeader[] = []
+        // Read all plugin files in parallel for faster scanning (PERF-02)
+        const results: ScannedPluginHeader[] = await Promise.all(
+          jsFiles.map(async (file) => {
+            const filePath = join(pluginsDir, file)
+            const content = await readFile(filePath, 'utf-8')
 
-        for (const file of jsFiles) {
-          const filePath = join(pluginsDir, file)
-          const content = await readFile(filePath, 'utf-8')
+            // Only read the MZ annotation block (/*: ... */)
+            const headerMatch = content.match(/\/\*:[\s\S]*?\*\//)
+            const header = headerMatch ? headerMatch[0] : ''
 
-          // Only read the MZ annotation block (/*: ... */)
-          const headerMatch = content.match(/\/\*:[\s\S]*?\*\//)
-          const header = headerMatch ? headerMatch[0] : ''
+            const baseEntries: string[] = []
+            const orderAfterEntries: string[] = []
+            const orderBeforeEntries: string[] = []
 
-          const baseEntries: string[] = []
-          const orderAfterEntries: string[] = []
-          const orderBeforeEntries: string[] = []
+            const baseRegex = /@base\s+(\S+)/g
+            let match: RegExpExecArray | null
+            while ((match = baseRegex.exec(header)) !== null) {
+              baseEntries.push(match[1])
+            }
 
-          const baseRegex = /@base\s+(\S+)/g
-          let match: RegExpExecArray | null
-          while ((match = baseRegex.exec(header)) !== null) {
-            baseEntries.push(match[1])
-          }
+            const orderAfterRegex = /@orderAfter\s+(\S+)/g
+            while ((match = orderAfterRegex.exec(header)) !== null) {
+              orderAfterEntries.push(match[1])
+            }
 
-          const orderAfterRegex = /@orderAfter\s+(\S+)/g
-          while ((match = orderAfterRegex.exec(header)) !== null) {
-            orderAfterEntries.push(match[1])
-          }
+            const orderBeforeRegex = /@orderBefore\s+(\S+)/g
+            while ((match = orderBeforeRegex.exec(header)) !== null) {
+              orderBeforeEntries.push(match[1])
+            }
 
-          const orderBeforeRegex = /@orderBefore\s+(\S+)/g
-          while ((match = orderBeforeRegex.exec(header)) !== null) {
-            orderBeforeEntries.push(match[1])
-          }
-
-          results.push({
-            filename: file,
-            name: file.replace(/\.js$/, ''),
-            base: baseEntries,
-            orderAfter: orderAfterEntries,
-            orderBefore: orderBeforeEntries,
-            overrides: extractOverrides(content)
+            return {
+              filename: file,
+              name: file.replace(/\.js$/, ''),
+              base: baseEntries,
+              orderAfter: orderAfterEntries,
+              orderBefore: orderBeforeEntries,
+              overrides: extractOverrides(content)
+            }
           })
-        }
+        )
 
         log.info(`[plugin:scan-headers] Scanned ${results.length} plugins in ${projectPath}`)
         return results

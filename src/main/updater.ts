@@ -8,17 +8,24 @@ export function setupAutoUpdater(mainWindow: BrowserWindow): void {
   autoUpdater.autoInstallOnAppQuit = true
   log.info('[updater] Auto-updater initialized')
 
+  // Defensive null checks on mainWindow — on macOS the window could be
+  // destroyed while the updater is still running. This app targets Windows
+  // but the guard is cheap insurance. (LEAK-06)
   autoUpdater.on('update-available', (info) => {
     log.info(`[updater] Update available: v${info.version}`)
-    mainWindow.webContents.send(IPC_CHANNELS.UPDATE_AVAILABLE, {
-      version: info.version,
-      releaseNotes: info.releaseNotes
-    })
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.UPDATE_AVAILABLE, {
+        version: info.version,
+        releaseNotes: info.releaseNotes
+      })
+    }
   })
 
   autoUpdater.on('update-downloaded', () => {
     log.info('[updater] Update downloaded, will install on quit')
-    mainWindow.webContents.send(IPC_CHANNELS.UPDATE_DOWNLOADED)
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.UPDATE_DOWNLOADED)
+    }
   })
 
   ipcMain.handle(IPC_CHANNELS.UPDATE_DOWNLOAD, async () => {
