@@ -165,7 +165,7 @@ describe('template registry', () => {
 
     it('uses defaults from template fields when values omit optional fields', () => {
       registerTemplate(makeTemplate())
-      // Pass only required fields; timing has a default
+      // Pass only required fields; timing has a default of 'after'
       const result = generateFromTemplate('test-template', {
         className: 'Game_Actor',
         methodName: 'initialize'
@@ -173,6 +173,7 @@ describe('template registry', () => {
         // The template generate() uses '?? after' fallback
       })
       expect(result).not.toBeNull()
+      expect(result).toContain('after')
     })
   })
 

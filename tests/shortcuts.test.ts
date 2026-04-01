@@ -91,6 +91,13 @@ describe('matchShortcut', () => {
     expect(result).toBeNull()
   })
 
+  it('matches cmd+s on macOS (metaKey)', () => {
+    const event = new KeyboardEvent('keydown', { key: 's', code: 'KeyS', metaKey: true })
+    const result = matchShortcut(event)
+    expect(result).not.toBeNull()
+    expect(result!.key).toBe('ctrl+s')
+  })
+
   it('matches f1 (show shortcuts help)', () => {
     const evt = makeKeyboardEvent({ code: 'F1' })
     const result = matchShortcut(evt)

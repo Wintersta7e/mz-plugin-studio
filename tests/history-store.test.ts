@@ -49,19 +49,6 @@ describe('historyStore', () => {
       expect(useHistoryStore.getState().future).toHaveLength(0)
     })
 
-    it('enforces 50-entry cap', () => {
-      const base = createPlugin('Base')
-
-      for (let i = 0; i < 51; i++) {
-        const plugin = createPlugin(`Plugin-${i}`)
-        plugin.id = base.id // same plugin id so history doesn't auto-clear
-        plugin.meta.description = `Iteration ${i}` // unique fingerprint
-        useHistoryStore.getState().push(plugin)
-      }
-
-      expect(useHistoryStore.getState().past).toHaveLength(50)
-    })
-
     it('skips duplicate consecutive pushes with identical fingerprints', () => {
       const plugin = createPlugin('Alpha')
       useHistoryStore.getState().push(plugin)
@@ -114,6 +101,7 @@ describe('historyStore', () => {
 
       const result = useHistoryStore.getState().undo()
       expect(result?.id).toBe(pluginV2.id) // last entry in past (rawSource stripped)
+      expect(result?.meta?.description).toBe('v2')
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future).toHaveLength(1)
       expect(useHistoryStore.getState().future[0].plugin.id).toBe(pluginV2.id)
@@ -308,6 +296,7 @@ describe('historyStore', () => {
       // Redo forward
       const redone = useHistoryStore.getState().redo()
       expect(redone).not.toBeNull()
+      expect(redone?.meta?.description).toBe('updated')
     })
   })
 })

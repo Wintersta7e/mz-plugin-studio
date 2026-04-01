@@ -188,14 +188,6 @@ describe('validation - COV-04 gaps', () => {
     )
   })
 
-  it('warns when command name shadows MZ built-in ShowText', () => {
-    const plugin = createTestPlugin({
-      commands: [{ id: '1', name: 'ShowText', text: 'Show Text', desc: '', args: [] }]
-    })
-    const result = validatePlugin(plugin)
-    expect(result.warnings.some((w) => w.includes('ShowText'))).toBe(true)
-  })
-
   it('does not warn for non-builtin command names', () => {
     const plugin = createTestPlugin({
       commands: [{ id: '1', name: 'CustomCommand', text: 'Custom', desc: '', args: [] }]

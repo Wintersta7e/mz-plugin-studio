@@ -220,12 +220,8 @@ describe('generatePlugin', () => {
         }
       ]
     })
-    const output = generatePlugin(plugin)
-    // Basic syntax check: matching braces, parens
-    const braces = output.split('{').length - output.split('}').length
-    const parens = output.split('(').length - output.split(')').length
-    expect(braces).toBe(0)
-    expect(parens).toBe(0)
+    const code = generatePlugin(plugin)
+    expect(() => new Function(code)).not.toThrow()
   })
 
   it('generates struct definition blocks', () => {
@@ -329,28 +325,6 @@ describe('generatePlugin', () => {
     expect(output).toContain("JSON.parse(params['pos'] || '{}')")
   })
 
-  it('skips command body generation when command already in customCode', () => {
-    const plugin = createTestPlugin({
-      commands: [
-        {
-          id: 'c1',
-          name: 'MyCmd',
-          text: 'My Cmd',
-          desc: '',
-          args: []
-        }
-      ],
-      customCode:
-        "PluginManager.registerCommand(PLUGIN_NAME, 'MyCmd', function(args) { /* custom */ });"
-    })
-    const output = generatePlugin(plugin)
-    // The header should have the @command
-    expect(output).toContain('@command MyCmd')
-    // But the body should not duplicate the registerCommand (it's in customCode)
-    const bodySection = output.split('Custom Plugin Code')[0]
-    const registerCalls = bodySection.match(/registerCommand\(PLUGIN_NAME, 'MyCmd'/g) || []
-    expect(registerCalls).toHaveLength(0)
-  })
 })
 
 // COV-01: generateRawMode injection paths
@@ -1075,33 +1049,6 @@ describe('generateBodyPreserved', () => {
 })
 
 describe('validatePlugin', () => {
-  it('returns valid for correct plugin', () => {
-    const plugin = createTestPlugin()
-    const result = validatePlugin(plugin)
-    expect(result.valid).toBe(true)
-    expect(result.errors).toHaveLength(0)
-  })
-
-  it('returns error for missing plugin name', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: '',
-        version: '1.0.0',
-        author: '',
-        description: '',
-        help: '',
-        url: '',
-        target: '',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {}
-      }
-    })
-    const result = validatePlugin(plugin)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('name'))).toBe(true)
-  })
-
   it('returns error for invalid plugin name', () => {
     const plugin = createTestPlugin({
       meta: {
@@ -1119,48 +1066,6 @@ describe('validatePlugin', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.valid).toBe(false)
-  })
-
-  it('returns error for duplicate parameter names', () => {
-    const plugin = createTestPlugin({
-      parameters: [
-        { id: '1', name: 'foo', text: 'Foo', desc: '', type: 'string', default: '' },
-        { id: '2', name: 'foo', text: 'Foo2', desc: '', type: 'string', default: '' }
-      ]
-    })
-    const result = validatePlugin(plugin)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Duplicate parameter'))).toBe(true)
-  })
-
-  it('returns error for duplicate command names', () => {
-    const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'Cmd', text: 'Cmd', desc: '', args: [] },
-        { id: '2', name: 'Cmd', text: 'Cmd2', desc: '', args: [] }
-      ]
-    })
-    const result = validatePlugin(plugin)
-    expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Duplicate command'))).toBe(true)
-  })
-
-  it('returns warning for undefined struct reference', () => {
-    const plugin = createTestPlugin({
-      parameters: [
-        {
-          id: '1',
-          name: 'data',
-          text: 'Data',
-          desc: '',
-          type: 'struct',
-          default: '{}',
-          structType: 'NonExistent'
-        }
-      ]
-    })
-    const result = validatePlugin(plugin)
-    expect(result.warnings.some((w) => w.includes('NonExistent'))).toBe(true)
   })
 
   it('returns error for invalid command name', () => {

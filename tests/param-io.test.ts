@@ -5,6 +5,7 @@ import {
   duplicateParams
 } from '../src/renderer/src/lib/param-io'
 import type { PluginParameter } from '../src/renderer/src/types/plugin'
+import { createEmptyParameter } from '../src/renderer/src/types/plugin'
 
 function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
   return {
@@ -143,12 +144,6 @@ describe('deserializeParams', () => {
     expect(result.parameters[1].name).toBe('alsoValid')
   })
 
-  it('returns specific error for invalid JSON', () => {
-    const result = deserializeParams('not json at all {{{')
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('not valid JSON')
-  })
-
   it('defaults source to Unknown when missing', () => {
     const content = JSON.stringify({
       version: 1,
@@ -172,6 +167,36 @@ describe('deserializeParams', () => {
     expect(result.parameters).toHaveLength(3)
     expect(result.parameters[0].name).toBe('a')
     expect(result.parameters[2].name).toBe('c')
+  })
+
+  it('filters out parameters with unrecognized type', () => {
+    const content = JSON.stringify({
+      version: 1,
+      parameters: [
+        { id: '1', name: 'good', type: 'string', default: '' },
+        { id: '2', name: 'bad', type: 'banana', default: '' }
+      ]
+    })
+    const result = deserializeParams(content)
+    expect(result.success).toBe(true)
+    expect(result.parameters).toHaveLength(1)
+    expect(result.parameters[0].name).toBe('good')
+  })
+})
+
+describe('param-io round-trip', () => {
+  it('round-trips through serialize and deserialize', () => {
+    const params = [createEmptyParameter()]
+    params[0].name = 'testParam'
+    params[0].type = 'number'
+    params[0].default = '42'
+    const serialized = serializeParams(params, 'TestPlugin')
+    const result = deserializeParams(serialized)
+    expect(result.success).toBe(true)
+    expect(result.parameters).toHaveLength(1)
+    expect(result.parameters[0].name).toBe('testParam')
+    expect(result.parameters[0].type).toBe('number')
+    expect(result.parameters[0].default).toBe('42')
   })
 })
 

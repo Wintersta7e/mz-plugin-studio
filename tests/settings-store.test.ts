@@ -108,6 +108,11 @@ describe('settingsStore', () => {
       expect(useSettingsStore.getState().editorFontSize).toBe(24)
     })
 
+    it('clamps NaN font size to minimum', () => {
+      useSettingsStore.getState().setEditorFontSize(NaN)
+      expect(useSettingsStore.getState().editorFontSize).toBe(10)
+    })
+
     it('accepts boundary values 10 and 24', () => {
       useSettingsStore.getState().setEditorFontSize(10)
       expect(useSettingsStore.getState().editorFontSize).toBe(10)

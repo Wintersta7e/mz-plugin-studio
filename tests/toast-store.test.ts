@@ -24,9 +24,11 @@ describe('toastStore', () => {
     const { addToast } = useToastStore.getState()
     addToast({ type: 'success', message: 'ok' })
     addToast({ type: 'error', message: 'fail' })
-    addToast({ type: 'info', message: 'note' })
     addToast({ type: 'warning', message: 'warn' })
-    expect(useToastStore.getState().toasts).toHaveLength(4)
+    addToast({ type: 'info', message: 'note' })
+    const toasts = useToastStore.getState().toasts
+    expect(toasts).toHaveLength(4)
+    expect(toasts.map((t) => t.type)).toEqual(['success', 'error', 'warning', 'info'])
   })
 
   it('dismisses a toast by id', () => {

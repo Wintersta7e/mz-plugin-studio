@@ -329,7 +329,7 @@ describe('PluginParser', () => {
 })();`
       const result = PluginParser.parsePlugin(content)
       expect(result.codeBody).toContain('(() => {')
-      expect(result.customCode).toBeTruthy()
+      expect(result.customCode).toContain('console.log')
     })
 
     it('returns empty customCode for empty plugin', () => {
@@ -366,6 +366,12 @@ describe('PluginParser', () => {
       expect(() => PluginParser.parsePlugin('')).not.toThrow()
       expect(() => PluginParser.parsePlugin('not a plugin')).not.toThrow()
       expect(() => PluginParser.parsePlugin('/* unclosed comment')).not.toThrow()
+
+      for (const input of ['', 'not a plugin', '/* unclosed comment']) {
+        const result = PluginParser.parsePlugin(input)
+        expect(result.parameters).toEqual([])
+        expect(result.commands).toEqual([])
+      }
     })
 
     it('handles plugin with no header comment', () => {
@@ -441,7 +447,8 @@ describe('PluginParser', () => {
       const result = PluginParser.parsePlugin(content)
       expect(result.parameters[0].type).toBe('select')
       expect(result.parameters[0].options).toBeDefined()
-      expect(result.parameters[0].options!.length).toBeGreaterThanOrEqual(1)
+      expect(result.parameters[0].options).toHaveLength(2)
+      expect(result.parameters[0].options![0].text).toBe('Easy')
     })
   })
 
@@ -587,7 +594,7 @@ describe('PluginParser', () => {
 })();`
       const result = PluginParser.parsePlugin(content)
       // customCode should contain the post-command code or at least the full inner body
-      expect(result.customCode).toBeTruthy()
+      expect(result.customCode).toContain('Scene_Map.prototype.update')
     })
 
     it('unwraps traditional function IIFE variant', () => {
@@ -605,7 +612,7 @@ describe('PluginParser', () => {
       const result = PluginParser.parsePlugin(content)
       expect(result.codeBody).toContain('(function()')
       // inner content should have been extracted into customCode
-      expect(result.customCode).toBeTruthy()
+      expect(result.customCode).toContain('MyPlugin.init')
     })
   })
 

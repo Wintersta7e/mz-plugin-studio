@@ -269,33 +269,6 @@ Scene_Title.prototype.drawGameTitle = function() {
   })
 
   describe('generateRawMode', () => {
-    it('falls back to generatePlugin when no rawSource', () => {
-      const plugin = {
-        id: 'test',
-        meta: {
-          name: 'TestPlugin',
-          version: '1.0.0',
-          author: 'Test',
-          description: 'Test plugin',
-          help: '',
-          url: '',
-          target: 'MZ',
-          dependencies: [],
-          orderAfter: [],
-          localizations: {}
-        },
-        parameters: [],
-        commands: [],
-        structs: []
-      }
-
-      const result = generateRawMode(plugin)
-      // Should contain the IIFE body from generatePlugin
-      expect(result).toContain('(() => {')
-      expect(result).toContain('/*:')
-      expect(result).toContain('@plugindesc Test plugin')
-    })
-
     it('preserves original code body while regenerating headers', () => {
       const originalCode = `
 

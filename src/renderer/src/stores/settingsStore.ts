@@ -44,7 +44,8 @@ export const useSettingsStore = create<SettingsState>()(
       debugLogging: false,
 
       setTheme: (theme) => set({ theme }),
-      setEditorFontSize: (size) => set({ editorFontSize: Math.max(10, Math.min(24, size)) }),
+      setEditorFontSize: (size) =>
+        set({ editorFontSize: Math.max(10, Math.min(24, Number.isFinite(size) ? size : 10)) }),
       setEditorWordWrap: (wrap) => set({ editorWordWrap: wrap }),
       setEditorMinimap: (minimap) => set({ editorMinimap: minimap }),
       setEditorLineNumbers: (lineNumbers) => set({ editorLineNumbers: lineNumbers }),

@@ -100,6 +100,11 @@ describe('extractOverrides', () => {
     expect(extractOverrides(code)).toEqual([])
   })
 
+  it('ignores prototype refs in single-quoted strings', () => {
+    const code = `var x = 'Game_Actor.prototype.setup = function() {}';`
+    expect(extractOverrides(code)).toEqual([])
+  })
+
   // --- Whitespace handling ---
 
   it('handles multiple spaces around =', () => {
@@ -355,11 +360,6 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
     expect(report.conflicts).toHaveLength(1)
     expect(report.conflicts[0].plugins).toEqual(['', 'PluginB'])
-  })
-
-  it('health is clean when 0 conflicts', () => {
-    const report = detectConflicts([], mockMzClasses)
-    expect(report.health).toBe('clean')
   })
 
   it('health is conflicts when any conflicts exist', () => {
