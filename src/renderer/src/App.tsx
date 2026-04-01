@@ -66,6 +66,13 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
 
+  // Guard: skip history push when the plugin change originated from undo/redo
+  const isUndoRedoRef = useRef(false)
+  // Guard: prevent concurrent save operations (BUG-03)
+  const isSavingRef = useRef(false)
+  // Guard: prevent concurrent loadProject calls (BUG-10)
+  const isLoadingRef = useRef(false)
+
   const [projectBrowserOpen, setProjectBrowserOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -107,8 +114,13 @@ function App() {
     resizeRef.current = { startX: e.clientX, startWidth: previewWidth }
   }
 
-  // Save plugin state to history on changes (debounced)
+  // Save plugin state to history on changes (debounced).
+  // Skips when the change came from undo/redo to avoid wiping the redo stack.
   useEffect(() => {
+    if (isUndoRedoRef.current) {
+      isUndoRedoRef.current = false
+      return
+    }
     const timeoutId = setTimeout(() => {
       pushHistory(plugin)
     }, 500)
@@ -119,8 +131,10 @@ function App() {
   // Note: Window close via titlebar is handled by the close button directly
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent): string | void => {
-      // Only warn for browser refresh, not for programmatic close
-      if (usePluginStore.getState().isDirty) {
+      // Check ALL open plugins for unsaved changes, not just the active one
+      const state = usePluginStore.getState()
+      const anyDirty = Object.values(state.dirtyByPluginId).some(Boolean)
+      if (anyDirty) {
         e.preventDefault()
         e.returnValue = ''
         return ''
@@ -133,6 +147,8 @@ function App() {
 
   const loadProject = useCallback(
     async (path: string) => {
+      if (isLoadingRef.current) return
+      isLoadingRef.current = true
       setLoading(true)
       setError(null)
 
@@ -148,53 +164,22 @@ function App() {
         setProject(projectData)
         addRecentProject(path)
 
-        const [
-          switches,
-          variables,
-          actors,
-          items,
-          skills,
-          weapons,
-          armors,
-          enemies,
-          states,
-          animations,
-          tilesets,
-          commonEvents,
-          classes,
-          troops
-        ] = await Promise.all([
-          window.api.project.getSwitches(path),
-          window.api.project.getVariables(path),
-          window.api.project.getActors(path),
-          window.api.project.getItems(path),
-          window.api.project.getSkills(path),
-          window.api.project.getWeapons(path),
-          window.api.project.getArmors(path),
-          window.api.project.getEnemies(path),
-          window.api.project.getStates(path),
-          window.api.project.getAnimations(path),
-          window.api.project.getTilesets(path),
-          window.api.project.getCommonEvents(path),
-          window.api.project.getClasses(path),
-          window.api.project.getTroops(path)
-        ])
-
+        // Use data already loaded by parseProject — avoids 14 redundant IPC file reads
         setAllGameData({
-          switches,
-          variables,
-          actors,
-          items,
-          skills,
-          weapons,
-          armors,
-          enemies,
-          states,
-          animations,
-          tilesets,
-          commonEvents,
-          classes,
-          troops
+          switches: projectData.switches,
+          variables: projectData.variables,
+          actors: projectData.actors,
+          items: projectData.items,
+          skills: projectData.skills,
+          weapons: projectData.weapons,
+          armors: projectData.armors,
+          enemies: projectData.enemies,
+          states: projectData.states,
+          animations: projectData.animations,
+          tilesets: projectData.tilesets,
+          commonEvents: projectData.commonEvents,
+          classes: projectData.classes,
+          troops: projectData.troops
         })
 
         // Scan after all game data is loaded (not via setTimeout in setProject)
@@ -203,6 +188,7 @@ function App() {
         setError(String(error))
       } finally {
         setLoading(false)
+        isLoadingRef.current = false
       }
     },
     [setLoading, setError, setProject, addRecentProject, setAllGameData, scanDependencies]
@@ -240,21 +226,32 @@ function App() {
       switch (shortcut.key) {
         case 'ctrl+z': {
           const prev = undo()
-          if (prev) setPlugin(prev)
+          if (prev) {
+            isUndoRedoRef.current = true
+            // Restore rawSource from current plugin since history strips it to save memory
+            const currentRawSource = usePluginStore.getState().plugin.rawSource
+            setPlugin(prev.rawSource ? prev : { ...prev, rawSource: currentRawSource })
+          }
           break
         }
         case 'ctrl+shift+z': {
           const next = redo()
-          if (next) setPlugin(next)
+          if (next) {
+            isUndoRedoRef.current = true
+            const currentRawSource = usePluginStore.getState().plugin.rawSource
+            setPlugin(next.rawSource ? next : { ...next, rawSource: currentRawSource })
+          }
           break
         }
         case 'ctrl+s': {
+          if (isSavingRef.current) break
           const ps = usePluginStore.getState()
           const rawMode = useUIStore
             .getState()
             .getRawModeForPlugin(ps.plugin.id, Boolean(ps.plugin.rawSource))
           const proj = useProjectStore.getState().project
           if (proj && ps.plugin.meta.name) {
+            isSavingRef.current = true
             const code = generatePluginOutput(ps.plugin, rawMode)
             const filename = `${ps.plugin.meta.name}.js`
             window.api.plugin
@@ -272,13 +269,21 @@ function App() {
                   message: `Save failed: ${error instanceof Error ? error.message : String(error)}`
                 })
               })
+              .finally(() => {
+                isSavingRef.current = false
+              })
           }
           break
         }
         case 'ctrl+shift+s': {
+          if (isSavingRef.current) break
+          isSavingRef.current = true
           const ps = usePluginStore.getState()
           const proj = useProjectStore.getState().project
-          if (!proj) break
+          if (!proj) {
+            isSavingRef.current = false
+            break
+          }
           let savedCount = 0
           let failCount = 0
           const savePromises = ps.openPlugins
@@ -307,17 +312,21 @@ function App() {
                 failCount++
               }
             })
-          void Promise.all(savePromises).then(() => {
-            if (savedCount > 0 || failCount > 0) {
-              useToastStore.getState().addToast({
-                type: failCount > 0 ? 'warning' : 'success',
-                message:
-                  failCount > 0
-                    ? `Saved ${savedCount}, failed ${failCount}`
-                    : `${savedCount} plugin${savedCount > 1 ? 's' : ''} saved`
-              })
-            }
-          })
+          void Promise.all(savePromises)
+            .then(() => {
+              if (savedCount > 0 || failCount > 0) {
+                useToastStore.getState().addToast({
+                  type: failCount > 0 ? 'warning' : 'success',
+                  message:
+                    failCount > 0
+                      ? `Saved ${savedCount}, failed ${failCount}`
+                      : `${savedCount} plugin${savedCount > 1 ? 's' : ''} saved`
+                })
+              }
+            })
+            .finally(() => {
+              isSavingRef.current = false
+            })
           break
         }
         case 'ctrl+b':

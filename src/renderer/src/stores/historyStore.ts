@@ -2,6 +2,9 @@ import { create } from 'zustand'
 import type { PluginDefinition } from '../types/plugin'
 import { usePluginStore } from './pluginStore'
 
+/** Plugin snapshot stored in history — rawSource is always stripped to save memory (R3-07) */
+type HistoryPluginSnapshot = Omit<PluginDefinition, 'rawSource'> & { rawSource?: undefined }
+
 /** Lightweight fingerprint to detect duplicate consecutive pushes */
 function pluginFingerprint(plugin: PluginDefinition): string {
   return JSON.stringify({
@@ -29,8 +32,9 @@ function pluginFingerprint(plugin: PluginDefinition): string {
 }
 
 interface HistoryEntry {
-  plugin: PluginDefinition
+  plugin: HistoryPluginSnapshot
   timestamp: number
+  fingerprint: string
 }
 
 interface HistoryState {
@@ -40,8 +44,8 @@ interface HistoryState {
   activePluginId: string | null
 
   push: (plugin: PluginDefinition) => void
-  undo: () => PluginDefinition | null
-  redo: () => PluginDefinition | null
+  undo: () => HistoryPluginSnapshot | null
+  redo: () => HistoryPluginSnapshot | null
   clear: () => void
   canUndo: () => boolean
   canRedo: () => boolean
@@ -64,9 +68,13 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
   push: (plugin) =>
     set((state) => {
       // Strip rawSource to avoid retaining large strings in history
-
       const { rawSource: _raw, ...pluginSnapshot } = plugin
-      const entry = { plugin: pluginSnapshot as PluginDefinition, timestamp: Date.now() }
+      const fp = pluginFingerprint(plugin)
+      const entry: HistoryEntry = {
+        plugin: pluginSnapshot as HistoryPluginSnapshot,
+        timestamp: Date.now(),
+        fingerprint: fp
+      }
 
       // If plugin switched without explicit setActivePluginId, clear history
       if (state.activePluginId !== null && plugin.id !== state.activePluginId) {
@@ -76,9 +84,9 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
           activePluginId: plugin.id
         }
       }
-      // Skip duplicate consecutive pushes
+      // Skip duplicate consecutive pushes (compare cached fingerprints — avoids double serialization)
       const last = state.past[state.past.length - 1]
-      if (last && pluginFingerprint(last.plugin) === pluginFingerprint(plugin)) {
+      if (last && last.fingerprint === fp) {
         return {}
       }
       return {
@@ -94,10 +102,18 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
     const previous = past[past.length - 1]
     const currentPlugin = usePluginStore.getState().plugin
+    const { rawSource: _raw, ...snapshot } = currentPlugin
 
     set({
       past: past.slice(0, -1),
-      future: [{ plugin: currentPlugin, timestamp: Date.now() }, ...future]
+      future: [
+        {
+          plugin: snapshot as HistoryPluginSnapshot,
+          timestamp: Date.now(),
+          fingerprint: pluginFingerprint(currentPlugin)
+        },
+        ...future
+      ]
     })
 
     return previous.plugin
@@ -109,9 +125,17 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
     const next = future[0]
     const currentPlugin = usePluginStore.getState().plugin
+    const { rawSource: _raw, ...snapshot } = currentPlugin
 
     set({
-      past: [...past, { plugin: currentPlugin, timestamp: Date.now() }],
+      past: [
+        ...past,
+        {
+          plugin: snapshot as HistoryPluginSnapshot,
+          timestamp: Date.now(),
+          fingerprint: pluginFingerprint(currentPlugin)
+        }
+      ],
       future: future.slice(1)
     })
 
