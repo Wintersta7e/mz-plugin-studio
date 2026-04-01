@@ -231,6 +231,14 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   const searchInputRef = useRef<HTMLInputElement>(null)
   const insertButtonRef = useRef<HTMLButtonElement>(null)
 
+  // Cleanup copy timer on unmount (LEAK-01)
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    },
+    []
+  )
+
   useEffect(() => {
     persistCategory(selectedCategory)
   }, [selectedCategory, persistCategory])
@@ -306,8 +314,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
       label: category.charAt(0).toUpperCase() + category.slice(1),
       options: [...classes]
         .sort((a, b) => {
-          const popA = (a as unknown as { popularity?: number }).popularity ?? 0
-          const popB = (b as unknown as { popularity?: number }).popularity ?? 0
+          const popA = a.popularity ?? 0
+          const popB = b.popularity ?? 0
           if (popB !== popA) return popB - popA
           return a.name.localeCompare(b.name)
         })
@@ -322,8 +330,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     const methods = getClassMethods(className)
     return [...methods]
       .sort((a, b) => {
-        const popA = (a as unknown as { popularity?: number }).popularity ?? 0
-        const popB = (b as unknown as { popularity?: number }).popularity ?? 0
+        const popA = a.popularity ?? 0
+        const popB = b.popularity ?? 0
         if (popB !== popA) return popB - popA
         return a.name.localeCompare(b.name)
       })

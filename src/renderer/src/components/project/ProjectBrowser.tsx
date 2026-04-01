@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   X,
   ChevronDown,
@@ -89,6 +89,15 @@ interface DataListProps {
 function DataList({ items, emptyMessage }: DataListProps) {
   const filteredItems = items.filter((item) => item.name && item.name.trim() !== '')
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Cleanup copy timer on unmount (LEAK-02)
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    },
+    []
+  )
 
   if (filteredItems.length === 0) {
     return <div className="px-4 py-2 text-sm text-muted-foreground italic">{emptyMessage}</div>
@@ -97,7 +106,8 @@ function DataList({ items, emptyMessage }: DataListProps) {
   const handleCopy = (id: number) => {
     navigator.clipboard.writeText(String(id))
     setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 1500)
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+    copyTimerRef.current = setTimeout(() => setCopiedId(null), 1500)
   }
 
   return (

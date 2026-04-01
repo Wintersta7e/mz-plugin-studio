@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
+import { useMemo, useCallback, useState, useRef, useEffect, useDeferredValue } from 'react'
 import Editor from '@monaco-editor/react'
 import {
   Copy,
@@ -48,6 +48,7 @@ export function CodePreview() {
     s.getRawModeForPlugin(plugin.id, Boolean(plugin.rawSource))
   )
   const setRawModeForPlugin = useUIStore((s) => s.setRawModeForPlugin)
+  const getRawModeForPlugin = useUIStore((s) => s.getRawModeForPlugin)
 
   const [copied, setCopied] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
@@ -84,6 +85,9 @@ export function CodePreview() {
   const hasRawSource = Boolean(plugin.rawSource)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
 
+  // Defer expensive computations so keystrokes aren't blocked by code gen + validation
+  const deferredPlugin = useDeferredValue(plugin)
+
   // Preserve the user's raw-mode choice per plugin while keeping imported plugins in raw mode by default.
   useEffect(() => {
     const currentRawMode = useUIStore.getState().rawModeByPluginId[plugin.id]
@@ -99,33 +103,39 @@ export function CodePreview() {
     }
   }, [plugin.id, hasRawSource, setRawModeForPlugin])
 
+  // Derive raw mode from deferred plugin to keep code gen consistent (R3-02)
+  const deferredRawMode = useMemo(
+    () => getRawModeForPlugin(deferredPlugin.id, Boolean(deferredPlugin.rawSource)),
+    [deferredPlugin.id, deferredPlugin.rawSource, getRawModeForPlugin]
+  )
+
   const code = useMemo(() => {
     try {
-      return generatePluginOutput(plugin, previewRawMode)
+      return generatePluginOutput(deferredPlugin, deferredRawMode)
     } catch (e) {
       log.error('Code generation error:', e)
       return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
     }
-  }, [plugin, previewRawMode])
+  }, [deferredPlugin, deferredRawMode])
 
   // Diff always uses raw mode for imported plugins (shows meaningful metadata changes, not full regeneration noise)
   const diffModifiedCode = useMemo(() => {
     if (!hasRawSource) return code
     try {
-      return generateRawMode(plugin)
+      return generateRawMode(deferredPlugin)
     } catch {
       return code
     }
-  }, [plugin, hasRawSource, code])
+  }, [deferredPlugin, hasRawSource, code])
 
   const validation = useMemo(() => {
     try {
-      return validatePlugin(plugin)
+      return validatePlugin(deferredPlugin)
     } catch (e) {
       log.error('Validation error:', e)
       return { valid: false, errors: [String(e)], warnings: [] }
     }
-  }, [plugin])
+  }, [deferredPlugin])
 
   // Badge bounce when validation counts change
   useEffect(() => {
@@ -161,22 +171,35 @@ export function CodePreview() {
   }, [exportMenuOpen])
 
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(code)
+    // Generate fresh code from immediate state, not deferred (R3-06)
+    const currentPlugin = usePluginStore.getState().plugin
+    const rawMode = useUIStore
+      .getState()
+      .getRawModeForPlugin(currentPlugin.id, Boolean(currentPlugin.rawSource))
+    const freshCode = generatePluginOutput(currentPlugin, rawMode)
+    await navigator.clipboard.writeText(freshCode)
     setCopied(true)
     addToast({ type: 'success', message: 'Code copied to clipboard' })
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
     copyTimerRef.current = setTimeout(() => setCopied(false), 2000)
-  }, [code, addToast])
+  }, [addToast])
 
   const handleExport = useCallback(async () => {
+    // Generate from immediate state (not deferred) to avoid saving stale code (R3-01)
+    const currentPlugin = usePluginStore.getState().plugin
+    const rawMode = useUIStore
+      .getState()
+      .getRawModeForPlugin(currentPlugin.id, Boolean(currentPlugin.rawSource))
+    const freshCode = generatePluginOutput(currentPlugin, rawMode)
+
     if (!project) {
       const filePath = await window.api.dialog.saveFile({
-        defaultPath: `${plugin.meta.name || 'NewPlugin'}.js`,
+        defaultPath: `${currentPlugin.meta.name || 'NewPlugin'}.js`,
         filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
       })
       if (filePath) {
         try {
-          const result = await window.api.plugin.saveToPath(filePath, code)
+          const result = await window.api.plugin.saveToPath(filePath, freshCode)
           if (result.success) {
             setSavedPath(result.path)
             setDirty(false)
@@ -194,9 +217,9 @@ export function CodePreview() {
       return
     }
 
-    const filename = `${plugin.meta.name || 'NewPlugin'}.js`
+    const filename = `${currentPlugin.meta.name || 'NewPlugin'}.js`
     try {
-      const result = await window.api.plugin.save(project.path, filename, code)
+      const result = await window.api.plugin.save(project.path, filename, freshCode)
       if (result.success) {
         setSavedPath(result.path)
         setDirty(false)
@@ -210,7 +233,7 @@ export function CodePreview() {
         message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
       })
     }
-  }, [code, plugin.meta.name, project, setSavedPath, setDirty, addToast])
+  }, [project, setSavedPath, setDirty, addToast])
 
   const handleDiffToggle = useCallback(async () => {
     if (showDiff) {
