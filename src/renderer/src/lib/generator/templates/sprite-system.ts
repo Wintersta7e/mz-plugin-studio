@@ -9,6 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Converts a sprite name to a valid identifier
@@ -144,7 +145,7 @@ const customSpriteClassTemplate: CodeTemplate = {
     } else if (useBitmap === 'filled') {
       lines.push('    // Create filled bitmap')
       lines.push(`    this.bitmap = new Bitmap(${width}, ${height});`)
-      lines.push(`    this.bitmap.fillRect(0, 0, ${width}, ${height}, '${fillColor}');`)
+      lines.push(`    this.bitmap.fillRect(0, 0, ${width}, ${height}, '${escapeJSString(fillColor)}');`)
     } else {
       lines.push('    // Load external image')
       lines.push("    // this.bitmap = ImageManager.loadPicture('your_image');")
@@ -519,7 +520,7 @@ const pictureManipulationTemplate: CodeTemplate = {
       lines.push('')
       lines.push(`$gameScreen.showPicture(`)
       lines.push(`    ${pictureId},         // Picture ID`)
-      lines.push(`    '${imageName}',       // Image name (from img/pictures/)`)
+      lines.push(`    '${escapeJSString(imageName)}',       // Image name (from img/pictures/)`)
       lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
       lines.push(`    ${x},                 // X position`)
       lines.push(`    ${y},                 // Y position`)

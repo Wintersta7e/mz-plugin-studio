@@ -9,6 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Template 1: Custom Text Code
@@ -425,7 +426,7 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('    if (this._dimmerSprite) {')
           lines.push('        this._dimmerSprite.bitmap.clear();')
           lines.push(
-            `        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, '${bgColor}');`
+            `        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`
           )
           lines.push('    }')
           lines.push('};')

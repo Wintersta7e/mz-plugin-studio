@@ -7,6 +7,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Converts a window name to a valid identifier
@@ -729,7 +730,7 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`${fullClassName}.prototype.createCustomBackground = function() {`)
     lines.push('    // Create a custom colored background')
     lines.push('    this._customBg = new Sprite(new Bitmap(this.width, this.height));')
-    lines.push(`    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${bgColor}');`)
+    lines.push(`    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`)
     lines.push('    this._customBg.opacity = 200;')
     lines.push('    this.addChildToBack(this._customBg);')
     lines.push('};')
@@ -812,7 +813,7 @@ const popupNotificationTemplate: CodeTemplate = {
     // Refresh method
     lines.push(`${fullClassName}.prototype.refresh = function() {`)
     lines.push('    this.contents.clear();')
-    lines.push(`    this.contents.textColor = '${textColor}';`)
+    lines.push(`    this.contents.textColor = '${escapeJSString(textColor)}';`)
     lines.push("    this.drawText(this._message, 0, 0, this.contentsWidth(), 'center');")
     lines.push('};')
     lines.push('')
@@ -1109,16 +1110,16 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push('    // Initialize gauge configurations')
     lines.push('    this._gaugeData = [')
     lines.push(
-      `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: 0, max: 100 },`
+      `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: 0, max: 100 },`
     )
     if (gaugeCount >= 2) {
       lines.push(
-        `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: 0, max: 100 },`
+        `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: 0, max: 100 },`
       )
     }
     if (gaugeCount >= 3) {
       lines.push(
-        `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: 0, max: 100 },`
+        `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: 0, max: 100 },`
       )
     }
     lines.push('    ];')
@@ -1155,16 +1156,16 @@ const gaugeWindowTemplate: CodeTemplate = {
       lines.push('    ')
       lines.push('    return [')
       lines.push(
-        `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: actor.hp, max: actor.mhp },`
+        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: actor.hp, max: actor.mhp },`
       )
       if (gaugeCount >= 2) {
         lines.push(
-          `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: actor.mp, max: actor.mmp },`
+          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: actor.mp, max: actor.mmp },`
         )
       }
       if (gaugeCount >= 3) {
         lines.push(
-          `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: actor.tp, max: actor.maxTp() },`
+          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: actor.tp, max: actor.maxTp() },`
         )
       }
       lines.push('    ];')
@@ -1173,16 +1174,16 @@ const gaugeWindowTemplate: CodeTemplate = {
       lines.push('    // Customize variable IDs as needed')
       lines.push('    return [')
       lines.push(
-        `        { label: '${gauge1Label}', color1: '${gauge1Color1}', color2: '${gauge1Color2}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
+        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
       )
       if (gaugeCount >= 2) {
         lines.push(
-          `        { label: '${gauge2Label}', color1: '${gauge2Color1}', color2: '${gauge2Color2}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
+          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
         )
       }
       if (gaugeCount >= 3) {
         lines.push(
-          `        { label: '${gauge3Label}', color1: '${gauge3Color1}', color2: '${gauge3Color2}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
+          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
         )
       }
       lines.push('    ];')

@@ -9,6 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Template 1: BGM Control
@@ -124,7 +125,7 @@ const bgmControlTemplate: CodeTemplate = {
         coreCode = [
           '// Play BGM with specified settings',
           'const bgm = {',
-          `    name: '${filename || 'BGM_NAME'}',`,
+          `    name: '${escapeJSString(filename || 'BGM_NAME')}',`,
           `    volume: ${volume},`,
           `    pitch: ${pitch},`,
           `    pan: ${pan}`,
@@ -322,7 +323,7 @@ const sePlayerTemplate: CodeTemplate = {
         'const randomPitch = basePitch + Math.floor(Math.random() * variation * 2) - variation;'
       )
       coreCode.push('const se = {')
-      coreCode.push(`    name: '${filename}',`)
+      coreCode.push(`    name: '${escapeJSString(filename)}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push('    pitch: Math.max(50, Math.min(150, randomPitch)),')
       coreCode.push(`    pan: ${pan}`)
@@ -330,7 +331,7 @@ const sePlayerTemplate: CodeTemplate = {
     } else {
       coreCode.push('// Play sound effect')
       coreCode.push('const se = {')
-      coreCode.push(`    name: '${filename}',`)
+      coreCode.push(`    name: '${escapeJSString(filename)}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push(`    pitch: ${pitch},`)
       coreCode.push(`    pan: ${pan}`)
@@ -511,7 +512,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         coreCode.push('')
         coreCode.push('// Define the new BGM settings')
         coreCode.push('const newBgm = {')
-        coreCode.push(`    name: '${newBgmFilename || 'NEW_BGM_NAME'}',`)
+        coreCode.push(`    name: '${escapeJSString(newBgmFilename || 'NEW_BGM_NAME')}',`)
         coreCode.push(`    volume: ${newBgmVolume},`)
         coreCode.push(`    pitch: ${newBgmPitch},`)
         coreCode.push('    pan: 0')
@@ -542,7 +543,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         coreCode.push('')
         coreCode.push('// Define the BGM settings')
         coreCode.push('const bgm = {')
-        coreCode.push(`    name: '${newBgmFilename || 'BGM_NAME'}',`)
+        coreCode.push(`    name: '${escapeJSString(newBgmFilename || 'BGM_NAME')}',`)
         coreCode.push(`    volume: ${newBgmVolume},`)
         coreCode.push(`    pitch: ${newBgmPitch},`)
         coreCode.push('    pan: 0')

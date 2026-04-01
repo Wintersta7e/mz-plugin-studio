@@ -9,6 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Helper to generate argument parsing code
@@ -147,7 +148,7 @@ const basicCommandTemplate: CodeTemplate = {
     }
 
     // Registration
-    lines.push(`PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`)
+    lines.push(`PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`)
 
     // Argument parsing
     if (args.length > 0) {
@@ -160,9 +161,9 @@ const basicCommandTemplate: CodeTemplate = {
     lines.push('    // Your command logic here')
     if (args.length > 0) {
       const argList = args.map((a) => a.name).join(', ')
-      lines.push(`    console.log('${commandName} called with:', ${argList});`)
+      lines.push(`    console.log('${escapeJSString(commandName)} called with:', ${argList});`)
     } else {
-      lines.push(`    console.log('${commandName} called');`)
+      lines.push(`    console.log('${escapeJSString(commandName)} called');`)
     }
 
     lines.push('});')
@@ -278,7 +279,7 @@ const asyncCommandTemplate: CodeTemplate = {
           `const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;`
         )
         lines.push('Game_Interpreter.prototype.updateWaitMode = function() {')
-        lines.push(`    if (this._waitMode === '${commandName}') {`)
+        lines.push(`    if (this._waitMode === '${escapeJSString(commandName)}') {`)
         lines.push(`        if (!this._${commandName}Complete) {`)
         lines.push('            return true; // Keep waiting')
         lines.push('        }')
@@ -290,15 +291,15 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push(
-          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push('    const interpreter = this;')
-        lines.push(`    interpreter.setWaitMode('${commandName}');`)
+        lines.push(`    interpreter.setWaitMode('${escapeJSString(commandName)}');`)
         lines.push('')
         lines.push('    // Your async operation here')
         lines.push('    setTimeout(() => {')
         lines.push('        // Simulate async work completing')
-        lines.push(`        console.log('${commandName} async operation complete');`)
+        lines.push(`        console.log('${escapeJSString(commandName)} async operation complete');`)
         lines.push(`        interpreter._${commandName}Complete = true;`)
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
@@ -307,7 +308,7 @@ const asyncCommandTemplate: CodeTemplate = {
       case 'waitCount':
         // Simple frame wait
         lines.push(
-          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push('    const interpreter = this;')
         lines.push('')
@@ -318,7 +319,7 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('')
         lines.push('    // Your command logic here')
         lines.push('    // Note: Code here runs immediately, wait only affects event flow')
-        lines.push(`    console.log('${commandName} initiated ${waitDuration} frame wait');`)
+        lines.push(`    console.log('${escapeJSString(commandName)} initiated ${waitDuration} frame wait');`)
         lines.push('});')
         break
 
@@ -338,14 +339,14 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push(
-          `PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push(`    _${commandName}Pending = true;`)
         lines.push('')
         lines.push('    // Your async operation here (e.g., fetch, image loading, etc.)')
         lines.push('    setTimeout(() => {')
         lines.push('        // Async work complete')
-        lines.push(`        console.log('${commandName} async operation complete');`)
+        lines.push(`        console.log('${escapeJSString(commandName)} async operation complete');`)
         lines.push(`        _${commandName}Pending = false;`)
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
@@ -482,19 +483,19 @@ const validatedCommandTemplate: CodeTemplate = {
     switch (errorHandling) {
       case 'silent':
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    console.log('[${pluginName}] ' + message);`)
+        lines.push(`    console.log('[${escapeJSString(pluginName)}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
       case 'throw':
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    throw new Error('[${pluginName}] ' + message);`)
+        lines.push(`    throw new Error('[${escapeJSString(pluginName)}] ' + message);`)
         lines.push('}')
         break
       case 'warning':
       default:
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    console.warn('[${pluginName}] ' + message);`)
+        lines.push(`    console.warn('[${escapeJSString(pluginName)}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
@@ -538,7 +539,7 @@ const validatedCommandTemplate: CodeTemplate = {
     lines.push('')
 
     // Command registration
-    lines.push(`PluginManager.registerCommand('${pluginName}', '${commandName}', function(args) {`)
+    lines.push(`PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`)
     lines.push('    // Run validation')
     lines.push(`    if (!${commandName}_validate(args)) {`)
     lines.push('        return; // Validation failed')
@@ -566,7 +567,7 @@ const validatedCommandTemplate: CodeTemplate = {
     } else if (validateNumberRange) {
       lines.push(`    console.log('Command executed with value:', value);`)
     } else {
-      lines.push(`    console.log('${commandName} executed');`)
+      lines.push(`    console.log('${escapeJSString(commandName)} executed');`)
     }
 
     lines.push('});')

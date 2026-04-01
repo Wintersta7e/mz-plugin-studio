@@ -7,6 +7,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
+import { escapeJSString } from '../escape'
 
 /**
  * Convert a property name to PascalCase for method names
@@ -18,12 +19,29 @@ function toPascalCase(str: string): string {
 }
 
 /**
- * Get the appropriate default value literal based on data type
+ * Get the appropriate default value literal based on data type.
+ * Sanitizes user-provided custom defaults to prevent code injection.
  */
 function getDefaultLiteral(dataType: string, customDefault?: string): string {
-  // If user provided a custom default, use it (with validation)
+  // If user provided a custom default, sanitize it based on type
   if (customDefault !== undefined && customDefault !== '') {
-    return customDefault
+    switch (dataType) {
+      case 'number':
+        return String(Number(customDefault))
+      case 'string':
+        return `'${escapeJSString(customDefault)}'`
+      case 'boolean':
+        return customDefault.toLowerCase() === 'true' ? 'true' : 'false'
+      case 'object':
+      case 'array':
+        try {
+          return JSON.stringify(JSON.parse(customDefault))
+        } catch {
+          return dataType === 'object' ? '{}' : '[]'
+        }
+      default:
+        return 'null'
+    }
   }
 
   // Return type-appropriate defaults

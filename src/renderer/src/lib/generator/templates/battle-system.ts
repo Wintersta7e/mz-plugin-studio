@@ -159,6 +159,9 @@ const damageModifierTemplate: CodeTemplate = {
         const num = parseFloat(modifyValue)
         if (isNaN(num)) {
           errors.push('Value must be a valid number for multiply/add operations')
+        } else if (String(num) !== modifyValue.trim()) {
+          // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
+          errors.push('Value must contain only numeric characters (digits, decimal point, minus sign)')
         } else if (modifyType === 'multiply' && num <= 0) {
           errors.push('Multiplier should be a positive number')
         }
