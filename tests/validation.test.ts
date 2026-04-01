@@ -155,6 +155,66 @@ describe('validation - empty parameter name', () => {
   })
 })
 
+// COV-04: validatePlugin gaps
+describe('validation - COV-04 gaps', () => {
+  it('warns when struct default is a JSON array (not an object)', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'list',
+          text: 'List',
+          desc: '',
+          type: 'struct',
+          default: '[1,2,3]',
+          structType: 'Item'
+        }
+      ],
+      structs: [{ id: 's1', name: 'Item', parameters: [] }]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('list') && w.includes('JSON'))).toBe(true)
+  })
+
+  it('warns when command name shadows a MZ built-in command (ShowAnimation)', () => {
+    const plugin = createTestPlugin({
+      commands: [
+        { id: '1', name: 'ShowAnimation', text: 'Show Animation', desc: '', args: [] }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('ShowAnimation') && w.includes('built-in'))).toBe(
+      true
+    )
+  })
+
+  it('warns when command name shadows MZ built-in ShowText', () => {
+    const plugin = createTestPlugin({
+      commands: [{ id: '1', name: 'ShowText', text: 'Show Text', desc: '', args: [] }]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('ShowText'))).toBe(true)
+  })
+
+  it('does not warn for non-builtin command names', () => {
+    const plugin = createTestPlugin({
+      commands: [{ id: '1', name: 'CustomCommand', text: 'Custom', desc: '', args: [] }]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.every((w) => !w.includes('built-in'))).toBe(true)
+  })
+
+  it('considers command implemented when registered with double quotes', () => {
+    const plugin = createTestPlugin({
+      commands: [{ id: '1', name: 'MyAction', text: 'My Action', desc: '', args: [] }],
+      customCode: `PluginManager.registerCommand(PLUGIN_NAME, "MyAction", function(args) {});`
+    })
+    const result = validatePlugin(plugin)
+    // The command name "MyAction" appears in customCode with double quotes
+    expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
+  })
+})
+
 describe('validation - new checks', () => {
   it('warns about unused struct definitions', () => {
     const plugin = createTestPlugin({

@@ -311,3 +311,55 @@ describe('historyStore', () => {
     })
   })
 })
+
+// COV-21: pluginFingerprint - fingerprint dedup behavior
+describe('pluginFingerprint dedup behavior', () => {
+  beforeEach(() => {
+    resetStores()
+  })
+
+  it('two plugins with same meta/params/commands but different customCode LENGTH share same fingerprint', () => {
+    // The fingerprint uses code LENGTH (customCode?.length), not content.
+    // Two plugins with different code content but same length → same fingerprint → dedup fires.
+    const baseId = createPlugin('A').id
+    const pluginA = createPlugin('A')
+    pluginA.id = baseId
+    pluginA.customCode = 'abc' // length 3
+
+    const pluginB = createPlugin('A')
+    pluginB.id = baseId
+    pluginB.customCode = 'xyz' // length 3, same as abc — same fingerprint!
+
+    useHistoryStore.getState().push(pluginA)
+    useHistoryStore.getState().push(pluginB)
+
+    // Same fingerprint → deduplication fires → only one entry
+    expect(useHistoryStore.getState().past).toHaveLength(1)
+  })
+
+  it('two plugins with different customCode length have different fingerprints and both are pushed', () => {
+    const baseId = createPlugin('A').id
+    const pluginA = createPlugin('A')
+    pluginA.id = baseId
+    pluginA.customCode = 'ab' // length 2
+
+    const pluginB = createPlugin('A')
+    pluginB.id = baseId
+    pluginB.customCode = 'abc' // length 3 — different fingerprint!
+
+    useHistoryStore.getState().push(pluginA)
+    useHistoryStore.getState().push(pluginB)
+
+    expect(useHistoryStore.getState().past).toHaveLength(2)
+  })
+
+  it('rawSource is stripped from history entries (not stored)', () => {
+    const plugin = createPlugin('Alpha')
+    plugin.rawSource = 'large raw source string that should not be stored'
+
+    useHistoryStore.getState().push(plugin)
+
+    const entry = useHistoryStore.getState().past[0]
+    expect(entry.plugin.rawSource).toBeUndefined()
+  })
+})

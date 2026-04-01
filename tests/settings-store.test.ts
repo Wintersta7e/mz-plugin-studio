@@ -134,3 +134,90 @@ describe('settingsStore', () => {
     })
   })
 })
+
+// COV-19: resetEditorSettings and individual setters
+describe('settingsStore - COV-19', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    useSettingsStore.setState(useSettingsStore.getInitialState(), true)
+  })
+
+  describe('resetEditorSettings', () => {
+    it('resets theme, fontSize, wordWrap, minimap, lineNumbers, debugLogging to defaults', () => {
+      useSettingsStore.getState().setTheme('light')
+      useSettingsStore.getState().setEditorFontSize(20)
+      useSettingsStore.getState().setEditorWordWrap(false)
+      useSettingsStore.getState().setEditorMinimap(true)
+      useSettingsStore.getState().setEditorLineNumbers(false)
+      useSettingsStore.setState({ debugLogging: true })
+
+      useSettingsStore.getState().resetEditorSettings()
+
+      const state = useSettingsStore.getState()
+      expect(state.theme).toBe('dark')
+      expect(state.editorFontSize).toBe(13)
+      expect(state.editorWordWrap).toBe(true)
+      expect(state.editorMinimap).toBe(false)
+      expect(state.editorLineNumbers).toBe(true)
+      expect(state.debugLogging).toBe(false)
+    })
+
+    it('preserves parameterPresets after resetEditorSettings', () => {
+      const param: PluginParameter = {
+        id: 'p1',
+        name: 'TestParam',
+        text: 'Test Parameter',
+        desc: '',
+        type: 'string',
+        default: 'hello'
+      }
+      useSettingsStore.getState().savePreset('Keeper', [param])
+      useSettingsStore.getState().resetEditorSettings()
+
+      expect(useSettingsStore.getState().parameterPresets).toHaveProperty('Keeper')
+    })
+
+    it('preserves defaultAuthor after resetEditorSettings', () => {
+      useSettingsStore.getState().setDefaultAuthor('KeepMe')
+      useSettingsStore.getState().resetEditorSettings()
+
+      // resetEditorSettings does not reset defaultAuthor
+      expect(useSettingsStore.getState().defaultAuthor).toBe('KeepMe')
+    })
+  })
+
+  describe('individual setters', () => {
+    it('setTheme toggles between dark and light', () => {
+      useSettingsStore.getState().setTheme('light')
+      expect(useSettingsStore.getState().theme).toBe('light')
+      useSettingsStore.getState().setTheme('dark')
+      expect(useSettingsStore.getState().theme).toBe('dark')
+    })
+
+    it('setEditorWordWrap sets word wrap', () => {
+      useSettingsStore.getState().setEditorWordWrap(false)
+      expect(useSettingsStore.getState().editorWordWrap).toBe(false)
+      useSettingsStore.getState().setEditorWordWrap(true)
+      expect(useSettingsStore.getState().editorWordWrap).toBe(true)
+    })
+
+    it('setEditorMinimap sets minimap visibility', () => {
+      useSettingsStore.getState().setEditorMinimap(true)
+      expect(useSettingsStore.getState().editorMinimap).toBe(true)
+      useSettingsStore.getState().setEditorMinimap(false)
+      expect(useSettingsStore.getState().editorMinimap).toBe(false)
+    })
+
+    it('setEditorLineNumbers sets line number visibility', () => {
+      useSettingsStore.getState().setEditorLineNumbers(false)
+      expect(useSettingsStore.getState().editorLineNumbers).toBe(false)
+      useSettingsStore.getState().setEditorLineNumbers(true)
+      expect(useSettingsStore.getState().editorLineNumbers).toBe(true)
+    })
+
+    it('setDefaultAuthor sets the author string', () => {
+      useSettingsStore.getState().setDefaultAuthor('Plugin Dev')
+      expect(useSettingsStore.getState().defaultAuthor).toBe('Plugin Dev')
+    })
+  })
+})

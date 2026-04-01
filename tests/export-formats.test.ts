@@ -297,8 +297,6 @@ describe('generateTypeDeclaration', () => {
       'text',
       'hidden',
       'file',
-      'icon',
-      'map',
       'color'
     ]
 
@@ -310,6 +308,20 @@ describe('generateTypeDeclaration', () => {
 
     for (const t of stringTypes) {
       expect(result).toContain(`p_${t}: string`)
+    }
+  })
+
+  it('maps icon and map types to number (ID-based)', () => {
+    const idTypes: ParamType[] = ['icon', 'map']
+
+    const plugin = createMinimalPlugin({
+      parameters: idTypes.map((t) => makeParam({ name: `p_${t}`, text: `P ${t}`, type: t }))
+    })
+
+    const result = generateTypeDeclaration(plugin)
+
+    for (const t of idTypes) {
+      expect(result).toContain(`p_${t}: number`)
     }
   })
 
@@ -514,5 +526,75 @@ describe('generateReadme', () => {
     const result = generateReadme(plugin)
 
     expect(result).not.toContain('## More Information')
+  })
+})
+
+// COV-20: Export format edge types - combo, hidden, color map to string
+describe('generateTypeDeclaration - COV-20 edge types', () => {
+  it('maps combo type to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'myCombo', type: 'combo', text: 'Combo' })]
+    })
+    const result = generateTypeDeclaration(plugin)
+    expect(result).toContain('myCombo: string')
+  })
+
+  it('maps hidden type to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'hiddenField', type: 'hidden', text: 'Hidden' })]
+    })
+    const result = generateTypeDeclaration(plugin)
+    expect(result).toContain('hiddenField: string')
+  })
+
+  it('maps color type to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'bgColor', type: 'color', text: 'Color' })]
+    })
+    const result = generateTypeDeclaration(plugin)
+    expect(result).toContain('bgColor: string')
+  })
+
+  it('maps note type to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'noteField', type: 'note', text: 'Note' })]
+    })
+    const result = generateTypeDeclaration(plugin)
+    expect(result).toContain('noteField: string')
+  })
+
+  it('maps text type to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'textArea', type: 'text', text: 'Text' })]
+    })
+    const result = generateTypeDeclaration(plugin)
+    expect(result).toContain('textArea: string')
+  })
+})
+
+// COV-20: generatePluginsJsonEntry edge types
+describe('generatePluginsJsonEntry - COV-20 edge types', () => {
+  it('stringifies combo defaults to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'mode', type: 'combo', default: 'auto' })]
+    })
+    const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+    expect(parsed.parameters.mode).toBe('auto')
+  })
+
+  it('stringifies hidden defaults to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'token', type: 'hidden', default: 'secret' })]
+    })
+    const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+    expect(parsed.parameters.token).toBe('secret')
+  })
+
+  it('stringifies color defaults to string', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'bg', type: 'color', default: '#ffffff' })]
+    })
+    const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+    expect(parsed.parameters.bg).toBe('#ffffff')
   })
 })

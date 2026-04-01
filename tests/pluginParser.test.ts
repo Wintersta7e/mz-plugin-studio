@@ -389,6 +389,226 @@ describe('PluginParser', () => {
     })
   })
 
+  // COV-12: parseParameters edge cases
+  describe('parseParameters edge cases', () => {
+    it('maps @type num to number', () => {
+      const content = `/*:
+ * @param speed
+ * @type num
+ * @default 5
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.parameters[0].type).toBe('number')
+    })
+
+    it('maps @type bool to boolean', () => {
+      const content = `/*:
+ * @param flag
+ * @type bool
+ * @default true
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.parameters[0].type).toBe('boolean')
+    })
+
+    it('maps @type string[] to array with arrayType string', () => {
+      const content = `/*:
+ * @param items
+ * @type string[]
+ * @default []
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.parameters[0].type).toBe('array')
+      expect(result.parameters[0].arrayType).toBe('string')
+    })
+
+    it('preserves rawType for struct<Name> types', () => {
+      const content = `/*:
+ * @param pos
+ * @type struct<Position>
+ * @default {}
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.parameters[0].type).toBe('struct')
+      expect(result.parameters[0].structType).toBe('Position')
+      expect(result.parameters[0].rawType).toBe('struct<Position>')
+    })
+
+    it('parses compact format with options on one line', () => {
+      const content = `/*:
+ * @param mode @text Mode @type select @option Easy @value easy @option Hard @value hard @default easy
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.parameters[0].type).toBe('select')
+      expect(result.parameters[0].options).toBeDefined()
+      expect(result.parameters[0].options!.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  // COV-13: parseCommands/parseArgs edge cases
+  describe('parseCommands/parseArgs edge cases', () => {
+    it('parses boolean arg with @on and @off', () => {
+      const content = `/*:
+ * @command Toggle
+ * @text Toggle Thing
+ *
+ * @arg visible
+ * @text Visible
+ * @type boolean
+ * @on Show
+ * @off Hide
+ * @default true
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.commands[0].args[0].type).toBe('boolean')
+      expect(result.commands[0].args[0].onLabel).toBe('Show')
+      expect(result.commands[0].args[0].offLabel).toBe('Hide')
+      expect(result.commands[0].args[0].default).toBe(true)
+    })
+
+    it('parses file arg with @require', () => {
+      const content = `/*:
+ * @command SetImage
+ * @text Set Image
+ *
+ * @arg image
+ * @text Image File
+ * @type file
+ * @dir img/pictures
+ * @require 1
+ * @default
+ */`
+      const result = PluginParser.parsePlugin(content)
+      const arg = result.commands[0].args[0]
+      expect(arg.type).toBe('file')
+      expect(arg.dir).toBe('img/pictures')
+      expect(arg.require).toBe(true)
+    })
+
+    it('parses struct type arg', () => {
+      const content = `/*:
+ * @command Configure
+ * @text Configure
+ *
+ * @arg settings
+ * @text Settings
+ * @type struct<Config>
+ * @default {}
+ */`
+      const result = PluginParser.parsePlugin(content)
+      const arg = result.commands[0].args[0]
+      expect(arg.type).toBe('struct')
+      expect(arg.structType).toBe('Config')
+    })
+
+    it('parses select arg with options', () => {
+      const content = `/*:
+ * @command SetDiff
+ * @text Set Difficulty
+ *
+ * @arg difficulty
+ * @text Difficulty
+ * @type select
+ * @option Easy
+ * @value easy
+ * @option Normal
+ * @value normal
+ * @default normal
+ */`
+      const result = PluginParser.parsePlugin(content)
+      const arg = result.commands[0].args[0]
+      expect(arg.type).toBe('select')
+      expect(arg.options).toBeDefined()
+      expect(arg.options!.some((o) => o.value === 'easy')).toBe(true)
+      expect(arg.options!.some((o) => o.value === 'normal')).toBe(true)
+    })
+
+    it('parses number arg with min/max/decimals', () => {
+      const content = `/*:
+ * @command SetValue
+ * @text Set Value
+ *
+ * @arg value
+ * @text Value
+ * @type number
+ * @min 0
+ * @max 100
+ * @decimals 2
+ * @default 50
+ */`
+      const result = PluginParser.parsePlugin(content)
+      const arg = result.commands[0].args[0]
+      expect(arg.type).toBe('number')
+      expect(arg.min).toBe(0)
+      expect(arg.max).toBe(100)
+      expect(arg.decimals).toBe(2)
+    })
+  })
+
+  // COV-11: extractCustomCode
+  describe('extractCustomCode', () => {
+    it('extracts code after custom code marker comment', () => {
+      const content = `/*:
+ * @plugindesc Test
+ * @author Test
+ */
+
+(() => {
+    'use strict';
+    const params = PluginManager.parameters('Test');
+    const speed = Number(params['speed'] || 5);
+
+    // Custom plugin code
+    Game_Actor.prototype.myMethod = function() {
+        return speed;
+    };
+})();`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.customCode).toContain('Game_Actor.prototype.myMethod')
+    })
+
+    it('extracts code after registerCommand block', () => {
+      const content = `/*:
+ * @plugindesc Test
+ * @author Test
+ *
+ * @command DoThing
+ */
+
+(() => {
+    'use strict';
+    const PLUGIN_NAME = 'Test';
+    PluginManager.registerCommand(PLUGIN_NAME, 'DoThing', function(args) {
+        // command logic
+    });
+
+    // Post-command extension
+    Scene_Map.prototype.update = function() {};
+})();`
+      const result = PluginParser.parsePlugin(content)
+      // customCode should contain the post-command code or at least the full inner body
+      expect(result.customCode).toBeTruthy()
+    })
+
+    it('unwraps traditional function IIFE variant', () => {
+      const content = `/*:
+ * @plugindesc Test
+ * @author Test
+ */
+
+(function() {
+    'use strict';
+    // Custom implementation
+    var MyPlugin = {};
+    MyPlugin.init = function() { return true; };
+})();`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.codeBody).toContain('(function()')
+      // inner content should have been extracted into customCode
+      expect(result.customCode).toBeTruthy()
+    })
+  })
+
   describe('real-world plugin', () => {
     it('parses a VisuStella-style plugin header', () => {
       const content = `/*:
