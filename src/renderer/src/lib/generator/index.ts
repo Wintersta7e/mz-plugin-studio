@@ -5,6 +5,9 @@ import type {
   PluginStruct,
   ParamType
 } from '../../types/plugin'
+import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
+import { escapeJSString } from './escape'
+import { stripCommentsAndStrings } from '../../../../shared/override-extractor'
 
 /**
  * Generate a complete RPG Maker MZ plugin from a PluginDefinition
@@ -362,7 +365,7 @@ function generateBody(plugin: PluginDefinition): string {
 
   // Plugin name constant
   const pluginName = plugin.meta.name || 'NewPlugin'
-  lines.push(`    const PLUGIN_NAME = '${pluginName}';`)
+  lines.push(`    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`)
   lines.push('')
 
   // Parse parameters if any exist
@@ -383,7 +386,11 @@ function generateBody(plugin: PluginDefinition): string {
   // Register commands if any exist (skip commands already handled in customCode)
   const customCode = plugin.customCode || ''
   const commandsToGenerate = plugin.commands.filter(
-    (cmd) => !customCode.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`)
+    (cmd) =>
+      !customCode.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+      !customCode.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
+      !customCode.includes(`registerCommand("${pluginName}", '${cmd.name}'`) &&
+      !customCode.includes(`registerCommand("${pluginName}", "${cmd.name}"`)
   )
 
   if (commandsToGenerate.length > 0) {
@@ -391,7 +398,9 @@ function generateBody(plugin: PluginDefinition): string {
 
     for (const cmd of commandsToGenerate) {
       lines.push('')
-      lines.push(`    PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`)
+      lines.push(
+        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
+      )
 
       // Parse command arguments
       for (const arg of cmd.args) {
@@ -401,7 +410,7 @@ function generateBody(plugin: PluginDefinition): string {
       lines.push('')
       lines.push('        // TODO: Implement command logic')
       lines.push(
-        `        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
+        `        console.log('${escapeJSString(cmd.name)} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
       )
       lines.push('    });')
     }
@@ -449,16 +458,14 @@ export function generateRawMode(plugin: PluginDefinition): string {
   let output = plugin.rawSource
 
   // 1. Replace the main /*: ... */ block with regenerated header
-  const mainStart = output.indexOf('/*:')
-  if (mainStart === -1) {
+  // The main header is /*: followed by whitespace/newline (not a language code like /*:ja or /*:en).
+  // Use a regex to find /*: that is NOT followed by two lowercase letters (BUG-13 fix).
+  const mainHeaderRe = /\/\*:(?![a-z]{2})/g
+  const mainHeaderMatch = mainHeaderRe.exec(output)
+  if (!mainHeaderMatch) {
     return generatePlugin(plugin)
   }
-
-  // Skip localized blocks like /*:ja — check the char after the colon
-  const afterColon = output.slice(mainStart + 3, mainStart + 6)
-  if (/^[a-z]{2}[\s\r\n]/.test(afterColon)) {
-    return generatePlugin(plugin) // shouldn't happen — main header should come first
-  }
+  const mainStart = mainHeaderMatch.index
 
   const mainEnd = output.indexOf('*/', mainStart + 3)
   if (mainEnd === -1) {
@@ -505,13 +512,15 @@ export function generateRawMode(plugin: PluginDefinition): string {
   }
 
   // 3. Inject parameter parsing for new parameters not already in the body
+  // Strip comments/strings so we don't match param names inside string literals (BUG-15)
+  const strippedOutput = stripCommentsAndStrings(output)
   if (plugin.parameters.length > 0) {
     const newParams = plugin.parameters.filter(
       (p) =>
         !p.name.includes('---') &&
         !p.name.includes('===') &&
-        !output.includes(`params['${p.name}']`) &&
-        !output.includes(`params["${p.name}"]`)
+        !strippedOutput.includes(`params['${p.name}']`) &&
+        !strippedOutput.includes(`params["${p.name}"]`)
     )
     if (newParams.length > 0) {
       const pluginName = plugin.meta.name || 'NewPlugin'
@@ -520,7 +529,7 @@ export function generateRawMode(plugin: PluginDefinition): string {
       // Check if PluginManager.parameters() already exists in body
       const hasParamsDecl = output.includes('PluginManager.parameters(')
       if (!hasParamsDecl) {
-        parsingLines.push(`    const PLUGIN_NAME = '${pluginName}';`)
+        parsingLines.push(`    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`)
         parsingLines.push(`    const params = PluginManager.parameters(PLUGIN_NAME);`)
       }
 
@@ -562,12 +571,14 @@ export function generateRawMode(plugin: PluginDefinition): string {
   }
 
   // 4. Inject command registration for new commands not already in the body
+  // Re-strip after potential param injection to check against clean source (BUG-15)
+  const strippedForCmds = stripCommentsAndStrings(output)
   const newCommands = plugin.commands.filter(
     (cmd) =>
-      !output.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-      !output.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
-      !output.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
-      !output.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
+      !strippedForCmds.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+      !strippedForCmds.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
+      !strippedForCmds.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
+      !strippedForCmds.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
   )
   if (newCommands.length > 0) {
     const pluginName = plugin.meta.name || 'NewPlugin'
@@ -575,28 +586,34 @@ export function generateRawMode(plugin: PluginDefinition): string {
 
     // Ensure PLUGIN_NAME exists
     if (!output.includes('PLUGIN_NAME')) {
-      cmdLines.push(`    const PLUGIN_NAME = '${pluginName}';`)
+      cmdLines.push(`    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`)
     }
 
     cmdLines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
     for (const cmd of newCommands) {
       cmdLines.push(
-        `    PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`
+        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
       )
       for (const arg of cmd.args) {
         cmdLines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
       }
       cmdLines.push('')
-      cmdLines.push(`        // TODO: Implement ${cmd.name} logic`)
+      cmdLines.push(`        // TODO: Implement ${escapeJSString(cmd.name)} logic`)
       cmdLines.push(
-        `        console.log('${cmd.name} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
+        `        console.log('${escapeJSString(cmd.name)} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
       )
       cmdLines.push('    });')
     }
     cmdLines.push(`    // --- End new commands ---`)
 
-    // Find injection point: before closing })(); or at end of body
-    const closingIife = output.lastIndexOf('})();')
+    // Find injection point: before closing })(); — match only when at start of a line
+    // (not inside strings/comments). Scan backwards to find the last occurrence.
+    const iifeClosingRe = /^\s*\}\s*\)\s*\(\s*\)\s*;?\s*$/gm
+    let closingIife = -1
+    let iifeCloseMatch: RegExpExecArray | null
+    while ((iifeCloseMatch = iifeClosingRe.exec(output)) !== null) {
+      closingIife = iifeCloseMatch.index
+    }
     if (closingIife !== -1) {
       const injection = '\n' + cmdLines.join('\n') + '\n'
       output = output.slice(0, closingIife) + injection + '\n' + output.slice(closingIife)
@@ -659,7 +676,7 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
     case 'struct': {
       const fallback =
         param.default && typeof param.default === 'string' && param.default !== ''
-          ? param.default.replace(/'/g, "\\'")
+          ? escapeJSString(param.default)
           : '{}'
       return `JSON.parse(${accessor} || '${fallback}')`
     }
@@ -667,41 +684,20 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
     case 'array':
       return `JSON.parse(${accessor} || '[]')`
 
-    case 'variable':
-    case 'switch':
-    case 'actor':
-    case 'class':
-    case 'skill':
-    case 'item':
-    case 'weapon':
-    case 'armor':
-    case 'enemy':
-    case 'troop':
-    case 'state':
-    case 'animation':
-    case 'tileset':
-    case 'common_event':
-    case 'icon':
-    case 'map':
-      return `Number(${accessor} || ${defaultVal})`
-
-    case 'color':
-    case 'text':
-    case 'combo':
-    case 'hidden':
-      return `${accessor} || ${defaultVal}`
-
     default:
+      if (ID_BASED_PARAM_TYPES.has(param.type)) {
+        return `Number(${accessor} || ${defaultVal})`
+      }
       return `${accessor} || ${defaultVal}`
   }
 }
 
 function generateParamParser(param: PluginParameter): string {
-  return generateAccessorParser(`params['${param.name}']`, param)
+  return generateAccessorParser(`params['${escapeJSString(param.name)}']`, param)
 }
 
 function generateArgParser(arg: PluginParameter): string {
-  return generateAccessorParser(`args['${arg.name}']`, arg)
+  return generateAccessorParser(`args['${escapeJSString(arg.name)}']`, arg)
 }
 
 /**
@@ -714,28 +710,10 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   if (typeof value === 'number') {
     return String(value)
   }
-  if (
-    type === 'number' ||
-    type === 'variable' ||
-    type === 'switch' ||
-    type === 'actor' ||
-    type === 'class' ||
-    type === 'skill' ||
-    type === 'item' ||
-    type === 'weapon' ||
-    type === 'armor' ||
-    type === 'enemy' ||
-    type === 'troop' ||
-    type === 'state' ||
-    type === 'animation' ||
-    type === 'tileset' ||
-    type === 'common_event' ||
-    type === 'icon' ||
-    type === 'map'
-  ) {
+  if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) {
     return '0'
   }
-  return `'${String(value ?? '').replace(/'/g, "\\'")}'`
+  return `'${escapeJSString(String(value ?? ''))}'`
 }
 
 /**
@@ -949,8 +927,10 @@ export function validatePlugin(plugin: PluginDefinition): {
 export function generateCommandSkeleton(cmd: PluginCommand): string {
   const lines: string[] = []
   lines.push(`// --- ${cmd.name} ---`)
-  lines.push(`PluginManager.registerCommand(PLUGIN_NAME, '${cmd.name}', function(args) {`)
-  lines.push(`    // TODO: Implement ${cmd.name} logic`)
+  lines.push(
+    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
+  )
+  lines.push(`    // TODO: Implement ${escapeJSString(cmd.name)} logic`)
   lines.push('});')
   return lines.join('\n')
 }
