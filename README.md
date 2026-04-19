@@ -8,6 +8,11 @@ A visual no-code plugin builder for RPG Maker MZ. Create professional-quality pl
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
+> **Part of [MZ DevKit](https://github.com/topics/mz-devkit)** — a suite of visual tools for RPG Maker MZ:
+> [`mz-plugin-studio`](https://github.com/Wintersta7e/mz-plugin-studio) (plugins) ·
+> [`mz-interaction-builder`](https://github.com/Wintersta7e/mz-interaction-builder) (dialogue trees) ·
+> [`mz-scene-builder`](https://github.com/Wintersta7e/mz-scene-builder) (timelines / cutscenes)
+
 ## Overview
 
 MZ Plugin Studio provides a complete visual development environment for creating RPG Maker MZ plugins:
