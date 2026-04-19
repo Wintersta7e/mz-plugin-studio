@@ -23,6 +23,7 @@ export type ParamType =
   | 'file'
   | 'icon'
   | 'map'
+  | 'location'
   | 'note'
   | 'color'
   | 'text'
@@ -168,6 +169,7 @@ export const ALL_PARAM_TYPES: ReadonlySet<string> = new Set<string>([
   'file',
   'icon',
   'map',
+  'location',
   'note',
   'color',
   'text',

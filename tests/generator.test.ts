@@ -324,7 +324,6 @@ describe('generatePlugin', () => {
     const output = generatePlugin(plugin)
     expect(output).toContain("JSON.parse(params['pos'] || '{}')")
   })
-
 })
 
 // COV-01: generateRawMode injection paths
@@ -380,7 +379,7 @@ describe('generateRawMode injection paths', () => {
     const result = generateRawMode(plugin)
     expect(result).toContain("const PLUGIN_NAME = 'RawPlugin';")
     expect(result).toContain('const params = PluginManager.parameters(PLUGIN_NAME);')
-    expect(result).toContain("const newParam =")
+    expect(result).toContain('const newParam =')
   })
 
   it('injects after existing params declaration without duplicating PLUGIN_NAME', () => {
@@ -409,7 +408,7 @@ describe('generateRawMode injection paths', () => {
     // Should not duplicate PLUGIN_NAME
     const pluginNameCount = (result.match(/const PLUGIN_NAME/g) || []).length
     expect(pluginNameCount).toBe(1)
-    expect(result).toContain("const newParam =")
+    expect(result).toContain('const newParam =')
   })
 
   it('falls back to IIFE-opening injection when no use strict present', () => {
@@ -428,7 +427,7 @@ describe('generateRawMode injection paths', () => {
       ]
     })
     const result = generateRawMode(plugin)
-    expect(result).toContain("const fresh =")
+    expect(result).toContain('const fresh =')
   })
 
   it('injects new commands before closing })();', () => {
@@ -444,9 +443,7 @@ describe('generateRawMode injection paths', () => {
     console.log('loaded');
 })();`
     const plugin = makeRawPlugin(raw, {
-      commands: [
-        { id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] }
-      ]
+      commands: [{ id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] }]
     })
     const result = generateRawMode(plugin)
     expect(result).toContain("registerCommand(PLUGIN_NAME, 'NewCommand'")
@@ -516,29 +513,29 @@ describe('camelCase', () => {
 describe('generatePlugin - accessor parser for all param types', () => {
   const cases: Array<{ type: string; expectContains: string; default?: unknown }> = [
     { type: 'string', expectContains: "params['greeting'] || ''", default: '' },
-    { type: 'number', expectContains: 'Number(params[\'speed\'] || 0)', default: 0 },
-    { type: 'boolean', expectContains: "params['flag'] === 'true'", default: false },
+    { type: 'number', expectContains: "Number(params['speed'] || 0)", default: 0 },
+    { type: 'boolean', expectContains: "(params['flag'] ?? 'false') === 'true'", default: false },
     { type: 'select', expectContains: "params['mode'] || 'easy'", default: 'easy' },
     { type: 'combo', expectContains: "params['combo'] || ''", default: '' },
     { type: 'note', expectContains: "params['note'] || ''", default: '' },
     { type: 'text', expectContains: "params['txt'] || ''", default: '' },
     { type: 'hidden', expectContains: "params['hid'] || ''", default: '' },
-    { type: 'variable', expectContains: 'Number(params[\'variable\'] || 0)', default: 0 },
-    { type: 'switch', expectContains: 'Number(params[\'sw\'] || 0)', default: 0 },
-    { type: 'actor', expectContains: 'Number(params[\'actor\'] || 0)', default: 0 },
-    { type: 'class', expectContains: 'Number(params[\'cls\'] || 0)', default: 0 },
-    { type: 'skill', expectContains: 'Number(params[\'skill\'] || 0)', default: 0 },
-    { type: 'item', expectContains: 'Number(params[\'item\'] || 0)', default: 0 },
-    { type: 'weapon', expectContains: 'Number(params[\'weapon\'] || 0)', default: 0 },
-    { type: 'armor', expectContains: 'Number(params[\'armor\'] || 0)', default: 0 },
-    { type: 'enemy', expectContains: 'Number(params[\'enemy\'] || 0)', default: 0 },
-    { type: 'troop', expectContains: 'Number(params[\'troop\'] || 0)', default: 0 },
-    { type: 'state', expectContains: 'Number(params[\'state\'] || 0)', default: 0 },
-    { type: 'animation', expectContains: 'Number(params[\'animation\'] || 0)', default: 0 },
-    { type: 'tileset', expectContains: 'Number(params[\'tileset\'] || 0)', default: 0 },
-    { type: 'common_event', expectContains: 'Number(params[\'common_event\'] || 0)', default: 0 },
-    { type: 'icon', expectContains: 'Number(params[\'icon\'] || 0)', default: 0 },
-    { type: 'map', expectContains: 'Number(params[\'map\'] || 0)', default: 0 },
+    { type: 'variable', expectContains: "Number(params['variable'] || 0)", default: 0 },
+    { type: 'switch', expectContains: "Number(params['sw'] || 0)", default: 0 },
+    { type: 'actor', expectContains: "Number(params['actor'] || 0)", default: 0 },
+    { type: 'class', expectContains: "Number(params['cls'] || 0)", default: 0 },
+    { type: 'skill', expectContains: "Number(params['skill'] || 0)", default: 0 },
+    { type: 'item', expectContains: "Number(params['item'] || 0)", default: 0 },
+    { type: 'weapon', expectContains: "Number(params['weapon'] || 0)", default: 0 },
+    { type: 'armor', expectContains: "Number(params['armor'] || 0)", default: 0 },
+    { type: 'enemy', expectContains: "Number(params['enemy'] || 0)", default: 0 },
+    { type: 'troop', expectContains: "Number(params['troop'] || 0)", default: 0 },
+    { type: 'state', expectContains: "Number(params['state'] || 0)", default: 0 },
+    { type: 'animation', expectContains: "Number(params['animation'] || 0)", default: 0 },
+    { type: 'tileset', expectContains: "Number(params['tileset'] || 0)", default: 0 },
+    { type: 'common_event', expectContains: "Number(params['common_event'] || 0)", default: 0 },
+    { type: 'icon', expectContains: "Number(params['icon'] || 0)", default: 0 },
+    { type: 'map', expectContains: "Number(params['map'] || 0)", default: 0 },
     { type: 'file', expectContains: "params['file'] || ''", default: '' },
     { type: 'color', expectContains: "params['color'] || ''", default: '' },
     {
@@ -637,7 +634,7 @@ describe('generatePlugin - formatJSDefault', () => {
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain('Number(params[\'count\'] || 0)')
+    expect(output).toContain("Number(params['count'] || 0)")
   })
 
   it('handles undefined default for ID-based types (falls back to 0)', () => {
@@ -654,27 +651,137 @@ describe('generatePlugin - formatJSDefault', () => {
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain('Number(params[\'actorId\'] || 0)')
+    expect(output).toContain("Number(params['actorId'] || 0)")
   })
 
-  it('handles boolean default true', () => {
+  it('handles boolean default true (nullish-fallback to preserve default when key absent)', () => {
     const plugin = createTestPlugin({
       parameters: [
         { id: 'p1', name: 'enabled', text: 'Enabled', desc: '', type: 'boolean', default: true }
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain("params['enabled'] === 'true'")
+    expect(output).toContain("(params['enabled'] ?? 'true') === 'true'")
   })
 
-  it('handles boolean default false', () => {
+  it('handles boolean default false (nullish-fallback)', () => {
     const plugin = createTestPlugin({
       parameters: [
         { id: 'p1', name: 'enabled', text: 'Enabled', desc: '', type: 'boolean', default: false }
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain("params['enabled'] === 'true'")
+    expect(output).toContain("(params['enabled'] ?? 'false') === 'true'")
+  })
+
+  it('deep-parses struct<X>[] arrays (MZ double-encodes struct arrays)', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'items',
+          text: 'Items',
+          desc: '',
+          type: 'array',
+          arrayType: 'struct',
+          structType: 'ItemConfig',
+          default: '[]'
+        }
+      ],
+      structs: [{ id: 's1', name: 'ItemConfig', parameters: [] }]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain('.map(s => JSON.parse(s))')
+  })
+
+  it('coerces elements of number[] arrays via Number()', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'nums',
+          text: 'Nums',
+          desc: '',
+          type: 'array',
+          arrayType: 'number',
+          default: '[]'
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain('.map(Number)')
+  })
+
+  it('coerces elements of ID-based arrays (actor[], variable[], etc.) via Number()', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'actors',
+          text: 'Actors',
+          desc: '',
+          type: 'array',
+          arrayType: 'actor',
+          default: '[]'
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain('.map(Number)')
+  })
+
+  it('coerces elements of boolean[] arrays via === true', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'flags',
+          text: 'Flags',
+          desc: '',
+          type: 'array',
+          arrayType: 'boolean',
+          default: '[]'
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain(".map(v => v === 'true')")
+  })
+
+  it('leaves string[] arrays as plain JSON.parse (elements are already strings)', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'tags',
+          text: 'Tags',
+          desc: '',
+          type: 'array',
+          arrayType: 'string',
+          default: '[]'
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain("JSON.parse(params['tags'] || '[]')")
+    expect(output).not.toContain('.map(')
+  })
+
+  it('parses @type location as JSON with stringly-typed coordinate fields', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'spawn',
+          text: 'Spawn',
+          desc: '',
+          type: 'location',
+          default: ''
+        }
+      ]
+    })
+    const output = generatePlugin(plugin)
+    expect(output).toContain(`JSON.parse(params['spawn'] || '{"mapId":"0","x":"0","y":"0"}')`)
   })
 
   it('escapes single quotes in string defaults', () => {
@@ -1014,17 +1121,31 @@ describe('generatePlugin - body dedup and section dividers', () => {
   it('does not generate const for section divider parameters', () => {
     const plugin = createTestPlugin({
       parameters: [
-        { id: 'p1', name: '---Settings---', text: 'Settings', desc: '', type: 'string', default: '' },
-        { id: 'p2', name: '===Advanced===', text: 'Advanced', desc: '', type: 'string', default: '' },
+        {
+          id: 'p1',
+          name: '---Settings---',
+          text: 'Settings',
+          desc: '',
+          type: 'string',
+          default: ''
+        },
+        {
+          id: 'p2',
+          name: '===Advanced===',
+          text: 'Advanced',
+          desc: '',
+          type: 'string',
+          default: ''
+        },
         { id: 'p3', name: 'speed', text: 'Speed', desc: '', type: 'number', default: 5 }
       ]
     })
     const output = generatePlugin(plugin)
     // Section dividers should not generate const declarations
-    expect(output).not.toContain("const SettingsSettings =")
-    expect(output).not.toContain("const Settings =")
+    expect(output).not.toContain('const SettingsSettings =')
+    expect(output).not.toContain('const Settings =')
     // But normal params should
-    expect(output).toContain("const speed =")
+    expect(output).toContain('const speed =')
   })
 })
 

@@ -670,8 +670,16 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
     case 'number':
       return `Number(${accessor} || ${defaultVal})`
 
-    case 'boolean':
-      return `${accessor} === 'true'`
+    case 'boolean': {
+      // MZ omits the param key entirely when the user never opens the Plugin
+      // Manager, so `accessor` may be undefined even when @default is true.
+      // Nullish-coalesce to the declared default before comparing.
+      const defBool = param.default === true ? 'true' : 'false'
+      return `(${accessor} ?? '${defBool}') === 'true'`
+    }
+
+    case 'location':
+      return `JSON.parse(${accessor} || '{"mapId":"0","x":"0","y":"0"}')`
 
     case 'struct': {
       const fallback =
@@ -681,8 +689,21 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       return `JSON.parse(${accessor} || '${fallback}')`
     }
 
-    case 'array':
+    case 'array': {
+      // MZ double-encodes struct<X>[]: outer JSON array of JSON strings.
+      // Without the inner parse each element remains a string literal.
+      const inner = param.arrayType
+      if (inner === 'struct' && param.structType) {
+        return `JSON.parse(${accessor} || '[]').map(s => JSON.parse(s))`
+      }
+      if (inner === 'number' || (inner && ID_BASED_PARAM_TYPES.has(inner))) {
+        return `JSON.parse(${accessor} || '[]').map(Number)`
+      }
+      if (inner === 'boolean') {
+        return `JSON.parse(${accessor} || '[]').map(v => v === 'true')`
+      }
       return `JSON.parse(${accessor} || '[]')`
+    }
 
     default:
       if (ID_BASED_PARAM_TYPES.has(param.type)) {
