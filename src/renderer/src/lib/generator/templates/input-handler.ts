@@ -112,17 +112,21 @@ function generateGlobalHandler(keyName: string, triggerType: string): string {
   )
   lines.push('')
 
+  // Use a key-specific method name so multiple plugins adding global handlers
+  // don't clobber each other's Scene_Base.prototype.updateGlobalKeyInput.
+  const methodName = `updateGlobalKeyInput_${keyName.charAt(0).toUpperCase()}${keyName.slice(1)}`
+
   // Alias Scene_Base.update for global handling
   lines.push('// Hook Scene_Base.update for global key handling')
-  lines.push('const _Scene_Base_update = Scene_Base.prototype.update;')
+  lines.push(`const _Scene_Base_update_${keyName} = Scene_Base.prototype.update;`)
   lines.push('Scene_Base.prototype.update = function() {')
-  lines.push('    _Scene_Base_update.call(this);')
-  lines.push('    this.updateGlobalKeyInput();')
+  lines.push(`    _Scene_Base_update_${keyName}.call(this);`)
+  lines.push(`    this.${methodName}();`)
   lines.push('};')
   lines.push('')
 
-  // Add the global input handler method
-  lines.push('Scene_Base.prototype.updateGlobalKeyInput = function() {')
+  // Add the global input handler method (key-scoped to avoid cross-plugin collision)
+  lines.push(`Scene_Base.prototype.${methodName} = function() {`)
   lines.push(`    if (Input.${triggerType}('${keyName}')) {`)
   lines.push(`        // Your code here - runs when ${keyDisplayName} is pressed in any scene`)
   lines.push(`        console.log('${keyDisplayName} key pressed!');`)

@@ -148,7 +148,9 @@ const basicCommandTemplate: CodeTemplate = {
     }
 
     // Registration
-    lines.push(`PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`)
+    lines.push(
+      `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+    )
 
     // Argument parsing
     if (args.length > 0) {
@@ -299,7 +301,9 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('    // Your async operation here')
         lines.push('    setTimeout(() => {')
         lines.push('        // Simulate async work completing')
-        lines.push(`        console.log('${escapeJSString(commandName)} async operation complete');`)
+        lines.push(
+          `        console.log('${escapeJSString(commandName)} async operation complete');`
+        )
         lines.push(`        interpreter._${commandName}Complete = true;`)
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
@@ -319,20 +323,25 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('')
         lines.push('    // Your command logic here')
         lines.push('    // Note: Code here runs immediately, wait only affects event flow')
-        lines.push(`    console.log('${escapeJSString(commandName)} initiated ${waitDuration} frame wait');`)
+        lines.push(
+          `    console.log('${escapeJSString(commandName)} initiated ${waitDuration} frame wait');`
+        )
         lines.push('});')
         break
 
       case 'callback':
       default:
-        // Callback flag approach
-        lines.push('// Completion flag for async operation')
-        lines.push(`let _${commandName}Pending = false;`)
+        // Per-interpreter pending flag — storing on `this` (the Game_Interpreter
+        // instance) is save-safe against parallel events and nested interpreters.
+        // A module-scope flag would collide when two parallel events fire the
+        // same async command concurrently.
+        lines.push(`// Per-interpreter pending flag — keyed on the interpreter instance`)
+        lines.push(`const _${commandName}PendingKey = '_${commandName}Pending';`)
         lines.push('')
-        lines.push('// Check if we should wait')
+        lines.push('// Check if the invoking interpreter should keep waiting')
         lines.push('const _Game_Interpreter_updateWait = Game_Interpreter.prototype.updateWait;')
         lines.push('Game_Interpreter.prototype.updateWait = function() {')
-        lines.push(`    if (_${commandName}Pending) {`)
+        lines.push(`    if (this[_${commandName}PendingKey]) {`)
         lines.push('        return true; // Keep waiting')
         lines.push('    }')
         lines.push('    return _Game_Interpreter_updateWait.call(this);')
@@ -341,13 +350,16 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push(
           `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
         )
-        lines.push(`    _${commandName}Pending = true;`)
+        lines.push('    const interpreter = this;')
+        lines.push(`    interpreter[_${commandName}PendingKey] = true;`)
         lines.push('')
         lines.push('    // Your async operation here (e.g., fetch, image loading, etc.)')
         lines.push('    setTimeout(() => {')
         lines.push('        // Async work complete')
-        lines.push(`        console.log('${escapeJSString(commandName)} async operation complete');`)
-        lines.push(`        _${commandName}Pending = false;`)
+        lines.push(
+          `        console.log('${escapeJSString(commandName)} async operation complete');`
+        )
+        lines.push(`        interpreter[_${commandName}PendingKey] = false;`)
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
         break
@@ -539,7 +551,9 @@ const validatedCommandTemplate: CodeTemplate = {
     lines.push('')
 
     // Command registration
-    lines.push(`PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`)
+    lines.push(
+      `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+    )
     lines.push('    // Run validation')
     lines.push(`    if (!${commandName}_validate(args)) {`)
     lines.push('        return; // Validation failed')

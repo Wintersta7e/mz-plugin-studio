@@ -127,7 +127,9 @@ const damageModifierTemplate: CodeTemplate = {
 
     switch (modifyType) {
       case 'multiply':
-        modificationCode = `Math.floor(value * ${modifyValue});`
+        // Healing skills produce negative value in MZ; Math.floor(-3.5) = -4
+        // would over-heal by 1. Split on sign to keep healing symmetric.
+        modificationCode = `value >= 0 ? Math.floor(value * ${modifyValue}) : Math.ceil(value * ${modifyValue});`
         break
       case 'add':
         modificationCode = `value + ${modifyValue};`
@@ -161,7 +163,9 @@ const damageModifierTemplate: CodeTemplate = {
           errors.push('Value must be a valid number for multiply/add operations')
         } else if (String(num) !== modifyValue.trim()) {
           // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
-          errors.push('Value must contain only numeric characters (digits, decimal point, minus sign)')
+          errors.push(
+            'Value must contain only numeric characters (digits, decimal point, minus sign)'
+          )
         } else if (modifyType === 'multiply' && num <= 0) {
           errors.push('Multiplier should be a positive number')
         }

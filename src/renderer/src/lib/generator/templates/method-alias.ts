@@ -76,9 +76,22 @@ function generateAliasCode(
         lines.push('    ')
         lines.push('    return result;')
       } else {
+        lines.push('    // ⚠  WARNING: This replacement does NOT call the original.')
+        lines.push(
+          '    //    Methods like canMove(), isValid(), canUse() expect a boolean — returning'
+        )
+        lines.push(
+          '    //    `undefined` is falsy and can silently disable MZ behavior (e.g., a battler'
+        )
+        lines.push(
+          '    //    that can never move). Replace the return value below before shipping.'
+        )
+        lines.push('    ')
         lines.push('    // Your code here (completely replacing original)')
         lines.push('    ')
-        lines.push('    // Return appropriate value for this method')
+        lines.push(
+          `    // TODO: return an appropriate value for ${className}.prototype.${methodName}`
+        )
         lines.push('    return undefined;')
       }
       break

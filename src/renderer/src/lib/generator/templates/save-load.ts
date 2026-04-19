@@ -79,6 +79,20 @@ function generateSaveLoadCode(
   lines.push(`// Custom Save Data: ${dataName}`)
   lines.push(`// Storage: $${storageLocation.replace('Game_', 'game').toLowerCase()}`)
   lines.push(`// Type: ${dataType}`)
+
+  // Warn at generation time for storage locations that don't reliably persist.
+  if (storageLocation === 'Game_Actors') {
+    lines.push('//')
+    lines.push('// ⚠  WARNING: Game_Actors is a CONTAINER — DataManager does not')
+    lines.push('//    round-trip properties set on the container itself. Data written')
+    lines.push('//    here in initialize() will be lost on save reload. Move persistent')
+    lines.push('//    data to Game_System, or store per-actor data on Game_Actor objects.')
+  } else if (storageLocation === 'Game_Map') {
+    lines.push('//')
+    lines.push('// ⚠  WARNING: Game_Map is reinitialized on every map transfer.')
+    lines.push('//    Data written here will be lost whenever the player changes maps.')
+    lines.push('//    Use Game_System if you need data to survive across maps.')
+  }
   lines.push('')
 
   // Store original initialize reference
@@ -175,14 +189,23 @@ const saveLoadTemplate: CodeTemplate = {
       type: 'select',
       required: true,
       options: [
-        { value: 'Game_System', label: '$gameSystem - Global game state' },
-        { value: 'Game_Party', label: '$gameParty - Party-wide data' },
-        { value: 'Game_Player', label: '$gamePlayer - Player-specific data' },
-        { value: 'Game_Map', label: '$gameMap - Current map data (resets on map change)' },
-        { value: 'Game_Actors', label: '$gameActors - Actor container' }
+        {
+          value: 'Game_System',
+          label: '$gameSystem — Global state (save-persistent, RECOMMENDED)'
+        },
+        { value: 'Game_Party', label: '$gameParty — Party-wide data (save-persistent)' },
+        { value: 'Game_Player', label: '$gamePlayer — Player data (save-persistent)' },
+        {
+          value: 'Game_Map',
+          label: '⚠ Game_Map — Reinitialized on every map change (NOT persistent)'
+        },
+        {
+          value: 'Game_Actors',
+          label: '⚠ Game_Actors — Container not round-tripped (NOT persistent)'
+        }
       ],
       default: 'Game_System',
-      help: 'Where to store the data. $gameSystem is recommended for most use cases.'
+      help: 'Where to store the data. Only Game_System/Game_Party/Game_Player are reliably save-persistent. Game_Map is rebuilt on every map load, and Game_Actors is not round-tripped by DataManager — properties set in initialize() will be lost on save reload.'
     },
     {
       id: 'dataType',

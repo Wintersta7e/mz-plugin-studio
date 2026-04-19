@@ -103,7 +103,10 @@ const customTextCodeTemplate: CodeTemplate = {
         lines.push('    });')
       } else {
         lines.push(`    // Process \\${escapeChar} codes`)
-        lines.push(`    text = text.replace(/\\\\${escapeChar}/gi, () => {`)
+        // Negative lookahead (?![A-Za-z]) prevents \X from matching \XY, \XX, etc.
+        // — MZ escape codes are case-sensitive single letters, so a longer
+        // identifier should not be hijacked by a shorter prefix code.
+        lines.push(`    text = text.replace(/\\\\${escapeChar}(?![A-Za-z])/gi, () => {`)
         lines.push(`        return ${replacementText};`)
         lines.push('    });')
       }
