@@ -737,15 +737,72 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   return `'${escapeJSString(String(value ?? ''))}'`
 }
 
+// Reserved words that would cause a SyntaxError if used as `const <name>`.
+// Includes ES2024 reserved + strict-mode reserved + contextual keywords that
+// collide inside `'use strict'` IIFEs. Suffixing with `_` is safer than
+// prefixing because it preserves the visible name in generated code.
+const JS_RESERVED: ReadonlySet<string> = new Set([
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'enum',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'implements',
+  'import',
+  'in',
+  'instanceof',
+  'interface',
+  'let',
+  'new',
+  'null',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'return',
+  'static',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'yield',
+  'async',
+  'await',
+  'of'
+])
+
 /**
- * Convert parameter name to camelCase
+ * Convert parameter name to a valid JS camelCase identifier.
+ * Guarantees: output is always a syntactically legal strict-mode identifier
+ * (never a reserved word, never starts with a digit, never empty).
  */
 export function camelCase(str: string): string {
   if (!str) return 'unnamed'
-  // If already a valid JS identifier with no separators, preserve as-is (e.g. myCombo → myCombo)
+  // Fast path: already a valid identifier with no separators (e.g. myCombo → myCombo)
   if (/^[a-zA-Z$][a-zA-Z0-9$]*$/.test(str)) {
-    // Just lowercase the first character
-    return str.charAt(0).toLowerCase() + str.slice(1) || 'unnamed'
+    const normalized = str.charAt(0).toLowerCase() + str.slice(1)
+    return sanitizeIdentifier(normalized)
   }
   // Strip leading/trailing underscores, split on non-alphanumeric
   const stripped = str.replace(/^_+|_+$/g, '')
@@ -763,7 +820,20 @@ export function camelCase(str: string): string {
       return word.charAt(0).toUpperCase() + word.slice(1)
     })
     .join('')
-  return result || 'unnamed'
+  return sanitizeIdentifier(result)
+}
+
+function sanitizeIdentifier(name: string): string {
+  if (!name) return 'unnamed'
+  // Digit-start: prefix with underscore so `const 123abc` becomes `const _123abc`
+  if (/^[0-9]/.test(name)) {
+    return '_' + name
+  }
+  // Reserved word: suffix with underscore so `const class` becomes `const class_`
+  if (JS_RESERVED.has(name)) {
+    return name + '_'
+  }
+  return name
 }
 
 /**
@@ -827,6 +897,8 @@ export function validatePlugin(plugin: PluginDefinition): {
 
   // Check for duplicate parameter names (but allow any string - MZ supports it)
   const paramNames = new Set<string>()
+  // Collect post-transform identifiers to detect collisions after camelCase sanitization
+  const identifierOrigins = new Map<string, string>()
   for (const param of plugin.parameters) {
     if (!param.name) {
       errors.push('Parameter name cannot be empty')
@@ -835,15 +907,45 @@ export function validatePlugin(plugin: PluginDefinition): {
     }
     paramNames.add(param.name)
 
+    const isSectionDivider =
+      !!param.name && (param.name.includes('---') || param.name.includes('==='))
+
     // Warn (not error) if parameter name isn't a valid identifier - it will still work in MZ
     // but won't be easily accessible in code
     if (param.name && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(param.name)) {
-      // Don't warn for obvious section dividers (contain dashes or are all caps with spaces)
-      const isSectionDivider = param.name.includes('---') || param.name.includes('===')
       if (!isSectionDivider) {
         warnings.push(
           `Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`
         )
+      }
+    }
+
+    // Post-transform collision detection: two params with different raw names
+    // can camelCase() to the same identifier (e.g., "foo-bar" and "Foo Bar")
+    // which produces duplicate `const` declarations inside the IIFE.
+    if (param.name && !isSectionDivider) {
+      const identifier = camelCase(param.name)
+      const previousOrigin = identifierOrigins.get(identifier)
+      if (previousOrigin && previousOrigin !== param.name) {
+        errors.push(
+          `Parameters "${previousOrigin}" and "${param.name}" both generate identifier "${identifier}" — rename one to avoid a duplicate declaration`
+        )
+      } else {
+        identifierOrigins.set(identifier, param.name)
+      }
+
+      // Warn about reserved-word and digit-start transforms so users know the
+      // generated variable differs from their parameter name.
+      if (identifier !== param.name) {
+        if (JS_RESERVED.has(param.name)) {
+          warnings.push(
+            `Parameter "${param.name}" is a JS reserved word; the generated variable will be "${identifier}"`
+          )
+        } else if (/^[0-9]/.test(param.name)) {
+          warnings.push(
+            `Parameter "${param.name}" starts with a digit; the generated variable will be "${identifier}"`
+          )
+        }
       }
     }
   }

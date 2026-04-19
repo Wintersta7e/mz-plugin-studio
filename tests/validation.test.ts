@@ -178,9 +178,7 @@ describe('validation - COV-04 gaps', () => {
 
   it('warns when command name shadows a MZ built-in command (ShowAnimation)', () => {
     const plugin = createTestPlugin({
-      commands: [
-        { id: '1', name: 'ShowAnimation', text: 'Show Animation', desc: '', args: [] }
-      ]
+      commands: [{ id: '1', name: 'ShowAnimation', text: 'Show Animation', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
     expect(result.warnings.some((w) => w.includes('ShowAnimation') && w.includes('built-in'))).toBe(
@@ -380,5 +378,63 @@ describe('validation - new checks', () => {
     })
     const result = validatePlugin(plugin)
     expect(result.warnings.filter((w) => w.includes('JSON'))).toHaveLength(0)
+  })
+})
+
+describe('validation - identifier sanitization', () => {
+  it('errors when two parameters camelCase to the same identifier', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        { id: 'p1', name: 'foo-bar', text: 'Foo Bar', desc: '', type: 'string', default: '' },
+        { id: 'p2', name: 'foo_bar', text: 'Foo Bar', desc: '', type: 'string', default: '' }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((e) => e.includes('fooBar'))).toBe(true)
+  })
+
+  it('warns when a parameter name is a JS reserved word', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        { id: 'p1', name: 'class', text: 'Class', desc: '', type: 'string', default: '' }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('class_'))).toBe(true)
+  })
+
+  it('warns when a parameter name starts with a digit', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        { id: 'p1', name: '2ndSlot', text: '2nd Slot', desc: '', type: 'string', default: '' }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(result.warnings.some((w) => w.includes('_2ndSlot') || w.includes('digit'))).toBe(true)
+  })
+
+  it('does not warn on normal parameter names', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        { id: 'p1', name: 'myParam', text: 'My Param', desc: '', type: 'string', default: '' }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    expect(
+      result.warnings.filter((w) => w.includes('reserved') || w.includes('digit'))
+    ).toHaveLength(0)
+  })
+
+  it('does not flag section dividers as collisions', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        { id: 'p1', name: '---Section 1---', text: '', desc: '', type: 'string', default: '' },
+        { id: 'p2', name: '---Section 2---', text: '', desc: '', type: 'string', default: '' }
+      ]
+    })
+    const result = validatePlugin(plugin)
+    // Section dividers are skipped by the collision detector
+    expect(result.errors.filter((e) => e.includes('generate identifier'))).toHaveLength(0)
   })
 })

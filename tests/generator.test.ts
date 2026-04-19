@@ -1063,10 +1063,11 @@ describe('generatePlugin - command arg attributes', () => {
 
 // COV-15: camelCase edge cases
 describe('camelCase edge cases', () => {
-  it('preserves internal structure of _private_ style names', () => {
-    // Strips leading/trailing underscores, splits on non-alnum
+  it('preserves internal structure of _private_ style names (but sanitizes if reserved)', () => {
+    // Strips leading/trailing underscores, splits on non-alnum.
+    // "private" is a strict-mode reserved word, so the sanitizer suffixes _.
     const result = camelCase('_private_')
-    expect(result).toBe('private')
+    expect(result).toBe('private_')
   })
 
   it('handles triple underscore (all underscores after stripping = empty) → unnamed', () => {
@@ -1090,6 +1091,26 @@ describe('camelCase edge cases', () => {
     // After stripping, no word segments remain
     const result = camelCase('!@#$%')
     expect(result).toBe('unnamed')
+  })
+
+  // Reserved-word and digit-start sanitization — preventing SyntaxError in generated plugins
+  it('suffixes underscore on JS reserved words (class, default, for)', () => {
+    expect(camelCase('class')).toBe('class_')
+    expect(camelCase('default')).toBe('default_')
+    expect(camelCase('for')).toBe('for_')
+    expect(camelCase('return')).toBe('return_')
+    expect(camelCase('const')).toBe('const_')
+  })
+
+  it('prefixes underscore on digit-start names', () => {
+    expect(camelCase('123abc')).toBe('_123abc')
+    expect(camelCase('7')).toBe('_7')
+  })
+
+  it('preserves already-valid camelCase names that happen to start with a keyword prefix', () => {
+    // "classroom" is not reserved; should pass through unchanged
+    expect(camelCase('classroom')).toBe('classroom')
+    expect(camelCase('awaitable')).toBe('awaitable')
   })
 })
 
