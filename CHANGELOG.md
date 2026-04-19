@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-04-19
+
+### Added
+- **`@type location`** support — official MZ map+coordinate picker. Added to parameter-type dropdown under "Game Data", parsed from imported plugins, and emitted with a JSON default (`{"mapId":"0","x":"0","y":"0"}`) in the IIFE body.
+- **`@requiredAssets` annotation** — plugin-level meta field for assets preserved during MZ's "Exclude unused files" deployment. New MetaEditor textarea (one asset path per line); generator emits one `@requiredAssets` line per entry; parser extracts them on import.
+- `tests/templates-output.test.ts` — 10 regression tests covering the six template bug fixes (save-load, input-handler, method-alias, battle-system, message-system, plugin-commands).
+- 22 new generator/validation tests covering struct-array deep-parse, number[]/boolean[]/ID[] element coercion, nullish boolean defaults, reserved-word camelCase sanitization, identifier collision detection, `@requiredAssets` round-trip, `@type location` round-trip, and comment-aware command dedup.
+
+### Fixed
+- **Struct-array parser now deep-parses correctly** — MZ double-encodes `struct<X>[]` as a JSON array of JSON strings. The generator previously emitted `JSON.parse(accessor || '[]')`, leaving each element as a string (so `arr[0].x` silently returned `undefined`). Now emits `.map(s => JSON.parse(s))` for struct arrays.
+- **Number/ID arrays now coerce their elements** — `number[]`, `actor[]`, `variable[]`, etc. now emit `.map(Number)` so arithmetic works; `boolean[]` emits `.map(v => v === 'true')`.
+- **Boolean `@default true` no longer silently becomes `false`** — the previous `accessor === 'true'` returned `false` when the param key was absent from `params` (edge case: plugin added but never opened in Plugin Manager). Now nullish-coalesces to the declared default.
+- **`camelCase()` no longer emits invalid JS identifiers** — a parameter named `class`, `default`, `return`, `123abc`, etc. previously produced `const class = ...` (strict-mode SyntaxError on plugin load). Sanitizer now suffixes `_` on reserved words and prefixes `_` on digit-start names.
+- **`validatePlugin` detects post-transform identifier collisions** — two differently-named parameters that camelCase to the same identifier (e.g., `foo-bar` and `foo_bar`) now surface as a hard error rather than silently producing duplicate `const` declarations.
+- **Command dedup no longer false-matches commented-out examples** — doc comments referencing `registerCommand(...)` previously suppressed generation of the real command body. A new `stripCommentsOnly()` helper masks comments while preserving string literals before the substring check.
+- **save-load template warns about non-persistent storage** — `Game_Actors` and `Game_Map` are no longer silently offered as "just another option": dropdown labels mark them as non-persistent, and generated code includes a prominent WARNING comment explaining that properties set in `initialize()` will be lost on save reload / map change.
+- **input-handler template no longer collides across plugins** — the global-key handler method is now key-scoped (`updateGlobalKeyInput_Q`, `updateGlobalKeyInput_Tab`, etc.) so two plugins each hooking a different key don't clobber each other's `Scene_Base.prototype.updateGlobalKeyInput`.
+- **method-alias replace-without-call emits a prominent WARNING** — for predicates like `Game_Battler.canMove`, `Game_Action.canUse`, etc., silently returning `undefined` breaks MZ logic. The placeholder now includes a multiline warning + a TODO naming the specific method.
+- **battle-system damage multiply is sign-preserving** — the old `Math.floor(value * m)` over-healed by 1 point for healing skills (where `value` is negative). Now emits `value >= 0 ? Math.floor(value * m) : Math.ceil(value * m)`.
+- **message-system custom escape code regex has a word boundary** — the no-parameter `replace` path previously emitted `/\\X/gi`, which would match `\XY`, `\XX`, etc. Now adds `(?![A-Za-z])` so only single-character escape codes match.
+- **plugin-commands async callback uses per-interpreter state** — the previous module-scope `let _XPending = false` collided when two parallel events fired the same async command concurrently. Now stores the pending flag on the invoking `Game_Interpreter` instance.
+
+### Changed
+- **`@require 1` emission dropped** — Kadokawa's MZ annotation reference marks `@require` as discontinued (MV-era). The UI checkbox is kept (faded) for round-tripping legacy imports, but the generator no longer emits `@require 1` on file/animation parameters or command args.
+- **`@noteRequire 1` emission dropped** — not part of the official Kadokawa note-asset spec (only `@noteParam`, `@noteType`, `@noteDir`, `@noteData` are documented). Parser still reads the legacy tag for back-compat.
+- **`@type text` marked as MV-legacy** in the parameter-type dropdown — the canonical MZ multi-line type is `multiline_string` (mapped to `note` internally). `text` still parses and emits for compatibility.
+- **Generated command stubs drop the `console.log(...)` line** — every generated `PluginManager.registerCommand` callback previously shipped a `console.log('X called with:', { args })` stub that survived to production. Replaced with an inline comment naming the parsed args.
+- Parameter-type count: 28 → 29 (added `location`).
+- Test count: 572 → 614 (+42 tests across generator, validation, mz-annotations, and the new templates-output suite).
+
 ## [1.5.0] - 2026-03-29
 
 ### Added
