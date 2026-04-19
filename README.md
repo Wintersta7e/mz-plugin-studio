@@ -98,6 +98,7 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Import Existing** - Parse and edit existing .js plugins
 
 ### Additional Features
+- **Plugin Browser Panel** - Searchable, filterable side panel (Ctrl+Shift+E) listing every `.js` in `js/plugins/`. Filter by Open / Dirty / Errors, sort by file order or A–Z, per-row status glyphs, click to load into a new tab. Designed for 50+ plugin projects where an icon rail no longer scales.
 - **Plugin Conflict Detection** - Scans all project plugins for prototype method overrides; flags when 2+ plugins override the same method with severity based on class popularity
 - **Dependency Analysis** - Scans `@base`, `@orderAfter`, and `@orderBefore` across project plugins; detects missing deps, circular deps, and load-order violations
 - **Analysis View** - Dedicated view with overview stats, conflict details, and dependency issues — switch between Editor and Analysis tabs
@@ -105,7 +106,7 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Bulk Parameter Operations** - Multi-select, duplicate, delete, export/import parameters, reusable presets
 - **Note Parameters** - Declare `@noteParam` groups for RPG Maker deployment packager
 - **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
-- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+Shift+S save all, Ctrl+B toggle preview, Ctrl+1-5 tab switching, F5 regenerate)
+- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+Shift+S save all, Ctrl+B toggle preview, Ctrl+Shift+E toggle plugin browser, Ctrl+1-5 tab switching, F5 regenerate)
 - **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
 - **Accessibility** - ARIA labels and live regions across sidebar, status bar, and toasts
 - **Struct Default Editor** - Visual inline form for struct parameter defaults with real-time JSON validation, "Fill from struct defaults" button, and type-appropriate inputs

@@ -5,10 +5,11 @@
 ## [1.6.0] - 2026-04-19
 
 ### Added
+- **Plugin Browser panel** — new 288px side panel for projects with many plugins (50+). Toggled via a `List` icon in the sidebar or **Ctrl+Shift+E**. Replaces the cramped bottom icon list that became unusable past ~10 plugins. Features: filename search, filter (All / Open / Dirty / Errors), sort (file order or A–Z), per-row status glyphs (error / warning / dirty dot), hover-to-close for open plugins, active-plugin highlight, and a footer summary (`N total · X dirty · Y errors`).
 - **`@type location`** support — official MZ map+coordinate picker. Added to parameter-type dropdown under "Game Data", parsed from imported plugins, and emitted with a JSON default (`{"mapId":"0","x":"0","y":"0"}`) in the IIFE body.
 - **`@requiredAssets` annotation** — plugin-level meta field for assets preserved during MZ's "Exclude unused files" deployment. New MetaEditor textarea (one asset path per line); generator emits one `@requiredAssets` line per entry; parser extracts them on import.
 - `tests/templates-output.test.ts` — 10 regression tests covering the six template bug fixes (save-load, input-handler, method-alias, battle-system, message-system, plugin-commands).
-- 22 new generator/validation tests covering struct-array deep-parse, number[]/boolean[]/ID[] element coercion, nullish boolean defaults, reserved-word camelCase sanitization, identifier collision detection, `@requiredAssets` round-trip, `@type location` round-trip, and comment-aware command dedup.
+- 24 new generator/validation/shortcut tests covering struct-array deep-parse, number[]/boolean[]/ID[] element coercion, nullish boolean defaults, reserved-word camelCase sanitization, identifier collision detection, `@requiredAssets` round-trip, `@type location` round-trip, comment-aware command dedup, and the Ctrl+Shift+E plugin-browser shortcut.
 
 ### Fixed
 - **Struct-array parser now deep-parses correctly** — MZ double-encodes `struct<X>[]` as a JSON array of JSON strings. The generator previously emitted `JSON.parse(accessor || '[]')`, leaving each element as a string (so `arr[0].x` silently returned `undefined`). Now emits `.map(s => JSON.parse(s))` for struct arrays.
@@ -29,8 +30,14 @@
 - **`@noteRequire 1` emission dropped** — not part of the official Kadokawa note-asset spec (only `@noteParam`, `@noteType`, `@noteDir`, `@noteData` are documented). Parser still reads the legacy tag for back-compat.
 - **`@type text` marked as MV-legacy** in the parameter-type dropdown — the canonical MZ multi-line type is `multiline_string` (mapped to `note` internally). `text` still parses and emits for compatibility.
 - **Generated command stubs drop the `console.log(...)` line** — every generated `PluginManager.registerCommand` callback previously shipped a `console.log('X called with:', { args })` stub that survived to production. Replaced with an inline comment naming the parsed args.
+- **Sidebar plugin list moved to the new panel** — the cramped icon-rail `.js` file list was removed (replaced by the Plugin Browser). The sidebar rail is now just: Open Project / New Plugin / [open-plugin tabs] / Plugin Browser / Project Data Browser / Settings / Shortcuts.
+- `lucide-react` 1.7.0 → 1.8.0 (safe minor; icon additions, no breaking changes).
+- Release-workflow retention policy: keep latest 2 releases (was 3).
 - Parameter-type count: 28 → 29 (added `location`).
-- Test count: 572 → 614 (+42 tests across generator, validation, mz-annotations, and the new templates-output suite).
+- Test count: 572 → 606 (+34 tests across generator, validation, mz-annotations, templates-output, and shortcuts).
+
+### Removed
+- `uuid` and `@types/uuid` as direct dependencies — never imported in source, tests, or tools. The project uses `crypto.randomUUID()` exclusively. Eliminates dead-dep attack surface and avoids a forced Node-20+ upgrade on uuid's v14 bump (which introduced breaking changes we would have had to work around for no benefit).
 
 ## [1.5.0] - 2026-03-29
 

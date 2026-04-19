@@ -44,10 +44,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Clean up old releases (keep latest 3)
+      - name: Clean up old releases (keep latest 2)
         shell: bash
         run: |
-          gh release list --json tagName --jq '.[].tagName' | tail -n +4 | while read -r tag; do
+          gh release list --json tagName --jq '.[].tagName' | tail -n +3 | while read -r tag; do
             echo "Deleting release $tag"
             gh release delete "$tag" --cleanup-tag --yes
           done

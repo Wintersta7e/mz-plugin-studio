@@ -90,7 +90,6 @@ listed with its license type and source repository.
 | universalify | 0.1.2 | MIT | [Link](https://github.com/RyanZim/universalify) |
 | use-callback-ref | 1.3.3 | MIT | [Link](https://github.com/theKashey/use-callback-ref/) |
 | use-sidecar | 1.1.3 | MIT | [Link](https://github.com/theKashey/use-sidecar) |
-| uuid | 13.0.0 | MIT | [Link](https://github.com/uuidjs/uuid) |
 | zustand | 5.0.12 | MIT | [Link](https://github.com/pmndrs/zustand) |
 
 ---
