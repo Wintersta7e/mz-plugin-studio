@@ -10,6 +10,17 @@ import { escapeJSString } from './escape'
 import { stripCommentsAndStrings } from '../../../../shared/override-extractor'
 
 /**
+ * Strip comments (//... and block comments) from code while preserving string
+ * literals. Used for command-dedup substring matching where we need to see
+ * real PluginManager.registerCommand(..., 'Name') calls but ignore commented
+ * examples. Unlike stripCommentsAndStrings, this keeps string contents
+ * intact so dedup can compare against the command name.
+ */
+function stripCommentsOnly(code: string): string {
+  return code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
+}
+
+/**
  * Generate a complete RPG Maker MZ plugin from a PluginDefinition
  */
 export function generatePlugin(plugin: PluginDefinition): string {
@@ -387,14 +398,18 @@ function generateBody(plugin: PluginDefinition): string {
     lines.push('')
   }
 
-  // Register commands if any exist (skip commands already handled in customCode)
+  // Register commands if any exist (skip commands already handled in customCode).
+  // Strip comments first so `// registerCommand(PLUGIN_NAME, 'Foo')` doesn't
+  // suppress generation of Foo. String literals are preserved so real calls
+  // (with the command name in quotes) still match.
   const customCode = plugin.customCode || ''
+  const commentStrippedCustom = customCode ? stripCommentsOnly(customCode) : ''
   const commandsToGenerate = plugin.commands.filter(
     (cmd) =>
-      !customCode.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-      !customCode.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
-      !customCode.includes(`registerCommand("${pluginName}", '${cmd.name}'`) &&
-      !customCode.includes(`registerCommand("${pluginName}", "${cmd.name}"`)
+      !commentStrippedCustom.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
+      !commentStrippedCustom.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
+      !commentStrippedCustom.includes(`registerCommand("${pluginName}", '${cmd.name}'`) &&
+      !commentStrippedCustom.includes(`registerCommand("${pluginName}", "${cmd.name}"`)
   )
 
   if (commandsToGenerate.length > 0) {
@@ -1036,9 +1051,11 @@ export function validatePlugin(plugin: PluginDefinition): {
 
   // Commands with no implementation in custom code (warning)
   if (plugin.customCode) {
+    // Ignore comments to avoid false positives (e.g., a `// 'Heal'` note counting as impl)
+    const strippedImpl = stripCommentsOnly(plugin.customCode)
     for (const cmd of plugin.commands) {
       const hasImplementation =
-        plugin.customCode.includes(`'${cmd.name}'`) || plugin.customCode.includes(`"${cmd.name}"`)
+        strippedImpl.includes(`'${cmd.name}'`) || strippedImpl.includes(`"${cmd.name}"`)
       if (!hasImplementation) {
         warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
       }

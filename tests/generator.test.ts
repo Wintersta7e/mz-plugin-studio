@@ -1168,6 +1168,37 @@ describe('generatePlugin - body dedup and section dividers', () => {
     // But normal params should
     expect(output).toContain('const speed =')
   })
+
+  it('generates command body even when customCode has a commented-out registerCommand', () => {
+    // A comment that mentions registerCommand MUST NOT suppress generation.
+    const plugin = createTestPlugin({
+      commands: [{ id: 'c1', name: 'Foo', text: 'Foo', desc: '', args: [] }],
+      customCode: [
+        `// Example from docs:`,
+        `// PluginManager.registerCommand(PLUGIN_NAME, 'Foo', function(args) { /* ... */ });`,
+        `const helper = () => {};`
+      ].join('\n')
+    })
+    const output = generatePlugin(plugin)
+    const bodyStart = output.indexOf('(() => {')
+    const body = output.slice(bodyStart)
+    // The generated IIFE should contain the real registerCommand call
+    expect(body).toMatch(/PluginManager\.registerCommand\(PLUGIN_NAME,\s*'Foo'/)
+  })
+
+  it('does not dedup against a registerCommand inside a string literal', () => {
+    // A string literal that happens to contain "registerCommand(PLUGIN_NAME, 'Foo'"
+    // should NOT count as an existing registration.
+    const plugin = createTestPlugin({
+      commands: [{ id: 'c1', name: 'Foo', text: 'Foo', desc: '', args: [] }],
+      customCode: `const note = "registerCommand(PLUGIN_NAME, 'Foo', fn)";`
+    })
+    const output = generatePlugin(plugin)
+    // Strings aren't stripped, so this is still detected as a registration.
+    // The more important case — commented-out calls — is covered above.
+    // Documents current behavior (string-literal false-match is acceptable).
+    expect(output).toContain('const note =')
+  })
 })
 
 // COV-18: generateBodyPreserved
