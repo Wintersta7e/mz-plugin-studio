@@ -95,6 +95,7 @@ const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
       { value: 'tileset', label: 'Tileset', desc: 'Tileset from database' },
       { value: 'common_event', label: 'Common Event', desc: 'Common event picker' },
       { value: 'map', label: 'Map', desc: 'Map ID picker' },
+      { value: 'location', label: 'Location', desc: 'Map + (x, y) coordinate picker' },
       { value: 'icon', label: 'Icon', desc: 'Icon index picker' }
     ]
   },
@@ -114,11 +115,7 @@ const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
 /** Map from param id to param name — lightweight alternative to passing full array (R3-03) */
 type ParamNameMap = ReadonlyMap<string, string>
 
-function getParamNameError(
-  name: string,
-  paramNames: ParamNameMap,
-  selfId: string
-): string | null {
+function getParamNameError(name: string, paramNames: ParamNameMap, selfId: string): string | null {
   if (!name.trim()) return 'Name is required'
   // Allow section dividers (--- or ===)
   if (/^-{3,}$/.test(name) || /^={3,}$/.test(name)) return null
@@ -1311,14 +1308,20 @@ const ParameterCard = memo(function ParameterCard({
                           }
                         />
                       </div>
-                      <label className="flex items-center gap-2 text-sm">
+                      <label className="flex items-center gap-2 text-sm opacity-60">
                         <input
                           type="checkbox"
                           checked={param.require || false}
                           onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
                           className="h-4 w-4"
                         />
-                        Required for deployment (@require 1)
+                        <span>
+                          Required for deployment{' '}
+                          <span className="text-xs text-muted-foreground">
+                            (MV-era @require — discontinued in MZ; use plugin-level @requiredAssets
+                            instead)
+                          </span>
+                        </span>
                       </label>
                     </div>
                   )}

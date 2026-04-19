@@ -79,12 +79,19 @@ function generateHeader(plugin: PluginDefinition): string {
   }
 
   // Note Parameters (deployment notetag groups)
+  // Kadokawa's MZ annotation reference documents only four note-asset tags:
+  // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
+  // of the spec and is dropped.
   for (const np of plugin.meta.noteParams || []) {
     lines.push(` * @noteParam ${np.name}`)
     lines.push(` * @noteType ${np.type}`)
     if (np.dir) lines.push(` * @noteDir ${np.dir}`)
     if (np.data) lines.push(` * @noteData ${np.data}`)
-    if (np.require) lines.push(` * @noteRequire 1`)
+  }
+
+  // Required assets — preserved during "Exclude unused files" deployment.
+  for (const asset of plugin.meta.requiredAssets || []) {
+    lines.push(` * @requiredAssets ${asset}`)
   }
 
   lines.push(' *')
@@ -159,9 +166,8 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
   if ((param.type === 'file' || param.type === 'animation') && param.dir) {
     lines.push(`${prefix}@dir ${param.dir}`)
   }
-  if ((param.type === 'file' || param.type === 'animation') && param.require) {
-    lines.push(`${prefix}@require 1`)
-  }
+  // @require is MV-era — explicitly discontinued in MZ per Kadokawa docs.
+  // Use @requiredAssets at the plugin level instead.
 
   // Options for select/combo type
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
@@ -277,9 +283,7 @@ function generateCommandBlock(cmd: PluginCommand): string[] {
     if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
       lines.push(` * @dir ${arg.dir}`)
     }
-    if ((arg.type === 'file' || arg.type === 'animation') && arg.require) {
-      lines.push(` * @require 1`)
-    }
+    // @require dropped (MV-era, discontinued in MZ)
 
     if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
       for (const opt of arg.options) {

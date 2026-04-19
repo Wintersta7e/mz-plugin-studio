@@ -143,7 +143,9 @@ describe('A2: @require on file/animation params', () => {
     expect(result.parameters[0].require).toBeUndefined()
   })
 
-  it('generator emits @require 1 after @dir', () => {
+  it('generator drops @require 1 (MV-era, discontinued in MZ)', () => {
+    // Even when the imported plugin had require:true, the generator should
+    // not re-emit @require — Kadokawa's MZ spec marks it as discontinued.
     const plugin = createTestPlugin({
       parameters: [
         {
@@ -160,11 +162,7 @@ describe('A2: @require on file/animation params', () => {
     })
     const output = generateHeaderOnly(plugin)
     expect(output).toContain('@dir img/pictures')
-    expect(output).toContain('@require 1')
-    // @require should come after @dir
-    const dirIdx = output.indexOf('@dir')
-    const reqIdx = output.indexOf('@require')
-    expect(reqIdx).toBeGreaterThan(dirIdx)
+    expect(output).not.toContain('@require 1')
   })
 
   it('generator omits @require when not set', () => {
@@ -308,7 +306,7 @@ describe('A4: @noteParam annotation group', () => {
     })
   })
 
-  it('generator emits noteParam group', () => {
+  it('generator emits noteParam group (without @noteRequire — not in spec)', () => {
     const plugin = createTestPlugin({
       meta: {
         noteParams: [
@@ -327,7 +325,8 @@ describe('A4: @noteParam annotation group', () => {
     expect(output).toContain('@noteType file')
     expect(output).toContain('@noteDir audio/bgm/')
     expect(output).toContain('@noteData actors')
-    expect(output).toContain('@noteRequire 1')
+    // @noteRequire is not part of the official Kadokawa spec
+    expect(output).not.toContain('@noteRequire')
   })
 
   it('generator omits optional noteParam fields when not set', () => {
@@ -538,9 +537,123 @@ describe('Round-trip: all new types together', () => {
     expect(output).toContain('@orderBefore LatePlugin')
     expect(output).toContain('@noteParam bgmTag')
     expect(output).toContain('@type combo')
-    expect(output).toContain('@require 1')
+    // @require and @noteRequire are MV-era and intentionally not re-emitted
+    // (Kadokawa docs mark @require as discontinued in MZ).
+    expect(output).not.toContain('@require 1')
+    expect(output).not.toContain('@noteRequire')
     expect(output).toContain('@type icon')
     expect(output).toContain('@type map')
     expect(output).toContain('@type hidden')
+  })
+})
+
+describe('MZ annotation spec compliance', () => {
+  it('emits @requiredAssets for each asset path', () => {
+    const plugin = createTestPlugin({
+      meta: {
+        name: 'AssetPlugin',
+        version: '1.0',
+        author: '',
+        description: 'x',
+        help: '',
+        url: '',
+        target: 'MZ',
+        dependencies: [],
+        orderAfter: [],
+        localizations: {},
+        requiredAssets: ['img/pictures/hero', 'audio/bgm/theme']
+      }
+    })
+    const output = generateHeaderOnly(plugin)
+    expect(output).toContain('@requiredAssets img/pictures/hero')
+    expect(output).toContain('@requiredAssets audio/bgm/theme')
+  })
+
+  it('does not emit @require for file params (MV-era discontinued)', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'icon',
+          text: 'Icon',
+          desc: '',
+          type: 'file',
+          default: '',
+          dir: 'img/pictures',
+          require: true
+        }
+      ]
+    })
+    const output = generateHeaderOnly(plugin)
+    expect(output).toContain('@dir img/pictures')
+    expect(output).not.toContain('@require 1')
+  })
+
+  it('does not emit @noteRequire for noteParam groups (not in spec)', () => {
+    const plugin = createTestPlugin({
+      meta: {
+        name: 'NoteReqTest',
+        version: '1.0',
+        author: '',
+        description: 'x',
+        help: '',
+        url: '',
+        target: 'MZ',
+        dependencies: [],
+        orderAfter: [],
+        localizations: {},
+        noteParams: [
+          { name: 'bgm', type: 'file', dir: 'audio/bgm/', data: 'actors', require: true }
+        ]
+      }
+    })
+    const output = generateHeaderOnly(plugin)
+    expect(output).toContain('@noteParam bgm')
+    expect(output).toContain('@noteType file')
+    expect(output).toContain('@noteDir audio/bgm/')
+    expect(output).toContain('@noteData actors')
+    expect(output).not.toContain('@noteRequire')
+  })
+
+  it('parser extracts @requiredAssets from the header', () => {
+    const content = `/*:
+ * @target MZ
+ * @plugindesc Test plugin
+ * @author Tester
+ * @requiredAssets img/pictures/title
+ * @requiredAssets audio/bgm/overworld
+ */`
+    const parsed = PluginParser.parsePlugin(content)
+    expect(parsed.meta.requiredAssets).toEqual(['img/pictures/title', 'audio/bgm/overworld'])
+  })
+
+  it('emits @type location', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'spawn',
+          text: 'Spawn Point',
+          desc: '',
+          type: 'location',
+          default: ''
+        }
+      ]
+    })
+    const output = generateHeaderOnly(plugin)
+    expect(output).toContain('@type location')
+  })
+
+  it('parses @type location', () => {
+    const content = `/*:
+ * @target MZ
+ * @plugindesc Test
+ * @author Tester
+ *
+ * @param spawn
+ * @type location
+ */`
+    const parsed = PluginParser.parsePlugin(content)
+    expect(parsed.parameters[0].type).toBe('location')
   })
 })

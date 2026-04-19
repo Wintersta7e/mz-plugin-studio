@@ -998,7 +998,7 @@ describe('generatePlugin - command arg attributes', () => {
     expect(output).toContain('@decimals 1')
   })
 
-  it('generates file arg with dir and @require 1', () => {
+  it('generates file arg with @dir but drops @require (MV-era)', () => {
     const plugin = createTestPlugin({
       commands: [
         {
@@ -1023,7 +1023,7 @@ describe('generatePlugin - command arg attributes', () => {
     })
     const output = generatePlugin(plugin)
     expect(output).toContain('@dir img/pictures')
-    expect(output).toContain('@require 1')
+    expect(output).not.toContain('@require 1')
   })
 
   it('generates select arg with multiple options', () => {

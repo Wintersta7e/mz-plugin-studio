@@ -255,6 +255,26 @@ export function MetaEditor() {
           <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="requiredAssets">Required Assets (one per line)</Label>
+          <Textarea
+            id="requiredAssets"
+            value={(meta.requiredAssets || []).join('\n')}
+            onChange={(e) =>
+              updateMeta({
+                requiredAssets: e.target.value.split('\n').filter((s) => s.trim())
+              })
+            }
+            placeholder="img/pictures/title&#10;audio/bgm/theme"
+            rows={3}
+            className="font-mono text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Assets preserved during MZ&apos;s &quot;Exclude unused files&quot; deployment (relative
+            paths).
+          </p>
+        </div>
+
         {/* Note Parameters for deployment */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">

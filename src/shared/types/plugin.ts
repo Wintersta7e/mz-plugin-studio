@@ -98,6 +98,7 @@ export interface PluginMeta {
   orderAfter?: string[] // @orderAfter entries (multiple allowed)
   orderBefore?: string[] // @orderBefore entries (multiple allowed)
   noteParams?: NoteParam[] // @noteParam groups for deployment
+  requiredAssets?: string[] // @requiredAssets — assets preserved during "Exclude unused files" deploy
   localizations?: Record<string, LocalizedContent> // { 'ja': {...}, 'zh': {...} }
 }
 

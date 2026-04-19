@@ -20,6 +20,7 @@ interface ParsedMeta {
   orderAfter: string[]
   orderBefore: string[]
   noteParams: NoteParam[]
+  requiredAssets: string[]
   localizations: Record<string, LocalizedContent>
 }
 
@@ -53,6 +54,7 @@ export class PluginParser {
         orderAfter: meta.orderAfter,
         orderBefore: meta.orderBefore,
         noteParams: meta.noteParams,
+        requiredAssets: meta.requiredAssets,
         localizations: meta.localizations
       },
       parameters,
@@ -259,6 +261,7 @@ export class PluginParser {
       orderAfter: [],
       orderBefore: [],
       noteParams: [],
+      requiredAssets: [],
       localizations: {}
     }
 
@@ -317,6 +320,12 @@ export class PluginParser {
     const orderBeforeMatches = header.matchAll(/@orderBefore\s+(.+?)(?=\n)/gi)
     for (const match of orderBeforeMatches) {
       meta.orderBefore.push(match[1].trim())
+    }
+
+    // Parse @requiredAssets (assets preserved during "Exclude unused files" deploy)
+    const requiredAssetMatches = header.matchAll(/@requiredAssets\s+(.+?)(?=\n)/gi)
+    for (const match of requiredAssetMatches) {
+      meta.requiredAssets.push(match[1].trim())
     }
 
     // Parse @noteParam groups
@@ -725,6 +734,7 @@ export class PluginParser {
     if (normalizedType === 'file') return 'file'
     if (normalizedType === 'icon') return 'icon'
     if (normalizedType === 'map') return 'map'
+    if (normalizedType === 'location') return 'location'
     if (normalizedType === 'note' || normalizedType === 'multiline_string') return 'note'
     if (normalizedType === 'color') return 'color'
     if (normalizedType === 'text') return 'text'
