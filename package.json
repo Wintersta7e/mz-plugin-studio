@@ -45,10 +45,10 @@
     "electron-log": "^5.4.3",
     "electron-updater": "^6.8.3",
     "framer-motion": "^12.38.0",
-    "lucide-react": "^1.7.0",
+    "lucide-react": "^1.8.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
