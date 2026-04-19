@@ -428,9 +428,11 @@ function generateBody(plugin: PluginDefinition): string {
 
       lines.push('')
       lines.push('        // TODO: Implement command logic')
-      lines.push(
-        `        console.log('${escapeJSString(cmd.name)} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
-      )
+      if (cmd.args.length > 0) {
+        lines.push(
+          `        // Parsed args available as: ${cmd.args.map((a) => camelCase(a.name)).join(', ')}`
+        )
+      }
       lines.push('    });')
     }
 
@@ -618,9 +620,11 @@ export function generateRawMode(plugin: PluginDefinition): string {
       }
       cmdLines.push('')
       cmdLines.push(`        // TODO: Implement ${escapeJSString(cmd.name)} logic`)
-      cmdLines.push(
-        `        console.log('${escapeJSString(cmd.name)} called with:', { ${cmd.args.map((a) => camelCase(a.name)).join(', ')} });`
-      )
+      if (cmd.args.length > 0) {
+        cmdLines.push(
+          `        // Parsed args available as: ${cmd.args.map((a) => camelCase(a.name)).join(', ')}`
+        )
+      }
       cmdLines.push('    });')
     }
     cmdLines.push(`    // --- End new commands ---`)
