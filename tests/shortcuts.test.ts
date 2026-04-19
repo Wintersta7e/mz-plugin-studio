@@ -73,6 +73,13 @@ describe('matchShortcut', () => {
     expect(result!.key).toBe('ctrl+shift+s')
   })
 
+  it('matches ctrl+shift+e (toggle plugin browser)', () => {
+    const evt = makeKeyboardEvent({ code: 'KeyE', ctrlKey: true, shiftKey: true })
+    const result = matchShortcut(evt)
+    expect(result).not.toBeNull()
+    expect(result!.key).toBe('ctrl+shift+e')
+  })
+
   it('returns null for alt+key combinations', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', altKey: true })
     const result = matchShortcut(evt)
@@ -108,27 +115,62 @@ describe('matchShortcut', () => {
 
 describe('shouldOverrideMonaco', () => {
   it('returns true for ctrl+s (global override)', () => {
-    const shortcut = { key: 'ctrl+s', label: 'Ctrl+S', description: 'Save', category: 'File' as const }
+    const shortcut = {
+      key: 'ctrl+s',
+      label: 'Ctrl+S',
+      description: 'Save',
+      category: 'File' as const
+    }
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
   it('returns true for ctrl+shift+s (save all)', () => {
-    const shortcut = { key: 'ctrl+shift+s', label: 'Ctrl+Shift+S', description: 'Save All', category: 'File' as const }
+    const shortcut = {
+      key: 'ctrl+shift+s',
+      label: 'Ctrl+Shift+S',
+      description: 'Save All',
+      category: 'File' as const
+    }
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
   it('returns true for ctrl+b (toggle preview)', () => {
-    const shortcut = { key: 'ctrl+b', label: 'Ctrl+B', description: 'Toggle preview', category: 'View' as const }
+    const shortcut = {
+      key: 'ctrl+b',
+      label: 'Ctrl+B',
+      description: 'Toggle preview',
+      category: 'View' as const
+    }
+    expect(shouldOverrideMonaco(shortcut)).toBe(true)
+  })
+
+  it('returns true for ctrl+shift+e (toggle plugin browser)', () => {
+    const shortcut = {
+      key: 'ctrl+shift+e',
+      label: 'Ctrl+Shift+E',
+      description: 'Toggle plugin browser',
+      category: 'View' as const
+    }
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
   it('returns false for ctrl+z (undo — Monaco should handle)', () => {
-    const shortcut = { key: 'ctrl+z', label: 'Ctrl+Z', description: 'Undo', category: 'Edit' as const }
+    const shortcut = {
+      key: 'ctrl+z',
+      label: 'Ctrl+Z',
+      description: 'Undo',
+      category: 'Edit' as const
+    }
     expect(shouldOverrideMonaco(shortcut)).toBe(false)
   })
 
   it('returns false for f5', () => {
-    const shortcut = { key: 'f5', label: 'F5', description: 'Regenerate', category: 'View' as const }
+    const shortcut = {
+      key: 'f5',
+      label: 'F5',
+      description: 'Regenerate',
+      category: 'View' as const
+    }
     expect(shouldOverrideMonaco(shortcut)).toBe(false)
   })
 })

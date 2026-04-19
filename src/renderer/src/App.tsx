@@ -10,6 +10,7 @@ import { CodeEditor } from './components/plugin/CodeEditor'
 import { CodePreview } from './components/preview/CodePreview'
 import { AnalysisView } from './components/analysis/AnalysisView'
 import { ProjectBrowser } from './components/project/ProjectBrowser'
+import { PluginBrowser } from './components/plugin/PluginBrowser'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import {
   useProjectStore,
@@ -74,6 +75,7 @@ function App() {
   const isLoadingRef = useRef(false)
 
   const [projectBrowserOpen, setProjectBrowserOpen] = useState(false)
+  const [pluginBrowserOpen, setPluginBrowserOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
@@ -332,6 +334,9 @@ function App() {
         case 'ctrl+b':
           useUIStore.getState().togglePreview()
           break
+        case 'ctrl+shift+e':
+          setPluginBrowserOpen((prev) => !prev)
+          break
         case 'ctrl+n': {
           const newPlugin = createEmptyPlugin()
           usePluginStore.getState().openPlugin(newPlugin)
@@ -371,9 +376,15 @@ function App() {
             onOpenProject={handleOpenProject}
             onToggleProjectBrowser={() => setProjectBrowserOpen(!projectBrowserOpen)}
             projectBrowserOpen={projectBrowserOpen}
+            onTogglePluginBrowser={() => setPluginBrowserOpen(!pluginBrowserOpen)}
+            pluginBrowserOpen={pluginBrowserOpen}
             onOpenSettings={() => setSettingsOpen(true)}
             onOpenShortcuts={() => setShortcutsOpen(true)}
           />
+
+          {pluginBrowserOpen && project && (
+            <PluginBrowser onClose={() => setPluginBrowserOpen(false)} />
+          )}
 
           <main className="flex flex-1 flex-col overflow-hidden">
             {openPlugins.length === 0 && !project ? (

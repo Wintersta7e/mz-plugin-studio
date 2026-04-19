@@ -1,4 +1,3 @@
-import { useState, useEffect, useMemo } from 'react'
 import {
   FolderOpen,
   FilePlus,
@@ -8,21 +7,21 @@ import {
   ChevronRight,
   X,
   Database,
-  RefreshCw
+  List
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
-import { useProjectStore, usePluginStore } from '../../stores'
+import { usePluginStore, useProjectStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
-import type { DependencyIssue } from '../../lib/dependency-analyzer'
 import { cn } from '../../lib/utils'
-import log from 'electron-log/renderer'
 
 interface SidebarProps {
   onOpenProject: () => void
   onToggleProjectBrowser?: () => void
   projectBrowserOpen?: boolean
+  onTogglePluginBrowser?: () => void
+  pluginBrowserOpen?: boolean
   onOpenSettings: () => void
   onOpenShortcuts: () => void
 }
@@ -31,6 +30,8 @@ export function Sidebar({
   onOpenProject,
   onToggleProjectBrowser,
   projectBrowserOpen,
+  onTogglePluginBrowser,
+  pluginBrowserOpen,
   onOpenSettings,
   onOpenShortcuts
 }: SidebarProps) {
@@ -41,51 +42,6 @@ export function Sidebar({
   const openPlugin = usePluginStore((s) => s.openPlugin)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
-
-  const dependencyReport = useProjectStore((s) => s.dependencyReport)
-  const scanDependencies = useProjectStore((s) => s.scanDependencies)
-
-  const pluginIssues = useMemo(() => {
-    if (!dependencyReport) return new Map<string, DependencyIssue[]>()
-    const map = new Map<string, DependencyIssue[]>()
-    for (const issue of dependencyReport.issues) {
-      const existing = map.get(issue.pluginName) || []
-      existing.push(issue)
-      map.set(issue.pluginName, existing)
-    }
-    return map
-  }, [dependencyReport])
-
-  // State for all plugin files in the js/plugins folder
-  const [allPluginFiles, setAllPluginFiles] = useState<string[]>([])
-
-  // Fetch all plugin files when project changes
-  useEffect(() => {
-    let cancelled = false
-    if (project?.path) {
-      window.api.plugin.list(project.path).then(
-        (files) => {
-          if (!cancelled) setAllPluginFiles(files)
-        },
-        () => {
-          if (!cancelled) setAllPluginFiles([])
-        }
-      )
-    } else {
-      setAllPluginFiles([])
-    }
-    return () => {
-      cancelled = true
-    }
-  }, [project?.path])
-
-  const refreshPluginList = async () => {
-    if (project?.path) {
-      const files = await window.api.plugin.list(project.path)
-      setAllPluginFiles(files)
-      await scanDependencies()
-    }
-  }
 
   const handleNewPlugin = () => {
     const plugin = createEmptyPlugin()
@@ -105,16 +61,6 @@ export function Sidebar({
       if (result === 0) return // Cancel
     }
     closePlugin(id)
-  }
-
-  const handleLoadPlugin = async (name: string) => {
-    if (!project) return
-    try {
-      const plugin = await window.api.plugin.load(project.path, `${name}.js`)
-      openPlugin(plugin)
-    } catch (error) {
-      log.error('Failed to load plugin:', error)
-    }
   }
 
   return (
@@ -205,78 +151,28 @@ export function Sidebar({
           </div>
         </ScrollArea>
 
-        {/* Project plugins - shows ALL .js files from js/plugins folder */}
-        {project && allPluginFiles.length > 0 && (
-          <>
-            <div className="border-t border-border p-2 flex items-center justify-center">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Refresh Plugins (${allPluginFiles.length})`}
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={refreshPluginList}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  Refresh Plugins ({allPluginFiles.length})
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <ScrollArea className="max-h-60">
-              <div className="flex flex-col items-center gap-1 p-2">
-                {allPluginFiles.map((filename, index) => {
-                  const name = filename.replace(/\.js$/, '')
-                  const issues = pluginIssues.get(name)
-                  const hasError = issues?.some((i) => i.severity === 'error')
-                  return (
-                    <Tooltip key={filename}>
-                      <TooltipTrigger asChild>
-                        <div className="relative">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Load ${name}`}
-                            className="h-8 w-8 text-muted-foreground"
-                            onClick={() => handleLoadPlugin(name)}
-                          >
-                            <FileCode className="h-4 w-4" />
-                          </Button>
-                          <span className="absolute -left-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-muted text-[9px] font-medium">
-                            {index + 1}
-                          </span>
-                          {issues && (
-                            <span
-                              className={cn(
-                                'absolute -right-1 -bottom-1 h-2.5 w-2.5 rounded-full',
-                                hasError ? 'bg-red-500' : 'bg-amber-500'
-                              )}
-                            />
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="whitespace-pre-line">
-                        {name}
-                        {issues && (
-                          <>
-                            {'\n'}
-                            {issues.map((i) => i.message).join('\n')}
-                          </>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  )
-                })}
-              </div>
-            </ScrollArea>
-          </>
-        )}
-
         {/* Bottom actions */}
         <div className="flex flex-col items-center gap-1 border-t border-border p-2">
+          {project && onTogglePluginBrowser && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={pluginBrowserOpen ? 'secondary' : 'ghost'}
+                  size="icon"
+                  aria-label="Plugin Browser"
+                  className={cn(
+                    'h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]',
+                    !pluginBrowserOpen && 'text-muted-foreground'
+                  )}
+                  onClick={onTogglePluginBrowser}
+                >
+                  <List className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Plugin Browser (Ctrl+Shift+E)</TooltipContent>
+            </Tooltip>
+          )}
+
           {project && onToggleProjectBrowser && (
             <Tooltip>
               <TooltipTrigger asChild>
