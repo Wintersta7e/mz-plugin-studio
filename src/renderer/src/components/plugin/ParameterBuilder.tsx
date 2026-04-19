@@ -66,7 +66,11 @@ const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
   {
     group: 'Text',
     types: [
-      { value: 'text', label: 'Text', desc: 'Multi-line text area' },
+      {
+        value: 'text',
+        label: 'Text',
+        desc: 'MV-legacy multi-line text — prefer Note for new plugins'
+      },
       { value: 'note', label: 'Note', desc: 'Large multi-line JSON-safe text' }
     ]
   },
