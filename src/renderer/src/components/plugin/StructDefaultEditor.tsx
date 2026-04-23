@@ -159,17 +159,17 @@ function StructFieldInput({
     return (
       <div className="flex items-center gap-2">
         <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
-        <Select
-          value={selectValue}
-          onValueChange={(v) => onChange(v === EMPTY_SENTINEL ? '' : v)}
-        >
+        <Select value={selectValue} onValueChange={(v) => onChange(v === EMPTY_SENTINEL ? '' : v)}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={EMPTY_SENTINEL}>(none)</SelectItem>
             {field.options.map((opt) => (
-              <SelectItem key={opt.value || `opt-${opt.text}`} value={opt.value || `__val_${opt.text}`}>
+              <SelectItem
+                key={opt.value || `opt-${opt.text}`}
+                value={opt.value || `__val_${opt.text}`}
+              >
                 {opt.text}
               </SelectItem>
             ))}

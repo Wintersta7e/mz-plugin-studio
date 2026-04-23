@@ -145,7 +145,9 @@ const customSpriteClassTemplate: CodeTemplate = {
     } else if (useBitmap === 'filled') {
       lines.push('    // Create filled bitmap')
       lines.push(`    this.bitmap = new Bitmap(${width}, ${height});`)
-      lines.push(`    this.bitmap.fillRect(0, 0, ${width}, ${height}, '${escapeJSString(fillColor)}');`)
+      lines.push(
+        `    this.bitmap.fillRect(0, 0, ${width}, ${height}, '${escapeJSString(fillColor)}');`
+      )
     } else {
       lines.push('    // Load external image')
       lines.push("    // this.bitmap = ImageManager.loadPicture('your_image');")
