@@ -7,18 +7,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "width",
-          "height"
-        ],
+        "params": ["width", "height"],
         "description": "Creates a new bitmap",
         "popularity": 1
       },
       {
         "name": "load",
-        "params": [
-          "url"
-        ],
+        "params": ["url"],
         "description": "Loads an image from URL",
         "popularity": 0
       },
@@ -30,42 +25,19 @@
       },
       {
         "name": "fillRect",
-        "params": [
-          "x",
-          "y",
-          "width",
-          "height",
-          "color"
-        ],
+        "params": ["x", "y", "width", "height", "color"],
         "description": "Fills a rectangle with color",
         "popularity": 0
       },
       {
         "name": "drawText",
-        "params": [
-          "text",
-          "x",
-          "y",
-          "maxWidth",
-          "lineHeight",
-          "align"
-        ],
+        "params": ["text", "x", "y", "maxWidth", "lineHeight", "align"],
         "description": "Draws text on the bitmap",
         "popularity": 1
       },
       {
         "name": "blt",
-        "params": [
-          "source",
-          "sx",
-          "sy",
-          "sw",
-          "sh",
-          "dx",
-          "dy",
-          "dw",
-          "dh"
-        ],
+        "params": ["source", "sx", "sy", "sw", "sh", "dx", "dy", "dw", "dh"],
         "description": "Block transfer from another bitmap",
         "popularity": 1
       }
@@ -86,9 +58,7 @@
       },
       {
         "name": "setStage",
-        "params": [
-          "stage"
-        ],
+        "params": ["stage"],
         "description": "Sets the current stage",
         "popularity": 0
       },
@@ -106,10 +76,7 @@
       },
       {
         "name": "resize",
-        "params": [
-          "width",
-          "height"
-        ],
+        "params": ["width", "height"],
         "description": "Resizes the game screen",
         "popularity": 0
       }
@@ -136,25 +103,19 @@
       },
       {
         "name": "isPressed",
-        "params": [
-          "keyName"
-        ],
+        "params": ["keyName"],
         "description": "Checks if key is currently pressed",
         "popularity": 0
       },
       {
         "name": "isTriggered",
-        "params": [
-          "keyName"
-        ],
+        "params": ["keyName"],
         "description": "Checks if key was just pressed",
         "popularity": 0
       },
       {
         "name": "isRepeated",
-        "params": [
-          "keyName"
-        ],
+        "params": ["keyName"],
         "description": "Checks if key is in repeat state",
         "popularity": 0
       }
@@ -208,25 +169,19 @@
     "methods": [
       {
         "name": "stringify",
-        "params": [
-          "object"
-        ],
+        "params": ["object"],
         "description": "Converts object to JSON string",
         "popularity": 0
       },
       {
         "name": "parse",
-        "params": [
-          "json"
-        ],
+        "params": ["json"],
         "description": "Parses JSON string to object",
         "popularity": 0
       },
       {
         "name": "makeDeepCopy",
-        "params": [
-          "object"
-        ],
+        "params": ["object"],
         "description": "Creates a deep copy of object",
         "popularity": 0
       }
@@ -265,11 +220,7 @@
       },
       {
         "name": "rgbToCssColor",
-        "params": [
-          "r",
-          "g",
-          "b"
-        ],
+        "params": ["r", "g", "b"],
         "description": "Converts RGB to CSS color string",
         "popularity": 0
       }
@@ -285,10 +236,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Creates a new point",
         "popularity": 0
       }
@@ -304,12 +252,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
+        "params": ["x", "y", "width", "height"],
         "description": "Creates a new rectangle",
         "popularity": 0
       }
@@ -347,9 +290,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "bitmap"
-        ],
+        "params": ["bitmap"],
         "description": "Creates sprite with optional bitmap",
         "popularity": 0
       },
@@ -361,21 +302,13 @@
       },
       {
         "name": "move",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Moves sprite to position",
         "popularity": 0
       },
       {
         "name": "setFrame",
-        "params": [
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
+        "params": ["x", "y", "width", "height"],
         "description": "Sets the source rectangle",
         "popularity": 0
       },
@@ -421,11 +354,7 @@
       },
       {
         "name": "setData",
-        "params": [
-          "width",
-          "height",
-          "data"
-        ],
+        "params": ["width", "height", "data"],
         "description": "Sets the map data",
         "popularity": 0
       }
@@ -453,20 +382,13 @@
       },
       {
         "name": "move",
-        "params": [
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
+        "params": ["x", "y", "width", "height"],
         "description": "Moves and resizes window",
         "popularity": 0
       },
       {
         "name": "setBackgroundType",
-        "params": [
-          "type"
-        ],
+        "params": ["type"],
         "description": "Sets background transparency",
         "popularity": 0
       },
@@ -511,17 +433,13 @@
       },
       {
         "name": "saveGame",
-        "params": [
-          "savefileId"
-        ],
+        "params": ["savefileId"],
         "description": "Saves game to slot",
         "popularity": 0
       },
       {
         "name": "loadGame",
-        "params": [
-          "savefileId"
-        ],
+        "params": ["savefileId"],
         "description": "Loads game from slot",
         "popularity": 0
       },
@@ -533,9 +451,7 @@
       },
       {
         "name": "extractSaveContents",
-        "params": [
-          "contents"
-        ],
+        "params": ["contents"],
         "description": "Restores from save data",
         "popularity": 0
       }
@@ -568,9 +484,7 @@
       },
       {
         "name": "applyData",
-        "params": [
-          "config"
-        ],
+        "params": ["config"],
         "description": "Applies config data",
         "popularity": 0
       }
@@ -585,34 +499,25 @@
     "methods": [
       {
         "name": "saveObject",
-        "params": [
-          "saveName",
-          "object"
-        ],
+        "params": ["saveName", "object"],
         "description": "Saves object to storage",
         "popularity": 0
       },
       {
         "name": "loadObject",
-        "params": [
-          "saveName"
-        ],
+        "params": ["saveName"],
         "description": "Loads object from storage",
         "popularity": 0
       },
       {
         "name": "exists",
-        "params": [
-          "saveName"
-        ],
+        "params": ["saveName"],
         "description": "Checks if save exists",
         "popularity": 0
       },
       {
         "name": "remove",
-        "params": [
-          "saveName"
-        ],
+        "params": ["saveName"],
         "description": "Removes a save file",
         "popularity": 0
       }
@@ -627,9 +532,7 @@
     "methods": [
       {
         "name": "run",
-        "params": [
-          "sceneClass"
-        ],
+        "params": ["sceneClass"],
         "description": "Runs the game starting with scene",
         "popularity": 0
       },
@@ -641,25 +544,19 @@
       },
       {
         "name": "update",
-        "params": [
-          "deltaTime"
-        ],
+        "params": ["deltaTime"],
         "description": "Updates current scene",
         "popularity": 0
       },
       {
         "name": "goto",
-        "params": [
-          "sceneClass"
-        ],
+        "params": ["sceneClass"],
         "description": "Transitions to new scene",
         "popularity": 0
       },
       {
         "name": "push",
-        "params": [
-          "sceneClass"
-        ],
+        "params": ["sceneClass"],
         "description": "Pushes scene onto stack",
         "popularity": 0
       },
@@ -680,11 +577,7 @@
     "methods": [
       {
         "name": "setup",
-        "params": [
-          "troopId",
-          "canEscape",
-          "canLose"
-        ],
+        "params": ["troopId", "canEscape", "canLose"],
         "description": "Sets up a battle",
         "popularity": 0
       },
@@ -696,9 +589,7 @@
       },
       {
         "name": "update",
-        "params": [
-          "timeActive"
-        ],
+        "params": ["timeActive"],
         "description": "Updates battle each frame",
         "popularity": 0
       },
@@ -722,9 +613,7 @@
       },
       {
         "name": "endBattle",
-        "params": [
-          "result"
-        ],
+        "params": ["result"],
         "description": "Ends the battle",
         "popularity": 0
       }
@@ -739,35 +628,25 @@
     "methods": [
       {
         "name": "playBgm",
-        "params": [
-          "bgm",
-          "pos"
-        ],
+        "params": ["bgm", "pos"],
         "description": "Plays background music",
         "popularity": 0
       },
       {
         "name": "playBgs",
-        "params": [
-          "bgs",
-          "pos"
-        ],
+        "params": ["bgs", "pos"],
         "description": "Plays background sound",
         "popularity": 0
       },
       {
         "name": "playMe",
-        "params": [
-          "me"
-        ],
+        "params": ["me"],
         "description": "Plays music effect",
         "popularity": 0
       },
       {
         "name": "playSe",
-        "params": [
-          "se"
-        ],
+        "params": ["se"],
         "description": "Plays sound effect",
         "popularity": 0
       },
@@ -794,9 +673,7 @@
     "methods": [
       {
         "name": "playSystemSound",
-        "params": [
-          "n"
-        ],
+        "params": ["n"],
         "description": "Plays a system sound by index",
         "popularity": 0
       },
@@ -835,33 +712,25 @@
     "methods": [
       {
         "name": "basic",
-        "params": [
-          "basicId"
-        ],
+        "params": ["basicId"],
         "description": "Gets basic term by ID",
         "popularity": 0
       },
       {
         "name": "param",
-        "params": [
-          "paramId"
-        ],
+        "params": ["paramId"],
         "description": "Gets parameter name",
         "popularity": 0
       },
       {
         "name": "command",
-        "params": [
-          "commandId"
-        ],
+        "params": ["commandId"],
         "description": "Gets command name",
         "popularity": 0
       },
       {
         "name": "message",
-        "params": [
-          "messageId"
-        ],
+        "params": ["messageId"],
         "description": "Gets message text",
         "popularity": 0
       }
@@ -882,9 +751,7 @@
       },
       {
         "name": "textColor",
-        "params": [
-          "n"
-        ],
+        "params": ["n"],
         "description": "Gets text color by index",
         "popularity": 0
       },
@@ -902,9 +769,7 @@
       },
       {
         "name": "hpColor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Gets HP gauge color",
         "popularity": 0
       }
@@ -919,9 +784,7 @@
     "methods": [
       {
         "name": "load",
-        "params": [
-          "filename"
-        ],
+        "params": ["filename"],
         "description": "Loads an effect file",
         "popularity": 0
       },
@@ -954,42 +817,31 @@
     "methods": [
       {
         "name": "loadBitmap",
-        "params": [
-          "folder",
-          "filename"
-        ],
+        "params": ["folder", "filename"],
         "description": "Loads a bitmap from folder",
         "popularity": 0
       },
       {
         "name": "loadFace",
-        "params": [
-          "filename"
-        ],
+        "params": ["filename"],
         "description": "Loads a face image",
         "popularity": 0
       },
       {
         "name": "loadCharacter",
-        "params": [
-          "filename"
-        ],
+        "params": ["filename"],
         "description": "Loads a character image",
         "popularity": 0
       },
       {
         "name": "loadPicture",
-        "params": [
-          "filename"
-        ],
+        "params": ["filename"],
         "description": "Loads a picture",
         "popularity": 0
       },
       {
         "name": "loadSystem",
-        "params": [
-          "filename"
-        ],
+        "params": ["filename"],
         "description": "Loads a system image",
         "popularity": 0
       },
@@ -1010,38 +862,25 @@
     "methods": [
       {
         "name": "setup",
-        "params": [
-          "plugins"
-        ],
+        "params": ["plugins"],
         "description": "Sets up plugins list",
         "popularity": 0
       },
       {
         "name": "parameters",
-        "params": [
-          "name"
-        ],
+        "params": ["name"],
         "description": "Gets plugin parameters",
         "popularity": 0
       },
       {
         "name": "registerCommand",
-        "params": [
-          "pluginName",
-          "commandName",
-          "func"
-        ],
+        "params": ["pluginName", "commandName", "func"],
         "description": "Registers plugin command",
         "popularity": 0
       },
       {
         "name": "callCommand",
-        "params": [
-          "self",
-          "pluginName",
-          "commandName",
-          "args"
-        ],
+        "params": ["self", "pluginName", "commandName", "args"],
         "description": "Calls a plugin command",
         "popularity": 0
       }
@@ -1068,10 +907,7 @@
       },
       {
         "name": "setDestination",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Sets player destination",
         "popularity": 1
       },
@@ -1083,9 +919,7 @@
       },
       {
         "name": "reserveCommonEvent",
-        "params": [
-          "commonEventId"
-        ],
+        "params": ["commonEventId"],
         "description": "Reserves common event",
         "popularity": 0
       }
@@ -1145,17 +979,13 @@
       },
       {
         "name": "update",
-        "params": [
-          "sceneActive"
-        ],
+        "params": ["sceneActive"],
         "description": "Updates timer each frame",
         "popularity": 0
       },
       {
         "name": "start",
-        "params": [
-          "count"
-        ],
+        "params": ["count"],
         "description": "Starts the timer",
         "popularity": 0
       },
@@ -1194,19 +1024,13 @@
       },
       {
         "name": "add",
-        "params": [
-          "text"
-        ],
+        "params": ["text"],
         "description": "Adds text line",
         "popularity": 0
       },
       {
         "name": "setChoices",
-        "params": [
-          "choices",
-          "defaultType",
-          "cancelType"
-        ],
+        "params": ["choices", "defaultType", "cancelType"],
         "description": "Sets up choices",
         "popularity": 0
       },
@@ -1239,18 +1063,13 @@
       },
       {
         "name": "value",
-        "params": [
-          "switchId"
-        ],
+        "params": ["switchId"],
         "description": "Gets switch value",
         "popularity": 0
       },
       {
         "name": "setValue",
-        "params": [
-          "switchId",
-          "value"
-        ],
+        "params": ["switchId", "value"],
         "description": "Sets switch value",
         "popularity": 1
       }
@@ -1277,18 +1096,13 @@
       },
       {
         "name": "value",
-        "params": [
-          "variableId"
-        ],
+        "params": ["variableId"],
         "description": "Gets variable value",
         "popularity": 0
       },
       {
         "name": "setValue",
-        "params": [
-          "variableId",
-          "value"
-        ],
+        "params": ["variableId", "value"],
         "description": "Sets variable value",
         "popularity": 3
       }
@@ -1315,18 +1129,13 @@
       },
       {
         "name": "value",
-        "params": [
-          "key"
-        ],
+        "params": ["key"],
         "description": "Gets self switch value",
         "popularity": 0
       },
       {
         "name": "setValue",
-        "params": [
-          "key",
-          "value"
-        ],
+        "params": ["key", "value"],
         "description": "Sets self switch value",
         "popularity": 0
       }
@@ -1359,36 +1168,25 @@
       },
       {
         "name": "startFadeIn",
-        "params": [
-          "duration"
-        ],
+        "params": ["duration"],
         "description": "Starts fade in",
         "popularity": 0
       },
       {
         "name": "startFadeOut",
-        "params": [
-          "duration"
-        ],
+        "params": ["duration"],
         "description": "Starts fade out",
         "popularity": 0
       },
       {
         "name": "startTint",
-        "params": [
-          "tone",
-          "duration"
-        ],
+        "params": ["tone", "duration"],
         "description": "Starts screen tint",
         "popularity": 0
       },
       {
         "name": "startShake",
-        "params": [
-          "power",
-          "speed",
-          "duration"
-        ],
+        "params": ["power", "speed", "duration"],
         "description": "Starts screen shake",
         "popularity": 0
       }
@@ -1409,16 +1207,7 @@
       },
       {
         "name": "show",
-        "params": [
-          "name",
-          "origin",
-          "x",
-          "y",
-          "scaleX",
-          "scaleY",
-          "opacity",
-          "blendMode"
-        ],
+        "params": ["name", "origin", "x", "y", "scaleX", "scaleY", "opacity", "blendMode"],
         "description": "Shows a picture",
         "popularity": 3
       },
@@ -1461,9 +1250,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Creates game item wrapper",
         "popularity": 0
       },
@@ -1508,10 +1295,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "subject",
-          "forcing"
-        ],
+        "params": ["subject", "forcing"],
         "description": "Creates battle action",
         "popularity": 0
       },
@@ -1523,34 +1307,25 @@
       },
       {
         "name": "setSkill",
-        "params": [
-          "skillId"
-        ],
+        "params": ["skillId"],
         "description": "Sets action to skill",
         "popularity": 0
       },
       {
         "name": "setItem",
-        "params": [
-          "itemId"
-        ],
+        "params": ["itemId"],
         "description": "Sets action to item",
         "popularity": 0
       },
       {
         "name": "apply",
-        "params": [
-          "target"
-        ],
+        "params": ["target"],
         "description": "Applies action to target",
         "popularity": 1
       },
       {
         "name": "makeDamageValue",
-        "params": [
-          "target",
-          "critical"
-        ],
+        "params": ["target", "critical"],
         "description": "Calculates damage value",
         "popularity": 1
       }
@@ -1604,33 +1379,25 @@
       },
       {
         "name": "param",
-        "params": [
-          "paramId"
-        ],
+        "params": ["paramId"],
         "description": "Gets parameter value",
         "popularity": 0
       },
       {
         "name": "paramBase",
-        "params": [
-          "paramId"
-        ],
+        "params": ["paramId"],
         "description": "Gets base parameter",
         "popularity": 0
       },
       {
         "name": "paramPlus",
-        "params": [
-          "paramId"
-        ],
+        "params": ["paramId"],
         "description": "Gets parameter bonus",
         "popularity": 0
       },
       {
         "name": "isStateAffected",
-        "params": [
-          "stateId"
-        ],
+        "params": ["stateId"],
         "description": "Checks if state is active",
         "popularity": 0
       },
@@ -1664,41 +1431,31 @@
       },
       {
         "name": "addState",
-        "params": [
-          "stateId"
-        ],
+        "params": ["stateId"],
         "description": "Adds a state",
         "popularity": 0
       },
       {
         "name": "removeState",
-        "params": [
-          "stateId"
-        ],
+        "params": ["stateId"],
         "description": "Removes a state",
         "popularity": 0
       },
       {
         "name": "gainHp",
-        "params": [
-          "value"
-        ],
+        "params": ["value"],
         "description": "Changes HP",
         "popularity": 0
       },
       {
         "name": "gainMp",
-        "params": [
-          "value"
-        ],
+        "params": ["value"],
         "description": "Changes MP",
         "popularity": 0
       },
       {
         "name": "performAction",
-        "params": [
-          "action"
-        ],
+        "params": ["action"],
         "description": "Performs battle action",
         "popularity": 1
       }
@@ -1714,17 +1471,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "actorId"
-        ],
+        "params": ["actorId"],
         "description": "Initializes actor",
         "popularity": 0
       },
       {
         "name": "setup",
-        "params": [
-          "actorId"
-        ],
+        "params": ["actorId"],
         "description": "Sets up actor from database",
         "popularity": 1
       },
@@ -1736,18 +1489,13 @@
       },
       {
         "name": "setName",
-        "params": [
-          "name"
-        ],
+        "params": ["name"],
         "description": "Sets actor name",
         "popularity": 0
       },
       {
         "name": "changeExp",
-        "params": [
-          "exp",
-          "show"
-        ],
+        "params": ["exp", "show"],
         "description": "Changes experience",
         "popularity": 0
       },
@@ -1759,10 +1507,7 @@
       },
       {
         "name": "changeEquip",
-        "params": [
-          "slotId",
-          "item"
-        ],
+        "params": ["slotId", "item"],
         "description": "Changes equipment",
         "popularity": 0
       }
@@ -1778,21 +1523,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "enemyId",
-          "x",
-          "y"
-        ],
+        "params": ["enemyId", "x", "y"],
         "description": "Initializes enemy",
         "popularity": 0
       },
       {
         "name": "setup",
-        "params": [
-          "enemyId",
-          "x",
-          "y"
-        ],
+        "params": ["enemyId", "x", "y"],
         "description": "Sets up enemy from database",
         "popularity": 1
       },
@@ -1837,9 +1574,7 @@
       },
       {
         "name": "actor",
-        "params": [
-          "actorId"
-        ],
+        "params": ["actorId"],
         "description": "Gets actor by ID",
         "popularity": 0
       }
@@ -1906,35 +1641,25 @@
       },
       {
         "name": "addActor",
-        "params": [
-          "actorId"
-        ],
+        "params": ["actorId"],
         "description": "Adds actor to party",
         "popularity": 1
       },
       {
         "name": "removeActor",
-        "params": [
-          "actorId"
-        ],
+        "params": ["actorId"],
         "description": "Removes actor from party",
         "popularity": 0
       },
       {
         "name": "gainItem",
-        "params": [
-          "item",
-          "amount",
-          "includeEquip"
-        ],
+        "params": ["item", "amount", "includeEquip"],
         "description": "Gains/loses items",
         "popularity": 1
       },
       {
         "name": "gainGold",
-        "params": [
-          "amount"
-        ],
+        "params": ["amount"],
         "description": "Gains/loses gold",
         "popularity": 0
       },
@@ -1962,9 +1687,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "troopId"
-        ],
+        "params": ["troopId"],
         "description": "Sets up troop from database",
         "popularity": 2
       },
@@ -2009,9 +1732,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "mapId"
-        ],
+        "params": ["mapId"],
         "description": "Sets up map from database",
         "popularity": 8
       },
@@ -2023,17 +1744,13 @@
       },
       {
         "name": "update",
-        "params": [
-          "sceneActive"
-        ],
+        "params": ["sceneActive"],
         "description": "Updates map each frame",
         "popularity": 4
       },
       {
         "name": "event",
-        "params": [
-          "eventId"
-        ],
+        "params": ["eventId"],
         "description": "Gets event by ID",
         "popularity": 0
       },
@@ -2045,11 +1762,7 @@
       },
       {
         "name": "isPassable",
-        "params": [
-          "x",
-          "y",
-          "d"
-        ],
+        "params": ["x", "y", "d"],
         "description": "Checks tile passability",
         "popularity": 1
       }
@@ -2064,9 +1777,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "commonEventId"
-        ],
+        "params": ["commonEventId"],
         "description": "Initializes common event",
         "popularity": 0
       },
@@ -2117,18 +1828,13 @@
       },
       {
         "name": "moveStraight",
-        "params": [
-          "d"
-        ],
+        "params": ["d"],
         "description": "Moves in direction",
         "popularity": 1
       },
       {
         "name": "setPosition",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Sets map position",
         "popularity": 0
       },
@@ -2162,25 +1868,19 @@
       },
       {
         "name": "setMoveRoute",
-        "params": [
-          "moveRoute"
-        ],
+        "params": ["moveRoute"],
         "description": "Sets movement route",
         "popularity": 0
       },
       {
         "name": "forceMoveRoute",
-        "params": [
-          "moveRoute"
-        ],
+        "params": ["moveRoute"],
         "description": "Forces movement route",
         "popularity": 0
       },
       {
         "name": "turnTowardCharacter",
-        "params": [
-          "character"
-        ],
+        "params": ["character"],
         "description": "Faces another character",
         "popularity": 0
       },
@@ -2214,9 +1914,7 @@
       },
       {
         "name": "update",
-        "params": [
-          "sceneActive"
-        ],
+        "params": ["sceneActive"],
         "description": "Updates player each frame",
         "popularity": 5
       },
@@ -2228,22 +1926,13 @@
       },
       {
         "name": "center",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Centers screen on position",
         "popularity": 0
       },
       {
         "name": "reserveTransfer",
-        "params": [
-          "mapId",
-          "x",
-          "y",
-          "d",
-          "fadeType"
-        ],
+        "params": ["mapId", "x", "y", "d", "fadeType"],
         "description": "Reserves map transfer",
         "popularity": 1
       },
@@ -2265,9 +1954,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "memberIndex"
-        ],
+        "params": ["memberIndex"],
         "description": "Initializes follower",
         "popularity": 0
       },
@@ -2285,9 +1972,7 @@
       },
       {
         "name": "chaseCharacter",
-        "params": [
-          "character"
-        ],
+        "params": ["character"],
         "description": "Follows another character",
         "popularity": 0
       }
@@ -2336,9 +2021,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "type"
-        ],
+        "params": ["type"],
         "description": "Initializes vehicle",
         "popularity": 0
       },
@@ -2378,10 +2061,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "mapId",
-          "eventId"
-        ],
+        "params": ["mapId", "eventId"],
         "description": "Initializes event",
         "popularity": 4
       },
@@ -2411,9 +2091,7 @@
       },
       {
         "name": "meetsConditions",
-        "params": [
-          "page"
-        ],
+        "params": ["page"],
         "description": "Checks page conditions",
         "popularity": 1
       }
@@ -2428,18 +2106,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "depth"
-        ],
+        "params": ["depth"],
         "description": "Initializes interpreter",
         "popularity": 0
       },
       {
         "name": "setup",
-        "params": [
-          "list",
-          "eventId"
-        ],
+        "params": ["list", "eventId"],
         "description": "Sets up command list",
         "popularity": 1
       },
@@ -2457,25 +2130,19 @@
       },
       {
         "name": "command101",
-        "params": [
-          "params"
-        ],
+        "params": ["params"],
         "description": "Show Text",
         "popularity": 2
       },
       {
         "name": "command102",
-        "params": [
-          "params"
-        ],
+        "params": ["params"],
         "description": "Show Choices",
         "popularity": 0
       },
       {
         "name": "command111",
-        "params": [
-          "params"
-        ],
+        "params": ["params"],
         "description": "Conditional Branch",
         "popularity": 0
       },
@@ -3087,9 +2754,7 @@
       },
       {
         "name": "executeSave",
-        "params": [
-          "savefileId"
-        ],
+        "params": ["savefileId"],
         "description": "Executes save",
         "popularity": 0
       }
@@ -3117,9 +2782,7 @@
       },
       {
         "name": "executeLoad",
-        "params": [
-          "savefileId"
-        ],
+        "params": ["savefileId"],
         "description": "Executes load",
         "popularity": 0
       }
@@ -3175,10 +2838,7 @@
       },
       {
         "name": "prepare",
-        "params": [
-          "goods",
-          "purchaseOnly"
-        ],
+        "params": ["goods", "purchaseOnly"],
         "description": "Prepares shop data",
         "popularity": 0
       },
@@ -3224,10 +2884,7 @@
       },
       {
         "name": "prepare",
-        "params": [
-          "actorId",
-          "maxLength"
-        ],
+        "params": ["actorId", "maxLength"],
         "description": "Prepares name input",
         "popularity": 0
       },
@@ -3421,9 +3078,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "buttonType"
-        ],
+        "params": ["buttonType"],
         "description": "Creates button sprite",
         "popularity": 0
       },
@@ -3457,9 +3112,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "character"
-        ],
+        "params": ["character"],
         "description": "Creates character sprite",
         "popularity": 5
       },
@@ -3477,9 +3130,7 @@
       },
       {
         "name": "setCharacter",
-        "params": [
-          "character"
-        ],
+        "params": ["character"],
         "description": "Sets the character",
         "popularity": 1
       },
@@ -3507,9 +3158,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Creates battler sprite",
         "popularity": 0
       },
@@ -3527,9 +3176,7 @@
       },
       {
         "name": "setBattler",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Sets the battler",
         "popularity": 0
       },
@@ -3551,9 +3198,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Creates actor sprite",
         "popularity": 0
       },
@@ -3565,9 +3210,7 @@
       },
       {
         "name": "setActorHome",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Sets home position",
         "popularity": 1
       },
@@ -3579,9 +3222,7 @@
       },
       {
         "name": "startMotion",
-        "params": [
-          "motionType"
-        ],
+        "params": ["motionType"],
         "description": "Starts a motion",
         "popularity": 0
       }
@@ -3597,9 +3238,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Creates enemy sprite",
         "popularity": 0
       },
@@ -3611,9 +3250,7 @@
       },
       {
         "name": "loadBitmap",
-        "params": [
-          "name"
-        ],
+        "params": ["name"],
         "description": "Loads enemy image",
         "popularity": 1
       },
@@ -3641,12 +3278,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "targets",
-          "animation",
-          "mirror",
-          "delay"
-        ],
+        "params": ["targets", "animation", "mirror", "delay"],
         "description": "Sets up animation",
         "popularity": 0
       },
@@ -3680,9 +3312,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "target"
-        ],
+        "params": ["target"],
         "description": "Sets up damage display",
         "popularity": 0
       },
@@ -3694,9 +3324,7 @@
       },
       {
         "name": "createDigits",
-        "params": [
-          "value"
-        ],
+        "params": ["value"],
         "description": "Creates digit sprites",
         "popularity": 0
       }
@@ -3718,9 +3346,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Sets up for battler",
         "popularity": 0
       },
@@ -3754,9 +3380,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "battler"
-        ],
+        "params": ["battler"],
         "description": "Sets up for battler",
         "popularity": 0
       },
@@ -3790,9 +3414,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "weaponImageId"
-        ],
+        "params": ["weaponImageId"],
         "description": "Sets up weapon image",
         "popularity": 1
       },
@@ -3826,10 +3448,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "targetSprite",
-          "balloonId"
-        ],
+        "params": ["targetSprite", "balloonId"],
         "description": "Sets up balloon",
         "popularity": 1
       },
@@ -3857,9 +3476,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "pictureId"
-        ],
+        "params": ["pictureId"],
         "description": "Creates picture sprite",
         "popularity": 3
       },
@@ -4069,9 +3686,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates window with rectangle",
         "popularity": 1
       },
@@ -4083,47 +3698,25 @@
       },
       {
         "name": "drawText",
-        "params": [
-          "text",
-          "x",
-          "y",
-          "maxWidth",
-          "align"
-        ],
+        "params": ["text", "x", "y", "maxWidth", "align"],
         "description": "Draws text",
         "popularity": 0
       },
       {
         "name": "drawTextEx",
-        "params": [
-          "text",
-          "x",
-          "y",
-          "width"
-        ],
+        "params": ["text", "x", "y", "width"],
         "description": "Draws text with codes",
         "popularity": 0
       },
       {
         "name": "drawIcon",
-        "params": [
-          "iconIndex",
-          "x",
-          "y"
-        ],
+        "params": ["iconIndex", "x", "y"],
         "description": "Draws an icon",
         "popularity": 1
       },
       {
         "name": "drawFace",
-        "params": [
-          "faceName",
-          "faceIndex",
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
+        "params": ["faceName", "faceIndex", "x", "y", "width", "height"],
         "description": "Draws a face",
         "popularity": 0
       },
@@ -4145,9 +3738,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates scrollable window",
         "popularity": 0
       },
@@ -4159,19 +3750,13 @@
       },
       {
         "name": "scrollTo",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Scrolls to position",
         "popularity": 0
       },
       {
         "name": "smoothScrollTo",
-        "params": [
-          "x",
-          "y"
-        ],
+        "params": ["x", "y"],
         "description": "Smooth scrolls to position",
         "popularity": 0
       }
@@ -4187,9 +3772,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates selectable window",
         "popularity": 2
       },
@@ -4201,9 +3784,7 @@
       },
       {
         "name": "select",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Selects an item",
         "popularity": 2
       },
@@ -4227,9 +3808,7 @@
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws an item",
         "popularity": 0
       },
@@ -4251,9 +3830,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates command window",
         "popularity": 1
       },
@@ -4265,12 +3842,7 @@
       },
       {
         "name": "addCommand",
-        "params": [
-          "name",
-          "symbol",
-          "enabled",
-          "ext"
-        ],
+        "params": ["name", "symbol", "enabled", "ext"],
         "description": "Adds a command",
         "popularity": 1
       },
@@ -4298,9 +3870,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates horizontal command window",
         "popularity": 0
       },
@@ -4322,25 +3892,19 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates help window",
         "popularity": 0
       },
       {
         "name": "setText",
-        "params": [
-          "text"
-        ],
+        "params": ["text"],
         "description": "Sets help text",
         "popularity": 0
       },
       {
         "name": "setItem",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Sets help from item",
         "popularity": 0
       },
@@ -4362,9 +3926,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates gold window",
         "popularity": 0
       },
@@ -4398,53 +3960,31 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates status window",
         "popularity": 1
       },
       {
         "name": "drawActorName",
-        "params": [
-          "actor",
-          "x",
-          "y",
-          "width"
-        ],
+        "params": ["actor", "x", "y", "width"],
         "description": "Draws actor name",
         "popularity": 0
       },
       {
         "name": "drawActorClass",
-        "params": [
-          "actor",
-          "x",
-          "y",
-          "width"
-        ],
+        "params": ["actor", "x", "y", "width"],
         "description": "Draws actor class",
         "popularity": 0
       },
       {
         "name": "drawActorLevel",
-        "params": [
-          "actor",
-          "x",
-          "y"
-        ],
+        "params": ["actor", "x", "y"],
         "description": "Draws actor level",
         "popularity": 0
       },
       {
         "name": "drawActorFace",
-        "params": [
-          "actor",
-          "x",
-          "y",
-          "width",
-          "height"
-        ],
+        "params": ["actor", "x", "y", "width", "height"],
         "description": "Draws actor face",
         "popularity": 0
       }
@@ -4460,9 +4000,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates menu command window",
         "popularity": 0
       },
@@ -4496,33 +4034,25 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates menu status window",
         "popularity": 0
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws actor status",
         "popularity": 1
       },
       {
         "name": "drawItemImage",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws actor image",
         "popularity": 1
       },
       {
         "name": "drawItemStatus",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws actor stats",
         "popularity": 1
       }
@@ -4538,17 +4068,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates actor window",
         "popularity": 0
       },
       {
         "name": "selectForItem",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Selects for item use",
         "popularity": 0
       }
@@ -4564,9 +4090,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates category window",
         "popularity": 0
       },
@@ -4578,9 +4102,7 @@
       },
       {
         "name": "setItemWindow",
-        "params": [
-          "itemWindow"
-        ],
+        "params": ["itemWindow"],
         "description": "Links item window",
         "popularity": 0
       }
@@ -4596,17 +4118,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates item list window",
         "popularity": 0
       },
       {
         "name": "setCategory",
-        "params": [
-          "category"
-        ],
+        "params": ["category"],
         "description": "Sets item category",
         "popularity": 0
       },
@@ -4618,17 +4136,13 @@
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws an item",
         "popularity": 0
       },
       {
         "name": "includes",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Checks if item included",
         "popularity": 0
       }
@@ -4644,9 +4158,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates skill type window",
         "popularity": 0
       },
@@ -4658,9 +4170,7 @@
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       }
@@ -4676,17 +4186,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates skill status window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
@@ -4708,25 +4214,19 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates skill list window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
       {
         "name": "setStypeId",
-        "params": [
-          "stypeId"
-        ],
+        "params": ["stypeId"],
         "description": "Sets skill type",
         "popularity": 0
       },
@@ -4738,9 +4238,7 @@
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws a skill",
         "popularity": 0
       }
@@ -4756,25 +4254,19 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates equip status window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
       {
         "name": "setTempActor",
-        "params": [
-          "tempActor"
-        ],
+        "params": ["tempActor"],
         "description": "Sets comparison actor",
         "popularity": 0
       },
@@ -4796,25 +4288,19 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates equip slot window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws equipment slot",
         "popularity": 0
       },
@@ -4836,33 +4322,25 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates equip item window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
       {
         "name": "setSlotId",
-        "params": [
-          "slotId"
-        ],
+        "params": ["slotId"],
         "description": "Sets equipment slot",
         "popularity": 0
       },
       {
         "name": "includes",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Checks if equippable",
         "popularity": 0
       }
@@ -4878,17 +4356,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates status window",
         "popularity": 0
       },
       {
         "name": "setActor",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets the actor",
         "popularity": 0
       },
@@ -4922,9 +4396,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates options window",
         "popularity": 1
       },
@@ -4948,10 +4420,7 @@
       },
       {
         "name": "changeValue",
-        "params": [
-          "symbol",
-          "value"
-        ],
+        "params": ["symbol", "value"],
         "description": "Changes option value",
         "popularity": 1
       }
@@ -4967,36 +4436,25 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates save list window",
         "popularity": 1
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws save file entry",
         "popularity": 1
       },
       {
         "name": "drawTitle",
-        "params": [
-          "savefileId",
-          "x",
-          "y"
-        ],
+        "params": ["savefileId", "x", "y"],
         "description": "Draws save title",
         "popularity": 0
       },
       {
         "name": "drawContents",
-        "params": [
-          "info",
-          "rect"
-        ],
+        "params": ["info", "rect"],
         "description": "Draws save info",
         "popularity": 0
       }
@@ -5012,9 +4470,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates shop command window",
         "popularity": 0
       },
@@ -5026,9 +4482,7 @@
       },
       {
         "name": "setPurchaseOnly",
-        "params": [
-          "purchaseOnly"
-        ],
+        "params": ["purchaseOnly"],
         "description": "Sets purchase only mode",
         "popularity": 0
       }
@@ -5044,25 +4498,19 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates shop buy window",
         "popularity": 0
       },
       {
         "name": "setMoney",
-        "params": [
-          "money"
-        ],
+        "params": ["money"],
         "description": "Sets available money",
         "popularity": 0
       },
       {
         "name": "setShopGoods",
-        "params": [
-          "shopGoods"
-        ],
+        "params": ["shopGoods"],
         "description": "Sets goods list",
         "popularity": 0
       },
@@ -5074,9 +4522,7 @@
       },
       {
         "name": "price",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Gets item price",
         "popularity": 0
       }
@@ -5092,17 +4538,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates shop sell window",
         "popularity": 0
       },
       {
         "name": "isEnabled",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Checks if sellable",
         "popularity": 0
       }
@@ -5118,19 +4560,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates number window",
         "popularity": 0
       },
       {
         "name": "setup",
-        "params": [
-          "item",
-          "max",
-          "price"
-        ],
+        "params": ["item", "max", "price"],
         "description": "Sets up number input",
         "popularity": 0
       },
@@ -5142,9 +4578,7 @@
       },
       {
         "name": "changeNumber",
-        "params": [
-          "amount"
-        ],
+        "params": ["amount"],
         "description": "Changes quantity",
         "popularity": 0
       }
@@ -5160,17 +4594,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates shop status window",
         "popularity": 0
       },
       {
         "name": "setItem",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Sets displayed item",
         "popularity": 0
       },
@@ -5192,18 +4622,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates name edit window",
         "popularity": 0
       },
       {
         "name": "setup",
-        "params": [
-          "actor",
-          "maxLength"
-        ],
+        "params": ["actor", "maxLength"],
         "description": "Sets up name editing",
         "popularity": 0
       },
@@ -5215,9 +4640,7 @@
       },
       {
         "name": "add",
-        "params": [
-          "ch"
-        ],
+        "params": ["ch"],
         "description": "Adds a character",
         "popularity": 0
       },
@@ -5239,17 +4662,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates name input window",
         "popularity": 0
       },
       {
         "name": "setEditWindow",
-        "params": [
-          "editWindow"
-        ],
+        "params": ["editWindow"],
         "description": "Links edit window",
         "popularity": 0
       },
@@ -5335,9 +4754,7 @@
       },
       {
         "name": "changeDigit",
-        "params": [
-          "up"
-        ],
+        "params": ["up"],
         "description": "Changes selected digit",
         "popularity": 0
       }
@@ -5353,9 +4770,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates event item window",
         "popularity": 0
       },
@@ -5367,9 +4782,7 @@
       },
       {
         "name": "includes",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Checks if item included",
         "popularity": 0
       },
@@ -5391,9 +4804,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates message window",
         "popularity": 4
       },
@@ -5439,9 +4850,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates scroll text window",
         "popularity": 0
       },
@@ -5475,9 +4884,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates map name window",
         "popularity": 2
       },
@@ -5511,17 +4918,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle log window",
         "popularity": 0
       },
       {
         "name": "push",
-        "params": [
-          "methodName"
-        ],
+        "params": ["methodName"],
         "description": "Pushes log method",
         "popularity": 0
       },
@@ -5533,18 +4936,13 @@
       },
       {
         "name": "addText",
-        "params": [
-          "text"
-        ],
+        "params": ["text"],
         "description": "Adds text to log",
         "popularity": 1
       },
       {
         "name": "displayAction",
-        "params": [
-          "subject",
-          "item"
-        ],
+        "params": ["subject", "item"],
         "description": "Displays action",
         "popularity": 1
       }
@@ -5560,9 +4958,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates party command window",
         "popularity": 0
       },
@@ -5590,9 +4986,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates actor command window",
         "popularity": 0
       },
@@ -5604,9 +4998,7 @@
       },
       {
         "name": "setup",
-        "params": [
-          "actor"
-        ],
+        "params": ["actor"],
         "description": "Sets up for actor",
         "popularity": 0
       },
@@ -5634,33 +5026,25 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle status window",
         "popularity": 0
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws actor status",
         "popularity": 0
       },
       {
         "name": "drawItemImage",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws actor face",
         "popularity": 0
       },
       {
         "name": "drawItemStatus",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws HP/MP/TP",
         "popularity": 0
       }
@@ -5676,9 +5060,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle actor window",
         "popularity": 0
       },
@@ -5690,9 +5072,7 @@
       },
       {
         "name": "select",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Selects an actor",
         "popularity": 0
       }
@@ -5708,9 +5088,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle enemy window",
         "popularity": 0
       },
@@ -5728,9 +5106,7 @@
       },
       {
         "name": "drawItem",
-        "params": [
-          "index"
-        ],
+        "params": ["index"],
         "description": "Draws enemy name",
         "popularity": 0
       }
@@ -5746,9 +5122,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle skill window",
         "popularity": 0
       },
@@ -5776,17 +5150,13 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates battle item window",
         "popularity": 0
       },
       {
         "name": "includes",
-        "params": [
-          "item"
-        ],
+        "params": ["item"],
         "description": "Checks if usable in battle",
         "popularity": 0
       },
@@ -5814,9 +5184,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates title command window",
         "popularity": 0
       },
@@ -5844,9 +5212,7 @@
     "methods": [
       {
         "name": "initialize",
-        "params": [
-          "rect"
-        ],
+        "params": ["rect"],
         "description": "Creates game end window",
         "popularity": 0
       },

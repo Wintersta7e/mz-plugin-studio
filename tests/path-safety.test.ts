@@ -226,7 +226,6 @@ describe('assertSafeFilePath - COV-16 edge cases', () => {
   it('accepts .md extension (for README exports)', () => {
     expect(() => assertSafeFilePath('/tmp/README.md')).not.toThrow()
   })
-
 })
 
 describe('assertSafeFilename - COV-16 edge cases', () => {
@@ -245,14 +244,15 @@ describe('assertSafeFilename - COV-16 edge cases', () => {
   it('rejects filename with only double dots and js extension attempt', () => {
     // '..js' — starts with '..' but is not a path traversal (no separator)
     // Actually this was already documented: '..hidden' throws. '..js' also has '..'
-    expect(() => assertSafeFilename('..js')).toThrow('must not contain path separators or traversal')
+    expect(() => assertSafeFilename('..js')).toThrow(
+      'must not contain path separators or traversal'
+    )
   })
 
   it('accepts filename with unicode characters', () => {
     // Unicode filenames are valid on most filesystems
     expect(() => assertSafeFilename('プラグイン.js')).not.toThrow()
   })
-
 })
 
 describe('assertSafeProjectPath - COV-16 edge cases', () => {

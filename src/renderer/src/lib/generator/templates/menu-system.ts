@@ -379,7 +379,9 @@ const titleScreenModTemplate: CodeTemplate = {
         )
         lines.push('Window_TitleCommand.prototype.makeCommandList = function() {')
         lines.push('    _Window_TitleCommand_makeCommandList.call(this);')
-        lines.push(`    this.addCommand("${escapeJSDoubleQuote(commandName)}", "${escapeJSDoubleQuote(commandSymbol)}");`)
+        lines.push(
+          `    this.addCommand("${escapeJSDoubleQuote(commandName)}", "${escapeJSDoubleQuote(commandSymbol)}");`
+        )
         lines.push('};')
         lines.push('')
         lines.push('// Create handler for the new command')
@@ -694,7 +696,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push('    _Window_MenuCommand_makeCommandList.call(this);')
       lines.push('    ')
       lines.push(`    // Find index of "${escapeJSDoubleQuote(insertCode)}" and insert before it`)
-      lines.push(`    const index = this._list.findIndex(cmd => cmd.symbol === "${escapeJSDoubleQuote(insertCode)}");`)
+      lines.push(
+        `    const index = this._list.findIndex(cmd => cmd.symbol === "${escapeJSDoubleQuote(insertCode)}");`
+      )
       lines.push('    if (index >= 0) {')
       lines.push(`        const cmd = this._list.pop(); // Remove the command we just added`)
       lines.push('        this._list.splice(index, 0, cmd); // Insert at correct position')
@@ -742,7 +746,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push(`Scene_Menu.prototype.on${symbolId}Ok = function() {`)
       lines.push('    const actor = $gameParty.members()[this._statusWindow.index()];')
       lines.push(`    // Your code here with the selected actor`)
-      lines.push(`    console.log("${escapeJSDoubleQuote(commandName)} - selected actor:", actor.name());`)
+      lines.push(
+        `    console.log("${escapeJSDoubleQuote(commandName)} - selected actor:", actor.name());`
+      )
       lines.push('    ')
       lines.push('    // Example: Push scene with actor data')
       lines.push(`    // SceneManager.push(Scene_${symbolId});`)
@@ -910,7 +916,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
           )
           break
         case 'volume':
-          lines.push(`    this.${optionSymbol} = this.readVolume(config, "${escapeJSDoubleQuote(optionSymbol)}");`)
+          lines.push(
+            `    this.${optionSymbol} = this.readVolume(config, "${escapeJSDoubleQuote(optionSymbol)}");`
+          )
           break
         case 'select':
           lines.push(
@@ -930,7 +938,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     )
     lines.push('Window_Options.prototype.addGeneralOptions = function() {')
     lines.push('    _Window_Options_addGeneralOptions.call(this);')
-    lines.push(`    this.addCommand("${escapeJSDoubleQuote(optionName)}", "${escapeJSDoubleQuote(optionSymbol)}");`)
+    lines.push(
+      `    this.addCommand("${escapeJSDoubleQuote(optionName)}", "${escapeJSDoubleQuote(optionSymbol)}");`
+    )
     lines.push('};')
     lines.push('')
 
@@ -965,7 +975,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('Window_Options.prototype.statusText = function(index) {')
         lines.push('    const symbol = this.commandSymbol(index);')
         lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
-        lines.push(`        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`)
+        lines.push(
+          `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
+        )
         lines.push(`        return choices[this.getConfigValue(symbol)] || choices[0];`)
         lines.push('    }')
         lines.push('    return _Window_Options_statusText.call(this, index);')
@@ -977,7 +989,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('Window_Options.prototype.processOk = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
         lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
-        lines.push(`        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`)
+        lines.push(
+          `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
+        )
         lines.push('        let value = this.getConfigValue(symbol);')
         lines.push('        value = (value + 1) % choices.length;')
         lines.push('        this.changeValue(symbol, value);')
@@ -992,7 +1006,9 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('Window_Options.prototype.cursorRight = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
         lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
-        lines.push(`        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`)
+        lines.push(
+          `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
+        )
         lines.push('        let value = this.getConfigValue(symbol);')
         lines.push('        value = Math.min(value + 1, choices.length - 1);')
         lines.push('        this.changeValue(symbol, value);')

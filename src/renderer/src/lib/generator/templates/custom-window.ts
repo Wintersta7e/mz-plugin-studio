@@ -730,7 +730,9 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`${fullClassName}.prototype.createCustomBackground = function() {`)
     lines.push('    // Create a custom colored background')
     lines.push('    this._customBg = new Sprite(new Bitmap(this.width, this.height));')
-    lines.push(`    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`)
+    lines.push(
+      `    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`
+    )
     lines.push('    this._customBg.opacity = 200;')
     lines.push('    this.addChildToBack(this._customBg);')
     lines.push('};')
