@@ -26,7 +26,6 @@ function makeProject(path = '/tmp/project'): MZProject {
   return {
     path,
     gameTitle: 'Test Game',
-    system: { switches: [], variables: [] },
     switches: [],
     variables: [],
     actors: [],

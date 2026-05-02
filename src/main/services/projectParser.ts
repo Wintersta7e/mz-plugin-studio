@@ -98,10 +98,6 @@ export class ProjectParser {
     return {
       path,
       gameTitle: system.gameTitle || 'Untitled',
-      system: {
-        switches: switches.map((s: MZSwitch) => s.name),
-        variables: variables.map((v: MZVariable) => v.name)
-      },
       switches,
       variables,
       actors,

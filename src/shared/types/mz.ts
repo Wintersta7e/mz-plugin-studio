@@ -3,10 +3,6 @@
 export interface MZProject {
   path: string
   gameTitle: string
-  system: {
-    switches: string[]
-    variables: string[]
-  }
   switches: MZSwitch[]
   variables: MZVariable[]
   actors: MZActor[]
