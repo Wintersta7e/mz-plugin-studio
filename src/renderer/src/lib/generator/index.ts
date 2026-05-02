@@ -10,6 +10,24 @@ import { escapeJSString } from './escape'
 import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
 
 /**
+ * Find names of `PluginManager.registerCommand(...)` calls already present in
+ * comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
+ * plugin name. Used to skip re-emitting commands the user already wrote.
+ */
+function findRegisteredCommandNames(strippedSource: string, pluginName: string): Set<string> {
+  const names = new Set<string>()
+  const escapedName = pluginName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const pattern = new RegExp(
+    String.raw`registerCommand\s*\(\s*(?:PLUGIN_NAME|"${escapedName}"|'${escapedName}')\s*,\s*['"]([^'"]+)['"]`,
+    'g'
+  )
+  for (const match of strippedSource.matchAll(pattern)) {
+    names.add(match[1])
+  }
+  return names
+}
+
+/**
  * Generate a complete RPG Maker MZ plugin from a PluginDefinition
  */
 export function generatePlugin(plugin: PluginDefinition): string {
@@ -392,14 +410,10 @@ function generateBody(plugin: PluginDefinition): string {
   // suppress generation of Foo. String literals are preserved so real calls
   // (with the command name in quotes) still match.
   const customCode = plugin.customCode || ''
-  const commentStrippedCustom = customCode ? stripCommentsOnly(customCode) : ''
-  const commandsToGenerate = plugin.commands.filter(
-    (cmd) =>
-      !commentStrippedCustom.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-      !commentStrippedCustom.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
-      !commentStrippedCustom.includes(`registerCommand("${pluginName}", '${cmd.name}'`) &&
-      !commentStrippedCustom.includes(`registerCommand("${pluginName}", "${cmd.name}"`)
-  )
+  const alreadyRegistered = customCode
+    ? findRegisteredCommandNames(stripCommentsOnly(customCode), pluginName)
+    : new Set<string>()
+  const commandsToGenerate = plugin.commands.filter((cmd) => !alreadyRegistered.has(cmd.name))
 
   if (commandsToGenerate.length > 0) {
     lines.push('    // Register plugin commands')
@@ -583,13 +597,8 @@ export function generateRawMode(plugin: PluginDefinition): string {
   // 4. Inject command registration for new commands not already in the body
   // Re-strip after potential param injection to check against clean source (BUG-15)
   const strippedForCmds = stripCommentsAndStrings(output)
-  const newCommands = plugin.commands.filter(
-    (cmd) =>
-      !strippedForCmds.includes(`registerCommand(PLUGIN_NAME, '${cmd.name}'`) &&
-      !strippedForCmds.includes(`registerCommand(PLUGIN_NAME, "${cmd.name}"`) &&
-      !strippedForCmds.includes(`registerCommand("${plugin.meta.name}", '${cmd.name}'`) &&
-      !strippedForCmds.includes(`registerCommand("${plugin.meta.name}", "${cmd.name}"`)
-  )
+  const alreadyRegisteredRaw = findRegisteredCommandNames(strippedForCmds, plugin.meta.name || '')
+  const newCommands = plugin.commands.filter((cmd) => !alreadyRegisteredRaw.has(cmd.name))
   if (newCommands.length > 0) {
     const pluginName = plugin.meta.name || 'NewPlugin'
     const cmdLines: string[] = []
