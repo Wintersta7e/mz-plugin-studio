@@ -323,9 +323,11 @@ export class PluginParser {
     }
 
     // Parse @requiredAssets (assets preserved during "Exclude unused files" deploy)
-    const requiredAssetMatches = header.matchAll(/@requiredAssets\s+(.+?)(?=\n)/gi)
+    // Also match a final entry that lacks a trailing newline (right before */).
+    const requiredAssetMatches = header.matchAll(/@requiredAssets\s+(.+?)(?=\n|\r|\*\/|$)/gi)
     for (const match of requiredAssetMatches) {
-      meta.requiredAssets.push(match[1].trim())
+      const value = match[1].replace(/\s*\*?\s*$/, '').trim()
+      if (value) meta.requiredAssets.push(value)
     }
 
     // Parse @noteParam groups
