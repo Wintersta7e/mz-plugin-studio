@@ -7,7 +7,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
-import { escapeJSString } from '../escape'
+import { getDefaultLiteral } from '../escape'
 
 /**
  * Convert a string to camelCase
@@ -46,44 +46,6 @@ function getDatabaseName(dbType: string): string {
     $dataMapInfos: 'MapInfos'
   }
   return names[dbType] || dbType.replace('$data', '')
-}
-
-/**
- * Get the type-appropriate default value literal.
- * Sanitizes user-provided custom defaults to prevent code injection.
- */
-function getDefaultLiteral(valueType: string, customDefault?: string): string {
-  if (customDefault !== undefined && customDefault !== '') {
-    switch (valueType) {
-      case 'number':
-        return String(Number(customDefault))
-      case 'string':
-        return `'${escapeJSString(customDefault)}'`
-      case 'boolean':
-        return customDefault.toLowerCase() === 'true' ? 'true' : 'false'
-      case 'array':
-        try {
-          return JSON.stringify(JSON.parse(customDefault))
-        } catch {
-          return '[]'
-        }
-      default:
-        return 'null'
-    }
-  }
-
-  switch (valueType) {
-    case 'number':
-      return '0'
-    case 'string':
-      return '""'
-    case 'boolean':
-      return 'false'
-    case 'array':
-      return '[]'
-    default:
-      return 'null'
-  }
 }
 
 /**
