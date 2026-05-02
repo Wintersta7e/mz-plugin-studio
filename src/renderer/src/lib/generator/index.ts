@@ -7,18 +7,7 @@ import type {
 } from '../../types/plugin'
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { escapeJSString } from './escape'
-import { stripCommentsAndStrings } from '../../../../shared/override-extractor'
-
-/**
- * Strip comments (//... and block comments) from code while preserving string
- * literals. Used for command-dedup substring matching where we need to see
- * real PluginManager.registerCommand(..., 'Name') calls but ignore commented
- * examples. Unlike stripCommentsAndStrings, this keeps string contents
- * intact so dedup can compare against the command name.
- */
-function stripCommentsOnly(code: string): string {
-  return code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
-}
+import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
 
 /**
  * Generate a complete RPG Maker MZ plugin from a PluginDefinition
