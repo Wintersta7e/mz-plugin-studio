@@ -28,6 +28,7 @@ import { createEmptyPlugin } from './types/plugin'
 import { generatePluginOutput } from './lib/plugin-output'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
+import log from 'electron-log/renderer'
 import { cn } from './lib/utils'
 
 const pluginFade = { duration: 0.12 }
@@ -286,43 +287,52 @@ function App() {
             isSavingRef.current = false
             break
           }
-          let savedCount = 0
-          let failCount = 0
-          const savePromises = ps.openPlugins
-            .filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
-            .map(async (p) => {
-              const rawMode = useUIStore.getState().getRawModeForPlugin(p.id, Boolean(p.rawSource))
-              const code = generatePluginOutput(p, rawMode)
-              const filename = `${p.meta.name}.js`
-              try {
-                const result = await window.api.plugin.save(proj.path, filename, code)
-                if (result.success) {
-                  usePluginStore.setState((state) => {
-                    const isActive = state.activePluginId === p.id
-                    const nextDirty = { ...state.dirtyByPluginId }
-                    delete nextDirty[p.id]
-                    const nextPaths = { ...state.savedPathsByPluginId, [p.id]: result.path }
-                    return {
-                      dirtyByPluginId: nextDirty,
-                      savedPathsByPluginId: nextPaths,
-                      ...(isActive ? { isDirty: false, savedPath: result.path } : {})
-                    }
-                  })
-                  savedCount++
-                }
-              } catch {
-                failCount++
-              }
-            })
+          const dirtyPlugins = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
+          const savePromises = dirtyPlugins.map(async (p) => {
+            const rawMode = useUIStore.getState().getRawModeForPlugin(p.id, Boolean(p.rawSource))
+            const code = generatePluginOutput(p, rawMode)
+            const filename = `${p.meta.name}.js`
+            try {
+              const result = await window.api.plugin.save(proj.path, filename, code)
+              if (result.success) return { id: p.id, path: result.path }
+              return { id: p.id, error: new Error('save returned success=false') }
+            } catch (error: unknown) {
+              log.error('[save-all]', p.meta.name, error)
+              return { id: p.id, error }
+            }
+          })
           void Promise.all(savePromises)
-            .then(() => {
-              if (savedCount > 0 || failCount > 0) {
+            .then((results) => {
+              const succeeded = results.filter(
+                (r): r is { id: string; path: string } => 'path' in r
+              )
+              const failed = results.filter((r) => 'error' in r)
+              if (succeeded.length > 0) {
+                usePluginStore.setState((state) => {
+                  const nextDirty = { ...state.dirtyByPluginId }
+                  const nextPaths = { ...state.savedPathsByPluginId }
+                  let activeUpdate: { isDirty: false; savedPath: string } | null = null
+                  for (const r of succeeded) {
+                    delete nextDirty[r.id]
+                    nextPaths[r.id] = r.path
+                    if (state.activePluginId === r.id) {
+                      activeUpdate = { isDirty: false, savedPath: r.path }
+                    }
+                  }
+                  return {
+                    dirtyByPluginId: nextDirty,
+                    savedPathsByPluginId: nextPaths,
+                    ...(activeUpdate ?? {})
+                  }
+                })
+              }
+              if (succeeded.length > 0 || failed.length > 0) {
                 useToastStore.getState().addToast({
-                  type: failCount > 0 ? 'warning' : 'success',
+                  type: failed.length > 0 ? 'warning' : 'success',
                   message:
-                    failCount > 0
-                      ? `Saved ${savedCount}, failed ${failCount}`
-                      : `${savedCount} plugin${savedCount > 1 ? 's' : ''} saved`
+                    failed.length > 0
+                      ? `Saved ${succeeded.length}, failed ${failed.length}`
+                      : `${succeeded.length} plugin${succeeded.length > 1 ? 's' : ''} saved`
                 })
               }
             })
