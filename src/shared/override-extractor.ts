@@ -20,6 +20,15 @@ export function stripCommentsAndStrings(code: string): string {
 }
 
 /**
+ * Replace only comments (block + line) with spaces, keeping string contents
+ * intact. Used for substring matching where the search target is a string
+ * literal that must remain comparable (e.g. command name dedup).
+ */
+export function stripCommentsOnly(code: string): string {
+  return code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
+}
+
+/**
  * Extract prototype override method names from JavaScript plugin code.
  *
  * Detects two patterns:
