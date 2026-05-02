@@ -408,15 +408,6 @@ function NoteParamRow({
         </div>
       </div>
       <div className="flex flex-col items-center gap-1 pt-5">
-        <label className="flex items-center gap-1 text-xs">
-          <input
-            type="checkbox"
-            checked={noteParam.require || false}
-            onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
-            className="h-3.5 w-3.5"
-          />
-          Req
-        </label>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
