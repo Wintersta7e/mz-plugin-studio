@@ -35,6 +35,9 @@ interface PluginRow {
   isActive: boolean
   isDirty: boolean
   issues: DependencyIssue[]
+  hasError: boolean
+  hasWarning: boolean
+  issueTitle: string | null
 }
 
 export function PluginBrowser({ onClose }: PluginBrowserProps) {
@@ -107,34 +110,52 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     const rows: PluginRow[] = []
     const seenNames = new Set<string>()
 
-    // Start with on-disk files in their list() order
-    allPluginFiles.forEach((filename, index) => {
-      const name = filename.replace(/\.js$/, '')
-      const openState = openByName.get(name)
-      rows.push({
+    const buildRow = (
+      name: string,
+      filename: string,
+      fileOrder: number,
+      openState: { id: string; isActive: boolean; isDirty: boolean } | undefined,
+      issues: DependencyIssue[]
+    ): PluginRow => {
+      let hasError = false
+      let hasWarning = false
+      for (const issue of issues) {
+        if (issue.severity === 'error') hasError = true
+        else if (issue.severity === 'warning') hasWarning = true
+      }
+      return {
         name,
         filename,
-        fileOrder: index,
+        fileOrder,
         openId: openState?.id ?? null,
         isActive: openState?.isActive ?? false,
         isDirty: openState?.isDirty ?? false,
-        issues: pluginIssues.get(name) ?? []
-      })
+        issues,
+        hasError,
+        hasWarning,
+        issueTitle: issues.length > 0 ? issues.map((i) => i.message).join('\n') : null
+      }
+    }
+
+    // Start with on-disk files in their list() order
+    allPluginFiles.forEach((filename, index) => {
+      const name = filename.replace(/\.js$/, '')
+      rows.push(buildRow(name, filename, index, openByName.get(name), pluginIssues.get(name) ?? []))
       seenNames.add(name)
     })
 
     // Append any open plugins that aren't on disk yet (new/unsaved)
     openPlugins.forEach((p) => {
       if (seenNames.has(p.meta.name)) return
-      rows.push({
-        name: p.meta.name || '(unnamed)',
-        filename: `${p.meta.name}.js`,
-        fileOrder: Number.MAX_SAFE_INTEGER,
-        openId: p.id,
-        isActive: activePluginId === p.id,
-        isDirty: !!dirtyByPluginId[p.id],
-        issues: []
-      })
+      rows.push(
+        buildRow(
+          p.meta.name || '(unnamed)',
+          `${p.meta.name}.js`,
+          Number.MAX_SAFE_INTEGER,
+          { id: p.id, isActive: activePluginId === p.id, isDirty: !!dirtyByPluginId[p.id] },
+          []
+        )
+      )
     })
 
     return rows
@@ -151,7 +172,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     } else if (filterMode === 'dirty') {
       rows = rows.filter((r) => r.isDirty)
     } else if (filterMode === 'errors') {
-      rows = rows.filter((r) => r.issues.some((i) => i.severity === 'error'))
+      rows = rows.filter((r) => r.hasError)
     }
     if (sortMode === 'name') {
       return [...rows].sort((a, b) => a.name.localeCompare(b.name))
@@ -159,15 +180,17 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     return rows // already in file order
   }, [allRows, search, filterMode, sortMode])
 
-  const counts = useMemo(
-    () => ({
-      total: allRows.length,
-      open: allRows.filter((r) => r.openId !== null).length,
-      dirty: allRows.filter((r) => r.isDirty).length,
-      errors: allRows.filter((r) => r.issues.some((i) => i.severity === 'error')).length
-    }),
-    [allRows]
-  )
+  const counts = useMemo(() => {
+    let open = 0
+    let dirty = 0
+    let errors = 0
+    for (const r of allRows) {
+      if (r.openId !== null) open++
+      if (r.isDirty) dirty++
+      if (r.hasError) errors++
+    }
+    return { total: allRows.length, open, dirty, errors }
+  }, [allRows])
 
   const handleRefresh = async () => {
     if (!project?.path) return
@@ -315,11 +338,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                     !row.openId && 'text-muted-foreground'
                   )}
                   aria-current={row.isActive ? 'page' : undefined}
-                  title={
-                    row.issues.length > 0
-                      ? row.issues.map((i) => i.message).join('\n')
-                      : row.filename
-                  }
+                  title={row.issueTitle ?? row.filename}
                 >
                   <FileCode
                     className={cn(
@@ -335,16 +354,15 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
 
                   {/* Status glyphs */}
                   <span className="flex items-center gap-1">
-                    {row.issues.some((i) => i.severity === 'error') && (
+                    {row.hasError && (
                       <AlertCircle className="h-3.5 w-3.5 text-red-500" aria-label="has errors" />
                     )}
-                    {!row.issues.some((i) => i.severity === 'error') &&
-                      row.issues.some((i) => i.severity === 'warning') && (
-                        <AlertTriangle
-                          className="h-3.5 w-3.5 text-amber-500"
-                          aria-label="has warnings"
-                        />
-                      )}
+                    {!row.hasError && row.hasWarning && (
+                      <AlertTriangle
+                        className="h-3.5 w-3.5 text-amber-500"
+                        aria-label="has warnings"
+                      />
+                    )}
                     {row.isDirty && (
                       <CircleDot className="h-3 w-3 text-orange-500" aria-label="unsaved changes" />
                     )}
