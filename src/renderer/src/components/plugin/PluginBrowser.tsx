@@ -212,22 +212,6 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     closePlugin(openId)
   }
 
-  if (!project) {
-    return (
-      <div className="flex h-full w-72 flex-col border-l border-border bg-background">
-        <header className="flex items-center justify-between border-b border-border px-3 py-2">
-          <h2 className="text-sm font-semibold">Plugins</h2>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </header>
-        <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-          Open a project to browse its plugins.
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex h-full w-72 flex-col border-l border-border bg-background">
       <header className="flex items-center justify-between border-b border-border px-3 py-2">
