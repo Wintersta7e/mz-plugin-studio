@@ -537,7 +537,8 @@ export function generateRawMode(plugin: PluginDefinition): string {
 
   // 3. Inject parameter parsing for new parameters not already in the body
   // Strip comments/strings so we don't match param names inside string literals (BUG-15)
-  const strippedOutput = stripCommentsAndStrings(output)
+  let strippedOutput = stripCommentsAndStrings(output)
+  let paramsInjected = false
   if (plugin.parameters.length > 0) {
     const newParams = plugin.parameters.filter(
       (p) =>
@@ -547,6 +548,7 @@ export function generateRawMode(plugin: PluginDefinition): string {
         !strippedOutput.includes(`params["${p.name}"]`)
     )
     if (newParams.length > 0) {
+      paramsInjected = true
       const pluginName = plugin.meta.name || 'NewPlugin'
       const parsingLines: string[] = []
 
@@ -595,9 +597,9 @@ export function generateRawMode(plugin: PluginDefinition): string {
   }
 
   // 4. Inject command registration for new commands not already in the body
-  // Re-strip after potential param injection to check against clean source (BUG-15)
-  const strippedForCmds = stripCommentsAndStrings(output)
-  const alreadyRegisteredRaw = findRegisteredCommandNames(strippedForCmds, plugin.meta.name || '')
+  // Only re-strip if step 3 actually mutated output; otherwise reuse strippedOutput.
+  if (paramsInjected) strippedOutput = stripCommentsAndStrings(output)
+  const alreadyRegisteredRaw = findRegisteredCommandNames(strippedOutput, plugin.meta.name || '')
   const newCommands = plugin.commands.filter((cmd) => !alreadyRegisteredRaw.has(cmd.name))
   if (newCommands.length > 0) {
     const pluginName = plugin.meta.name || 'NewPlugin'
