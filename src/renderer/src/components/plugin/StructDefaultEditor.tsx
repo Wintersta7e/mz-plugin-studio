@@ -156,20 +156,30 @@ function StructFieldInput({
     // Radix Select crashes on value="" — use sentinel for empty state (BUG-14)
     const EMPTY_SENTINEL = '__empty__'
     const selectValue = value || EMPTY_SENTINEL
+    const synthBySentinel = new Map<string, string>()
+    const sentinelFor = (opt: { value: string; text: string }): string => {
+      if (opt.value) return opt.value
+      const sentinel = `__val_${opt.text}`
+      synthBySentinel.set(sentinel, '')
+      return sentinel
+    }
     return (
       <div className="flex items-center gap-2">
         <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
-        <Select value={selectValue} onValueChange={(v) => onChange(v === EMPTY_SENTINEL ? '' : v)}>
+        <Select
+          value={selectValue}
+          onValueChange={(v) => {
+            if (v === EMPTY_SENTINEL || synthBySentinel.has(v)) onChange('')
+            else onChange(v)
+          }}
+        >
           <SelectTrigger className="h-8 text-xs">
             <SelectValue placeholder="Select..." />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={EMPTY_SENTINEL}>(none)</SelectItem>
             {field.options.map((opt) => (
-              <SelectItem
-                key={opt.value || `opt-${opt.text}`}
-                value={opt.value || `__val_${opt.text}`}
-              >
+              <SelectItem key={opt.value || `opt-${opt.text}`} value={sentinelFor(opt)}>
                 {opt.text}
               </SelectItem>
             ))}
