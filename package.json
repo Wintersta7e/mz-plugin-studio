@@ -42,13 +42,13 @@
     "@radix-ui/react-tooltip": "^1.1.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "electron-log": "^5.4.3",
+    "electron-log": "^5.4.4",
     "electron-updater": "^6.8.3",
-    "framer-motion": "^12.38.0",
-    "lucide-react": "^1.8.0",
-    "tailwind-merge": "^3.5.0",
+    "framer-motion": "^12.39.0",
+    "lucide-react": "^1.16.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
