@@ -1,5 +1,8 @@
 # MZ Plugin Studio
 
+> **⚠️ Archived — this project is no longer actively maintained.**
+> The repository is feature-complete at **v1.6.0** and has been set read-only. Issues and pull requests are closed, and dependency updates are no longer applied. The code remains available under the MIT license; feel free to fork.
+
 A visual no-code plugin builder for RPG Maker MZ. Create professional-quality plugins without writing JavaScript.
 
 [![CI](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml)
