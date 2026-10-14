@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { Script, createContext } from 'vm'
+import { SENTINEL } from './hostile'
 
 /** A syntax error: its message and 1-based line, null when the stack names no line. */
 export interface CompileProblem {
@@ -20,14 +21,14 @@ export interface EvaluationResult {
 }
 
 const TIMEOUT_MS = 2000
-const SENTINEL = '__pwn'
 
 // MZ globals the template sources name that the class dictionary does not hold.
 const SOURCE_PATTERNS = [
   /\$(?:game|data)[A-Za-z]+/g,
   /\b(?:Game|Scene|Sprite|Spriteset|Window|Tilemap|Weather|ColorFilter)_[A-Za-z]+\b|\b[A-Z][A-Za-z]*Manager\b/g
 ]
-const FIXED_GLOBALS = ['window']
+// Browser globals generated template code calls at the top level.
+const FIXED_GLOBALS = ['window', 'setTimeout']
 
 // Runs inside the context. Every stand-in is created there, and each trap answers with a new
 // stand-in, so no property read ever returns something from outside the context.
@@ -81,7 +82,8 @@ let templateGlobals: ReturnType<typeof listTemplateGlobals> | null = null
 
 /**
  * Global names a template may touch at the top level: every class of the MZ dictionary, every
- * `$game*`/`$data*` and other MZ global named in the template sources, and `window`.
+ * `$game*`/`$data*` and other MZ global named in the template sources, and `window` and
+ * `setTimeout`.
  */
 export function listTemplateGlobals(): {
   names: string[]

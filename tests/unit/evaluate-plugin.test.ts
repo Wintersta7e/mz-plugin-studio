@@ -65,7 +65,7 @@ describe('evaluatePlugin', () => {
 })
 
 describe('listTemplateGlobals', () => {
-  it('lists every dictionary class, every global the templates name, and window', () => {
+  it('lists every dictionary class, every global the templates name, and the browser globals', () => {
     const globals = listTemplateGlobals()
     console.log(
       `template globals ${globals.names.length} (dictionary ${globals.dictionary}, ` +
@@ -73,9 +73,9 @@ describe('listTemplateGlobals', () => {
     )
     expect(globals.dictionary).toBe(Object.keys(classes).length)
     expect(globals.sources).toBeGreaterThan(0)
-    expect(globals.fixed).toBe(1)
+    expect(globals.fixed).toBe(2)
     expect(globals.names).toHaveLength(globals.dictionary + globals.sources + globals.fixed)
     expect(new Set(globals.names).size).toBe(globals.names.length)
-    expect(globals.names).toContain('window')
+    expect(globals.names).toEqual(expect.arrayContaining(['window', 'setTimeout']))
   })
 })
