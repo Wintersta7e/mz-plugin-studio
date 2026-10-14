@@ -4,13 +4,11 @@ copyright: "Copyright (c) 2026 MZ Plugin Studio Contributors"
 directories:
   buildResources: build
 files:
-  - '!**/.vscode/*'
-  - '!.claude'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - out/**
+  - resources/**
+  - package.json
+  - LICENSE
+  - THIRD_PARTY_LICENSES.md
 asarUnpack:
   - resources/**
 win:
