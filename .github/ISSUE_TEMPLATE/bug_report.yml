@@ -28,8 +28,8 @@ body:
     id: version
     attributes:
       label: App version
-      description: Found in the title bar or Settings dialog.
-      placeholder: v1.3.0
+      description: Shown at the right end of the status bar.
+      placeholder: v1.x.y
     validations:
       required: true
 
@@ -40,8 +40,7 @@ body:
       options:
         - Windows 10
         - Windows 11
-        - macOS
-        - Linux
+        - Other / built from source
     validations:
       required: true
 
