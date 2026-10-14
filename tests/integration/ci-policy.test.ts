@@ -207,6 +207,15 @@ describe('ci-policy runtime-deps', () => {
     )
     expect(status).toBe(1)
   })
+
+  it('passes on the repository tree', () => {
+    const { status, out } = runPolicy(['runtime-deps'])
+    const lineStarting = (prefix: string) => lines(out).find((line) => line.startsWith(prefix))
+    expect(lineStarting('in dependencies, not imported')).toBe('in dependencies, not imported 0:')
+    expect(lineStarting('imported, not in dependencies')).toBe('imported, not in dependencies 0:')
+    expect(out).toMatch(/files scanned [1-9]\d* \(/)
+    expect(status).toBe(0)
+  })
 })
 
 describe('ci-policy usage', () => {

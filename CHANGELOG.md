@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The app package no longer contains test files, documentation or libraries the app does not load.
+
 ## [1.6.0] - 2026-04-19
 
 ### Added
