@@ -584,7 +584,7 @@ const mapTransferHookTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const timing = (values.timing as string) || 'after'
-    const filterMapId = values.filterMapId as string
+    const filterMapId = String(values.filterMapId ?? '').trim()
     const includeFadeInfo = values.includeFadeInfo as boolean
     const includeDirection = values.includeDirection as boolean
 
@@ -700,8 +700,8 @@ const mapTransferHookTemplate: CodeTemplate = {
 
     // Validate map ID if provided
     if (filterMapId && filterMapId.trim() !== '') {
-      const num = parseInt(filterMapId, 10)
-      if (isNaN(num) || num < 1) {
+      // The whole text is written as code: parseInt would pass anything after the digits.
+      if (!/^[1-9]\d*$/.test(filterMapId.trim())) {
         errors.push('Map ID must be a positive integer')
       }
     }

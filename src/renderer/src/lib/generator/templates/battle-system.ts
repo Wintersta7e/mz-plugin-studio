@@ -10,6 +10,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { isOneLineExpression } from '../escape'
 
 /**
  * Helper to generate condition check code for damage modifiers
@@ -90,7 +91,8 @@ const damageModifierTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const modifyType = (values.modifyType as string) || 'multiply'
-    const modifyValue = values.modifyValue as string
+    // The check reads the value trimmed, so the code is written with the same text.
+    const modifyValue = String(values.modifyValue ?? '').trim()
     const condition = (values.condition as string) || 'always'
 
     const lines: string[] = []
@@ -169,6 +171,8 @@ const damageModifierTemplate: CodeTemplate = {
         } else if (modifyType === 'multiply' && num <= 0) {
           errors.push('Multiplier should be a positive number')
         }
+      } else if (!isOneLineExpression(modifyValue)) {
+        errors.push('Value must be one expression on one line (no ";" or comments)')
       }
     }
 
@@ -332,7 +336,7 @@ const stateHookTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const hookType = (values.hookType as string) || 'add'
-    const stateId = values.stateId as string
+    const stateId = String(values.stateId ?? '').trim()
     const lines: string[] = []
 
     const hasStateFilter = stateId && stateId.trim() !== ''
@@ -406,8 +410,8 @@ const stateHookTemplate: CodeTemplate = {
 
     // Validate state ID if provided
     if (stateId && stateId.trim() !== '') {
-      const num = parseInt(stateId, 10)
-      if (isNaN(num) || num < 1) {
+      // The whole text is written as code: parseInt would pass anything after the digits.
+      if (!/^[1-9]\d*$/.test(stateId.trim())) {
         errors.push('State ID must be a positive integer')
       }
     }

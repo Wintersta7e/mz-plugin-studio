@@ -3,13 +3,13 @@
 // the code runs in a sealed context.
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { describe, it, expect } from 'vitest'
+import { afterAll, describe, it, expect } from 'vitest'
 import {
   getTemplate,
   getTemplateDefaults,
   validateTemplateValues
 } from '../../src/renderer/src/lib/generator/templates/index'
-import { ENABLING_VALUES, baseValues, templateIds } from '../golden/corpus/templates'
+import { ENABLING_VALUES, baseValues, templateCases, templateIds } from '../golden/corpus/templates'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { ALL_PAYLOADS, SENTINEL } from '../helpers/hostile'
 import { contextsOf, isContained } from '../helpers/js-context'
@@ -239,5 +239,64 @@ describe('template field text', () => {
     for (const [id, errors] of Object.entries(failing))
       console.log(`  ${id}: ${errors.join(' | ')}`)
     expect(ids.length).toBeGreaterThan(0)
+  })
+})
+
+// Text a field's check accepts, with a payload written after it or a line break around it, under
+// every corpus value set that leaves the field as it is: another field's value can move the text
+// to a new position, and a check that reads only the start of the text, or the text trimmed,
+// passes what follows.
+const LINE_TERMINATORS: [string, string][] = [
+  ['lf', '\n'],
+  ['cr', '\r'],
+  ['u2028', '\u2028'],
+  ['u2029', '\u2029']
+]
+const accepted = { cases: 0, rejected: 0 }
+
+function acceptedTextFailures(id: string): string[] {
+  const failures: string[] = []
+  const valueSets = templateCases(id).filter((c) => c.hostile === null)
+  for (const field of getTemplate(id)!.fields.filter((f) => free.includes(f.type))) {
+    const key = `${id}.${field.id}`
+    for (const set of valueSets.filter((c) => !c.name.startsWith(`${field.id}=`))) {
+      const text = String(set.values[field.id] ?? '') || '1'
+      const variants: [string, string][] = [
+        ...ALL_PAYLOADS.map((p): [string, string] => [`after ${p.name}`, text + p.text.slice(1)]),
+        ...LINE_TERMINATORS.flatMap(([name, lb]): [string, string][] => [
+          [`${name} before`, lb + text],
+          [`${name} after`, text + lb]
+        ])
+      ]
+      for (const [name, value] of variants) {
+        const values = { ...set.values, [field.id]: value }
+        accepted.cases++
+        if (!validateTemplateValues(id, values).valid) {
+          accepted.rejected++
+          continue
+        }
+        const code = getTemplate(id)!.generate(values)
+        const result = evaluatePlugin(code, { mode: 'template' })
+        const clean = result.compileProblem === null && result.threw === null && !result.sentinel
+        if (!clean || !isContained(code, needleFor(key, INJECTED))) {
+          failures.push(`${key} under ${set.name}: ${name}`)
+        }
+      }
+    }
+  }
+  return failures
+}
+
+describe('accepted template field text', () => {
+  afterAll(() => {
+    console.log(
+      `accepted-text cases: ${accepted.cases}; rejected ${accepted.rejected}, ` +
+        `accepted and in place ${accepted.cases - accepted.rejected}`
+    )
+    expect(accepted.cases).toBeGreaterThan(0)
+  })
+
+  it.each(templateIds())('stays in place with a payload or line break added (%s)', (id) => {
+    expect(acceptedTextFailures(id)).toEqual([])
   })
 })

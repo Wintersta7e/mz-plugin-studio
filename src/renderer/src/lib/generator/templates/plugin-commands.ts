@@ -123,7 +123,8 @@ const basicCommandTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values.commandName as string
+    // The check reads the name trimmed, so the code is written with the same text.
+    const commandName = String(values.commandName ?? '').trim()
     const pluginName = values.pluginName as string
     const arg1Name = values.arg1Name as string
     const arg1Type = (values.arg1Type as string) || 'string'
@@ -261,7 +262,8 @@ const asyncCommandTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values.commandName as string
+    // The check reads the name trimmed, so the code is written with the same text.
+    const commandName = String(values.commandName ?? '').trim()
     const pluginName = values.pluginName as string
     const waitType = (values.waitType as string) || 'callback'
     const waitDuration = (values.waitDuration as number) || 60
@@ -475,7 +477,8 @@ const validatedCommandTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values.commandName as string
+    // The check reads the name trimmed, so the code is written with the same text.
+    const commandName = String(values.commandName ?? '').trim()
     const pluginName = values.pluginName as string
     const validateActorId = values.validateActorId as boolean
     const validateNumberRange = values.validateNumberRange as boolean

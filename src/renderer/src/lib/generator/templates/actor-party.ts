@@ -88,14 +88,15 @@ const customActorPropertyTemplate: CodeTemplate = {
     const propertyName = values.propertyName as string
     const dataType = (values.dataType as string) || 'number'
     const defaultValue = values.defaultValue as string | undefined
-    const minValue = values.minValue as string | undefined
-    const maxValue = values.maxValue as string | undefined
+    // Number() in the check ignores surrounding whitespace; the code gets the trimmed text.
+    const minValue = String(values.minValue ?? '').trim()
+    const maxValue = String(values.maxValue ?? '').trim()
     const includeChange = values.includeChange !== false
 
     const pascalName = toPascalCase(propertyName)
     const defaultLiteral = getDefaultLiteral(dataType, defaultValue)
-    const hasMin = dataType === 'number' && minValue !== undefined && minValue !== ''
-    const hasMax = dataType === 'number' && maxValue !== undefined && maxValue !== ''
+    const hasMin = dataType === 'number' && minValue !== ''
+    const hasMax = dataType === 'number' && maxValue !== ''
     const hasClamp = hasMin || hasMax
 
     const lines: string[] = []
