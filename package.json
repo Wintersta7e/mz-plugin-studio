@@ -23,7 +23,8 @@
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --coverage && node scripts/check-coverage.mjs suite",
     "test:golden": "node node_modules/vitest/vitest.mjs run --project golden",
-    "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden"
+    "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden",
+    "licenses": "node scripts/third-party-licenses.mjs"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
