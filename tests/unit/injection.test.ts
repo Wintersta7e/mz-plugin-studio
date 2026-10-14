@@ -23,7 +23,8 @@ import type {
 } from '../../src/shared/types/plugin'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import type { EvaluationResult } from '../helpers/evaluate-plugin'
-import { ALL_PAYLOADS, COMMENT_PAYLOADS, SENTINEL } from '../helpers/hostile'
+import { ALL_PAYLOADS, COMMENT_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
+import type { Payload } from '../helpers/hostile'
 import { contextsOf, isContained } from '../helpers/js-context'
 
 const INJECTED = `globalThis.${SENTINEL}`
@@ -339,10 +340,10 @@ interface MatrixCase {
   contained: boolean
 }
 
-function runMatrix(): MatrixCase[] {
+function runMatrix(payloads: readonly Payload[] = ALL_PAYLOADS): MatrixCase[] {
   const cases: MatrixCase[] = []
   for (const row of FIELD_ROWS) {
-    for (const payload of ALL_PAYLOADS) {
+    for (const payload of payloads) {
       for (const [entry, generate] of ENTRIES) {
         const def = cleanDefinition()
         row.set(def, payload.text)
@@ -356,7 +357,7 @@ function runMatrix(): MatrixCase[] {
     }
   }
   console.log(
-    `injection matrix: fields ${FIELD_ROWS.length}, payloads ${ALL_PAYLOADS.length}, ` +
+    `injection matrix: fields ${FIELD_ROWS.length}, payloads ${payloads.length}, ` +
       `entries ${ENTRIES.length}, cases ${cases.length}`
   )
   return cases
@@ -367,6 +368,25 @@ describe('generated plugin annotations', () => {
     expect(FIELD_ROWS.length).toBeGreaterThan(0)
     const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
     expect(notClean.map((c) => c.label)).toEqual([])
+  })
+
+  it('field text that starts like a valid value stays inside the annotation comment', () => {
+    const notClean: string[] = []
+    for (const payload of PREFIX_PAYLOADS) {
+      const cases = runMatrix([payload])
+      const count = (outcome: Outcome): number => cases.filter((c) => c.outcome === outcome).length
+      console.log(
+        `prefix payload ${payload.name}: cases ${cases.length}, contained ` +
+          `${cases.filter((c) => c.outcome === 'clean' && c.contained).length}, ` +
+          `does not compile ${count('does not compile')}, throws ${count('throws')}, ` +
+          `ran ${count('runs the text')}`
+      )
+      expect(cases.length).toBeGreaterThan(0)
+      notClean.push(
+        ...cases.filter((c) => c.outcome !== 'clean' || !c.contained).map((c) => c.label)
+      )
+    }
+    expect(notClean).toEqual([])
   })
 })
 

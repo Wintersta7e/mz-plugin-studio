@@ -11,7 +11,7 @@ import {
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { ENABLING_VALUES, baseValues, templateCases, templateIds } from '../golden/corpus/templates'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import { ALL_PAYLOADS, SENTINEL } from '../helpers/hostile'
+import { ALL_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
 import { contextsOf, isContained } from '../helpers/js-context'
 import type { JsContext } from '../helpers/js-context'
 
@@ -59,7 +59,7 @@ const TRANSFORMED: Record<string, (text: string) => string> = {
   'message-custom-text-code.escapeChar': upperCase
 }
 
-/** `needle` as it reads inside rewritten field text; every payload starts with `X`. */
+/** `needle` as it reads inside rewritten field text; no payload starts with it. */
 function needleFor(key: string, needle: string): string {
   const transform = TRANSFORMED[key]
   return transform === undefined ? needle : transform(`X${needle}`).slice(1)
@@ -103,6 +103,15 @@ function fieldCases(free: string[]): FieldCase[] {
     }
   }
   return cases
+}
+
+// A field written as code under another field's value that the corpus gives no hostile cases:
+// the custom damage formula.
+const PREFIX_VALUES: Record<string, { label: string; values: Record<string, unknown> }> = {
+  'battle-damage-modifier.modifyValue': {
+    label: ' with modifyType=custom',
+    values: { ...baseValues('battle-damage-modifier'), modifyType: 'custom' }
+  }
 }
 
 type Outcome = 'rejected' | 'contained' | 'throws' | 'ran' | 'escaped'
@@ -222,6 +231,41 @@ describe('template field text', () => {
     expect(Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, outcomes[key]]))).toEqual(
       Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, EVERY.map(() => 'rejected')]))
     )
+  })
+
+  // A check that reads a word or a number at the start of the text passes the line break and the
+  // code after it.
+  it('text that starts like a valid value stays inside its comment, string or position', () => {
+    const tallies = Object.fromEntries(
+      PREFIX_PAYLOADS.map((p) => [
+        p.name,
+        { rejected: 0, contained: 0, throws: 0, ran: 0, escaped: 0 } as Record<Outcome, number>
+      ])
+    )
+    const table: Record<string, Outcome> = {}
+    for (const c of cases) {
+      const extra = PREFIX_VALUES[c.key]
+      for (const { label, values } of extra === undefined ? c.valueSets : [...c.valueSets, extra]) {
+        for (const payload of PREFIX_PAYLOADS) {
+          const outcome = outcomeOf(c.id, c.key, { ...values, [c.field]: payload.text })
+          tallies[payload.name][outcome]++
+          if (outcome !== 'rejected' && outcome !== 'contained') {
+            table[`${c.key}${label}: ${payload.name}`] = outcome
+          }
+        }
+      }
+    }
+    for (const [name, tally] of Object.entries(tallies)) {
+      console.log(
+        `prefix payload ${name}: rejected ${tally.rejected}, contained ${tally.contained}, ` +
+          `throws ${tally.throws}, ran ${tally.ran}, escaped ${tally.escaped}`
+      )
+    }
+    for (const [key, outcome] of Object.entries(table)) console.log(`  ${key}: ${outcome}`)
+    const ran = Object.values(tallies).reduce((sum, t) => sum + t.ran, 0)
+    expect(Object.values(tallies).every((t) => t.rejected + t.contained > 0)).toBe(true)
+    expect(ran).toBe(0)
+    expect(table).toEqual({})
   })
 
   // The dialog opens a template with its defaults and shows no code until they pass; a required

@@ -27,3 +27,13 @@ export const QUOTE_PAYLOADS: readonly Payload[] = [
 ]
 
 export const ALL_PAYLOADS: readonly Payload[] = [...COMMENT_PAYLOADS, ...QUOTE_PAYLOADS]
+
+/**
+ * Text whose start a field's check may accept (a word, a number), then a line break and code.
+ * Kept out of `ALL_PAYLOADS`, whose cases the golden files record.
+ */
+export const PREFIX_PAYLOADS: readonly Payload[] = [
+  { name: 'prefix-lf', text: `Sample\n${ASSIGN};` },
+  { name: 'prefix-u2028', text: `Sample\u2028${ASSIGN};` },
+  { name: 'number-comment-lf', text: `1 */\n${ASSIGN}; /* 2` }
+]
