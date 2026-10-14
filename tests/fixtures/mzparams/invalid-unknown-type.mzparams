@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "source": "Fixture_Params",
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "parameters": [
+    {
+      "id": "label",
+      "name": "Label",
+      "text": "Label",
+      "desc": "Text to show.",
+      "type": "string",
+      "default": "Hello"
+    },
+    {
+      "id": "shape",
+      "name": "Shape",
+      "text": "Shape",
+      "desc": "A type this app does not have.",
+      "type": "vector",
+      "default": "0,0"
+    }
+  ]
+}

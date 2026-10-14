@@ -1,11 +1,15 @@
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 import { describe, it, expect } from 'vitest'
+import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import {
   serializeParams,
   deserializeParams,
   duplicateParams
 } from '../../src/renderer/src/lib/param-io'
 import type { PluginParameter } from '../../src/renderer/src/types/plugin'
-import { createEmptyParameter } from '../../src/renderer/src/types/plugin'
+import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { V160_FIXTURE, V160_PARAMS, V160_SOURCE } from '../golden/corpus/mzparams'
 
 function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
   return {
@@ -197,6 +201,80 @@ describe('param-io round-trip', () => {
     expect(result.parameters[0].name).toBe('testParam')
     expect(result.parameters[0].type).toBe('number')
     expect(result.parameters[0].default).toBe('42')
+  })
+})
+
+// How a file this app did not write, or wrote in another version, is read today.
+const fixtureText = (name: string): string =>
+  readFileSync(resolve(process.cwd(), 'tests/fixtures/mzparams', name), 'utf8')
+const FORMAT_ERROR = 'Invalid or unsupported .mzparams format'
+
+describe('deserializeParams with files it was not written for', () => {
+  it('refuses text that is not JSON', () => {
+    expect(deserializeParams('not json at all')).toEqual({
+      success: false,
+      parameters: [],
+      source: '',
+      error: 'The file is not valid JSON.'
+    })
+  })
+
+  it('refuses a newer version, a missing version and parameters that are not a list', () => {
+    const contents = [
+      fixtureText('invalid-newer-version.mzparams'),
+      fixtureText('invalid-missing-version.mzparams'),
+      JSON.stringify({ version: 1, source: 'Test', parameters: {} })
+    ]
+    for (const content of contents) {
+      expect(deserializeParams(content)).toEqual({
+        success: false,
+        parameters: [],
+        source: '',
+        error: FORMAT_ERROR
+      })
+    }
+  })
+
+  it('skips a parameter of an unknown type and leaves no trace of it', () => {
+    const result = deserializeParams(fixtureText('invalid-unknown-type.mzparams'))
+    expect(result.success).toBe(true)
+    expect(result.parameters.map((p) => p.name)).toEqual(['Label'])
+    expect(Object.keys(result).sort()).toEqual(['parameters', 'source', 'success'])
+    expect(JSON.stringify(result)).not.toContain('Shape')
+  })
+
+  it('keeps an unknown key and a description that is not text', () => {
+    const [withKey] = deserializeParams(fixtureText('invalid-unknown-key.mzparams')).parameters
+    const [wrongType] = deserializeParams(
+      fixtureText('invalid-wrong-type-field.mzparams')
+    ).parameters
+    expect(withKey).toHaveProperty('extra', 'not a parameter field')
+    expect(wrongType.desc).toBe(5)
+  })
+
+  it('returns a source that is not text as it is', () => {
+    const result = deserializeParams(JSON.stringify({ version: 1, source: 7, parameters: [] }))
+    expect(result.success).toBe(true)
+    expect(result.source).toBe(7)
+  })
+
+  it('keeps a cleared limit as null, which the plugin prints as @min null', () => {
+    const content = JSON.stringify({
+      version: 1,
+      source: 'Test',
+      parameters: [{ ...makeParam({ name: 'speed' }), min: null }]
+    })
+    const result = deserializeParams(content)
+    expect(result.parameters[0].min).toBeNull()
+    const code = generatePlugin({ ...createEmptyPlugin(), parameters: result.parameters })
+    expect(code).toContain(' * @min null\n')
+  })
+
+  it('loads every parameter of a file the released version exported', () => {
+    const result = deserializeParams(readFileSync(V160_FIXTURE, 'utf8'))
+    expect(result.success).toBe(true)
+    expect(result.source).toBe(V160_SOURCE)
+    expect(result.parameters.map((p) => p.name)).toEqual(V160_PARAMS.map((p) => p.name))
   })
 })
 
