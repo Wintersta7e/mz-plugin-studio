@@ -17,6 +17,7 @@ import {
   getClassMethods
 } from '../../../src/renderer/src/lib/generator/class-registry'
 import { ALL_PAYLOADS } from '../../helpers/hostile'
+import { oneLine } from './normalise'
 
 // Each template module registers itself when loaded.
 import.meta.glob('../../../src/renderer/src/lib/generator/templates/*.ts', { eager: true })
@@ -187,13 +188,6 @@ export function templateCases(id: string): TemplateCase[] {
   }
   return cases
 }
-
-// Keeps a header or verdict on one line: JSON escapes LF but not the two Unicode separators.
-const oneLine = (text: string): string =>
-  text
-    .replace(/\n/g, '\\n')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029')
 
 function renderCase(id: string, c: TemplateCase): string {
   const lines = [`// ==== case: ${c.name} ${oneLine(JSON.stringify(c.values))}`]

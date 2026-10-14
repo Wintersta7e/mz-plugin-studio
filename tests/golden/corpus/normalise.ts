@@ -14,6 +14,13 @@ export function restoreTime(): void {
   vi.useRealTimers()
 }
 
+/** Keeps a case header on one line: JSON escapes LF but not the two Unicode separators. */
+export const oneLine = (text: string): string =>
+  text
+    .replace(/\n/g, '\\n')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
 
 /** Replaces each UUID with `<id:n>`, numbered by first appearance. For JSON goldens only. */
