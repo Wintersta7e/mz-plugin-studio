@@ -11,13 +11,15 @@ import {
   assertSafeFilename,
   assertSafeProjectPath
 } from '../../shared/path-safety'
+import { assertWriteGranted } from '../file-access'
 
-/** Writes `content` to `filePath`, creating its folder when missing */
+/** Writes `content` to `filePath`, a path chosen in a save dialog; creates its folder when missing */
 export async function savePluginToPath(
   filePath: string,
   content: string
 ): Promise<{ success: boolean; path: string }> {
   assertSafeFilePath(filePath)
+  assertWriteGranted(filePath)
   log.debug(`[plugin:save-to-path] ${filePath}`)
   const dir = dirname(filePath)
   try {

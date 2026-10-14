@@ -1,13 +1,17 @@
 import { type IpcMain, type IpcMainInvokeEvent, type Dialog } from 'electron'
 import log from 'electron-log/main'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
+import { recordWriteGrant } from '../file-access'
 
 export interface SaveFileDialogOptions {
   defaultPath?: string
   filters?: { name: string; extensions: string[] }[]
 }
 
-/** Shows the save dialog; returns the chosen path, or null when cancelled */
+/**
+ * Shows the save dialog; returns the chosen path, or null when cancelled.
+ * The chosen path becomes writable by save-to-path for the rest of the session.
+ */
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
   options: SaveFileDialogOptions
@@ -23,6 +27,7 @@ export async function showSaveFileDialog(
   }
 
   log.info(`[dialog:save-file] Selected: ${result.filePath}`)
+  recordWriteGrant(result.filePath)
   return result.filePath
 }
 

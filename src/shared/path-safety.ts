@@ -31,6 +31,11 @@ function resolveCheckedPath(p: string, pathImpl: PlatformPath): string {
   return pathImpl.resolve(p)
 }
 
+/** Whether the file's extension is one that read/write-by-path operations accept */
+export function isAllowedExtension(filePath: string, pathImpl: PlatformPath = path): boolean {
+  return ALLOWED_EXTENSIONS.has(pathImpl.extname(filePath).toLowerCase())
+}
+
 /**
  * Validate that a file path is safe for read/write operations.
  * - Absolute, with no '..' segment, checked before resolving
@@ -38,8 +43,8 @@ function resolveCheckedPath(p: string, pathImpl: PlatformPath): string {
  */
 export function assertSafeFilePath(filePath: string, pathImpl: PlatformPath = path): void {
   const resolved = resolveCheckedPath(filePath, pathImpl)
-  const ext = pathImpl.extname(resolved).toLowerCase()
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
+  if (!isAllowedExtension(resolved, pathImpl)) {
+    const ext = pathImpl.extname(resolved).toLowerCase()
     throw new Error(
       `File extension "${ext}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`
     )

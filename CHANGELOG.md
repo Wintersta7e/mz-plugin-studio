@@ -21,6 +21,7 @@
 - Text typed into a template field can no longer end a comment or string in the inserted code, and fields that become code accept only what fits there.
 - File paths are checked segment by segment; `..` segments, device names and drive-relative paths are rejected.
 - A drive or filesystem root can no longer be used as a project folder.
+- Saving to a file path now requires that path to have been chosen in a save dialog during the session.
 
 ## [1.6.0] - 2026-04-19
 

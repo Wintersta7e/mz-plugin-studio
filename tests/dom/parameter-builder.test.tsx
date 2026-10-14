@@ -1,10 +1,10 @@
 // The parameter tab's Import menu (what a .mzparams file does once it is read in) and its Export
 // button (where the selected parameters are written).
 import { readFileSync } from 'fs'
-import { mkdtemp, readFile, rm } from 'fs/promises'
+import { access, mkdtemp, readFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, resolve } from 'path'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
@@ -116,31 +116,61 @@ describe('parameter import from a file', () => {
 })
 
 describe('parameter export to a file', () => {
-  it('writes the selected parameters to the path chosen in the save dialog', async () => {
-    const tmp = await mkdtemp(join(tmpdir(), 'param-export-'))
-    try {
-      const target = join(tmp, 'Alpha-params.mzparams')
-      const dialog = {
-        showSaveDialog: vi.fn(async (_options: SaveDialogOptions) => ({
-          canceled: false,
-          filePath: target
-        }))
-      }
-      const message = vi.fn(async () => 0)
-      window.api = createFakeApi({
-        dialog: { saveFile: (options) => showSaveFileDialog(dialog, options ?? {}), message },
-        plugin: { saveToPath: (filePath, content) => savePluginToPath(filePath, content) }
-      })
-      render(<ParameterBuilder />)
-      fireEvent.click(screen.getByRole('button', { name: 'Select All' }))
-      fireEvent.click(screen.getByRole('button', { name: 'Export' }))
+  let tmp: string
 
-      const written = await waitFor(() => readFile(target, 'utf8'))
-      const result = deserializeParams(written)
-      expect(result.success && result.parameters.map((p) => p.name)).toEqual(['Existing'])
-      expect(message).not.toHaveBeenCalled()
-    } finally {
-      await rm(tmp, { recursive: true, force: true })
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), 'param-export-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true })
+  })
+
+  /**
+   * Exports every parameter through the main-process save functions; `saveFile` answers
+   * `target`, through the save dialog or not. Returns the message dialog mock.
+   */
+  function exportTo(target: string, { throughDialog = true } = {}): ReturnType<typeof vi.fn> {
+    const dialog = {
+      showSaveDialog: vi.fn(async (_options: SaveDialogOptions) => ({
+        canceled: false,
+        filePath: target
+      }))
     }
+    const message = vi.fn(async () => 0)
+    window.api = createFakeApi({
+      dialog: {
+        saveFile: throughDialog
+          ? (options) => showSaveFileDialog(dialog, options ?? {})
+          : vi.fn(async () => target),
+        message
+      },
+      plugin: { saveToPath: (filePath, content) => savePluginToPath(filePath, content) }
+    })
+    render(<ParameterBuilder />)
+    fireEvent.click(screen.getByRole('button', { name: 'Select All' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }))
+    return message
+  }
+
+  it('writes the selected parameters to the path chosen in the save dialog', async () => {
+    const target = join(tmp, 'Alpha-params.mzparams')
+    const message = exportTo(target)
+    const written = await waitFor(() => readFile(target, 'utf8'))
+    const result = deserializeParams(written)
+    expect(result.success && result.parameters.map((p) => p.name)).toEqual(['Existing'])
+    expect(message).not.toHaveBeenCalled()
+  })
+
+  it('says why and writes nothing for a path no save dialog returned', async () => {
+    const target = join(tmp, 'Alpha-params.mzparams')
+    const message = exportTo(target, { throughDialog: false })
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message).toHaveBeenCalledWith({
+      type: 'error',
+      title: 'Export Failed',
+      message: `Access denied: ${target} was not chosen in a save dialog`
+    })
+    await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 })
