@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "source": "Fixture_Params",
+  "exportedAt": "2026-01-01T00:00:00.000Z",
+  "parameters": [
+    {
+      "id": "speed",
+      "name": "Speed",
+      "text": "Speed",
+      "desc": "All limits cleared.",
+      "type": "number",
+      "default": 5,
+      "min": null,
+      "max": null,
+      "decimals": null
+    },
+    {
+      "id": "count",
+      "name": "Count",
+      "text": "Count",
+      "desc": "How many to show.",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "max": 99,
+      "decimals": 0
+    },
+    {
+      "id": "mode",
+      "name": "Mode",
+      "text": "Mode",
+      "desc": "How fast it moves.",
+      "type": "select",
+      "default": "fast",
+      "options": [
+        {
+          "value": "fast",
+          "text": "Fast"
+        },
+        {
+          "value": "slow",
+          "text": "Slow"
+        }
+      ]
+    },
+    {
+      "id": "enabled",
+      "name": "Enabled",
+      "text": "Enabled",
+      "desc": "Turns it on.",
+      "type": "boolean",
+      "default": true,
+      "onLabel": "On",
+      "offLabel": "Off",
+      "parent": "Mode"
+    },
+    {
+      "id": "picture",
+      "name": "Picture",
+      "text": "Picture",
+      "desc": "Image to show.",
+      "type": "file",
+      "default": "",
+      "dir": "img/pictures/",
+      "require": true
+    },
+    {
+      "id": "points",
+      "name": "Points",
+      "text": "Points",
+      "desc": "Positions to visit.",
+      "type": "array",
+      "default": "[]",
+      "arrayType": "struct",
+      "structType": "Point"
+    },
+    {
+      "id": "tint",
+      "name": "Tint",
+      "text": "Tint",
+      "desc": "Ends a comment */ here\nand goes on.",
+      "type": "color",
+      "default": "0",
+      "rawType": "color"
+    }
+  ]
+}
