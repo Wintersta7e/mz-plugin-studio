@@ -5,6 +5,7 @@
 ### Changed
 
 - The app package no longer contains test files, documentation or libraries the app does not load.
+- The preview warns when a field's text contains `*/` or a word starting with `@` that MZ would read as a tag.
 
 ### Security
 

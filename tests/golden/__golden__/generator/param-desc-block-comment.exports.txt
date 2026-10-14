@@ -163,5 +163,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
 {
   "valid": true,
   "errors": [],
-  "warnings": []
+  "warnings": [
+    "Parameter \"Label\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment."
+  ]
 }

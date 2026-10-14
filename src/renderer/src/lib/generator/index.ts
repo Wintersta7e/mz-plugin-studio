@@ -9,6 +9,14 @@ import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
 
+/** Receives each field's text as it is written into an annotation comment, with its label. */
+type BlockSink = (field: string, value: string) => void
+
+function blockValue(sink: BlockSink | undefined, field: string, value: string): string {
+  sink?.(field, value)
+  return escapeBlockComment(value)
+}
+
 /**
  * Find names of `PluginManager.registerCommand(...)` calls already present in
  * comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
@@ -56,44 +64,44 @@ export function generatePlugin(plugin: PluginDefinition): string {
 /**
  * Generate the plugin header comment block with all metadata, parameters, and commands
  */
-function generateHeader(plugin: PluginDefinition): string {
+function generateHeader(plugin: PluginDefinition, sink?: BlockSink): string {
   const lines: string[] = []
 
   lines.push('/*:')
 
   // Target
   if (plugin.meta.target) {
-    lines.push(` * @target ${escapeBlockComment(plugin.meta.target)}`)
+    lines.push(` * @target ${blockValue(sink, 'Plugin @target', plugin.meta.target)}`)
   }
 
   // Plugin description
   if (plugin.meta.description) {
-    lines.push(` * @plugindesc ${escapeBlockComment(plugin.meta.description)}`)
+    lines.push(` * @plugindesc ${blockValue(sink, 'Plugin @plugindesc', plugin.meta.description)}`)
   }
 
   // Author
   if (plugin.meta.author) {
-    lines.push(` * @author ${escapeBlockComment(plugin.meta.author)}`)
+    lines.push(` * @author ${blockValue(sink, 'Plugin @author', plugin.meta.author)}`)
   }
 
   // URL
   if (plugin.meta.url) {
-    lines.push(` * @url ${escapeBlockComment(plugin.meta.url)}`)
+    lines.push(` * @url ${blockValue(sink, 'Plugin @url', plugin.meta.url)}`)
   }
 
   // Dependencies
   for (const dep of plugin.meta.dependencies) {
-    lines.push(` * @base ${escapeBlockComment(dep)}`)
+    lines.push(` * @base ${blockValue(sink, 'Plugin @base', dep)}`)
   }
 
   // Order After
   for (const order of plugin.meta.orderAfter || []) {
-    lines.push(` * @orderAfter ${escapeBlockComment(order)}`)
+    lines.push(` * @orderAfter ${blockValue(sink, 'Plugin @orderAfter', order)}`)
   }
 
   // Order Before
   for (const order of plugin.meta.orderBefore || []) {
-    lines.push(` * @orderBefore ${escapeBlockComment(order)}`)
+    lines.push(` * @orderBefore ${blockValue(sink, 'Plugin @orderBefore', order)}`)
   }
 
   // Note Parameters (deployment notetag groups)
@@ -101,28 +109,28 @@ function generateHeader(plugin: PluginDefinition): string {
   // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
   // of the spec and is dropped.
   for (const np of plugin.meta.noteParams || []) {
-    lines.push(` * @noteParam ${escapeBlockComment(np.name)}`)
-    lines.push(` * @noteType ${escapeBlockComment(np.type)}`)
-    if (np.dir) lines.push(` * @noteDir ${escapeBlockComment(np.dir)}`)
-    if (np.data) lines.push(` * @noteData ${escapeBlockComment(np.data)}`)
+    lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
+    lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
+    if (np.dir) lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
+    if (np.data) lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
   }
 
   // Required assets — preserved during "Exclude unused files" deployment.
   for (const asset of plugin.meta.requiredAssets || []) {
-    lines.push(` * @requiredAssets ${escapeBlockComment(asset)}`)
+    lines.push(` * @requiredAssets ${blockValue(sink, 'Plugin @requiredAssets', asset)}`)
   }
 
   lines.push(' *')
 
   // Parameters
   for (const param of plugin.parameters) {
-    lines.push(...generateParameterBlock(param, ' * '))
+    lines.push(...generateParameterBlock(param, ' * ', `Parameter "${param.name}"`, sink))
     lines.push(' *')
   }
 
   // Commands
   for (const cmd of plugin.commands) {
-    lines.push(...generateCommandBlock(cmd))
+    lines.push(...generateCommandBlock(cmd, sink))
     lines.push(' *')
   }
 
@@ -130,7 +138,7 @@ function generateHeader(plugin: PluginDefinition): string {
   if (plugin.meta.help) {
     lines.push(' * @help')
     for (const helpLine of plugin.meta.help.split('\n')) {
-      lines.push(` * ${escapeBlockComment(helpLine)}`)
+      lines.push(` * ${blockValue(sink, 'Plugin @help', helpLine)}`)
     }
   }
 
@@ -142,47 +150,54 @@ function generateHeader(plugin: PluginDefinition): string {
 /**
  * Generate a parameter block for the header
  */
-function generateParameterBlock(param: PluginParameter, prefix: string = ' * '): string[] {
+function generateParameterBlock(
+  param: PluginParameter,
+  prefix: string = ' * ',
+  owner: string = `Parameter "${param.name}"`,
+  sink?: BlockSink
+): string[] {
   const lines: string[] = []
 
-  lines.push(`${prefix}@param ${escapeBlockComment(param.name)}`)
+  lines.push(`${prefix}@param ${blockValue(sink, `${owner} @param`, param.name)}`)
 
   if (param.text && param.text !== param.name) {
-    lines.push(`${prefix}@text ${escapeBlockComment(param.text)}`)
+    lines.push(`${prefix}@text ${blockValue(sink, `${owner} @text`, param.text)}`)
   }
 
   if (param.desc) {
-    lines.push(`${prefix}@desc ${escapeBlockComment(param.desc)}`)
+    lines.push(`${prefix}@desc ${blockValue(sink, `${owner} @desc`, param.desc)}`)
   }
 
   // Type
-  lines.push(`${prefix}@type ${escapeBlockComment(formatParamType(param))}`)
+  lines.push(`${prefix}@type ${blockValue(sink, `${owner} @type`, formatParamType(param))}`)
 
   // Boolean-specific @on/@off labels
   if (param.type === 'boolean') {
     if (param.onLabel) {
-      lines.push(`${prefix}@on ${escapeBlockComment(param.onLabel)}`)
+      lines.push(`${prefix}@on ${blockValue(sink, `${owner} @on`, param.onLabel)}`)
     }
     if (param.offLabel) {
-      lines.push(`${prefix}@off ${escapeBlockComment(param.offLabel)}`)
+      lines.push(`${prefix}@off ${blockValue(sink, `${owner} @off`, param.offLabel)}`)
     }
   }
 
   // Type-specific attributes
   if (param.type === 'number') {
     if (param.min !== undefined) {
-      lines.push(`${prefix}@min ${escapeBlockComment(String(param.min))}`)
+      lines.push(`${prefix}@min ${blockValue(sink, `${owner} @min`, String(param.min))}`)
     }
     if (param.max !== undefined) {
-      lines.push(`${prefix}@max ${escapeBlockComment(String(param.max))}`)
+      lines.push(`${prefix}@max ${blockValue(sink, `${owner} @max`, String(param.max))}`)
     }
     if (param.decimals !== undefined) {
-      lines.push(`${prefix}@decimals ${escapeBlockComment(String(param.decimals))}`)
+      lines.push(
+        `${prefix}@decimals ${blockValue(sink, `${owner} @decimals`, String(param.decimals))}`
+      )
     }
   }
 
   if ((param.type === 'file' || param.type === 'animation') && param.dir) {
-    lines.push(`${prefix}@dir ${escapeBlockComment(param.dir)}`)
+    lines.push(`${prefix}@dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
   }
   // @require is MV-era — explicitly discontinued in MZ per Kadokawa docs.
   // Use @requiredAssets at the plugin level instead.
@@ -190,9 +205,9 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
   // Options for select/combo type
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
     for (const opt of param.options) {
-      lines.push(`${prefix}@option ${escapeBlockComment(opt.text)}`)
+      lines.push(`${prefix}@option ${blockValue(sink, `${owner} @option`, opt.text)}`)
       if (opt.value !== opt.text) {
-        lines.push(`${prefix}@value ${escapeBlockComment(opt.value)}`)
+        lines.push(`${prefix}@value ${blockValue(sink, `${owner} @value`, opt.value)}`)
       }
     }
   }
@@ -200,13 +215,13 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
   // Default value
   if (param.default !== undefined && param.default !== '') {
     lines.push(
-      `${prefix}@default ${escapeBlockComment(formatDefaultValue(param.default, param.type))}`
+      `${prefix}@default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default, param.type))}`
     )
   }
 
   // Parent (for nested parameters)
   if (param.parent) {
-    lines.push(`${prefix}@parent ${escapeBlockComment(param.parent)}`)
+    lines.push(`${prefix}@parent ${blockValue(sink, `${owner} @parent`, param.parent)}`)
   }
 
   return lines
@@ -260,63 +275,71 @@ function formatDefaultValue(
 /**
  * Generate a command block for the header
  */
-function generateCommandBlock(cmd: PluginCommand): string[] {
+function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink): string[] {
   const lines: string[] = []
+  const owner = `Command "${cmd.name}"`
 
-  lines.push(` * @command ${escapeBlockComment(cmd.name)}`)
+  lines.push(` * @command ${blockValue(sink, `${owner} @command`, cmd.name)}`)
 
   if (cmd.text && cmd.text !== cmd.name) {
-    lines.push(` * @text ${escapeBlockComment(cmd.text)}`)
+    lines.push(` * @text ${blockValue(sink, `${owner} @text`, cmd.text)}`)
   }
 
   if (cmd.desc) {
-    lines.push(` * @desc ${escapeBlockComment(cmd.desc)}`)
+    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, cmd.desc)}`)
   }
 
   // Command arguments
   for (const arg of cmd.args) {
+    const argOwner = `${owner} argument "${arg.name}"`
     lines.push(' *')
-    lines.push(` * @arg ${escapeBlockComment(arg.name)}`)
+    lines.push(` * @arg ${blockValue(sink, `${argOwner} @arg`, arg.name)}`)
 
     if (arg.text && arg.text !== arg.name) {
-      lines.push(` * @text ${escapeBlockComment(arg.text)}`)
+      lines.push(` * @text ${blockValue(sink, `${argOwner} @text`, arg.text)}`)
     }
 
     if (arg.desc) {
-      lines.push(` * @desc ${escapeBlockComment(arg.desc)}`)
+      lines.push(` * @desc ${blockValue(sink, `${argOwner} @desc`, arg.desc)}`)
     }
 
-    lines.push(` * @type ${escapeBlockComment(formatParamType(arg))}`)
+    lines.push(` * @type ${blockValue(sink, `${argOwner} @type`, formatParamType(arg))}`)
 
     // Boolean-specific @on/@off labels
     if (arg.type === 'boolean') {
-      if (arg.onLabel) lines.push(` * @on ${escapeBlockComment(arg.onLabel)}`)
-      if (arg.offLabel) lines.push(` * @off ${escapeBlockComment(arg.offLabel)}`)
+      if (arg.onLabel) lines.push(` * @on ${blockValue(sink, `${argOwner} @on`, arg.onLabel)}`)
+      if (arg.offLabel) lines.push(` * @off ${blockValue(sink, `${argOwner} @off`, arg.offLabel)}`)
     }
 
     if (arg.type === 'number') {
-      if (arg.min !== undefined) lines.push(` * @min ${escapeBlockComment(String(arg.min))}`)
-      if (arg.max !== undefined) lines.push(` * @max ${escapeBlockComment(String(arg.max))}`)
+      if (arg.min !== undefined)
+        lines.push(` * @min ${blockValue(sink, `${argOwner} @min`, String(arg.min))}`)
+      if (arg.max !== undefined)
+        lines.push(` * @max ${blockValue(sink, `${argOwner} @max`, String(arg.max))}`)
       if (arg.decimals !== undefined)
-        lines.push(` * @decimals ${escapeBlockComment(String(arg.decimals))}`)
+        lines.push(
+          ` * @decimals ${blockValue(sink, `${argOwner} @decimals`, String(arg.decimals))}`
+        )
     }
 
     if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
-      lines.push(` * @dir ${escapeBlockComment(arg.dir)}`)
+      lines.push(` * @dir ${blockValue(sink, `${argOwner} @dir`, arg.dir)}`)
     }
     // @require dropped (MV-era, discontinued in MZ)
 
     if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
       for (const opt of arg.options) {
-        lines.push(` * @option ${escapeBlockComment(opt.text)}`)
+        lines.push(` * @option ${blockValue(sink, `${argOwner} @option`, opt.text)}`)
         if (opt.value !== opt.text) {
-          lines.push(` * @value ${escapeBlockComment(opt.value)}`)
+          lines.push(` * @value ${blockValue(sink, `${argOwner} @value`, opt.value)}`)
         }
       }
     }
 
     if (arg.default !== undefined && arg.default !== '') {
-      lines.push(` * @default ${escapeBlockComment(formatDefaultValue(arg.default, arg.type))}`)
+      lines.push(
+        ` * @default ${blockValue(sink, `${argOwner} @default`, formatDefaultValue(arg.default, arg.type))}`
+      )
     }
   }
 
@@ -326,7 +349,7 @@ function generateCommandBlock(cmd: PluginCommand): string[] {
 /**
  * Generate localized header blocks for multi-language support
  */
-function generateLocalizedHeaders(plugin: PluginDefinition): string | null {
+function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): string | null {
   const localizations = plugin.meta.localizations
   if (!localizations || Object.keys(localizations).length === 0) {
     return null
@@ -338,16 +361,18 @@ function generateLocalizedHeaders(plugin: PluginDefinition): string | null {
     if (!content.description && !content.help) continue
 
     const lines: string[] = []
-    lines.push(`/*:${escapeBlockComment(lang)}`)
+    lines.push(`/*:${blockValue(sink, `Localization "${lang}"`, lang)}`)
 
     if (content.description) {
-      lines.push(` * @plugindesc ${escapeBlockComment(content.description)}`)
+      lines.push(
+        ` * @plugindesc ${blockValue(sink, `Localization "${lang}" @plugindesc`, content.description)}`
+      )
     }
 
     if (content.help) {
       lines.push(' * @help')
       for (const helpLine of content.help.split('\n')) {
-        lines.push(` * ${escapeBlockComment(helpLine)}`)
+        lines.push(` * ${blockValue(sink, `Localization "${lang}" @help`, helpLine)}`)
       }
     }
 
@@ -361,13 +386,14 @@ function generateLocalizedHeaders(plugin: PluginDefinition): string | null {
 /**
  * Generate struct definition comment block
  */
-function generateStructDefinition(struct: PluginStruct): string {
+function generateStructDefinition(struct: PluginStruct, sink?: BlockSink): string {
   const lines: string[] = []
 
-  lines.push(`/*~struct~${escapeBlockComment(struct.name)}:`)
+  lines.push(`/*~struct~${blockValue(sink, `Struct "${struct.name}"`, struct.name)}:`)
 
   for (const param of struct.parameters) {
-    lines.push(...generateParameterBlock(param, ' * '))
+    const owner = `Struct "${struct.name}" field "${param.name}"`
+    lines.push(...generateParameterBlock(param, ' * ', owner, sink))
     lines.push(' *')
   }
 
@@ -1067,6 +1093,31 @@ export function validatePlugin(plugin: PluginDefinition): {
         warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
       }
     }
+  }
+
+  // Field text written escaped or read by MZ as a tag (warning, once per field and kind)
+  const reported = new Set<string>()
+  const report = (key: string, warning: string): void => {
+    if (reported.has(key)) return
+    reported.add(key)
+    warnings.push(warning)
+  }
+  const collect: BlockSink = (field, value) => {
+    if (escapeBlockComment(value) !== value) {
+      report(
+        `escaped ${field}`,
+        `${field}: "*/" is written as "*\\/" so it cannot end the comment.`
+      )
+    }
+    const tag = /@(\w+)/.exec(value)
+    if (tag) {
+      report(`tag ${field}`, `${field}: "@${tag[1]}" is read by MZ as a new annotation tag.`)
+    }
+  }
+  generateHeader(plugin, collect)
+  generateLocalizedHeaders(plugin, collect)
+  for (const struct of plugin.structs) {
+    generateStructDefinition(struct, collect)
   }
 
   return { valid: errors.length === 0, errors, warnings }

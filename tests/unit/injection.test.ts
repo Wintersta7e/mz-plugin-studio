@@ -466,14 +466,64 @@ describe('parameter defaults', () => {
   })
 })
 
+/** The warnings `change` adds to those of the clean definition. */
+function addedWarnings(change: (def: PluginDefinition) => void): string[] {
+  const before = new Set(validatePlugin(cleanDefinition()).warnings)
+  const def = cleanDefinition()
+  change(def)
+  return validatePlugin(def).warnings.filter((w) => !before.has(w))
+}
+
+const escapedWarning = (field: string): string =>
+  `${field}: "*/" is written as "*\\/" so it cannot end the comment.`
+
 describe('validatePlugin warnings', () => {
-  it('field text holding "*/" or "@word" raises no warning (today)', () => {
-    const clean = cleanDefinition()
-    const before = validatePlugin(clean).warnings
-    for (const desc of ['a */ b', 'see @note here']) {
-      const def = cleanDefinition()
-      def.parameters[0].desc = desc
-      expect(validatePlugin(def).warnings).toEqual(before)
-    }
+  it('names the field whose "*/" is written escaped', () => {
+    const added = addedWarnings((def) => {
+      def.parameters[0].desc = 'a */ b'
+    })
+    expect(added).toEqual([escapedWarning('Parameter "FixtureParam" @desc')])
+  })
+
+  it('names the field and the tag MZ reads in "@word"', () => {
+    const added = addedWarnings((def) => {
+      def.parameters[0].desc = 'see @note here'
+    })
+    expect(added).toEqual([
+      'Parameter "FixtureParam" @desc: "@note" is read by MZ as a new annotation tag.'
+    ])
+  })
+
+  it.each<[string, (def: PluginDefinition) => void, string]>([
+    [
+      'the plugin description',
+      (def) => {
+        def.meta.description = 'a */ b'
+      },
+      'Plugin @plugindesc'
+    ],
+    [
+      'a command argument label',
+      (def) => {
+        def.commands[0].args[0].text = 'a */ b'
+      },
+      'Command "FixtureCommand" argument "FixtureArg" @text'
+    ],
+    [
+      'a struct field description',
+      (def) => {
+        def.structs[0].parameters[0].desc = 'a */ b'
+      },
+      'Struct "FixtureStruct" field "FixtureField" @desc'
+    ],
+    [
+      'translated help, once for two lines',
+      (def) => {
+        def.meta.localizations!.ja.help = 'one\na */ b\nc */ d'
+      },
+      'Localization "ja" @help'
+    ]
+  ])('names %s', (_, change, field) => {
+    expect(addedWarnings(change)).toEqual([escapedWarning(field)])
   })
 })

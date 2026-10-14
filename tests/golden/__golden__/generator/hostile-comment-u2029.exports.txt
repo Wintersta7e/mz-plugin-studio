@@ -208,7 +208,55 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X */\u2029globalThis.__pwn = 1; /* Y
     "Invalid command name: X */ globalThis.__pwn = 1; /* Y (must be valid identifier)"
   ],
   "warnings": [
-    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" is not a valid JS identifier (will still work in MZ)"
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" is not a valid JS identifier (will still work in MZ)",
+    "Plugin @target: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @author: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @url: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @base: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @orderAfter: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @orderBefore: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteParam: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteType: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteDir: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteData: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @requiredAssets: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @param: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @option: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @value: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */ globalThis.__pwn = 1; /* Y\" @parent: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" @command: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @arg: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @on: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @off: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"X */ globalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @arg: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @option: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @value: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */ globalThis.__pwn = 1; /* Y\" argument \"ComboX */ globalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @help: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Localization \"ja\" @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Localization \"ja\" @help: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\": \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @param: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @dir: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */ globalThis.__pwn = 1; /* Y\" field \"X */ globalThis.__pwn = 1; /* Y\" @parent: \"*/\" is written as \"*\\/\" so it cannot end the comment."
   ]
 }
 
