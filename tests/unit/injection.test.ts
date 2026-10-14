@@ -418,12 +418,19 @@ describe('snippet comments', () => {
 })
 
 describe('localization keys', () => {
-  it('a localization key is written into the comment opener unchecked (today)', () => {
+  it('a localization key MZ cannot read is left out and reported', () => {
     const def = cleanDefinition()
-    def.meta.localizations = { 'ja */ x': { description: 'd' } }
+    def.meta.localizations = { 'ja */ x': { description: 'd' }, ja: { description: 'kept' } }
     const output = generatePlugin(def)
-    expect(output.split('\n')).toContain('/*:ja *\\/ x')
-    expect(validatePlugin(def).errors.filter((e) => e.includes('ja */ x'))).toEqual([])
+    expect(output.split('\n').filter((line) => line.startsWith('/*:ja'))).toEqual(['/*:ja'])
+    expect(output).not.toContain('ja */ x')
+    expect(output).not.toContain('ja *\\/ x')
+    expect(output).toContain(' * @plugindesc kept')
+    const { errors, warnings } = validatePlugin(def)
+    expect(errors).toContain(
+      'Localization "ja */ x" is left out: a language code may contain only letters and underscores.'
+    )
+    expect(warnings.filter((w) => w.includes('ja */ x'))).toEqual([])
   })
 })
 

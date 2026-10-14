@@ -161,9 +161,9 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
 
 // ==== case: validatePlugin
 {
-  "valid": true,
-  "errors": [],
-  "warnings": [
-    "Localization \"ja */ x\": \"*/\" is written as \"*\\/\" so it cannot end the comment."
-  ]
+  "valid": false,
+  "errors": [
+    "Localization \"ja */ x\" is left out: a language code may contain only letters and underscores."
+  ],
+  "warnings": []
 }

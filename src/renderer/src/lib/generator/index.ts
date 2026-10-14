@@ -12,6 +12,9 @@ import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/o
 /** Receives each field's text as it is written into an annotation comment, with its label. */
 type BlockSink = (field: string, value: string) => void
 
+/** A language code MZ reads after `/*:`; any other key is left out of the output. */
+const LOCALIZATION_KEY = /^[A-Za-z_]+$/
+
 function blockValue(sink: BlockSink | undefined, field: string, value: string): string {
   sink?.(field, value)
   return escapeBlockComment(value)
@@ -358,6 +361,7 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
   const parts: string[] = []
 
   for (const [lang, content] of Object.entries(localizations)) {
+    if (!LOCALIZATION_KEY.test(lang)) continue
     if (!content.description && !content.help) continue
 
     const lines: string[] = []
@@ -945,6 +949,14 @@ export function validatePlugin(plugin: PluginDefinition): {
     errors.push(
       'Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)'
     )
+  }
+
+  for (const lang of Object.keys(plugin.meta.localizations ?? {})) {
+    if (!LOCALIZATION_KEY.test(lang)) {
+      errors.push(
+        `Localization "${lang}" is left out: a language code may contain only letters and underscores.`
+      )
+    }
   }
 
   // Check for duplicate parameter names (but allow any string - MZ supports it)

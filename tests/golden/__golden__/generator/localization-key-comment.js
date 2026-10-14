@@ -19,10 +19,6 @@
  *
  */
 
-/*:ja *\/ x
- * @plugindesc Localized description
- */
-
 /*~struct~Pair:
  * @param a
  * @text A

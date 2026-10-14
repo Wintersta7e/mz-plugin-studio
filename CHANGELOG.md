@@ -6,6 +6,7 @@
 
 - The app package no longer contains test files, documentation or libraries the app does not load.
 - The preview warns when a field's text contains `*/` or a word starting with `@` that MZ would read as a tag.
+- A translation whose language code holds anything other than letters and underscores is left out of the generated plugin, and the preview reports it.
 
 ### Security
 
