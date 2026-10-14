@@ -1,0 +1,98 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Dependent",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin that builds on Fixture_HandWritten.",
+    "help": "Fixture_Dependent.js\n\nNeeds Fixture_HandWritten above it in the plugin list. Both plugins\nextend the map scene's update.",
+    "url": "https://example.invalid/Fixture_Dependent",
+    "target": "MZ",
+    "dependencies": [
+      "Fixture_HandWritten"
+    ],
+    "orderAfter": [
+      "Fixture_HandWritten"
+    ],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Delay",
+      "text": "Delay",
+      "desc": "Frames before the badge appears.",
+      "type": "number",
+      "default": 60,
+      "min": 0,
+      "max": 120
+    },
+    {
+      "id": "<id:3>",
+      "name": "Badge",
+      "text": "Badge",
+      "desc": "Text of the badge.",
+      "type": "string",
+      "default": "New"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Placement",
+      "text": "Placement",
+      "desc": "Where the badge is drawn.",
+      "type": "struct",
+      "default": "{\"x\":\"16\",\"y\":\"16\"}",
+      "rawType": "struct<Placement>",
+      "structType": "Placement"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "HideBadge",
+      "text": "Hide Badge",
+      "desc": "Hides the badge for a while.",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "frames",
+          "text": "Frames",
+          "desc": "Frames the badge stays hidden.",
+          "type": "number",
+          "default": 60,
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Placement",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "x",
+          "text": "X",
+          "desc": "",
+          "type": "number",
+          "default": 16
+        },
+        {
+          "id": "<id:9>",
+          "name": "y",
+          "text": "Y",
+          "desc": "",
+          "type": "number",
+          "default": 16
+        }
+      ]
+    }
+  ],
+  "codeBody": "(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_Dependent');\n    const delay = Number(params['Delay'] || 60);\n    const badge = String(params['Badge'] || 'New');\n    const placement = JSON.parse(params['Placement'] || '{\"x\":\"0\",\"y\":\"0\"}');\n\n    let hiddenFor = 0;\n\n    PluginManager.registerCommand('Fixture_Dependent', 'HideBadge', args => {\n        hiddenFor = Number(args.frames || 60);\n    });\n\n    const _Scene_Map_update = Scene_Map.prototype.update;\n    Scene_Map.prototype.update = function() {\n        _Scene_Map_update.call(this);\n        if (hiddenFor > 0) {\n            hiddenFor--;\n        } else if ((this._fixtureFrames || 0) >= delay) {\n            this._fixtureBadge = { text: badge, x: Number(placement.x), y: Number(placement.y) };\n        }\n    };\n})();",
+  "customCode": "const _Scene_Map_update = Scene_Map.prototype.update;\nScene_Map.prototype.update = function() {\n    _Scene_Map_update.call(this);\n    if (hiddenFor > 0) {\n        hiddenFor--;\n    } else if ((this._fixtureFrames || 0) >= delay) {\n        this._fixtureBadge = { text: badge, x: Number(placement.x), y: Number(placement.y) };\n    }\n};",
+  "rawSource": "/*:\n * @target MZ\n * @plugindesc Fixture plugin that builds on Fixture_HandWritten.\n * @author Example Author\n * @url https://example.invalid/Fixture_Dependent\n * @base Fixture_HandWritten\n * @orderAfter Fixture_HandWritten\n *\n * @help Fixture_Dependent.js\n *\n * Needs Fixture_HandWritten above it in the plugin list. Both plugins\n * extend the map scene's update.\n *\n * @param Delay\n * @text Delay\n * @desc Frames before the badge appears.\n * @type number\n * @min 0\n * @max 120\n * @default 60\n *\n * @param Badge\n * @text Badge\n * @desc Text of the badge.\n * @type string\n * @default New\n *\n * @param Placement\n * @text Placement\n * @desc Where the badge is drawn.\n * @type struct<Placement>\n * @default {\"x\":\"16\",\"y\":\"16\"}\n *\n * @command HideBadge\n * @text Hide Badge\n * @desc Hides the badge for a while.\n *\n * @arg frames\n * @text Frames\n * @desc Frames the badge stays hidden.\n * @type number\n * @min 1\n * @default 60\n */\n\n/*~struct~Placement:\n * @param x\n * @text X\n * @type number\n * @default 16\n *\n * @param y\n * @text Y\n * @type number\n * @default 16\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_Dependent');\n    const delay = Number(params['Delay'] || 60);\n    const badge = String(params['Badge'] || 'New');\n    const placement = JSON.parse(params['Placement'] || '{\"x\":\"0\",\"y\":\"0\"}');\n\n    let hiddenFor = 0;\n\n    PluginManager.registerCommand('Fixture_Dependent', 'HideBadge', args => {\n        hiddenFor = Number(args.frames || 60);\n    });\n\n    const _Scene_Map_update = Scene_Map.prototype.update;\n    Scene_Map.prototype.update = function() {\n        _Scene_Map_update.call(this);\n        if (hiddenFor > 0) {\n            hiddenFor--;\n        } else if ((this._fixtureFrames || 0) >= delay) {\n            this._fixtureBadge = { text: badge, x: Number(placement.x), y: Number(placement.y) };\n        }\n    };\n})();\n"
+}

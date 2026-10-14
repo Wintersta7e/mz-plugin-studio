@@ -1,0 +1,156 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Structs",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Struct fixture whose lists close with ];",
+    "help": "Fixture_Structs.js\n\nKeeps a list of entries and highlights the newest one.\nThe struct definitions sit after the code.",
+    "url": "https://example.invalid/Fixture_Structs",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Entries",
+      "text": "Entries",
+      "desc": "Entries listed at the start.",
+      "type": "array",
+      "default": "[]",
+      "rawType": "struct<Entry>[]",
+      "arrayType": "struct",
+      "structType": "Entry"
+    },
+    {
+      "id": "<id:3>",
+      "name": "Highlight",
+      "text": "Highlight",
+      "desc": "Color of the newest entry.",
+      "type": "struct",
+      "default": "{\"red\":\"255\",\"green\":\"224\",\"blue\":\"128\"}",
+      "rawType": "struct<Color>",
+      "structType": "Color"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Count",
+      "text": "Count",
+      "desc": "Number of entries kept.",
+      "type": "number",
+      "default": 4,
+      "min": 0,
+      "max": 20
+    },
+    {
+      "id": "<id:5>",
+      "name": "Heading",
+      "text": "Heading",
+      "desc": "Text drawn above the list.",
+      "type": "string",
+      "default": "Entries"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:6>",
+      "name": "AddEntry",
+      "text": "Add Entry",
+      "desc": "Adds an entry to the list.",
+      "args": [
+        {
+          "id": "<id:7>",
+          "name": "label",
+          "text": "Label",
+          "desc": "Text of the entry.",
+          "type": "string",
+          "default": "Entry"
+        },
+        {
+          "id": "<id:8>",
+          "name": "weight",
+          "text": "Weight",
+          "desc": "Sort weight of the entry.",
+          "type": "number",
+          "default": 1
+        }
+      ]
+    },
+    {
+      "id": "<id:9>",
+      "name": "ClearEntries",
+      "text": "ClearEntries",
+      "desc": "Removes every entry.",
+      "args": []
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:10>",
+      "name": "Entry",
+      "parameters": [
+        {
+          "id": "<id:11>",
+          "name": "label",
+          "text": "Label",
+          "desc": "",
+          "type": "string",
+          "default": "Entry"
+        },
+        {
+          "id": "<id:12>",
+          "name": "weight",
+          "text": "Weight",
+          "desc": "",
+          "type": "number",
+          "default": 1,
+          "min": 0
+        }
+      ]
+    },
+    {
+      "id": "<id:13>",
+      "name": "Color",
+      "parameters": [
+        {
+          "id": "<id:14>",
+          "name": "red",
+          "text": "Red",
+          "desc": "",
+          "type": "number",
+          "default": 255,
+          "min": 0,
+          "max": 255
+        },
+        {
+          "id": "<id:15>",
+          "name": "green",
+          "text": "Green",
+          "desc": "",
+          "type": "number",
+          "default": 224,
+          "min": 0,
+          "max": 255
+        },
+        {
+          "id": "<id:16>",
+          "name": "blue",
+          "text": "Blue",
+          "desc": "",
+          "type": "number",
+          "default": 128,
+          "min": 0,
+          "max": 255
+        }
+      ]
+    }
+  ],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @target MZ\n * @plugindesc Struct fixture whose lists close with ];\n * @author Example Author\n * @url https://example.invalid/Fixture_Structs\n *\n * @help Fixture_Structs.js\n *\n * Keeps a list of entries and highlights the newest one.\n * The struct definitions sit after the code.\n *\n * @param Entries\n * @text Entries\n * @desc Entries listed at the start.\n * @type struct<Entry>[]\n * @default []\n *\n * @param Highlight\n * @text Highlight\n * @desc Color of the newest entry.\n * @type struct<Color>\n * @default {\"red\":\"255\",\"green\":\"224\",\"blue\":\"128\"}\n *\n * @param Count\n * @text Count\n * @desc Number of entries kept.\n * @type number\n * @min 0\n * @max 20\n * @default 4\n *\n * @param Heading\n * @text Heading\n * @desc Text drawn above the list.\n * @type string\n * @default Entries\n *\n * @command AddEntry\n * @text Add Entry\n * @desc Adds an entry to the list.\n *\n * @arg label\n * @text Label\n * @desc Text of the entry.\n * @type string\n * @default Entry\n *\n * @arg weight\n * @text Weight\n * @desc Sort weight of the entry.\n * @type number\n * @default 1\n *\n * @command ClearEntries\n * @desc Removes every entry.\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_Structs');\n    const entries = JSON.parse(params['Entries'] || '[]').map(e => JSON.parse(e));\n    const highlight = JSON.parse(params['Highlight'] || '{}');\n    const count = Number(params['Count'] || 4);\n    const heading = String(params['Heading'] || 'Entries');\n\n    PluginManager.registerCommand('Fixture_Structs', 'AddEntry', args => {\n        entries.push({ label: args.label, weight: Number(args.weight || 1) });\n        while (entries.length > count) {\n            entries.shift();\n        }\n    });\n\n    PluginManager.registerCommand('Fixture_Structs', 'ClearEntries', () => {\n        entries.length = 0;\n    });\n\n    window.FixtureStructs = {\n        heading,\n        entries: () => entries.slice(),\n        highlight: () => `rgb(${highlight.red}, ${highlight.green}, ${highlight.blue})`\n    };\n})();\n\n/*~struct~Entry:\n * @param label\n * @text Label\n * @type string\n * @default Entry\n *\n * @param weight\n * @text Weight\n * @type number\n * @min 0\n * @default 1\n */\n\n/*~struct~Color:\n * @param red\n * @text Red\n * @type number\n * @min 0\n * @max 255\n * @default 255\n *\n * @param green\n * @text Green\n * @type number\n * @min 0\n * @max 255\n * @default 224\n *\n * @param blue\n * @text Blue\n * @type number\n * @min 0\n * @max 255\n * @default 128\n */\n"
+}

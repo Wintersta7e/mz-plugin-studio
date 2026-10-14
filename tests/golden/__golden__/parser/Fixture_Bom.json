@@ -1,0 +1,97 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Bom",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin saved with a byte order mark.",
+    "help": "Fixture_Bom.js\n\nPlays a sound effect with a prefix in the log.",
+    "url": "https://example.invalid/Fixture_Bom",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Volume",
+      "text": "Volume",
+      "desc": "Volume of the sound effect.",
+      "type": "number",
+      "default": 90,
+      "min": 0,
+      "max": 100
+    },
+    {
+      "id": "<id:3>",
+      "name": "Prefix",
+      "text": "Prefix",
+      "desc": "Text written before each log line.",
+      "type": "string",
+      "default": "Bom"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Offset",
+      "text": "Offset",
+      "desc": "Pan and pitch offsets.",
+      "type": "struct",
+      "default": "{\"pan\":\"0\",\"pitch\":\"100\"}",
+      "rawType": "struct<Offset>",
+      "structType": "Offset"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "PlayCue",
+      "text": "Play Cue",
+      "desc": "Plays a named sound effect.",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "cue",
+          "text": "Cue",
+          "desc": "Name of the sound effect.",
+          "type": "string",
+          "default": "Cursor1"
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Offset",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "pan",
+          "text": "Pan",
+          "desc": "",
+          "type": "number",
+          "default": 0,
+          "min": -100,
+          "max": 100
+        },
+        {
+          "id": "<id:9>",
+          "name": "pitch",
+          "text": "Pitch",
+          "desc": "",
+          "type": "number",
+          "default": 100,
+          "min": 50,
+          "max": 150
+        }
+      ]
+    }
+  ],
+  "codeBody": "(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_Bom');\n    const volume = Number(params['Volume'] || 90);\n    const prefix = String(params['Prefix'] || 'Bom');\n    const offset = JSON.parse(params['Offset'] || '{}');\n\n    PluginManager.registerCommand('Fixture_Bom', 'PlayCue', args => {\n        const se = { name: args.cue, volume, pitch: Number(offset.pitch || 100), pan: Number(offset.pan || 0) };\n        console.log(prefix + ': ' + se.name);\n        AudioManager.playSe(se);\n    });\n})();",
+  "customCode": "'use strict';\n\nconst params = PluginManager.parameters('Fixture_Bom');\nconst volume = Number(params['Volume'] || 90);\nconst prefix = String(params['Prefix'] || 'Bom');\nconst offset = JSON.parse(params['Offset'] || '{}');\n\nPluginManager.registerCommand('Fixture_Bom', 'PlayCue', args => {\n    const se = { name: args.cue, volume, pitch: Number(offset.pitch || 100), pan: Number(offset.pan || 0) };\n    console.log(prefix + ': ' + se.name);\n    AudioManager.playSe(se);\n});",
+  "rawSource": "﻿/*:\n * @target MZ\n * @plugindesc Fixture plugin saved with a byte order mark.\n * @author Example Author\n * @url https://example.invalid/Fixture_Bom\n *\n * @help Fixture_Bom.js\n *\n * Plays a sound effect with a prefix in the log.\n *\n * @param Volume\n * @text Volume\n * @desc Volume of the sound effect.\n * @type number\n * @min 0\n * @max 100\n * @default 90\n *\n * @param Prefix\n * @text Prefix\n * @desc Text written before each log line.\n * @type string\n * @default Bom\n *\n * @param Offset\n * @text Offset\n * @desc Pan and pitch offsets.\n * @type struct<Offset>\n * @default {\"pan\":\"0\",\"pitch\":\"100\"}\n *\n * @command PlayCue\n * @text Play Cue\n * @desc Plays a named sound effect.\n *\n * @arg cue\n * @text Cue\n * @desc Name of the sound effect.\n * @type string\n * @default Cursor1\n */\n\n/*~struct~Offset:\n * @param pan\n * @text Pan\n * @type number\n * @min -100\n * @max 100\n * @default 0\n *\n * @param pitch\n * @text Pitch\n * @type number\n * @min 50\n * @max 150\n * @default 100\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_Bom');\n    const volume = Number(params['Volume'] || 90);\n    const prefix = String(params['Prefix'] || 'Bom');\n    const offset = JSON.parse(params['Offset'] || '{}');\n\n    PluginManager.registerCommand('Fixture_Bom', 'PlayCue', args => {\n        const se = { name: args.cue, volume, pitch: Number(offset.pitch || 100), pan: Number(offset.pan || 0) };\n        console.log(prefix + ': ' + se.name);\n        AudioManager.playSe(se);\n    });\n})();\n"
+}

@@ -1,0 +1,103 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_NoIife",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin written without a wrapping function.",
+    "help": "Fixture_NoIife.js\n\nMoves the player a few tiles when the command runs.\nThe code sits at the top level of the file.",
+    "url": "https://example.invalid/Fixture_NoIife",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Step",
+      "text": "Step",
+      "desc": "Tiles moved per command.",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 8
+    },
+    {
+      "id": "<id:3>",
+      "name": "Title",
+      "text": "Title",
+      "desc": "Name shown in the log.",
+      "type": "string",
+      "default": "Fixture"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Start",
+      "text": "Start",
+      "desc": "Tile the player returns to.",
+      "type": "struct",
+      "default": "{\"mapId\":\"1\",\"x\":\"0\",\"y\":\"0\"}",
+      "rawType": "struct<Start>",
+      "structType": "Start"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "Nudge",
+      "text": "Nudge",
+      "desc": "Moves the player in a direction.",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "direction",
+          "text": "Direction",
+          "desc": "Direction to move (2, 4, 6 or 8).",
+          "type": "number",
+          "default": 2,
+          "min": 2,
+          "max": 8
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Start",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "mapId",
+          "text": "Map",
+          "desc": "",
+          "type": "map",
+          "default": 1
+        },
+        {
+          "id": "<id:9>",
+          "name": "x",
+          "text": "X",
+          "desc": "",
+          "type": "number",
+          "default": 0
+        },
+        {
+          "id": "<id:10>",
+          "name": "y",
+          "text": "Y",
+          "desc": "",
+          "type": "number",
+          "default": 0
+        }
+      ]
+    }
+  ],
+  "codeBody": "var Fixture = Fixture || {};\nFixture.NoIife = Fixture.NoIife || {};\n\nvar prm = PluginManager.parameters(\n    'Fixture_NoIife'\n);\nFixture.NoIife.step = Number(prm.Step || 2);\nFixture.NoIife.title = String(prm.Title || 'Fixture');\nFixture.NoIife.start = JSON.parse(prm.Start || '{}');\n\nPluginManager.registerCommand('Fixture_NoIife', 'Nudge', function(args) {\n    var direction = Number(args.direction || 2);\n    for (var i = 0; i < Fixture.NoIife.step; i++) {\n        $gamePlayer.moveStraight(direction);\n    }\n    console.log(Fixture.NoIife.title + ': ' + direction);\n});\n\nFixture.NoIife._Game_Player_reserveTransfer = Game_Player.prototype.reserveTransfer;\nGame_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {\n    var start = Fixture.NoIife.start;\n    if (mapId === 0) {\n        mapId = Number(start.mapId);\n        x = Number(start.x);\n        y = Number(start.y);\n    }\n    Fixture.NoIife._Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);\n};",
+  "customCode": "Fixture.NoIife._Game_Player_reserveTransfer = Game_Player.prototype.reserveTransfer;\nGame_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {\n    var start = Fixture.NoIife.start;\n    if (mapId === 0) {\n        mapId = Number(start.mapId);\n        x = Number(start.x);\n        y = Number(start.y);\n    }\n    Fixture.NoIife._Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);\n};",
+  "rawSource": "/*:\n * @target MZ\n * @plugindesc Fixture plugin written without a wrapping function.\n * @author Example Author\n * @url https://example.invalid/Fixture_NoIife\n *\n * @help Fixture_NoIife.js\n *\n * Moves the player a few tiles when the command runs.\n * The code sits at the top level of the file.\n *\n * @param Step\n * @text Step\n * @desc Tiles moved per command.\n * @type number\n * @min 1\n * @max 8\n * @default 2\n *\n * @param Title\n * @text Title\n * @desc Name shown in the log.\n * @type string\n * @default Fixture\n *\n * @param Start\n * @text Start\n * @desc Tile the player returns to.\n * @type struct<Start>\n * @default {\"mapId\":\"1\",\"x\":\"0\",\"y\":\"0\"}\n *\n * @command Nudge\n * @text Nudge\n * @desc Moves the player in a direction.\n *\n * @arg direction\n * @text Direction\n * @desc Direction to move (2, 4, 6 or 8).\n * @type number\n * @min 2\n * @max 8\n * @default 2\n */\n\n/*~struct~Start:\n * @param mapId\n * @text Map\n * @type map\n * @default 1\n *\n * @param x\n * @text X\n * @type number\n * @default 0\n *\n * @param y\n * @text Y\n * @type number\n * @default 0\n */\n\nvar Fixture = Fixture || {};\nFixture.NoIife = Fixture.NoIife || {};\n\nvar prm = PluginManager.parameters(\n    'Fixture_NoIife'\n);\nFixture.NoIife.step = Number(prm.Step || 2);\nFixture.NoIife.title = String(prm.Title || 'Fixture');\nFixture.NoIife.start = JSON.parse(prm.Start || '{}');\n\nPluginManager.registerCommand('Fixture_NoIife', 'Nudge', function(args) {\n    var direction = Number(args.direction || 2);\n    for (var i = 0; i < Fixture.NoIife.step; i++) {\n        $gamePlayer.moveStraight(direction);\n    }\n    console.log(Fixture.NoIife.title + ': ' + direction);\n});\n\nFixture.NoIife._Game_Player_reserveTransfer = Game_Player.prototype.reserveTransfer;\nGame_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {\n    var start = Fixture.NoIife.start;\n    if (mapId === 0) {\n        mapId = Number(start.mapId);\n        x = Number(start.x);\n        y = Number(start.y);\n    }\n    Fixture.NoIife._Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);\n};\n"
+}

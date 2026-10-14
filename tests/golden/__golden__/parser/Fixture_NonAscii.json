@@ -1,0 +1,95 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_NonAscii",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin with non-ASCII text — café, naïve, 日本語 ★",
+    "help": "Fixture_NonAscii.js\n\nGreets the party in several scripts: Grüße, Привет, こんにちは.",
+    "url": "https://example.invalid/Fixture_NonAscii",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Pause",
+      "text": "待機フレーム",
+      "desc": "Frames to wait between greetings (×1 … ×60).",
+      "type": "number",
+      "default": 30,
+      "min": 1,
+      "max": 60
+    },
+    {
+      "id": "<id:3>",
+      "name": "Greeting",
+      "text": "Grußwort",
+      "desc": "Greeting shown first — «bonjour».",
+      "type": "string",
+      "default": "こんにちは"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Symbol",
+      "text": "Symbole",
+      "desc": "Symbol drawn beside the greeting.",
+      "type": "struct",
+      "default": "{\"char\":\"★\",\"size\":\"28\"}",
+      "rawType": "struct<Glyph>",
+      "structType": "Glyph"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "Greet",
+      "text": "Begrüßen",
+      "desc": "Shows the greeting — «salut».",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "name",
+          "text": "Name",
+          "desc": "Name added after the greeting.",
+          "type": "string",
+          "default": "Zoë"
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Glyph",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "char",
+          "text": "Zeichen",
+          "desc": "",
+          "type": "string",
+          "default": "★"
+        },
+        {
+          "id": "<id:9>",
+          "name": "size",
+          "text": "Größe",
+          "desc": "",
+          "type": "number",
+          "default": 28,
+          "min": 8,
+          "max": 64
+        }
+      ]
+    }
+  ],
+  "codeBody": "(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_NonAscii');\n    const pause = Number(params['Pause'] || 30);\n    const greeting = String(params['Greeting'] || 'こんにちは');\n    const glyph = JSON.parse(params['Symbol'] || '{\"char\":\"★\",\"size\":\"28\"}');\n    const separator = '、';\n\n    PluginManager.registerCommand('Fixture_NonAscii', 'Greet', args => {\n        const name = String(args.name || 'Zoë');\n        $gameMessage.add(glyph.char + ' ' + greeting + separator + name + ' — ¡hola!');\n        $gameMap._interpreter.wait(pause);\n    });\n})();",
+  "customCode": "'use strict';\n\nconst params = PluginManager.parameters('Fixture_NonAscii');\nconst pause = Number(params['Pause'] || 30);\nconst greeting = String(params['Greeting'] || 'こんにちは');\nconst glyph = JSON.parse(params['Symbol'] || '{\"char\":\"★\",\"size\":\"28\"}');\nconst separator = '、';\n\nPluginManager.registerCommand('Fixture_NonAscii', 'Greet', args => {\n    const name = String(args.name || 'Zoë');\n    $gameMessage.add(glyph.char + ' ' + greeting + separator + name + ' — ¡hola!');\n    $gameMap._interpreter.wait(pause);\n});",
+  "rawSource": "/*:\n * @target MZ\n * @plugindesc Fixture plugin with non-ASCII text — café, naïve, 日本語 ★\n * @author Example Author\n * @url https://example.invalid/Fixture_NonAscii\n *\n * @help Fixture_NonAscii.js\n *\n * Greets the party in several scripts: Grüße, Привет, こんにちは.\n *\n * @param Pause\n * @text 待機フレーム\n * @desc Frames to wait between greetings (×1 … ×60).\n * @type number\n * @min 1\n * @max 60\n * @default 30\n *\n * @param Greeting\n * @text Grußwort\n * @desc Greeting shown first — «bonjour».\n * @type string\n * @default こんにちは\n *\n * @param Symbol\n * @text Symbole\n * @desc Symbol drawn beside the greeting.\n * @type struct<Glyph>\n * @default {\"char\":\"★\",\"size\":\"28\"}\n *\n * @command Greet\n * @text Begrüßen\n * @desc Shows the greeting — «salut».\n *\n * @arg name\n * @text Name\n * @desc Name added after the greeting.\n * @type string\n * @default Zoë\n */\n\n/*~struct~Glyph:\n * @param char\n * @text Zeichen\n * @type string\n * @default ★\n *\n * @param size\n * @text Größe\n * @type number\n * @min 8\n * @max 64\n * @default 28\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_NonAscii');\n    const pause = Number(params['Pause'] || 30);\n    const greeting = String(params['Greeting'] || 'こんにちは');\n    const glyph = JSON.parse(params['Symbol'] || '{\"char\":\"★\",\"size\":\"28\"}');\n    const separator = '、';\n\n    PluginManager.registerCommand('Fixture_NonAscii', 'Greet', args => {\n        const name = String(args.name || 'Zoë');\n        $gameMessage.add(glyph.char + ' ' + greeting + separator + name + ' — ¡hola!');\n        $gameMap._interpreter.wait(pause);\n    });\n})();\n"
+}

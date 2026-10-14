@@ -1,0 +1,102 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_EnJaOnly",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin with English and Japanese blocks only.",
+    "help": "Fixture_EnJaOnly.js\n\nChanges the battle speed and draws a frame around the status window.",
+    "url": "https://example.invalid/Fixture_EnJaOnly",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {
+      "ja": {
+        "description": "英語と日本語のブロックだけを持つフィクスチャ",
+        "help": "Fixture_EnJaOnly.js\n\n戦闘速度を変更し、ステータスウィンドウに枠を描きます。"
+      }
+    }
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Rate",
+      "text": "Rate",
+      "desc": "Battle speed multiplier.",
+      "type": "number",
+      "default": 2,
+      "min": 1,
+      "max": 4
+    },
+    {
+      "id": "<id:3>",
+      "name": "Title",
+      "text": "Title",
+      "desc": "Title drawn above the status window.",
+      "type": "string",
+      "default": "Status"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Frame",
+      "text": "Frame",
+      "desc": "Frame drawn around the status window.",
+      "type": "struct",
+      "default": "{\"thickness\":\"2\",\"color\":\"#ffffff\"}",
+      "rawType": "struct<Frame>",
+      "structType": "Frame"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "SetRate",
+      "text": "Set Rate",
+      "desc": "Changes the battle speed multiplier.",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "rate",
+          "text": "Rate",
+          "desc": "New multiplier.",
+          "type": "number",
+          "default": 1,
+          "min": 1,
+          "max": 4
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Frame",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "thickness",
+          "text": "Thickness",
+          "desc": "",
+          "type": "number",
+          "default": 2,
+          "min": 0,
+          "max": 8
+        },
+        {
+          "id": "<id:9>",
+          "name": "color",
+          "text": "Color",
+          "desc": "",
+          "type": "string",
+          "default": "#ffffff"
+        }
+      ]
+    }
+  ],
+  "codeBody": "(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_EnJaOnly');\n    let rate = Number(params['Rate'] || 2);\n    const title = String(params['Title'] || 'Status');\n    const frame = JSON.parse(params['Frame'] || '{}');\n\n    PluginManager.registerCommand('Fixture_EnJaOnly', 'SetRate', args => {\n        rate = Number(args.rate || 1);\n    });\n\n    const _BattleManager_update = BattleManager.update;\n    BattleManager.update = function(timeActive) {\n        for (let i = 0; i < rate; i++) {\n            _BattleManager_update.call(this, timeActive);\n        }\n    };\n\n    const _Window_BattleStatus_refresh = Window_BattleStatus.prototype.refresh;\n    Window_BattleStatus.prototype.refresh = function() {\n        _Window_BattleStatus_refresh.call(this);\n        this.contents.fontSize = 18;\n        this.drawText(title, 0, 0, this.innerWidth, 'center');\n        this._fixtureFrame = { thickness: Number(frame.thickness || 0), color: frame.color };\n    };\n})();",
+  "customCode": "const _BattleManager_update = BattleManager.update;\nBattleManager.update = function(timeActive) {\n    for (let i = 0; i < rate; i++) {\n        _BattleManager_update.call(this, timeActive);\n    }\n};\n\nconst _Window_BattleStatus_refresh = Window_BattleStatus.prototype.refresh;\nWindow_BattleStatus.prototype.refresh = function() {\n    _Window_BattleStatus_refresh.call(this);\n    this.contents.fontSize = 18;\n    this.drawText(title, 0, 0, this.innerWidth, 'center');\n    this._fixtureFrame = { thickness: Number(frame.thickness || 0), color: frame.color };\n};",
+  "rawSource": "/*:en\n * @target MZ\n * @plugindesc Fixture plugin with English and Japanese blocks only.\n * @author Example Author\n * @url https://example.invalid/Fixture_EnJaOnly\n *\n * @help Fixture_EnJaOnly.js\n *\n * Changes the battle speed and draws a frame around the status window.\n *\n * @param Rate\n * @text Rate\n * @desc Battle speed multiplier.\n * @type number\n * @min 1\n * @max 4\n * @default 2\n *\n * @param Title\n * @text Title\n * @desc Title drawn above the status window.\n * @type string\n * @default Status\n *\n * @param Frame\n * @text Frame\n * @desc Frame drawn around the status window.\n * @type struct<Frame>\n * @default {\"thickness\":\"2\",\"color\":\"#ffffff\"}\n *\n * @command SetRate\n * @text Set Rate\n * @desc Changes the battle speed multiplier.\n *\n * @arg rate\n * @text Rate\n * @desc New multiplier.\n * @type number\n * @min 1\n * @max 4\n * @default 1\n */\n\n/*:ja\n * @target MZ\n * @plugindesc 英語と日本語のブロックだけを持つフィクスチャ\n * @author Example Author\n * @url https://example.invalid/Fixture_EnJaOnly\n *\n * @help Fixture_EnJaOnly.js\n *\n * 戦闘速度を変更し、ステータスウィンドウに枠を描きます。\n *\n * @param Rate\n * @text 倍率\n * @desc 戦闘速度の倍率\n * @type number\n * @min 1\n * @max 4\n * @default 2\n *\n * @param Title\n * @text 見出し\n * @desc ステータスウィンドウの見出し\n * @type string\n * @default ステータス\n *\n * @param Frame\n * @text 枠\n * @desc ステータスウィンドウの枠\n * @type struct<Frame>\n * @default {\"thickness\":\"2\",\"color\":\"#ffffff\"}\n *\n * @command SetRate\n * @text 倍率変更\n * @desc 戦闘速度の倍率を変更します。\n *\n * @arg rate\n * @text 倍率\n * @desc 新しい倍率\n * @type number\n * @min 1\n * @max 4\n * @default 1\n */\n\n/*~struct~Frame:\n * @param thickness\n * @text Thickness\n * @type number\n * @min 0\n * @max 8\n * @default 2\n *\n * @param color\n * @text Color\n * @type string\n * @default #ffffff\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_EnJaOnly');\n    let rate = Number(params['Rate'] || 2);\n    const title = String(params['Title'] || 'Status');\n    const frame = JSON.parse(params['Frame'] || '{}');\n\n    PluginManager.registerCommand('Fixture_EnJaOnly', 'SetRate', args => {\n        rate = Number(args.rate || 1);\n    });\n\n    const _BattleManager_update = BattleManager.update;\n    BattleManager.update = function(timeActive) {\n        for (let i = 0; i < rate; i++) {\n            _BattleManager_update.call(this, timeActive);\n        }\n    };\n\n    const _Window_BattleStatus_refresh = Window_BattleStatus.prototype.refresh;\n    Window_BattleStatus.prototype.refresh = function() {\n        _Window_BattleStatus_refresh.call(this);\n        this.contents.fontSize = 18;\n        this.drawText(title, 0, 0, this.innerWidth, 'center');\n        this._fixtureFrame = { thickness: Number(frame.thickness || 0), color: frame.color };\n    };\n})();\n"
+}
