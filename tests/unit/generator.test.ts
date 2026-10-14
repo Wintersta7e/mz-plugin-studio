@@ -9,6 +9,7 @@ import {
   generateHeaderOnly
 } from '../../src/renderer/src/lib/generator/index'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
+import { compilePlugin } from '../helpers/evaluate-plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {
@@ -221,7 +222,7 @@ describe('generatePlugin', () => {
       ]
     })
     const code = generatePlugin(plugin)
-    expect(() => new Function(code)).not.toThrow()
+    expect(compilePlugin(code, 'plugin.js')).toBeNull()
   })
 
   it('generates struct definition blocks', () => {
