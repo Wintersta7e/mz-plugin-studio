@@ -21,7 +21,9 @@
     "build:linux": "npm run build && electron-builder --linux",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
-    "test:golden": "node node_modules/vitest/vitest.mjs run --project golden"
+    "test:coverage": "node node_modules/vitest/vitest.mjs run --coverage && node scripts/check-coverage.mjs suite",
+    "test:golden": "node node_modules/vitest/vitest.mjs run --project golden",
+    "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

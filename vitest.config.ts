@@ -15,6 +15,14 @@ export default defineConfig({
   test: {
     globals: true,
     update: 'none',
+    // Floors live in scripts/check-coverage.mjs, so a golden-only run never meets suite floors.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['**/*.d.ts'],
+      reporter: ['text-summary', 'json-summary', 'json'],
+      reportsDirectory: 'coverage'
+    },
     projects: [
       {
         extends: true,
