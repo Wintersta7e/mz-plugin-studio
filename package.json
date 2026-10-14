@@ -55,7 +55,7 @@
     "autoprefixer": "^10.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "electron": "^41.2.1",
+    "electron": "^41.10.7",
     "electron-builder": "^26.0.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.4",

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security
+
+- Electron is updated to 41.10.7, which fixes eight published Electron security advisories.
+
 ### Changed
 
 - The app package no longer contains test files, documentation or libraries the app does not load.
