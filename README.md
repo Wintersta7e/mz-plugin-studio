@@ -26,8 +26,6 @@ MZ Plugin Studio provides a complete visual development environment for creating
 - **Project Integration** - Load your MZ project for auto-populated dropdowns
 - **Full Format Support** - All 26 parameter types, multi-language, structs, and arrays
 
-<img src="screenshots/overview.png" alt="MZ Plugin Studio" width="800">
-
 ## Features
 
 ### Plugin Building
@@ -38,8 +36,6 @@ MZ Plugin Studio provides a complete visual development environment for creating
 - **Multi-language** - Japanese (ja) and Chinese (zh) localization tabs
 
 ### Parameter Types
-
-<img src="screenshots/parameter-builder.png" alt="Parameter Builder" width="700">
 
 All 26 RPG Maker MZ parameter types are fully supported:
 
@@ -62,13 +58,7 @@ All 26 RPG Maker MZ parameter types are fully supported:
 | `@on` / `@off` | Boolean labels |
 | `@option` / `@value` | Select options |
 
-### Plugin Commands
-
-<img src="screenshots/command-builder.png" alt="Command Builder" width="700">
-
 ### Code Template Library
-
-<img src="screenshots/template-inserter.png" alt="Template Inserter" width="700">
 
 36 templates across 14 categories to jumpstart your plugins:
 
