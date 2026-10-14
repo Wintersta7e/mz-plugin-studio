@@ -20,7 +20,7 @@ Run the executable from the `dist/` folder after building with `npm run build:wi
 When you first open MZ Plugin Studio, you'll see:
 - An empty sidebar on the left (your plugin list)
 - The main editing area (currently empty)
-- A toolbar at the top with project and plugin controls
+- Project and plugin controls in the sidebar
 
 ---
 
@@ -40,13 +40,13 @@ Tabs for different aspects of your plugin:
 | **Parameters** | Configuration options users can set |
 | **Commands** | Plugin commands callable from events |
 | **Structs** | Complex nested data structures |
-| **Code** | Generated JavaScript preview |
+| **Code** | Your plugin's own code (editable) |
 
 ### Code Editor (Left Panel - Code Tab)
 - **Monaco Editor** - Same editor used in VS Code
-- **MZ Autocomplete** - 139 RPG Maker MZ classes and 28 global objects with IntelliSense, sorted by real-world popularity
-- **Code Snippets** - Type `alias`, `register`, `param`, or `window` for quick scaffolding
-- **Template Insertion** - Click the puzzle piece icon to browse and insert code templates
+- **MZ Autocomplete** - RPG Maker MZ classes and global objects with IntelliSense, sorted by real-world popularity
+- **Code Snippets** - Type a snippet prefix such as `alias` or `plugincmd` for quick scaffolding
+- **Template Insertion** - Click **Insert Template** (the wand icon) to browse and insert code templates
 
 ### Generated Code Preview (Right Panel)
 - Real-time JavaScript preview (read-only)
@@ -93,7 +93,7 @@ Switch to the **Code** tab to write your plugin's implementation logic. Code ske
 In the Code tab, click the template icon to add boilerplate code for common patterns.
 
 ### Step 7: Export
-Click the export button or use **Ctrl+E** to save your plugin.
+With a project loaded, press **Ctrl+S** or click **Export** to save your plugin to the project's `js/plugins/` folder. Without a project, click **Export** and choose where to save.
 
 ---
 
@@ -227,6 +227,15 @@ Text: Target Map
 Type: map
 Default: 1
 ```
+
+**Example: Location**
+```
+Name: startPosition
+Text: Start Position
+Type: location
+```
+
+MZ shows a map-and-position picker. The generated code reads the value as an object with `mapId`, `x` and `y`, each a string of digits (`"0"` when unset); convert with `Number()` before use.
 
 #### Advanced Types
 
@@ -497,7 +506,7 @@ Templates provide ready-to-use code patterns for common plugin tasks.
 ### Accessing Templates
 
 1. Go to the **Code** tab
-2. Click the **template icon** (puzzle piece) in the toolbar
+2. Click **Insert Template** (the wand icon) in the code editor
 3. Browse categories, search by name, or check your **Favorites** and **Recently Used**
 4. Select a template
 5. Configure the template options
@@ -688,6 +697,10 @@ This generates:
  * @noteData actors
 ```
 
+### Required Assets
+
+Files your plugin loads by name, which no database entry or event references, are excluded when a game is deployed with unused files removed. List them in **Required Assets** on the **Meta** tab, one path per line (for example `img/pictures/Logo`); each becomes a `@requiredAssets` line.
+
 ---
 
 ## Auto-Documentation
@@ -714,9 +727,13 @@ Loading your RPG Maker MZ project enables powerful features.
 
 ### Loading a Project
 
-1. Click the **folder icon** in the toolbar
+1. Click **Open Project** in the sidebar
 2. Navigate to your RPG Maker MZ project folder
 3. Select the folder (the one containing `Game.rpgproject`)
+
+### Plugin Browser
+
+With a project loaded, press **Ctrl+Shift+E** or click **Plugin Browser** in the sidebar to list every `.js` file in the project's `js/plugins/` folder. Search by name, filter or sort the list, and click a plugin to open it.
 
 ### Benefits of Loading a Project
 
@@ -756,8 +773,8 @@ You can import existing .js plugins to edit them.
 
 ### Importing a Plugin
 
-1. Click **File > Open** or use **Ctrl+O**
-2. Select a .js plugin file
+1. Load the project the plugin belongs to (see Project Integration)
+2. Open the **Plugin Browser** (**Ctrl+Shift+E**) and click the plugin
 3. The plugin metadata, parameters, and commands are parsed and loaded
 
 ### What Gets Imported
@@ -779,13 +796,13 @@ You can import existing .js plugins to edit them.
 
 - Make a backup of your original plugin
 - After importing, review all parameters for accuracy
-- Use **Raw Mode** to preserve the original code body exactly (see below)
+- Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
 
 ---
 
 ## Raw Mode
 
-When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode lets you edit structured metadata while preserving the original code body.
+When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
 
 ### Auto-Enable
 
@@ -801,7 +818,7 @@ Raw mode is **automatically enabled** when you import an existing plugin. This e
 
 1. Import a plugin (raw mode is auto-enabled, the **Raw** button is active)
 2. The output regenerates header blocks (main header, localized headers, struct definitions)
-3. The code body remains exactly as the original author wrote it
+3. Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
 4. **New parameters** added in the UI are automatically injected into the code body after the parameter loading section
 5. **New commands** added in the UI get `registerCommand` calls injected before the closing IIFE
 6. **New struct definitions** are added as new `/*~struct~` blocks
@@ -826,9 +843,10 @@ If the original plugin has text before the `/*:` annotation block (license heade
 ### Export Options
 
 **Export as .js Plugin**
-1. Click the **Export** button or **Ctrl+S**
-2. If a project is loaded, saves to `js/plugins/YourPlugin.js`
-3. If no project, opens a save dialog
+1. With a project loaded, click **Export** or press **Ctrl+S**: the plugin is saved to `js/plugins/YourPlugin.js`, and a file of the same name there is replaced without asking
+2. Without a project, click **Export** and choose where to save; **Ctrl+S** does nothing
+
+**Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, replacing files of the same name without asking, and reports how many were saved and how many failed.
 
 **Export in Other Formats**
 Click the **chevron dropdown** next to the Export button:
@@ -1033,7 +1051,7 @@ If the app shows a red error screen with a stack trace, this is the built-in err
 
 **Solutions:**
 1. Run `npm install` again
-2. Ensure Node.js 18 or later
+2. Ensure your Node.js version is the one `.github/workflows/ci.yml` uses
 3. Delete `node_modules` and reinstall
 
 ---
