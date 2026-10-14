@@ -4,7 +4,7 @@ This guide explains how to add new code templates to MZ Plugin Studio's template
 
 ## Overview
 
-The template system currently includes **36 templates** organized into **14 categories**. Each template presents a form-based UI where users configure options, then generates valid RPG Maker MZ JavaScript code based on those inputs.
+The template system groups its templates into categories. Each template presents a form-based UI where users configure options, then generates valid RPG Maker MZ JavaScript code based on those inputs.
 
 Templates live in:
 
@@ -18,20 +18,20 @@ Key files:
 |------|---------|
 | `types.ts` | TypeScript interfaces (`CodeTemplate`, `TemplateField`, `CategoryInfo`, etc.) |
 | `index.ts` | Template registry (`registerTemplate`, `getAllTemplates`, `getTemplatesByCategory`, etc.) |
-| `method-alias.ts` | Method Aliasing templates (1 template) |
-| `custom-window.ts` | Custom Windows templates (4 templates) |
-| `scene-hooks.ts` | Scene Hooks templates (1 template) |
-| `database-ext.ts` | Notetag templates (1 template) |
-| `plugin-commands.ts` | Plugin Command templates (3 templates) |
-| `save-load.ts` | Save/Load templates (1 template) |
-| `input-handler.ts` | Input Handler templates (1 template) |
-| `battle-system.ts` | Battle System templates (4 templates) |
-| `sprite-system.ts` | Sprite System templates (3 templates) |
-| `map-events.ts` | Map & Events templates (4 templates) |
-| `menu-system.ts` | Menu System templates (4 templates) |
-| `audio-system.ts` | Audio System templates (3 templates) |
-| `message-system.ts` | Message System templates (3 templates) |
-| `actor-party.ts` | Actor & Party templates (3 templates) |
+| `method-alias.ts` | Method Aliasing templates |
+| `custom-window.ts` | Custom Windows templates |
+| `scene-hooks.ts` | Scene Hooks templates |
+| `database-ext.ts` | Notetag templates |
+| `plugin-commands.ts` | Plugin Command templates |
+| `save-load.ts` | Save/Load templates |
+| `input-handler.ts` | Input Handler templates |
+| `battle-system.ts` | Battle System templates |
+| `sprite-system.ts` | Sprite System templates |
+| `map-events.ts` | Map & Events templates |
+| `menu-system.ts` | Menu System templates |
+| `audio-system.ts` | Audio System templates |
+| `message-system.ts` | Message System templates |
+| `actor-party.ts` | Actor & Party templates |
 
 The UI component that renders templates is `TemplateInserter.tsx` in `src/renderer/src/components/plugin/`.
 
@@ -187,7 +187,7 @@ export const CATEGORIES: CategoryInfo[] = [
     name: 'My Category',
     description: 'Brief description of what these templates do',
     icon: 'Code',        // Lucide icon name
-    order: 15            // Position in sidebar (after existing 14 categories)
+    order: 15            // Position in sidebar (after the existing categories)
   }
 ]
 ```

@@ -1,53 +1,36 @@
 # MZ Plugin Studio
 
-> **⚠️ Archived — this project is no longer actively maintained.**
-> The repository is feature-complete at **v1.6.0** and has been set read-only. Issues and pull requests are closed, and dependency updates are no longer applied. The code remains available under the MIT license; feel free to fork.
-
-A visual no-code plugin builder for RPG Maker MZ. Create professional-quality plugins without writing JavaScript.
+A desktop editor for RPG Maker MZ plugins. You define parameters, commands and structs in forms; it writes the annotation block and the parameter-parsing code, and you add the plugin's behaviour in its code editor or from templates.
 
 [![CI](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml)
-![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-
-> **Part of [MZ DevKit](https://github.com/topics/mz-devkit)** — a suite of visual tools for RPG Maker MZ:
-> [`mz-plugin-studio`](https://github.com/Wintersta7e/mz-plugin-studio) (plugins) ·
-> [`mz-interaction-builder`](https://github.com/Wintersta7e/mz-interaction-builder) (dialogue trees) ·
-> [`mz-scene-builder`](https://github.com/Wintersta7e/mz-scene-builder) (timelines / cutscenes)
 
 ## Overview
 
-MZ Plugin Studio provides a complete visual development environment for creating RPG Maker MZ plugins:
-
 - **Visual Editors** - Build plugins through intuitive forms instead of writing code
 - **Real-time Preview** - See generated JavaScript update as you make changes
-- **Code Templates** - 36 ready-to-use templates covering common plugin patterns
+- **Code Templates** - Ready-to-use templates covering common plugin patterns
 - **Project Integration** - Load your MZ project for auto-populated dropdowns
-- **Full Format Support** - All 26 parameter types, multi-language, structs, and arrays
-
-<img src="screenshots/overview.png" alt="MZ Plugin Studio" width="800">
+- **Full Format Support** - The parameter types listed below, multi-language, structs, and arrays
 
 ## Features
 
 ### Plugin Building
 - **Metadata Editor** - Name, version, author, description, help text, URL
-- **Parameter Builder** - All 26 MZ parameter types with grouped dropdown, progressive disclosure, drag-and-drop reordering, inline validation, bulk operations, and presets
+- **Parameter Builder** - Every supported parameter type with grouped dropdown, progressive disclosure, drag-and-drop reordering, inline validation, bulk operations, and presets
 - **Command Builder** - Plugin commands with typed arguments
 - **Struct Definitions** - Complex nested data structures
 - **Multi-language** - Japanese (ja) and Chinese (zh) localization tabs
 
 ### Parameter Types
 
-<img src="screenshots/parameter-builder.png" alt="Parameter Builder" width="700">
-
-All 26 RPG Maker MZ parameter types are fully supported:
+The parameter types the app supports:
 
 | Category | Types |
 |----------|-------|
 | **Basic** | string, number, boolean, select, combo, note, text, hidden |
-| **Game Data** | variable, switch, actor, class, skill, item, weapon, armor, enemy, troop, state, animation, tileset, common_event, map, icon |
-| **Advanced** | file (with @require), struct, array, color |
+| **Game Data** | variable, switch, actor, class, skill, item, weapon, armor, enemy, troop, state, animation, tileset, common_event, map, location, icon |
+| **Advanced** | file, struct, array, color |
 
 ### Parameter Attributes
 | Attribute | Description |
@@ -62,32 +45,26 @@ All 26 RPG Maker MZ parameter types are fully supported:
 | `@on` / `@off` | Boolean labels |
 | `@option` / `@value` | Select options |
 
-### Plugin Commands
-
-<img src="screenshots/command-builder.png" alt="Command Builder" width="700">
-
 ### Code Template Library
 
-<img src="screenshots/template-inserter.png" alt="Template Inserter" width="700">
+Templates are grouped by category:
 
-36 templates across 14 categories to jumpstart your plugins:
-
-| Category | Templates | Description |
-|----------|-----------|-------------|
-| **Method Alias** | 1 | Extend existing MZ classes safely (139 classes, 644 methods) |
-| **Custom Window** | 4 | Windows, HUDs, popups, gauges |
-| **Scene Hooks** | 1 | Hook into scene lifecycle |
-| **Database Extension** | 1 | Add note tag parsing |
-| **Plugin Commands** | 3 | Basic, async, and validated commands |
-| **Save/Load** | 1 | Persistent data storage |
-| **Input Handler** | 1 | Keyboard and gamepad input |
-| **Battle System** | 4 | Actions, damage, turn hooks |
-| **Sprite System** | 3 | Custom sprites and animations |
-| **Map Events** | 4 | Event spawning, movement, transfers |
-| **Menu System** | 4 | Custom scenes, title mods, options |
-| **Audio System** | 3 | BGM control, SFX, crossfades |
-| **Message System** | 3 | Text codes, window mods, choices |
-| **Actor/Party** | 3 | Custom properties, party management |
+| Category | Covers |
+|----------|--------|
+| **Method Aliasing** | Extend existing MZ classes safely |
+| **Custom Windows** | Windows, HUDs, popups, gauges |
+| **Scene Hooks** | Hook into scene lifecycle |
+| **Notetags** | Add note tag parsing |
+| **Plugin Commands** | Basic, async, and validated commands |
+| **Save/Load** | Persistent data storage |
+| **Input Handler** | Keyboard and gamepad input |
+| **Battle System** | Actions, damage, turn hooks |
+| **Sprites** | Custom sprites and animations |
+| **Map & Events** | Event spawning, movement, transfers |
+| **Menu System** | Custom scenes, title mods, options |
+| **Audio** | BGM control, SFX, crossfades |
+| **Messages** | Text codes, window mods, choices |
+| **Actor & Party** | Custom properties, party management |
 
 ### Code Editor
 - **Monaco Editor** - Same editor as VS Code
@@ -95,13 +72,13 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Real-time Generation** - Code updates as you edit
 - **Template Insertion** - One-click template insertion
 - **Validation** - Real-time error and warning display
-- **Raw Mode** - Imported plugins can regenerate headers only, preserving original code body verbatim
+- **Raw Mode** - Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
 - **Diff View** - Side-by-side comparison of generated output vs saved file
 - **Export Formats** - Export as .js, README.md, .d.ts type declarations, or plugins.json entry
 
 ### Project Integration
 - **Load MZ Projects** - Select your project folder
-- **Auto-populate Dropdowns** - All 14 MZ database types (actors, classes, skills, items, weapons, armors, enemies, troops, states, animations, tilesets, common events, switches, variables)
+- **Auto-populate Dropdowns** - Database entries (actors, classes, skills, items, weapons, armors, enemies, troops, states, animations, tilesets, common events, switches, variables)
 - **Direct Export** - Save plugins to `js/plugins/` folder
 - **Import Existing** - Parse and edit existing .js plugins
 
@@ -114,8 +91,7 @@ All 26 RPG Maker MZ parameter types are fully supported:
 - **Bulk Parameter Operations** - Multi-select, duplicate, delete, export/import parameters, reusable presets
 - **Note Parameters** - Declare `@noteParam` groups for RPG Maker deployment packager
 - **Dark/Light Theme** - Toggle between dark and light modes with full Monaco editor theme sync
-- **Keyboard Shortcuts** - Press F1 for shortcuts panel (Ctrl+S/N/O, Ctrl+Shift+S save all, Ctrl+B toggle preview, Ctrl+Shift+E toggle plugin browser, Ctrl+1-5 tab switching, F5 regenerate)
-- **Auto-Update** - Checks for new versions via GitHub Releases with status bar notification
+- **Keyboard Shortcuts** - Press F1 for all shortcuts
 - **Accessibility** - ARIA labels and live regions across sidebar, status bar, and toasts
 - **Struct Default Editor** - Visual inline form for struct parameter defaults with real-time JSON validation, "Fill from struct defaults" button, and type-appropriate inputs
 - **Validation** - Warns about unused structs, orphaned parent references, unimplemented commands, and invalid struct default JSON
@@ -124,8 +100,8 @@ All 26 RPG Maker MZ parameter types are fully supported:
 ## Installation
 
 ### Prerequisites
-- Node.js 18 or later
-- npm or yarn
+- Node.js — the version `.github/workflows/ci.yml` uses
+- npm
 
 ### Setup
 
@@ -135,9 +111,6 @@ cd mz-plugin-studio
 
 # Install dependencies
 npm install
-
-# On WSL or Windows mounted drives, use:
-npm install --no-bin-links
 ```
 
 ## Development
@@ -149,7 +122,7 @@ npm run dev
 # Type check only
 npm run typecheck
 
-# Run tests (411 tests)
+# Run tests
 npm test
 
 # Build for production
@@ -165,17 +138,10 @@ npm run format
 ## Building for Distribution
 
 ```bash
-# Windows
 npm run build:win
-
-# macOS
-npm run build:mac
-
-# Linux
-npm run build:linux
 ```
 
-Output will be in the `dist/` folder.
+Windows only. Output will be in the `dist/` folder.
 
 ## Quick Start
 
@@ -191,54 +157,12 @@ Output will be in the `dist/` folder.
 ## Project Structure
 
 ```
-src/
-├── main/                    # Electron main process
-│   ├── index.ts             # Window creation, app lifecycle, CSP
-│   ├── updater.ts           # Auto-update (GitHub Releases)
-│   ├── ipc/                 # IPC handlers
-│   │   ├── dialog.ts        # File dialogs
-│   │   ├── plugin.ts        # Plugin load/save/parse
-│   │   └── project.ts       # MZ project loading
-│   └── services/
-│       ├── pluginParser.ts  # Parse existing .js plugins
-│       └── projectParser.ts # Parse MZ project data
-├── preload/
-│   └── index.ts             # Context bridge (window.api), API type exports
-├── shared/                  # Shared across main, preload, and renderer
-│   ├── types/
-│   │   ├── plugin.ts        # Plugin definition types + factory functions
-│   │   └── mz.ts            # RPG Maker MZ project types
-│   ├── ipc-types.ts         # Typed IPC channel constants
-│   ├── override-extractor.ts # Prototype override extraction
-│   └── path-safety.ts       # Path validation for IPC handlers
-└── renderer/src/            # React frontend
-    ├── components/
-    │   ├── plugin/          # Main editors (ParameterBuilder, CodeEditor, etc.)
-    │   ├── preview/         # CodePreview, DiffView
-    │   ├── project/         # ProjectBrowser
-    │   ├── analysis/        # AnalysisView (conflicts + dependencies)
-    │   ├── layout/          # Sidebar, StatusBar, TitleBar
-    │   ├── settings/        # SettingsDialog, ShortcutsDialog
-    │   └── ui/              # shadcn/ui components
-    ├── stores/              # Zustand stores (one per domain)
-    │   ├── pluginStore.ts
-    │   ├── projectStore.ts
-    │   ├── settingsStore.ts
-    │   ├── historyStore.ts
-    │   ├── uiStore.ts
-    │   ├── toastStore.ts
-    │   └── templateStore.ts
-    ├── lib/
-    │   ├── generator/       # Code generation + validation
-    │   ├── conflict-detector.ts   # Plugin conflict detection
-    │   ├── dependency-analyzer.ts # Plugin dependency graph + validation
-    │   ├── plugin-output.ts # Unified output facade (raw/generated)
-    │   ├── param-io.ts      # Parameter import/export (.mzparams)
-    │   ├── exportFormats.ts  # README, .d.ts, plugins.json
-    │   ├── shortcuts.ts     # Keyboard shortcut definitions
-    │   └── mz-completions.ts # Monaco MZ autocomplete
-    └── types/               # Re-exports from src/shared/types/
-tests/                       # Vitest unit tests (411 tests, 22 suites)
+src/        Application code: Electron main process, preload bridge, React renderer, shared types
+tests/      Vitest suites and their fixtures
+tools/      Scripts that enrich the MZ class dictionary used by autocomplete
+scripts/    Repository scripts run by npm scripts and CI
+docs/       User guide and template contribution guide
+resources/  App icons
 ```
 
 ## Tech Stack
@@ -246,7 +170,7 @@ tests/                       # Vitest unit tests (411 tests, 22 suites)
 | Technology | Purpose |
 |------------|---------|
 | [Electron](https://electronjs.org) | Desktop application shell |
-| [React 19](https://react.dev) | UI framework |
+| [React](https://react.dev) | UI framework |
 | [TypeScript](https://typescriptlang.org) | Type-safe development |
 | [electron-vite](https://electron-vite.org) | Build tooling |
 | [Tailwind CSS](https://tailwindcss.com) | Styling |
@@ -260,13 +184,7 @@ tests/                       # Vitest unit tests (411 tests, 22 suites)
 
 ## Contributing
 
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run `npm run lint` and `npm run typecheck`
-5. Submit a pull request
+Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run lint`, `npm run typecheck` and `npm test`.
 
 ## License
 
@@ -276,12 +194,6 @@ Third-party dependency licenses are listed in [THIRD_PARTY_LICENSES.md](./THIRD_
 
 ## Disclaimer
 
-"RPG Maker" and "RPG Maker MZ" are trademarks of Gotcha Gotcha Games / Kadokawa Corporation. MZ Plugin Studio is an independent, community-developed tool and is not affiliated with, endorsed by, or sponsored by Gotcha Gotcha Games or Kadokawa Corporation.
+'RPG Maker' and 'RPG Maker MZ' are trademarks of their respective owners. MZ Plugin Studio is an independent tool, not affiliated with or endorsed by them.
 
-## Support
-
-If you find this tool useful, consider supporting its development:
-
-- Star this repository
-- [Report issues](../../issues) or suggest features
-- Contribute code or templates
+Related: `mz-interaction-builder` (dialogue trees) · `mz-scene-builder` (cutscene timelines).
