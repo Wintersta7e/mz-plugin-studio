@@ -35,21 +35,21 @@ describe('PluginParser', () => {
       const content = `/*:
  * @plugindesc Test plugin
  * @author Test
- * @base PluginCommonBase
+ * @base Synthetic_CoreBase
  * @base AnotherPlugin
  */`
       const result = PluginParser.parsePlugin(content)
-      expect(result.meta.dependencies).toEqual(['PluginCommonBase', 'AnotherPlugin'])
+      expect(result.meta.dependencies).toEqual(['Synthetic_CoreBase', 'AnotherPlugin'])
     })
 
     it('parses @orderAfter', () => {
       const content = `/*:
  * @plugindesc Test plugin
  * @author Test
- * @orderAfter PluginCommonBase
+ * @orderAfter Synthetic_CoreBase
  */`
       const result = PluginParser.parsePlugin(content)
-      expect(result.meta.orderAfter).toEqual(['PluginCommonBase'])
+      expect(result.meta.orderAfter).toEqual(['Synthetic_CoreBase'])
     })
 
     it('parses @help text when followed by another tag', () => {
@@ -617,16 +617,16 @@ describe('PluginParser', () => {
   })
 
   describe('real-world plugin', () => {
-    it('parses a VisuStella-style plugin header', () => {
+    it('parses a full-featured plugin header', () => {
       const content = `/*:
  * @target MZ
  * @plugindesc A comprehensive battle system plugin that adds
  * various combat mechanics and customization options.
- * @author VisuStella-Style
+ * @author Example Author
  * @url https://example.com/plugin
  *
- * @base PluginCommonBase
- * @orderAfter PluginCommonBase
+ * @base Synthetic_CoreBase
+ * @orderAfter Synthetic_CoreBase
  *
  * @param General Settings
  * @text General Settings
@@ -663,12 +663,12 @@ describe('PluginParser', () => {
  * @param helpEndMarker
  * @type string
  */`
-      const result = PluginParser.parsePlugin(content, 'VisuStella_BattleCore.js')
-      expect(result.meta.name).toBe('VisuStella_BattleCore')
+      const result = PluginParser.parsePlugin(content, 'Synthetic_BattleCore.js')
+      expect(result.meta.name).toBe('Synthetic_BattleCore')
       expect(result.meta.target).toBe('MZ')
-      expect(result.meta.author).toBe('VisuStella-Style')
-      expect(result.meta.dependencies).toContain('PluginCommonBase')
-      expect(result.meta.orderAfter).toContain('PluginCommonBase')
+      expect(result.meta.author).toBe('Example Author')
+      expect(result.meta.dependencies).toContain('Synthetic_CoreBase')
+      expect(result.meta.orderAfter).toContain('Synthetic_CoreBase')
       // +1 for helpEndMarker used to terminate the @help block
       expect(result.parameters.length).toBeGreaterThanOrEqual(3)
       expect(result.commands).toHaveLength(1)

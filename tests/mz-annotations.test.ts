@@ -145,7 +145,7 @@ describe('A2: @require on file/animation params', () => {
 
   it('generator drops @require 1 (MV-era, discontinued in MZ)', () => {
     // Even when the imported plugin had require:true, the generator should
-    // not re-emit @require — Kadokawa's MZ spec marks it as discontinued.
+    // not re-emit @require — the official MZ annotation reference marks it as discontinued.
     const plugin = createTestPlugin({
       parameters: [
         {
@@ -325,7 +325,7 @@ describe('A4: @noteParam annotation group', () => {
     expect(output).toContain('@noteType file')
     expect(output).toContain('@noteDir audio/bgm/')
     expect(output).toContain('@noteData actors')
-    // @noteRequire is not part of the official Kadokawa spec
+    // @noteRequire is not part of the official MZ annotation reference
     expect(output).not.toContain('@noteRequire')
   })
 
@@ -538,7 +538,7 @@ describe('Round-trip: all new types together', () => {
     expect(output).toContain('@noteParam bgmTag')
     expect(output).toContain('@type combo')
     // @require and @noteRequire are MV-era and intentionally not re-emitted
-    // (Kadokawa docs mark @require as discontinued in MZ).
+    // (the official MZ annotation reference marks @require as discontinued in MZ).
     expect(output).not.toContain('@require 1')
     expect(output).not.toContain('@noteRequire')
     expect(output).toContain('@type icon')
