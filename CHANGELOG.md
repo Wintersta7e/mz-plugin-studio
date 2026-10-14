@@ -2,9 +2,20 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The struct default editor no longer writes an internal placeholder into the default when an empty-value option is chosen.
+- `@requiredAssets` as the last annotation line keeps its last entry on import.
+- Save All reports failures instead of dropping them, and saving many plugins re-renders once.
+
 ### Changed
 
 - The app package no longer contains test files, documentation or libraries the app does not load.
+- Electron 40 → 41.
+
+### Removed
+
+- The "Req" checkbox on note parameters, which had no effect.
 
 ## [1.6.0] - 2026-04-19
 
@@ -30,8 +41,8 @@
 - **plugin-commands async callback uses per-interpreter state** — the previous module-scope `let _XPending = false` collided when two parallel events fired the same async command concurrently. Now stores the pending flag on the invoking `Game_Interpreter` instance.
 
 ### Changed
-- **`@require 1` emission dropped** — Kadokawa's MZ annotation reference marks `@require` as discontinued (MV-era). The UI checkbox is kept (faded) for round-tripping legacy imports, but the generator no longer emits `@require 1` on file/animation parameters or command args.
-- **`@noteRequire 1` emission dropped** — not part of the official Kadokawa note-asset spec (only `@noteParam`, `@noteType`, `@noteDir`, `@noteData` are documented). Parser still reads the legacy tag for back-compat.
+- **`@require 1` emission dropped** — the official MZ annotation reference marks `@require` as discontinued (MV-era). The UI checkbox remains (faded) but no longer affects output: the generator no longer emits `@require 1` on file/animation parameters or command args.
+- **`@noteRequire 1` emission dropped** — not part of the official MZ annotation reference (only `@noteParam`, `@noteType`, `@noteDir`, `@noteData` are documented). Parser still reads the legacy tag for back-compat.
 - **`@type text` marked as MV-legacy** in the parameter-type dropdown — the canonical MZ multi-line type is `multiline_string` (mapped to `note` internally). `text` still parses and emits for compatibility.
 - **Generated command stubs drop the `console.log(...)` line** — every generated `PluginManager.registerCommand` callback previously shipped a `console.log('X called with:', { args })` stub that survived to production. Replaced with an inline comment naming the parsed args.
 - **Sidebar plugin list moved to the new panel** — the cramped icon-rail `.js` file list was removed (replaced by the Plugin Browser). The sidebar rail is now just: Open Project / New Plugin / [open-plugin tabs] / Plugin Browser / Project Data Browser / Settings / Shortcuts.
@@ -55,7 +66,7 @@
 - **Template Category Persistence** — last-selected template category remembered across opens
 - **Save All (Ctrl+Shift+S)** — save all dirty open plugins in parallel with toast summary
 - **Toggle Preview (Ctrl+B)** — collapse/expand the code preview panel
-- **Command Name Collision Warning** — warns when command names shadow MZ built-in commands (28 names)
+- **Command Name Collision Warning** — warns when command names shadow MZ built-in commands (29 names)
 - **Settings Reset to Defaults** — one-click button to restore all settings
 - **Export Format Descriptions** — explanatory text for each export option
 - **Accessibility** — aria-labels on sidebar, status bar, and toast notifications; aria-live regions for dynamic content
