@@ -10,6 +10,7 @@
 - File paths are checked segment by segment; `..` segments, device names and drive-relative paths are rejected.
 - A drive or filesystem root can no longer be used as a project folder.
 - Saving to a file path now requires that path to have been chosen in a save dialog during the session.
+- Electron is updated to 41.10.7, which fixes eight published Electron security advisories.
 
 ### Fixed
 
