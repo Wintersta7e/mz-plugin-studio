@@ -1,0 +1,1 @@
+- `scripts/ci-policy.mjs` — run before packaging a release: `package <app.asar>` checks the packaged app's top-level entries, licence files and `node_modules/` size; `runtime-deps` checks that `dependencies` lists exactly the packages the main process and preload import.
