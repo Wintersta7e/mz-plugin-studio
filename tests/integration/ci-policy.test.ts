@@ -208,11 +208,75 @@ describe('ci-policy runtime-deps', () => {
     expect(status).toBe(1)
   })
 
+  it('reads an import clause that holds a line comment', () => {
+    const source = [
+      'import {',
+      "  one, // was from 'old-name'",
+      '  two',
+      "} from 'line-comment'",
+      'import {',
+      '  type A, // a type',
+      '  type B',
+      "} from 'typeonly-commented'",
+      ''
+    ].join('\n')
+    const root = sourceRoot({ 'line-comment': '1.0.0', f: '1.0.0', g: '1.0.0' }, source)
+    const { status, out } = runPolicy(['runtime-deps'], root)
+    expect(lines(out)).toContain('value imports 3: f, g, line-comment')
+    expect(lines(out)).toContain('unclassified imports 0:')
+    expect(status).toBe(0)
+  })
+
+  it('reads an import clause that holds a block comment', () => {
+    const source = [
+      "import { one /* why */, two } from 'block-comment'",
+      "import /* default */ three from 'block-default'",
+      ''
+    ].join('\n')
+    const dependencies = {
+      'block-comment': '1.0.0',
+      'block-default': '1.0.0',
+      f: '1.0.0',
+      g: '1.0.0'
+    }
+    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    expect(lines(out)).toContain('value imports 4: block-comment, block-default, f, g')
+    expect(status).toBe(0)
+  })
+
+  it('reads a re-export that follows a local type export', () => {
+    const source = "export type { E }\nexport { h } from 'after-type-export'\n"
+    const dependencies = { 'after-type-export': '1.0.0', f: '1.0.0', g: '1.0.0' }
+    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    expect(lines(out)).toContain('value imports 3: after-type-export, f, g')
+    expect(status).toBe(0)
+  })
+
+  it('reads a default import named type as a value import', () => {
+    const source = "import type from 'default-named-type'\n"
+    const dependencies = { 'default-named-type': '1.0.0', f: '1.0.0', g: '1.0.0' }
+    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    expect(lines(out)).toContain('value imports 3: default-named-type, f, g')
+    expect(status).toBe(0)
+  })
+
+  it('fails a from-import no pattern reads, naming its file and line', () => {
+    const source = "import { app } from 'electron'\nimport { 'a-b' as ab } from 'quoted-name'\n"
+    const { status, out } = runPolicy(
+      ['runtime-deps'],
+      sourceRoot({ f: '1.0.0', g: '1.0.0' }, source)
+    )
+    expect(lines(out)).toContain('unclassified imports 1: src/main/x.ts:2')
+    expect(lines(out)).toContain('ci-policy runtime-deps: FAILED')
+    expect(status).toBe(1)
+  })
+
   it('passes on the repository tree', () => {
     const { status, out } = runPolicy(['runtime-deps'])
     const lineStarting = (prefix: string) => lines(out).find((line) => line.startsWith(prefix))
     expect(lineStarting('in dependencies, not imported')).toBe('in dependencies, not imported 0:')
     expect(lineStarting('imported, not in dependencies')).toBe('imported, not in dependencies 0:')
+    expect(lineStarting('unclassified imports')).toBe('unclassified imports 0:')
     expect(out).toMatch(/files scanned [1-9]\d* \(/)
     expect(status).toBe(0)
   })

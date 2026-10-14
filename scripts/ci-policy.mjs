@@ -22,12 +22,20 @@ const SOURCE_ROOTS = ['src/main', 'src/preload', 'src/shared']
 const SOURCE_EXTENSION = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/
 const DECLARATION_FILE = /\.d\.(ts|mts|cts)$/
 
-// Every pattern is line-anchored or call-shaped: a misread can only add a package to the
-// value set, never drop one.
-const FROM_IMPORT =
-  /^[ \t]*(import|export)[ \t]+(type[ \t]+)?([\w$\s{},*]*?)\s*from[ \t]*(['"])([^'"\n]+)\4/gm
+// Every pattern is line-anchored or call-shaped. An import clause may hold comments but not
+// the `import`/`export` of a following statement, so a misread clause can only add a package
+// to the value set; a `from '<package>'` that no pattern reads fails the check with its
+// file:line. `import(…)`, `require(…)` and `import '…'` are read in their one-line form only.
+const COMMENT = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g
+const FROM_IMPORT = new RegExp(
+  String.raw`^[ \t]*(import|export)[ \t]+(type[ \t]+)?` +
+    String.raw`((?:${COMMENT.source}|(?!\b(?:import|export)\b)[\w$\s{},*])*?)` +
+    String.raw`\s*from[ \t]*(['"])([^'"\n]+)\4`,
+  'gm'
+)
 const BARE_IMPORT = /^[ \t]*import[ \t]*(['"])([^'"\n]+)\1/gm
 const CALL_IMPORT = /\b(?:import|require)\([ \t]*(['"])([^'"\n]+)\1[ \t]*\)/g
+const FROM_SPECIFIER = /\bfrom\s*(['"])([^'"\n]+)\1/g
 
 const SUBCOMMANDS = { package: checkPackage, 'runtime-deps': checkRuntimeDeps }
 
@@ -183,10 +191,12 @@ function listSources(root) {
     .sort()
 }
 
-// TypeScript and esbuild elide `import type …` and a clause of only `{ type … }` items.
+// TypeScript and esbuild elide `import type …` and a clause of only `{ type … }` items;
+// `import type from '…'` imports a default export named `type`.
 function isTypeOnly(typeKeyword, clause) {
-  if (typeKeyword) return true
-  const named = /^\{([^{}]*)\}$/.exec(clause.trim())
+  const bindings = clause.replace(COMMENT, ' ').trim()
+  if (typeKeyword) return bindings !== ''
+  const named = /^\{([^{}]*)\}$/.exec(bindings)
   if (!named) return false
   const items = named[1]
     .split(',')
@@ -203,14 +213,24 @@ function packageOf(specifier) {
   return specifier.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0]
 }
 
-function valueSpecifiers(source) {
+// Value specifiers in one source, and the lines of every `from '<package>'` outside a
+// statement FROM_IMPORT read.
+function readImports(source) {
   const specifiers = []
+  const statements = []
   for (const match of source.matchAll(FROM_IMPORT)) {
+    statements.push([match.index, match.index + match[0].length])
     if (!isTypeOnly(match[2], match[3])) specifiers.push(match[5])
   }
   for (const match of source.matchAll(BARE_IMPORT)) specifiers.push(match[2])
   for (const match of source.matchAll(CALL_IMPORT)) specifiers.push(match[2])
-  return specifiers
+  const unclassified = [...source.matchAll(FROM_SPECIFIER)]
+    .filter((match) => packageOf(match[2]) !== undefined)
+    .filter(
+      (match) => !statements.some(([start, end]) => match.index >= start && match.index < end)
+    )
+    .map((match) => source.slice(0, match.index).split('\n').length)
+  return { specifiers, unclassified }
 }
 
 function checkRuntimeDeps(args) {
@@ -233,6 +253,7 @@ function checkRuntimeDeps(args) {
   const counts = []
   let scanned = 0
   const imported = new Set()
+  const unclassified = []
   for (const root of SOURCE_ROOTS) {
     const files = listSources(root)
     if (files === undefined) return 1
@@ -241,10 +262,12 @@ function checkRuntimeDeps(args) {
     for (const file of files) {
       const source = readInput(file, (path) => readFileSync(path, 'utf8'))
       if (source === undefined) return 1
-      for (const specifier of valueSpecifiers(source)) {
+      const imports = readImports(source)
+      for (const specifier of imports.specifiers) {
         const name = packageOf(specifier)
         if (name) imported.add(name)
       }
+      for (const line of imports.unclassified) unclassified.push(`${file}:${line}`)
     }
   }
 
@@ -257,7 +280,9 @@ function checkRuntimeDeps(args) {
   print(listLine('value imports', values))
   print(listLine('in dependencies, not imported', unused))
   print(listLine('imported, not in dependencies', undeclared))
-  const failed = scanned === 0 || unused.length > 0 || undeclared.length > 0
+  print(listLine('unclassified imports', unclassified))
+  const failed =
+    scanned === 0 || unused.length > 0 || undeclared.length > 0 || unclassified.length > 0
   print(`ci-policy runtime-deps: ${failed ? 'FAILED' : 'ok'}`)
   return failed ? 1 : 0
 }
