@@ -1,11 +1,7 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": [
-    "tests/**/*",
-    "src/main/**/*",
-    "src/renderer/src/**/*",
-    "src/shared/**/*"
-  ],
+  "include": ["tests/**/*", "src/main/**/*", "src/renderer/src/**/*", "src/shared/**/*"],
+  "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**"],
   "compilerOptions": {
     "composite": true,
     "types": ["node", "vitest/globals"],

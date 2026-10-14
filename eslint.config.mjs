@@ -6,7 +6,16 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks'
 const { configs, config } = tsConfigPkg
 
 export default config(
-  { ignores: ['node_modules', 'dist', 'out', 'tools'] },
+  {
+    ignores: [
+      'node_modules',
+      'dist',
+      'out',
+      'tools',
+      'tests/fixtures/**',
+      'tests/golden/__golden__/**'
+    ]
+  },
   ...configs.recommended,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],

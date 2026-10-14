@@ -1,0 +1,15 @@
+{
+  "gameTitle": "Fixture Game",
+  "switches": [
+    "",
+    "Fixture Switch 1",
+    "Fixture Switch 2",
+    "Fixture Switch 3"
+  ],
+  "variables": [
+    "",
+    "Fixture Variable 1",
+    "Fixture Variable 2",
+    "Fixture Variable 3"
+  ]
+}
