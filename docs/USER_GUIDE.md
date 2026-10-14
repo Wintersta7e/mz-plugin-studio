@@ -2,34 +2,6 @@
 
 A comprehensive guide to creating RPG Maker MZ plugins with MZ Plugin Studio.
 
-## Table of Contents
-
-1. [Getting Started](#getting-started)
-2. [Interface Overview](#interface-overview)
-3. [Creating Your First Plugin](#creating-your-first-plugin)
-4. [Working with Parameters](#working-with-parameters)
-5. [Bulk Parameter Operations](#bulk-parameter-operations)
-6. [Creating Plugin Commands](#creating-plugin-commands)
-7. [Using Structs](#using-structs)
-8. [Code Templates](#code-templates)
-9. [Multi-Language Support](#multi-language-support)
-10. [Plugin Dependencies](#plugin-dependencies)
-11. [Plugin Conflict Detection](#plugin-conflict-detection)
-12. [Note Parameters (Deployment)](#note-parameters-deployment)
-13. [Auto-Documentation](#auto-documentation)
-14. [Project Integration](#project-integration)
-15. [Importing Existing Plugins](#importing-existing-plugins)
-16. [Raw Mode](#raw-mode)
-17. [Exporting Plugins](#exporting-plugins)
-18. [Diff View](#diff-view)
-19. [Settings](#settings)
-20. [Keyboard Shortcuts](#keyboard-shortcuts)
-21. [Auto-Update](#auto-update)
-22. [Best Practices](#best-practices)
-23. [Troubleshooting](#troubleshooting)
-
----
-
 ## Getting Started
 
 ### Launching the Application
@@ -147,6 +119,8 @@ Parameters are configuration options that users can set in the Plugin Manager.
 
 ### Parameter Types
 
+The examples below cover common types; the type dropdown in the **Parameters** tab lists them all.
+
 #### Basic Types
 
 **String**
@@ -263,8 +237,6 @@ Text: Background Image
 Type: file
 Directory: img/pictures
 ```
-
-The **Require** checkbox (available for `file` and `animation` types) tells the RPG Maker MZ deployment packager to include the referenced file when exporting. Check this if the file is essential for the plugin to function.
 
 **Struct (Complex Object)**
 ```
@@ -540,99 +512,7 @@ Templates provide ready-to-use code patterns for common plugin tasks.
 
 ### Template Categories
 
-#### Method Alias (1 template)
-Safely extend existing MZ classes without replacing them.
-
-- **Alias Method** - Extend any class method with before/after/wrap/replace options
-
-**Dynamic Class Selection:** This template includes a searchable dropdown of 139 RPG Maker MZ classes (organized by category: Core, Managers, Game Objects, Scenes, Sprites, Windows) with 644 hookable methods. Select a class to see its available methods.
-
-#### Custom Window (4 templates)
-Create new windows for displaying information.
-
-- **Custom Window** - Create a new window class and add it to a scene
-- **HUD Overlay Window** - HUD window that displays on the map screen
-- **Popup Notification** - Temporary popup window that auto-closes after a duration
-- **Gauge Window** - Window with customizable gauge bars (HP/MP style)
-
-#### Scene Hooks (1 template)
-Hook into scene lifecycle events.
-
-- **Scene Lifecycle Hook** - Execute code at scene create/start/update/terminate
-
-#### Database Extension (1 template)
-Add custom note tag parsing to database objects.
-
-- **Notetag Parser** - Parse custom notetags from database entries
-
-#### Plugin Commands (3 templates)
-Create plugin commands callable from events.
-
-- **Basic Command** - Simple command
-- **Async Command with Wait** - Command that can pause event execution
-- **Command with Validation** - Command with input validation
-
-#### Save/Load (1 template)
-Persist custom data in save files.
-
-- **Custom Save Data** - Add custom data that persists in save files
-
-#### Input Handler (1 template)
-Handle keyboard and gamepad input.
-
-- **Key Input Handler** - React to keyboard or gamepad input
-
-#### Battle System (4 templates)
-Modify battle mechanics.
-
-- **Damage Modifier** - Modify damage calculation in battle
-- **Battle Event Hook** - React to battle events (victory, defeat, escape)
-- **State Change Hook** - React when states are added or removed
-- **Action Execution Hook** - React before/after battle actions execute
-
-#### Sprite System (3 templates)
-Create and manipulate sprites.
-
-- **Custom Sprite Class** - Define a new sprite type
-- **Picture Manipulation** - Control show picture images
-- **Sprite Animation** - Animated sprite with frame control
-
-#### Map Events (4 templates)
-Work with map events and movement.
-
-- **Event Spawn** - Dynamically create events
-- **Movement Route** - Custom movement patterns
-- **Map Transfer Hook** - Execute code on map change
-- **Parallel Process** - Run code every frame on maps
-
-#### Menu System (4 templates)
-Customize menus and UI.
-
-- **Custom Menu Scene** - New menu screen
-- **Title Screen Modification** - Customize title screen
-- **Menu Command Addition** - Add items to main menu
-- **Options Menu Addition** - Add items to options
-
-#### Audio System (3 templates)
-Control game audio.
-
-- **BGM Control** - Play, stop, fade background music
-- **Sound Effect Player** - Play sound effects
-- **Audio Fade/Crossfade** - Smooth audio transitions
-
-#### Message System (3 templates)
-Extend the message system.
-
-- **Custom Text Code** - Add new \X[n] escape codes
-- **Message Window Modification** - Customize message appearance
-- **Choice Handler** - Custom choice processing
-
-#### Actor/Party (3 templates)
-Extend actor and party functionality.
-
-- **Custom Actor Property** - Add new actor stats/properties
-- **Party Management** - Party manipulation functions
-- **Equipment Hook** - Hook equipment changes
+Templates are grouped into categories in the template dialog's sidebar. Select a category to see its templates; each one shows a description and the options it takes before you insert it.
 
 ---
 
@@ -709,12 +589,6 @@ A colored badge appears in the status bar:
 | Red | Errors (missing hard dependencies, circular deps) |
 
 Click the badge to see the full issues list.
-
-### Sidebar Indicators
-
-Project plugins in the sidebar show:
-- **Load order number** — Position in the plugin list
-- **Warning dot** — Hover to see dependency issues
 
 ### Available Plugins Hint
 
@@ -794,7 +668,6 @@ In the **Meta** tab, scroll to the **Note Parameters** section and click **Add N
 | **Type** | `@noteType` | Usually `file` |
 | **Directory** | `@noteDir` | Asset directory (e.g., `img/pictures/`) |
 | **Data** | `@noteData` | Database target (e.g., `actors`, `enemies`) |
-| **Require** | `@noteRequire` | Check to include referenced files in deployment |
 
 ### Example
 
@@ -805,7 +678,6 @@ Name: Portrait
 Type: file
 Directory: img/pictures/
 Data: actors
-Require: checked
 ```
 
 This generates:
@@ -814,7 +686,6 @@ This generates:
  * @noteType file
  * @noteDir img/pictures/
  * @noteData actors
- * @noteRequire 1
 ```
 
 ---
@@ -1008,14 +879,14 @@ Click the **gear icon** in the bottom of the sidebar to open the Settings dialog
 
 Configure the code editor and preview:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Theme | Dark | Dark or Light mode (applies to entire app and Monaco editors) |
-| Font Size | 13 | Code font size (10-24) |
-| Word Wrap | On | Wrap long lines in the code preview |
-| Minimap | Off | Show the minimap scroll overview |
-| Line Numbers | On | Show line numbers |
-| Debug Logging | Off | Enable verbose logging for troubleshooting |
+| Setting | Description |
+|---------|-------------|
+| Theme | Dark or Light mode (applies to entire app and Monaco editors) |
+| Font Size | Code font size (10-24) |
+| Word Wrap | Wrap long lines in the code preview |
+| Minimap | Show the minimap scroll overview |
+| Line Numbers | Show line numbers |
+| Debug Logging | Enable verbose logging for troubleshooting |
 
 Changes apply immediately to the Code tab editor, Generated Code preview, and Diff View.
 
@@ -1030,9 +901,9 @@ The **Diagnostics** section at the bottom of the Editor tab provides:
 
 ### Defaults Tab
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Default Author | (empty) | Pre-fills the author field when creating new plugins |
+| Setting | Description |
+|---------|-------------|
+| Default Author | Pre-fills the author field when creating new plugins |
 
 ### Data Tab
 
@@ -1169,57 +1040,7 @@ If the app shows a red error screen with a stack trace, this is the built-in err
 
 ## Keyboard Shortcuts
 
-Press **F1** at any time to open the Keyboard Shortcuts panel.
-
-### File
-
-| Action | Shortcut |
-|--------|----------|
-| Save / Export plugin | Ctrl+S |
-| New plugin | Ctrl+N |
-| Open project | Ctrl+O |
-
-### Edit
-
-| Action | Shortcut |
-|--------|----------|
-| Undo | Ctrl+Z |
-| Redo | Ctrl+Shift+Z |
-
-### View
-
-| Action | Shortcut |
-|--------|----------|
-| Regenerate preview | F5 |
-| Open settings | Ctrl+, |
-| Show keyboard shortcuts | F1 |
-
-### Navigation
-
-| Action | Shortcut |
-|--------|----------|
-| Switch to Meta tab | Ctrl+1 |
-| Switch to Parameters tab | Ctrl+2 |
-| Switch to Commands tab | Ctrl+3 |
-| Switch to Structs tab | Ctrl+4 |
-| Switch to Code tab | Ctrl+5 |
-
-**Note:** Ctrl+S, Ctrl+N, Ctrl+O, and F1 work even when the Monaco code editor is focused. Other shortcuts (like Ctrl+Z, Ctrl+1-5) are handled by Monaco when the editor is focused.
-
----
-
-## Auto-Update
-
-MZ Plugin Studio checks for updates automatically on startup (production builds only).
-
-### How It Works
-
-1. On launch, the app checks GitHub Releases for newer versions
-2. If an update is available, a notification appears in the status bar
-3. Click **Download** to download the update in the background
-4. Once downloaded, click **Restart** to install and relaunch
-
-Updates are never forced - you can dismiss the notification and continue working.
+Press **F1** at any time to see every keyboard shortcut.
 
 ---
 
@@ -1227,8 +1048,3 @@ Updates are never forced - you can dismiss the notification and continue working
 
 - **GitHub Issues** - Report bugs and request features
 - **Documentation** - README.md
-- **RPG Maker Forums** - Community support for MZ plugin development
-
----
-
-*MZ Plugin Studio - Making plugin development accessible to everyone*
