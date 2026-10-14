@@ -18,16 +18,23 @@ const fixtureText = (name: string): string =>
 const parameterNames = (): string[] =>
   usePluginStore.getState().plugin.parameters.map((p) => p.name)
 
+/** The plugin's parameter names at the moment each message was shown. */
+const namesWhenShown: string[][] = []
+
 // The Import menu sits in the toolbar, which shows once the plugin has a parameter.
 beforeEach(() => {
   resetStores()
+  namesWhenShown.length = 0
   const existing = { ...createEmptyParameter(), name: 'Existing' }
   usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), parameters: [existing] })
 })
 
 /** Picks "From File (.mzparams)" with `text` as the chosen file; returns the dialog mock. */
 function importFile(text: string): ReturnType<typeof vi.fn> {
-  const message = vi.fn(async () => 0)
+  const message = vi.fn(async () => {
+    namesWhenShown.push(parameterNames())
+    return 0
+  })
   window.api = createFakeApi({
     dialog: { openFile: vi.fn(async () => '/fixtures/in.mzparams'), message },
     plugin: { readByPath: vi.fn(async () => text) }
@@ -39,21 +46,43 @@ function importFile(text: string): ReturnType<typeof vi.fn> {
 }
 
 describe('parameter import from a file', () => {
-  it('shows an error for a file that is not JSON', async () => {
-    const message = importFile('not json at all')
+  it.each([
+    ['not JSON', 'not json at all', 'This file could not be read: it is not valid JSON.'],
+    [
+      'without a version',
+      fixtureText('invalid-missing-version.mzparams'),
+      'This file is not an MZ Plugin Studio parameter file.'
+    ],
+    [
+      'from a newer version',
+      fixtureText('invalid-newer-version.mzparams'),
+      'This file was made by a newer version of MZ Plugin Studio. Update the app to import it.'
+    ]
+  ])('says why it refuses a file %s', async (_label, text, expected) => {
+    const message = importFile(text)
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
     expect(message).toHaveBeenCalledWith({
       type: 'error',
       title: 'Import Failed',
-      message: 'The file is not valid JSON.'
+      message: expected
     })
     expect(parameterNames()).toEqual(['Existing'])
   })
 
-  it('adds the known parameters and says nothing of one of an unknown type', async () => {
-    const message = importFile(fixtureText('invalid-unknown-type.mzparams'))
-    await waitFor(() => expect(parameterNames()).toEqual(['Existing', 'Label']))
-    expect(message).not.toHaveBeenCalled()
+  it('adds the good parameters, then reports what it skipped and dropped', async () => {
+    const file = JSON.parse(fixtureText('invalid-unknown-type.mzparams'))
+    file.parameters[0].extra = 'not a parameter field'
+    file.parameters.push(42)
+    const message = importFile(JSON.stringify(file))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message).toHaveBeenCalledWith({
+      type: 'warning',
+      title: 'Import Report',
+      message:
+        'Imported 1 parameter. Skipped 2: "Shape" (unknown type), item 3 (not a parameter). ' +
+        'Dropped 1 field with the wrong type or an unknown name.'
+    })
+    expect(namesWhenShown).toEqual([['Existing', 'Label']])
   })
 
   it('keeps an imported description inside the plugin comment when the plugin runs', async () => {
@@ -66,8 +95,9 @@ describe('parameter import from a file', () => {
         { id: 'p', name: 'Label', text: 'Label', desc: payload.text, type: 'string', default: '' }
       ]
     })
-    importFile(text)
+    const message = importFile(text)
     await waitFor(() => expect(parameterNames()).toEqual(['Existing', 'Label']))
+    expect(message).not.toHaveBeenCalled()
     const plugin = usePluginStore.getState().plugin
     expect(plugin.parameters[1].desc).toBe(payload.text)
 

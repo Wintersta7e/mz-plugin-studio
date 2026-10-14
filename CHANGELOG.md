@@ -7,6 +7,11 @@
 - The app package no longer contains test files, documentation or libraries the app does not load.
 - The preview warns when a field's text contains `*/` or a word starting with `@` that MZ would read as a tag.
 - A translation whose language code holds anything other than letters and underscores is left out of the generated plugin, and the preview reports it.
+- Importing a `.mzparams` file skips fields of the wrong type and unknown keys, and lists what it skipped.
+
+### Fixed
+
+- Parameters loaded from a `.mzparams` file with an empty minimum or maximum no longer produce `@min null`, `@max null` or `@decimals null`.
 
 ### Security
 

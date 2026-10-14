@@ -7,9 +7,6 @@
  * @param Speed
  * @desc All limits cleared.
  * @type number
- * @min null
- * @max null
- * @decimals null
  * @default 5
  *
  * @param Count

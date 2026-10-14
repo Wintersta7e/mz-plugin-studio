@@ -18,7 +18,7 @@ describe('v1.6.0 parameter export', () => {
 
   it('generates a plugin from the imported parameters', async () => {
     const imported = deserializeParams(readFileSync(V160_FIXTURE, 'utf8'))
-    expect(imported.success).toBe(true)
+    if (!imported.success) throw new Error(`file refused: ${imported.reason}`)
     expect(imported.parameters).toHaveLength(V160_PARAMS.length)
     await expect(
       generatePlugin({ ...MZPARAMS_HOST, parameters: imported.parameters })

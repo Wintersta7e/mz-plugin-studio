@@ -365,7 +365,7 @@ Presets are managed in **Settings > Data > Parameter Presets**.
 
 ### .mzparams File Format
 
-Exported parameter files use a simple JSON format with a version field for forward compatibility. They can be shared between projects or with other users.
+Exported parameter files are JSON with a version field. Importing reads any file this app has exported. A file made by a newer version is refused with a message. Parameters of an unknown type are skipped, fields of the wrong type and unknown fields are dropped, and a report lists what was left out.
 
 ---
 

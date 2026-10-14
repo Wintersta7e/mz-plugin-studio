@@ -35,7 +35,12 @@ import {
   type PluginStruct
 } from '../../types/plugin'
 import { generateParameterComment } from '../../lib/generator'
-import { serializeParams, deserializeParams, duplicateParams } from '../../lib/param-io'
+import {
+  serializeParams,
+  deserializeParams,
+  duplicateParams,
+  type ParamImportResult
+} from '../../lib/param-io'
 import { cn } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
@@ -130,6 +135,34 @@ function getParamNameError(name: string, paramNames: ParamNameMap, selfId: strin
     if (id !== selfId && n === name) return 'Duplicate parameter name'
   }
   return null
+}
+
+const IMPORT_REFUSED: Record<Extract<ParamImportResult, { success: false }>['reason'], string> = {
+  'not-json': 'This file could not be read: it is not valid JSON.',
+  'not-mzparams': 'This file is not an MZ Plugin Studio parameter file.',
+  'newer-version':
+    'This file was made by a newer version of MZ Plugin Studio. Update the app to import it.'
+}
+
+const plural = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`
+
+/** What an import left out of the file, or null when it loaded all of it. */
+function importReport(result: Extract<ParamImportResult, { success: true }>): string | null {
+  const { parameters, skipped, dropped } = result
+  if (skipped.length === 0 && dropped.length === 0) return null
+  const parts = [`Imported ${plural(parameters.length, 'parameter')}.`]
+  if (skipped.length > 0) {
+    const items = skipped.map(
+      (s) =>
+        `${s.name === null ? `item ${s.index + 1}` : `"${s.name}"`} ` +
+        `(${s.reason === 'type' ? 'unknown type' : 'not a parameter'})`
+    )
+    parts.push(`Skipped ${skipped.length}: ${items.join(', ')}.`)
+  }
+  if (dropped.length > 0) {
+    parts.push(`Dropped ${plural(dropped.length, 'field')} with the wrong type or an unknown name.`)
+  }
+  return parts.join(' ')
 }
 
 export function ParameterBuilder() {
@@ -256,12 +289,20 @@ export function ParameterBuilder() {
         await window.api.dialog.message({
           type: 'error',
           title: 'Import Failed',
-          message: result.error || 'Unknown error'
+          message: IMPORT_REFUSED[result.reason]
         })
         return
       }
       for (const p of result.parameters) {
         addParameter(p)
+      }
+      const report = importReport(result)
+      if (report !== null) {
+        await window.api.dialog.message({
+          type: 'warning',
+          title: 'Import Report',
+          message: report
+        })
       }
     } catch (error) {
       await window.api.dialog.message({
