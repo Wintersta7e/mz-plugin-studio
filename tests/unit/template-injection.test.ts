@@ -298,10 +298,10 @@ const LINE_TERMINATORS: [string, string][] = [
 ]
 const accepted = { cases: 0, rejected: 0 }
 
-function acceptedTextFailures(id: string): string[] {
+function acceptedTextFailures(id: string, fieldId: string): string[] {
   const failures: string[] = []
   const valueSets = templateCases(id).filter((c) => c.hostile === null)
-  for (const field of getTemplate(id)!.fields.filter((f) => free.includes(f.type))) {
+  for (const field of getTemplate(id)!.fields.filter((f) => f.id === fieldId)) {
     const key = `${id}.${field.id}`
     for (const set of valueSets.filter((c) => !c.name.startsWith(`${field.id}=`))) {
       const text = String(set.values[field.id] ?? '') || '1'
@@ -340,7 +340,14 @@ describe('accepted template field text', () => {
     expect(accepted.cases).toBeGreaterThan(0)
   })
 
-  it.each(templateIds())('stays in place with a payload or line break added (%s)', (id) => {
-    expect(acceptedTextFailures(id)).toEqual([])
+  // One test per field: all fields of a template together run past the test timeout when the
+  // suite runs with coverage.
+  const fields = templateIds().flatMap((id) =>
+    getTemplate(id)!
+      .fields.filter((f) => free.includes(f.type))
+      .map((f) => [id, f.id] as const)
+  )
+  it.each(fields)('stays in place with a payload or line break added (%s.%s)', (id, fieldId) => {
+    expect(acceptedTextFailures(id, fieldId)).toEqual([])
   })
 })
