@@ -1,12 +1,14 @@
-// Escapes the generator applies to text it writes into a comment or a string literal.
+// Escapes the generator applies to text it writes into a comment or a string literal, and the
+// check for text it writes as an expression.
 import { describe, it, expect } from 'vitest'
 import {
   escapeBlockComment,
   escapeJSDoubleQuote,
   escapeJSString,
-  escapeLineComment
+  escapeLineComment,
+  isOneLineExpression
 } from '../../src/renderer/src/lib/generator/escape'
-import { evaluatePlugin } from '../helpers/evaluate-plugin'
+import { compilePlugin, evaluatePlugin } from '../helpers/evaluate-plugin'
 
 const BLOCK_INPUTS = ['*/', '**/', '*/*/', 'a*/b', '*\\/', '', '/*', '*']
 const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u2028b', 'a\u2029b', '\r\n\r\n', '']
@@ -54,6 +56,42 @@ describe('JS string escapes', () => {
         expect(result.compileProblem, `${quote} ${JSON.stringify(input)}`).toBeNull()
         expect(result.context?.__value, `${quote} ${JSON.stringify(input)}`).toBe(input)
       }
+    }
+  })
+})
+
+// Expressions a template field is meant to hold, and text that ends the expression or its line.
+const EXPRESSIONS = [
+  '$gameParty.gold()',
+  "'Hello'",
+  '"Gold: " + $gameParty.gold()',
+  '`Gold: ${$gameParty.gold()}`',
+  "param > 1 ? 'many' : 'one'",
+  "String(param).padStart(3, '0')",
+  "'a; b // c'",
+  "'It\\'s'"
+]
+const NOT_EXPRESSIONS = [
+  "'open",
+  'a; b',
+  'a // b',
+  'a /* b */',
+  "x' + y + 'z",
+  "'a' 'b'",
+  'a\nb',
+  'a\u2028b'
+]
+
+describe('isOneLineExpression', () => {
+  it('accepts expressions that compile and refuses text that ends them early', () => {
+    console.log(`expression inputs checked: ${EXPRESSIONS.length + NOT_EXPRESSIONS.length}`)
+    expect(EXPRESSIONS.length * NOT_EXPRESSIONS.length).toBeGreaterThan(0)
+    for (const text of EXPRESSIONS) {
+      expect(isOneLineExpression(text), text).toBe(true)
+      expect(compilePlugin(`globalThis.__value = ${text};`), text).toBeNull()
+    }
+    for (const text of NOT_EXPRESSIONS) {
+      expect(isOneLineExpression(text), JSON.stringify(text)).toBe(false)
     }
   })
 })

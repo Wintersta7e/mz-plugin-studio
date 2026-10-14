@@ -118,43 +118,31 @@ function outcomeOf(id: string, key: string, values: Record<string, unknown>): Ou
   return code.includes(needle) && isContained(code, needle) ? 'contained' : 'escaped'
 }
 
-const LINE_BREAKS = ['comment-u2028', 'comment-u2029', 'comment-lf']
-const QUOTES = ['quote-single', 'quote-double', 'quote-backtick']
 const EVERY = ALL_PAYLOADS.map((p) => p.name)
 
-// Cases neither rejected by the template's own checks nor contained, today.
-const TODAY: { field: string; payloads: string[]; outcome: Outcome }[] = [
-  // A line break ends the `//` comment the text is written into.
-  { field: 'audio-se-player.filename', payloads: LINE_BREAKS, outcome: 'throws' },
-  { field: 'menu-command-addition.commandName', payloads: LINE_BREAKS, outcome: 'throws' },
-  { field: 'menu-options-addition.optionName', payloads: LINE_BREAKS, outcome: 'throws' },
-  {
-    field: 'menu-options-addition.choices with optionType=select',
-    payloads: LINE_BREAKS,
-    outcome: 'throws'
-  },
-  { field: 'menu-title-mod.commandName', payloads: LINE_BREAKS, outcome: 'throws' },
-  // A JavaScript expression by design.
-  {
-    field: 'message-custom-text-code.replacementText',
-    payloads: [...LINE_BREAKS, ...QUOTES],
-    outcome: 'throws'
-  },
-  // Written in code position.
-  {
-    field: 'menu-options-addition.defaultValue with optionType=volume',
-    payloads: EVERY,
-    outcome: 'throws'
-  },
-  {
-    field: 'sprite-frame-animation.targetClass with animationType=mixin',
-    payloads: EVERY,
-    outcome: 'throws'
-  }
-]
+// (template, field, context) triples where the marker lands. Escaping moves no field to another
+// context, so a change here means a field was added or now lands somewhere else.
+const CONTEXT_COUNTS: Record<JsContext, number> = {
+  'line-comment': 32,
+  'block-comment': 0,
+  'single-quote': 27,
+  'double-quote': 7,
+  'template-literal': 0,
+  regex: 2,
+  code: 33
+}
 
 const { types, free } = fieldRenderers()
 const cases = fieldCases(free)
+const contextsByKey = new Map(
+  cases.map((c) => {
+    const found = new Set<JsContext>()
+    for (const { code } of c.valueSets) {
+      for (const context of contextsOf(code, needleFor(c.key, MARKER))) found.add(context)
+    }
+    return [c.key, found] as const
+  })
+)
 
 describe('template field text', () => {
   it('names the field types whose text reaches the generated code', () => {
@@ -170,10 +158,7 @@ describe('template field text', () => {
     const counts = Object.fromEntries(CONTEXTS.map((c) => [c, 0])) as Record<JsContext, number>
     const notEmitted: string[] = []
     for (const c of cases) {
-      const found = new Set<JsContext>()
-      for (const { code } of c.valueSets) {
-        for (const context of contextsOf(code, needleFor(c.key, MARKER))) found.add(context)
-      }
+      const found = contextsByKey.get(c.key)!
       for (const context of found) counts[context]++
       if (found.size === 0) notEmitted.push(c.key)
     }
@@ -183,9 +168,10 @@ describe('template field text', () => {
     )
     expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBeGreaterThan(0)
     expect(notEmitted).toEqual([])
+    expect(counts).toEqual(CONTEXT_COUNTS)
   })
 
-  it('template field text can leave its comment or position (today)', () => {
+  it('template field text stays inside its comment, string or position', () => {
     const tally: Record<Outcome, number> = {
       rejected: 0,
       contained: 0,
@@ -194,7 +180,7 @@ describe('template field text', () => {
       escaped: 0
     }
     const table: Record<string, Outcome> = {}
-    const rewritten: Record<string, Outcome[]> = {}
+    const outcomes: Record<string, Outcome[]> = {}
     for (const c of cases) {
       for (const { label, values } of c.valueSets) {
         for (const payload of ALL_PAYLOADS) {
@@ -203,7 +189,7 @@ describe('template field text', () => {
           if (outcome !== 'rejected' && outcome !== 'contained') {
             table[`${c.key}${label}: ${payload.name}`] = outcome
           }
-          if (c.key in TRANSFORMED) (rewritten[c.key] ??= []).push(outcome)
+          ;(outcomes[c.key] ??= []).push(outcome)
         }
       }
     }
@@ -213,15 +199,27 @@ describe('template field text', () => {
         `throws ${tally.throws}, ran ${tally.ran}, escaped ${tally.escaped}`
     )
     expect(total).toBeGreaterThan(0)
-    expect(table).toEqual(
-      Object.fromEntries(
-        TODAY.flatMap(({ field, payloads, outcome }) =>
-          payloads.map((payload) => [`${field}: ${payload}`, outcome])
-        )
-      )
+    expect(table).toEqual({})
+
+    // Text written as code or read as a pattern fails its field's check for every payload; text
+    // reduced to an identifier before it is written may instead pass and stay contained.
+    const landingIn = (context: JsContext): string[] =>
+      cases.filter((c) => contextsByKey.get(c.key)!.has(context)).map((c) => c.key)
+    const code = landingIn('code')
+    const regex = landingIn('regex')
+    const sanitized = code.filter((key) => key in TRANSFORMED)
+    const passing = [...code, ...regex].filter((key) =>
+      outcomes[key].some((o) => o !== 'rejected' && !(sanitized.includes(key) && o === 'contained'))
     )
+    console.log(
+      `code-position fields ${code.length}, pattern fields ${regex.length}, ` +
+        `passing a payload ${passing.length}; sanitized to identifiers: ${sanitized.join(', ')}`
+    )
+    expect(code.length).toBeGreaterThan(0)
+    expect(regex.length).toBeGreaterThan(0)
+    expect(passing).toEqual([])
     // Each rewritten field is rejected by its own check for every payload.
-    expect(rewritten).toEqual(
+    expect(Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, outcomes[key]]))).toEqual(
       Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, EVERY.map(() => 'rejected')]))
     )
   })

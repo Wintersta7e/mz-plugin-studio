@@ -291,7 +291,7 @@ Window_Options.prototype.addGeneralOptions = function() {
 // Access the value with: ConfigManager.Sample
 
 // ==== case: optionName=comment-u2028 {"optionType":"boolean","persistToConfig":true,"optionName":"X */\u2028globalThis.__pwn = 1; /* Y","optionSymbol":"Sample"}
-// Options Menu Addition: X */ globalThis.__pwn = 1; /* Y
+// Options Menu Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add to ConfigManager
 ConfigManager.Sample = true;
@@ -322,7 +322,7 @@ Window_Options.prototype.addGeneralOptions = function() {
 // Access the value with: ConfigManager.Sample
 
 // ==== case: optionName=comment-u2029 {"optionType":"boolean","persistToConfig":true,"optionName":"X */\u2029globalThis.__pwn = 1; /* Y","optionSymbol":"Sample"}
-// Options Menu Addition: X */ globalThis.__pwn = 1; /* Y
+// Options Menu Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add to ConfigManager
 ConfigManager.Sample = true;
@@ -353,8 +353,7 @@ Window_Options.prototype.addGeneralOptions = function() {
 // Access the value with: ConfigManager.Sample
 
 // ==== case: optionName=comment-lf {"optionType":"boolean","persistToConfig":true,"optionName":"X */\nglobalThis.__pwn = 1; /* Y","optionSymbol":"Sample"}
-// Options Menu Addition: X */
-globalThis.__pwn = 1; /* Y
+// Options Menu Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add to ConfigManager
 ConfigManager.Sample = true;
@@ -924,6 +923,7 @@ Window_Options.prototype.addGeneralOptions = function() {
 // Access the value with: ConfigManager.Sample
 
 // ==== case: optionType=volume,defaultValue=comment-space {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X */ globalThis.__pwn = 1; /* Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -962,6 +962,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=comment-u2028 {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X */\u2028globalThis.__pwn = 1; /* Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1000,6 +1001,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=comment-u2029 {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X */\u2029globalThis.__pwn = 1; /* Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1038,6 +1040,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=comment-lf {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X */\nglobalThis.__pwn = 1; /* Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1077,6 +1080,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=quote-single {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X' + (globalThis.__pwn = 1) + 'Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1115,6 +1119,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=quote-double {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X\" + (globalThis.__pwn = 1) + \"Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1153,6 +1158,7 @@ Window_Options.prototype.isVolumeSymbol = function(symbol) {
 };
 
 // ==== case: optionType=volume,defaultValue=quote-backtick {"optionType":"volume","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y"}
+// rejects: Default Value must be a whole number for a volume option
 // Options Menu Addition: Sample
 
 // Add to ConfigManager
@@ -1569,7 +1575,7 @@ Window_Options.prototype.cursorLeft = function() {
 };
 
 // Access the value with: ConfigManager.Sample (index 0-0)
-// Choices: X */ globalThis.__pwn = 1; /* Y
+// Choices: X */ globalThis.__pwn = 1; /* Y
 
 // ==== case: optionType=select,choices=comment-u2029 {"optionType":"select","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","choices":"X */\u2029globalThis.__pwn = 1; /* Y"}
 // Options Menu Addition: Sample
@@ -1651,7 +1657,7 @@ Window_Options.prototype.cursorLeft = function() {
 };
 
 // Access the value with: ConfigManager.Sample (index 0-0)
-// Choices: X */ globalThis.__pwn = 1; /* Y
+// Choices: X */ globalThis.__pwn = 1; /* Y
 
 // ==== case: optionType=select,choices=comment-lf {"optionType":"select","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","choices":"X */\nglobalThis.__pwn = 1; /* Y"}
 // Options Menu Addition: Sample
@@ -1733,8 +1739,7 @@ Window_Options.prototype.cursorLeft = function() {
 };
 
 // Access the value with: ConfigManager.Sample (index 0-0)
-// Choices: X */
-globalThis.__pwn = 1; /* Y
+// Choices: X */ globalThis.__pwn = 1; /* Y
 
 // ==== case: optionType=select,choices=quote-single {"optionType":"select","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","choices":"X' + (globalThis.__pwn = 1) + 'Y"}
 // Options Menu Addition: Sample

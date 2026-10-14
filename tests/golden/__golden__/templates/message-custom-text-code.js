@@ -338,6 +338,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=comment-space {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X */ globalThis.__pwn = 1; /* Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -356,6 +357,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=comment-u2028 {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X */\u2028globalThis.__pwn = 1; /* Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -374,6 +376,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=comment-u2029 {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X */\u2029globalThis.__pwn = 1; /* Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -392,6 +395,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=comment-lf {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X */\nglobalThis.__pwn = 1; /* Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -411,6 +415,7 @@ globalThis.__pwn = 1; /* Y;
 };
 
 // ==== case: replacementText=quote-single {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X' + (globalThis.__pwn = 1) + 'Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -429,6 +434,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=quote-double {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X\" + (globalThis.__pwn = 1) + \"Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 
@@ -447,6 +453,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: replacementText=quote-backtick {"hasParameter":true,"codeType":"replace","effectType":"color","replacementText":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","escapeChar":"Sample"}
+// rejects: Replacement Expression must be one expression on one line (no ";" or comments)
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 

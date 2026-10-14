@@ -9,7 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
-import { escapeJSString } from '../escape'
+import { escapeJSString, isOneLineExpression } from '../escape'
 
 /**
  * Template 1: Custom Text Code
@@ -199,6 +199,8 @@ const customTextCodeTemplate: CodeTemplate = {
     const codeType = values.codeType as string
     if (codeType === 'replace' && !values.replacementText) {
       errors.push('Replacement expression is required for text replacement codes')
+    } else if (codeType === 'replace' && !isOneLineExpression(values.replacementText as string)) {
+      errors.push('Replacement Expression must be one expression on one line (no ";" or comments)')
     }
 
     return {

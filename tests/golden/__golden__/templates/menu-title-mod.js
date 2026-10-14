@@ -268,7 +268,7 @@ Scene_Title.prototype.commandextra = function() {
 };
 
 // ==== case: commandName=comment-u2028 {"modType":"addCommand","commandName":"X */\u2028globalThis.__pwn = 1; /* Y","commandSymbol":"extra"}
-// Title Screen Mod: Add "X */ globalThis.__pwn = 1; /* Y" Command
+// Title Screen Mod: Add "X */ globalThis.__pwn = 1; /* Y" Command
 
 // Add command to title command window
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
@@ -294,7 +294,7 @@ Scene_Title.prototype.commandextra = function() {
 };
 
 // ==== case: commandName=comment-u2029 {"modType":"addCommand","commandName":"X */\u2029globalThis.__pwn = 1; /* Y","commandSymbol":"extra"}
-// Title Screen Mod: Add "X */ globalThis.__pwn = 1; /* Y" Command
+// Title Screen Mod: Add "X */ globalThis.__pwn = 1; /* Y" Command
 
 // Add command to title command window
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
@@ -320,8 +320,7 @@ Scene_Title.prototype.commandextra = function() {
 };
 
 // ==== case: commandName=comment-lf {"modType":"addCommand","commandName":"X */\nglobalThis.__pwn = 1; /* Y","commandSymbol":"extra"}
-// Title Screen Mod: Add "X */
-globalThis.__pwn = 1; /* Y" Command
+// Title Screen Mod: Add "X */ globalThis.__pwn = 1; /* Y" Command
 
 // Add command to title command window
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;

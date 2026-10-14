@@ -1008,6 +1008,11 @@ const spriteAnimationTemplate: CodeTemplate = {
     const animationType = values.animationType as string
     if (animationType === 'mixin' && !values.targetClass) {
       errors.push('Target Sprite Class is required for Animation Mixin')
+    } else if (
+      animationType === 'mixin' &&
+      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(values.targetClass as string)
+    ) {
+      errors.push('Target Sprite Class must be a class name (letters, numbers, _ or $)')
     }
 
     return {

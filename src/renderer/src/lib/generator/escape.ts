@@ -39,6 +39,31 @@ export function escapeLineComment(str: string): string {
 }
 
 /**
+ * Whether text a template writes as a JavaScript expression stays one expression on one line:
+ * no line break, every string literal closed, and outside the literals no `;`, no comment
+ * marker and no literal written against a name or value (as in `x' + y + 'z`). A check, not a
+ * parser: a few valid expressions fail it, such as `'a' in obj`.
+ */
+export function isOneLineExpression(text: string): boolean {
+  if (/[\r\n\u2028\u2029]/.test(text)) return false
+  let outside = ''
+  for (let i = 0; i < text.length; i++) {
+    const quote = text[i]
+    if (quote !== "'" && quote !== '"' && quote !== '`') {
+      outside += quote
+      continue
+    }
+    let end = i + 1
+    while (end < text.length && text[end] !== quote) end += text[end] === '\\' ? 2 : 1
+    if (end >= text.length) return false
+    // The whole literal reads as one quote from here on.
+    outside += "'"
+    i = end
+  }
+  return !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(']/.test(outside)
+}
+
+/**
  * Sanitize a user-provided default into a JS literal of the requested type.
  * Strings are single-quoted via escapeJSString. Numbers go through Number().
  * Booleans match 'true'/'false' (default false). Object/array round-trip through

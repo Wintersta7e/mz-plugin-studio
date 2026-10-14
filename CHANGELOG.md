@@ -12,6 +12,7 @@
 
 - Text entered in a plugin field, or loaded from a `.mzparams` file, can no longer end a comment in the generated plugin and run as code; the descriptions in the `.d.ts` export are covered too.
 - Line breaks and hidden line separators in command and parameter names can no longer end a comment in inserted code snippets; generated strings write those separators as escapes.
+- Text typed into a template field can no longer end a comment or string in the inserted code, and fields that become code accept only what fits there.
 
 ## [1.6.0] - 2026-04-19
 

@@ -64,7 +64,7 @@ function playCustomSE() {
 }
 
 // ==== case: filename=comment-u2028 {"volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"randomizePitch":false,"pitchVariation":10,"filename":"X */\u2028globalThis.__pwn = 1; /* Y"}
-// Sound Effect Function: X */ globalThis.__pwn = 1; /* Y
+// Sound Effect Function: X */ globalThis.__pwn = 1; /* Y
 function playCustomSE() {
     // Play sound effect
     const se = {
@@ -77,7 +77,7 @@ function playCustomSE() {
 }
 
 // ==== case: filename=comment-u2029 {"volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"randomizePitch":false,"pitchVariation":10,"filename":"X */\u2029globalThis.__pwn = 1; /* Y"}
-// Sound Effect Function: X */ globalThis.__pwn = 1; /* Y
+// Sound Effect Function: X */ globalThis.__pwn = 1; /* Y
 function playCustomSE() {
     // Play sound effect
     const se = {
@@ -90,8 +90,7 @@ function playCustomSE() {
 }
 
 // ==== case: filename=comment-lf {"volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"randomizePitch":false,"pitchVariation":10,"filename":"X */\nglobalThis.__pwn = 1; /* Y"}
-// Sound Effect Function: X */
-globalThis.__pwn = 1; /* Y
+// Sound Effect Function: X */ globalThis.__pwn = 1; /* Y
 function playCustomSE() {
     // Play sound effect
     const se = {

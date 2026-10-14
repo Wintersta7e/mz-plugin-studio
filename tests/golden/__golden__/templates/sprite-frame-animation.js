@@ -2580,6 +2580,7 @@ Sprite_Sample.prototype.currentFrame = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=comment-space {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X */ globalThis.__pwn = 1; /* Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X */ globalThis.__pwn = 1; /* Y
@@ -2650,6 +2651,7 @@ X */ globalThis.__pwn = 1; /* Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=comment-u2028 {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X */\u2028globalThis.__pwn = 1; /* Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X */ globalThis.__pwn = 1; /* Y
@@ -2720,6 +2722,7 @@ X */ globalThis.__pwn = 1; /* Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=comment-u2029 {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X */\u2029globalThis.__pwn = 1; /* Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X */ globalThis.__pwn = 1; /* Y
@@ -2790,6 +2793,7 @@ X */ globalThis.__pwn = 1; /* Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=comment-lf {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X */\nglobalThis.__pwn = 1; /* Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X */
@@ -2875,6 +2879,7 @@ globalThis.__pwn = 1; /* Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=quote-single {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X' + (globalThis.__pwn = 1) + 'Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X' + (globalThis.__pwn = 1) + 'Y
@@ -2945,6 +2950,7 @@ X' + (globalThis.__pwn = 1) + 'Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=quote-double {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X\" + (globalThis.__pwn = 1) + \"Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X" + (globalThis.__pwn = 1) + "Y
@@ -3015,6 +3021,7 @@ X" + (globalThis.__pwn = 1) + "Y.prototype.resumeAnimation = function() {
 };
 
 // ==== case: animationType=mixin,targetClass=quote-backtick {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y"}
+// rejects: Target Sprite Class must be a class name (letters, numbers, _ or $)
 // Animation Mixin
 //
 // Adds frame-based animation to X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y

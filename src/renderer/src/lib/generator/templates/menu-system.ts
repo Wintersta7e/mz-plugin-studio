@@ -10,7 +10,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
-import { escapeJSDoubleQuote } from '../escape'
+import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
 
 /**
  * Helper to convert a name to a valid JavaScript identifier
@@ -371,7 +371,7 @@ const titleScreenModTemplate: CodeTemplate = {
         const commandName = (values.commandName as string) || 'Custom'
         const commandSymbol = (values.commandSymbol as string) || 'custom'
 
-        lines.push(`// Title Screen Mod: Add "${commandName}" Command`)
+        lines.push(`// Title Screen Mod: Add "${escapeLineComment(commandName)}" Command`)
         lines.push('')
         lines.push('// Add command to title command window')
         lines.push(
@@ -621,7 +621,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     const symbolId = toValidIdentifier(commandSymbol)
     const lines: string[] = []
 
-    lines.push(`// Menu Command Addition: ${commandName}`)
+    lines.push(`// Menu Command Addition: ${escapeLineComment(commandName)}`)
     lines.push('')
 
     // Determine insertion logic
@@ -667,7 +667,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push('')
 
     // Enable check method
-    lines.push(`// Enable condition for ${commandName}`)
+    lines.push(`// Enable condition for ${escapeLineComment(commandName)}`)
     lines.push(`Window_MenuCommand.prototype.is${symbolId}Enabled = function() {`)
 
     switch (enableCondition) {
@@ -868,7 +868,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
 
     const lines: string[] = []
 
-    lines.push(`// Options Menu Addition: ${optionName}`)
+    lines.push(`// Options Menu Addition: ${escapeLineComment(optionName)}`)
     lines.push('')
 
     // Determine default value
@@ -1034,7 +1034,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push(
           `// Access the value with: ConfigManager.${optionSymbol} (index 0-${choiceList.length - 1})`
         )
-        lines.push(`// Choices: ${choiceList.join(', ')}`)
+        lines.push(`// Choices: ${escapeLineComment(choiceList.join(', '))}`)
         break
       }
     }
@@ -1060,6 +1060,14 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     const optionType = values.optionType as string
     if (optionType === 'select' && !values.choices) {
       errors.push('Choices are required for select-type options')
+    }
+
+    // Written as code for these two types: a volume, or the index of the chosen choice.
+    const defaultValue = values.defaultValue as string
+    if ((optionType === 'volume' || optionType === 'select') && defaultValue) {
+      if (!/^\d+$/.test(defaultValue)) {
+        errors.push(`Default Value must be a whole number for a ${optionType} option`)
+      }
     }
 
     return {

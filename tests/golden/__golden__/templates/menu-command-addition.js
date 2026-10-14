@@ -567,7 +567,7 @@ Scene_Menu.prototype.commandSample = function() {
 };
 
 // ==== case: commandName=comment-u2028 {"insertPosition":"beforeOptions","requiresActor":false,"enableCondition":"always","commandName":"X */\u2028globalThis.__pwn = 1; /* Y","commandSymbol":"Sample"}
-// Menu Command Addition: X */ globalThis.__pwn = 1; /* Y
+// Menu Command Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add command to main menu
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
@@ -576,7 +576,7 @@ Window_MenuCommand.prototype.addOriginalCommands = function() {
     this.addCommand("X */\u2028globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
 };
 
-// Enable condition for X */ globalThis.__pwn = 1; /* Y
+// Enable condition for X */ globalThis.__pwn = 1; /* Y
 Window_MenuCommand.prototype.isSampleEnabled = function() {
     return true;
 };
@@ -611,7 +611,7 @@ Scene_Menu.prototype.commandSample = function() {
 };
 
 // ==== case: commandName=comment-u2029 {"insertPosition":"beforeOptions","requiresActor":false,"enableCondition":"always","commandName":"X */\u2029globalThis.__pwn = 1; /* Y","commandSymbol":"Sample"}
-// Menu Command Addition: X */ globalThis.__pwn = 1; /* Y
+// Menu Command Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add command to main menu
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
@@ -620,7 +620,7 @@ Window_MenuCommand.prototype.addOriginalCommands = function() {
     this.addCommand("X */\u2029globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
 };
 
-// Enable condition for X */ globalThis.__pwn = 1; /* Y
+// Enable condition for X */ globalThis.__pwn = 1; /* Y
 Window_MenuCommand.prototype.isSampleEnabled = function() {
     return true;
 };
@@ -655,8 +655,7 @@ Scene_Menu.prototype.commandSample = function() {
 };
 
 // ==== case: commandName=comment-lf {"insertPosition":"beforeOptions","requiresActor":false,"enableCondition":"always","commandName":"X */\nglobalThis.__pwn = 1; /* Y","commandSymbol":"Sample"}
-// Menu Command Addition: X */
-globalThis.__pwn = 1; /* Y
+// Menu Command Addition: X */ globalThis.__pwn = 1; /* Y
 
 // Add command to main menu
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
@@ -665,8 +664,7 @@ Window_MenuCommand.prototype.addOriginalCommands = function() {
     this.addCommand("X */\nglobalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
 };
 
-// Enable condition for X */
-globalThis.__pwn = 1; /* Y
+// Enable condition for X */ globalThis.__pwn = 1; /* Y
 Window_MenuCommand.prototype.isSampleEnabled = function() {
     return true;
 };

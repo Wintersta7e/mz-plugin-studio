@@ -9,7 +9,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
-import { escapeJSString } from '../escape'
+import { escapeJSString, escapeLineComment } from '../escape'
 
 /**
  * Template 1: BGM Control
@@ -340,7 +340,7 @@ const sePlayerTemplate: CodeTemplate = {
     coreCode.push('AudioManager.playSe(se);')
 
     if (wrapInFunction) {
-      lines.push(`// Sound Effect Function: ${filename}`)
+      lines.push(`// Sound Effect Function: ${escapeLineComment(filename)}`)
       lines.push(`function ${functionName}() {`)
       coreCode.forEach((line) => {
         lines.push(line ? `    ${line}` : '')
