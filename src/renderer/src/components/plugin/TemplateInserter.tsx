@@ -47,6 +47,7 @@ import {
   getTemplateDefaults,
   getAllTemplates,
   getTemplate,
+  validateTemplateValues,
   type TemplateCategory,
   type TemplateField
 } from '../../lib/generator/templates'
@@ -220,6 +221,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({})
   const [previewCode, setPreviewCode] = useState<string>('')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
   const highlightedPreview = useMemo(
     () => (previewCode ? highlightCode(previewCode) : null),
     [previewCode]
@@ -341,17 +343,26 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
       }))
   }, [fieldValues.className])
 
-  // Update preview when template or field values change
+  // Update preview when template or field values change; values failing the template's own
+  // checks produce no code, so nothing they would generate can be inserted or copied
   useEffect(() => {
-    if (selectedTemplate) {
-      try {
-        const code = selectedTemplate.generate(fieldValues)
-        setPreviewCode(code)
-      } catch {
-        setPreviewCode('// Error generating code - please check field values')
-      }
-    } else {
+    if (!selectedTemplate) {
+      setValidationErrors([])
       setPreviewCode('')
+      return
+    }
+    const validation = validateTemplateValues(selectedTemplate.id, fieldValues)
+    if (!validation.valid) {
+      setValidationErrors(validation.errors)
+      setPreviewCode('')
+      return
+    }
+    setValidationErrors([])
+    try {
+      const code = selectedTemplate.generate(fieldValues)
+      setPreviewCode(code)
+    } catch {
+      setPreviewCode('// Error generating code - please check field values')
     }
   }, [selectedTemplate, fieldValues])
 
@@ -390,22 +401,27 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     return undefined
   }, [open])
 
+  const handleInsert = useCallback(() => {
+    if (validationErrors.length > 0) return
+    if (previewCode && !previewCode.startsWith('// Error')) {
+      if (selectedTemplateId) {
+        addToRecent(selectedTemplateId)
+      }
+      onInsert(previewCode)
+      onClose()
+    }
+  }, [validationErrors, previewCode, selectedTemplateId, addToRecent, onInsert, onClose])
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose()
       } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         // Cmd/Ctrl+Enter to insert
-        if (previewCode && !previewCode.startsWith('// Error')) {
-          if (selectedTemplateId) {
-            addToRecent(selectedTemplateId)
-          }
-          onInsert(previewCode)
-          onClose()
-        }
+        handleInsert()
       }
     },
-    [onClose, onInsert, previewCode, selectedTemplateId, addToRecent]
+    [onClose, handleInsert]
   )
 
   useEffect(() => {
@@ -422,17 +438,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
     }
   }
 
-  const handleInsert = () => {
-    if (previewCode && !previewCode.startsWith('// Error')) {
-      if (selectedTemplateId) {
-        addToRecent(selectedTemplateId)
-      }
-      onInsert(previewCode)
-      onClose()
-    }
-  }
-
   const handleCopyCode = async () => {
+    if (validationErrors.length > 0) return
     if (previewCode) {
       await navigator.clipboard.writeText(previewCode)
       setCopied(true)
@@ -728,7 +735,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   if (!open) return null
 
   const selectedCategoryInfo = CATEGORIES.find((c) => c.id === selectedCategory)
-  const canInsert = previewCode && !previewCode.startsWith('// Error')
+  const canInsert =
+    validationErrors.length === 0 && previewCode && !previewCode.startsWith('// Error')
 
   return (
     <div
@@ -1078,7 +1086,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyCode}
-                  disabled={!previewCode}
+                  disabled={!previewCode || validationErrors.length > 0}
                   className="h-7 gap-1.5 text-xs"
                 >
                   {copied ? (
@@ -1095,7 +1103,16 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                 </Button>
               </div>
               <div className="h-44 overflow-auto bg-[#1e1e2e] p-4">
-                {previewCode ? (
+                {validationErrors.length > 0 ? (
+                  <div className="space-y-1.5 text-sm">
+                    <p className="text-gray-300">Fix these fields to see the code:</p>
+                    <ul className="list-disc space-y-0.5 pl-5 text-red-300">
+                      {validationErrors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : previewCode ? (
                   <code className="font-mono text-[13px] leading-relaxed text-gray-300">
                     {highlightedPreview}
                   </code>

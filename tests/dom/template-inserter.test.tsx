@@ -24,19 +24,37 @@ function openPropertyTemplate(onInsert: (code: string) => void, propertyName: st
 }
 
 const preview = (): string => document.querySelector('code')?.textContent ?? ''
+const copyButton = (): HTMLElement => screen.getByRole('button', { name: /Copy/ })
+const insertButton = (): HTMLElement => screen.getByRole('button', { name: /Insert Code/ })
 
 describe('template dialog', () => {
-  it('inserts and copies a property name that is not an identifier', async () => {
+  it('refuses to insert or copy a property name that is not an identifier', async () => {
     const onInsert = vi.fn()
     openPropertyTemplate(onInsert, HOSTILE_NAME)
-    expect(preview()).toContain(HOSTILE_NAME)
+    expect(screen.getByText(/must be a valid JavaScript identifier/)).toBeInTheDocument()
+    expect(preview()).not.toContain(HOSTILE_NAME)
+    expect(copyButton()).toBeDisabled()
+    expect(insertButton()).toBeDisabled()
 
-    fireEvent.click(screen.getByRole('button', { name: /Copy/ }))
+    fireEvent.click(copyButton())
+    fireEvent.click(insertButton())
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true })
+    await Promise.resolve()
+    expect(writeText).not.toHaveBeenCalled()
+    expect(onInsert).not.toHaveBeenCalled()
+  })
+
+  it('inserts and copies a property name that passes the checks', async () => {
+    const onInsert = vi.fn()
+    openPropertyTemplate(onInsert, 'loyalty')
+    expect(preview()).toContain('loyalty')
+
+    fireEvent.click(copyButton())
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
-    expect(writeText.mock.calls[0][0]).toContain(HOSTILE_NAME)
+    expect(writeText.mock.calls[0][0]).toContain('loyalty')
 
-    fireEvent.click(screen.getByRole('button', { name: /Insert Code/ }))
+    fireEvent.click(insertButton())
     expect(onInsert).toHaveBeenCalledTimes(1)
-    expect(onInsert.mock.calls[0][0]).toContain(HOSTILE_NAME)
+    expect(onInsert.mock.calls[0][0]).toContain('loyalty')
   })
 })

@@ -6,6 +6,7 @@ import { resolve } from 'path'
 import { describe, it, expect } from 'vitest'
 import {
   getTemplate,
+  getTemplateDefaults,
   validateTemplateValues
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { ENABLING_VALUES, baseValues, templateIds } from '../golden/corpus/templates'
@@ -223,5 +224,22 @@ describe('template field text', () => {
     expect(rewritten).toEqual(
       Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, EVERY.map(() => 'rejected')]))
     )
+  })
+
+  // The dialog opens a template with its defaults and shows no code until they pass; a required
+  // field without a default fails by design.
+  it('names the templates whose defaults fail their own checks', () => {
+    const ids = templateIds()
+    const failing = Object.fromEntries(
+      ids
+        .map((id) => [id, validateTemplateValues(id, getTemplateDefaults(id)).errors] as const)
+        .filter(([, errors]) => errors.length > 0)
+    )
+    console.log(
+      `template defaults passing their own checks: ${ids.length - Object.keys(failing).length}/${ids.length}`
+    )
+    for (const [id, errors] of Object.entries(failing))
+      console.log(`  ${id}: ${errors.join(' | ')}`)
+    expect(ids.length).toBeGreaterThan(0)
   })
 })
