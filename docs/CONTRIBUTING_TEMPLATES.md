@@ -147,6 +147,16 @@ import '../../lib/generator/templates/my-new-category'
 
 If you added your template to an existing file, no import changes are needed -- the file is already imported.
 
+### Step 5: Add Golden Cases
+
+Every template's output is pinned in `tests/golden/__golden__/templates/<template-id>.js`. A new template needs golden cases, or the golden inventory test fails. Write them with:
+
+```bash
+npm run test:golden -- --update=new
+```
+
+Review the written file, then commit it in a test-only commit (no `src/` change) after the template's commit.
+
 ---
 
 ## Adding a New Category
@@ -801,3 +811,4 @@ Before submitting a new template, verify:
 - [ ] **Alias pattern**: MZ class extensions use the alias pattern (store original, call with `.call(this)` or `.apply(this, arguments)`)
 - [ ] **Unique alias names**: Alias variable names include enough context to avoid collisions
 - [ ] **Export**: The template object is exported from the file
+- [ ] **Golden cases**: `tests/golden/__golden__/templates/<id>.js` was written with `npm run test:golden -- --update=new` and committed without `src/` changes
