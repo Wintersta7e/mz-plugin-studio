@@ -42,3 +42,7 @@ tools/reference-repos/
 # Internal planning docs
 docs/plans/
 docs/claude-mz-reference.md
+
+# Test coverage and local tools
+coverage/
+.dev/
