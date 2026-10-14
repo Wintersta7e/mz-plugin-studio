@@ -316,7 +316,7 @@ $gameScreen.showPicture(
 
 $gameScreen.showPicture(
     1,         // Picture ID
-    'X */ globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+    'X */\u2028globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
     0,            // Origin (0 = Upper Left, 1 = Center)
     0,                 // X position
     0,                 // Y position
@@ -333,7 +333,7 @@ $gameScreen.showPicture(
 
 $gameScreen.showPicture(
     1,         // Picture ID
-    'X */ globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+    'X */\u2029globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
     0,            // Origin (0 = Upper Left, 1 = Center)
     0,                 // X position
     0,                 // Y position

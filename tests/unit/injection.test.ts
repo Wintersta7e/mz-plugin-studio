@@ -333,12 +333,6 @@ const ENTRIES: [string, (def: PluginDefinition) => string][] = [
   ['generateRawMode', (def) => generateRawMode({ ...def, rawSource: rawSource() })]
 ]
 
-// Raw mode names an added command in a line comment, which a line separator still ends.
-const LINE_COMMENT_CASES = [
-  'command.name / comment-u2028 / generateRawMode',
-  'command.name / comment-u2029 / generateRawMode'
-]
-
 interface MatrixCase {
   label: string
   outcome: Outcome
@@ -372,7 +366,7 @@ describe('generated plugin annotations', () => {
   it('field text stays inside the annotation comment', () => {
     expect(FIELD_ROWS.length).toBeGreaterThan(0)
     const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
-    expect(notClean.map((c) => c.label)).toEqual(LINE_COMMENT_CASES)
+    expect(notClean.map((c) => c.label)).toEqual([])
   })
 })
 
@@ -416,25 +410,10 @@ function runSnippets(): Record<string, string> {
 }
 
 describe('snippet comments', () => {
-  it('a line break in a name ends the snippet comment (today)', () => {
-    expect(runSnippets()).toEqual({
-      'generateCommandSkeleton lf': 'runs the text, not contained',
-      'generateCommandSkeleton crlf': 'runs the text, not contained',
-      'generateCommandSkeleton u2028': 'runs the text, not contained',
-      'generateCommandSkeleton u2029': 'runs the text, not contained',
-      'generateCommandSkeleton comment-space': 'clean, contained',
-      'generateCommandSkeleton comment-u2028': 'does not compile, not contained',
-      'generateCommandSkeleton comment-u2029': 'does not compile, not contained',
-      'generateCommandSkeleton comment-lf': 'does not compile, not contained',
-      'generateParameterComment lf': 'runs the text, not contained',
-      'generateParameterComment crlf': 'runs the text, not contained',
-      'generateParameterComment u2028': 'runs the text, not contained',
-      'generateParameterComment u2029': 'runs the text, not contained',
-      'generateParameterComment comment-space': 'clean, contained',
-      'generateParameterComment comment-u2028': 'does not compile, not contained',
-      'generateParameterComment comment-u2029': 'does not compile, not contained',
-      'generateParameterComment comment-lf': 'does not compile, not contained'
-    })
+  it('snippet comments stay on one line', () => {
+    const results = Object.entries(runSnippets())
+    expect(results).toHaveLength(SNIPPETS.length * SNIPPET_NAMES.length)
+    expect(results.filter(([, result]) => result !== 'clean, contained')).toEqual([])
   })
 })
 

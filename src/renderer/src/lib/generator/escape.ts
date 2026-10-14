@@ -1,16 +1,25 @@
 /**
  * Escape a string for safe interpolation inside a single-quoted JS string literal.
- * Handles backslash, single-quote, newline, and carriage return.
+ * Handles backslash, single-quote, newline, carriage return and the two line separators,
+ * which would otherwise end a line comment the same text is also written into.
  */
 export function escapeJSString(str: string): string {
-  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+  return escapeLineSeparators(
+    str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+  )
 }
 
 /**
  * Escape a string for safe interpolation inside a double-quoted JS string literal.
  */
 export function escapeJSDoubleQuote(str: string): string {
-  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+  return escapeLineSeparators(
+    str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+  )
+}
+
+function escapeLineSeparators(str: string): string {
+  return str.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
 }
 
 /**
@@ -19,6 +28,14 @@ export function escapeJSDoubleQuote(str: string): string {
  */
 export function escapeBlockComment(str: string): string {
   return str.replace(/\*\//g, '*\\/')
+}
+
+/**
+ * Escape a string for interpolation inside a line comment: each line break or line separator
+ * becomes one space, so the text cannot end the comment.
+ */
+export function escapeLineComment(str: string): string {
+  return str.replace(/\r\n|[\r\n\u2028\u2029]/g, ' ')
 }
 
 /**

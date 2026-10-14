@@ -269,15 +269,13 @@ globalThis.__pwn = 1; /* Y
  */
 
 // ==== case: generateCommandSkeleton X */\nglobalThis.__pwn = 1; /* Y
-// --- X */
-globalThis.__pwn = 1; /* Y ---
+// --- X */ globalThis.__pwn = 1; /* Y ---
 PluginManager.registerCommand(PLUGIN_NAME, 'X */\nglobalThis.__pwn = 1; /* Y', function(args) {
     // TODO: Implement X */\nglobalThis.__pwn = 1; /* Y logic
 });
 
 // ==== case: generateParameterComment X */\nglobalThis.__pwn = 1; /* Y
-// Parameter 'X */
-globalThis.__pwn = 1; /* Y' (select) is available as: xGlobalThisPwn1Y
+// Parameter 'X */ globalThis.__pwn = 1; /* Y' (select) is available as: xGlobalThisPwn1Y
 
 // ==== case: validatePlugin
 {

@@ -3599,7 +3599,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -3627,7 +3627,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -3727,7 +3727,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -3755,7 +3755,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -4495,7 +4495,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'HP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: 0, max: 100 },
+        { label: 'HP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -4523,7 +4523,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'HP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: actor.hp, max: actor.mhp },
+        { label: 'HP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -4623,7 +4623,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'HP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: 0, max: 100 },
+        { label: 'HP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -4651,7 +4651,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'HP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: actor.hp, max: actor.mhp },
+        { label: 'HP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -5391,7 +5391,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'HP', color1: '#e08040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'HP', color1: '#e08040', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -5419,7 +5419,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'HP', color1: '#e08040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.hp, max: actor.mhp },
+        { label: 'HP', color1: '#e08040', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -5519,7 +5519,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
-        { label: 'HP', color1: '#e08040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'HP', color1: '#e08040', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
@@ -5547,7 +5547,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     if (!actor) return this._gaugeData;
     
     return [
-        { label: 'HP', color1: '#e08040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.hp, max: actor.mhp },
+        { label: 'HP', color1: '#e08040', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
@@ -6288,7 +6288,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
 
@@ -6316,7 +6316,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -6416,7 +6416,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
 
@@ -6444,7 +6444,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -7184,7 +7184,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'MP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: 0, max: 100 },
+        { label: 'MP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
 
@@ -7212,7 +7212,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'MP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
+        { label: 'MP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -7312,7 +7312,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'MP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: 0, max: 100 },
+        { label: 'MP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: 0, max: 100 },
     ];
 };
 
@@ -7340,7 +7340,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'MP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
+        { label: 'MP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -8080,7 +8080,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'MP', color1: '#4080c0', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'MP', color1: '#4080c0', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
     ];
 };
 
@@ -8108,7 +8108,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'MP', color1: '#4080c0', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.mp, max: actor.mmp },
+        { label: 'MP', color1: '#4080c0', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -8208,7 +8208,7 @@ Window_Sample.prototype.initializeGauges = function() {
     // Initialize gauge configurations
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
-        { label: 'MP', color1: '#4080c0', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'MP', color1: '#4080c0', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
     ];
 };
 
@@ -8236,7 +8236,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
-        { label: 'MP', color1: '#4080c0', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.mp, max: actor.mmp },
+        { label: 'MP', color1: '#4080c0', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: actor.mp, max: actor.mmp },
     ];
 };
 
@@ -9875,7 +9875,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: 0, max: 100 },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: 0, max: 100 },
     ];
 };
 
@@ -9904,7 +9904,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
+        { label: 'X */\u2028globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
     ];
 };
 
@@ -10005,7 +10005,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: 0, max: 100 },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: 0, max: 100 },
     ];
 };
 
@@ -10034,7 +10034,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'X */ globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
+        { label: 'X */\u2029globalThis.__pwn = 1; /* Y', color1: '#40c040', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
     ];
 };
 
@@ -11681,7 +11681,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'TP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#80f080', current: 0, max: 100 },
+        { label: 'TP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#80f080', current: 0, max: 100 },
     ];
 };
 
@@ -11710,7 +11710,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'TP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
+        { label: 'TP', color1: 'X */\u2028globalThis.__pwn = 1; /* Y', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
     ];
 };
 
@@ -11811,7 +11811,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'TP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#80f080', current: 0, max: 100 },
+        { label: 'TP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#80f080', current: 0, max: 100 },
     ];
 };
 
@@ -11840,7 +11840,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'TP', color1: 'X */ globalThis.__pwn = 1; /* Y', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
+        { label: 'TP', color1: 'X */\u2029globalThis.__pwn = 1; /* Y', color2: '#80f080', current: actor.tp, max: actor.maxTp() },
     ];
 };
 
@@ -13487,7 +13487,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'TP', color1: '#40c040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'TP', color1: '#40c040', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
     ];
 };
 
@@ -13516,7 +13516,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'TP', color1: '#40c040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.tp, max: actor.maxTp() },
+        { label: 'TP', color1: '#40c040', color2: 'X */\u2028globalThis.__pwn = 1; /* Y', current: actor.tp, max: actor.maxTp() },
     ];
 };
 
@@ -13617,7 +13617,7 @@ Window_Sample.prototype.initializeGauges = function() {
     this._gaugeData = [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: 0, max: 100 },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: 0, max: 100 },
-        { label: 'TP', color1: '#40c040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
+        { label: 'TP', color1: '#40c040', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: 0, max: 100 },
     ];
 };
 
@@ -13646,7 +13646,7 @@ Window_Sample.prototype.getCurrentValues = function() {
     return [
         { label: 'HP', color1: '#e08040', color2: '#f0c040', current: actor.hp, max: actor.mhp },
         { label: 'MP', color1: '#4080c0', color2: '#40c0f0', current: actor.mp, max: actor.mmp },
-        { label: 'TP', color1: '#40c040', color2: 'X */ globalThis.__pwn = 1; /* Y', current: actor.tp, max: actor.maxTp() },
+        { label: 'TP', color1: '#40c040', color2: 'X */\u2029globalThis.__pwn = 1; /* Y', current: actor.tp, max: actor.maxTp() },
     ];
 };
 

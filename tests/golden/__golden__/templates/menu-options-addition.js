@@ -315,7 +315,7 @@ ConfigManager.applyData = function(config) {
 const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
 Window_Options.prototype.addGeneralOptions = function() {
     _Window_Options_addGeneralOptions.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "Sample");
+    this.addCommand("X */\u2028globalThis.__pwn = 1; /* Y", "Sample");
 };
 
 // Boolean type uses default behavior - no additional code needed
@@ -346,7 +346,7 @@ ConfigManager.applyData = function(config) {
 const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
 Window_Options.prototype.addGeneralOptions = function() {
     _Window_Options_addGeneralOptions.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "Sample");
+    this.addCommand("X */\u2029globalThis.__pwn = 1; /* Y", "Sample");
 };
 
 // Boolean type uses default behavior - no additional code needed
@@ -528,14 +528,14 @@ ConfigManager.makeData = function() {
 const _ConfigManager_applyData = ConfigManager.applyData;
 ConfigManager.applyData = function(config) {
     _ConfigManager_applyData.call(this, config);
-    this.X */ globalThis.__pwn = 1; /* Y = this.readFlag(config, "X */ globalThis.__pwn = 1; /* Y", true);
+    this.X */ globalThis.__pwn = 1; /* Y = this.readFlag(config, "X */\u2028globalThis.__pwn = 1; /* Y", true);
 };
 
 // Add option to options window
 const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
 Window_Options.prototype.addGeneralOptions = function() {
     _Window_Options_addGeneralOptions.call(this);
-    this.addCommand("Sample", "X */ globalThis.__pwn = 1; /* Y");
+    this.addCommand("Sample", "X */\u2028globalThis.__pwn = 1; /* Y");
 };
 
 // Boolean type uses default behavior - no additional code needed
@@ -560,14 +560,14 @@ ConfigManager.makeData = function() {
 const _ConfigManager_applyData = ConfigManager.applyData;
 ConfigManager.applyData = function(config) {
     _ConfigManager_applyData.call(this, config);
-    this.X */ globalThis.__pwn = 1; /* Y = this.readFlag(config, "X */ globalThis.__pwn = 1; /* Y", true);
+    this.X */ globalThis.__pwn = 1; /* Y = this.readFlag(config, "X */\u2029globalThis.__pwn = 1; /* Y", true);
 };
 
 // Add option to options window
 const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
 Window_Options.prototype.addGeneralOptions = function() {
     _Window_Options_addGeneralOptions.call(this);
-    this.addCommand("Sample", "X */ globalThis.__pwn = 1; /* Y");
+    this.addCommand("Sample", "X */\u2029globalThis.__pwn = 1; /* Y");
 };
 
 // Boolean type uses default behavior - no additional code needed
@@ -1522,7 +1522,7 @@ const _Window_Options_statusText = Window_Options.prototype.statusText;
 Window_Options.prototype.statusText = function(index) {
     const symbol = this.commandSymbol(index);
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2028globalThis.__pwn = 1; /* Y"];
         return choices[this.getConfigValue(symbol)] || choices[0];
     }
     return _Window_Options_statusText.call(this, index);
@@ -1533,7 +1533,7 @@ const _Window_Options_processOk = Window_Options.prototype.processOk;
 Window_Options.prototype.processOk = function() {
     const symbol = this.commandSymbol(this.index());
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2028globalThis.__pwn = 1; /* Y"];
         let value = this.getConfigValue(symbol);
         value = (value + 1) % choices.length;
         this.changeValue(symbol, value);
@@ -1547,7 +1547,7 @@ const _Window_Options_cursorRight = Window_Options.prototype.cursorRight;
 Window_Options.prototype.cursorRight = function() {
     const symbol = this.commandSymbol(this.index());
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2028globalThis.__pwn = 1; /* Y"];
         let value = this.getConfigValue(symbol);
         value = Math.min(value + 1, choices.length - 1);
         this.changeValue(symbol, value);
@@ -1604,7 +1604,7 @@ const _Window_Options_statusText = Window_Options.prototype.statusText;
 Window_Options.prototype.statusText = function(index) {
     const symbol = this.commandSymbol(index);
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2029globalThis.__pwn = 1; /* Y"];
         return choices[this.getConfigValue(symbol)] || choices[0];
     }
     return _Window_Options_statusText.call(this, index);
@@ -1615,7 +1615,7 @@ const _Window_Options_processOk = Window_Options.prototype.processOk;
 Window_Options.prototype.processOk = function() {
     const symbol = this.commandSymbol(this.index());
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2029globalThis.__pwn = 1; /* Y"];
         let value = this.getConfigValue(symbol);
         value = (value + 1) % choices.length;
         this.changeValue(symbol, value);
@@ -1629,7 +1629,7 @@ const _Window_Options_cursorRight = Window_Options.prototype.cursorRight;
 Window_Options.prototype.cursorRight = function() {
     const symbol = this.commandSymbol(this.index());
     if (symbol === "Sample") {
-        const choices = ["X */ globalThis.__pwn = 1; /* Y"];
+        const choices = ["X */\u2029globalThis.__pwn = 1; /* Y"];
         let value = this.getConfigValue(symbol);
         value = Math.min(value + 1, choices.length - 1);
         this.changeValue(symbol, value);

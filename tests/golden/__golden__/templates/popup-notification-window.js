@@ -1835,7 +1835,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.createCustomBackground = function() {
     // Create a custom colored background
     this._customBg = new Sprite(new Bitmap(this.width, this.height));
-    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
     this._customBg.opacity = 200;
     this.addChildToBack(this._customBg);
 };
@@ -1940,7 +1940,7 @@ Window_Sample.prototype.initialize = function(rect) {
 Window_Sample.prototype.createCustomBackground = function() {
     // Create a custom colored background
     this._customBg = new Sprite(new Bitmap(this.width, this.height));
-    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
     this._customBg.opacity = 200;
     this.addChildToBack(this._customBg);
 };
@@ -2611,7 +2611,7 @@ Window_Sample.prototype.updateDuration = function() {
 
 Window_Sample.prototype.refresh = function() {
     this.contents.clear();
-    this.contents.textColor = 'X */ globalThis.__pwn = 1; /* Y';
+    this.contents.textColor = 'X */\u2028globalThis.__pwn = 1; /* Y';
     this.drawText(this._message, 0, 0, this.contentsWidth(), 'center');
 };
 
@@ -2716,7 +2716,7 @@ Window_Sample.prototype.updateDuration = function() {
 
 Window_Sample.prototype.refresh = function() {
     this.contents.clear();
-    this.contents.textColor = 'X */ globalThis.__pwn = 1; /* Y';
+    this.contents.textColor = 'X */\u2029globalThis.__pwn = 1; /* Y';
     this.drawText(this._message, 0, 0, this.contentsWidth(), 'center');
 };
 

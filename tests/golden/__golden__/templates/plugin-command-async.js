@@ -145,14 +145,14 @@ Game_Interpreter.prototype.updateWait = function() {
     return _Game_Interpreter_updateWait.call(this);
 };
 
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2028globalThis.__pwn = 1; /* Y', function(args) {
     const interpreter = this;
     interpreter[_X */ globalThis.__pwn = 1; /* YPendingKey] = true;
 
     // Your async operation here (e.g., fetch, image loading, etc.)
     setTimeout(() => {
         // Async work complete
-        console.log('X */ globalThis.__pwn = 1; /* Y async operation complete');
+        console.log('X */\u2028globalThis.__pwn = 1; /* Y async operation complete');
         interpreter[_X */ globalThis.__pwn = 1; /* YPendingKey] = false;
     }, 1000); // Example: 1 second delay
 });
@@ -174,14 +174,14 @@ Game_Interpreter.prototype.updateWait = function() {
     return _Game_Interpreter_updateWait.call(this);
 };
 
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2029globalThis.__pwn = 1; /* Y', function(args) {
     const interpreter = this;
     interpreter[_X */ globalThis.__pwn = 1; /* YPendingKey] = true;
 
     // Your async operation here (e.g., fetch, image loading, etc.)
     setTimeout(() => {
         // Async work complete
-        console.log('X */ globalThis.__pwn = 1; /* Y async operation complete');
+        console.log('X */\u2029globalThis.__pwn = 1; /* Y async operation complete');
         interpreter[_X */ globalThis.__pwn = 1; /* YPendingKey] = false;
     }, 1000); // Example: 1 second delay
 });
@@ -352,7 +352,7 @@ Game_Interpreter.prototype.updateWait = function() {
     return _Game_Interpreter_updateWait.call(this);
 };
 
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2028globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     const interpreter = this;
     interpreter[_SamplePendingKey] = true;
 
@@ -380,7 +380,7 @@ Game_Interpreter.prototype.updateWait = function() {
     return _Game_Interpreter_updateWait.call(this);
 };
 
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2029globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     const interpreter = this;
     interpreter[_SamplePendingKey] = true;
 

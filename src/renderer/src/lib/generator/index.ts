@@ -6,7 +6,7 @@ import type {
   ParamType
 } from '../../types/plugin'
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
-import { escapeBlockComment, escapeJSString } from './escape'
+import { escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
 
 /**
@@ -1077,7 +1077,7 @@ export function validatePlugin(plugin: PluginDefinition): {
  */
 export function generateCommandSkeleton(cmd: PluginCommand): string {
   const lines: string[] = []
-  lines.push(`// --- ${cmd.name} ---`)
+  lines.push(`// --- ${escapeLineComment(cmd.name)} ---`)
   lines.push(
     `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
   )
@@ -1090,5 +1090,6 @@ export function generateCommandSkeleton(cmd: PluginCommand): string {
  * Generate a parameter usage comment for insertion into customCode
  */
 export function generateParameterComment(param: PluginParameter): string {
-  return `// Parameter '${param.name}' (${param.type}) is available as: ${camelCase(param.name)}`
+  const text = `Parameter '${param.name}' (${param.type}) is available as: ${camelCase(param.name)}`
+  return `// ${escapeLineComment(text)}`
 }

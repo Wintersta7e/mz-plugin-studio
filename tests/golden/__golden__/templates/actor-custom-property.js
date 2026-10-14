@@ -663,13 +663,13 @@ Game_Actor.prototype.setSample = function(value) {
 
 // ==== case: dataType=string,defaultValue=comment-u2028 {"dataType":"string","includeChange":true,"propertyName":"Sample","defaultValue":"X */\u2028globalThis.__pwn = 1; /* Y"}
 // Custom Actor Property: Sample
-// Type: string, Default: 'X */ globalThis.__pwn = 1; /* Y'
+// Type: string, Default: 'X */\u2028globalThis.__pwn = 1; /* Y'
 
 // Initialize the property when actor is created
 const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
 Game_Actor.prototype.initMembers = function() {
     _Game_Actor_initMembers.call(this);
-    this._Sample = 'X */ globalThis.__pwn = 1; /* Y';
+    this._Sample = 'X */\u2028globalThis.__pwn = 1; /* Y';
 };
 
 // Getter: actor.Sample()
@@ -684,13 +684,13 @@ Game_Actor.prototype.setSample = function(value) {
 
 // ==== case: dataType=string,defaultValue=comment-u2029 {"dataType":"string","includeChange":true,"propertyName":"Sample","defaultValue":"X */\u2029globalThis.__pwn = 1; /* Y"}
 // Custom Actor Property: Sample
-// Type: string, Default: 'X */ globalThis.__pwn = 1; /* Y'
+// Type: string, Default: 'X */\u2029globalThis.__pwn = 1; /* Y'
 
 // Initialize the property when actor is created
 const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
 Game_Actor.prototype.initMembers = function() {
     _Game_Actor_initMembers.call(this);
-    this._Sample = 'X */ globalThis.__pwn = 1; /* Y';
+    this._Sample = 'X */\u2029globalThis.__pwn = 1; /* Y';
 };
 
 // Getter: actor.Sample()

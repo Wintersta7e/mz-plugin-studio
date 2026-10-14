@@ -452,7 +452,7 @@ Window_Message.prototype.updateBackground = function() {
     // Apply custom background color
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -466,7 +466,7 @@ Window_Message.prototype.updateBackground = function() {
     // Apply custom background color
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
     }
 };
 

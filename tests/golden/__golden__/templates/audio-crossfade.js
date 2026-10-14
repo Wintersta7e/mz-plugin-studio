@@ -232,7 +232,7 @@ function crossfadeBgm() {
 
     // Define the new BGM settings
     const newBgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2028globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0
@@ -260,7 +260,7 @@ function crossfadeBgm() {
 
     // Define the new BGM settings
     const newBgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2029globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0
@@ -617,7 +617,7 @@ function crossfadeBgm() {
 
     // Define the BGM settings
     const bgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2028globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0
@@ -639,7 +639,7 @@ function crossfadeBgm() {
 
     // Define the BGM settings
     const bgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2029globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0

@@ -86,17 +86,17 @@ PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', funct
 // ==== case: commandName=comment-u2028 {"arg1Type":"string","arg2Type":"number","commandName":"X */\u2028globalThis.__pwn = 1; /* Y","pluginName":"Sample"}
 // rejects: Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)
 // Plugin Command: X */ globalThis.__pwn = 1; /* Y
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2028globalThis.__pwn = 1; /* Y', function(args) {
     // Your command logic here
-    console.log('X */ globalThis.__pwn = 1; /* Y called');
+    console.log('X */\u2028globalThis.__pwn = 1; /* Y called');
 });
 
 // ==== case: commandName=comment-u2029 {"arg1Type":"string","arg2Type":"number","commandName":"X */\u2029globalThis.__pwn = 1; /* Y","pluginName":"Sample"}
 // rejects: Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)
 // Plugin Command: X */ globalThis.__pwn = 1; /* Y
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2029globalThis.__pwn = 1; /* Y', function(args) {
     // Your command logic here
-    console.log('X */ globalThis.__pwn = 1; /* Y called');
+    console.log('X */\u2029globalThis.__pwn = 1; /* Y called');
 });
 
 // ==== case: commandName=comment-lf {"arg1Type":"string","arg2Type":"number","commandName":"X */\nglobalThis.__pwn = 1; /* Y","pluginName":"Sample"}
@@ -141,14 +141,14 @@ PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', funct
 
 // ==== case: pluginName=comment-u2028 {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"X */\u2028globalThis.__pwn = 1; /* Y"}
 // Plugin Command: Sample
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2028globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     // Your command logic here
     console.log('Sample called');
 });
 
 // ==== case: pluginName=comment-u2029 {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"X */\u2029globalThis.__pwn = 1; /* Y"}
 // Plugin Command: Sample
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2029globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     // Your command logic here
     console.log('Sample called');
 });

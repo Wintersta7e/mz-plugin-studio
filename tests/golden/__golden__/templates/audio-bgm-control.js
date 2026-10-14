@@ -118,7 +118,7 @@ function customBgmControl() {
 function customBgmControl() {
     // Play BGM with specified settings
     const bgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2028globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0
@@ -131,7 +131,7 @@ function customBgmControl() {
 function customBgmControl() {
     // Play BGM with specified settings
     const bgm = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2029globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0

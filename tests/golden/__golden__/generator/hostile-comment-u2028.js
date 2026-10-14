@@ -65,18 +65,18 @@
 (() => {
     'use strict';
 
-    const PLUGIN_NAME = 'X */ globalThis.__pwn = 1; /* Y';
+    const PLUGIN_NAME = 'X */\u2028globalThis.__pwn = 1; /* Y';
 
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const xGlobalThisPwn1Y = params['X */ globalThis.__pwn = 1; /* Y'] || 'X *\\/ globalThis.__pwn = 1; /* Y';
+    const xGlobalThisPwn1Y = params['X */\u2028globalThis.__pwn = 1; /* Y'] || 'X *\\/\u2028globalThis.__pwn = 1; /* Y';
 
     // Register plugin commands
 
-    PluginManager.registerCommand(PLUGIN_NAME, 'X */ globalThis.__pwn = 1; /* Y', function(args) {
-        const xGlobalThisPwn1Y = (args['X */ globalThis.__pwn = 1; /* Y'] ?? 'false') === 'true';
-        const comboXGlobalThisPwn1Y = args['ComboX */ globalThis.__pwn = 1; /* Y'] || 'X *\\/ globalThis.__pwn = 1; /* Y';
+    PluginManager.registerCommand(PLUGIN_NAME, 'X */\u2028globalThis.__pwn = 1; /* Y', function(args) {
+        const xGlobalThisPwn1Y = (args['X */\u2028globalThis.__pwn = 1; /* Y'] ?? 'false') === 'true';
+        const comboXGlobalThisPwn1Y = args['ComboX */\u2028globalThis.__pwn = 1; /* Y'] || 'X *\\/\u2028globalThis.__pwn = 1; /* Y';
 
         // TODO: Implement command logic
         // Parsed args available as: xGlobalThisPwn1Y, comboXGlobalThisPwn1Y

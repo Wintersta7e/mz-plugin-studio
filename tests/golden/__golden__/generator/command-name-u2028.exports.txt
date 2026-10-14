@@ -149,9 +149,9 @@ https://example.invalid/rows
  */
 
 // ==== case: generateCommandSkeleton A\u2028B
-// --- A B ---
-PluginManager.registerCommand(PLUGIN_NAME, 'A B', function(args) {
-    // TODO: Implement A B logic
+// --- A B ---
+PluginManager.registerCommand(PLUGIN_NAME, 'A\u2028B', function(args) {
+    // TODO: Implement A\u2028B logic
 });
 
 // ==== case: generateParameterComment Label

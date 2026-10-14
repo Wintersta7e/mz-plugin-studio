@@ -40,7 +40,7 @@
 
     // Register plugin commands
 
-    PluginManager.registerCommand(PLUGIN_NAME, 'A B', function(args) {
+    PluginManager.registerCommand(PLUGIN_NAME, 'A\u2028B', function(args) {
 
         // TODO: Implement command logic
     });

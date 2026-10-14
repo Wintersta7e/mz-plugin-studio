@@ -274,7 +274,7 @@ Scene_Title.prototype.commandextra = function() {
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
     _Window_TitleCommand_makeCommandList.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "extra");
+    this.addCommand("X */\u2028globalThis.__pwn = 1; /* Y", "extra");
 };
 
 // Create handler for the new command
@@ -285,8 +285,8 @@ Scene_Title.prototype.createCommandWindow = function() {
 };
 
 Scene_Title.prototype.commandextra = function() {
-    // Your code here when "X */ globalThis.__pwn = 1; /* Y" is selected
-    console.log("X */ globalThis.__pwn = 1; /* Y command selected");
+    // Your code here when "X */\u2028globalThis.__pwn = 1; /* Y" is selected
+    console.log("X */\u2028globalThis.__pwn = 1; /* Y command selected");
     this._commandWindow.activate();
     
     // Example: Push a custom scene
@@ -300,7 +300,7 @@ Scene_Title.prototype.commandextra = function() {
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
     _Window_TitleCommand_makeCommandList.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "extra");
+    this.addCommand("X */\u2029globalThis.__pwn = 1; /* Y", "extra");
 };
 
 // Create handler for the new command
@@ -311,8 +311,8 @@ Scene_Title.prototype.createCommandWindow = function() {
 };
 
 Scene_Title.prototype.commandextra = function() {
-    // Your code here when "X */ globalThis.__pwn = 1; /* Y" is selected
-    console.log("X */ globalThis.__pwn = 1; /* Y command selected");
+    // Your code here when "X */\u2029globalThis.__pwn = 1; /* Y" is selected
+    console.log("X */\u2029globalThis.__pwn = 1; /* Y command selected");
     this._commandWindow.activate();
     
     // Example: Push a custom scene
@@ -459,14 +459,14 @@ Scene_Title.prototype.commandXglobalThis__pwn1Y = function() {
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
     _Window_TitleCommand_makeCommandList.call(this);
-    this.addCommand("Extra", "X */ globalThis.__pwn = 1; /* Y");
+    this.addCommand("Extra", "X */\u2028globalThis.__pwn = 1; /* Y");
 };
 
 // Create handler for the new command
 const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
 Scene_Title.prototype.createCommandWindow = function() {
     _Scene_Title_createCommandWindow.call(this);
-    this._commandWindow.setHandler("X */ globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
+    this._commandWindow.setHandler("X */\u2028globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
 };
 
 Scene_Title.prototype.commandXglobalThis__pwn1Y = function() {
@@ -486,14 +486,14 @@ Scene_Title.prototype.commandXglobalThis__pwn1Y = function() {
 const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
     _Window_TitleCommand_makeCommandList.call(this);
-    this.addCommand("Extra", "X */ globalThis.__pwn = 1; /* Y");
+    this.addCommand("Extra", "X */\u2029globalThis.__pwn = 1; /* Y");
 };
 
 // Create handler for the new command
 const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
 Scene_Title.prototype.createCommandWindow = function() {
     _Scene_Title_createCommandWindow.call(this);
-    this._commandWindow.setHandler("X */ globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
+    this._commandWindow.setHandler("X */\u2029globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
 };
 
 Scene_Title.prototype.commandXglobalThis__pwn1Y = function() {

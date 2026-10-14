@@ -573,7 +573,7 @@ Scene_Menu.prototype.commandSample = function() {
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
 Window_MenuCommand.prototype.addOriginalCommands = function() {
     _Window_MenuCommand_addOriginalCommands.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
+    this.addCommand("X */\u2028globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
 };
 
 // Enable condition for X */ globalThis.__pwn = 1; /* Y
@@ -602,8 +602,8 @@ Scene_Menu.prototype.createCommandWindow = function() {
 };
 
 Scene_Menu.prototype.commandSample = function() {
-    // Your code here when "X */ globalThis.__pwn = 1; /* Y" is selected
-    console.log("X */ globalThis.__pwn = 1; /* Y command selected");
+    // Your code here when "X */\u2028globalThis.__pwn = 1; /* Y" is selected
+    console.log("X */\u2028globalThis.__pwn = 1; /* Y command selected");
     
     // Example: Push a custom scene
     // SceneManager.push(Scene_Sample);
@@ -617,7 +617,7 @@ Scene_Menu.prototype.commandSample = function() {
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
 Window_MenuCommand.prototype.addOriginalCommands = function() {
     _Window_MenuCommand_addOriginalCommands.call(this);
-    this.addCommand("X */ globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
+    this.addCommand("X */\u2029globalThis.__pwn = 1; /* Y", "Sample", this.isSampleEnabled());
 };
 
 // Enable condition for X */ globalThis.__pwn = 1; /* Y
@@ -646,8 +646,8 @@ Scene_Menu.prototype.createCommandWindow = function() {
 };
 
 Scene_Menu.prototype.commandSample = function() {
-    // Your code here when "X */ globalThis.__pwn = 1; /* Y" is selected
-    console.log("X */ globalThis.__pwn = 1; /* Y command selected");
+    // Your code here when "X */\u2029globalThis.__pwn = 1; /* Y" is selected
+    console.log("X */\u2029globalThis.__pwn = 1; /* Y command selected");
     
     // Example: Push a custom scene
     // SceneManager.push(Scene_Sample);
@@ -885,7 +885,7 @@ Scene_Menu.prototype.commandXglobalThis__pwn1Y = function() {
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
 Window_MenuCommand.prototype.addOriginalCommands = function() {
     _Window_MenuCommand_addOriginalCommands.call(this);
-    this.addCommand("Sample", "X */ globalThis.__pwn = 1; /* Y", this.isXglobalThis__pwn1YEnabled());
+    this.addCommand("Sample", "X */\u2028globalThis.__pwn = 1; /* Y", this.isXglobalThis__pwn1YEnabled());
 };
 
 // Enable condition for Sample
@@ -910,7 +910,7 @@ Window_MenuCommand.prototype.makeCommandList = function() {
 const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
 Scene_Menu.prototype.createCommandWindow = function() {
     _Scene_Menu_createCommandWindow.call(this);
-    this._commandWindow.setHandler("X */ globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
+    this._commandWindow.setHandler("X */\u2028globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
 };
 
 Scene_Menu.prototype.commandXglobalThis__pwn1Y = function() {
@@ -930,7 +930,7 @@ Scene_Menu.prototype.commandXglobalThis__pwn1Y = function() {
 const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
 Window_MenuCommand.prototype.addOriginalCommands = function() {
     _Window_MenuCommand_addOriginalCommands.call(this);
-    this.addCommand("Sample", "X */ globalThis.__pwn = 1; /* Y", this.isXglobalThis__pwn1YEnabled());
+    this.addCommand("Sample", "X */\u2029globalThis.__pwn = 1; /* Y", this.isXglobalThis__pwn1YEnabled());
 };
 
 // Enable condition for Sample
@@ -955,7 +955,7 @@ Window_MenuCommand.prototype.makeCommandList = function() {
 const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
 Scene_Menu.prototype.createCommandWindow = function() {
     _Scene_Menu_createCommandWindow.call(this);
-    this._commandWindow.setHandler("X */ globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
+    this._commandWindow.setHandler("X */\u2029globalThis.__pwn = 1; /* Y", this.commandXglobalThis__pwn1Y.bind(this));
 };
 
 Scene_Menu.prototype.commandXglobalThis__pwn1Y = function() {

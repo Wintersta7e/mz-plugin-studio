@@ -1329,7 +1329,7 @@ DataManager.processSampleNotetags = function(database) {
     const regex = /<Sample:\s*(.+?)>/i;
     for (const item of database) {
         if (item) {
-            item.meta.sample = 'X */ globalThis.__pwn = 1; /* Y';
+            item.meta.sample = 'X */\u2028globalThis.__pwn = 1; /* Y';
             const match = item.note.match(regex);
             if (match) {
                 item.meta.sample = String(match[1]).trim();
@@ -1358,7 +1358,7 @@ DataManager.processSampleNotetags = function(database) {
     const regex = /<Sample:\s*(.+?)>/i;
     for (const item of database) {
         if (item) {
-            item.meta.sample = 'X */ globalThis.__pwn = 1; /* Y';
+            item.meta.sample = 'X */\u2029globalThis.__pwn = 1; /* Y';
             const match = item.note.match(regex);
             if (match) {
                 item.meta.sample = String(match[1]).trim();

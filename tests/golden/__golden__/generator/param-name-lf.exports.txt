@@ -157,8 +157,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
 });
 
 // ==== case: generateParameterComment a\nb
-// Parameter 'a
-b' (string) is available as: aB
+// Parameter 'a b' (string) is available as: aB
 
 // ==== case: generateParameterComment Pair
 // Parameter 'Pair' (struct) is available as: pair

@@ -855,7 +855,7 @@ Game_System.prototype.setSample = function(value) {
 const _Game_System_initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
     _Game_System_initialize.call(this);
-    this.Sample = 'X */ globalThis.__pwn = 1; /* Y';
+    this.Sample = 'X */\u2028globalThis.__pwn = 1; /* Y';
 };
 
 // Getter: $gamesystem.getSample()
@@ -876,7 +876,7 @@ Game_System.prototype.setSample = function(value) {
 const _Game_System_initialize = Game_System.prototype.initialize;
 Game_System.prototype.initialize = function() {
     _Game_System_initialize.call(this);
-    this.Sample = 'X */ globalThis.__pwn = 1; /* Y';
+    this.Sample = 'X */\u2029globalThis.__pwn = 1; /* Y';
 };
 
 // Getter: $gamesystem.getSample()

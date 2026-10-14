@@ -1329,7 +1329,7 @@ Sprite_Sample.prototype.initialize = function() {
 
     // Create filled bitmap
     this.bitmap = new Bitmap(48, 48);
-    this.bitmap.fillRect(0, 0, 48, 48, 'X */ globalThis.__pwn = 1; /* Y');
+    this.bitmap.fillRect(0, 0, 48, 48, 'X */\u2028globalThis.__pwn = 1; /* Y');
 
     // Set anchor to center (optional)
     this.anchor.x = 0.5;
@@ -1385,7 +1385,7 @@ Sprite_Sample.prototype.initialize = function() {
 
     // Create filled bitmap
     this.bitmap = new Bitmap(48, 48);
-    this.bitmap.fillRect(0, 0, 48, 48, 'X */ globalThis.__pwn = 1; /* Y');
+    this.bitmap.fillRect(0, 0, 48, 48, 'X */\u2029globalThis.__pwn = 1; /* Y');
 
     // Set anchor to center (optional)
     this.anchor.x = 0.5;

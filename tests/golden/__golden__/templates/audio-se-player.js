@@ -68,7 +68,7 @@ function playCustomSE() {
 function playCustomSE() {
     // Play sound effect
     const se = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2028globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0
@@ -81,7 +81,7 @@ function playCustomSE() {
 function playCustomSE() {
     // Play sound effect
     const se = {
-        name: 'X */ globalThis.__pwn = 1; /* Y',
+        name: 'X */\u2029globalThis.__pwn = 1; /* Y',
         volume: 90,
         pitch: 100,
         pan: 0

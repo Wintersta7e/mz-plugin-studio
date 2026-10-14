@@ -357,7 +357,7 @@ function X */ globalThis.__pwn = 1; /* Y_validate(args) {
     return true; // All validations passed
 }
 
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2028globalThis.__pwn = 1; /* Y', function(args) {
     // Run validation
     if (!X */ globalThis.__pwn = 1; /* Y_validate(args)) {
         return; // Validation failed
@@ -408,7 +408,7 @@ function X */ globalThis.__pwn = 1; /* Y_validate(args) {
     return true; // All validations passed
 }
 
-PluginManager.registerCommand('Sample', 'X */ globalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand('Sample', 'X */\u2029globalThis.__pwn = 1; /* Y', function(args) {
     // Run validation
     if (!X */ globalThis.__pwn = 1; /* Y_validate(args)) {
         return; // Validation failed
@@ -693,7 +693,7 @@ PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', funct
 
 // Error handling helper
 function Sample_handleError(message) {
-    console.warn('[X */ globalThis.__pwn = 1; /* Y] ' + message);
+    console.warn('[X */\u2028globalThis.__pwn = 1; /* Y] ' + message);
     return false;
 }
 
@@ -720,7 +720,7 @@ function Sample_validate(args) {
     return true; // All validations passed
 }
 
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2028globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     // Run validation
     if (!Sample_validate(args)) {
         return; // Validation failed
@@ -743,7 +743,7 @@ PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', fun
 
 // Error handling helper
 function Sample_handleError(message) {
-    console.warn('[X */ globalThis.__pwn = 1; /* Y] ' + message);
+    console.warn('[X */\u2029globalThis.__pwn = 1; /* Y] ' + message);
     return false;
 }
 
@@ -770,7 +770,7 @@ function Sample_validate(args) {
     return true; // All validations passed
 }
 
-PluginManager.registerCommand('X */ globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
+PluginManager.registerCommand('X */\u2029globalThis.__pwn = 1; /* Y', 'Sample', function(args) {
     // Run validation
     if (!Sample_validate(args)) {
         return; // Validation failed
