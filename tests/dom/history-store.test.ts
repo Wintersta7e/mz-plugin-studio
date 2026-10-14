@@ -1,8 +1,7 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useHistoryStore } from '../src/renderer/src/stores/historyStore'
-import { usePluginStore } from '../src/renderer/src/stores/pluginStore'
-import { createEmptyPlugin } from '../src/renderer/src/types/plugin'
+import { useHistoryStore } from '../../src/renderer/src/stores/historyStore'
+import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
+import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 
 function resetStores() {
   localStorage.clear()

@@ -3,7 +3,7 @@
 // from ../../renderer/src/types/plugin via relative path. This works
 // in Vitest's node environment.
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/pluginParser'
 
 describe('PluginParser', () => {
   describe('parseMeta', () => {

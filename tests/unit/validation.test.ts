@@ -1,7 +1,7 @@
 // Tests for validation — extended checks
 import { describe, it, expect } from 'vitest'
-import { validatePlugin } from '../src/renderer/src/lib/generator/index'
-import type { PluginDefinition } from '../src/renderer/src/types/plugin'
+import { validatePlugin } from '../../src/renderer/src/lib/generator/index'
+import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {

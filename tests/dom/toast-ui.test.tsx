@@ -1,8 +1,7 @@
-// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ToastContainer } from '../src/renderer/src/components/ui/toast'
-import { useToastStore } from '../src/renderer/src/stores/toastStore'
+import { ToastContainer } from '../../src/renderer/src/components/ui/toast'
+import { useToastStore } from '../../src/renderer/src/stores/toastStore'
 
 describe('ToastContainer UI', () => {
   beforeEach(() => {

@@ -1,7 +1,6 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSettingsStore } from '../src/renderer/src/stores/settingsStore'
-import type { PluginParameter } from '../src/renderer/src/types/plugin'
+import { useSettingsStore } from '../../src/renderer/src/stores/settingsStore'
+import type { PluginParameter } from '../../src/renderer/src/types/plugin'
 
 function resetSettingsStore() {
   localStorage.clear()

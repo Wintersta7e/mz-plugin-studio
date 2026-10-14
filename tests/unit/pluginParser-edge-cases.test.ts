@@ -1,7 +1,7 @@
 // Edge case tests for PluginParser and raw mode round-trip
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../src/main/services/pluginParser'
-import { generateRawMode } from '../src/renderer/src/lib/generator/index'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
 
 describe('PluginParser edge cases', () => {
   describe('rawSource storage', () => {

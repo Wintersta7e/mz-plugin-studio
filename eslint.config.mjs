@@ -20,16 +20,22 @@ export default config(
     },
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        destructuredArrayIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ],
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/consistent-type-imports': ['error', {
-        prefer: 'type-imports',
-        fixStyle: 'inline-type-imports'
-      }],
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        {
+          prefer: 'type-imports',
+          fixStyle: 'inline-type-imports'
+        }
+      ],
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }]
@@ -47,6 +53,38 @@ export default config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       'no-console': 'off'
+    }
+  },
+  {
+    // Mirrors the routed list owned by tests/unit/test-layout.test.ts
+    files: ['tests/**/*.{ts,tsx}'],
+    ignores: ['tests/dom/**', 'tests/golden/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/renderer/src/stores',
+                '**/renderer/src/stores/**',
+                '@/stores',
+                '@/stores/**',
+                '**/renderer/src/components',
+                '**/renderer/src/components/**',
+                '@/components',
+                '@/components/**',
+                '**/renderer/src/App',
+                '@/App',
+                '@testing-library/react',
+                '@testing-library/user-event'
+              ],
+              message:
+                'Tests importing a store, component, App or Testing Library belong in tests/dom/.'
+            }
+          ]
+        }
+      ]
     }
   }
 )

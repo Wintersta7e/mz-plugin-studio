@@ -9,7 +9,7 @@ import {
   extractParamTypes,
   detectNoteTagPattern,
   detectNewClasses
-} from '../tools/analyze-plugins'
+} from '../../tools/analyze-plugins'
 
 // ── detectIIFEStyle ────────────────────────────────────────────────────────
 

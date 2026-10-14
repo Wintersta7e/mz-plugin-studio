@@ -3,8 +3,8 @@ import { describe, it, expect } from 'vitest'
 import {
   buildDependencyGraph,
   validateDependencies
-} from '../src/renderer/src/lib/dependency-analyzer'
-import type { ScannedPluginHeader } from '../src/renderer/src/lib/dependency-analyzer'
+} from '../../src/renderer/src/lib/dependency-analyzer'
+import type { ScannedPluginHeader } from '../../src/renderer/src/lib/dependency-analyzer'
 
 function header(
   name: string,

@@ -4,13 +4,13 @@ import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
   generateReadme
-} from '../src/renderer/src/lib/exportFormats'
+} from '../../src/renderer/src/lib/exportFormats'
 import type {
   PluginDefinition,
   PluginParameter,
   PluginCommand,
   ParamType
-} from '../src/renderer/src/types/plugin'
+} from '../../src/renderer/src/types/plugin'
 
 function createMinimalPlugin(
   overrides: Partial<PluginDefinition> & {

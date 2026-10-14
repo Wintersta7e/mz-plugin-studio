@@ -3,9 +3,9 @@ import {
   serializeParams,
   deserializeParams,
   duplicateParams
-} from '../src/renderer/src/lib/param-io'
-import type { PluginParameter } from '../src/renderer/src/types/plugin'
-import { createEmptyParameter } from '../src/renderer/src/types/plugin'
+} from '../../src/renderer/src/lib/param-io'
+import type { PluginParameter } from '../../src/renderer/src/types/plugin'
+import { createEmptyParameter } from '../../src/renderer/src/types/plugin'
 
 function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
   return {

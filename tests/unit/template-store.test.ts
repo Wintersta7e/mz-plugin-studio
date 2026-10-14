@@ -19,8 +19,8 @@ import {
   validateTemplateValues,
   getTemplateDefaults,
   clearTemplates
-} from '../src/renderer/src/lib/generator/templates/index'
-import type { CodeTemplate } from '../src/renderer/src/lib/generator/templates/types'
+} from '../../src/renderer/src/lib/generator/templates/index'
+import type { CodeTemplate } from '../../src/renderer/src/lib/generator/templates/types'
 
 function makeTemplate(overrides: Partial<CodeTemplate> = {}): CodeTemplate {
   return {

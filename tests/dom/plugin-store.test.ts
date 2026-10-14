@@ -1,8 +1,11 @@
-// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { usePluginStore } from '../src/renderer/src/stores/pluginStore'
-import { createEmptyPlugin } from '../src/renderer/src/types/plugin'
-import type { PluginParameter, PluginCommand, PluginStruct } from '../src/renderer/src/types/plugin'
+import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
+import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import type {
+  PluginParameter,
+  PluginCommand,
+  PluginStruct
+} from '../../src/renderer/src/types/plugin'
 
 function makeParam(id: string, name: string): PluginParameter {
   return { id, name, text: name, desc: '', type: 'string', default: '' }

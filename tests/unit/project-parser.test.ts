@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ProjectParser } from '../src/main/services/projectParser'
+import { ProjectParser } from '../../src/main/services/projectParser'
 
 describe('parseNoteTags', () => {
   it('parses tag with value', () => {

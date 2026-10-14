@@ -1,6 +1,6 @@
 // Tests for conflict detector — override extraction + conflict detection
 import { describe, it, expect } from 'vitest'
-import { extractOverrides, detectConflicts } from '../src/renderer/src/lib/conflict-detector'
+import { extractOverrides, detectConflicts } from '../../src/renderer/src/lib/conflict-detector'
 
 describe('extractOverrides', () => {
   // --- Basic extraction ---

@@ -1,11 +1,10 @@
-// @vitest-environment jsdom
 // COV-10: shortcuts.ts tests
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   matchShortcut,
   shouldHandleShortcut,
   shouldOverrideMonaco
-} from '../src/renderer/src/lib/shortcuts'
+} from '../../src/renderer/src/lib/shortcuts'
 
 function makeKeyboardEvent(opts: {
   code: string

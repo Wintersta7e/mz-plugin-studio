@@ -4,7 +4,7 @@ import {
   assertSafeFilePath,
   assertSafeFilename,
   assertSafeProjectPath
-} from '../src/shared/path-safety'
+} from '../../src/shared/path-safety'
 
 // --- assertSafeFilePath ---
 

@@ -1,7 +1,7 @@
 // Tests for auto-documentation help text generation
 import { describe, it, expect } from 'vitest'
-import { generateHelpText } from '../src/renderer/src/lib/exportFormats'
-import type { PluginDefinition } from '../src/renderer/src/types/plugin'
+import { generateHelpText } from '../../src/renderer/src/lib/exportFormats'
+import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function createMinimalPlugin(
   metaOverrides: Partial<PluginDefinition['meta']> = {}

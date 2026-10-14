@@ -10,14 +10,14 @@ vi.mock('electron-log/renderer', () => ({
 }))
 
 // Side-effect imports register each template into the shared registry
-import '../src/renderer/src/lib/generator/templates/method-alias'
-import '../src/renderer/src/lib/generator/templates/save-load'
-import '../src/renderer/src/lib/generator/templates/input-handler'
-import '../src/renderer/src/lib/generator/templates/battle-system'
-import '../src/renderer/src/lib/generator/templates/plugin-commands'
-import '../src/renderer/src/lib/generator/templates/message-system'
+import '../../src/renderer/src/lib/generator/templates/method-alias'
+import '../../src/renderer/src/lib/generator/templates/save-load'
+import '../../src/renderer/src/lib/generator/templates/input-handler'
+import '../../src/renderer/src/lib/generator/templates/battle-system'
+import '../../src/renderer/src/lib/generator/templates/plugin-commands'
+import '../../src/renderer/src/lib/generator/templates/message-system'
 
-import { getTemplate } from '../src/renderer/src/lib/generator/templates/index'
+import { getTemplate } from '../../src/renderer/src/lib/generator/templates/index'
 
 describe('save-load template', () => {
   it('injects a warning comment when storageLocation is Game_Actors', () => {

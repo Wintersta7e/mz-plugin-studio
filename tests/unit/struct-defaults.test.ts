@@ -4,8 +4,8 @@ import {
   parseStructDefault,
   validateStructDefault,
   fillFromStructDefaults
-} from '../src/renderer/src/lib/struct-defaults'
-import type { PluginParameter, PluginStruct } from '../src/renderer/src/types/plugin'
+} from '../../src/renderer/src/lib/struct-defaults'
+import type { PluginParameter, PluginStruct } from '../../src/renderer/src/types/plugin'
 
 function makeStruct(fields: Partial<PluginParameter>[]): PluginStruct {
   return {

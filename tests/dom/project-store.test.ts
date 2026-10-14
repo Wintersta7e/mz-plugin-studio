@@ -1,7 +1,6 @@
-// @vitest-environment jsdom
 // COV-07: scanDependencies, COV-08: setProject/addRecentProject/clearProject
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MZProject } from '../src/shared/types/mz'
+import type { MZProject } from '../../src/shared/types/mz'
 
 // Mock electron-log before importing the store (it imports log from electron-log/renderer)
 vi.mock('electron-log/renderer', () => ({
@@ -15,7 +14,7 @@ vi.mock('electron-log/renderer', () => ({
   }
 }))
 
-import { useProjectStore } from '../src/renderer/src/stores/projectStore'
+import { useProjectStore } from '../../src/renderer/src/stores/projectStore'
 
 function resetProjectStore() {
   localStorage.clear()

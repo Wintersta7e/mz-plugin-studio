@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { generatePlugin, generateRawMode } from '../src/renderer/src/lib/generator'
-import { generatePluginOutput } from '../src/renderer/src/lib/plugin-output'
-import { PluginParser } from '../src/main/services/pluginParser'
-import { createEmptyPlugin } from '../src/renderer/src/types/plugin'
+import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/generator'
+import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 
 const importedPluginSource = `/*:
  * @target MZ

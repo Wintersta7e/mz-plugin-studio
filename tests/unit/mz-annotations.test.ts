@@ -1,8 +1,8 @@
 // Tests for new MZ annotation support (A1-A7)
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../src/main/services/pluginParser'
-import { generatePlugin, generateHeaderOnly } from '../src/renderer/src/lib/generator/index'
-import type { PluginDefinition } from '../src/renderer/src/types/plugin'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import { generatePlugin, generateHeaderOnly } from '../../src/renderer/src/lib/generator/index'
+import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {

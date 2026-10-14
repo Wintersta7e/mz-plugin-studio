@@ -7,8 +7,8 @@ import {
   validatePlugin,
   camelCase,
   generateHeaderOnly
-} from '../src/renderer/src/lib/generator/index'
-import type { PluginDefinition } from '../src/renderer/src/types/plugin'
+} from '../../src/renderer/src/lib/generator/index'
+import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {
