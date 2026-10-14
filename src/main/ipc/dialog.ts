@@ -2,6 +2,30 @@ import { type IpcMain, type IpcMainInvokeEvent, type Dialog } from 'electron'
 import log from 'electron-log/main'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 
+export interface SaveFileDialogOptions {
+  defaultPath?: string
+  filters?: { name: string; extensions: string[] }[]
+}
+
+/** Shows the save dialog; returns the chosen path, or null when cancelled */
+export async function showSaveFileDialog(
+  dialog: Pick<Dialog, 'showSaveDialog'>,
+  options: SaveFileDialogOptions
+): Promise<string | null> {
+  const result = await dialog.showSaveDialog({
+    defaultPath: options.defaultPath,
+    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
+  })
+
+  if (result.canceled || !result.filePath) {
+    log.debug('[dialog:save-file] Cancelled')
+    return null
+  }
+
+  log.info(`[dialog:save-file] Selected: ${result.filePath}`)
+  return result.filePath
+}
+
 export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
   ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async (_event: IpcMainInvokeEvent) => {
     const result = await dialog.showOpenDialog({
@@ -20,23 +44,8 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
 
   ipcMain.handle(
     IPC_CHANNELS.DIALOG_SAVE_FILE,
-    async (
-      _event: IpcMainInvokeEvent,
-      options: { defaultPath?: string; filters?: { name: string; extensions: string[] }[] }
-    ) => {
-      const result = await dialog.showSaveDialog({
-        defaultPath: options.defaultPath,
-        filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
-      })
-
-      if (result.canceled || !result.filePath) {
-        log.debug('[dialog:save-file] Cancelled')
-        return null
-      }
-
-      log.info(`[dialog:save-file] Selected: ${result.filePath}`)
-      return result.filePath
-    }
+    (_event: IpcMainInvokeEvent, options: SaveFileDialogOptions) =>
+      showSaveFileDialog(dialog, options)
   )
 
   ipcMain.handle(

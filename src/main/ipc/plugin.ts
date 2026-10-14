@@ -12,6 +12,24 @@ import {
   assertSafeProjectPath
 } from '../../shared/path-safety'
 
+/** Writes `content` to `filePath`, creating its folder when missing */
+export async function savePluginToPath(
+  filePath: string,
+  content: string
+): Promise<{ success: boolean; path: string }> {
+  assertSafeFilePath(filePath)
+  log.debug(`[plugin:save-to-path] ${filePath}`)
+  const dir = dirname(filePath)
+  try {
+    await access(dir)
+  } catch {
+    await mkdir(dir, { recursive: true })
+  }
+  await writeFile(filePath, content, 'utf-8')
+  log.info(`[plugin:save-to-path] Saved to ${filePath}`)
+  return { success: true, path: filePath }
+}
+
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE,
@@ -107,19 +125,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
-    async (_event: IpcMainInvokeEvent, filePath: string, content: string) => {
-      assertSafeFilePath(filePath)
-      log.debug(`[plugin:save-to-path] ${filePath}`)
-      const dir = dirname(filePath)
-      try {
-        await access(dir)
-      } catch {
-        await mkdir(dir, { recursive: true })
-      }
-      await writeFile(filePath, content, 'utf-8')
-      log.info(`[plugin:save-to-path] Saved to ${filePath}`)
-      return { success: true, path: filePath }
-    }
+    (_event: IpcMainInvokeEvent, filePath: string, content: string) =>
+      savePluginToPath(filePath, content)
   )
 
   ipcMain.handle(

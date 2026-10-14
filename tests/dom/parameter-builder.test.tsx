@@ -1,10 +1,17 @@
-// The parameter tab's Import menu: what a .mzparams file does once it is read in.
+// The parameter tab's Import menu (what a .mzparams file does once it is read in) and its Export
+// button (where the selected parameters are written).
 import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { mkdtemp, readFile, rm } from 'fs/promises'
+import { tmpdir } from 'os'
+import { join, resolve } from 'path'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import type { SaveDialogOptions } from 'electron'
+import { showSaveFileDialog } from '../../src/main/ipc/dialog'
+import { savePluginToPath } from '../../src/main/ipc/plugin'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { usePluginStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
@@ -105,5 +112,35 @@ describe('parameter import from a file', () => {
     expect(result.compileProblem).toBeNull()
     expect(result.threw).toBeNull()
     expect(result.sentinel).toBe(false)
+  })
+})
+
+describe('parameter export to a file', () => {
+  it('writes the selected parameters to the path chosen in the save dialog', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'param-export-'))
+    try {
+      const target = join(tmp, 'Alpha-params.mzparams')
+      const dialog = {
+        showSaveDialog: vi.fn(async (_options: SaveDialogOptions) => ({
+          canceled: false,
+          filePath: target
+        }))
+      }
+      const message = vi.fn(async () => 0)
+      window.api = createFakeApi({
+        dialog: { saveFile: (options) => showSaveFileDialog(dialog, options ?? {}), message },
+        plugin: { saveToPath: (filePath, content) => savePluginToPath(filePath, content) }
+      })
+      render(<ParameterBuilder />)
+      fireEvent.click(screen.getByRole('button', { name: 'Select All' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Export' }))
+
+      const written = await waitFor(() => readFile(target, 'utf8'))
+      const result = deserializeParams(written)
+      expect(result.success && result.parameters.map((p) => p.name)).toEqual(['Existing'])
+      expect(message).not.toHaveBeenCalled()
+    } finally {
+      await rm(tmp, { recursive: true, force: true })
+    }
   })
 })
