@@ -12,7 +12,7 @@
  * @param Pair
  * @desc Two values.
  * @type struct<Pair>
- * @default {"a":"*/"}
+ * @default {"a":"*\/"}
  *
  * @command Show
  * @desc Shows the label.
@@ -35,7 +35,7 @@
     const params = PluginManager.parameters(PLUGIN_NAME);
 
     const label = params['Label'] || 'Hello';
-    const pair = JSON.parse(params['Pair'] || '{"a":"*/"}');
+    const pair = JSON.parse(params['Pair'] || '{"a":"*\\/"}');
 
     // Register plugin commands
 

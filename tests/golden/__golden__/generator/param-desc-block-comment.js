@@ -5,7 +5,7 @@
  * @url https://example.invalid/rows
  *
  * @param Label
- * @desc x */ y
+ * @desc x *\/ y
  * @type string
  * @default Hello
  *

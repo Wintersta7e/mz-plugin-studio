@@ -65,7 +65,7 @@ function parse(text: string): { diagnostics: string[]; declarations: string[] } 
 }
 
 describe('generateTypeDeclaration', () => {
-  it('a description holding "*/" ends its JSDoc comment (today)', () => {
+  it('a description holding "*/" stays inside its JSDoc comment', () => {
     const clean = parse(generateTypeDeclaration(definition('Plain description')))
     expect(clean.diagnostics).toEqual([])
     expect(clean.declarations).toEqual([
@@ -76,7 +76,7 @@ describe('generateTypeDeclaration', () => {
     const hostile = parse(
       generateTypeDeclaration(definition('x */ declare const injected: 1; /* y'))
     )
-    expect(hostile.diagnostics).toEqual(["';' expected.", "';' expected."])
+    expect(hostile.diagnostics).toEqual([])
     expect(hostile.declarations).toEqual(clean.declarations)
   })
 })

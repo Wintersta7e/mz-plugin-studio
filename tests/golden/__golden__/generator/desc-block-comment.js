@@ -1,6 +1,6 @@
 /*:
  * @target MZ
- * @plugindesc a */ b
+ * @plugindesc a *\/ b
  * @author Example Author
  * @url https://example.invalid/rows
  *

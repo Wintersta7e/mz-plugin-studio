@@ -14,6 +14,14 @@ export function escapeJSDoubleQuote(str: string): string {
 }
 
 /**
+ * Escape a string for interpolation inside a block comment: a backslash goes between each `*`
+ * and the `/` after it, so the text cannot end the comment.
+ */
+export function escapeBlockComment(str: string): string {
+  return str.replace(/\*\//g, '*\\/')
+}
+
+/**
  * Sanitize a user-provided default into a JS literal of the requested type.
  * Strings are single-quoted via escapeJSString. Numbers go through Number().
  * Booleans match 'true'/'false' (default false). Object/array round-trip through

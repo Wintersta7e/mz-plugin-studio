@@ -19,7 +19,7 @@
  *
  */
 
-/*:ja */ x
+/*:ja *\/ x
  * @plugindesc Localized description
  */
 

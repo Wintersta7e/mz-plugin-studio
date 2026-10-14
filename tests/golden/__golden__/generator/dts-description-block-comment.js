@@ -5,7 +5,7 @@
  * @url https://example.invalid/rows
  *
  * @param Label
- * @desc x */ declare const injected: 1; /* y
+ * @desc x *\/ declare const injected: 1; /* y
  * @type string
  * @default Hello
  *

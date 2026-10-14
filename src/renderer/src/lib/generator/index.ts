@@ -6,7 +6,7 @@ import type {
   ParamType
 } from '../../types/plugin'
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
-import { escapeJSString } from './escape'
+import { escapeBlockComment, escapeJSString } from './escape'
 import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
 
 /**
@@ -63,37 +63,37 @@ function generateHeader(plugin: PluginDefinition): string {
 
   // Target
   if (plugin.meta.target) {
-    lines.push(` * @target ${plugin.meta.target}`)
+    lines.push(` * @target ${escapeBlockComment(plugin.meta.target)}`)
   }
 
   // Plugin description
   if (plugin.meta.description) {
-    lines.push(` * @plugindesc ${plugin.meta.description}`)
+    lines.push(` * @plugindesc ${escapeBlockComment(plugin.meta.description)}`)
   }
 
   // Author
   if (plugin.meta.author) {
-    lines.push(` * @author ${plugin.meta.author}`)
+    lines.push(` * @author ${escapeBlockComment(plugin.meta.author)}`)
   }
 
   // URL
   if (plugin.meta.url) {
-    lines.push(` * @url ${plugin.meta.url}`)
+    lines.push(` * @url ${escapeBlockComment(plugin.meta.url)}`)
   }
 
   // Dependencies
   for (const dep of plugin.meta.dependencies) {
-    lines.push(` * @base ${dep}`)
+    lines.push(` * @base ${escapeBlockComment(dep)}`)
   }
 
   // Order After
   for (const order of plugin.meta.orderAfter || []) {
-    lines.push(` * @orderAfter ${order}`)
+    lines.push(` * @orderAfter ${escapeBlockComment(order)}`)
   }
 
   // Order Before
   for (const order of plugin.meta.orderBefore || []) {
-    lines.push(` * @orderBefore ${order}`)
+    lines.push(` * @orderBefore ${escapeBlockComment(order)}`)
   }
 
   // Note Parameters (deployment notetag groups)
@@ -101,15 +101,15 @@ function generateHeader(plugin: PluginDefinition): string {
   // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
   // of the spec and is dropped.
   for (const np of plugin.meta.noteParams || []) {
-    lines.push(` * @noteParam ${np.name}`)
-    lines.push(` * @noteType ${np.type}`)
-    if (np.dir) lines.push(` * @noteDir ${np.dir}`)
-    if (np.data) lines.push(` * @noteData ${np.data}`)
+    lines.push(` * @noteParam ${escapeBlockComment(np.name)}`)
+    lines.push(` * @noteType ${escapeBlockComment(np.type)}`)
+    if (np.dir) lines.push(` * @noteDir ${escapeBlockComment(np.dir)}`)
+    if (np.data) lines.push(` * @noteData ${escapeBlockComment(np.data)}`)
   }
 
   // Required assets — preserved during "Exclude unused files" deployment.
   for (const asset of plugin.meta.requiredAssets || []) {
-    lines.push(` * @requiredAssets ${asset}`)
+    lines.push(` * @requiredAssets ${escapeBlockComment(asset)}`)
   }
 
   lines.push(' *')
@@ -130,7 +130,7 @@ function generateHeader(plugin: PluginDefinition): string {
   if (plugin.meta.help) {
     lines.push(' * @help')
     for (const helpLine of plugin.meta.help.split('\n')) {
-      lines.push(` * ${helpLine}`)
+      lines.push(` * ${escapeBlockComment(helpLine)}`)
     }
   }
 
@@ -145,44 +145,44 @@ function generateHeader(plugin: PluginDefinition): string {
 function generateParameterBlock(param: PluginParameter, prefix: string = ' * '): string[] {
   const lines: string[] = []
 
-  lines.push(`${prefix}@param ${param.name}`)
+  lines.push(`${prefix}@param ${escapeBlockComment(param.name)}`)
 
   if (param.text && param.text !== param.name) {
-    lines.push(`${prefix}@text ${param.text}`)
+    lines.push(`${prefix}@text ${escapeBlockComment(param.text)}`)
   }
 
   if (param.desc) {
-    lines.push(`${prefix}@desc ${param.desc}`)
+    lines.push(`${prefix}@desc ${escapeBlockComment(param.desc)}`)
   }
 
   // Type
-  lines.push(`${prefix}@type ${formatParamType(param)}`)
+  lines.push(`${prefix}@type ${escapeBlockComment(formatParamType(param))}`)
 
   // Boolean-specific @on/@off labels
   if (param.type === 'boolean') {
     if (param.onLabel) {
-      lines.push(`${prefix}@on ${param.onLabel}`)
+      lines.push(`${prefix}@on ${escapeBlockComment(param.onLabel)}`)
     }
     if (param.offLabel) {
-      lines.push(`${prefix}@off ${param.offLabel}`)
+      lines.push(`${prefix}@off ${escapeBlockComment(param.offLabel)}`)
     }
   }
 
   // Type-specific attributes
   if (param.type === 'number') {
     if (param.min !== undefined) {
-      lines.push(`${prefix}@min ${param.min}`)
+      lines.push(`${prefix}@min ${escapeBlockComment(String(param.min))}`)
     }
     if (param.max !== undefined) {
-      lines.push(`${prefix}@max ${param.max}`)
+      lines.push(`${prefix}@max ${escapeBlockComment(String(param.max))}`)
     }
     if (param.decimals !== undefined) {
-      lines.push(`${prefix}@decimals ${param.decimals}`)
+      lines.push(`${prefix}@decimals ${escapeBlockComment(String(param.decimals))}`)
     }
   }
 
   if ((param.type === 'file' || param.type === 'animation') && param.dir) {
-    lines.push(`${prefix}@dir ${param.dir}`)
+    lines.push(`${prefix}@dir ${escapeBlockComment(param.dir)}`)
   }
   // @require is MV-era — explicitly discontinued in MZ per Kadokawa docs.
   // Use @requiredAssets at the plugin level instead.
@@ -190,21 +190,23 @@ function generateParameterBlock(param: PluginParameter, prefix: string = ' * '):
   // Options for select/combo type
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
     for (const opt of param.options) {
-      lines.push(`${prefix}@option ${opt.text}`)
+      lines.push(`${prefix}@option ${escapeBlockComment(opt.text)}`)
       if (opt.value !== opt.text) {
-        lines.push(`${prefix}@value ${opt.value}`)
+        lines.push(`${prefix}@value ${escapeBlockComment(opt.value)}`)
       }
     }
   }
 
   // Default value
   if (param.default !== undefined && param.default !== '') {
-    lines.push(`${prefix}@default ${formatDefaultValue(param.default, param.type)}`)
+    lines.push(
+      `${prefix}@default ${escapeBlockComment(formatDefaultValue(param.default, param.type))}`
+    )
   }
 
   // Parent (for nested parameters)
   if (param.parent) {
-    lines.push(`${prefix}@parent ${param.parent}`)
+    lines.push(`${prefix}@parent ${escapeBlockComment(param.parent)}`)
   }
 
   return lines
@@ -261,59 +263,60 @@ function formatDefaultValue(
 function generateCommandBlock(cmd: PluginCommand): string[] {
   const lines: string[] = []
 
-  lines.push(` * @command ${cmd.name}`)
+  lines.push(` * @command ${escapeBlockComment(cmd.name)}`)
 
   if (cmd.text && cmd.text !== cmd.name) {
-    lines.push(` * @text ${cmd.text}`)
+    lines.push(` * @text ${escapeBlockComment(cmd.text)}`)
   }
 
   if (cmd.desc) {
-    lines.push(` * @desc ${cmd.desc}`)
+    lines.push(` * @desc ${escapeBlockComment(cmd.desc)}`)
   }
 
   // Command arguments
   for (const arg of cmd.args) {
     lines.push(' *')
-    lines.push(` * @arg ${arg.name}`)
+    lines.push(` * @arg ${escapeBlockComment(arg.name)}`)
 
     if (arg.text && arg.text !== arg.name) {
-      lines.push(` * @text ${arg.text}`)
+      lines.push(` * @text ${escapeBlockComment(arg.text)}`)
     }
 
     if (arg.desc) {
-      lines.push(` * @desc ${arg.desc}`)
+      lines.push(` * @desc ${escapeBlockComment(arg.desc)}`)
     }
 
-    lines.push(` * @type ${formatParamType(arg)}`)
+    lines.push(` * @type ${escapeBlockComment(formatParamType(arg))}`)
 
     // Boolean-specific @on/@off labels
     if (arg.type === 'boolean') {
-      if (arg.onLabel) lines.push(` * @on ${arg.onLabel}`)
-      if (arg.offLabel) lines.push(` * @off ${arg.offLabel}`)
+      if (arg.onLabel) lines.push(` * @on ${escapeBlockComment(arg.onLabel)}`)
+      if (arg.offLabel) lines.push(` * @off ${escapeBlockComment(arg.offLabel)}`)
     }
 
     if (arg.type === 'number') {
-      if (arg.min !== undefined) lines.push(` * @min ${arg.min}`)
-      if (arg.max !== undefined) lines.push(` * @max ${arg.max}`)
-      if (arg.decimals !== undefined) lines.push(` * @decimals ${arg.decimals}`)
+      if (arg.min !== undefined) lines.push(` * @min ${escapeBlockComment(String(arg.min))}`)
+      if (arg.max !== undefined) lines.push(` * @max ${escapeBlockComment(String(arg.max))}`)
+      if (arg.decimals !== undefined)
+        lines.push(` * @decimals ${escapeBlockComment(String(arg.decimals))}`)
     }
 
     if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
-      lines.push(` * @dir ${arg.dir}`)
+      lines.push(` * @dir ${escapeBlockComment(arg.dir)}`)
     }
     // @require dropped (MV-era, discontinued in MZ)
 
     if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
       for (const opt of arg.options) {
-        lines.push(` * @option ${opt.text}`)
+        lines.push(` * @option ${escapeBlockComment(opt.text)}`)
         if (opt.value !== opt.text) {
-          lines.push(` * @value ${opt.value}`)
+          lines.push(` * @value ${escapeBlockComment(opt.value)}`)
         }
       }
     }
 
     if (arg.default !== undefined && arg.default !== '') {
-      lines.push(` * @default ${formatDefaultValue(arg.default, arg.type)}`)
+      lines.push(` * @default ${escapeBlockComment(formatDefaultValue(arg.default, arg.type))}`)
     }
   }
 
@@ -335,16 +338,16 @@ function generateLocalizedHeaders(plugin: PluginDefinition): string | null {
     if (!content.description && !content.help) continue
 
     const lines: string[] = []
-    lines.push(`/*:${lang}`)
+    lines.push(`/*:${escapeBlockComment(lang)}`)
 
     if (content.description) {
-      lines.push(` * @plugindesc ${content.description}`)
+      lines.push(` * @plugindesc ${escapeBlockComment(content.description)}`)
     }
 
     if (content.help) {
       lines.push(' * @help')
       for (const helpLine of content.help.split('\n')) {
-        lines.push(` * ${helpLine}`)
+        lines.push(` * ${escapeBlockComment(helpLine)}`)
       }
     }
 
@@ -361,7 +364,7 @@ function generateLocalizedHeaders(plugin: PluginDefinition): string | null {
 function generateStructDefinition(struct: PluginStruct): string {
   const lines: string[] = []
 
-  lines.push(`/*~struct~${struct.name}:`)
+  lines.push(`/*~struct~${escapeBlockComment(struct.name)}:`)
 
   for (const param of struct.parameters) {
     lines.push(...generateParameterBlock(param, ' * '))
@@ -707,7 +710,7 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
     case 'struct': {
       const fallback =
         param.default && typeof param.default === 'string' && param.default !== ''
-          ? escapeJSString(param.default)
+          ? escapeJSString(escapeBlockComment(param.default))
           : '{}'
       return `JSON.parse(${accessor} || '${fallback}')`
     }
@@ -757,7 +760,7 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) {
     return '0'
   }
-  return `'${escapeJSString(String(value ?? ''))}'`
+  return `'${escapeJSString(escapeBlockComment(String(value ?? '')))}'`
 }
 
 // Reserved words that would cause a SyntaxError if used as `const <name>`.

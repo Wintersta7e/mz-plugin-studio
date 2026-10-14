@@ -15,7 +15,7 @@
 
 declare namespace Fixture_Rows {
   interface Parameters {
-    /** x */ y */
+    /** x *\/ y */
     Label: string
     /** Two values. */
     Pair: Record<string, unknown>
@@ -133,7 +133,7 @@ https://example.invalid/rows
  * @url https://example.invalid/rows
  *
  * @param Label
- * @desc x */ y
+ * @desc x *\/ y
  * @type string
  * @default Hello
  *

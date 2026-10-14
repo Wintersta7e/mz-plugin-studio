@@ -6,6 +6,10 @@
 
 - The app package no longer contains test files, documentation or libraries the app does not load.
 
+### Security
+
+- Text entered in a plugin field, or loaded from a `.mzparams` file, can no longer end a comment in the generated plugin and run as code; the descriptions in the `.d.ts` export are covered too.
+
 ## [1.6.0] - 2026-04-19
 
 ### Added

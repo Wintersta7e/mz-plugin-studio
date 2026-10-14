@@ -140,7 +140,7 @@ https://example.invalid/rows
  * @param Pair
  * @desc Two values.
  * @type struct<Pair>
- * @default {"a":"*/"}
+ * @default {"a":"*\/"}
  *
  * @command Show
  * @desc Shows the label.

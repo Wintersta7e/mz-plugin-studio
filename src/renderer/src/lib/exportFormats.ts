@@ -3,6 +3,7 @@
 
 import type { PluginDefinition, PluginParameter, ParamType } from '../types/plugin'
 import { ID_BASED_PARAM_TYPES } from '../types/plugin'
+import { escapeBlockComment } from './generator/escape'
 
 /**
  * Generates a JSON entry for plugins.js
@@ -59,7 +60,7 @@ export function generateTypeDeclaration(plugin: PluginDefinition): string {
       if (param.parent) continue
 
       const description = param.desc || param.text
-      lines.push(`    /** ${description} */`)
+      lines.push(`    /** ${escapeBlockComment(description)} */`)
       lines.push(`    ${param.name}: ${paramTypeToTS(param.type)}`)
     }
     lines.push(`  }`)
@@ -73,7 +74,7 @@ export function generateTypeDeclaration(plugin: PluginDefinition): string {
     lines.push(`  interface ${command.name}Args {`)
     for (const arg of command.args) {
       const description = arg.desc || arg.text
-      lines.push(`    /** ${description} */`)
+      lines.push(`    /** ${escapeBlockComment(description)} */`)
       lines.push(`    ${arg.name}: ${paramTypeToTS(arg.type)}`)
     }
     lines.push(`  }`)

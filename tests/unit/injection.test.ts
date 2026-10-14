@@ -3,6 +3,7 @@
 // output is compiled and run in a sealed context that reports whether the text ran as code.
 import { describe, it, expect } from 'vitest'
 import {
+  camelCase,
   generateCommandSkeleton,
   generateParameterComment,
   generatePlugin,
@@ -332,19 +333,11 @@ const ENTRIES: [string, (def: PluginDefinition) => string][] = [
   ['generateRawMode', (def) => generateRawMode({ ...def, rawSource: rawSource() })]
 ]
 
-// String keys that no annotation writes: identifiers the app assigns, the name (written only
-// as a quoted string) and the version (not written at all). An argument has no @parent.
-const OUTSIDE_COMMENTS = new Set([
-  'definition.id',
-  'meta.name',
-  'meta.version',
-  'parameter.id',
-  'argument.id',
-  'argument.parent',
-  'struct field.id',
-  'command.id',
-  'struct.id'
-])
+// Raw mode names an added command in a line comment, which a line separator still ends.
+const LINE_COMMENT_CASES = [
+  'command.name / comment-u2028 / generateRawMode',
+  'command.name / comment-u2029 / generateRawMode'
+]
 
 interface MatrixCase {
   label: string
@@ -376,23 +369,10 @@ function runMatrix(): MatrixCase[] {
 }
 
 describe('generated plugin annotations', () => {
-  it('field text can end the annotation comment and run (today)', () => {
+  it('field text stays inside the annotation comment', () => {
     expect(FIELD_ROWS.length).toBeGreaterThan(0)
-    const cases = runMatrix()
-    const commentPayloads = new Set(COMMENT_PAYLOADS.map((p) => p.name))
-    const unexpected = cases.filter((c) => {
-      const [field, payload, entry] = c.label.split(' / ')
-      // Raw mode keeps the translated blocks of the source it edits.
-      const regenerated = !(entry === 'generateRawMode' && field.startsWith('localization.'))
-      const breaks = commentPayloads.has(payload) && !OUTSIDE_COMMENTS.has(field) && regenerated
-      return (c.outcome !== 'clean') !== breaks || c.contained === breaks
-    })
-    const broken = cases.filter((c) => c.outcome !== 'clean')
-    console.log(
-      `injection matrix today: ${broken.length} cases not clean, fields ` +
-        new Set(broken.map((c) => c.label.split(' / ')[0])).size
-    )
-    expect(unexpected).toEqual([])
+    const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
+    expect(notClean.map((c) => c.label)).toEqual(LINE_COMMENT_CASES)
   })
 })
 
@@ -463,8 +443,47 @@ describe('localization keys', () => {
     const def = cleanDefinition()
     def.meta.localizations = { 'ja */ x': { description: 'd' } }
     const output = generatePlugin(def)
-    expect(output.split('\n')).toContain('/*:ja */ x')
+    expect(output.split('\n')).toContain('/*:ja *\\/ x')
     expect(validatePlugin(def).errors.filter((e) => e.includes('ja */ x'))).toEqual([])
+  })
+})
+
+/** The text after `@default ` in the annotation block of the parameter `name`. */
+function annotatedDefault(code: string, name: string): string {
+  const lines = code.split('\n')
+  const start = lines.indexOf(` * @param ${name}`)
+  const line = lines
+    .slice(start, lines.indexOf(' *', start))
+    .find((l) => l.startsWith(' * @default '))
+  if (start === -1 || line === undefined) throw new Error(`no @default for ${name}`)
+  return line.slice(' * @default '.length)
+}
+
+/** Generates `def` with code that stores `expression` of the first parameter, then runs it. */
+function runDefault(def: PluginDefinition, expression: (name: string) => string): unknown {
+  def.customCode = `globalThis.__value = ${expression(camelCase(def.parameters[0].name))};`
+  const result = evaluatePlugin(generatePlugin(def), { mode: 'generator' })
+  expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: false })
+  return result.context?.__value
+}
+
+describe('parameter defaults', () => {
+  it('the code fallback of a text default is the text after @default', () => {
+    const def = cleanDefinition()
+    def.parameters[0].default = 'x */ y'
+    const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
+    expect(runDefault(def, (name) => name)).toBe(annotated)
+    expect(annotated).toBe('x *\\/ y')
+  })
+
+  it('the code fallback of a struct default decodes to the @default JSON', () => {
+    const def = cleanDefinition()
+    Object.assign(def.parameters[0], { type: 'struct', structType: 'FixtureStruct' })
+    def.parameters[0].default = '{"a":"*/"}'
+    const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
+    const stored = runDefault(def, (name) => `JSON.stringify(${name})`)
+    expect(JSON.parse(String(stored))).toEqual({ a: '*/' })
+    expect(JSON.parse(annotated)).toEqual({ a: '*/' })
   })
 })
 
