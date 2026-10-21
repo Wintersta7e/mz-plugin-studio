@@ -129,7 +129,6 @@ const saveLoadTemplate: CodeTemplate = {
   category: 'save-load',
   name: 'Custom Save Data',
   description: 'Add custom data that persists in save files',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/DataManager.html',
   icon: 'Save',
   fields: [
     {

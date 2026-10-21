@@ -54,7 +54,6 @@ export interface CodeTemplate {
   category: TemplateCategory
   name: string
   description: string
-  docUrl?: string // Link to relevant RPG Maker MZ documentation
   icon: string // Lucide icon name
   fields: TemplateField[]
   generate: (values: Record<string, unknown>) => string

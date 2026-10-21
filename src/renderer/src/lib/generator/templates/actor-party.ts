@@ -29,7 +29,6 @@ const customActorPropertyTemplate: CodeTemplate = {
   category: 'actor-party',
   name: 'Custom Actor Property',
   description: 'Add a new property to Game_Actor with getter/setter',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Actor.html',
   icon: 'Users',
   fields: [
     {
@@ -233,7 +232,6 @@ const partyManagementTemplate: CodeTemplate = {
   category: 'actor-party',
   name: 'Party Management',
   description: 'Add/remove party members, party size limits',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Party.html',
   icon: 'Users',
   fields: [
     {
@@ -534,7 +532,6 @@ const equipmentHookTemplate: CodeTemplate = {
   category: 'actor-party',
   name: 'Equipment Hook',
   description: 'Hook into equip/unequip events with before/after timing',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Actor.html',
   icon: 'Users',
   fields: [
     {

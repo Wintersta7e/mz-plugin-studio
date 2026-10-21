@@ -50,7 +50,6 @@ const damageModifierTemplate: CodeTemplate = {
   category: 'battle-system',
   name: 'Damage Modifier',
   description: 'Modify damage calculation in battle',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Action.html',
   icon: 'Swords',
   fields: [
     {
@@ -192,7 +191,6 @@ const battleEventTemplate: CodeTemplate = {
   category: 'battle-system',
   name: 'Battle Event Hook',
   description: 'React to battle events (victory, defeat, escape)',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/BattleManager.html',
   icon: 'Swords',
   fields: [
     {
@@ -310,7 +308,6 @@ const stateHookTemplate: CodeTemplate = {
   category: 'battle-system',
   name: 'State Change Hook',
   description: 'React when states are added or removed',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Battler.html',
   icon: 'Swords',
   fields: [
     {
@@ -432,7 +429,6 @@ const actionSequenceTemplate: CodeTemplate = {
   category: 'battle-system',
   name: 'Action Execution Hook',
   description: 'React before/after battle actions execute',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Action.html',
   icon: 'Swords',
   fields: [
     {

@@ -11,7 +11,6 @@ const sceneHooksTemplate: CodeTemplate = {
   category: 'scene-hooks',
   name: 'Scene Lifecycle Hook',
   description: "Execute code at specific points in a scene's lifecycle",
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Scene_Base.html',
   icon: 'Play',
   fields: [
     {

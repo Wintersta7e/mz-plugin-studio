@@ -21,7 +21,6 @@ import {
   Image,
   Menu,
   Users,
-  ExternalLink,
   Star,
   Clock,
   HelpCircle
@@ -1031,17 +1030,6 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
                         <p className="text-sm text-muted-foreground mt-1">
                           {selectedTemplate.description}
                         </p>
-                        {selectedTemplate.docUrl && (
-                          <a
-                            href={selectedTemplate.docUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            MZ Documentation
-                          </a>
-                        )}
                       </div>
 
                       {selectedTemplate.fields.length > 0 ? (

@@ -20,7 +20,6 @@ const bgmControlTemplate: CodeTemplate = {
   category: 'audio-system',
   name: 'BGM Control',
   description: 'Play, stop, fade, save/restore background music',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/AudioManager.html',
   icon: 'Volume2',
   fields: [
     {
@@ -236,7 +235,6 @@ const sePlayerTemplate: CodeTemplate = {
   category: 'audio-system',
   name: 'Sound Effect Player',
   description: 'Play sound effects with customizable pitch, volume, and pan',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/AudioManager.html',
   icon: 'Volume2',
   fields: [
     {
@@ -410,7 +408,6 @@ const audioCrossfadeTemplate: CodeTemplate = {
   category: 'audio-system',
   name: 'Audio Fade/Crossfade',
   description: 'Fade out current BGM and optionally fade in new BGM',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/AudioManager.html',
   icon: 'Volume2',
   fields: [
     {

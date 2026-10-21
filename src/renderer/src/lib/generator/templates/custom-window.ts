@@ -215,7 +215,6 @@ const customWindowTemplate: CodeTemplate = {
   category: 'custom-window',
   name: 'Custom Window',
   description: 'Create a new window class and add it to a scene',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Base.html',
   icon: 'PanelTop',
   fields: [
     {
@@ -330,7 +329,6 @@ const hudOverlayWindowTemplate: CodeTemplate = {
   category: 'custom-window',
   name: 'HUD Overlay Window',
   description: 'Create a HUD window that displays on the map screen',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Base.html',
   icon: 'PanelTop',
   fields: [
     {
@@ -596,7 +594,6 @@ const popupNotificationTemplate: CodeTemplate = {
   category: 'custom-window',
   name: 'Popup Notification',
   description: 'Create a temporary popup window that auto-closes after a duration',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Base.html',
   icon: 'PanelTop',
   fields: [
     {
@@ -900,7 +897,6 @@ const gaugeWindowTemplate: CodeTemplate = {
   category: 'custom-window',
   name: 'Gauge Window',
   description: 'Create a window with customizable gauge bars (HP/MP style)',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Base.html',
   icon: 'PanelTop',
   fields: [
     {

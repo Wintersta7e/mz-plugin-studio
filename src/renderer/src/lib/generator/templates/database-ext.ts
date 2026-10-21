@@ -209,7 +209,6 @@ const databaseExtTemplate: CodeTemplate = {
   category: 'database-ext',
   name: 'Notetag Parser',
   description: 'Parse custom notetags from database entries',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/RPG.BaseItem.html',
   icon: 'Tag',
   fields: [
     {

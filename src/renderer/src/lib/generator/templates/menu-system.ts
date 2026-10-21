@@ -29,7 +29,6 @@ const customMenuSceneTemplate: CodeTemplate = {
   category: 'menu-system',
   name: 'Custom Menu Scene',
   description: 'Create a new Scene_MenuBase subclass with custom windows',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Scene_MenuBase.html',
   icon: 'Menu',
   fields: [
     {
@@ -316,7 +315,6 @@ const titleScreenModTemplate: CodeTemplate = {
   category: 'menu-system',
   name: 'Title Screen Mod',
   description: 'Add commands or modify the title screen',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Scene_Title.html',
   icon: 'Menu',
   fields: [
     {
@@ -546,7 +544,6 @@ const menuCommandAdditionTemplate: CodeTemplate = {
   category: 'menu-system',
   name: 'Menu Command Addition',
   description: 'Add new commands to the main menu (Scene_Menu)',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_MenuCommand.html',
   icon: 'Menu',
   fields: [
     {
@@ -803,7 +800,6 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   category: 'menu-system',
   name: 'Options Menu Addition',
   description: 'Add custom options to the options menu',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Options.html',
   icon: 'Menu',
   fields: [
     {

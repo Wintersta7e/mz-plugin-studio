@@ -20,7 +20,6 @@ const eventSpawnTemplate: CodeTemplate = {
   category: 'map-events',
   name: 'Event Spawn',
   description: 'Dynamically spawn events at runtime',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Map.html',
   icon: 'Map',
   fields: [
     {
@@ -289,7 +288,6 @@ const movementRouteTemplate: CodeTemplate = {
   category: 'map-events',
   name: 'Movement Route',
   description: 'Create custom movement routes programmatically',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Character.html',
   icon: 'Map',
   fields: [
     {
@@ -544,7 +542,6 @@ const mapTransferHookTemplate: CodeTemplate = {
   category: 'map-events',
   name: 'Map Transfer Hook',
   description: 'Hook into map transfers with before/after timing',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Player.html',
   icon: 'Map',
   fields: [
     {
@@ -722,7 +719,6 @@ const parallelProcessTemplate: CodeTemplate = {
   category: 'map-events',
   name: 'Parallel Process',
   description: 'Create a parallel update process on the map',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Scene_Map.html',
   icon: 'Map',
   fields: [
     {

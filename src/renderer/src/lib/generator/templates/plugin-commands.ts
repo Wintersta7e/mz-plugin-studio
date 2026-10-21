@@ -60,7 +60,6 @@ const basicCommandTemplate: CodeTemplate = {
   category: 'plugin-command',
   name: 'Basic Plugin Command',
   description: 'Simple command registration with arguments',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/PluginManager.html',
   icon: 'Terminal',
   fields: [
     {
@@ -219,7 +218,6 @@ const asyncCommandTemplate: CodeTemplate = {
   category: 'plugin-command',
   name: 'Async Command with Wait',
   description: 'Command that pauses event execution until complete',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/PluginManager.html',
   icon: 'Terminal',
   fields: [
     {
@@ -411,7 +409,6 @@ const validatedCommandTemplate: CodeTemplate = {
   category: 'plugin-command',
   name: 'Command with Validation',
   description: 'Command with input validation and error handling',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/PluginManager.html',
   icon: 'Terminal',
   fields: [
     {

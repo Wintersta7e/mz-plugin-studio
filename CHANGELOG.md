@@ -31,6 +31,7 @@
 ### Removed
 
 - The "Req" checkbox on note parameters, which had no effect.
+- The "MZ Documentation" link in the template dialog; its pages no longer exist.
 
 ## [1.6.0] - 2026-04-19
 

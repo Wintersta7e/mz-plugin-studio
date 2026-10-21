@@ -20,7 +20,6 @@ const customTextCodeTemplate: CodeTemplate = {
   category: 'message-system',
   name: 'Custom Text Code',
   description: 'Add a new escape code like \\C[n] or \\V[n]',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Message.html',
   icon: 'MessageSquare',
   fields: [
     {
@@ -219,7 +218,6 @@ const messageWindowModTemplate: CodeTemplate = {
   category: 'message-system',
   name: 'Message Window Mod',
   description: 'Modify message window appearance (position, size, background)',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_Message.html',
   icon: 'MessageSquare',
   fields: [
     {
@@ -550,7 +548,6 @@ const choiceHandlerTemplate: CodeTemplate = {
   category: 'message-system',
   name: 'Choice Handler',
   description: 'Custom choice window handling and styling',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Window_ChoiceList.html',
   icon: 'MessageSquare',
   fields: [
     {

@@ -141,7 +141,6 @@ const inputHandlerTemplate: CodeTemplate = {
   category: 'input-handler',
   name: 'Key Input Handler',
   description: 'React to keyboard or gamepad input',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Input.html',
   icon: 'Keyboard',
   fields: [
     {

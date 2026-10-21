@@ -31,7 +31,6 @@ const customSpriteClassTemplate: CodeTemplate = {
   category: 'sprite-system',
   name: 'Custom Sprite Class',
   description: 'Create a new Sprite subclass with initialize and update methods',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Sprite.html',
   icon: 'Image',
   fields: [
     {
@@ -244,7 +243,6 @@ const pictureManipulationTemplate: CodeTemplate = {
   category: 'sprite-system',
   name: 'Picture Manipulation',
   description: 'Show, move, rotate, and tint pictures programmatically',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Game_Screen.html',
   icon: 'Image',
   fields: [
     {
@@ -619,7 +617,6 @@ const spriteAnimationTemplate: CodeTemplate = {
   category: 'sprite-system',
   name: 'Sprite Animation',
   description: 'Add frame-based animation to sprites using spritesheets',
-  docUrl: 'https://kinoar.github.io/rmmz-docs-MZ/Sprite.html',
   icon: 'Image',
   fields: [
     {
