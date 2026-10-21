@@ -141,6 +141,7 @@ templates from the code editor, and save into your project's `js/plugins/` folde
 ## Development
 
 ```bash
+npm run check          # the full local gate: lint, types, licences, tests
 npm run typecheck      # tsc for main, renderer and tests
 npm run lint           # ESLint
 npm run format         # Prettier
@@ -191,7 +192,7 @@ use the latest release.
 
 ## Contributing
 
-Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run lint`, `npm run typecheck` and `npm test`.
+Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run check`.
 
 ## License
 
