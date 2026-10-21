@@ -27,6 +27,7 @@
     "ci:runtime-deps": "node scripts/ci-policy.mjs runtime-deps",
     "ci:toolchain": "node scripts/ci-policy.mjs toolchain",
     "check": "npm run ci:runtime-deps && npm run lint && npm run lint:scripts && npm run format:check && npm run typecheck && npm run licenses -- --check && npm run test:coverage && npm run test:golden && npm run test:golden:coverage",
+    "check:commits": "node scripts/check-golden-commits.mjs origin/main..HEAD",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --coverage && node scripts/check-coverage.mjs suite",

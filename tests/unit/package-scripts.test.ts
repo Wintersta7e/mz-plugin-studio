@@ -97,6 +97,26 @@ describe('package.json scripts', () => {
     )
   })
 
+  it('a script runs the golden commit rules outside check, and the README names it', () => {
+    const runners = Object.keys(scripts).filter((name) =>
+      commandsOf(scripts[name]).some(
+        (c) => NODE_SCRIPT.exec(c)?.[1] === 'scripts/check-golden-commits.mjs'
+      )
+    )
+    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
+    const section = (heading: string): string => {
+      const start = readme.indexOf(`\n## ${heading}\n`)
+      expect(start, heading).toBeGreaterThanOrEqual(0)
+      const end = readme.indexOf('\n## ', start + 1)
+      return readme.slice(start, end < 0 ? undefined : end)
+    }
+    console.log(`golden commit rules: scripts running them ${runners.length}`)
+    expect(runners).toEqual(['check:commits'])
+    expect(commandsOf(scripts.check)).not.toContain('npm run check:commits')
+    for (const heading of ['Development', 'Contributing'])
+      expect(section(heading), heading).toContain('npm run check:commits')
+  })
+
   it('typecheck includes the scripts project', () => {
     expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
   })
