@@ -865,12 +865,15 @@ Before exporting, the studio validates your plugin:
 - Missing or invalid plugin name
 - Duplicate parameter or command names
 - Parameters referencing nonexistent parent
+- Translations whose language code has characters other than letters and underscores (the translation is left out)
 
 **Warnings** (review recommended)
 - Unused struct definitions (defined but not referenced)
 - Invalid JSON in struct parameter defaults
 - Commands with no implementation in custom code
 - Parameter names that aren't valid JS identifiers
+- Field text containing `*/`, which is written as `*\/` so it cannot end the comment
+- Field text containing `@` followed by a word, which MZ reads as a new annotation tag
 
 ---
 
