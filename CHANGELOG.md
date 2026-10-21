@@ -2,30 +2,32 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-10-21
+
 ### Security
 
-- Text entered in a plugin field, or loaded from a `.mzparams` file, can no longer end a comment in the generated plugin and run as code; the descriptions in the `.d.ts` export are covered too.
+- Text entered in a plugin field or in a code template's options, or loaded from a `.mzparams` file, can no longer end a comment or string in the generated plugin or in the code a template inserts and run as code; the descriptions in the `.d.ts` export are covered too.
+- The code template dialog checks a template's options before showing its code, and options written directly into code accept only what fits there; while an option is invalid the dialog lists the problem instead of the code and inserts or copies nothing. 25 of the 36 templates now ask for their required fields before they show code.
 - Line breaks and hidden line separators in command and parameter names can no longer end a comment in inserted code snippets; generated strings write those separators as escapes.
-- Text typed into a template field can no longer end a comment or string in the inserted code, and fields that become code accept only what fits there.
+- Saving to a file path now requires that path to have been chosen in a save dialog during the session.
 - File paths are checked segment by segment; `..` segments, device names and drive-relative paths are rejected.
 - A drive or filesystem root can no longer be used as a project folder.
-- Saving to a file path now requires that path to have been chosen in a save dialog during the session.
 - Electron is updated to 41.10.7, which fixes eight published Electron security advisories.
 
 ### Fixed
 
-- Parameters loaded from a `.mzparams` file with an empty minimum or maximum no longer produce `@min null`, `@max null` or `@decimals null`.
 - Folders and files with `..` inside a name (for example `My..Game`) can be opened and saved.
+- Parameters loaded from a `.mzparams` file with an empty minimum, maximum or decimals value no longer produce `@min null`, `@max null` or `@decimals null`.
 - The struct default editor no longer writes an internal placeholder into the default when an empty-value option is chosen.
 - `@requiredAssets` as the last annotation line keeps its last entry on import.
 - Save All reports failures instead of dropping them, and saving many plugins re-renders once.
 
 ### Changed
 
-- The app package no longer contains test files, documentation or libraries the app does not load.
+- Importing a `.mzparams` file skips fields of the wrong type and unknown keys, and lists what it skipped.
 - The preview warns when a field's text contains `*/` or a word starting with `@` that MZ would read as a tag.
 - A translation whose language code holds anything other than letters and underscores is left out of the generated plugin, and the preview reports it.
-- Importing a `.mzparams` file skips fields of the wrong type and unknown keys, and lists what it skipped.
+- The app package no longer contains test files, documentation or libraries the app does not load.
 - Electron 40 → 41.
 
 ### Removed
