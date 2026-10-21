@@ -108,7 +108,7 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink): string {
   }
 
   // Note Parameters (deployment notetag groups)
-  // Kadokawa's MZ annotation reference documents only four note-asset tags:
+  // The official MZ annotation reference documents only four note-asset tags:
   // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
   // of the spec and is dropped.
   for (const np of plugin.meta.noteParams || []) {
@@ -202,7 +202,7 @@ function generateParameterBlock(
   if ((param.type === 'file' || param.type === 'animation') && param.dir) {
     lines.push(`${prefix}@dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
   }
-  // @require is MV-era — explicitly discontinued in MZ per Kadokawa docs.
+  // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
   // Use @requiredAssets at the plugin level instead.
 
   // Options for select/combo type
