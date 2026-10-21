@@ -206,17 +206,11 @@ const customSpriteClassTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.spriteName) {
-      errors.push('Sprite Name is required')
-    } else {
+    if (values.spriteName) {
       const name = values.spriteName as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Sprite Name must start with a letter and contain only letters and numbers')
       }
-    }
-
-    if (!values.parentClass) {
-      errors.push('Parent Class is required')
     }
 
     if (values.width !== undefined && (values.width as number) <= 0) {
@@ -973,9 +967,7 @@ const spriteAnimationTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.spriteName) {
-      errors.push('Sprite Class Name is required')
-    } else {
+    if (values.spriteName) {
       const name = values.spriteName as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Sprite Name must start with a letter and contain only letters and numbers')

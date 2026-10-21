@@ -301,15 +301,8 @@ const databaseExtTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    // Validate database type is selected
-    if (!values.databaseType) {
-      errors.push('Database selection is required')
-    }
-
     // Validate tag name
-    if (!values.tagName) {
-      errors.push('Tag Name is required')
-    } else {
+    if (values.tagName) {
       const tagName = values.tagName as string
 
       // Check for valid tag name (letters, numbers, underscores)

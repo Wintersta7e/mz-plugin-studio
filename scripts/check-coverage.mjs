@@ -32,7 +32,7 @@ const FLOORS = {
       // Below the 60% bar: lines 109-176 are exports no production code calls
       // (getClassOptions, getMethodOptions, searchClassesAndMethods).
       [`${GENERATOR}/class-registry.ts`]: 31,
-      // Below the 60% bar: lines 31, 66, 74, 84-112 and 170 are exports only unit tests call
+      // Below the 60% bar: lines 31, 66, 74, 84-109 and 167 are exports only unit tests call
       // (unregisterTemplate, hasTemplate, getTemplateCount, generateFromTemplate, clearTemplates).
       [`${GENERATOR}/templates/index.ts`]: 51,
       [`${GENERATOR}/templates/types.ts`]: 60

@@ -202,9 +202,7 @@ const inputHandlerTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.keyName) {
-      errors.push('Key is required')
-    } else if (!KEY_CODES[values.keyName as string]) {
+    if (values.keyName && !KEY_CODES[values.keyName as string]) {
       errors.push(`Unknown key: ${values.keyName}`)
     }
 

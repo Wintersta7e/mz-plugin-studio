@@ -162,9 +162,7 @@ const customActorPropertyTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.propertyName) {
-      errors.push('Property Name is required')
-    } else {
+    if (values.propertyName) {
       const propertyName = values.propertyName as string
 
       // Check for valid JavaScript identifier
@@ -817,21 +815,6 @@ const equipmentHookTemplate: CodeTemplate = {
     }
 
     return lines.join('\n')
-  },
-  validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    if (!values.eventType) {
-      errors.push('Event Type is required')
-    }
-    if (!values.timing) {
-      errors.push('Timing is required')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
   }
 }
 

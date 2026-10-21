@@ -172,14 +172,6 @@ const methodAliasTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.className) {
-      errors.push('Class is required')
-    }
-
-    if (!values.methodName) {
-      errors.push('Method is required')
-    }
-
     // Verify the method exists on the class
     if (values.className && values.methodName) {
       const methodInfo = getMethodInfo(values.className as string, values.methodName as string)

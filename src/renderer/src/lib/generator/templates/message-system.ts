@@ -178,9 +178,7 @@ const customTextCodeTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.escapeChar) {
-      errors.push('Escape character is required')
-    } else {
+    if (values.escapeChar) {
       const escapeChar = values.escapeChar as string
       // Validate escape character format
       if (!/^[A-Za-z]+$/.test(escapeChar)) {

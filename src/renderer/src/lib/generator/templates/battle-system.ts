@@ -151,9 +151,7 @@ const damageModifierTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.modifyValue) {
-      errors.push('Value is required')
-    } else {
+    if (values.modifyValue) {
       const modifyType = values.modifyType as string
       const modifyValue = values.modifyValue as string
 
@@ -284,18 +282,6 @@ const battleEventTemplate: CodeTemplate = {
     lines.push('};')
 
     return lines.join('\n')
-  },
-  validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    if (!values.eventType) {
-      errors.push('Event type is required')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
   }
 }
 
@@ -525,18 +511,6 @@ const actionSequenceTemplate: CodeTemplate = {
     lines.push('};')
 
     return lines.join('\n')
-  },
-  validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    if (!values.timing) {
-      errors.push('Timing is required')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
   }
 }
 

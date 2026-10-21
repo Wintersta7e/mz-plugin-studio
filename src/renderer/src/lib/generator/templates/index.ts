@@ -91,13 +91,10 @@ export function generateFromTemplate(
     return null
   }
 
-  // Validate if validator exists
-  if (template.validate) {
-    const validation = template.validate(values)
-    if (!validation.valid) {
-      log.error('Template validation failed:', validation.errors)
-      return null
-    }
+  const validation = validateTemplateValues(templateId, values)
+  if (!validation.valid) {
+    log.error('Template validation failed:', validation.errors)
+    return null
   }
 
   try {

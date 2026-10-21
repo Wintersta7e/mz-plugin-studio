@@ -261,9 +261,9 @@ const eventSpawnTemplate: CodeTemplate = {
     const errors: string[] = []
 
     const functionName = values.functionName as string
-    if (!functionName || functionName.trim() === '') {
+    if (functionName && functionName.trim() === '') {
       errors.push('Function name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
+    } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
       errors.push('Function name must be a valid JavaScript identifier')
     }
 
@@ -520,9 +520,9 @@ const movementRouteTemplate: CodeTemplate = {
     const errors: string[] = []
 
     const functionName = values.functionName as string
-    if (!functionName || functionName.trim() === '') {
+    if (functionName && functionName.trim() === '') {
       errors.push('Function name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
+    } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
       errors.push('Function name must be a valid JavaScript identifier')
     }
 
@@ -952,9 +952,9 @@ const parallelProcessTemplate: CodeTemplate = {
     const errors: string[] = []
 
     const processName = values.processName as string
-    if (!processName || processName.trim() === '') {
+    if (processName && processName.trim() === '') {
       errors.push('Process name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(processName)) {
+    } else if (processName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(processName)) {
       errors.push('Process name must be a valid JavaScript identifier')
     }
 

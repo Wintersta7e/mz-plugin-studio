@@ -178,15 +178,15 @@ const basicCommandTemplate: CodeTemplate = {
     const commandName = values.commandName as string
     const pluginName = values.pluginName as string
 
-    if (!commandName || !commandName.trim()) {
+    if (commandName && !commandName.trim()) {
       errors.push('Command name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
+    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
       errors.push(
         'Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)'
       )
     }
 
-    if (!pluginName || !pluginName.trim()) {
+    if (pluginName && !pluginName.trim()) {
       errors.push('Plugin name is required')
     }
 
@@ -375,13 +375,13 @@ const asyncCommandTemplate: CodeTemplate = {
     const waitType = values.waitType as string
     const waitDuration = values.waitDuration as number
 
-    if (!commandName || !commandName.trim()) {
+    if (commandName && !commandName.trim()) {
       errors.push('Command name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
+    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
       errors.push('Command name must be a valid identifier')
     }
 
-    if (!pluginName || !pluginName.trim()) {
+    if (pluginName && !pluginName.trim()) {
       errors.push('Plugin name is required')
     }
 
@@ -597,13 +597,13 @@ const validatedCommandTemplate: CodeTemplate = {
     const minValue = values.minValue as number
     const maxValue = values.maxValue as number
 
-    if (!commandName || !commandName.trim()) {
+    if (commandName && !commandName.trim()) {
       errors.push('Command name is required')
-    } else if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
+    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
       errors.push('Command name must be a valid identifier')
     }
 
-    if (!pluginName || !pluginName.trim()) {
+    if (pluginName && !pluginName.trim()) {
       errors.push('Plugin name is required')
     }
 

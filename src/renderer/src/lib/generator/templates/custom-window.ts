@@ -288,18 +288,12 @@ const customWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.windowName) {
-      errors.push('Window Name is required')
-    } else {
+    if (values.windowName) {
       const name = values.windowName as string
       // Check for valid identifier
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
-    }
-
-    if (!values.parentClass) {
-      errors.push('Parent Class is required')
     }
 
     // Validate width and height are positive
@@ -563,9 +557,7 @@ const hudOverlayWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.windowName) {
-      errors.push('Window Name is required')
-    } else {
+    if (values.windowName) {
       const name = values.windowName as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
@@ -866,9 +858,7 @@ const popupNotificationTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.windowName) {
-      errors.push('Window Name is required')
-    } else {
+    if (values.windowName) {
       const name = values.windowName as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
@@ -1291,9 +1281,7 @@ const gaugeWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.windowName) {
-      errors.push('Window Name is required')
-    } else {
+    if (values.windowName) {
       const name = values.windowName as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')

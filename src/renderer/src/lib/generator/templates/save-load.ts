@@ -197,9 +197,7 @@ const saveLoadTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (!values.dataName) {
-      errors.push('Data Property Name is required')
-    } else {
+    if (values.dataName) {
       const dataName = values.dataName as string
 
       // Check for valid JavaScript identifier

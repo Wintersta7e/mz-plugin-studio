@@ -353,10 +353,6 @@ const sePlayerTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.filename) {
-      errors.push('SE filename is required')
-    }
-
     if (values.volume !== undefined) {
       const volume = values.volume as number
       if (volume < 0 || volume > 100) {

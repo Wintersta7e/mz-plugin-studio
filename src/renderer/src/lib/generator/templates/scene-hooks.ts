@@ -4,7 +4,7 @@
  */
 
 import { registerTemplate } from './index'
-import type { CodeTemplate, ValidationResult } from './types'
+import type { CodeTemplate } from './types'
 
 const sceneHooksTemplate: CodeTemplate = {
   id: 'scene-hook-basic',
@@ -64,22 +64,6 @@ ${sceneName}.prototype.${hookPoint} = function() {
     // Your code here - runs when ${sceneName} ${hookPoint}s
 
 };`
-  },
-  validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    if (!values.sceneName) {
-      errors.push('Scene is required')
-    }
-
-    if (!values.hookPoint) {
-      errors.push('Hook Point is required')
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors
-    }
   }
 }
 

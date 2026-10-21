@@ -279,9 +279,7 @@ const customMenuSceneTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.sceneName) {
-      errors.push('Scene name is required')
-    } else {
+    if (values.sceneName) {
       const sceneName = values.sceneName as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sceneName)) {
         errors.push(
@@ -290,9 +288,7 @@ const customMenuSceneTemplate: CodeTemplate = {
       }
     }
 
-    if (!values.windowName) {
-      errors.push('Window name is required')
-    } else {
+    if (values.windowName) {
       const windowName = values.windowName as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(windowName)) {
         errors.push('Window name must be a valid JavaScript identifier')
@@ -763,13 +759,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.commandName) {
-      errors.push('Command name is required')
-    }
-
-    if (!values.commandSymbol) {
-      errors.push('Command symbol is required')
-    } else {
+    if (values.commandSymbol) {
       const symbol = values.commandSymbol as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
@@ -1040,13 +1030,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (!values.optionName) {
-      errors.push('Option name is required')
-    }
-
-    if (!values.optionSymbol) {
-      errors.push('Option symbol is required')
-    } else {
+    if (values.optionSymbol) {
       const symbol = values.optionSymbol as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
