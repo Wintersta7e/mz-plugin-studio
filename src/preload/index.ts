@@ -75,15 +75,6 @@ export interface WindowAPI {
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
 }
 
-export interface UpdateAPI {
-  onUpdateAvailable: (
-    callback: (info: { version: string; releaseNotes?: string }) => void
-  ) => () => void
-  onUpdateDownloaded: (callback: () => void) => () => void
-  downloadUpdate: () => Promise<void>
-  installUpdate: () => Promise<void>
-}
-
 export interface LogAPI {
   openFolder: () => Promise<void>
   setLevel: (debug: boolean) => void
@@ -145,24 +136,6 @@ const windowApi: WindowAPI = {
   }
 }
 
-const updateApi: UpdateAPI = {
-  onUpdateAvailable: (callback) => {
-    const channel = IPC_CHANNELS.UPDATE_AVAILABLE
-    const handler = (_event: unknown, info: { version: string; releaseNotes?: string }) =>
-      callback(info)
-    ipcRenderer.on(channel, handler)
-    return () => ipcRenderer.removeListener(channel, handler)
-  },
-  onUpdateDownloaded: (callback) => {
-    const channel = IPC_CHANNELS.UPDATE_DOWNLOADED
-    const handler = () => callback()
-    ipcRenderer.on(channel, handler)
-    return () => ipcRenderer.removeListener(channel, handler)
-  },
-  downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DOWNLOAD),
-  installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL)
-}
-
 const logApi: LogAPI = {
   openFolder: () => ipcRenderer.invoke(IPC_CHANNELS.LOG_OPEN_FOLDER),
   setLevel: (debug) => ipcRenderer.send(IPC_CHANNELS.LOG_SET_LEVEL, debug)
@@ -173,7 +146,6 @@ contextBridge.exposeInMainWorld('api', {
   plugin: pluginApi,
   dialog: dialogApi,
   window: windowApi,
-  update: updateApi,
   log: logApi
 })
 
@@ -183,6 +155,5 @@ export type API = {
   plugin: PluginAPI
   dialog: DialogAPI
   window: WindowAPI
-  update: UpdateAPI
   log: LogAPI
 }

@@ -20,31 +20,6 @@ win:
         - x64
 portable:
   artifactName: ${name}-${version}-portable.${ext}
-mac:
-  icon: resources/icon.icns
-  entitlementsInherit: build/entitlements.mac.plist
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
-  target:
-    - target: dmg
-      arch:
-        - x64
-        - arm64
-dmg:
-  artifactName: ${name}-${version}.${ext}
-linux:
-  target:
-    - target: AppImage
-      arch:
-        - x64
-  maintainer: mzpluginstudio.com
-  category: Development
-appImage:
-  artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 electronFuses:
   runAsNode: false
@@ -55,7 +30,3 @@ electronFuses:
   onlyLoadAppFromAsar: true
   # Off stops the app loading its own scripts from file://.
   grantFileProtocolExtraPrivileges: true
-publish:
-  provider: github
-  owner: Wintersta7e
-  repo: mz-plugin-studio

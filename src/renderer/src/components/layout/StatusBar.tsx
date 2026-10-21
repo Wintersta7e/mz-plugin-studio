@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
-import { Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
+import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { ScrollArea } from '../ui/scroll-area'
@@ -13,9 +13,6 @@ export function StatusBar() {
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
 
   const [showIssues, setShowIssues] = useState(false)
-  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null)
-  const [updateDownloaded, setUpdateDownloaded] = useState(false)
-  const [downloading, setDownloading] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
   const prevDirtyRef = useRef(isDirty)
 
@@ -30,29 +27,6 @@ export function StatusBar() {
       if (timer) clearTimeout(timer)
     }
   }, [isDirty])
-
-  useEffect(() => {
-    const cleanupAvailable = window.api.update?.onUpdateAvailable((info) => {
-      setUpdateAvailable(info.version)
-    })
-    const cleanupDownloaded = window.api.update?.onUpdateDownloaded(() => {
-      setUpdateDownloaded(true)
-      setDownloading(false)
-    })
-    return () => {
-      cleanupAvailable?.()
-      cleanupDownloaded?.()
-    }
-  }, [])
-
-  const handleDownload = async () => {
-    setDownloading(true)
-    await window.api.update?.downloadUpdate()
-  }
-
-  const handleInstall = () => {
-    window.api.update?.installUpdate()
-  }
 
   return (
     <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-[13px] text-muted-foreground">
@@ -127,24 +101,6 @@ export function StatusBar() {
       </div>
 
       <div className="flex items-center gap-4">
-        {updateDownloaded ? (
-          <button
-            onClick={handleInstall}
-            className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300"
-          >
-            <CheckCircle className="h-3 w-3" />
-            Restart to update
-          </button>
-        ) : updateAvailable ? (
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center gap-1 text-blue-400 hover:text-blue-300 disabled:opacity-50"
-          >
-            <Download className="h-3 w-3" />
-            {downloading ? 'Downloading...' : `v${updateAvailable} available`}
-          </button>
-        ) : null}
         {showSaved && <span className="text-green-400 animate-save-flash">Saved</span>}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
         <span>MZ Plugin Studio v{__APP_VERSION__}</span>

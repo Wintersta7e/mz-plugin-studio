@@ -3,48 +3,114 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  release:
-    runs-on: windows-latest
-
+  ci:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     permissions:
-      contents: write
+      actions: read # find and watch this commit's ci.yml run
+    steps:
+      - name: Wait for this commit's CI run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # A tag pushed together with its commit can start before that commit's CI run exists.
+          run_id=""
+          for attempt in 1 2 3 4 5 6; do
+            run_id="$(gh run list --workflow ci.yml --commit "$GITHUB_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty')"
+            if [ -n "$run_id" ]; then break; fi
+            echo "no ci.yml run for commit ${GITHUB_SHA} yet (attempt ${attempt} of 6)"
+            sleep 10
+          done
+          if [ -z "$run_id" ]; then
+            echo "No ci.yml run exists for commit ${GITHUB_SHA}: push the commit to main and let CI run before tagging it."
+            exit 1
+          fi
+          echo "ci.yml run ${run_id} for commit ${GITHUB_SHA}"
+          if ! gh run watch "$run_id" --exit-status --interval 30 --compact; then
+            echo "ci.yml run ${run_id} for commit ${GITHUB_SHA} did not succeed."
+            exit 1
+          fi
 
+  build:
+    needs: ci
+    runs-on: windows-2025
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: package.json
           package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: node node_modules/electron/install.js
+      - run: npm run build
+      - run: npm run package:win
+      - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
+      - name: Fuse wire
+        run: node scripts/ci-policy.mjs fuses dist/win-unpacked/mz-plugin-studio.exe
+      - name: Upload portable exe
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: portable-exe
+          path: dist/*-portable.exe
+          if-no-files-found: error
 
-      - run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Build Windows portable app and publish to GitHub Releases
-        run: npx electron-builder --win --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract changelog and publish release
+  publish:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # create the release and delete the oldest ones
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: portable-exe
+          path: dist
+      - name: Extract changelog
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           awk "/^## \\[${VERSION}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md > release-notes.md
-          if [ ! -s release-notes.md ]; then
-            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details." > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "CHANGELOG.md has no notes under [${VERSION}]"
+            exit 1
           fi
-          gh release edit "$GITHUB_REF_NAME" \
+      - name: Publish release
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ASSET="dist/mz-plugin-studio-${VERSION}-portable.exe"
+          count="$(find dist -maxdepth 1 -name '*-portable.exe' | wc -l)"
+          if [ "$count" -ne 1 ] || [ ! -f "$ASSET" ]; then
+            echo "expected exactly ${ASSET}; found ${count} portable executable(s)"
+            ls -la dist
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag \
             --title "MZ Plugin Studio v${VERSION}" \
             --notes-file release-notes.md \
-            --draft=false
+            "$ASSET"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
       - name: Clean up old releases (keep latest 2)
         shell: bash
@@ -55,3 +121,4 @@ jobs:
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

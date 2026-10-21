@@ -24,8 +24,6 @@
     "build:unpack": "npm run build && node node_modules/electron-builder/cli.js --dir",
     "package:win": "node node_modules/electron-builder/cli.js --win --publish never",
     "build:win": "npm run build && npm run package:win",
-    "build:mac": "npm run build && node node_modules/electron-builder/cli.js --mac",
-    "build:linux": "npm run build && node node_modules/electron-builder/cli.js --linux",
     "ci:runtime-deps": "node scripts/ci-policy.mjs runtime-deps",
     "ci:toolchain": "node scripts/ci-policy.mjs toolchain",
     "check": "npm run ci:runtime-deps && npm run lint && npm run lint:scripts && npm run format:check && npm run typecheck && npm run licenses -- --check && npm run test:coverage && npm run test:golden && npm run test:golden:coverage",
@@ -38,8 +36,7 @@
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-log": "^5.4.3",
-    "electron-updater": "^6.8.3"
+    "electron-log": "^5.4.3"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

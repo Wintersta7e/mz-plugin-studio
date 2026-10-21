@@ -70,12 +70,6 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
       isMaximized: vi.fn(async () => false),
       onMaximizeChange: vi.fn(() => () => {})
     },
-    update: {
-      onUpdateAvailable: vi.fn(() => () => {}),
-      onUpdateDownloaded: vi.fn(() => () => {}),
-      downloadUpdate: vi.fn(async () => {}),
-      installUpdate: vi.fn(async () => {})
-    },
     log: {
       openFolder: vi.fn(async () => {}),
       setLevel: vi.fn()
@@ -86,7 +80,6 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
     plugin: { ...api.plugin, ...overrides.plugin },
     dialog: { ...api.dialog, ...overrides.dialog },
     window: { ...api.window, ...overrides.window },
-    update: { ...api.update, ...overrides.update },
     log: { ...api.log, ...overrides.log }
   }
 }

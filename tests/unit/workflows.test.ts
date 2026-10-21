@@ -20,6 +20,8 @@ interface Step {
 interface Job {
   id: string
   keys: Map<string, string>
+  // Trimmed lines nested under each job key other than steps: (permissions:, strategy:)
+  nested: Map<string, string[]>
   steps: Step[]
 }
 
@@ -53,7 +55,7 @@ function readJobs(file: string): Job[] {
     if (/^\S/.test(line)) break
     let match: RegExpExecArray | null
     if ((match = JOB.exec(line))) {
-      job = { id: match[1], keys: new Map(), steps: [] }
+      job = { id: match[1], keys: new Map(), nested: new Map(), steps: [] }
       jobs.push(job)
       step = undefined
       inSteps = false
@@ -73,7 +75,8 @@ function readJobs(file: string): Job[] {
       step.nested.push(line.trim())
       if (lastStepKey === 'run') step.run.push(line.trim())
     } else if (!inSteps && /^ {6}/.test(line)) {
-      // nested under a job key such as permissions: or strategy:
+      const key = [...job.keys.keys()].at(-1) ?? ''
+      job.nested.set(key, [...(job.nested.get(key) ?? []), line.trim()])
     } else {
       fail(n, 'unreadable line')
     }
@@ -198,5 +201,113 @@ describe('CI workflow', () => {
       /^node scripts\/ci-policy\.mjs fuses dist\/win-unpacked\/mz-plugin-studio\.exe$/
     )
     expect(fuses).toBeGreaterThan(policy)
+  })
+})
+
+const releaseText = readFileSync(join(WORKFLOWS, 'release.yml'), 'utf8')
+const releaseJobs = readJobs('release.yml')
+
+function releaseJob(id: string): Job {
+  const job = releaseJobs.find((each) => each.id === id)
+  if (!job) throw new Error(`release.yml has no job ${id}`)
+  return job
+}
+
+// Permission lines without their trailing comment
+const permissionsOf = (job: Job): string[] =>
+  (job.nested.get('permissions') ?? []).map((line) => line.replace(/\s+#.*$/, ''))
+
+function stepNamed(job: Job, name: string): Step {
+  const step = job.steps.find((each) => each.keys.get('name') === name)
+  if (!step) throw new Error(`release.yml job ${job.id} has no step ${name}`)
+  return step
+}
+
+describe('Release workflow', () => {
+  it('waits for CI, builds, then publishes', () => {
+    expect(releaseJobs.map((job) => job.id)).toEqual(['ci', 'build', 'publish'])
+    expect(releaseText).toMatch(/^permissions:\n {2}contents: read$/m)
+    for (const job of releaseJobs) {
+      expect(job.keys.get('timeout-minutes'), job.id).toMatch(/^\d+$/)
+      expect(['ubuntu-24.04', 'windows-2025'], job.id).toContain(job.keys.get('runs-on'))
+    }
+  })
+
+  it("the ci job runs no project code and waits on the commit's own CI run", () => {
+    const job = releaseJob('ci')
+    expect(job.keys.has('uses')).toBe(false)
+    expect(job.steps.filter((step) => step.keys.has('uses'))).toEqual([])
+    expect(permissionsOf(job)).toEqual(['actions: read'])
+    expect(job.nested.get('permissions')?.[0]).toMatch(/ # \S/)
+    const run = runs(job).join('\n')
+    expect(run).toContain('gh run list --workflow ci.yml --commit "$GITHUB_SHA"')
+    expect(run).toContain('gh run watch "$run_id" --exit-status')
+    expect(ciText).not.toMatch(/\bworkflow_call\b/)
+  })
+
+  it('the build job packages the exe and checks it with read-only rights', () => {
+    const job = releaseJob('build')
+    expect(job.keys.get('needs')).toBe('ci')
+    expect(job.keys.get('runs-on')).toBe('windows-2025')
+    expect(permissionsOf(job)).toEqual(['contents: read'])
+    const setups = job.steps.filter(isSetupNode)
+    expect(setups).toHaveLength(1)
+    expect(setups[0].nested).toContain('node-version-file: package.json')
+    expect(setups[0].nested).toContain('package-manager-cache: false')
+    expect(job.steps.flatMap((step) => step.nested).filter((line) => /^cache:/.test(line))).toEqual(
+      []
+    )
+    expect(releaseText).not.toMatch(/\bnode-version:/)
+    const installs = runs(job).filter((line) => /\bnpm ci\b/.test(line))
+    expect(installs).toEqual(['npm ci --ignore-scripts'])
+    const pack = indexOfRun(job, /^npm run package:win$/)
+    const policy = indexOfRun(job, /^node scripts\/ci-policy\.mjs package /)
+    const fuses = indexOfRun(
+      job,
+      /^node scripts\/ci-policy\.mjs fuses dist\/win-unpacked\/mz-plugin-studio\.exe$/
+    )
+    const upload = job.steps.indexOf(stepNamed(job, 'Upload portable exe'))
+    expect(pack).toBeGreaterThanOrEqual(0)
+    expect(policy).toBeGreaterThan(pack)
+    expect(fuses).toBeGreaterThan(policy)
+    expect(stepNamed(job, 'Fuse wire')).toBe(job.steps[fuses])
+    expect(upload).toBeGreaterThan(fuses)
+  })
+
+  it('only the publish job can write, and only on a pushed v tag', () => {
+    const job = releaseJob('publish')
+    expect(job.keys.get('needs')).toBe('build')
+    expect(job.keys.get('if')).toContain("github.event_name == 'push'")
+    expect(job.keys.get('if')).toContain("startsWith(github.ref, 'refs/tags/v')")
+    const writers = releaseJobs.filter((each) => permissionsOf(each).includes('contents: write'))
+    expect(writers.map((each) => each.id)).toEqual(['publish'])
+    expect(job.nested.get('permissions')?.[0]).toMatch(/ # \S/)
+  })
+
+  it('the publish job runs no project code', () => {
+    const lines = releaseJob('publish').steps.flatMap((step) => [
+      ...step.keys.values(),
+      ...step.nested
+    ])
+    expect(lines.length).toBeGreaterThan(0)
+    expect(lines.filter((line) => /\bnpm\b|\bnpx\b|\bnode /.test(line))).toEqual([])
+  })
+
+  it('an empty changelog section fails the release instead of shipping fallback notes', () => {
+    const job = releaseJob('publish')
+    const notes = stepNamed(job, 'Extract changelog').run
+    expect(notes).toContain('exit 1')
+    expect(notes.filter((line) => /^echo .*>\s*release-notes\.md/.test(line))).toEqual([])
+    expect(notes.join('\n')).not.toContain('for details')
+    const publish = stepNamed(job, 'Publish release').run
+    expect(publish.filter((line) => /^gh release create .*--verify-tag/.test(line))).toHaveLength(1)
+  })
+
+  it('publishing still keeps only the latest two releases', () => {
+    const job = releaseJob('publish')
+    const publish = job.steps.indexOf(stepNamed(job, 'Publish release'))
+    const cleanup = stepNamed(job, 'Clean up old releases (keep latest 2)')
+    expect(job.steps.indexOf(cleanup)).toBeGreaterThan(publish)
+    expect(cleanup.run.join('\n')).toContain('tail -n +3')
   })
 })

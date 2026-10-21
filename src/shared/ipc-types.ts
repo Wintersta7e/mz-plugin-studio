@@ -46,12 +46,6 @@ export const IPC_CHANNELS = {
   WINDOW_IS_MAXIMIZED: 'window-is-maximized',
   WINDOW_MAXIMIZED_CHANGED: 'window-maximized-changed',
 
-  // Auto-updater
-  UPDATE_AVAILABLE: 'update:available',
-  UPDATE_DOWNLOADED: 'update:downloaded',
-  UPDATE_DOWNLOAD: 'update:download',
-  UPDATE_INSTALL: 'update:install',
-
   // Logging
   LOG_OPEN_FOLDER: 'log:open-folder',
   LOG_SET_LEVEL: 'log:set-level'

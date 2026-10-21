@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- The app no longer checks GitHub for updates; download new versions from the Releases page.
+
 ## [1.6.1] - 2026-10-21
 
 ### Security

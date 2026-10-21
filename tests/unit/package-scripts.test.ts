@@ -104,4 +104,18 @@ describe('package.json scripts', () => {
   it('the Windows package script never publishes', () => {
     expect(scripts['package:win']).toMatch(/ --publish never(?: |$)/)
   })
+
+  it('CI and the release package the exe with that script', () => {
+    for (const [file, job] of [
+      ['ci.yml', 'package-win'],
+      ['release.yml', 'build']
+    ]) {
+      const lines = readFileSync(join(ROOT, '.github/workflows', file), 'utf8').split(/\r?\n/)
+      const start = lines.indexOf(`  ${job}:`)
+      expect(start, `${file} ${job}`).toBeGreaterThanOrEqual(0)
+      const end = lines.findIndex((line, index) => index > start && /^ {0,2}\S/.test(line))
+      const body = lines.slice(start + 1, end < 0 ? undefined : end)
+      expect(body, `${file} ${job}`).toContain('      - run: npm run package:win')
+    }
+  })
 })
