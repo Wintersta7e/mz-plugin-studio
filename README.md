@@ -12,7 +12,6 @@ MZ project, so game-data parameters pick from your actual actors, items and swit
 ![Electron](https://img.shields.io/github/package-json/dependency-version/Wintersta7e/mz-plugin-studio/dev/electron?label=Electron&logo=electron&logoColor=white&color=47848F)
 ![React](https://img.shields.io/github/package-json/dependency-version/Wintersta7e/mz-plugin-studio/dev/react?label=React&logo=react&logoColor=black&color=61DAFB)
 ![TypeScript](https://img.shields.io/github/package-json/dependency-version/Wintersta7e/mz-plugin-studio/dev/typescript?label=TypeScript&logo=typescript&logoColor=white&color=3178C6)
-![Typecheck](https://img.shields.io/badge/tsc-strict-3178C6?logo=typescript&logoColor=white)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 ![Status](https://img.shields.io/badge/status-personal%20tool%20%C2%B7%20maintained-brightgreen)

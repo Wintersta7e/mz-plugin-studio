@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { ALL_PARAM_TYPES } from '../../src/shared/types/plugin'
 import { CATEGORIES } from '../../src/renderer/src/lib/generator/templates/types'
@@ -85,6 +86,25 @@ describe('published docs match the code', () => {
     console.log(`docs denylist: files scanned ${scanned.length}, matches ${matches.length}`)
     expect(scanned.length).toBeGreaterThan(0)
     expect({ missing, matches }).toEqual({ missing: [], matches: [] })
+  })
+
+  it('README shows the tsc-strict badge only while every type-checked tsconfig is strict', () => {
+    const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> })
+      .scripts
+    // The tsconfigs `npm run typecheck` passes to tsc, through the scripts it runs
+    const configs = scripts.typecheck.split('&&').flatMap((command) => {
+      const run = /^npm run ([\w:-]+)$/.exec(command.trim())
+      const script = run ? (scripts[run[1]] ?? '') : command
+      return [...script.matchAll(/ -p (\S+)/g)].map((match) => match[1])
+    })
+    // strict as tsc resolves it, through `extends`
+    const nonStrict = configs.filter((file) => {
+      const { config } = ts.readConfigFile(join(ROOT, file), ts.sys.readFile)
+      return ts.parseJsonConfigFileContent(config, ts.sys, ROOT).options.strict !== true
+    })
+    console.log(`strict badge: tsconfigs ${configs.length}, non-strict ${nonStrict.length}`)
+    expect(configs.length).toBeGreaterThan(0)
+    if (/img\.shields\.io\/badge\/tsc-strict\b/.test(readme)) expect(nonStrict).toEqual([])
   })
 
   it('README screenshots and tracked screenshots are the same files', () => {
