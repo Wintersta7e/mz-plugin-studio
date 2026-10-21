@@ -75,6 +75,32 @@ describe('package.json scripts', () => {
     expect(commandsOf(scripts.check)).not.toContain('npm run ci:toolchain')
   })
 
+  it('check runs the scripts lint and the format check right after the source lint', () => {
+    const commands = commandsOf(scripts.check)
+    const lint = commands.indexOf('npm run lint')
+    expect(lint).toBeGreaterThanOrEqual(0)
+    expect(commands.slice(lint + 1, lint + 3)).toEqual([
+      'npm run lint:scripts',
+      'npm run format:check'
+    ])
+  })
+
+  it('the scripts lint fails on any warning in scripts/', () => {
+    expect(scripts['lint:scripts']).toBe(
+      'node node_modules/eslint/bin/eslint.js --max-warnings 0 scripts/'
+    )
+  })
+
+  it('the format check covers code and config, never the prose docs', () => {
+    expect(scripts['format:check']).toBe(
+      'node node_modules/prettier/bin/prettier.cjs --check src/ tests/ scripts/ tools/ .github/ "*.ts" "*.mjs" "*.js" "*.json" "*.yml"'
+    )
+  })
+
+  it('typecheck includes the scripts project', () => {
+    expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
+  })
+
   it('the Windows package script never publishes', () => {
     expect(scripts['package:win']).toMatch(/ --publish never(?: |$)/)
   })
