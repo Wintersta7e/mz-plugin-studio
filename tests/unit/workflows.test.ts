@@ -191,6 +191,12 @@ describe('CI workflow', () => {
     const packaging = runs(job).filter((line) => line === 'npm run package:win')
     expect(packaging).toHaveLength(1)
     const pack = indexOfRun(job, /^npm run package:win$/)
-    expect(indexOfRun(job, /^node scripts\/ci-policy\.mjs package /)).toBeGreaterThan(pack)
+    const policy = indexOfRun(job, /^node scripts\/ci-policy\.mjs package /)
+    expect(policy).toBeGreaterThan(pack)
+    const fuses = indexOfRun(
+      job,
+      /^node scripts\/ci-policy\.mjs fuses dist\/win-unpacked\/mz-plugin-studio\.exe$/
+    )
+    expect(fuses).toBeGreaterThan(policy)
   })
 })

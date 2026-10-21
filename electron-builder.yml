@@ -46,6 +46,15 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  # Off stops the app loading its own scripts from file://.
+  grantFileProtocolExtraPrivileges: true
 publish:
   provider: github
   owner: Wintersta7e

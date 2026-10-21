@@ -139,6 +139,8 @@ jobs:
       - run: npm run build
       - run: npm run package:win
       - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
+      - name: Fuse wire
+        run: node scripts/ci-policy.mjs fuses dist/win-unpacked/mz-plugin-studio.exe
 
   test:
     if: always()

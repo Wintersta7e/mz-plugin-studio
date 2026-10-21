@@ -4,6 +4,7 @@
 //   node scripts/ci-policy.mjs toolchain [--electron]
 //   node scripts/ci-policy.mjs needs               (reads NEEDS_JSON)
 //   node scripts/ci-policy.mjs osv-ignores
+//   node scripts/ci-policy.mjs fuses <executable>
 import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire, isBuiltin } from 'node:module'
@@ -46,12 +47,44 @@ const OSV_CONFIG = 'osv-scanner.toml'
 const OSV_MAX_DAYS = 90
 const DAY_MS = 86_400_000
 
+// Fuse wire: sentinel, version byte, length byte, then one state byte per fuse.
+const FUSE_SENTINEL = Buffer.from('dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX', 'latin1')
+const FUSE_STATES = new Map([
+  [0x30, 'disabled'],
+  [0x31, 'enabled'],
+  [0x72, 'removed'],
+  [0x90, 'inherit']
+])
+const FUSE_NAMES = [
+  'RunAsNode',
+  'EnableCookieEncryption',
+  'EnableNodeOptionsEnvironmentVariable',
+  'EnableNodeCliInspectArguments',
+  'EnableEmbeddedAsarIntegrityValidation',
+  'OnlyLoadAppFromAsar',
+  'LoadBrowserProcessSpecificV8Snapshot',
+  'GrantFileProtocolExtraPrivileges',
+  'WasmTrapHandlers'
+]
+// The states the packaged app must carry, by wire index; the others keep Electron's default.
+const REQUIRED_FUSES = new Map([
+  [0, 'disabled'],
+  [1, 'enabled'],
+  [2, 'disabled'],
+  [3, 'disabled'],
+  [4, 'enabled'],
+  [5, 'enabled'],
+  [7, 'enabled']
+])
+const FUSE_MIN_LENGTH = 8
+
 const SUBCOMMANDS = {
   package: checkPackage,
   'runtime-deps': checkRuntimeDeps,
   toolchain: checkToolchain,
   needs: checkNeeds,
-  'osv-ignores': checkOsvIgnores
+  'osv-ignores': checkOsvIgnores,
+  fuses: checkFuses
 }
 
 function print(line) {
@@ -64,7 +97,7 @@ function printError(line) {
 
 function usage() {
   printError(
-    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | osv-ignores>'
+    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | osv-ignores | fuses <executable>>'
   )
   return 1
 }
@@ -488,6 +521,50 @@ function checkOsvIgnores(args) {
   print(`ci-policy osv-ignores: nearest expiry ${expiries[0] ?? 'none'}`)
   for (const problem of problems) print(`FAIL ${problem}`)
   print(`ci-policy osv-ignores: ${problems.length ? `FAILED (${problems.length} problems)` : 'ok'}`)
+  return problems.length ? 1 : 0
+}
+
+function checkFuses(args) {
+  if (args.length !== 1) return usage()
+  const [path] = args
+  const buffer = readInput(path, (file) => readFileSync(file))
+  if (buffer === undefined) return 1
+  print(`ci-policy fuses: ${path}`)
+
+  const fail = (problem) => {
+    print(`FAIL ${problem}`)
+    print('ci-policy fuses: FAILED (1 problems)')
+    return 1
+  }
+  const at = buffer.indexOf(FUSE_SENTINEL)
+  if (at < 0) return fail('no fuse wire found')
+  let wires = 0
+  for (let next = at; next >= 0; next = buffer.indexOf(FUSE_SENTINEL, next + 1)) wires++
+  if (wires > 1) return fail(`${wires} fuse wires found`)
+  const start = at + FUSE_SENTINEL.length
+  if (start + 2 > buffer.length) return fail('fuse wire truncated')
+  const version = buffer[start]
+  const length = buffer[start + 1]
+  if (version !== 1) return fail(`wire version ${version}, expected 1`)
+  if (length < FUSE_MIN_LENGTH) {
+    return fail(`wire length ${length}, expected at least ${FUSE_MIN_LENGTH}`)
+  }
+  if (start + 2 + length > buffer.length) return fail('fuse wire truncated')
+
+  const problems = []
+  for (let index = 0; index < length; index++) {
+    const byte = buffer[start + 2 + index]
+    const name = FUSE_NAMES[index] ?? `Fuse${index}`
+    const state = FUSE_STATES.get(byte) ?? `unknown 0x${byte.toString(16)}`
+    const required = REQUIRED_FUSES.get(index)
+    print(`fuse ${name}: ${state} (${required ? `required ${required}` : 'default, not checked'})`)
+    if (required && state !== required) {
+      problems.push(`fuse ${name}: ${state}, required ${required}`)
+    }
+  }
+  print(`ci-policy fuses: wire version ${version}, fuses ${length}, checked ${REQUIRED_FUSES.size}`)
+  for (const problem of problems) print(`FAIL ${problem}`)
+  print(`ci-policy fuses: ${problems.length ? `FAILED (${problems.length} problems)` : 'ok'}`)
   return problems.length ? 1 : 0
 }
 
