@@ -160,7 +160,7 @@ Windows only. Output will be in the `dist/` folder.
 src/        Application code: Electron main process, preload bridge, React renderer, shared types
 tests/      Vitest suites and their fixtures
 tools/      Scripts that enrich the MZ class dictionary used by autocomplete
-scripts/    Repository scripts run by npm scripts and CI
+scripts/    Repository checks, run by hand or through npm scripts
 docs/       User guide and template contribution guide
 resources/  App icons
 ```
