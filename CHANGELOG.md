@@ -10,7 +10,7 @@
 - The code template dialog checks a template's options before showing its code, and options written directly into code accept only what fits there; while an option is invalid the dialog lists the problem instead of the code and inserts or copies nothing. 25 of the 36 templates now ask for their required fields before they show code.
 - Line breaks and hidden line separators in command and parameter names can no longer end a comment in inserted code snippets; generated strings write those separators as escapes.
 - Saving to a file path now requires that path to have been chosen in a save dialog during the session.
-- File paths are checked segment by segment; `..` segments, device names and drive-relative paths are rejected.
+- File paths are checked segment by segment; `..` segments, device-namespace paths (`\\?\`, `\\.\`) and drive-relative paths are rejected.
 - A drive or filesystem root can no longer be used as a project folder.
 - Electron is updated to 41.10.7, which fixes eight published Electron security advisories.
 
