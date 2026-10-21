@@ -135,7 +135,7 @@ export function extractAliases(content: string): AliasInfo[] {
     results.push({
       style: match[1] as AliasStyle,
       className: match[2],
-      methodName: match[3],
+      methodName: match[3]
     })
   }
   return results
@@ -152,7 +152,7 @@ export function extractMethodOverrides(content: string): MethodOverride[] {
   while ((match = overrideRegex.exec(content)) !== null) {
     results.push({
       className: match[1],
-      methodName: match[2],
+      methodName: match[2]
     })
   }
   return results
@@ -250,7 +250,7 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
       totalFiles: 0,
       analyzedFiles: analyses.length,
       skippedFiles: 0,
-      categories: {},
+      categories: {}
     },
     patterns: {
       iifeStyle: { arrow: 0, function: 0, none: 0 },
@@ -263,12 +263,12 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
       definesNewClasses: 0,
       usesES6Extends: 0,
       totalAliases: 0,
-      uniqueMethodsOverridden: 0,
+      uniqueMethodsOverridden: 0
     },
     classPopularity: {},
     methodPopularity: {},
     paramTypes: {},
-    noteTagPatterns: { meta_bracket: 0, meta_property: 0, note_regex: 0 },
+    noteTagPatterns: { meta_bracket: 0, meta_property: 0, note_regex: 0 }
   }
 
   // Per-category counts
@@ -320,7 +320,7 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
 
     // New class definitions
     if (a.newClasses.length > 0) report.patterns.definesNewClasses++
-    if (a.newClasses.some(c => c.style === 'es6_extends')) report.patterns.usesES6Extends++
+    if (a.newClasses.some((c) => c.style === 'es6_extends')) report.patterns.usesES6Extends++
 
     // Parameter types
     for (const t of a.paramTypes) {
@@ -352,9 +352,7 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
 }
 
 function sortByValue(obj: Record<string, number>): Record<string, number> {
-  return Object.fromEntries(
-    Object.entries(obj).sort(([, a], [, b]) => b - a)
-  )
+  return Object.fromEntries(Object.entries(obj).sort(([, a], [, b]) => b - a))
 }
 
 // ── Output Generation ──────────────────────────────────────────────────────
@@ -365,7 +363,7 @@ function generateEnrichment(report: AggregatedReport): EnrichmentData {
     generatedAt: report.generatedAt,
     pluginCount: report.corpus.analyzedFiles,
     classPopularity: report.classPopularity,
-    methodPopularity: report.methodPopularity,
+    methodPopularity: report.methodPopularity
   }
 }
 
@@ -474,10 +472,12 @@ these is well-established practice with minimal risk of conflicts.
 
 | Rank | Method | Plugins | Use Case |
 |------|--------|---------|----------|
-${topMethods.map(([method, count], i) => {
-  const desc = getMethodDescription(method)
-  return `| ${i + 1} | ${method} | ${count} | ${desc} |`
-}).join('\n')}
+${topMethods
+  .map(([method, count], i) => {
+    const desc = getMethodDescription(method)
+    return `| ${i + 1} | ${method} | ${count} | ${desc} |`
+  })
+  .join('\n')}
 
 ---
 
@@ -618,7 +618,7 @@ function getMethodDescription(method: string): string {
     'Game_Actor.prototype.setup': 'Actor data setup',
     'Scene_Boot.prototype.loadSystemImages': 'System image preload',
     'Sprite_Character.prototype.update': 'Character sprite update',
-    'Window_Base.prototype.update': 'Window per-frame update',
+    'Window_Base.prototype.update': 'Window per-frame update'
   }
   return descriptions[method] || ''
 }
@@ -635,17 +635,25 @@ function printConsoleReport(report: AggregatedReport, skippedCount: number): voi
   console.log('║       MZ Plugin Dictionary — Analysis Report        ║')
   console.log('╚══════════════════════════════════════════════════════╝\n')
 
-  console.log(`Corpus: ${total + skippedCount} files total, ${total} analyzed, ${skippedCount} skipped\n`)
+  console.log(
+    `Corpus: ${total + skippedCount} files total, ${total} analyzed, ${skippedCount} skipped\n`
+  )
   console.log('Categories:')
   for (const [cat, count] of Object.entries(r.corpus.categories)) {
     console.log(`  ${cat}: ${count}`)
   }
 
   console.log('\n── Structural Patterns ──\n')
-  console.log(`  IIFE Style:       arrow ${p.iifeStyle.arrow} (${pct(p.iifeStyle.arrow)})  |  function ${p.iifeStyle.function} (${pct(p.iifeStyle.function)})  |  none ${p.iifeStyle.none} (${pct(p.iifeStyle.none)})`)
+  console.log(
+    `  IIFE Style:       arrow ${p.iifeStyle.arrow} (${pct(p.iifeStyle.arrow)})  |  function ${p.iifeStyle.function} (${pct(p.iifeStyle.function)})  |  none ${p.iifeStyle.none} (${pct(p.iifeStyle.none)})`
+  )
   console.log(`  'use strict':     ${p.useStrict} (${pct(p.useStrict)})`)
-  console.log(`  Param Loading:    standard ${p.paramLoading.standard} (${pct(p.paramLoading.standard)})  |  PluginManagerEx ${p.paramLoading.pluginmanagerex} (${pct(p.paramLoading.pluginmanagerex)})  |  none ${p.paramLoading.none} (${pct(p.paramLoading.none)})`)
-  console.log(`  Alias Styles:     const ${p.aliasStyle['const'] || 0}  |  var ${p.aliasStyle['var'] || 0}  |  let ${p.aliasStyle['let'] || 0}`)
+  console.log(
+    `  Param Loading:    standard ${p.paramLoading.standard} (${pct(p.paramLoading.standard)})  |  PluginManagerEx ${p.paramLoading.pluginmanagerex} (${pct(p.paramLoading.pluginmanagerex)})  |  none ${p.paramLoading.none} (${pct(p.paramLoading.none)})`
+  )
+  console.log(
+    `  Alias Styles:     const ${p.aliasStyle['const'] || 0}  |  var ${p.aliasStyle['var'] || 0}  |  let ${p.aliasStyle['let'] || 0}`
+  )
   console.log(`  Total Aliases:    ${p.totalAliases}`)
   console.log(`  registerCommand:  ${p.hasRegisterCommand} (${pct(p.hasRegisterCommand)})`)
   console.log(`  Uses Structs:     ${p.usesStructs} (${pct(p.usesStructs)})`)
@@ -655,19 +663,25 @@ function printConsoleReport(report: AggregatedReport, skippedCount: number): voi
   console.log(`  Unique Methods:   ${p.uniqueMethodsOverridden}`)
 
   console.log('\n── Top 15 Extended Classes ──\n')
-  Object.entries(r.classPopularity).slice(0, 15).forEach(([cls, count], i) => {
-    console.log(`  ${String(i + 1).padStart(2)}. ${cls.padEnd(25)} ${count}`)
-  })
+  Object.entries(r.classPopularity)
+    .slice(0, 15)
+    .forEach(([cls, count], i) => {
+      console.log(`  ${String(i + 1).padStart(2)}. ${cls.padEnd(25)} ${count}`)
+    })
 
   console.log('\n── Top 15 Overridden Methods ──\n')
-  Object.entries(r.methodPopularity).slice(0, 15).forEach(([method, count], i) => {
-    console.log(`  ${String(i + 1).padStart(2)}. ${method.padEnd(55)} ${count}`)
-  })
+  Object.entries(r.methodPopularity)
+    .slice(0, 15)
+    .forEach(([method, count], i) => {
+      console.log(`  ${String(i + 1).padStart(2)}. ${method.padEnd(55)} ${count}`)
+    })
 
   console.log('\n── Parameter Types ──\n')
-  Object.entries(r.paramTypes).slice(0, 10).forEach(([type, count]) => {
-    console.log(`  ${type.padEnd(20)} ${count}`)
-  })
+  Object.entries(r.paramTypes)
+    .slice(0, 10)
+    .forEach(([type, count]) => {
+      console.log(`  ${type.padEnd(20)} ${count}`)
+    })
 
   console.log('\n── Note Tag Patterns ──\n')
   for (const [pattern, count] of Object.entries(r.noteTagPatterns)) {
@@ -725,7 +739,7 @@ function analyzeFile(filePath: string, category: string): PluginAnalysis | null 
     noteTagPatterns: detectNoteTagPattern(content),
     newClasses: detectNewClasses(content),
     usesStructs: /struct</.test(content),
-    usesArrays: /\[\]\s*$/m.test(content) || /@type\s+\w+\[\]/.test(content),
+    usesArrays: /\[\]\s*$/m.test(content) || /@type\s+\w+\[\]/.test(content)
   }
 }
 
@@ -764,18 +778,12 @@ function main(): void {
   }
 
   const enrichment = generateEnrichment(report)
-  fs.writeFileSync(
-    path.join(outputDir, 'enrichment.json'),
-    JSON.stringify(enrichment, null, 2)
-  )
+  fs.writeFileSync(path.join(outputDir, 'enrichment.json'), JSON.stringify(enrichment, null, 2))
 
   const conventions = generateConventions(report)
   fs.writeFileSync(path.join(outputDir, 'conventions.md'), conventions)
 
-  fs.writeFileSync(
-    path.join(outputDir, 'full-report.json'),
-    JSON.stringify(report, null, 2)
-  )
+  fs.writeFileSync(path.join(outputDir, 'full-report.json'), JSON.stringify(report, null, 2))
 
   printConsoleReport(report, skipped)
 
@@ -787,7 +795,8 @@ function main(): void {
 }
 
 // Run if executed directly (not imported for testing)
-const isDirectRun = process.argv[1] &&
+const isDirectRun =
+  process.argv[1] &&
   (process.argv[1].endsWith('analyze-plugins.ts') || process.argv[1].endsWith('analyze-plugins.js'))
 if (isDirectRun) {
   main()
