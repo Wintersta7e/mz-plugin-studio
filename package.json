@@ -5,6 +5,9 @@
   "main": "./out/main/index.js",
   "author": "MZ Plugin Studio",
   "license": "MIT",
+  "engines": {
+    "node": "^24.15.0"
+  },
   "scripts": {
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check src/ tests/ scripts/ tools/ .github/ \"*.ts\" \"*.mjs\" \"*.js\" \"*.json\" \"*.yml\"",
@@ -24,6 +27,7 @@
     "build:mac": "npm run build && node node_modules/electron-builder/cli.js --mac",
     "build:linux": "npm run build && node node_modules/electron-builder/cli.js --linux",
     "ci:runtime-deps": "node scripts/ci-policy.mjs runtime-deps",
+    "ci:toolchain": "node scripts/ci-policy.mjs toolchain",
     "check": "npm run ci:runtime-deps && npm run lint && npm run lint:scripts && npm run format:check && npm run typecheck && npm run licenses -- --check && npm run test:coverage && npm run test:golden && npm run test:golden:coverage",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
@@ -54,7 +58,7 @@
     "@testing-library/dom": "~10.4.1",
     "@testing-library/jest-dom": "~7.0.1",
     "@testing-library/react": "~16.3.2",
-    "@types/node": "^25.6.0",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",

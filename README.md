@@ -132,7 +132,7 @@ npm install            # on a WSL /mnt/ path: npm install --no-bin-links
 npm run dev            # start with hot reload
 ```
 
-Node.js — the version `.github/workflows/ci.yml` uses.
+Node.js — the version in `package.json` `engines`.
 
 Then: **+** in the sidebar creates a plugin; fill in the Meta tab, add parameters and commands, insert
 templates from the code editor, and save into your project's `js/plugins/` folder. The
@@ -160,7 +160,7 @@ mz-plugin-studio/
 │   ├── renderer/   # React app: editors, preview, analysis, plugin generator
 │   └── shared/     # types and checks used on both sides
 ├── tests/          # Vitest suites and their fixtures
-├── scripts/        # repository checks, run by hand or through npm scripts
+├── scripts/        # repository checks, run by CI and through npm scripts
 ├── tools/          # scripts that enrich the MZ class dictionary used by autocomplete
 ├── docs/           # user guide and template contribution guide
 └── resources/      # app icons

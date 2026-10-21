@@ -1054,7 +1054,7 @@ If the app shows a red error screen with a stack trace, this is the built-in err
 
 **Solutions:**
 1. Run `npm install` again
-2. Ensure your Node.js version is the one `.github/workflows/ci.yml` uses
+2. Ensure your Node.js version is the one in `package.json` `engines`
 3. Delete `node_modules` and reinstall
 
 ---

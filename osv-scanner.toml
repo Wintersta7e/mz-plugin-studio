@@ -1,0 +1,2 @@
+# Each [[IgnoredVulns]] entry needs an id, an ignoreUntil at most 90 days ahead and a reason.
+# Checked by: node scripts/ci-policy.mjs osv-ignores

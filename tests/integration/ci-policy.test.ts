@@ -286,7 +286,9 @@ describe('ci-policy usage', () => {
   it('fails without a subcommand or with an unknown one', () => {
     for (const args of [[], ['bogus']]) {
       const { status, out } = runPolicy(args)
-      expect(out).toContain('usage: ci-policy <package <app.asar> | runtime-deps>')
+      expect(out).toContain(
+        'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | osv-ignores>'
+      )
       expect(status).toBe(1)
     }
   })

@@ -5,26 +5,158 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
-          cache: npm
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: ${{ github.event_name != 'schedule' && 'npm' || '' }}
+      - run: npm ci --ignore-scripts
+      - run: npm run ci:toolchain
+      - run: npm run ci:runtime-deps
+      - run: npm run lint
+      - run: npm run lint:scripts
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run licenses -- --check
+      - name: Golden commit rules
+        run: node scripts/check-golden-commits.mjs --github-event
+      - name: Workflow audit (zizmor)
+        shell: bash
+        env:
+          ZIZMOR_VERSION: 1.30.1
+          ZIZMOR_WHEEL_SHA256: eee12266b793cb87ad4a7e3af2e72404f8a63e3de5eb099b80bf7b1cfd232a8e
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zizmor"
+          printf 'zizmor==%s --hash=sha256:%s\n' "$ZIZMOR_VERSION" "$ZIZMOR_WHEEL_SHA256" > "$RUNNER_TEMP/zizmor-requirements.txt"
+          "$RUNNER_TEMP/zizmor/bin/pip" install --quiet --require-hashes --only-binary=:all: -r "$RUNNER_TEMP/zizmor-requirements.txt"
+          "$RUNNER_TEMP/zizmor/bin/zizmor" --offline .github/workflows
+      - name: Workflow lint (actionlint)
+        shell: bash
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/actionlint.tar.gz" "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -verbose
+      - name: Secrets scan, full history (gitleaks)
+        shell: bash
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --no-color --exit-code 1 2>&1 | tee "$RUNNER_TEMP/gitleaks.log"
+          # A scan of zero commits is a failed scan.
+          grep -Eq '[1-9][0-9]* commits scanned' "$RUNNER_TEMP/gitleaks.log"
+      - name: Dependency advisories (osv-scanner, report-only)
+        shell: bash
+        env:
+          OSV_SCANNER_VERSION: 2.6.0
+          OSV_SCANNER_SHA256: ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/osv-scanner" "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  $RUNNER_TEMP/osv-scanner" | sha256sum --check --strict
+          chmod +x "$RUNNER_TEMP/osv-scanner"
+          status=0
+          "$RUNNER_TEMP/osv-scanner" scan source --lockfile=package-lock.json --config=osv-scanner.toml || status=$?
+          echo "osv-scanner exit ${status} (report-only: advisories are printed, not failed)"
+          # 1 means advisories were found; any other non-zero status is a failed scan.
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
+      - run: node scripts/ci-policy.mjs osv-ignores
 
-      - run: npm ci
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: ${{ github.event_name != 'schedule' && 'npm' || '' }}
+      - run: npm ci --ignore-scripts
+      - name: No Electron binary in this job
+        shell: bash
+        run: |
+          if [ -e node_modules/electron/dist ]; then
+            echo "node_modules/electron/dist: present"
+            exit 1
+          fi
+          echo "node_modules/electron/dist: absent"
+      - run: npm run test:coverage
+      - run: npm run test:golden
+      - run: npm run test:golden:coverage
+      - name: Clean tree after tests
+        shell: bash
+        run: |
+          status="$(git status --porcelain)"
+          if [ -n "$status" ]; then
+            echo "$status"
+            exit 1
+          fi
+          echo "git status --porcelain: empty"
 
-      - name: Lint
-        run: npm run lint
+  package-win:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: ${{ github.event_name != 'schedule' && 'npm' || '' }}
+      - run: npm ci --ignore-scripts
+      - name: Fixture bytes on a Windows checkout
+        run: npm test -- --project node tests/unit/fixture-set.test.ts
+      - run: node node_modules/electron/install.js
+      - run: node scripts/ci-policy.mjs toolchain --electron
+      - run: npm run build
+      - run: npm run package:win
+      - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Tests
-        run: npx vitest run
+  test:
+    if: always()
+    needs: [static, unit, package-win]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci-policy.mjs
+            package.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+      - run: node scripts/ci-policy.mjs needs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}

@@ -1,9 +1,13 @@
 // Packaging and dependency policy checks. Exit 0 = pass, 1 = any failure.
 //   node scripts/ci-policy.mjs package <app.asar>
 //   node scripts/ci-policy.mjs runtime-deps        (run from the repository root)
+//   node scripts/ci-policy.mjs toolchain [--electron]
+//   node scripts/ci-policy.mjs needs               (reads NEEDS_JSON)
+//   node scripts/ci-policy.mjs osv-ignores
+import { spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync } from 'node:fs'
-import { isBuiltin } from 'node:module'
-import { join, relative, sep } from 'node:path'
+import { createRequire, isBuiltin } from 'node:module'
+import { join, relative, resolve, sep } from 'node:path'
 
 const NODE_MODULES_BUDGET = 2097152
 
@@ -37,7 +41,18 @@ const BARE_IMPORT = /^[ \t]*import[ \t]*(['"])([^'"\n]+)\1/gm
 const CALL_IMPORT = /\b(?:import|require)\([ \t]*(['"])([^'"\n]+)\1[ \t]*\)/g
 const FROM_SPECIFIER = /\bfrom\s*(['"])([^'"\n]+)\1/g
 
-const SUBCOMMANDS = { package: checkPackage, 'runtime-deps': checkRuntimeDeps }
+const CARET_RANGE = /^\^(\d+)\.(\d+)\.(\d+)$/
+const OSV_CONFIG = 'osv-scanner.toml'
+const OSV_MAX_DAYS = 90
+const DAY_MS = 86_400_000
+
+const SUBCOMMANDS = {
+  package: checkPackage,
+  'runtime-deps': checkRuntimeDeps,
+  toolchain: checkToolchain,
+  needs: checkNeeds,
+  'osv-ignores': checkOsvIgnores
+}
 
 function print(line) {
   process.stdout.write(`${line}\n`)
@@ -48,7 +63,9 @@ function printError(line) {
 }
 
 function usage() {
-  printError('usage: ci-policy <package <app.asar> | runtime-deps>')
+  printError(
+    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | osv-ignores>'
+  )
   return 1
 }
 
@@ -285,6 +302,193 @@ function checkRuntimeDeps(args) {
     scanned === 0 || unused.length > 0 || undeclared.length > 0 || unclassified.length > 0
   print(`ci-policy runtime-deps: ${failed ? 'FAILED' : 'ok'}`)
   return failed ? 1 : 0
+}
+
+// Parsed JSON from a file, or undefined after printing why it could not be read.
+function readJson(path) {
+  const text = readInput(path, (file) => readFileSync(file, 'utf8'))
+  if (text === undefined) return undefined
+  try {
+    return JSON.parse(text)
+  } catch {
+    printError(`unreadable: ${path} (not JSON)`)
+    return undefined
+  }
+}
+
+function versionParts(version) {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(String(version))
+  return match ? match.slice(1, 4).map(Number) : undefined
+}
+
+// ^A.B.C: the same major, and minor.patch at or above B.C.
+function satisfiesCaret(version, wanted) {
+  const [major, minor, patch] = version
+  const [wantMajor, wantMinor, wantPatch] = wanted
+  return major === wantMajor && (minor > wantMinor || (minor === wantMinor && patch >= wantPatch))
+}
+
+// The Node version the installed Electron binary bundles, or why it could not be read.
+function electronNodeVersion() {
+  let binary
+  try {
+    binary = createRequire(resolve('package.json'))('electron')
+  } catch (error) {
+    return { problem: `electron could not be loaded (${String(error.message).split('\n')[0]})` }
+  }
+  if (typeof binary !== 'string') return { problem: 'electron did not export a binary path' }
+  const result = spawnSync(binary, ['-p', 'process.versions.node'], {
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    encoding: 'utf8'
+  })
+  const version = (result.stdout ?? '').trim()
+  if (result.status !== 0 || !versionParts(version)) {
+    const why = result.error ? result.error.message : `exit ${result.status}`
+    return { problem: `electron did not print its Node version (${why})` }
+  }
+  return { version }
+}
+
+function checkToolchain(args) {
+  const electron = args.length === 1 && args[0] === '--electron'
+  if (args.length !== 0 && !electron) return usage()
+  const manifest = readJson('package.json')
+  if (manifest === undefined) return 1
+  const types = readJson('node_modules/@types/node/package.json')
+  if (types === undefined) return 1
+
+  const problems = []
+  const engines =
+    isObject(manifest) && isObject(manifest.engines) ? manifest.engines.node : undefined
+  const range = typeof engines === 'string' ? CARET_RANGE.exec(engines) : null
+  const wanted = range ? range.slice(1, 4).map(Number) : undefined
+  print(`ci-policy toolchain: engines.node ${engines ?? '(absent)'}`)
+  if (!wanted) {
+    problems.push(
+      engines === undefined
+        ? 'engines.node absent'
+        : `engines.node ${engines} is not ^major.minor.patch`
+    )
+  }
+  print(`ci-policy toolchain: node ${process.version}`)
+  if (wanted && !satisfiesCaret(versionParts(process.version), wanted)) {
+    problems.push(`node ${process.version} does not satisfy ${engines}`)
+  }
+  const typesVersion = isObject(types) ? types.version : undefined
+  print(`ci-policy toolchain: @types/node ${typesVersion}`)
+  if (wanted && versionParts(typesVersion)?.[0] !== wanted[0]) {
+    problems.push(`@types/node ${typesVersion} is not major ${wanted[0]}`)
+  }
+  if (electron) {
+    const result = electronNodeVersion()
+    if (result.problem) {
+      problems.push(result.problem)
+    } else {
+      print(`ci-policy toolchain: electron node ${result.version}`)
+      if (wanted && versionParts(result.version)[0] !== wanted[0]) {
+        problems.push(`electron node ${result.version} is not major ${wanted[0]}`)
+      }
+    }
+  }
+
+  for (const problem of problems) print(`FAIL ${problem}`)
+  print(`ci-policy toolchain: ${problems.length ? `FAILED (${problems.length} problems)` : 'ok'}`)
+  return problems.length ? 1 : 0
+}
+
+// NEEDS_JSON is the aggregate job's `toJSON(needs)`: { "<job>": { "result": "…" }, … }.
+function checkNeeds(args) {
+  if (args.length !== 0) return usage()
+  const text = process.env.NEEDS_JSON
+  if (text === undefined) {
+    printError('not set: NEEDS_JSON')
+    return 1
+  }
+  let needs
+  try {
+    needs = JSON.parse(text)
+  } catch {
+    printError('unreadable: NEEDS_JSON (not JSON)')
+    return 1
+  }
+  if (!isObject(needs)) {
+    printError('unreadable: NEEDS_JSON (not an object)')
+    return 1
+  }
+
+  const problems = []
+  const jobs = Object.entries(needs)
+  for (const [job, need] of jobs) {
+    const result = isObject(need) ? need.result : undefined
+    print(`ci-policy needs: ${job} ${result}`)
+    if (result !== 'success') problems.push(`${job} ${result}`)
+  }
+  print(`ci-policy needs: jobs ${jobs.length}`)
+  if (jobs.length === 0) problems.push('0 jobs')
+  for (const problem of problems) print(`FAIL ${problem}`)
+  print(`ci-policy needs: ${problems.length ? `FAILED (${problems.length} problems)` : 'ok'}`)
+  return problems.length ? 1 : 0
+}
+
+// The only keys an [[IgnoredVulns]] table may hold, each in this one form.
+const OSV_KEYS = {
+  id: /^id = "([^"\\]+)"$/,
+  ignoreUntil: /^ignoreUntil = (\d{4}-\d{2}-\d{2})(?:T\d{2}:\d{2}:\d{2}Z)?$/,
+  reason: /^reason = "([^"\\]*)"$/
+}
+
+function checkOsvIgnores(args) {
+  if (args.length !== 0) return usage()
+  const text = readInput(OSV_CONFIG, (path) => readFileSync(path, 'utf8'))
+  if (text === undefined) return 1
+
+  const problems = []
+  const entries = []
+  let entry
+  text.split(/\r?\n/).forEach((raw, index) => {
+    const line = raw.trim()
+    const where = `${OSV_CONFIG}:${index + 1}`
+    if (line === '' || line.startsWith('#')) return
+    if (line === '[[IgnoredVulns]]') {
+      entry = { where, keys: {} }
+      entries.push(entry)
+      return
+    }
+    const key = /^(\w+) = /.exec(line)?.[1]
+    const match = key && Object.hasOwn(OSV_KEYS, key) ? OSV_KEYS[key].exec(line) : null
+    if (!entry || !match) {
+      problems.push(`${where}: unexpected line: ${line}`)
+    } else if (Object.hasOwn(entry.keys, key)) {
+      problems.push(`${where}: duplicate ${key}`)
+    } else {
+      entry.keys[key] = match[1]
+    }
+  })
+
+  const now = new Date()
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  for (const { where, keys } of entries) {
+    for (const key of Object.keys(OSV_KEYS)) {
+      if (!Object.hasOwn(keys, key)) problems.push(`${where}: missing ${key}`)
+    }
+    if (keys.reason === '') problems.push(`${where}: empty reason`)
+    if (keys.ignoreUntil === undefined) continue
+    const day = Date.parse(`${keys.ignoreUntil}T00:00:00Z`)
+    if (Number.isNaN(day) || new Date(day).toISOString().slice(0, 10) !== keys.ignoreUntil) {
+      problems.push(`${where}: not a date: ${keys.ignoreUntil}`)
+    } else if (day > today + OSV_MAX_DAYS * DAY_MS) {
+      problems.push(
+        `${where}: ignoreUntil ${keys.ignoreUntil} is more than ${OSV_MAX_DAYS} days ahead`
+      )
+    }
+  }
+
+  const expiries = entries.flatMap(({ keys }) => keys.ignoreUntil ?? []).sort()
+  print(`ci-policy osv-ignores: entries ${entries.length}`)
+  print(`ci-policy osv-ignores: nearest expiry ${expiries[0] ?? 'none'}`)
+  for (const problem of problems) print(`FAIL ${problem}`)
+  print(`ci-policy osv-ignores: ${problems.length ? `FAILED (${problems.length} problems)` : 'ok'}`)
+  return problems.length ? 1 : 0
 }
 
 const [command, ...rest] = process.argv.slice(2)
