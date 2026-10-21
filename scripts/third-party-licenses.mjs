@@ -1,6 +1,6 @@
 // Writes THIRD_PARTY_LICENSES.md from package-lock.json and the installed packages; --check compares instead.
 // Covered: the lockfile closure of the root `dependencies` (shipped in the app's node_modules) and of every
-// package value-imported from src/ (bundled into out/), without electron and Node builtins.
+// package value-imported from src/ (bundled into out/), plus GENERATED_INTO_APP, without electron and Node builtins.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import { join, relative } from 'node:path'
@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const OUTPUT = join(ROOT, 'THIRD_PARTY_LICENSES.md')
+// Build-time packages whose output ships: the app's CSS is generated from them (globals.css, tailwind.config.js)
+const GENERATED_INTO_APP = ['tailwindcss', 'tailwindcss-animate']
 // Path aliases from electron.vite.config.ts
 const ALIASES = ['@/', '@renderer/']
 const BUILTINS = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]))
@@ -96,7 +98,10 @@ function repository(manifest, key) {
 
 const shipped = closure(Object.keys(pkg.dependencies ?? {}))
 const packages = new Map()
-for (const key of [...new Set([...shipped, ...closure(importedPackages())])].sort()) {
+const generatedIntoApp = GENERATED_INTO_APP.map((name) => `node_modules/${name}`)
+for (const key of [
+  ...new Set([...shipped, ...closure(importedPackages()), ...generatedIntoApp])
+].sort()) {
   const name = key.slice(key.lastIndexOf('node_modules/') + 'node_modules/'.length)
   const dir = join(ROOT, key)
   if (!existsSync(dir))
