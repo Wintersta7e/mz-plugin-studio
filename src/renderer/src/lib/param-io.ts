@@ -1,5 +1,6 @@
 import type { ParamType, PluginParameter, SelectOption } from '../types/plugin'
 import { ALL_PARAM_TYPES } from '../types/plugin'
+import type { FieldLabels } from '../stores/persist'
 
 /** File format for .mzparams export */
 export interface ParameterExport {
@@ -134,6 +135,13 @@ export function checkSavedParameter(
   for (const field of shape.dropped) drop(`.${field}`)
   const id = isRecord(value) && typeof value.id === 'string' ? value.id : crypto.randomUUID()
   return { id, ...shape.parameter }
+}
+
+/** Words for the keys `checkSavedParameter` names, for every store that saves parameters. */
+export const PARAMETER_LABELS: FieldLabels = {
+  text: 'display name',
+  desc: 'description',
+  options: { all: 'options', one: 'option' }
 }
 
 export type ParamImportResult =

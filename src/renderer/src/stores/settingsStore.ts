@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { checkSavedParameter } from '../lib/param-io'
+import { checkSavedParameter, PARAMETER_LABELS } from '../lib/param-io'
 import { setSettingsGetter } from '../types/plugin'
 import type { PluginParameter } from '../types/plugin'
 import {
@@ -127,6 +127,17 @@ export const useSettingsStore = create<SettingsState>()(
         defaultAuthor: checkString,
         parameterPresets: checkRecordOf(checkArrayOf(checkSavedParameter)),
         debugLogging: checkBoolean
+      },
+      labels: {
+        theme: 'theme',
+        editorFontSize: 'editor font size',
+        editorWordWrap: 'word wrap',
+        editorMinimap: 'minimap',
+        editorLineNumbers: 'line numbers',
+        defaultAuthor: 'default author',
+        parameterPresets: { all: 'parameter presets', one: 'parameter preset' },
+        debugLogging: 'debug logging',
+        ...PARAMETER_LABELS
       },
       partialize: (state) => ({
         theme: state.theme,

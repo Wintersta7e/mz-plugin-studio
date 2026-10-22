@@ -154,6 +154,13 @@ export const useUIStore = create<UIState>()(
         lastTemplateCategory: checkString,
         rawModeByPluginId: checkRecordOf(checkBoolean)
       },
+      labels: {
+        sidebarWidth: 'sidebar width',
+        previewWidth: 'preview width',
+        previewCollapsed: 'collapsed preview',
+        lastTemplateCategory: 'last template category',
+        rawModeByPluginId: { all: 'raw mode switches', one: 'raw mode switch of tab' }
+      },
       partialize: (state) => ({
         sidebarWidth: state.sidebarWidth,
         previewWidth: state.previewWidth,

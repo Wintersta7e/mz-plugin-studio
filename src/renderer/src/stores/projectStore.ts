@@ -190,6 +190,7 @@ export const useProjectStore = create<ProjectState>()(
       area: 'Recent projects',
       migrations: PROJECT_MIGRATIONS,
       fields: { recentProjects: checkArrayOf(checkString) },
+      labels: { recentProjects: { all: 'recent projects', one: 'recent project' } },
       partialize: (state) => ({ recentProjects: state.recentProjects })
     })
   )

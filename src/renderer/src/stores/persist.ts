@@ -20,11 +20,18 @@ export type FieldCheck<T> = (value: unknown, drop: (what: string) => void) => T 
 // migrations[i] takes a payload from schema i to i + 1; the current schema is migrations.length
 export type MigrationStep = (state: Record<string, unknown>) => Record<string, unknown>
 
+// What the restore report calls a saved field or a key inside one: one phrase, or one for the whole
+// field and one for an entry of it ('' leaves a key out of the words)
+export type FieldLabel = string | { all: string; one: string }
+export type FieldLabels = Readonly<Record<string, FieldLabel>>
+
 export interface PersistSpec<S, P> {
   name: PersistedKey
   area: string // user-facing name of the stored data
   migrations: readonly MigrationStep[]
   fields: { [K in keyof P]-?: FieldCheck<P[K]> }
+  // every field, and any key inside one whose words are not its own split at capitals
+  labels: { [K in keyof P]-?: FieldLabel } & FieldLabels
   partialize: (state: S) => P
   // pure; run by merge after the checks; never names a store (hydration runs inside create())
   prune?: (persisted: P) => P
@@ -46,8 +53,8 @@ export interface RestoreReportEntry {
 let pendingReport: RestoreReportEntry[] = []
 // Writes of each store that failed on a full quota since its last successful write
 const quotaFailures = new Map<PersistedKey, number>()
-// Each store's user-facing name, to label its backup
-const areas = new Map<PersistedKey, string>()
+// Each loaded store's user words, for its backup and its report entries
+const wordsOf = new Map<PersistedKey, { area: string; labels: FieldLabels }>()
 
 const BACKUPS_PLACE = 'Settings > Data > Saved-state backups'
 
@@ -92,11 +99,46 @@ function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
   }
 }
 
+// One step of a field path as the checks write it: `[index]`, `["record key"]`, `key` or `.key`
+const PATH_STEP = /\[(\d+)\]|\[("(?:[^"\\]|\\.)*")\]|\.?([^.[\]]+)/g
+
+/**
+ * A field path in the store's words, innermost first: `openPlugins[0].parameters[1] (Good)` →
+ * "parameter 2 of open plugin Good". The name a check adds names the outermost entry.
+ */
+function describeField(path: string, labels: FieldLabels): string {
+  const named = / \((.*)\)$/.exec(path)
+  const parts: { label: FieldLabel; at?: string }[] = []
+  for (const [, index, entry, key] of (named ? path.slice(0, named.index) : path).matchAll(
+    PATH_STEP
+  )) {
+    if (key !== undefined) {
+      parts.push({ label: labels[key] ?? key.replace(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase() })
+      continue
+    }
+    const at = index !== undefined ? String(Number(index) + 1) : (JSON.parse(entry) as string)
+    const last = parts.at(-1)
+    if (last !== undefined && last.at === undefined) last.at = at
+    else parts.push({ label: 'entry', at })
+  }
+  const outermost = parts.find((part) => part.at !== undefined)
+  if (named && outermost) outermost.at = named[1]
+  return parts
+    .map(({ label, at }) => {
+      const noun = typeof label === 'string' ? label : at === undefined ? label.all : label.one
+      return noun === '' || at === undefined ? noun : `${noun} ${at}`
+    })
+    .filter((words) => words !== '')
+    .reverse()
+    .join(' of ')
+}
+
 export function formatRestoreReport(entries: RestoreReportEntry[]): string {
-  const lines = entries.map(
-    ({ name, area, kind, fields, backup }) =>
-      `${area}: ${loadText(kind, fields)}; ${backupText(name + BACKUP_SUFFIX, backup)}`
-  )
+  const lines = entries.map(({ name, area, kind, fields, backup }) => {
+    const labels = wordsOf.get(name)?.labels ?? {}
+    const described = fields.map((field) => describeField(field, labels))
+    return `${area}: ${loadText(kind, described)}; ${backupText(name + BACKUP_SUFFIX, backup)}`
+  })
   return [...lines, `Backups can be exported or deleted in ${BACKUPS_PLACE}.`].join(' ')
 }
 
@@ -148,8 +190,9 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
     if (!isRecord(value)) return undefined
     const kept: Record<string, T> = {}
     for (const [key, item] of Object.entries(value)) {
-      const checked = entry(item, (what) => drop(`.${key}${what}`))
-      if (checked === undefined) drop(`.${key}`)
+      const at = `[${JSON.stringify(key)}]`
+      const checked = entry(item, (what) => drop(at + what))
+      if (checked === undefined) drop(at)
       else kept[key] = checked
     }
     return kept
@@ -204,7 +247,7 @@ export interface SavedBackup {
 export function listBackups(): SavedBackup[] {
   return backupKeys().map((key) => {
     const name = key.slice(0, -BACKUP_SUFFIX.length) as PersistedKey
-    return { key, area: areas.get(name) ?? name, text: localStorage.getItem(key) ?? '' }
+    return { key, area: wordsOf.get(name)?.area ?? name, text: localStorage.getItem(key) ?? '' }
   })
 }
 
@@ -270,7 +313,7 @@ export function definePersist<S, P extends object>(
   spec: PersistSpec<S, P>
 ): PersistOptions<S, P & { schemaVersion: number }> {
   const currentSchema = spec.migrations.length
-  areas.set(spec.name, spec.area)
+  wordsOf.set(spec.name, { area: spec.area, labels: spec.labels })
   // The envelope keeps the middleware's default version 0, which v1.6.0 also writes and reads;
   // schema changes are tracked by schemaVersion inside the state instead.
   return {

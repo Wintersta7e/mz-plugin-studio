@@ -54,6 +54,10 @@ export const useTemplateStore = create<TemplateStoreState>()(
         favorites: checkArrayOf(checkString),
         recentlyUsed: checkArrayOf(checkRecent)
       },
+      labels: {
+        favorites: { all: 'favorite templates', one: 'favorite template' },
+        recentlyUsed: { all: 'recently used templates', one: 'recently used template' }
+      },
       partialize: (state) => ({
         favorites: state.favorites,
         recentlyUsed: state.recentlyUsed

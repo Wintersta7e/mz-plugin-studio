@@ -12,7 +12,7 @@ import type {
   PluginStruct
 } from '../types/plugin'
 import { createEmptyPlugin, toBaseline } from '../types/plugin'
-import { checkSavedParameter } from '../lib/param-io'
+import { checkSavedParameter, PARAMETER_LABELS } from '../lib/param-io'
 import { isImported } from '../lib/plugin-output'
 import {
   checkArrayOf,
@@ -707,6 +707,30 @@ export const usePluginStore = create<PluginState>()(
         dirtyByPluginId: checkRecordOf(checkBoolean),
         savedPathsByPluginId: checkRecordOf(checkString),
         baselineByPluginId: checkRecordOf(checkBaseline)
+      },
+      labels: {
+        plugin: 'the active plugin',
+        openPlugins: { all: 'open plugin tabs', one: 'open plugin' },
+        activePluginId: 'the active tab',
+        isDirty: "the active plugin's unsaved-changes mark",
+        savedPath: "the active plugin's file path",
+        dirtyByPluginId: { all: 'unsaved-changes marks', one: 'unsaved-changes mark of tab' },
+        savedPathsByPluginId: { all: 'saved file paths', one: 'saved file path of tab' },
+        baselineByPluginId: { all: 'last-saved copies', one: 'last-saved copy of tab' },
+        // inside a plugin definition
+        meta: '',
+        parameters: { all: 'parameters', one: 'parameter' },
+        commands: { all: 'commands', one: 'command' },
+        args: { all: 'arguments', one: 'argument' },
+        structs: { all: 'structs', one: 'struct' },
+        noteParams: { all: 'note parameters', one: 'note parameter' },
+        localizations: { all: 'translations', one: 'translation' },
+        url: 'URL',
+        orderAfter: 'load-after list',
+        orderBefore: 'load-before list',
+        rawSource: 'file text',
+        importedFrom: 'source file name',
+        ...PARAMETER_LABELS
       },
       partialize: (state) => ({
         plugin: toStored(state.plugin),

@@ -195,7 +195,7 @@ describe('damaged saved state', () => {
       }
     ])
     expect(persist.formatRestoreReport(entries)).toBe(
-      `Settings: theme, editorFontSize had unexpected values and were reset; a copy was kept as ${BACKUP}. ${SEE_BACKUPS}`
+      `Settings: theme, editor font size had unexpected values and were reset; a copy was kept as ${BACKUP}. ${SEE_BACKUPS}`
     )
     expect(localStorage.getItem(BACKUP)).toBe(raw)
     expect(log.warn).toHaveBeenCalled()
@@ -229,7 +229,7 @@ describe('damaged saved state', () => {
       }
     ])
     expect(persist.formatRestoreReport(entries)).toBe(
-      `Open plugins: openPlugins[0].rawSource (Good), openPlugins[1] (Broken) could not be read and were left out; a copy was kept as ${PLUGIN_KEY}.backup. ${SEE_BACKUPS}`
+      `Open plugins: file text of open plugin Good, open plugin Broken could not be read and were left out; a copy was kept as ${PLUGIN_KEY}.backup. ${SEE_BACKUPS}`
     )
   })
 
@@ -246,8 +246,8 @@ describe('damaged saved state', () => {
       expect(() => render(createElement(App))).not.toThrow()
       expect(usePluginStore.getState().plugin.meta.dependencies).toEqual([])
       const messages = useToastStore.getState().toasts.map((t) => t.message)
-      expect(messages).toEqual([expect.stringContaining('plugin.meta.dependencies')])
-      expect(messages[0]).toContain('openPlugins[0].meta.dependencies (NoDeps)')
+      expect(messages).toEqual([expect.stringContaining('dependencies of the active plugin')])
+      expect(messages[0]).toContain('dependencies of open plugin NoDeps')
       expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).not.toBeNull()
     } finally {
       cleanup()
@@ -305,7 +305,7 @@ describe('damaged saved state', () => {
         name: KEY,
         area: 'Settings',
         kind: 'entries-dropped',
-        fields: ['parameterPresets.Mixed[0]'],
+        fields: ['parameterPresets["Mixed"][0]'],
         backup: 'kept'
       }
     ])
