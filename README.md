@@ -37,7 +37,19 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
 
 **Known limits:**
 
-- **Raw mode**: An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded.
+- **Raw mode** keeps an imported plugin's own file text when it saves; the
+  [User Guide](./docs/USER_GUIDE.md#raw-mode) says what a save changes. Its limits:
+  - Files are read as UTF-8: a plugin in another encoding loses its non-UTF-8 text on save.
+  - Header edits are refused for a file without a `/*:` or `/*:en` annotation block.
+  - Added parameters, commands or structs are refused for a file that is not valid JavaScript,
+    and any save whose result would not be valid JavaScript is refused.
+  - Language blocks (`/*:ja` and others) are never updated, so a parameter or command added in
+    raw mode is missing from them and the editor in that language does not show it.
+  - **Save All** skips an imported plugin with raw mode off until a **Ctrl+S** save of it is
+    confirmed.
+- **Upgrading from 1.6.x**: imported plugin tabs opened in 1.6.x have no file text, and raw mode
+  refuses to save them until you open the project and click **Reload from project** in the code
+  preview.
 - The app does not update itself: new versions are on the
   [Releases](https://github.com/Wintersta7e/mz-plugin-studio/releases) page.
 

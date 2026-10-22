@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Upgrading from 1.6.x
+
+- Plugin tabs imported in 1.6.x were saved without their file text. After upgrading, the code preview shows a warning on each one and raw mode refuses to save it until you open its project and click **Reload from project**.
+
 ### Added
 
 - Reload from project restores an imported plugin's file text. A tab with no unsaved edits takes the file as it is now; a tab with edits asks whether to replace them with the file or keep them.
@@ -16,7 +20,7 @@
 - Saved settings, layout, recent projects, template favorites and open plugins that cannot be read, in whole or in part, are now kept in a backup entry and reported at startup instead of being silently replaced. The report names each entry left out, such as one open plugin tab, and says when no copy could be kept because an earlier one exists or storage is full. A full storage quota is reported once instead of breaking every change.
 - Closed plugin tabs no longer leave saved dirty flags and file paths behind in stored state.
 - Imported plugins stay in raw mode after a restart and keep their file text, so the app no longer regenerates an imported plugin's code without asking.
-- Saving an imported plugin in raw mode writes an unedited file back byte-for-byte, keeps CRLF line endings and the byte order mark, rewrites only the annotation blocks that changed, and adds code only for parameters and commands added since loading.
+- Saving an imported plugin in raw mode writes an unedited UTF-8 file back byte-for-byte, keeps CRLF line endings and the byte order mark, rewrites only the annotation blocks that changed, and adds code only for parameters and commands added since loading.
 - Plugins with CRLF line endings, a Japanese block before the main block, or command text written before the arguments are read correctly.
 - Translated struct blocks (`/*~struct~Name:ja` and the like) are read as translations of their struct instead of as extra structs.
 - Raw mode keeps the `@require` and `@noteRequire` lines of an imported plugin when it rewrites a block.
@@ -33,7 +37,7 @@
 
 ### Changed
 
-- In raw mode the Code tab, template inserter and localized description and help fields are read-only, and saving an imported plugin with raw mode off asks first.
+- In raw mode the Code tab, template inserter and localized description and help fields are read-only, and saving an imported plugin with raw mode off asks first. Save All lists such a plugin as not saved until a Ctrl+S save of it has been confirmed.
 
 ## [1.6.1] - 2026-10-21
 

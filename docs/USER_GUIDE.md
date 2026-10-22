@@ -796,19 +796,21 @@ You can import existing .js plugins to edit them.
 
 - Make a backup of your original plugin
 - After importing, review all parameters for accuracy
-- An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
+- Saving an imported plugin keeps the file's own text; see [Raw Mode](#raw-mode) for what a save changes and when it refuses
 
 ---
 
 ## Raw Mode
 
-When you import an existing plugin, MZ Plugin Studio stores the complete original source. An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
+When you import an existing plugin, MZ Plugin Studio stores the complete original source. For a UTF-8 file, an imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
+
+Plugin files are read as UTF-8. In a file saved in another encoding (Shift_JIS, for example), every byte that is not valid UTF-8 is replaced when the file is read, and a save writes the replacement characters, so the original text is lost. Keep a copy of such a file before saving over it.
 
 ### Auto-Enable
 
 Raw mode is **automatically enabled** when you import an existing plugin. This ensures imported plugins maintain maximum fidelity by default.
 
-In raw mode the Code tab, the template inserter and the localized description and help fields are read-only, because raw mode keeps the file's own code and language blocks. The first save of an imported plugin with raw mode off asks first, because it regenerates the whole file.
+In raw mode the Code tab, the template inserter and the localized description and help fields are read-only, because raw mode keeps the file's own code and language blocks. The first save of an imported plugin with raw mode off asks first, because it regenerates the whole file. **Save All** does not ask: it lists such a plugin as not saved until you confirm a **Ctrl+S** save of it. The confirmation lasts until the app closes or raw mode is turned off again.
 
 ### When to Use Raw Mode
 
@@ -819,10 +821,33 @@ In raw mode the Code tab, the template inserter and the localized description an
 ### How It Works
 
 1. Import a plugin (raw mode is auto-enabled, the **Raw** button is active)
-2. Only the annotation blocks whose content changed are rewritten; language blocks (/*:ja and others) are kept as they are
-3. An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
-4. **New parameters** and **new commands** added since the file was loaded get parsing or registerCommand code added once; nothing is added for items the file already had
-5. **New struct definitions** are added as new `/*~struct~` blocks
+2. Only the annotation blocks whose content changed are rewritten; language blocks (/*:ja and others) are kept as they are, so a parameter or command you add is missing from them and RPG Maker MZ in that language does not show it
+3. **New parameters** and **new commands** added since the file was loaded get parsing or registerCommand code added once; nothing is added for items the file already had. Raw mode reads the file as JavaScript to place this code
+4. **New struct definitions** are added as new `/*~struct~` blocks
+
+### When Raw Mode Refuses to Save
+
+Raw mode does not write a file it cannot keep intact. The code preview shows why, naming the file, and **Ctrl+S** and **Save All** report it as not saved:
+
+- **The file text is not loaded** — the tab was opened in an older version of the app, or the app's copy of the file as last read is missing. The banner offers **Reload from project** (below).
+- **Header changes to a file without a main block** — the file has no `/*:` or `/*:en` annotation block to rewrite. Undo the header changes.
+- **Additions to a file that is not valid JavaScript** — new parameters, commands or struct blocks need the file's structure. Edits to existing annotations still save.
+- **A result that would not be valid JavaScript** — the game could not load it, so the edit is refused. Undo the last edits.
+
+Turning raw mode off saves regenerated code instead, after asking.
+
+### Reload from Project
+
+When the file text is not loaded, the banner in the code preview has a **Reload from project** button. With the plugin's project open, it reads the plugin from the project's `js/plugins/` folder again and makes it the tab's file text:
+
+- A tab with no unsaved edits takes the file as it is now, without asking.
+- A tab with unsaved edits asks first. **Replace with file** (the default) drops the edits; **Keep tab values** applies the tab's values to the reloaded file and leaves the tab marked unsaved; **Cancel** changes nothing.
+
+The button is disabled until a project is open. If the file cannot be read, an error names the path.
+
+### Upgrading from 1.6.x
+
+Version 1.6.x did not keep an imported plugin's file text, so after upgrading every imported plugin tab that was open shows the "file text is not loaded" banner, and raw mode refuses to save it. Open the plugin's project and click **Reload from project** in each such tab.
 
 ### Header Preamble Preservation
 
