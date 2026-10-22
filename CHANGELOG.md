@@ -46,6 +46,7 @@
 - A project that fails to load now shows a message naming the folder and the reason.
 - A plugin loaded from a file is always saved back to that file: its Plugin Name, which is the file name, is read-only, so renaming it can no longer write a second file while Reload from project keeps reading the first.
 - Reload from project asks first when the tab was read from another project, instead of silently attaching the open project's copy of the plugin.
+- A plugin file that is not UTF-8 is refused when opened or reloaded, with an error naming the file, instead of being read with its non-UTF-8 text replaced and then saved that way.
 
 ### Changed
 

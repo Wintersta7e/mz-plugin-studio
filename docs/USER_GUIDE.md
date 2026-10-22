@@ -806,7 +806,7 @@ You can import existing .js plugins to edit them.
 
 When you import an existing plugin, MZ Plugin Studio stores the complete original source. For a UTF-8 file, an imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
 
-Plugin files are read as UTF-8. In a file saved in another encoding (Shift_JIS, for example), every byte that is not valid UTF-8 is replaced when the file is read, and a save writes the replacement characters, so the original text is lost. Keep a copy of such a file before saving over it.
+Plugin files are read as UTF-8 only. A file saved in another encoding (Shift_JIS, for example) is refused when you open or reload it, with an error naming the file, because its text could not be saved back unchanged. Convert the file to UTF-8 in a text editor to open it here.
 
 ### Auto-Enable
 

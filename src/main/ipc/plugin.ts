@@ -82,6 +82,7 @@ export async function writeGuarded(
     if (
       problem !== null &&
       !guard.force?.includes('would-break') &&
+      // Only whether the file on disk compiles matters here, so a lossy decode is enough
       compileCheck(disk.toString('utf-8'), filename) === null
     ) {
       return refuse('would-break', problem)
@@ -115,10 +116,26 @@ export async function savePluginToPath(
   return result
 }
 
-/** Reads a file's bytes as text with their sha256 */
+/** A file whose bytes are not UTF-8, so its text could not be saved back unchanged */
+class NotUtf8Error extends Error {}
+
+// Keeps a byte order mark in the text, so a save writes it back
+const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
+
+/** Reads a file's bytes as UTF-8 text with their sha256; bytes that are not UTF-8 are refused */
 async function readWithSha(filePath: string): Promise<{ content: string; sha256: string }> {
   const bytes = await readFile(filePath)
-  return { content: bytes.toString('utf-8'), sha256: sha256Hex(bytes) }
+  let content: string
+  try {
+    content = utf8.decode(bytes)
+  } catch {
+    const name = path.basename(filePath)
+    log.warn(`[plugin] ${name} is not UTF-8:`, filePath)
+    throw new NotUtf8Error(
+      `${name} is not UTF-8, so the app cannot keep its text unchanged; convert it to UTF-8 to open it here`
+    )
+  }
+  return { content, sha256: sha256Hex(bytes) }
 }
 
 /** Parses `js/plugins/<filename>` of a project, recording the file it came from */
@@ -134,7 +151,8 @@ export async function loadPluginFile(projectPath: string, filename: string): Pro
     )
     return { plugin: { ...result, importedFrom: filename }, path: pluginPath, sha256 }
   } catch (error) {
-    log.error(`[plugin:load] Failed to load ${filename}:`, error)
+    if (!(error instanceof NotUtf8Error))
+      log.error(`[plugin:load] Failed to load ${filename}:`, error)
     throw new Error(
       `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`
     )
