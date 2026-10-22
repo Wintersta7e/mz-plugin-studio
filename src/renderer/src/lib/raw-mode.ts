@@ -159,3 +159,50 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     return false
   }
 }
+
+/** The open tabs raw mode refuses to save because their file text is not loaded. */
+function sourceMissingTabs(): PluginDefinition[] {
+  const { openPlugins, baselineByPluginId } = usePluginStore.getState()
+  const { rawModeByPluginId } = useUIStore.getState()
+  return openPlugins.filter((p) => {
+    if (!isRawMode(p, rawModeByPluginId[p.id])) return false
+    const out = generatePluginOutput(p, true, baselineByPluginId[p.id] ?? null)
+    return !out.ok && out.refusal === 'source-missing'
+  })
+}
+
+/**
+ * Once a project is open, offers one action that reloads every tab whose file text is not loaded
+ * and whose file is in the project's plugins folder, each as `reloadFromProject` does.
+ */
+export async function offerReloadFromProject(projectPath: string): Promise<void> {
+  let files: Set<string>
+  try {
+    files = new Set(await window.api.plugin.list(projectPath))
+  } catch (error) {
+    log.warn('[reload] could not list the plugins of', projectPath, error)
+    return
+  }
+  const ids = sourceMissingTabs()
+    .filter((p) => p.importedFrom !== undefined && files.has(p.importedFrom))
+    .map((p) => p.id)
+  if (ids.length === 0) return
+  const plugins = ids.length === 1 ? '1 plugin' : `${ids.length} plugins`
+  useToastStore.getState().addToast({
+    type: 'info',
+    message: `Raw mode cannot save ${plugins} open in tabs until reloaded: the file text is not loaded.`,
+    duration: 0,
+    action: {
+      label: `Reload ${plugins} from this project`,
+      run: () => void reloadAllFromProject(ids)
+    }
+  })
+}
+
+/** Reloads the tabs one after another, so each question comes on its own; skips reloaded tabs. */
+async function reloadAllFromProject(pluginIds: readonly string[]): Promise<void> {
+  const missing = new Set(sourceMissingTabs().map((p) => p.id))
+  for (const id of pluginIds) {
+    if (missing.has(id)) await reloadFromProject(id)
+  }
+}

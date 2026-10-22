@@ -27,6 +27,7 @@ import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { NOTICE_MS, saveAllPlugins, savePlugin } from './lib/save-plugin'
+import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { cn } from './lib/utils'
@@ -205,6 +206,7 @@ function App() {
 
         // Scan after all game data is loaded (not via setTimeout in setProject)
         await scanDependencies()
+        await offerReloadFromProject(projectData.path)
       } catch (error) {
         setError(String(error))
         const message = error instanceof Error ? error.message : String(error)

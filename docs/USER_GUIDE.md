@@ -848,9 +848,11 @@ When the file text is not loaded, the banner in the code preview has a **Reload 
 
 The button is disabled until a project is open. If the file cannot be read, an error names the path.
 
+When you open a project while tabs have no file text loaded and their files are in that project's `js/plugins/` folder, a notice offers **Reload N plugins from this project**. It reloads those tabs one after another, each as **Reload from project** does, asking about a tab only where that button would ask.
+
 ### Upgrading from 1.6.x
 
-Version 1.6.x did not keep an imported plugin's file text, so after upgrading every imported plugin tab that was open shows the "file text is not loaded" banner, and raw mode refuses to save it. Open the plugin's project and click **Reload from project** in each such tab.
+Version 1.6.x did not keep an imported plugin's file text, so after upgrading every imported plugin tab that was open shows the "file text is not loaded" banner, and raw mode refuses to save it. Open the plugin's project and click **Reload N plugins from this project** in the notice, or **Reload from project** in each such tab.
 
 ### Header Preamble Preservation
 

@@ -2,18 +2,26 @@ import { create } from 'zustand'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
+/** A button on a toast; clicking it runs `run` and dismisses the toast. */
+export interface ToastAction {
+  label: string
+  run: () => void
+}
+
 export interface Toast {
   id: string
   type: ToastType
   message: string
   duration: number
   createdAt: number
+  action?: ToastAction
 }
 
 interface AddToastInput {
   type: ToastType
   message: string
   duration?: number
+  action?: ToastAction
 }
 
 const MAX_TOASTS = 5
@@ -39,7 +47,8 @@ export const useToastStore = create<ToastState>((set, get) => ({
       type: input.type,
       message: input.message,
       duration,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      ...(input.action && { action: input.action })
     }
 
     set((state) => {

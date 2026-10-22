@@ -4,11 +4,12 @@
 
 ### Upgrading from 1.6.x
 
-- Plugin tabs imported in 1.6.x were saved without their file text. After upgrading, the code preview shows a warning on each one and raw mode refuses to save it until you open its project and click **Reload from project**.
+- Plugin tabs imported in 1.6.x were saved without their file text. After upgrading, the code preview shows a warning on each one and raw mode refuses to save it until you open its project and click **Reload from project**, or **Reload N plugins from this project** in the notice that opening the project shows.
 
 ### Added
 
 - Reload from project restores an imported plugin's file text. A tab with no unsaved edits takes the file as it is now; a tab with edits asks whether to replace them with the file or keep them.
+- Opening a project offers one action that reloads every tab whose file text is not loaded and whose file is in that project, instead of one tab at a time.
 - **Settings > Data > Saved-state backups** lists the copies kept of saved data that could not be loaded, and exports each to a file or deletes it, so the next problem can be backed up too. The startup report and the full-storage message point there.
 
 ### Removed

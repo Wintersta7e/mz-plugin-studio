@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react'
-import { useToastStore, type ToastType } from '../../stores/toastStore'
+import { useToastStore, type ToastAction, type ToastType } from '../../stores/toastStore'
 import { cn } from '@/lib/utils'
+import { Button } from './button'
 
 const icons: Record<ToastType, typeof CheckCircle> = {
   success: CheckCircle,
@@ -30,13 +31,15 @@ function ToastItem({
   id,
   type,
   message,
-  duration
+  duration,
+  action
 }: {
   id: string
   type: ToastType
   message: string
   duration: number
   createdAt: number
+  action?: ToastAction
 }): React.ReactElement {
   const dismiss = useToastStore((s) => s.dismiss)
   const Icon = icons[type]
@@ -53,7 +56,21 @@ function ToastItem({
       )}
     >
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-      <p className="text-sm text-foreground">{message}</p>
+      <div className="space-y-2">
+        <p className="text-sm text-foreground">{message}</p>
+        {action && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              dismiss(id)
+              action.run()
+            }}
+          >
+            {action.label}
+          </Button>
+        )}
+      </div>
       <button
         onClick={() => dismiss(id)}
         aria-label="Dismiss notification"
