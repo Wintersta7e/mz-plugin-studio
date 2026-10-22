@@ -69,9 +69,11 @@ var prm = PluginManager.parameters(
     'Fixture_NoIife'
 );
 
+{
     // --- New parameters (added by MZ Plugin Studio) ---
     const addedParam = prm['AddedParam'] || 'added';
     // --- End new parameters ---
+}
 Fixture.NoIife.step = Number(prm.Step || 2);
 Fixture.NoIife.title = String(prm.Title || 'Fixture');
 Fixture.NoIife.start = JSON.parse(prm.Start || '{}');

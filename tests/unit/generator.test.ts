@@ -447,7 +447,7 @@ describe('generateRawMode', () => {
     expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
   })
 
-  it('adds parameter code after a parameters call that spans several lines', () => {
+  it('adds parameter code in a block after a top-level parameters call on several lines', () => {
     const raw = `/*:
  * @param speed
  */
@@ -460,8 +460,9 @@ var speed = prm.speed;
     plugin.parameters.push(param('label'))
     const result = save(plugin, opened)
     expect(result).toContain(
-      "    'RawPlugin'\n);\n\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
+      "    'RawPlugin'\n);\n\n{\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
     )
+    expect(result).toContain('    // --- End new parameters ---\n}\nvar speed = prm.speed;\n')
     expect(compilePlugin(result)).toBeNull()
   })
 

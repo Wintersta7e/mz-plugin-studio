@@ -826,8 +826,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
       lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
     }
     lines.push(`    // --- End new parameters ---`)
-    const text = at === source.length ? wrap(place, lines) : lines.join('\n')
-    edits.push({ start: at, end: at, text: `\n${text}\n` })
+    edits.push({ start: at, end: at, text: `\n${wrap(place, lines)}\n` })
   }
 
   // 4. Registration code for commands added since load, at the end of the IIFE body

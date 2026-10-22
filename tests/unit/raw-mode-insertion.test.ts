@@ -9,6 +9,7 @@ import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import type { PluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { toBaseline } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
+import { EDITS, loadFixture } from '../golden/corpus/raw-mode'
 
 const HEADER =
   '/*:\n * @target MZ\n * @plugindesc Probe\n * @param A\n * @type number\n * @default 1\n */\n'
@@ -51,6 +52,7 @@ function load(...scripts: string[]): Loaded {
   const read: string[] = []
   const context = createContext({
     window: {},
+    Game_Player: class {},
     PluginManager: {
       parameters: () =>
         new Proxy(
@@ -167,6 +169,14 @@ describe('raw mode adds code where the file can run it', () => {
     expect(blockCount(code)).toBe(1)
     expect(code).toContain(' * @plugindesc Edited description\n')
     expect(load(code).read).toContain('Jump')
+  })
+
+  it('keeps parameters added to a plugin without an IIFE out of the global scope', () => {
+    const opened = { ...loadFixture('Fixture_NoIife.js'), importedFrom: 'Fixture_NoIife.js' }
+    const edit = EDITS.find((e) => e.name === 'param-added')
+    if (edit === undefined) throw new Error('no param-added edit')
+    const code = save(edit.apply(opened), opened)
+    expect(() => load(code, 'var addedParam = 1;')).not.toThrow()
   })
 })
 
