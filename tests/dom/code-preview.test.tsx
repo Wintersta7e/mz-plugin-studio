@@ -12,7 +12,12 @@ import { savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
+import {
+  usePluginStore,
+  useProjectStore,
+  useToastStore,
+  useUIStore
+} from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
@@ -165,6 +170,29 @@ describe('code preview banner', () => {
     const button = screen.getByRole('button', { name: RELOAD })
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('title', 'Open the project first.')
+  })
+
+  it('offers the reload when the file text is loaded but the file as last read is not', async () => {
+    window.api = createFakeApi()
+    useProjectStore.setState({ project: await window.api.project.load('/fixture/mz-project') })
+    openImported(FILE, { withSource: true })
+    usePluginStore.setState({ baselineByPluginId: {} })
+    render(<CodePreview />)
+    expect(await screen.findByRole('button', { name: RELOAD })).toBeEnabled()
+    const banner = await bannerOf(
+      `The app's copy of ${FILE} as it was last read is missing, so raw mode cannot tell what changed. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
+    )
+    expect(banner).not.toHaveClass('text-destructive')
+  })
+
+  it('shows no reload banner with raw mode off', async () => {
+    window.api = createFakeApi()
+    openImported(FILE, { withSource: false })
+    useUIStore.getState().setRawModeForPlugin(usePluginStore.getState().plugin.id, false)
+    render(<CodePreview />)
+    await screen.findByText('Generated Code')
+    expect(screen.queryByText(missingText)).toBeNull()
+    expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
   })
 
   it('shows a save that raw mode refuses as an error', async () => {

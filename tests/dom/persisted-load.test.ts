@@ -3,11 +3,7 @@
 import { readFileSync } from 'fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
-import {
-  generatePluginOutput,
-  isRawMode,
-  isSourceMissing
-} from '../../src/renderer/src/lib/plugin-output'
+import { generatePluginOutput, isRawMode } from '../../src/renderer/src/lib/plugin-output'
 import { toBaseline } from '../../src/shared/types/plugin'
 import type { PluginBaseline, PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'
@@ -135,7 +131,7 @@ describe('loading the state v1.6.0 saved', () => {
     const tab = tabs.find((p) => p.id === IMPORTED_SAVED) as PluginDefinition
     expect(tab.importedFrom).toBe('Fixture_HandWritten.js')
     expect(tab).not.toHaveProperty('codeBody')
-    expect(isSourceMissing(tab)).toBe(true)
+    expect(tab).not.toHaveProperty('rawSource')
     const rawMode = stores['mz-plugin-studio-ui'].getState().rawModeByPluginId as Record<
       string,
       boolean

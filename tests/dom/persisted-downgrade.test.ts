@@ -3,7 +3,7 @@
 import { readFileSync } from 'fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
-import { isImported, isSourceMissing } from '../../src/renderer/src/lib/plugin-output'
+import { isImported } from '../../src/renderer/src/lib/plugin-output'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'
 import { PERSISTED_KEYS, createV160Stores, readV160Payloads } from '../helpers/persist-v160'
@@ -78,7 +78,7 @@ describe('downgrade to v1.6.0', () => {
     const tabs = tabsOf(pluginState)
     expect(tabs.map((p) => p.id)).toEqual(beforeTabs.map((p) => p.id))
     expect(tabs.map((p) => p.importedFrom)).toEqual(beforeTabs.map((p) => p.importedFrom))
-    expect(tabs.filter(isImported).map(isSourceMissing)).toEqual([true, true, true])
+    expect(tabs.filter(isImported).map((p) => 'rawSource' in p)).toEqual([false, false, false])
     expect(pluginState.baselineByPluginId).toEqual({})
     expect(tabIds(pluginState).slice(0, -1)).toEqual(
       tabIds(JSON.parse(payloads['mz-plugin-studio-plugin'] as string).state)

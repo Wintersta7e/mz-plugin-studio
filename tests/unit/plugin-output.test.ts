@@ -3,8 +3,7 @@ import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/gene
 import {
   generatePluginOutput,
   isImported,
-  isRawMode,
-  isSourceMissing
+  isRawMode
 } from '../../src/renderer/src/lib/plugin-output'
 import { createEmptyPlugin, toBaseline } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
@@ -34,13 +33,9 @@ describe('raw mode of a plugin', () => {
     }
   })
 
-  it('an imported plugin without its file text is source missing', () => {
-    const file = imported('Fixture_HandWritten.js')
-    expect(isImported(file)).toBe(true)
-    expect(isSourceMissing(file)).toBe(false)
-    expect(isSourceMissing(withoutSource(file))).toBe(true)
+  it('a plugin loaded from a file is imported, one created in the app is not', () => {
+    expect(isImported(imported('Fixture_HandWritten.js'))).toBe(true)
     expect(isImported(createEmptyPlugin())).toBe(false)
-    expect(isSourceMissing(createEmptyPlugin())).toBe(false)
   })
 })
 

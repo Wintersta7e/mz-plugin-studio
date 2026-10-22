@@ -25,12 +25,7 @@ import {
   generateTypeDeclaration,
   generateReadme
 } from '../../lib/exportFormats'
-import {
-  generatePluginOutput,
-  isImported,
-  isRawMode,
-  isSourceMissing
-} from '../../lib/plugin-output'
+import { generatePluginOutput, isImported, isRawMode } from '../../lib/plugin-output'
 import type { PluginOutput } from '../../lib/plugin-output'
 import { prepareSave, reloadFromProject } from '../../lib/raw-mode'
 import { DiffView } from './DiffView'
@@ -117,9 +112,13 @@ export function CodePreview() {
   }, [deferredPlugin, deferredRawMode, deferredBaseline])
   // The diff shows the code a save would write
   const code = output.ok ? output.code : ''
-  const sourceMissing = isSourceMissing(deferredPlugin)
+  const sourceMissing = !output.ok && output.refusal === 'source-missing'
+  const remedy =
+    'Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.'
   const banner = sourceMissing
-    ? `This plugin's file text (${deferredPlugin.importedFrom}) is not loaded — plugins opened in an older version of the app did not keep it. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
+    ? deferredPlugin.rawSource
+      ? `The app's copy of ${deferredPlugin.importedFrom} as it was last read is missing, so raw mode cannot tell what changed. ${remedy}`
+      : `This plugin's file text (${deferredPlugin.importedFrom}) is not loaded — plugins opened in an older version of the app did not keep it. ${remedy}`
     : output.ok
       ? null
       : output.message

@@ -23,11 +23,6 @@ export function isImported(plugin: Pick<PluginDefinition, 'importedFrom'>): bool
   return plugin.importedFrom !== undefined
 }
 
-/** Imported, but the file text raw mode saves from is not loaded. */
-export function isSourceMissing(plugin: PluginDefinition): boolean {
-  return isImported(plugin) && !plugin.rawSource
-}
-
 /** Raw mode is on for an imported plugin unless the user turned it off. */
 export function isRawMode(
   plugin: Pick<PluginDefinition, 'importedFrom'>,
