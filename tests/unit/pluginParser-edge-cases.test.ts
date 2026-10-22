@@ -385,3 +385,101 @@ LegacyPlugin.doThing = function() {
     })
   })
 })
+
+describe('empty tags', () => {
+  const plugin = PluginParser.parsePlugin(`/*:
+ * @plugindesc
+ * @author
+ * @url
+ * @target MZ
+ * @base
+ * @orderAfter
+ * @orderBefore
+ * @noteParam
+ * @noteType
+ * @noteDir
+ * @noteData
+ * @help Help text.
+ *
+ * @param p
+ * @text
+ * @desc
+ * @type number
+ * @default
+ * @require 1
+ * @parent
+ * @dir
+ * @type file
+ *
+ * @param q
+ * @type boolean
+ * @on
+ * @off
+ * @default true
+ *
+ * @param s
+ * @type select
+ * @option
+ * @value
+ * @option Two
+ * @value 2
+ *
+ * @param
+ * @text Separator
+ *
+ * @command
+ * @text Unnamed
+ *
+ * @command c
+ * @text
+ * @desc
+ *
+ * @arg
+ * @text Unnamed argument
+ *
+ * @arg a
+ * @desc
+ * @type number
+ */
+`)
+  const param = (name: string) => plugin.parameters.find((p) => p.name === name)!
+
+  it('plugin tags without a value are empty, never the next line', () => {
+    expect(plugin.meta.description).toBe('')
+    expect(plugin.meta.author).toBe('')
+    expect(plugin.meta.url).toBe('')
+    expect(plugin.meta.target).toBe('MZ')
+    expect(plugin.meta.dependencies).toEqual([])
+    expect(plugin.meta.orderAfter).toEqual([])
+    expect(plugin.meta.orderBefore).toEqual([])
+    expect(plugin.meta.noteParams).toEqual([{ name: '', type: 'file' }])
+  })
+
+  it('parameter tags without a value are empty, never the next line', () => {
+    expect(plugin.parameters.map((p) => p.name)).toEqual(['p', 'q', 's'])
+    expect(param('p')).toMatchObject({ text: 'p', desc: '', type: 'number', default: '' })
+    expect(param('p').parent).toBeUndefined()
+    expect(param('p').dir).toBeUndefined()
+    expect(param('q')).toMatchObject({ default: true })
+    expect(param('q').onLabel).toBeUndefined()
+    expect(param('q').offLabel).toBeUndefined()
+    expect(param('s').options).toEqual([
+      { value: '', text: '' },
+      { value: '2', text: 'Two' }
+    ])
+  })
+
+  it('command and argument tags without a value are empty, never the next line', () => {
+    expect(plugin.commands.map((c) => c.name)).toEqual(['c'])
+    expect(plugin.commands[0]).toMatchObject({ text: 'c', desc: '' })
+    expect(plugin.commands[0].args.map((a) => a.name)).toEqual(['a'])
+    expect(plugin.commands[0].args[0]).toMatchObject({ desc: '', type: 'number', default: '' })
+  })
+
+  it('a blank comment line after the description adds no trailing space', () => {
+    const parsed = PluginParser.parsePlugin(
+      '/*:\n * @plugindesc Short text\n *\n * @author Someone\n */\n'
+    )
+    expect(parsed.meta.description).toBe('Short text')
+  })
+})
