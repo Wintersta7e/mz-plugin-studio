@@ -77,6 +77,23 @@ describe('opening a project', { timeout: 30_000 }, () => {
     expect(useProjectStore.getState().project).toBeNull()
   })
 
+  it('a load refused by main shows its reason without the prefix Electron adds', async () => {
+    await openFolder({
+      validate: vi.fn(async () => ({ valid: true })),
+      // The shape ipcRenderer.invoke rejects with when the main-process handler throws
+      load: vi.fn(async () => {
+        throw new Error(
+          "Error invoking remote method 'project:load': Error: data folder unreadable"
+        )
+      })
+    })
+    const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(useToastStore.getState().toasts).toMatchObject([
+      { type: 'error', message, duration: 10_000 }
+    ])
+  })
+
   it('a load that rejects with a value that is not an Error shows that value', async () => {
     await openFolder({
       validate: vi.fn(async () => ({ valid: true })),

@@ -26,11 +26,12 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
-import { NOTICE_MS, saveAllPlugins, savePlugin } from './lib/save-plugin'
+import { saveAllPlugins, savePlugin } from './lib/save-plugin'
+import { NOTICE_MS } from './stores/toastStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import { cn } from './lib/utils'
+import { cn, userMessage } from './lib/utils'
 
 const pluginFade = { duration: 0.12 }
 const viewFade = { duration: 0.1 }
@@ -209,10 +210,9 @@ function App() {
         await offerReloadFromProject(projectData.path)
       } catch (error) {
         setError(String(error))
-        const message = error instanceof Error ? error.message : String(error)
         useToastStore.getState().addToast({
           type: 'error',
-          message: `Could not open "${path}": ${message}`,
+          message: `Could not open "${path}": ${userMessage(error)}`,
           duration: NOTICE_MS
         })
       } finally {

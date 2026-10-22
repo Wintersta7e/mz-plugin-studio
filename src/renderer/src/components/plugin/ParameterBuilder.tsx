@@ -42,7 +42,7 @@ import {
   type ParamImportResult
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
-import { cn } from '../../lib/utils'
+import { cn, userMessage } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
@@ -275,7 +275,7 @@ export function ParameterBuilder() {
       await window.api.dialog.message({
         type: 'error',
         title: 'Export Failed',
-        message: error instanceof Error ? error.message : String(error)
+        message: userMessage(error)
       })
     }
   }
@@ -311,8 +311,7 @@ export function ParameterBuilder() {
       await window.api.dialog.message({
         type: 'error',
         title: 'Import Failed',
-        message:
-          'Could not read the file. ' + (error instanceof Error ? error.message : String(error))
+        message: 'Could not read the file. ' + userMessage(error)
       })
     }
   }
@@ -340,9 +339,7 @@ export function ParameterBuilder() {
       await window.api.dialog.message({
         type: 'error',
         title: 'Import Failed',
-        message:
-          'Could not read or parse the plugin file. ' +
-          (error instanceof Error ? error.message : String(error))
+        message: 'Could not read or parse the plugin file. ' + userMessage(error)
       })
     }
   }

@@ -182,10 +182,12 @@ describe('reloading an imported plugin from the project', () => {
   }, 60_000)
 
   it('a file that cannot be read is reported and changes nothing', async () => {
+    // The shape ipcRenderer.invoke rejects with when the main-process handler throws
+    const refusal = new Error("Error invoking remote method 'plugin:read-raw': Error: missing")
     const api = createFakeApi({
       plugin: {
         readRaw: vi.fn(async () => {
-          throw new Error('missing')
+          throw refusal
         })
       },
       dialog: { message: vi.fn(async () => 1) }
@@ -193,14 +195,18 @@ describe('reloading an imported plugin from the project', () => {
     const stores = await startApp(api, true)
     fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
     await waitFor(() =>
-      expect(
-        stores.useToastStore.getState().toasts.map((t) => `${t.type}: ${t.message}`)
-      ).toContain(`error: Could not read ${PATH}: missing`)
+      expect(stores.useToastStore.getState().toasts).toContainEqual(
+        expect.objectContaining({
+          type: 'error',
+          message: `Could not read ${PATH}: missing`,
+          duration: 10_000
+        })
+      )
     )
     expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
     // The app's own copy of the logger, imported afresh with it
     const { default: log } = await import('electron-log/renderer')
-    expect(log.error).toHaveBeenCalledWith('[reload]', PATH, new Error('missing'))
+    expect(log.error).toHaveBeenCalledWith('[reload]', PATH, refusal)
     expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
       path: PATH,
       sha256: null

@@ -45,6 +45,7 @@
 - Undo or redo after saving marks the plugin unsaved.
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 - A project that fails to load now shows a message naming the folder and the reason.
+- Error messages from loading, reading, saving and exporting show the reason alone, without the internal "Error invoking remote method" prefix, and error notifications stay up for 10 seconds.
 - A plugin loaded from a file is always saved back to that file: its Plugin Name, which is the file name, is read-only, so renaming it can no longer write a second file while Reload from project keeps reading the first.
 - Reload from project asks first when the tab was read from another project, instead of silently attaching the open project's copy of the plugin.
 - A plugin file that is not UTF-8 is refused when opened or reloaded, with an error naming the file, instead of being read with its non-UTF-8 text replaced and then saved that way.

@@ -29,8 +29,9 @@ import { generatePluginOutput, isImported, isRawMode } from '../../lib/plugin-ou
 import type { PluginOutput } from '../../lib/plugin-output'
 import { reloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
+import { NOTICE_MS } from '../../stores/toastStore'
 import { DiffView } from './DiffView'
-import { cn } from '../../lib/utils'
+import { cn, userMessage } from '../../lib/utils'
 import log from 'electron-log/renderer'
 
 export function CodePreview() {
@@ -257,7 +258,8 @@ export function CodePreview() {
           log.error('Failed to export:', error)
           addToast({
             type: 'error',
-            message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+            message: `Export failed: ${userMessage(error)}`,
+            duration: NOTICE_MS
           })
         }
       }

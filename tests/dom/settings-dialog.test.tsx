@@ -86,6 +86,27 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
     expect(localStorage.getItem(BACKUP)).toBe('{"state":')
   })
 
+  it('an export main refuses shows its reason, without the prefix Electron adds', async () => {
+    localStorage.setItem(KEY, '{"state":')
+    await loadSettings()
+    const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
+    window.api = createFakeApi({
+      dialog: { saveFile: vi.fn(async () => 'out/settings-backup.json') },
+      plugin: {
+        saveToPath: vi.fn(async () => {
+          throw new Error("Error invoking remote method 'plugin:save-to-path': Error: disk full")
+        })
+      }
+    })
+    await openDataTab()
+    fireEvent.click(screen.getByRole('button', { name: 'Export the Settings backup' }))
+    await waitFor(() =>
+      expect(useToastStore.getState().toasts).toMatchObject([
+        { type: 'error', message: 'Export failed: disk full', duration: 10_000 }
+      ])
+    )
+  })
+
   it('with no backups the section says so', async () => {
     await loadSettings()
     await openDataTab()

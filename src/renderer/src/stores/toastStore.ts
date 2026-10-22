@@ -26,6 +26,9 @@ interface AddToastInput {
 
 const MAX_TOASTS = 5
 
+// Long enough to read an error, a refusal, a Save All report or why a project did not open
+export const NOTICE_MS = 10_000
+
 interface ToastState {
   toasts: Toast[]
   addToast: (input: AddToastInput) => void

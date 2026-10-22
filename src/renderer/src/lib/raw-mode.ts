@@ -2,12 +2,13 @@ import log from 'electron-log/renderer'
 import { useMemo } from 'react'
 import { usePluginStore } from '../stores/pluginStore'
 import { useProjectStore } from '../stores/projectStore'
-import { useToastStore } from '../stores/toastStore'
+import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
 import type { PluginDefinition } from '../types/plugin'
 import { hasMainBlock } from './generator'
 import { generatePluginOutput, isImported, isRawMode } from './plugin-output'
 import type { OutputRefusal } from './plugin-output'
+import { userMessage } from './utils'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
   "Raw mode keeps this plugin's own code and language blocks, so this is read-only here. Turn raw mode off in the preview to edit it."
@@ -154,7 +155,8 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     log.error('[reload]', path, error)
     useToastStore.getState().addToast({
       type: 'error',
-      message: `Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`
+      message: `Could not read ${path}: ${userMessage(error)}`,
+      duration: NOTICE_MS
     })
     return false
   }

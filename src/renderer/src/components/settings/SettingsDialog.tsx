@@ -9,6 +9,8 @@ import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
 import { useSettingsStore, useProjectStore, useTemplateStore, useToastStore } from '../../stores'
 import { deleteBackup, listBackups, type SavedBackup } from '../../stores/persist'
+import { NOTICE_MS } from '../../stores/toastStore'
+import { userMessage } from '../../lib/utils'
 
 interface SettingsDialogProps {
   open: boolean
@@ -38,7 +40,8 @@ function BackupsSection() {
       log.error('Failed to export backup:', error)
       addToast({
         type: 'error',
-        message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+        message: `Export failed: ${userMessage(error)}`,
+        duration: NOTICE_MS
       })
     }
   }

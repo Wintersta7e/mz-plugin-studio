@@ -2,12 +2,13 @@ import log from 'electron-log/renderer'
 import { usePluginStore } from '../stores/pluginStore'
 import type { SaveRecord } from '../stores/pluginStore'
 import { useProjectStore } from '../stores/projectStore'
-import { useToastStore } from '../stores/toastStore'
+import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-types'
 import { isImported, saveFileName } from './plugin-output'
 import { prepareSave, reloadFromProject } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
+import { userMessage } from './utils'
 
 /** `save` is Ctrl+S (into the open project when there is one); `export` is the preview's Export button. */
 export type SaveMode = 'save' | 'export'
@@ -21,9 +22,6 @@ export type SaveOutcome =
 type Written = Extract<SaveResult, { success: true }>
 type Refused = Extract<SaveResult, { success: false }>
 
-// Long enough to read a refusal, a Save All report or why a project did not open
-export const NOTICE_MS = 10_000
-
 // Save All's reason for each kind of tab it did not save, shared by every tab of that kind
 const NOT_SAVED: Record<SaveRefusal | SaveConflict, string> = {
   'source-missing': 'file text not loaded (reload it from the project)',
@@ -35,9 +33,6 @@ const NOT_SAVED: Record<SaveRefusal | SaveConflict, string> = {
   'changed-on-disk': 'changed on disk',
   'would-break': 'would stop the file compiling'
 }
-
-const errorText = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
 
 const nameOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? plugin.meta.name
 
@@ -173,9 +168,10 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
     log.error('[save]', error)
     addToast({
       type: 'error',
-      message: `${mode === 'save' ? 'Save' : 'Export'} failed: ${errorText(error)}`
+      message: `${mode === 'save' ? 'Save' : 'Export'} failed: ${userMessage(error)}`,
+      duration: NOTICE_MS
     })
-    return { status: 'failed', error: errorText(error) }
+    return { status: 'failed', error: userMessage(error) }
   }
 }
 
