@@ -7,6 +7,8 @@ import type {
   LocalizedContent,
   NoteParam
 } from '../../shared/types/plugin'
+import { findAnnotationBlocks } from '../../shared/annotation-blocks'
+import type { AnnotationBlock } from '../../shared/annotation-blocks'
 
 interface ParsedMeta {
   name: string
@@ -26,10 +28,28 @@ interface ParsedMeta {
 
 export class PluginParser {
   static parsePlugin(content: string, filename?: string): PluginDefinition {
-    const meta = this.parseMeta(content)
-    const parameters = this.parseParameters(content)
-    const commands = this.parseCommands(content)
-    const structs = this.parseStructs(content)
+    // Values are read from an LF copy, so a CRLF file parses the same as its LF twin
+    const text = content.replace(/\r\n/g, '\n')
+    const blocks = findAnnotationBlocks(text)
+    const inner = (b: AnnotationBlock): string => text.slice(b.start + b.opener.length, b.end - 2)
+    const headers = blocks.filter((b) => b.kind !== 'struct')
+    const main = headers.find((b) => b.kind === 'main')
+    // Without a main block, parameters and commands are shown from the first language block
+    const source = main ?? headers[0]
+    const sourceText = source === undefined ? '' : inner(source)
+
+    const meta = this.parseMeta(
+      text,
+      main === undefined ? '' : inner(main),
+      headers.filter((b) => b.kind === 'language').map((b): [string, string] => [b.lang, inner(b)])
+    )
+    const parameters = this.parseParameters(sourceText)
+    const commands = this.parseCommands(sourceText)
+    const structs = this.parseStructs(
+      blocks
+        .filter((b) => b.kind === 'struct')
+        .map((b): [string, string, string] => [b.structName ?? '', b.lang, inner(b)])
+    )
     const codeBody = this.extractCodeBody(content)
     const customCode = this.extractCustomCode(codeBody)
 
@@ -67,20 +87,17 @@ export class PluginParser {
   }
 
   /**
-   * Extract the code body (implementation) from the plugin content.
-   * This is everything after the last comment block (header or struct).
+   * Extract the code body (implementation) from the plugin content: the text outside every
+   * annotation block, as written.
    */
   private static extractCodeBody(content: string): string {
-    // Find the last closing comment marker (*/)
-    const lastCommentEnd = content.lastIndexOf('*/')
-    if (lastCommentEnd === -1) {
-      // No comment blocks found, entire content is code
-      return content.trim()
+    let codeBody = ''
+    let at = 0
+    for (const block of findAnnotationBlocks(content)) {
+      codeBody += content.slice(at, block.start)
+      at = block.end
     }
-
-    // Get everything after the last comment block
-    const codeBody = content.slice(lastCommentEnd + 2).trim()
-    return codeBody
+    return (codeBody + content.slice(at)).trim()
   }
 
   /**
@@ -105,10 +122,10 @@ export class PluginParser {
 
     // Look for explicit custom code markers
     const customMarkers = [
-      /\/\/\s*custom\s*(plugin)?\s*code/i,
+      /\/\/\s*custom\s*(?:plugin\s*)?code/i,
       /\/\/\s*your\s*code\s*here/i,
       /\/\/\s*implementation/i,
-      /\/\/\s*main\s*(plugin)?\s*logic/i,
+      /\/\/\s*main\s*(?:plugin\s*)?logic/i,
       /\/\/\s*===+\s*custom/i,
       /\/\/\s*---+\s*custom/i
     ]
@@ -248,7 +265,11 @@ export class PluginParser {
     return -1
   }
 
-  private static parseMeta(content: string): ParsedMeta {
+  private static parseMeta(
+    content: string,
+    header: string,
+    languages: [string, string][]
+  ): ParsedMeta {
     const meta: ParsedMeta = {
       name: '',
       version: '1.0.0',
@@ -265,10 +286,8 @@ export class PluginParser {
       localizations: {}
     }
 
-    // Parse all language headers
-    const headers = this.parseAllHeaders(content)
-    const header = headers.get('en') || headers.get('') || ''
-    if (!header) return meta
+    const localizations = this.parseLocalizations(languages)
+    if (!header) return { ...meta, localizations }
 
     // Parse @plugindesc
     const descMatch = header.match(/@plugindesc\s+(.+?)(?=\n\s*\*\s*@|\n\s*\*\/)/s)
@@ -367,13 +386,20 @@ export class PluginParser {
       meta.name = nameMatch[1]
     }
 
-    // Parse localizations from other language headers
-    for (const [lang, langHeader] of headers) {
-      if (lang && lang !== 'en' && lang !== '') {
+    meta.localizations = localizations
+    return meta
+  }
+
+  private static parseLocalizations(
+    languages: [string, string][]
+  ): Record<string, LocalizedContent> {
+    const localizations: Record<string, LocalizedContent> = {}
+    for (const [lang, langHeader] of languages) {
+      if (lang) {
         const locDesc = langHeader.match(/@plugindesc\s+(.+?)(?=\n\s*\*\s*@|\n\s*\*\/)/s)
         const locHelp = langHeader.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)
 
-        meta.localizations[lang] = {
+        localizations[lang] = {
           description: locDesc ? locDesc[1].trim().replace(/\n\s*\*\s*/g, ' ') : '',
           help: locHelp
             ? locHelp[1]
@@ -385,28 +411,11 @@ export class PluginParser {
         }
       }
     }
-
-    return meta
+    return localizations
   }
 
-  private static parseAllHeaders(content: string): Map<string, string> {
-    const headers = new Map<string, string>()
-    // Match /*: or /*:ja or /*:zh etc.
-    const headerRegex = /\/\*:([a-z]*)([\s\S]*?)\*\//g
-    let match
-    while ((match = headerRegex.exec(content)) !== null) {
-      const lang = match[1] || 'en'
-      headers.set(lang, match[2])
-    }
-    return headers
-  }
-
-  private static parseParameters(content: string): PluginParameter[] {
+  private static parseParameters(header: string): PluginParameter[] {
     const parameters: PluginParameter[] = []
-    const headerMatch = content.match(/\/\*:([\s\S]*?)\*\//)
-    if (!headerMatch) return parameters
-
-    const header = headerMatch[1]
 
     // Match @param blocks - capture full name (may include spaces) to end of line
     // Uses [^\n\r]+ to handle both LF and CRLF line endings
@@ -505,12 +514,8 @@ export class PluginParser {
     return parameters
   }
 
-  private static parseCommands(content: string): PluginCommand[] {
+  private static parseCommands(header: string): PluginCommand[] {
     const commands: PluginCommand[] = []
-    const headerMatch = content.match(/\/\*:([\s\S]*?)\*\//)
-    if (!headerMatch) return commands
-
-    const header = headerMatch[1]
 
     // Match @command blocks
     const cmdRegex = /@command\s+(\S+)([\s\S]*?)(?=@command\s+\S|\*\/|$)/g
@@ -519,12 +524,15 @@ export class PluginParser {
     while ((match = cmdRegex.exec(header)) !== null) {
       const cmdName = match[1]
       const cmdBlock = match[2]
+      // The command's own tags come before its first @arg
+      const firstArg = cmdBlock.search(/@arg\s/)
+      const cmdHead = firstArg === -1 ? cmdBlock : cmdBlock.slice(0, firstArg)
 
       const command: PluginCommand = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
         name: cmdName,
-        text: this.extractTag(cmdBlock, 'text') || cmdName,
-        desc: this.extractTag(cmdBlock, 'desc') || '',
+        text: this.extractTag(cmdHead, 'text') || cmdName,
+        desc: this.extractTag(cmdHead, 'desc') || '',
         args: this.parseArgs(cmdBlock)
       }
 
@@ -607,27 +615,22 @@ export class PluginParser {
     return args
   }
 
-  private static parseStructs(content: string): PluginStruct[] {
-    const structs: PluginStruct[] = []
-
-    // Match struct definition blocks /*~struct~StructName:
-    const structRegex = /\/\*~struct~(\w+):([\s\S]*?)\*\//g
-    let match
-
-    while ((match = structRegex.exec(content)) !== null) {
-      const structName = match[1]
-      const structBlock = match[2]
-
-      const struct: PluginStruct = {
+  /**
+   * One struct per name from `[name, lang, block text]` entries: its bare block, else its `:en`
+   * block, else its first block. `/*~struct~Name:ja` and the like are translations of `Name`.
+   */
+  private static parseStructs(blocks: [string, string, string][]): PluginStruct[] {
+    const names = [...new Set(blocks.map(([name]) => name))]
+    return names.map((name) => {
+      const own = blocks.filter(([n]) => n === name)
+      const [, , structBlock] =
+        own.find(([, lang]) => lang === '') ?? own.find(([, lang]) => lang === 'en') ?? own[0]
+      return {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
-        name: structName,
-        parameters: this.parseParameters('/*:' + structBlock + '*/')
+        name,
+        parameters: this.parseParameters(structBlock)
       }
-
-      structs.push(struct)
-    }
-
-    return structs
+    })
   }
 
   private static extractTag(block: string, tag: string): string | null {

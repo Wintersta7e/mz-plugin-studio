@@ -37,9 +37,7 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
 
 **Known limits:**
 
-- **Raw mode** regenerates the annotation blocks of an imported plugin and keeps the rest of the file.
-  It can still alter or remove parts of the plugin's code (for example after a restart), so keep a
-  backup of any plugin before saving over it.
+- **Raw mode**: An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded.
 - The app does not update itself: new versions are on the
   [Releases](https://github.com/Wintersta7e/mz-plugin-studio/releases) page.
 

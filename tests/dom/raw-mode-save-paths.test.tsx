@@ -1,13 +1,16 @@
 // Saving an imported plugin through every save path of the app: Ctrl+S, Save All and the
 // preview's Export button. The app starts over the state v1.6.0 saved, whose second tab was
 // imported and comes back without its file text.
+import { readFileSync } from 'fs'
 import { createElement } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import type * as StoresModule from '../../src/renderer/src/stores'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
+import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
 import { seed } from './support/load-persisted'
 
@@ -15,7 +18,7 @@ const payloads = readV160Payloads()
 const TAB = '00000000-0000-4000-8000-000000000013'
 const FILE = 'Fixture_HandWritten.js'
 const PROJECT = '/fixture/mz-project'
-const SOURCE_MISSING = `Not saved: the original file ${FILE} is not loaded. Turn raw mode off to save regenerated code.`
+const SOURCE_MISSING = `Not saved: the original file ${FILE} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
 const RAW_ON = "Raw mode ON: the file's own code and unchanged blocks are kept"
 const RAW_OFF = 'Raw mode OFF: the whole plugin is regenerated from the editor'
 
@@ -156,5 +159,37 @@ describe('saving an imported plugin', () => {
     expect((diff as HTMLTextAreaElement).value).toBe(generatePlugin(tab()))
     expect(stores.useUIStore.getState().diffRequestPluginId).toBeNull()
     expect(savedFiles(api)).toEqual([FILE, FILE])
+  }, 90_000)
+
+  it('every save path makes what it wrote the file text and baseline of the tab', async () => {
+    const api = savingApi()
+    const stores = await startApp(api)
+    const text = readFileSync(fixturePath('js', 'plugins', FILE), 'utf-8')
+    const opened = { ...PluginParser.parsePlugin(text, FILE), importedFrom: FILE }
+    act(() => stores.usePluginStore.getState().openPlugin(opened))
+    const state = () => stores.usePluginStore.getState()
+    const writes = (): string[] => [
+      ...vi.mocked(api.plugin.save).mock.calls.map((call) => call[2]),
+      ...vi.mocked(api.plugin.saveToPath).mock.calls.map((call) => call[1])
+    ]
+    const saves: [string, () => void][] = [
+      ['Ctrl+S', () => press('KeyS')],
+      ['Save All', () => press('KeyS', true)],
+      ['Export', () => fireEvent.click(screen.getByRole('button', { name: 'Export' }))]
+    ]
+    let checked = 0
+    for (const [path, run] of saves) {
+      const description = `Saved by ${path}`
+      act(() => state().updateMeta({ description }))
+      run()
+      await waitFor(() => expect(state().plugin.rawSource).toContain(description))
+      const written = writes().find((code) => code.includes(description))
+      expect(state().plugin.rawSource, path).toBe(written)
+      expect(state().baselineByPluginId[opened.id].meta.description, path).toBe(description)
+      expect(written?.startsWith(text.slice(0, text.indexOf('/*:')))).toBe(true)
+      checked++
+    }
+    console.log(`save paths recording the written file ${checked}`)
+    expect(checked).toBe(3)
   }, 90_000)
 })

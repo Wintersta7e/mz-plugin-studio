@@ -21,7 +21,7 @@
     // --- New commands (added by MZ Plugin Studio) ---
     PluginManager.registerCommand(PLUGIN_NAME, 'AddedCommand', function(args) {
 
-        // TODO: Implement AddedCommand logic
+        // TODO: Implement command logic
     });
     // --- End new commands ---
 

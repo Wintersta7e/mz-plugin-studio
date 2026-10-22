@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
+import { toBaseline } from '../../src/shared/types/plugin'
 
 describe('PluginParser edge cases', () => {
   describe('rawSource storage', () => {
@@ -294,12 +295,13 @@ Scene_Title.prototype.drawGameTitle = function() {
  */` + originalCode
 
       const plugin = PluginParser.parsePlugin(rawSource, 'TestPlugin.js')
+      const baseline = toBaseline(structuredClone(plugin))
 
       // Modify the description (simulates user editing in UI)
       plugin.meta.description = 'New description'
       plugin.meta.author = 'NewAuthor'
 
-      const result = generateRawMode(plugin)
+      const result = generateRawMode(plugin, baseline)
 
       // Header should be regenerated with new values
       expect(result).toContain('@plugindesc New description')
@@ -342,11 +344,12 @@ Scene_Title.prototype.drawGameTitle = function() {
 })();`
 
       const plugin = PluginParser.parsePlugin(rawSource, 'StructTest.js')
+      const baseline = toBaseline(structuredClone(plugin))
 
       // Modify struct name (simulates user editing)
       plugin.structs[0].parameters[0].desc = 'X coordinate'
 
-      const result = generateRawMode(plugin)
+      const result = generateRawMode(plugin, baseline)
 
       // Should contain regenerated struct block
       expect(result).toContain('/*~struct~Position:')
@@ -370,9 +373,10 @@ LegacyPlugin.doThing = function() {
 };`
 
       const plugin = PluginParser.parsePlugin(rawSource, 'LegacyPlugin.js')
+      const baseline = toBaseline(structuredClone(plugin))
       plugin.meta.description = 'Updated legacy plugin'
 
-      const result = generateRawMode(plugin)
+      const result = generateRawMode(plugin, baseline)
 
       expect(result).toContain('@plugindesc Updated legacy plugin')
       expect(result).toContain('var LegacyPlugin = {};')

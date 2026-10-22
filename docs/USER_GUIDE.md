@@ -52,7 +52,7 @@ Tabs for different aspects of your plugin:
 - Real-time JavaScript preview (read-only)
 - Syntax highlighting
 - Validation errors and warnings
-- **Raw** button - Toggle raw mode for imported plugins (headers-only regeneration)
+- **Raw** button - Toggle raw mode for imported plugins (keeps the file's text and rewrites only the annotation blocks you changed)
 - **Diff** button - Compare generated output against saved file
 - **Copy** and **Export** buttons
 - **Export dropdown** (chevron) - Export as README.md, .d.ts, or plugins.json entry
@@ -796,13 +796,13 @@ You can import existing .js plugins to edit them.
 
 - Make a backup of your original plugin
 - After importing, review all parameters for accuracy
-- Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
+- An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
 
 ---
 
 ## Raw Mode
 
-When you import an existing plugin, MZ Plugin Studio stores the complete original source. Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
+When you import an existing plugin, MZ Plugin Studio stores the complete original source. An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
 
 ### Auto-Enable
 
@@ -819,11 +819,10 @@ In raw mode the Code tab, the template inserter and the localized description an
 ### How It Works
 
 1. Import a plugin (raw mode is auto-enabled, the **Raw** button is active)
-2. The output regenerates header blocks (main header, localized headers, struct definitions)
-3. Raw mode regenerates the annotation blocks of an imported plugin and keeps the rest of the file. In this version it can still alter or remove parts of the plugin's code (for example after a restart), so keep a backup of any plugin before saving over it.
-4. **New parameters** added in the UI are automatically injected into the code body after the parameter loading section
-5. **New commands** added in the UI get `registerCommand` calls injected before the closing IIFE
-6. **New struct definitions** are added as new `/*~struct~` blocks
+2. Only the annotation blocks whose content changed are rewritten; language blocks (/*:ja and others) are kept as they are
+3. An imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
+4. **New parameters** and **new commands** added since the file was loaded get parsing or registerCommand code added once; nothing is added for items the file already had
+5. **New struct definitions** are added as new `/*~struct~` blocks
 
 ### Header Preamble Preservation
 
@@ -833,8 +832,8 @@ If the original plugin has text before the `/*:` annotation block (license heade
 
 | Aspect | Normal Mode | Raw Mode |
 |--------|-------------|----------|
-| Headers | Regenerated | Regenerated |
-| Code body | Generated from template + custom code | Kept from the file; regenerated only when raw mode is off and the save is confirmed |
+| Headers | Regenerated | Kept from the file; only blocks whose content changed are rewritten |
+| Code body | Generated from template + custom code | Kept from the file; code added only for parameters and commands added since load |
 | Preamble | Not applicable | Preserved verbatim |
 | Best for | New plugins, plugins you own | Third-party plugins, metadata edits |
 

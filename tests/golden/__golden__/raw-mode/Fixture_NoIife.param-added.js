@@ -60,22 +60,18 @@
  * @text Y
  * @type number
  * @default 0
- *
  */
 
 var Fixture = Fixture || {};
 Fixture.NoIife = Fixture.NoIife || {};
 
 var prm = PluginManager.parameters(
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const step = Number(params['Step'] || 2);
-    const title = params['Title'] || 'Fixture';
-    const start = JSON.parse(params['Start'] || '{"mapId":"1","x":"0","y":"0"}');
-    const addedParam = params['AddedParam'] || 'added';
-    // --- End new parameters ---
     'Fixture_NoIife'
 );
+
+    // --- New parameters (added by MZ Plugin Studio) ---
+    const addedParam = prm['AddedParam'] || 'added';
+    // --- End new parameters ---
 Fixture.NoIife.step = Number(prm.Step || 2);
 Fixture.NoIife.title = String(prm.Title || 'Fixture');
 Fixture.NoIife.start = JSON.parse(prm.Start || '{}');

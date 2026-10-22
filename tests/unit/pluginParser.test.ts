@@ -301,6 +301,90 @@ describe('PluginParser', () => {
       expect(result.structs[0].parameters[0].name).toBe('x')
       expect(result.structs[0].parameters[1].name).toBe('y')
     })
+
+    it('reads a translated struct block as a translation, not a second struct', () => {
+      const content = `/*:
+ * @param origin
+ * @type struct<Position>
+ */
+
+/*~struct~Position:
+ * @param x
+ * @text X
+ * @type number
+ */
+
+/*~struct~Position:ja
+ * @param x
+ * @text 横
+ * @type number
+ */
+
+/*~struct~Position:zh
+ * @param x
+ * @text 横坐标
+ * @type number
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.structs.map((s) => s.name)).toEqual(['Position'])
+      expect(result.structs[0].parameters.map((p) => p.text)).toEqual(['X'])
+    })
+  })
+
+  describe('main block by rule', () => {
+    it('reads parameters and commands from the bare block when a Japanese block comes first', () => {
+      const content = `/*:ja
+ * @plugindesc 説明
+ * @param speed
+ * @text 速さ
+ * @type number
+ *
+ * @command Run
+ * @text 実行
+ */
+
+/*:
+ * @plugindesc Description
+ * @param speed
+ * @text Speed
+ * @type number
+ *
+ * @command Run
+ * @text Run now
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.meta.description).toBe('Description')
+      expect(result.parameters.map((p) => p.text)).toEqual(['Speed'])
+      expect(result.commands.map((c) => c.text)).toEqual(['Run now'])
+      expect(result.meta.localizations).toEqual({ ja: { description: '説明', help: '' } })
+    })
+
+    it('takes a command text and description from before its first argument', () => {
+      const content = `/*:
+ * @command Run
+ *
+ * @arg speed
+ * @text Speed
+ * @desc How fast.
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.commands[0].text).toBe('Run')
+      expect(result.commands[0].desc).toBe('')
+      expect(result.commands[0].args[0].text).toBe('Speed')
+    })
+
+    it('keeps code between annotation blocks in the code body', () => {
+      const content = `/*:
+ * @plugindesc Test
+ */
+var before = 1;
+/*~struct~Pos:
+ * @param x
+ */
+var after = 2;`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.codeBody).toBe('var before = 1;\n\nvar after = 2;')
+    })
   })
 
   describe('compact format', () => {

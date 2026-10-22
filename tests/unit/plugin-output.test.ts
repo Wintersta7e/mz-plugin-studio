@@ -54,14 +54,14 @@ describe('generatePluginOutput', () => {
     })
     expect(generatePluginOutput(plugin, true, baseline)).toEqual({
       ok: true,
-      code: generateRawMode(plugin)
+      code: generateRawMode(plugin, baseline)
     })
   })
 
   it('refuses raw mode without the file text or without the loaded definition', () => {
     const plugin = imported('Fixture_HandWritten.js')
     const message =
-      'Not saved: the original file Fixture_HandWritten.js is not loaded. Turn raw mode off to save regenerated code.'
+      'Not saved: the original file Fixture_HandWritten.js is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.'
     expect(generatePluginOutput(withoutSource(plugin), true, toBaseline(plugin))).toEqual({
       ok: false,
       refusal: 'source-missing',
@@ -95,7 +95,19 @@ describe('generatePluginOutput', () => {
       expect(out.ok).toBe(true)
       const code = out.ok ? out.code : ''
       expect(code).toContain('/*~struct~Added:')
-      for (const line of (plugin.rawSource ?? '').split('\n')) expect(code).toContain(line)
+      expect(code.replace('/*~struct~Added:\n */\n\n', '')).toBe(plugin.rawSource)
     })
   }
+
+  it('saves header changes to a file whose English block stands in for the main block', () => {
+    const plugin = imported('Fixture_EnJaOnly.js')
+    const text = plugin.rawSource ?? ''
+    const edited = { ...plugin, meta: { ...plugin.meta, description: 'Edited description' } }
+    const out = generatePluginOutput(edited, true, toBaseline(plugin))
+    expect(out.ok).toBe(true)
+    const code = out.ok ? out.code : ''
+    expect(code.startsWith('/*:en\n')).toBe(true)
+    expect(code).toContain(' * @plugindesc Edited description\n')
+    expect(code.endsWith(text.slice(text.indexOf('/*:ja')))).toBe(true)
+  })
 })

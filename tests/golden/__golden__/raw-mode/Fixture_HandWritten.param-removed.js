@@ -94,7 +94,6 @@
  * @type number
  * @min 0
  * @default 0
- *
  */
 
 (() => {
@@ -102,11 +101,6 @@
 
     const pluginName = 'Fixture_HandWritten';
     const params = PluginManager.parameters(pluginName);
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const speed = Number(params['Speed'] || 5);
-    const label = params['Label'] || 'Hello';
-    // --- End new parameters ---
     const speed = Number(params['Speed'] || 5);
     const label = String(params["Label"] || 'Hello');
     const origin = JSON.parse(params['Origin'] || '{"x":"0","y":"0"}');
@@ -138,15 +132,4 @@
             this._fixtureLabelY = Number(origin.y);
         }
     };
-
-    const PLUGIN_NAME = 'Fixture_HandWritten';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ShowLabel', function(args) {
-        const times = Number(args['times'] || 1);
-
-        // TODO: Implement ShowLabel logic
-        // Parsed args available as: times
-    });
-    // --- End new commands ---
-
 })();

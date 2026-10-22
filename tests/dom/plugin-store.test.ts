@@ -456,3 +456,80 @@ describe('pluginStore baseline of an imported plugin', () => {
     })
   })
 })
+
+describe('pluginStore file text of an imported plugin', () => {
+  beforeEach(() => {
+    resetPluginStore()
+  })
+
+  function importedPlugin(name: string): PluginDefinition {
+    return {
+      ...createPlugin(name),
+      parameters: [makeParam('p1', 'alpha')],
+      rawSource: `/*:\n * @param alpha\n */\n(() => {})();\n`,
+      importedFrom: `${name}.js`
+    }
+  }
+
+  it('reattachSource gives a tab its file text and that file as the baseline, keeping edits', () => {
+    const { rawSource: _rawSource, ...missing } = importedPlugin('Alpha')
+    const other = createPlugin('Other')
+    const text = `/*:\n * @plugindesc On disk\n * @param alpha\n */\n(() => {})();\n`
+    const parsed: PluginDefinition = {
+      ...createPlugin('ParsedName'),
+      meta: { ...createPlugin('ParsedName').meta, description: 'On disk' },
+      parameters: [makeParam('p9', 'alpha')],
+      rawSource: text,
+      codeBody: '(() => {})();'
+    }
+
+    for (const active of [false, true]) {
+      resetPluginStore()
+      usePluginStore.getState().openPlugin(missing)
+      usePluginStore.getState().updateMeta({ description: 'Edited' })
+      if (!active) usePluginStore.getState().openPlugin(other)
+      usePluginStore.getState().reattachSource(missing.id, text, parsed)
+
+      const state = usePluginStore.getState()
+      const tab = state.openPlugins.find((p) => p.id === missing.id)
+      expect(tab?.rawSource).toBe(text)
+      expect(tab?.meta.description).toBe('Edited')
+      expect(state.plugin.id).toBe(active ? missing.id : other.id)
+      if (active) expect(state.plugin.rawSource).toBe(text)
+      expect(state.dirtyByPluginId[missing.id]).toBe(true)
+      expect(state.baselineByPluginId[missing.id]).toEqual(
+        toBaseline({
+          ...parsed,
+          id: missing.id,
+          importedFrom: 'Alpha.js',
+          meta: { ...parsed.meta, name: 'Alpha' }
+        })
+      )
+    }
+  })
+
+  it('recordSaved makes the written text the file text and the saved definition the baseline', () => {
+    const alpha = importedPlugin('Alpha')
+    usePluginStore.getState().openPlugin(alpha)
+    usePluginStore.getState().updateMeta({ description: 'Edited' })
+    const saved = usePluginStore.getState().plugin
+    usePluginStore.getState().updateMeta({ description: 'Edited after the save started' })
+    usePluginStore.getState().recordSaved(alpha.id, saved, 'written text')
+
+    const state = usePluginStore.getState()
+    expect(state.plugin.rawSource).toBe('written text')
+    expect(state.plugin.meta.description).toBe('Edited after the save started')
+    expect(state.openPlugins[0].rawSource).toBe('written text')
+    expect(state.baselineByPluginId[alpha.id]).toEqual(toBaseline(saved))
+  })
+
+  it('recordSaved leaves a plugin created here without file text or baseline', () => {
+    const created = createPlugin('Created')
+    usePluginStore.getState().openPlugin(created)
+    usePluginStore.getState().recordSaved(created.id, created, 'written text')
+    const state = usePluginStore.getState()
+    expect(state.plugin.rawSource).toBeUndefined()
+    expect(state.openPlugins[0].rawSource).toBeUndefined()
+    expect(state.baselineByPluginId).toEqual({})
+  })
+})

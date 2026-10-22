@@ -6,7 +6,13 @@
  * @base Fixture_HandWritten
  * @orderAfter Fixture_HandWritten
  *
+ * @help Fixture_Dependent.js
+ *
+ * Needs Fixture_HandWritten above it in the plugin list. Both plugins
+ * extend the map scene's update.
+ *
  * @param Delay
+ * @text Delay
  * @desc Frames before the badge appears.
  * @type number
  * @min 0
@@ -14,11 +20,13 @@
  * @default 60
  *
  * @param Badge
+ * @text Badge
  * @desc Text of the badge.
  * @type string
  * @default New
  *
  * @param Placement
+ * @text Placement
  * @desc Where the badge is drawn.
  * @type struct<Placement>
  * @default {"x":"16","y":"16"}
@@ -33,12 +41,6 @@
  * @type number
  * @min 1
  * @default 60
- *
- * @help
- * Fixture_Dependent.js
- * 
- * Needs Fixture_HandWritten above it in the plugin list. Both plugins
- * extend the map scene's update.
  */
 
 /*~struct~Placement:
@@ -51,19 +53,12 @@
  * @text Y
  * @type number
  * @default 16
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Dependent');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const delay = Number(params['Delay'] || 60);
-    const badge = params['Badge'] || 'New';
-    const placement = JSON.parse(params['Placement'] || '{"x":"16","y":"16"}');
-    // --- End new parameters ---
     const delay = Number(params['Delay'] || 60);
     const badge = String(params['Badge'] || 'New');
     const placement = JSON.parse(params['Placement'] || '{"x":"0","y":"0"}');
@@ -83,15 +78,4 @@
             this._fixtureBadge = { text: badge, x: Number(placement.x), y: Number(placement.y) };
         }
     };
-
-    const PLUGIN_NAME = 'Fixture_Dependent';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'HideBadge', function(args) {
-        const frames = Number(args['frames'] || 60);
-
-        // TODO: Implement HideBadge logic
-        // Parsed args available as: frames
-    });
-    // --- End new commands ---
-
 })();

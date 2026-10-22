@@ -32,7 +32,7 @@ import {
   isSourceMissing
 } from '../../lib/plugin-output'
 import type { PluginOutput } from '../../lib/plugin-output'
-import { prepareSave } from '../../lib/raw-mode'
+import { prepareSave, reloadFromProject } from '../../lib/raw-mode'
 import { DiffView } from './DiffView'
 import { cn } from '../../lib/utils'
 import log from 'electron-log/renderer'
@@ -43,6 +43,7 @@ export function CodePreview() {
   const savedPath = usePluginStore((s) => s.savedPath)
   const setSavedPath = usePluginStore((s) => s.setSavedPath)
   const setDirty = usePluginStore((s) => s.setDirty)
+  const recordSaved = usePluginStore((s) => s.recordSaved)
 
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
   const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
@@ -209,6 +210,7 @@ export function CodePreview() {
           if (result.success) {
             setSavedPath(result.path)
             setDirty(false)
+            recordSaved(prepared.plugin.id, prepared.plugin, freshCode)
             addToast({ type: 'success', message: 'Plugin exported successfully' })
             log.info('[save] Plugin saved successfully')
           }
@@ -229,6 +231,7 @@ export function CodePreview() {
       if (result.success) {
         setSavedPath(result.path)
         setDirty(false)
+        recordSaved(prepared.plugin.id, prepared.plugin, freshCode)
         addToast({ type: 'success', message: 'Plugin exported successfully' })
         log.info('[save] Plugin saved successfully')
       }
@@ -239,7 +242,7 @@ export function CodePreview() {
         message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
       })
     }
-  }, [project, setSavedPath, setDirty, addToast])
+  }, [project, setSavedPath, setDirty, recordSaved, addToast])
 
   const openDiff = useCallback(async () => {
     // Try to load on-disk version
@@ -479,8 +482,19 @@ export function CodePreview() {
       )}
 
       {banner !== null && (
-        <div className="border-b border-border bg-destructive/10 p-3 text-sm text-destructive">
-          {banner}
+        <div className="flex items-center gap-3 border-b border-border bg-destructive/10 p-3 text-sm text-destructive">
+          <span className="flex-1">{banner}</span>
+          {isSourceMissing(deferredPlugin) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void reloadFromProject(deferredPlugin.id)}
+              disabled={!project}
+              title={project ? undefined : 'Open the project first.'}
+            >
+              Reload from project
+            </Button>
+          )}
         </div>
       )}
 

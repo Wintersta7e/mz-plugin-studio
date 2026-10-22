@@ -57,19 +57,12 @@
  * @min 8
  * @max 64
  * @default 28
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_NonAscii');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const pause = Number(params['Pause'] || 30);
-    const greeting = params['Greeting'] || 'こんにちは';
-    const symbol = JSON.parse(params['Symbol'] || '{"char":"★","size":"28"}');
-    // --- End new parameters ---
     const pause = Number(params['Pause'] || 30);
     const greeting = String(params['Greeting'] || 'こんにちは');
     const glyph = JSON.parse(params['Symbol'] || '{"char":"★","size":"28"}');
@@ -80,16 +73,4 @@
         $gameMessage.add(glyph.char + ' ' + greeting + separator + name + ' — ¡hola!');
         $gameMap._interpreter.wait(pause);
     });
-
-    const PLUGIN_NAME = 'Fixture_NonAscii';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'Greet', function(args) {
-        const name = args['name'] || 'Zoë';
-        const addedArg = Number(args['addedArg'] || 0);
-
-        // TODO: Implement Greet logic
-        // Parsed args available as: name, addedArg
-    });
-    // --- End new commands ---
-
 })();

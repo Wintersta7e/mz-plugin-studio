@@ -4,17 +4,25 @@
  * @author Example Author
  * @url https://example.invalid/Fixture_Structs
  *
+ * @help Fixture_Structs.js
+ *
+ * Keeps a list of entries and highlights the newest one.
+ * The struct definitions sit after the code.
+ *
  * @param Entries
+ * @text Entries
  * @desc Entries listed at the start.
  * @type struct<Entry>[]
  * @default []
  *
  * @param Highlight
+ * @text Highlight
  * @desc Color of the newest entry.
  * @type struct<Color>
  * @default {"red":"255","green":"224","blue":"128"}
  *
  * @param Count
+ * @text Count
  * @desc Number of entries kept.
  * @type number
  * @min 0
@@ -22,6 +30,7 @@
  * @default 4
  *
  * @param Heading
+ * @text Heading
  * @desc Text drawn above the list.
  * @type string
  * @default Entries
@@ -44,25 +53,12 @@
  *
  * @command ClearEntries
  * @desc Removes every entry.
- *
- * @help
- * Fixture_Structs.js
- * 
- * Keeps a list of entries and highlights the newest one.
- * The struct definitions sit after the code.
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Structs');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const entries = JSON.parse(params['Entries'] || '[]').map(s => JSON.parse(s));
-    const highlight = JSON.parse(params['Highlight'] || '{"red":"255","green":"224","blue":"128"}');
-    const count = Number(params['Count'] || 4);
-    const heading = params['Heading'] || 'Entries';
-    // --- End new parameters ---
     const entries = JSON.parse(params['Entries'] || '[]').map(e => JSON.parse(e));
     const highlight = JSON.parse(params['Highlight'] || '{}');
     const count = Number(params['Count'] || 4);
@@ -84,22 +80,6 @@
         entries: () => entries.slice(),
         highlight: () => `rgb(${highlight.red}, ${highlight.green}, ${highlight.blue})`
     };
-
-    const PLUGIN_NAME = 'Fixture_Structs';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'AddEntry', function(args) {
-        const label = args['label'] || 'Entry';
-        const weight = Number(args['weight'] || 1);
-
-        // TODO: Implement AddEntry logic
-        // Parsed args available as: label, weight
-    });
-    PluginManager.registerCommand(PLUGIN_NAME, 'ClearEntries', function(args) {
-
-        // TODO: Implement ClearEntries logic
-    });
-    // --- End new commands ---
-
 })();
 
 /*~struct~Entry:
@@ -141,5 +121,4 @@
  * @min 0
  * @max 255
  * @default 128
- *
  */

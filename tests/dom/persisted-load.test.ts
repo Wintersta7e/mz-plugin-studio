@@ -187,6 +187,8 @@ describe('loading the state v1.6.0 saved', () => {
       boolean
     >
     expect(isRawMode(tab, rawMode[tab.id])).toBe(true)
+    const baseline = (state.baselineByPluginId as Record<string, PluginBaseline>)[tab.id]
+    expect(generatePluginOutput(tab, true, baseline)).toEqual({ ok: true, code: text })
   })
 
   it('entries of closed tabs are dropped while loading and hydration finishes', async () => {

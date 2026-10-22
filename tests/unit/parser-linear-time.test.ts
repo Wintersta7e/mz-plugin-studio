@@ -17,12 +17,7 @@ function timeParse(marker: string): number {
 }
 
 describe('parse time after a custom-code marker', () => {
-  // Today these two backtrack over the padding; the others scan it once.
-  it.each(['// custom', '// main'])('%s takes longer than the bound', (marker) => {
-    expect(timeParse(marker)).toBeGreaterThan(BOUND_MS)
-  })
-
-  it.each(['// your', '// implementation', '// ===', '// ---'])(
+  it.each(['// custom', '// main', '// your', '// implementation', '// ===', '// ---'])(
     '%s finishes within the bound',
     (marker) => {
       expect(timeParse(marker)).toBeLessThan(BOUND_MS)

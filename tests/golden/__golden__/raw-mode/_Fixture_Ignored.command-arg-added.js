@@ -51,19 +51,12 @@
  * @text Height
  * @type number
  * @default 120
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('_Fixture_Ignored');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const level = Number(params['Level'] || 1);
-    const note = params['Note'] || 'Draft';
-    const size = JSON.parse(params['Size'] || '{"width":"240","height":"120"}');
-    // --- End new parameters ---
     const level = Number(params['Level'] || 1);
     const note = String(params['Note'] || 'Draft');
     const size = JSON.parse(params['Size'] || '{}');
@@ -73,16 +66,4 @@
             console.log(note, level, size.width, size.height);
         }
     });
-
-    const PLUGIN_NAME = '_Fixture_Ignored';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'Ping', function(args) {
-        const times = Number(args['times'] || 1);
-        const addedArg = Number(args['addedArg'] || 0);
-
-        // TODO: Implement Ping logic
-        // Parsed args available as: times, addedArg
-    });
-    // --- End new commands ---
-
 })();

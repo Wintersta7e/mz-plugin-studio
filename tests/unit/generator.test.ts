@@ -8,8 +8,10 @@ import {
   camelCase,
   generateHeaderOnly
 } from '../../src/renderer/src/lib/generator/index'
-import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
-import { compilePlugin } from '../helpers/evaluate-plugin'
+import type { PluginDefinition, PluginParameter } from '../../src/renderer/src/types/plugin'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import { toBaseline } from '../../src/shared/types/plugin'
+import { compilePlugin, evaluatePlugin } from '../helpers/evaluate-plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {
@@ -327,39 +329,53 @@ describe('generatePlugin', () => {
   })
 })
 
-// COV-01: generateRawMode injection paths
-describe('generateRawMode injection paths', () => {
-  function makeRawPlugin(
-    rawSource: string,
-    overrides: Partial<PluginDefinition> = {}
-  ): PluginDefinition {
-    return {
-      id: 'raw-id',
-      rawSource,
-      meta: {
-        name: 'RawPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'Raw plugin',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {}
-      },
-      parameters: [],
-      commands: [],
-      structs: [],
-      ...overrides
+// COV-01: generateRawMode against the definition the file was opened with
+describe('generateRawMode', () => {
+  /** The file as the app opens it, and a copy to edit; the opened definition is the baseline. */
+  function open(rawSource: string): { opened: PluginDefinition; plugin: PluginDefinition } {
+    const opened = {
+      ...PluginParser.parsePlugin(rawSource, 'RawPlugin.js'),
+      importedFrom: 'RawPlugin.js'
     }
+    return { opened, plugin: structuredClone(opened) }
   }
 
-  it('refuses to run without rawSource', () => {
-    expect(() => generateRawMode(createTestPlugin())).toThrow('generateRawMode needs rawSource')
+  const save = (plugin: PluginDefinition, opened: PluginDefinition): string =>
+    generateRawMode(plugin, toBaseline(opened))
+
+  const param = (name: string, overrides: Partial<PluginParameter> = {}): PluginParameter => ({
+    id: name,
+    name,
+    text: name,
+    desc: '',
+    type: 'string',
+    default: '',
+    ...overrides
   })
 
-  it('keeps a file without a bare /*: block as it is', () => {
+  it('refuses to run without rawSource', () => {
+    const plugin = createTestPlugin()
+    expect(() => generateRawMode(plugin, toBaseline(plugin))).toThrow(
+      'generateRawMode needs rawSource'
+    )
+  })
+
+  it('writes an unedited file back unchanged, whatever its blocks look like', () => {
+    const raw = `/*:
+ *   @plugindesc   Spaced out
+ * @param speed
+ *     @type number
+ */
+(() => {
+    const params = PluginManager.parameters('RawPlugin');
+    const speed = Number(params['speed']);
+})();
+`
+    const { opened, plugin } = open(raw)
+    expect(save(plugin, opened)).toBe(raw)
+  })
+
+  it('keeps a file without a main block as it is', () => {
     const raw = `/*:ja
  * @plugindesc テスト
  */
@@ -369,10 +385,11 @@ describe('generateRawMode injection paths', () => {
     console.log('hello');
 })();
 `
-    expect(generateRawMode(makeRawPlugin(raw))).toBe(raw)
+    const { opened, plugin } = open(raw)
+    expect(save(plugin, opened)).toBe(raw)
   })
 
-  it('injects PLUGIN_NAME + params declaration when body has no PluginManager.parameters()', () => {
+  it('declares PLUGIN_NAME and params for an added parameter when the code reads none', () => {
     const raw = `/*:
  * @plugindesc Test
  * @author Test
@@ -383,22 +400,17 @@ describe('generateRawMode injection paths', () => {
     // custom logic only
     console.log('hello');
 })();`
-    const plugin = makeRawPlugin(raw, {
-      parameters: [
-        { id: 'p1', name: 'newParam', text: 'New', desc: '', type: 'string', default: 'x' }
-      ]
-    })
-    const result = generateRawMode(plugin)
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('newParam', { default: 'x' }))
+    const result = save(plugin, opened)
     expect(result).toContain("const PLUGIN_NAME = 'RawPlugin';")
     expect(result).toContain('const params = PluginManager.parameters(PLUGIN_NAME);')
     expect(result).toContain('const newParam =')
+    expect(compilePlugin(result)).toBeNull()
   })
 
-  it('injects after existing params declaration without duplicating PLUGIN_NAME', () => {
+  it('scaffolds only parameters added since the file was opened', () => {
     const raw = `/*:
- * @plugindesc Test
- * @author Test
- *
  * @param oldParam
  * @type string
  * @default hello
@@ -407,20 +419,50 @@ describe('generateRawMode injection paths', () => {
 (() => {
     'use strict';
     const PLUGIN_NAME = 'RawPlugin';
-    const params = PluginManager.parameters(PLUGIN_NAME);
-    const oldParam = params['oldParam'] || 'hello';
+    const prm = PluginManager.parameters(PLUGIN_NAME);
+    const oldParam = prm.oldParam || 'hello';
 })();`
-    const plugin = makeRawPlugin(raw, {
-      parameters: [
-        { id: 'p1', name: 'oldParam', text: 'Old', desc: '', type: 'string', default: 'hello' },
-        { id: 'p2', name: 'newParam', text: 'New', desc: '', type: 'number', default: 5 }
-      ]
-    })
-    const result = generateRawMode(plugin)
-    // Should not duplicate PLUGIN_NAME
-    const pluginNameCount = (result.match(/const PLUGIN_NAME/g) || []).length
-    expect(pluginNameCount).toBe(1)
-    expect(result).toContain('const newParam =')
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('newParam', { type: 'number', default: 5 }))
+    const result = save(plugin, opened)
+    expect(result.match(/const PLUGIN_NAME/g)).toHaveLength(1)
+    expect(result.match(/const oldParam/g)).toHaveLength(1)
+    expect(result).toContain("const newParam = Number(prm['newParam'] || 5);")
+    expect(compilePlugin(result)).toBeNull()
+  })
+
+  it('reads an added parameter through the object the file stores its parameters in', () => {
+    const raw = `/*:
+ * @param speed
+ */
+(() => {
+    const parameters = PluginManager.parameters('RawPlugin');
+    const speed = parameters['speed'];
+})();
+`
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('label', { default: 'x' }))
+    const result = save(plugin, opened)
+    expect(result).toContain("const label = parameters['label'] || 'x';")
+    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
+  })
+
+  it('adds parameter code after a parameters call that spans several lines', () => {
+    const raw = `/*:
+ * @param speed
+ */
+var prm = PluginManager.parameters(
+    'RawPlugin'
+);
+var speed = prm.speed;
+`
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('label'))
+    const result = save(plugin, opened)
+    expect(result).toContain(
+      "    'RawPlugin'\n);\n\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
+    )
+    expect(compilePlugin(result)).toBeNull()
   })
 
   it('falls back to IIFE-opening injection when no use strict present', () => {
@@ -433,19 +475,16 @@ describe('generateRawMode injection paths', () => {
     // no use strict here
     console.log('hello');
 })();`
-    const plugin = makeRawPlugin(raw, {
-      parameters: [
-        { id: 'p1', name: 'fresh', text: 'Fresh', desc: '', type: 'string', default: '' }
-      ]
-    })
-    const result = generateRawMode(plugin)
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('fresh'))
+    const result = save(plugin, opened)
     expect(result).toContain('const fresh =')
+    expect(result.indexOf('const fresh =')).toBeLessThan(result.indexOf("console.log('hello')"))
   })
 
-  it('injects new commands before closing })();', () => {
+  it('injects new commands before closing })(); and only those', () => {
     const raw = `/*:
- * @plugindesc Test
- * @author Test
+ * @command Old
  */
 
 (() => {
@@ -454,15 +493,31 @@ describe('generateRawMode injection paths', () => {
     // existing code
     console.log('loaded');
 })();`
-    const plugin = makeRawPlugin(raw, {
-      commands: [{ id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] }]
-    })
-    const result = generateRawMode(plugin)
-    expect(result).toContain("registerCommand(PLUGIN_NAME, 'NewCommand'")
-    // Command should appear before })();
+    const { opened, plugin } = open(raw)
+    plugin.commands.push({ id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] })
+    const result = save(plugin, opened)
+    expect(result).not.toContain("'Old'")
     const cmdIdx = result.indexOf("registerCommand(PLUGIN_NAME, 'NewCommand'")
-    const closingIdx = result.lastIndexOf('})();')
-    expect(cmdIdx).toBeLessThan(closingIdx)
+    expect(cmdIdx).toBeGreaterThan(-1)
+    expect(cmdIdx).toBeLessThan(result.lastIndexOf('})();'))
+    expect(compilePlugin(result)).toBeNull()
+  })
+
+  it('appends code for added items inside braces when the file has no IIFE', () => {
+    const raw = `/*:
+ * @plugindesc Legacy
+ */
+var Legacy = {};
+`
+    const { opened, plugin } = open(raw)
+    plugin.parameters.push(param('fresh'))
+    plugin.commands.push({ id: 'c1', name: 'Go', text: 'Go', desc: '', args: [] })
+    const result = save(plugin, opened)
+    expect(result).toContain('var Legacy = {};\n')
+    expect(result).toContain("registerCommand(PLUGIN_NAME, 'Go'")
+    expect(result.trimEnd().endsWith('}')).toBe(true)
+    expect(compilePlugin(result)).toBeNull()
+    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
   })
 
   it('preserves preamble (license text) before first annotation', () => {
@@ -479,14 +534,85 @@ describe('generateRawMode injection paths', () => {
 (() => {
     'use strict';
 })();`
-    const plugin = makeRawPlugin(raw)
+    const { opened, plugin } = open(raw)
     plugin.meta.description = 'New description'
-    const result = generateRawMode(plugin)
-    // Preamble should be preserved in output
+    const result = save(plugin, opened)
     expect(result).toContain('MZ Plugin Studio - RawPlugin')
     expect(result).toContain('Copyright (c) 2024 Test Author')
-    // New description should be present
     expect(result).toContain('@plugindesc New description')
+  })
+
+  it('writes the file line endings and keeps blocks that did not change', () => {
+    const raw = [
+      '﻿/*:',
+      ' * @plugindesc Old',
+      ' */',
+      '',
+      '/*:ja',
+      ' * @plugindesc 古い',
+      ' */',
+      '',
+      '/*~struct~Pos:',
+      ' * @param x',
+      ' */',
+      '',
+      '(() => {',
+      "    const params = PluginManager.parameters('RawPlugin');",
+      '})();',
+      ''
+    ].join('\r\n')
+    const { opened, plugin } = open(raw)
+    plugin.meta.description = 'New'
+    plugin.parameters.push(param('added'))
+    const result = save(plugin, opened)
+    expect(result.startsWith('﻿/*:\r\n')).toBe(true)
+    expect(result).not.toMatch(/[^\r]\n/)
+    expect(result).toContain('/*:ja\r\n * @plugindesc 古い\r\n */')
+    expect(result).toContain('/*~struct~Pos:\r\n * @param x\r\n */')
+    expect(result).toContain('@plugindesc New\r\n')
+    expect(result).toContain("params['added']")
+  })
+
+  it('rewrites the English block that stands in for a missing bare block, keeping its opener', () => {
+    const raw = `/*:en
+ * @plugindesc Old
+ */
+
+/*:ja
+ * @plugindesc 古い
+ */
+`
+    const { opened, plugin } = open(raw)
+    plugin.meta.description = 'New'
+    const result = save(plugin, opened)
+    expect(result.startsWith('/*:en\n')).toBe(true)
+    expect(result).toContain('@plugindesc New')
+    expect(result).toContain('/*:ja\n * @plugindesc 古い\n */')
+  })
+
+  it("rewrites a struct's own block and keeps its translated blocks", () => {
+    const raw = `/*:
+ * @param pos
+ * @type struct<Pos>
+ */
+
+/*~struct~Pos:
+ * @param x
+ * @text X
+ */
+
+/*~struct~Pos:ja
+ * @param x
+ * @text 横
+ */
+`
+    const { opened, plugin } = open(raw)
+    plugin.structs[0].parameters.push(param('y'))
+    const result = save(plugin, opened)
+    expect(result.match(/\/\*~struct~Pos:/g)).toHaveLength(2)
+    expect(result).toContain('/*~struct~Pos:\n * @param x\n * @text X\n')
+    expect(result).toContain(' * @param y\n')
+    expect(result).toContain('/*~struct~Pos:ja\n * @param x\n * @text 横\n */')
   })
 })
 

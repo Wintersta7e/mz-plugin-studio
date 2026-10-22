@@ -1,12 +1,15 @@
 import { usePluginStore } from '../stores/pluginStore'
+import { useProjectStore } from '../stores/projectStore'
+import { useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
+import type { PluginDefinition } from '../types/plugin'
 import { generatePluginOutput, isImported, isRawMode } from './plugin-output'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
   "Raw mode keeps this plugin's own code and language blocks, so this is read-only here. Turn raw mode off in the preview to edit it."
 
 export type SavePreparation =
-  | { status: 'ready'; code: string }
+  | { status: 'ready'; code: string; plugin: PluginDefinition }
   | { status: 'refused'; reason: string }
   | { status: 'cancelled' }
 
@@ -34,7 +37,9 @@ export async function prepareSave(
 
   if (isRawMode(plugin, ui.rawModeByPluginId[pluginId])) {
     const out = generatePluginOutput(plugin, true, baselineByPluginId[pluginId] ?? null)
-    return out.ok ? { status: 'ready', code: out.code } : { status: 'refused', reason: out.message }
+    return out.ok
+      ? { status: 'ready', code: out.code, plugin }
+      : { status: 'refused', reason: out.message }
   }
 
   if (isImported(plugin) && !ui.structuralSaveConfirmedByPluginId[pluginId]) {
@@ -56,5 +61,40 @@ export async function prepareSave(
   }
 
   const out = generatePluginOutput(plugin, false, null)
-  return out.ok ? { status: 'ready', code: out.code } : { status: 'refused', reason: out.message }
+  return out.ok
+    ? { status: 'ready', code: out.code, plugin }
+    : { status: 'refused', reason: out.message }
+}
+
+/**
+ * Reads an imported tab's file from the open project again and makes it the tab's file text
+ * and baseline; the tab's edits stay. False when there is no project, the user cancels or the
+ * file cannot be read.
+ */
+export async function reloadFromProject(pluginId: string): Promise<boolean> {
+  const project = useProjectStore.getState().project
+  const plugin = usePluginStore.getState().openPlugins.find((p) => p.id === pluginId)
+  if (project === null || plugin?.importedFrom === undefined) return false
+  const sep = project.path.includes('\\') ? '\\' : '/'
+  const path = [project.path, 'js', 'plugins', plugin.importedFrom].join(sep)
+  // Cancel is the first button, so closing the dialog cancels
+  const answer = await window.api.dialog.message({
+    type: 'question',
+    title: 'Reload from project?',
+    message: `Reload ${path}? The plugin's current edits are kept and applied to the reloaded file.`,
+    buttons: ['Cancel', 'Reload']
+  })
+  if (answer !== 1) return false
+  try {
+    const text = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
+    const parsed = await window.api.plugin.parse(text)
+    usePluginStore.getState().reattachSource(pluginId, text, parsed)
+    return true
+  } catch (error) {
+    useToastStore.getState().addToast({
+      type: 'error',
+      message: `Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`
+    })
+    return false
+  }
 }

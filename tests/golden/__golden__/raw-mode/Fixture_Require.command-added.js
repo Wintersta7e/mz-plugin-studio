@@ -67,20 +67,12 @@
  * @text Y
  * @type number
  * @default 312
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Require');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const picture = params['Picture'] || 'FixturePicture';
-    const opacity = Number(params['Opacity'] || 255);
-    const caption = params['Caption'] || 'Fixture';
-    const anchor = JSON.parse(params['Anchor'] || '{"x":"408","y":"312"}');
-    // --- End new parameters ---
     const picture = String(params['Picture'] || '');
     const opacity = Number(params['Opacity'] || 255);
     const caption = String(params['Caption'] || '');
@@ -94,15 +86,9 @@
 
     const PLUGIN_NAME = 'Fixture_Require';
     // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ShowPicture', function(args) {
-        const pictureId = Number(args['pictureId'] || 1);
-
-        // TODO: Implement ShowPicture logic
-        // Parsed args available as: pictureId
-    });
     PluginManager.registerCommand(PLUGIN_NAME, 'AddedCommand', function(args) {
 
-        // TODO: Implement AddedCommand logic
+        // TODO: Implement command logic
     });
     // --- End new commands ---
 

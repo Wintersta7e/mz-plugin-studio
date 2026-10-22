@@ -71,6 +71,10 @@ interface PluginState {
   // Code
   setCustomCode: (code: string) => void
 
+  // File text of an imported tab: loaded again from the project, or what a save wrote
+  reattachSource: (id: string, rawSource: string, parsed: PluginDefinition) => void
+  recordSaved: (id: string, saved: PluginDefinition, written: string) => void
+
   // State
   setDirty: (dirty: boolean) => void
   setSavedPath: (path: string | null) => void
@@ -243,6 +247,18 @@ function setPluginSavedPath(
   const next = { ...savedPathsByPluginId }
   delete next[pluginId]
   return next
+}
+
+/** Sets the file text of an open tab, in the tab list and on the active plugin; not an edit. */
+function withRawSource(
+  state: PluginState,
+  id: string,
+  rawSource: string
+): Pick<PluginState, 'openPlugins' | 'plugin'> {
+  return {
+    openPlugins: state.openPlugins.map((p) => (p.id === id ? { ...p, rawSource } : p)),
+    plugin: state.plugin.id === id ? { ...state.plugin, rawSource } : state.plugin
+  }
 }
 
 function updateActivePluginState(
@@ -527,6 +543,32 @@ export const usePluginStore = create<PluginState>()(
             customCode: code
           }))
         ),
+
+      reattachSource: (id, rawSource, parsed) =>
+        set((state) => {
+          const tab = state.openPlugins.find((p) => p.id === id)
+          if (tab === undefined) return {}
+          const fileName = (tab.importedFrom ?? '').replace(/\.js$/i, '')
+          const baseline = toBaseline({
+            ...parsed,
+            id,
+            importedFrom: tab.importedFrom,
+            meta: { ...parsed.meta, name: fileName }
+          })
+          return {
+            ...withRawSource(state, id, rawSource),
+            baselineByPluginId: { ...state.baselineByPluginId, [id]: baseline }
+          }
+        }),
+      recordSaved: (id, saved, written) =>
+        set((state) => {
+          const tab = state.openPlugins.find((p) => p.id === id)
+          if (tab === undefined || !isImported(tab)) return {}
+          return {
+            ...withRawSource(state, id, written),
+            baselineByPluginId: { ...state.baselineByPluginId, [id]: toBaseline(saved) }
+          }
+        }),
 
       // State
       setDirty: (isDirty) =>

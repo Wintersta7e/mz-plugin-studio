@@ -96,19 +96,12 @@
  * @text Color
  * @type string
  * @default #ffffff
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_EnJaOnly');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const rate = Number(params['Rate'] || 2);
-    const title = params['Title'] || 'Status';
-    const frame = JSON.parse(params['Frame'] || '{"thickness":"2","color":"#ffffff"}');
-    // --- End new parameters ---
     let rate = Number(params['Rate'] || 2);
     const title = String(params['Title'] || 'Status');
     const frame = JSON.parse(params['Frame'] || '{}');
@@ -131,15 +124,4 @@
         this.drawText(title, 0, 0, this.innerWidth, 'center');
         this._fixtureFrame = { thickness: Number(frame.thickness || 0), color: frame.color };
     };
-
-    const PLUGIN_NAME = 'Fixture_EnJaOnly';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'SetRate', function(args) {
-        const rate = Number(args['rate'] || 1);
-
-        // TODO: Implement SetRate logic
-        // Parsed args available as: rate
-    });
-    // --- End new commands ---
-
 })();

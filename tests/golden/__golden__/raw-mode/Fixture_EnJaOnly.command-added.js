@@ -4,12 +4,7 @@
  * @author Example Author
  * @url https://example.invalid/Fixture_EnJaOnly
  *
- * @help Fixture_EnJaOnly.js
- *
- * Changes the battle speed and draws a frame around the status window.
- *
  * @param Rate
- * @text Rate
  * @desc Battle speed multiplier.
  * @type number
  * @min 1
@@ -17,13 +12,11 @@
  * @default 2
  *
  * @param Title
- * @text Title
  * @desc Title drawn above the status window.
  * @type string
  * @default Status
  *
  * @param Frame
- * @text Frame
  * @desc Frame drawn around the status window.
  * @type struct<Frame>
  * @default {"thickness":"2","color":"#ffffff"}
@@ -39,6 +32,15 @@
  * @min 1
  * @max 4
  * @default 1
+ *
+ * @command AddedCommand
+ * @text Added Command
+ * @desc Added command
+ *
+ * @help
+ * Fixture_EnJaOnly.js
+ * 
+ * Changes the battle speed and draws a frame around the status window.
  */
 
 /*:ja
@@ -96,19 +98,12 @@
  * @text Color
  * @type string
  * @default #ffffff
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_EnJaOnly');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const rate = Number(params['Rate'] || 2);
-    const title = params['Title'] || 'Status';
-    const frame = JSON.parse(params['Frame'] || '{"thickness":"2","color":"#ffffff"}');
-    // --- End new parameters ---
     let rate = Number(params['Rate'] || 2);
     const title = String(params['Title'] || 'Status');
     const frame = JSON.parse(params['Frame'] || '{}');
@@ -134,15 +129,9 @@
 
     const PLUGIN_NAME = 'Fixture_EnJaOnly';
     // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'SetRate', function(args) {
-        const rate = Number(args['rate'] || 1);
-
-        // TODO: Implement SetRate logic
-        // Parsed args available as: rate
-    });
     PluginManager.registerCommand(PLUGIN_NAME, 'AddedCommand', function(args) {
 
-        // TODO: Implement AddedCommand logic
+        // TODO: Implement command logic
     });
     // --- End new commands ---
 

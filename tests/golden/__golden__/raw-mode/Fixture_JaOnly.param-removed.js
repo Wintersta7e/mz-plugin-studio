@@ -38,10 +38,6 @@
     'use strict';
 
     const params = PluginManager.parameters('Fixture_JaOnly');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const interval = Number(params['Interval'] || 10);
-    // --- End new parameters ---
     const interval = Number(params['Interval'] || 10);
     const message = String(params['Message'] || '');
     let steps = 0;
@@ -58,15 +54,4 @@
             $gameMessage.add(message);
         }
     };
-
-    const PLUGIN_NAME = 'Fixture_JaOnly';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ResetSteps', function(args) {
-        const steps = Number(args['steps'] || 0);
-
-        // TODO: Implement ResetSteps logic
-        // Parsed args available as: steps
-    });
-    // --- End new commands ---
-
 })();

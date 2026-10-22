@@ -58,19 +58,12 @@
  * @text Y
  * @type number
  * @default 0
- *
  */
 
 var Fixture = Fixture || {};
 Fixture.NoIife = Fixture.NoIife || {};
 
 var prm = PluginManager.parameters(
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const step = Number(params['Step'] || 2);
-    const title = params['Title'] || 'Fixture';
-    const start = JSON.parse(params['Start'] || '{"mapId":"1","x":"0","y":"0"}');
-    // --- End new parameters ---
     'Fixture_NoIife'
 );
 Fixture.NoIife.step = Number(prm.Step || 2);
@@ -95,3 +88,13 @@ Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
     }
     Fixture.NoIife._Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);
 };
+
+{
+    const PLUGIN_NAME = 'Fixture_NoIife';
+    // --- New commands (added by MZ Plugin Studio) ---
+    PluginManager.registerCommand(PLUGIN_NAME, 'AddedCommand', function(args) {
+
+        // TODO: Implement command logic
+    });
+    // --- End new commands ---
+}

@@ -13,7 +13,12 @@
     "orderBefore": [],
     "noteParams": [],
     "requiredAssets": [],
-    "localizations": {}
+    "localizations": {
+      "ja": {
+        "description": "日本語のブロックだけを持つフィクスチャ",
+        "help": "Fixture_JaOnly.js\n\n歩数を数え、一定の歩数ごとにメッセージを表示します。"
+      }
+    }
   },
   "parameters": [
     {

@@ -56,19 +56,12 @@
  * @text Y
  * @type number
  * @default 16
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Dependent');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const delay = Number(params['Delay'] || 60);
-    const badge = params['Badge'] || 'New';
-    const placement = JSON.parse(params['Placement'] || '{"x":"16","y":"16"}');
-    // --- End new parameters ---
     const delay = Number(params['Delay'] || 60);
     const badge = String(params['Badge'] || 'New');
     const placement = JSON.parse(params['Placement'] || '{"x":"0","y":"0"}');
@@ -88,16 +81,4 @@
             this._fixtureBadge = { text: badge, x: Number(placement.x), y: Number(placement.y) };
         }
     };
-
-    const PLUGIN_NAME = 'Fixture_Dependent';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'HideBadge', function(args) {
-        const frames = Number(args['frames'] || 60);
-        const addedArg = Number(args['addedArg'] || 0);
-
-        // TODO: Implement HideBadge logic
-        // Parsed args available as: frames, addedArg
-    });
-    // --- End new commands ---
-
 })();

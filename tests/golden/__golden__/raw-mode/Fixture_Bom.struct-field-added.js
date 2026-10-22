@@ -4,7 +4,12 @@
  * @author Example Author
  * @url https://example.invalid/Fixture_Bom
  *
+ * @help Fixture_Bom.js
+ *
+ * Plays a sound effect with a prefix in the log.
+ *
  * @param Volume
+ * @text Volume
  * @desc Volume of the sound effect.
  * @type number
  * @min 0
@@ -12,11 +17,13 @@
  * @default 90
  *
  * @param Prefix
+ * @text Prefix
  * @desc Text written before each log line.
  * @type string
  * @default Bom
  *
  * @param Offset
+ * @text Offset
  * @desc Pan and pitch offsets.
  * @type struct<Offset>
  * @default {"pan":"0","pitch":"100"}
@@ -30,11 +37,6 @@
  * @desc Name of the sound effect.
  * @type string
  * @default Cursor1
- *
- * @help
- * Fixture_Bom.js
- * 
- * Plays a sound effect with a prefix in the log.
  */
 
 /*~struct~Offset:
@@ -62,12 +64,6 @@
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Bom');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const volume = Number(params['Volume'] || 90);
-    const prefix = params['Prefix'] || 'Bom';
-    const offset = JSON.parse(params['Offset'] || '{"pan":"0","pitch":"100"}');
-    // --- End new parameters ---
     const volume = Number(params['Volume'] || 90);
     const prefix = String(params['Prefix'] || 'Bom');
     const offset = JSON.parse(params['Offset'] || '{}');
@@ -77,15 +73,4 @@
         console.log(prefix + ': ' + se.name);
         AudioManager.playSe(se);
     });
-
-    const PLUGIN_NAME = 'Fixture_Bom';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'PlayCue', function(args) {
-        const cue = args['cue'] || 'Cursor1';
-
-        // TODO: Implement PlayCue logic
-        // Parsed args available as: cue
-    });
-    // --- End new commands ---
-
 })();

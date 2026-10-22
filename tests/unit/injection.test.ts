@@ -21,6 +21,7 @@ import type {
   PluginStruct,
   SelectOption
 } from '../../src/shared/types/plugin'
+import { toBaseline } from '../../src/shared/types/plugin'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import type { EvaluationResult } from '../helpers/evaluate-plugin'
 import { ALL_PAYLOADS, COMMENT_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
@@ -321,8 +322,8 @@ const FIELD_ROWS: FieldRow[] = [
 ]
 
 // An imported file: the clean definition's comment blocks and a body that reads the parameters
-// but parses none, so raw mode adds one parsing line per parameter and registers each command.
-// (Raw mode re-adds every parameter of a body the generator wrote, which does not compile.)
+// but parses none. It was opened without parameters or commands, so raw mode rewrites the main
+// block, adds one parsing line per parameter and registers each command.
 function rawSource(): string {
   const generated = generatePlugin(cleanDefinition())
   return (
@@ -334,7 +335,14 @@ function rawSource(): string {
 
 const ENTRIES: [string, (def: PluginDefinition) => string][] = [
   ['generatePlugin', (def) => generatePlugin(def)],
-  ['generateRawMode', (def) => generateRawMode({ ...def, rawSource: rawSource() })]
+  [
+    'generateRawMode',
+    (def) =>
+      generateRawMode(
+        { ...def, rawSource: rawSource() },
+        toBaseline({ ...def, parameters: [], commands: [] })
+      )
+  ]
 ]
 
 interface MatrixCase {

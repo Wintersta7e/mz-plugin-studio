@@ -46,26 +46,24 @@
  * @url https://example.invalid/Fixture_JaFirst
  *
  * @param Limit
- * @text 上限
- * @desc 数える歩数の上限
+ * @desc Highest step count.
  * @type number
  * @min 1
  * @max 9
  * @default 3
  *
  * @param Caption
- * @text 見出し
- * @desc 歩数の前に表示する文字列
+ * @desc Text shown before the step count.
  * @type string
- * @default 歩数
+ * @default Steps
  *
  * @command ResetSteps
- * @text 歩数リセット
- * @desc 歩数を初期値に戻します。
+ * @text Reset Steps
+ * @desc Sets the step count back.
  *
  * @arg value
- * @text 初期値
- * @desc リセット後の歩数
+ * @text Value
+ * @desc Step count after the reset.
  * @type number
  * @default 0
  *
@@ -87,18 +85,12 @@
  * @type number
  * @min 1
  * @default 5
- *
  */
 
 (() => {
     'use strict';
 
     const parameters = PluginManager.parameters('Fixture_JaFirst');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const limit = Number(params['Limit'] || 3);
-    const caption = params['Caption'] || '歩数';
-    // --- End new parameters ---
     const limit = Number(parameters['Limit'] || 3);
     const caption = String(parameters['Caption'] || 'Steps');
     const area = JSON.parse(parameters['Area'] || '{"width":"5","height":"5"}');
@@ -117,15 +109,4 @@
             this._fixtureStepText = caption + ' ' + steps;
         }
     };
-
-    const PLUGIN_NAME = 'Fixture_JaFirst';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ResetSteps', function(args) {
-        const value = Number(args['value'] || 0);
-
-        // TODO: Implement ResetSteps logic
-        // Parsed args available as: value
-    });
-    // --- End new commands ---
-
 })();

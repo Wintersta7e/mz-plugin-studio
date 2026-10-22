@@ -5,9 +5,18 @@
  */
 
 /*:
+ * @target MZ
  * @plugindesc Hand-written fixture plugin with a licence preamble.
+ * @author Example Author
+ * @url https://example.invalid/Fixture_HandWritten
+ *
+ * @help Fixture_HandWritten.js
+ *
+ * Shows a label on the map and refreshes it every few frames.
+ * The command shows the label a number of times.
  *
  * @param Speed
+ * @text Speed
  * @desc Frames between two label refreshes.
  * @type number
  * @min 1
@@ -15,11 +24,13 @@
  * @default 5
  *
  * @param Label
+ * @text Label
  * @desc Text shown on the map.
  * @type string
  * @default Hello
  *
  * @param Origin
+ * @text Origin
  * @desc Where the label is drawn.
  * @type struct<Point>
  * @default {"x":"0","y":"0"}
@@ -34,12 +45,6 @@
  * @type number
  * @min 1
  * @default 1
- *
- * @help
- * Fixture_HandWritten.js
- * 
- * Shows a label on the map and refreshes it every few frames.
- * The command shows the label a number of times.
  */
 
 /*:ja
@@ -96,7 +101,6 @@
  * @type number
  * @min 0
  * @default 0
- *
  */
 
 (() => {
@@ -104,12 +108,6 @@
 
     const pluginName = 'Fixture_HandWritten';
     const params = PluginManager.parameters(pluginName);
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const speed = Number(params['Speed'] || 5);
-    const label = params['Label'] || 'Hello';
-    const origin = JSON.parse(params['Origin'] || '{"x":"0","y":"0"}');
-    // --- End new parameters ---
     const speed = Number(params['Speed'] || 5);
     const label = String(params["Label"] || 'Hello');
     const origin = JSON.parse(params['Origin'] || '{"x":"0","y":"0"}');
@@ -141,15 +139,4 @@
             this._fixtureLabelY = Number(origin.y);
         }
     };
-    const PLUGIN_NAME = 'Fixture_HandWritten_CRLF';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ShowLabel', function(args) {
-        const times = Number(args['times'] || 1);
-
-        // TODO: Implement ShowLabel logic
-        // Parsed args available as: times
-    });
-    // --- End new commands ---
-
-
 })();

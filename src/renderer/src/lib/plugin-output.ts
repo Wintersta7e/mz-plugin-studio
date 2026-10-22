@@ -38,7 +38,7 @@ export function generatePluginOutput(
     return {
       ok: false,
       refusal: 'source-missing',
-      message: `Not saved: the original file ${fileOf(plugin)} is not loaded. Turn raw mode off to save regenerated code.`
+      message: `Not saved: the original file ${fileOf(plugin)} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
     }
   }
   if (
@@ -51,5 +51,5 @@ export function generatePluginOutput(
       message: `Header changes cannot be saved: ${fileOf(plugin)} has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.`
     }
   }
-  return { ok: true, code: generateRawMode(plugin) }
+  return { ok: true, code: generateRawMode(plugin, baseline) }
 }

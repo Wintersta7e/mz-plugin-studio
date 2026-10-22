@@ -55,19 +55,12 @@
  * @min 50
  * @max 150
  * @default 100
- *
  */
 
 (() => {
     'use strict';
 
     const params = PluginManager.parameters('Fixture_Bom');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const volume = Number(params['Volume'] || 90);
-    const prefix = params['Prefix'] || 'Bom';
-    const offset = JSON.parse(params['Offset'] || '{"pan":"0","pitch":"100"}');
-    // --- End new parameters ---
     const volume = Number(params['Volume'] || 90);
     const prefix = String(params['Prefix'] || 'Bom');
     const offset = JSON.parse(params['Offset'] || '{}');
@@ -80,15 +73,9 @@
 
     const PLUGIN_NAME = 'Fixture_Bom';
     // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'PlayCue', function(args) {
-        const cue = args['cue'] || 'Cursor1';
-
-        // TODO: Implement PlayCue logic
-        // Parsed args available as: cue
-    });
     PluginManager.registerCommand(PLUGIN_NAME, 'AddedCommand', function(args) {
 
-        // TODO: Implement AddedCommand logic
+        // TODO: Implement command logic
     });
     // --- End new commands ---
 

@@ -15,7 +15,8 @@ import {
   generateTypeDeclaration
 } from '../../../src/renderer/src/lib/exportFormats'
 import { serializeParams } from '../../../src/renderer/src/lib/param-io'
-import { ALL_PARAM_TYPES } from '../../../src/shared/types/plugin'
+import { PluginParser } from '../../../src/main/services/pluginParser'
+import { ALL_PARAM_TYPES, toBaseline } from '../../../src/shared/types/plugin'
 import type { ParamType, PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
 import { COMMENT_PAYLOADS } from '../../helpers/hostile'
 import { oneLine } from './normalise'
@@ -395,6 +396,13 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
 // A header-only source, so raw mode regenerates the annotation block around nothing else.
 const HEADER_ONLY_SOURCE = '/*:\n * @target MZ\n */\n'
 
+/** An opened HEADER_ONLY_SOURCE file whose code already handled the parameters and commands. */
+function headerOnlyRawMode(def: PluginDefinition): string {
+  const opened = PluginParser.parsePlugin(HEADER_ONLY_SOURCE, `${def.meta.name}.js`)
+  const baseline = { ...toBaseline(def), meta: opened.meta, structs: [] }
+  return generateRawMode({ ...def, rawSource: HEADER_ONLY_SOURCE }, baseline)
+}
+
 /** Every export format of one entry, one `// ==== case:` section each. */
 export function renderExports(entry: GeneratorEntry): string {
   const { def } = entry
@@ -416,7 +424,7 @@ export function renderExports(entry: GeneratorEntry): string {
     ['validatePlugin', JSON.stringify(validatePlugin(def), null, 2)]
   ]
   if (entry.name.startsWith('hostile-')) {
-    sections.push(['generateRawMode', generateRawMode({ ...def, rawSource: HEADER_ONLY_SOURCE })])
+    sections.push(['generateRawMode', headerOnlyRawMode(def)])
   }
   return (
     sections.map(([title, text]) => `// ==== case: ${oneLine(title)}\n${text}`).join('\n\n') + '\n'

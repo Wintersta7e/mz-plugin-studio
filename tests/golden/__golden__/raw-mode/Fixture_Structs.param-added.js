@@ -64,10 +64,6 @@
     const params = PluginManager.parameters('Fixture_Structs');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const entries = JSON.parse(params['Entries'] || '[]').map(s => JSON.parse(s));
-    const highlight = JSON.parse(params['Highlight'] || '{"red":"255","green":"224","blue":"128"}');
-    const count = Number(params['Count'] || 4);
-    const heading = params['Heading'] || 'Entries';
     const addedParam = params['AddedParam'] || 'added';
     // --- End new parameters ---
     const entries = JSON.parse(params['Entries'] || '[]').map(e => JSON.parse(e));
@@ -91,22 +87,6 @@
         entries: () => entries.slice(),
         highlight: () => `rgb(${highlight.red}, ${highlight.green}, ${highlight.blue})`
     };
-
-    const PLUGIN_NAME = 'Fixture_Structs';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'AddEntry', function(args) {
-        const label = args['label'] || 'Entry';
-        const weight = Number(args['weight'] || 1);
-
-        // TODO: Implement AddEntry logic
-        // Parsed args available as: label, weight
-    });
-    PluginManager.registerCommand(PLUGIN_NAME, 'ClearEntries', function(args) {
-
-        // TODO: Implement ClearEntries logic
-    });
-    // --- End new commands ---
-
 })();
 
 /*~struct~Entry:
@@ -120,7 +100,6 @@
  * @type number
  * @min 0
  * @default 1
- *
  */
 
 /*~struct~Color:
@@ -144,5 +123,4 @@
  * @min 0
  * @max 255
  * @default 128
- *
  */

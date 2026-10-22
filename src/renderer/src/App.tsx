@@ -26,6 +26,7 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
+import type { PluginDefinition } from './types/plugin'
 import { prepareSave } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
@@ -276,6 +277,9 @@ function App() {
                 if (result.success) {
                   usePluginStore.getState().setSavedPath(result.path)
                   usePluginStore.getState().setDirty(false)
+                  usePluginStore
+                    .getState()
+                    .recordSaved(prepared.plugin.id, prepared.plugin, prepared.code)
                   useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
                 }
               })
@@ -312,7 +316,9 @@ function App() {
             if (prepared.status === 'cancelled') return { id: p.id }
             try {
               const result = await window.api.plugin.save(proj.path, filename, prepared.code)
-              if (result.success) return { id: p.id, path: result.path }
+              if (result.success) {
+                return { id: p.id, path: result.path, saved: prepared.plugin, code: prepared.code }
+              }
               return { id: p.id, error: new Error('save returned success=false') }
             } catch (error: unknown) {
               log.error('[save-all]', p.meta.name, error)
@@ -322,8 +328,11 @@ function App() {
           void Promise.all(savePromises)
             .then((results) => {
               const succeeded = results.filter(
-                (r): r is { id: string; path: string } => 'path' in r
+                (r): r is { id: string; path: string; saved: PluginDefinition; code: string } =>
+                  'path' in r
               )
+              for (const r of succeeded)
+                usePluginStore.getState().recordSaved(r.id, r.saved, r.code)
               const failed = results.filter((r) => 'error' in r)
               const refused = results.flatMap((r) => ('refused' in r ? [r.refused] : []))
               if (succeeded.length > 0) {

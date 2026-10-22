@@ -1,4 +1,5 @@
 import type {
+  PluginBaseline,
   PluginDefinition,
   PluginParameter,
   PluginCommand,
@@ -8,6 +9,7 @@ import type {
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
+import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
 
 /** Receives each field's text as it is written into an annotation comment, with its label. */
 type BlockSink = (field: string, value: string) => void
@@ -498,190 +500,182 @@ function generateBody(plugin: PluginDefinition): string {
   return lines.join('\n')
 }
 
-/**
- * The main /*: block: /*: followed by whitespace/newline, not a language code like /*:ja
- * or /*:en (BUG-13 fix), and closed by a later *\/. `end` is the index of that *\/.
- */
-function findMainBlock(source: string): { start: number; end: number } | null {
-  const match = /\/\*:(?![a-z]{2})/.exec(source)
-  if (!match) return null
-  const end = source.indexOf('*/', match.index + 3)
-  return end === -1 ? null : { start: match.index, end }
-}
-
-/** Whether raw mode can regenerate the file's main annotation block. */
+/** Whether raw mode can rewrite the file's main annotation block (/*: or /*:en). */
 export function hasMainBlock(source: string): boolean {
-  return findMainBlock(source) !== null
+  return findAnnotationBlocks(source).some((b) => b.kind === 'main')
+}
+
+/** A separator parameter only groups others in the MZ editor; no code reads it. */
+const isSeparator = (name: string): boolean => name.includes('---') || name.includes('===')
+
+const IIFE_OPEN = /\(\s*\(\s*\)\s*(?:=>)?\s*\{/
+const IIFE_CLOSE_LINE = /^\s*\}\s*\)\s*\(\s*\)\s*;?\s*$/gm
+
+/** Index just past the line holding `index`, or the end of the text. */
+function afterLine(text: string, index: number): number {
+  const lineEnd = text.indexOf('\n', index)
+  return lineEnd === -1 ? text.length : lineEnd + 1
+}
+
+/** Index of the parenthesis closing the one at `open`, in comment- and string-stripped code. */
+function closingParen(stripped: string, open: number): number {
+  let depth = 0
+  for (let i = open; i < stripped.length; i++) {
+    if (stripped[i] === '(') depth++
+    else if (stripped[i] === ')' && --depth === 0) return i
+  }
+  return -1
 }
 
 /**
- * Generate plugin output in "raw mode": only regenerate the metadata header
- * blocks (main header, localized headers, struct definitions) while preserving
- * the original code body verbatim from rawSource.
- *
- * This ensures maximum round-trip fidelity for imported plugins — only the
- * structured metadata that the UI can edit is regenerated; all code remains
- * exactly as the original author wrote it. A file without a main block keeps
- * its blocks as they are; only struct blocks and scaffolding are added.
+ * Generate plugin output in "raw mode" for an imported plugin: the file's own text, with only
+ * the annotation blocks whose content changed since `baseline` rewritten and code added only
+ * for parameters and commands absent from `baseline`. Language blocks are never touched, the
+ * file's line endings are kept, and an unedited plugin is written back byte for byte.
  */
-export function generateRawMode(plugin: PluginDefinition): string {
-  if (!plugin.rawSource) {
+export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseline): string {
+  const source = plugin.rawSource
+  if (!source) {
     throw new Error('generateRawMode needs rawSource')
   }
+  const eol = source.includes('\r\n') ? '\r\n' : '\n'
+  const blocks = findAnnotationBlocks(source)
+  const stripped = stripCommentsAndStrings(source)
+  // Replacements of [start, end) in the source; text is built with \n
+  const edits: { start: number; end: number; text: string }[] = []
 
-  let output = plugin.rawSource
-
-  // 1. Replace the main /*: ... */ block with regenerated header
-  const main = findMainBlock(output)
-  if (main !== null) {
-    // Extract preamble (license, version history, etc.) from original block
-    const originalBlock = output.slice(main.start, main.end + 2)
-    const preamble = extractHeaderPreamble(originalBlock)
-
-    // Build replacement header with preamble injected
-    const header = generateHeader(plugin)
-    let newMain: string
-    if (preamble) {
-      const firstNL = header.indexOf('\n')
-      newMain = header.slice(0, firstNL + 1) + preamble + header.slice(firstNL + 1)
-    } else {
-      newMain = header
-    }
-
-    output = output.slice(0, main.start) + newMain + output.slice(main.end + 2)
-  }
-
-  // 2. Replace existing /*~struct~Name: ... */ blocks and add new ones
-  for (const struct of plugin.structs) {
-    const tag = `/*~struct~${struct.name}:`
-    const sStart = output.indexOf(tag)
-    if (sStart !== -1) {
-      const sEnd = output.indexOf('*/', sStart + tag.length)
-      if (sEnd !== -1) {
-        const newStruct = generateStructDefinition(struct)
-        output = output.slice(0, sStart) + newStruct + output.slice(sEnd + 2)
-      }
-    } else {
-      // New struct — insert before the IIFE or at end of header section
-      const newStruct = generateStructDefinition(struct)
-      const iifeMatch = output.match(/\(\s*\(\s*\)\s*(?:=>)?\s*\{/)
-      if (iifeMatch && iifeMatch.index !== undefined) {
-        output =
-          output.slice(0, iifeMatch.index) + newStruct + '\n\n' + output.slice(iifeMatch.index)
-      } else {
-        output += '\n\n' + newStruct
-      }
-    }
-  }
-
-  // 3. Inject parameter parsing for new parameters not already in the body
-  // Strip comments/strings so we don't match param names inside string literals (BUG-15)
-  let strippedOutput = stripCommentsAndStrings(output)
-  let paramsInjected = false
-  if (plugin.parameters.length > 0) {
-    const newParams = plugin.parameters.filter(
-      (p) =>
-        !p.name.includes('---') &&
-        !p.name.includes('===') &&
-        !strippedOutput.includes(`params['${p.name}']`) &&
-        !strippedOutput.includes(`params["${p.name}"]`)
+  // 1. The main block, when its rendering changed
+  const main = blocks.find((b) => b.kind === 'main')
+  const header = generateHeader(plugin)
+  if (main !== undefined && header !== generateHeader(baseline)) {
+    const preamble = extractHeaderPreamble(
+      source.slice(main.start, main.end).replace(/\r\n/g, '\n')
     )
-    if (newParams.length > 0) {
-      paramsInjected = true
-      const pluginName = plugin.meta.name || 'NewPlugin'
-      const parsingLines: string[] = []
+    const rest = header.slice(header.indexOf('\n') + 1)
+    edits.push({ start: main.start, end: main.end, text: `${main.opener}\n${preamble}${rest}` })
+  }
 
-      // Check if PluginManager.parameters() already exists in body
-      const hasParamsDecl = output.includes('PluginManager.parameters(')
-      if (!hasParamsDecl) {
-        parsingLines.push(`    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`)
-        parsingLines.push(`    const params = PluginManager.parameters(PLUGIN_NAME);`)
-      }
-
-      parsingLines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
-      for (const param of newParams) {
-        parsingLines.push(`    const ${camelCase(param.name)} = ${generateParamParser(param)};`)
-      }
-      parsingLines.push(`    // --- End new parameters ---`)
-
-      // Find injection point: after existing params declaration, or after 'use strict', or after IIFE opening
-      const injection = '\n' + parsingLines.join('\n') + '\n'
-      const paramsIdx = output.indexOf('PluginManager.parameters(')
-      if (paramsIdx !== -1) {
-        // Inject after the line that contains PluginManager.parameters(...)
-        const lineEnd = output.indexOf('\n', paramsIdx)
-        if (lineEnd !== -1) {
-          output = output.slice(0, lineEnd + 1) + injection + output.slice(lineEnd + 1)
-        }
-      } else {
-        // No existing params — inject after 'use strict' or IIFE opening
-        const strictIdx = output.indexOf("'use strict'")
-        if (strictIdx !== -1) {
-          const lineEnd = output.indexOf('\n', strictIdx)
-          if (lineEnd !== -1) {
-            output = output.slice(0, lineEnd + 1) + injection + output.slice(lineEnd + 1)
-          }
-        } else {
-          const iifeMatch = output.match(/\(\s*\(\s*\)\s*(?:=>)?\s*\{/)
-          if (iifeMatch && iifeMatch.index !== undefined) {
-            const iifeEnd = iifeMatch.index + iifeMatch[0].length
-            const nextNL = output.indexOf('\n', iifeEnd)
-            if (nextNL !== -1) {
-              output = output.slice(0, nextNL + 1) + injection + output.slice(nextNL + 1)
-            }
-          }
-        }
-      }
+  // 2. Struct blocks: a struct's own block (bare, else :en) is rewritten when its rendering
+  // changed; translated blocks stay; a struct without its own block is added before the IIFE
+  const iifeOpen = IIFE_OPEN.exec(stripped)
+  for (const struct of plugin.structs) {
+    const text = generateStructDefinition(struct)
+    const before = baseline.structs.find((s) => s.name === struct.name)
+    if (before !== undefined && generateStructDefinition(before) === text) continue
+    const own = blocks.filter((b) => b.kind === 'struct' && b.structName === struct.name)
+    const block = own.find((b) => b.lang === '') ?? own.find((b) => b.lang === 'en')
+    if (block !== undefined) {
+      edits.push({
+        start: block.start,
+        end: block.end,
+        text: block.opener + text.slice(text.indexOf('\n'))
+      })
+    } else if (iifeOpen !== null) {
+      edits.push({ start: iifeOpen.index, end: iifeOpen.index, text: `${text}\n\n` })
+    } else {
+      edits.push({ start: source.length, end: source.length, text: `\n\n${text}` })
     }
   }
 
-  // 4. Inject command registration for new commands not already in the body
-  // Only re-strip if step 3 actually mutated output; otherwise reuse strippedOutput.
-  if (paramsInjected) strippedOutput = stripCommentsAndStrings(output)
-  const alreadyRegisteredRaw = findRegisteredCommandNames(strippedOutput, plugin.meta.name || '')
-  const newCommands = plugin.commands.filter((cmd) => !alreadyRegisteredRaw.has(cmd.name))
-  if (newCommands.length > 0) {
-    const pluginName = plugin.meta.name || 'NewPlugin'
-    const cmdLines: string[] = []
+  const pluginName = plugin.meta.name || 'NewPlugin'
+  const nameLine = `    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`
+  const hasPluginName = /\bPLUGIN_NAME\b/.test(stripped)
+  let declaredPluginName = false
 
-    // Ensure PLUGIN_NAME exists
-    if (!output.includes('PLUGIN_NAME')) {
-      cmdLines.push(`    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`)
+  // 3. Parsing code for parameters added since load, after the parameters call when there is one
+  const knownParams = new Set(baseline.parameters.map((p) => p.name))
+  const newParams = plugin.parameters.filter(
+    (p) => !isSeparator(p.name) && !knownParams.has(p.name)
+  )
+  if (newParams.length > 0) {
+    const lines: string[] = []
+    const call = stripped.indexOf('PluginManager.parameters(')
+    const close =
+      call === -1 ? -1 : closingParen(stripped, call + 'PluginManager.parameters'.length)
+    // The variable the file keeps its parameters in, when the call is assigned to one
+    const variable =
+      close === -1
+        ? undefined
+        : /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*$/.exec(
+            stripped.slice(stripped.lastIndexOf('\n', call) + 1, call)
+          )?.[1]
+    if (variable === undefined) {
+      if (!hasPluginName) {
+        lines.push(nameLine)
+        declaredPluginName = true
+      }
+      lines.push(`    const params = PluginManager.parameters(PLUGIN_NAME);`)
     }
+    lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
+    for (const param of newParams) {
+      const accessor = `${variable ?? 'params'}['${escapeJSString(param.name)}']`
+      lines.push(`    const ${camelCase(param.name)} = ${generateAccessorParser(accessor, param)};`)
+    }
+    lines.push(`    // --- End new parameters ---`)
+    const strict = stripCommentsOnly(source).indexOf("'use strict'")
+    const at =
+      variable !== undefined
+        ? afterLine(source, close)
+        : strict !== -1
+          ? afterLine(source, strict)
+          : iifeOpen !== null
+            ? afterLine(source, iifeOpen.index + iifeOpen[0].length)
+            : -1
+    if (at === -1) {
+      edits.push({
+        start: source.length,
+        end: source.length,
+        text: `\n{\n${lines.join('\n')}\n}\n`
+      })
+      declaredPluginName = false
+    } else {
+      edits.push({ start: at, end: at, text: `\n${lines.join('\n')}\n` })
+    }
+  }
 
-    cmdLines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
+  // 4. Registration code for commands added since load, before the closing IIFE line
+  const knownCommands = new Set(baseline.commands.map((c) => c.name))
+  const newCommands = plugin.commands.filter((cmd) => !knownCommands.has(cmd.name))
+  if (newCommands.length > 0) {
+    let closing = -1
+    for (const match of stripped.matchAll(IIFE_CLOSE_LINE)) {
+      // The start of the line holding the closing brace (the match may begin on a blank line)
+      closing = stripped.lastIndexOf('\n', match.index + match[0].indexOf('}')) + 1
+    }
+    const lines: string[] = []
+    if (!hasPluginName && (!declaredPluginName || closing === -1)) lines.push(nameLine)
+    lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
     for (const cmd of newCommands) {
-      cmdLines.push(
+      lines.push(
         `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
       )
       for (const arg of cmd.args) {
-        cmdLines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
+        lines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
       }
-      cmdLines.push('')
-      cmdLines.push(`        // TODO: Implement ${escapeJSString(cmd.name)} logic`)
+      lines.push('')
+      lines.push('        // TODO: Implement command logic')
       if (cmd.args.length > 0) {
-        cmdLines.push(
+        lines.push(
           `        // Parsed args available as: ${cmd.args.map((a) => camelCase(a.name)).join(', ')}`
         )
       }
-      cmdLines.push('    });')
+      lines.push('    });')
     }
-    cmdLines.push(`    // --- End new commands ---`)
-
-    // Find injection point: before closing })(); — match only when at start of a line
-    // (not inside strings/comments). Scan backwards to find the last occurrence.
-    const iifeClosingRe = /^\s*\}\s*\)\s*\(\s*\)\s*;?\s*$/gm
-    let closingIife = -1
-    let iifeCloseMatch: RegExpExecArray | null
-    while ((iifeCloseMatch = iifeClosingRe.exec(output)) !== null) {
-      closingIife = iifeCloseMatch.index
-    }
-    if (closingIife !== -1) {
-      const injection = '\n' + cmdLines.join('\n') + '\n'
-      output = output.slice(0, closingIife) + injection + '\n' + output.slice(closingIife)
-    }
+    lines.push(`    // --- End new commands ---`)
+    edits.push(
+      closing === -1
+        ? { start: source.length, end: source.length, text: `\n{\n${lines.join('\n')}\n}\n` }
+        : { start: closing, end: closing, text: `\n${lines.join('\n')}\n\n` }
+    )
   }
 
+  // Apply from the end so earlier offsets stay valid; equal offsets keep their order
+  let output = source
+  const ordered = edits.map((e, i) => ({ ...e, i })).sort((a, b) => b.start - a.start || b.i - a.i)
+  for (const edit of ordered) {
+    const text = eol === '\n' ? edit.text : edit.text.replace(/\n/g, eol)
+    output = output.slice(0, edit.start) + text + output.slice(edit.end)
+  }
   return output
 }
 
@@ -691,10 +685,8 @@ export function generateRawMode(plugin: PluginDefinition): string {
  * before the first recognized MZ annotation (@target, @plugindesc, etc.).
  */
 function extractHeaderPreamble(blockContent: string): string {
+  // Line 0 is the opener of the main block
   const lines = blockContent.split('\n')
-
-  // Line 0 is the /*: opener — only extract from main header, not /*:ja etc.
-  if (!/^\/\*:\s*$/.test(lines[0].replace(/\r$/, ''))) return ''
 
   // Known MZ annotation tags that mark the end of the preamble
   const mzAnnotation =

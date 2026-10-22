@@ -4,7 +4,12 @@
  * @author Example Author
  * @url https://example.invalid/_Fixture_Ignored
  *
+ * @help _Fixture_Ignored.js
+ *
+ * A disabled draft. Its file name starts with an underscore.
+ *
  * @param Level
+ * @text Level
  * @desc Detail level of the draft.
  * @type number
  * @min 0
@@ -12,16 +17,19 @@
  * @default 1
  *
  * @param Note
+ * @text Note
  * @desc Reminder kept with the draft.
  * @type string
  * @default Draft
  *
  * @param Size
+ * @text Size
  * @desc Size of the draft window.
  * @type struct<Size>
  * @default {"width":"240","height":"120"}
  *
  * @command Ping
+ * @text Ping
  * @desc Writes the note to the log.
  *
  * @arg times
@@ -29,11 +37,6 @@
  * @desc How often the note is written.
  * @type number
  * @default 1
- *
- * @help
- * _Fixture_Ignored.js
- * 
- * A disabled draft. Its file name starts with an underscore.
  */
 
 /*~struct~Size:
@@ -57,12 +60,6 @@
     'use strict';
 
     const params = PluginManager.parameters('_Fixture_Ignored');
-
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const level = Number(params['Level'] || 1);
-    const note = params['Note'] || 'Draft';
-    const size = JSON.parse(params['Size'] || '{"width":"240","height":"120"}');
-    // --- End new parameters ---
     const level = Number(params['Level'] || 1);
     const note = String(params['Note'] || 'Draft');
     const size = JSON.parse(params['Size'] || '{}');
@@ -72,15 +69,4 @@
             console.log(note, level, size.width, size.height);
         }
     });
-
-    const PLUGIN_NAME = '_Fixture_Ignored';
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'Ping', function(args) {
-        const times = Number(args['times'] || 1);
-
-        // TODO: Implement Ping logic
-        // Parsed args available as: times
-    });
-    // --- End new commands ---
-
 })();

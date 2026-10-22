@@ -54,12 +54,6 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    // --- New parameters (added by MZ Plugin Studio) ---
-    const speed = Number(params['Speed'] || 5);
-    const label = params['Label'] || 'Hello';
-    const points = JSON.parse(params['Points'] || '[]').map(s => JSON.parse(s));
-    // --- End new parameters ---
-
     const speed = Number(params['Speed'] || 5);
     const label = params['Label'] || 'Hello';
     const points = JSON.parse(params['Points'] || '[]').map(s => JSON.parse(s));
@@ -74,15 +68,5 @@
     });
 
     // Custom plugin code goes here
-
-    // --- New commands (added by MZ Plugin Studio) ---
-    PluginManager.registerCommand(PLUGIN_NAME, 'ShowLabel', function(args) {
-        const times = Number(args['times'] || 1);
-
-        // TODO: Implement ShowLabel logic
-        // Parsed args available as: times
-    });
-    // --- End new commands ---
-
 
 })();

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Reload from project restores an imported plugin's file text and keeps its edits.
+
 ### Removed
 
 - The app no longer checks GitHub for updates; download new versions from the Releases page.
@@ -12,6 +16,10 @@
 - Saved settings, layout, recent projects, template favorites and open plugins that cannot be read are now kept in a backup entry and reported at startup instead of being silently replaced; a full storage quota is reported once instead of breaking every change.
 - Closed plugin tabs no longer leave saved dirty flags and file paths behind in stored state.
 - Imported plugins stay in raw mode after a restart and keep their file text, so the app no longer regenerates an imported plugin's code without asking.
+- Saving an imported plugin in raw mode writes an unedited file back byte-for-byte, keeps CRLF line endings and the byte order mark, rewrites only the annotation blocks that changed, and adds code only for parameters and commands added since loading.
+- Plugins with CRLF line endings, a Japanese block before the main block, or command text written before the arguments are read correctly.
+- Translated struct blocks (`/*~struct~Name:ja` and the like) are read as translations of their struct instead of as extra structs.
+- Opening a plugin with a long run of spaces after a "custom code" or "main logic" comment no longer freezes the app.
 
 ### Changed
 

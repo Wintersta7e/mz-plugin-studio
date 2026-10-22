@@ -27,66 +27,7 @@ type PropertyName =
   | 'command-text'
   | 'code-body'
 
-const KNOWN_FAILING: Record<string, PropertyName[]> = {
-  'Fixture_Bom.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_Dependent.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_EnJaOnly.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'no-structural-fallback'
-  ],
-  'Fixture_Generated.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_HandWritten.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'code-body'
-  ],
-  'Fixture_HandWritten_CRLF.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'encoding',
-    'idempotent',
-    'scaffold-once',
-    'lf-twin',
-    'code-body'
-  ],
-  'Fixture_JaFirst.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'main-block-by-rule',
-    'command-text'
-  ],
-  'Fixture_JaOnly.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'no-structural-fallback'
-  ],
-  'Fixture_NoIife.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_NonAscii.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_Require.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
-  'Fixture_Structs.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'code-body'
-  ],
-  '_Fixture_Ignored.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once']
-}
+const KNOWN_FAILING: Record<string, PropertyName[]> = {}
 
 const PLUGIN_DIR = fixturePath('js', 'plugins')
 const LF_TWIN = 'Fixture_HandWritten.js'
