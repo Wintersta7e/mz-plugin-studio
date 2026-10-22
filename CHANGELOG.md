@@ -4,7 +4,7 @@
 
 ### Added
 
-- Reload from project restores an imported plugin's file text and keeps its edits.
+- Reload from project restores an imported plugin's file text. A tab with no unsaved edits takes the file as it is now; a tab with edits asks whether to replace them with the file or keep them.
 
 ### Removed
 

@@ -68,27 +68,35 @@ export async function prepareSave(
 
 /**
  * Reads an imported tab's file from the open project again and makes it the tab's file text
- * and baseline; the tab's edits stay. False when there is no project, the user cancels or the
- * file cannot be read.
+ * and baseline. A tab with no unsaved edits takes the file's values; a tab with edits asks
+ * whether to replace them with the file or keep them. False when there is no project, the user
+ * cancels or the file cannot be read.
  */
 export async function reloadFromProject(pluginId: string): Promise<boolean> {
   const project = useProjectStore.getState().project
-  const plugin = usePluginStore.getState().openPlugins.find((p) => p.id === pluginId)
+  const { openPlugins, dirtyByPluginId } = usePluginStore.getState()
+  const plugin = openPlugins.find((p) => p.id === pluginId)
   if (project === null || plugin?.importedFrom === undefined) return false
   const sep = project.path.includes('\\') ? '\\' : '/'
   const path = [project.path, 'js', 'plugins', plugin.importedFrom].join(sep)
-  // Cancel is the first button, so closing the dialog cancels
-  const answer = await window.api.dialog.message({
-    type: 'question',
-    title: 'Reload from project?',
-    message: `Reload ${path}? The plugin's current edits are kept and applied to the reloaded file.`,
-    buttons: ['Cancel', 'Reload']
-  })
-  if (answer !== 1) return false
+  let keepTab = false
+  // A tab read by an older parser differs from its file with no edit, so only edits are kept
+  if (dirtyByPluginId[pluginId]) {
+    // Cancel is the first button, so closing the dialog cancels
+    const answer = await window.api.dialog.message({
+      type: 'question',
+      title: 'Reload from project?',
+      message: `${path} may not match this tab: the tab was read by an older version of the app, or the file changed since it was opened. Replace the tab with the file, dropping its unsaved edits, or keep the tab's values and apply them to the reloaded file?`,
+      buttons: ['Cancel', 'Replace with file', 'Keep tab values'],
+      defaultId: 1
+    })
+    if (answer !== 1 && answer !== 2) return false
+    keepTab = answer === 2
+  }
   try {
     const text = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
     const parsed = await window.api.plugin.parse(text)
-    usePluginStore.getState().reattachSource(pluginId, text, parsed)
+    usePluginStore.getState().reattachSource(pluginId, text, parsed, { keepTab })
     return true
   } catch (error) {
     useToastStore.getState().addToast({

@@ -1,0 +1,100 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_JaFirst",
+    "version": "1.0.0",
+    "author": "Example Author",
+    "description": "Fixture plugin whose Japanese block comes first.",
+    "help": "Fixture_JaFirst.js\n\nCounts steps inside an area.",
+    "url": "https://example.invalid/Fixture_JaFirst",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {
+      "ja": {
+        "description": "日本語ブロックが先に来るフィクスチャ",
+        "help": "Fixture_JaFirst.js\n\n指定した範囲内で歩数を数えます。"
+      }
+    }
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Limit",
+      "text": "上限",
+      "desc": "数える歩数の上限",
+      "type": "number",
+      "default": 3,
+      "min": 1,
+      "max": 9
+    },
+    {
+      "id": "<id:3>",
+      "name": "Caption",
+      "text": "見出し",
+      "desc": "歩数の前に表示する文字列",
+      "type": "string",
+      "default": "歩数"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Area",
+      "text": "範囲",
+      "desc": "歩数を数える範囲",
+      "type": "struct",
+      "default": "{\"width\":\"5\",\"height\":\"5\"}",
+      "rawType": "struct<Area>",
+      "structType": "Area"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "ResetSteps",
+      "text": "歩数リセット",
+      "desc": "歩数を初期値に戻します。",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "value",
+          "text": "初期値",
+          "desc": "リセット後の歩数",
+          "type": "number",
+          "default": 0
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Area",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "width",
+          "text": "Width",
+          "desc": "",
+          "type": "number",
+          "default": 5,
+          "min": 1
+        },
+        {
+          "id": "<id:9>",
+          "name": "height",
+          "text": "Height",
+          "desc": "",
+          "type": "number",
+          "default": 5,
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "codeBody": "(() => {\n    'use strict';\n\n    const parameters = PluginManager.parameters('Fixture_JaFirst');\n    const limit = Number(parameters['Limit'] || 3);\n    const caption = String(parameters['Caption'] || 'Steps');\n    const area = JSON.parse(parameters['Area'] || '{\"width\":\"5\",\"height\":\"5\"}');\n\n    let steps = 0;\n\n    PluginManager.registerCommand('Fixture_JaFirst', 'ResetSteps', args => {\n        steps = Number(args.value || 0);\n    });\n\n    const _Game_Player_increaseSteps = Game_Player.prototype.increaseSteps;\n    Game_Player.prototype.increaseSteps = function() {\n        _Game_Player_increaseSteps.call(this);\n        if (this.x < Number(area.width) && this.y < Number(area.height)) {\n            steps = Math.min(limit, steps + 1);\n            this._fixtureStepText = caption + ' ' + steps;\n        }\n    };\n})();",
+  "customCode": "const _Game_Player_increaseSteps = Game_Player.prototype.increaseSteps;\nGame_Player.prototype.increaseSteps = function() {\n    _Game_Player_increaseSteps.call(this);\n    if (this.x < Number(area.width) && this.y < Number(area.height)) {\n        steps = Math.min(limit, steps + 1);\n        this._fixtureStepText = caption + ' ' + steps;\n    }\n};",
+  "rawSource": "/*:ja\n * @target MZ\n * @plugindesc 日本語ブロックが先に来るフィクスチャ\n * @author Example Author\n * @url https://example.invalid/Fixture_JaFirst\n *\n * @help Fixture_JaFirst.js\n *\n * 指定した範囲内で歩数を数えます。\n *\n * @param Limit\n * @text 上限\n * @desc 数える歩数の上限\n * @type number\n * @min 1\n * @max 9\n * @default 3\n *\n * @param Caption\n * @text 見出し\n * @desc 歩数の前に表示する文字列\n * @type string\n * @default 歩数\n *\n * @param Area\n * @text 範囲\n * @desc 歩数を数える範囲\n * @type struct<Area>\n * @default {\"width\":\"5\",\"height\":\"5\"}\n *\n * @command ResetSteps\n * @text 歩数リセット\n * @desc 歩数を初期値に戻します。\n *\n * @arg value\n * @text 初期値\n * @desc リセット後の歩数\n * @type number\n * @default 0\n */\n\n/*:\n * @target MZ\n * @plugindesc Fixture plugin whose Japanese block comes first.\n * @author Example Author\n * @url https://example.invalid/Fixture_JaFirst\n *\n * @help Fixture_JaFirst.js\n *\n * Counts steps inside an area.\n *\n * @param Limit\n * @text Limit\n * @desc Highest step count.\n * @type number\n * @min 1\n * @max 9\n * @default 3\n *\n * @param Caption\n * @text Caption\n * @desc Text shown before the step count.\n * @type string\n * @default Steps\n *\n * @param Area\n * @text Area\n * @desc Area in which steps are counted.\n * @type struct<Area>\n * @default {\"width\":\"5\",\"height\":\"5\"}\n *\n * @command ResetSteps\n * @text Reset Steps\n * @desc Sets the step count back.\n *\n * @arg value\n * @text Value\n * @desc Step count after the reset.\n * @type number\n * @default 0\n */\n\n/*~struct~Area:\n * @param width\n * @text Width\n * @type number\n * @min 1\n * @default 5\n *\n * @param height\n * @text Height\n * @type number\n * @min 1\n * @default 5\n */\n\n(() => {\n    'use strict';\n\n    const parameters = PluginManager.parameters('Fixture_JaFirst');\n    const limit = Number(parameters['Limit'] || 3);\n    const caption = String(parameters['Caption'] || 'Steps');\n    const area = JSON.parse(parameters['Area'] || '{\"width\":\"5\",\"height\":\"5\"}');\n\n    let steps = 0;\n\n    PluginManager.registerCommand('Fixture_JaFirst', 'ResetSteps', args => {\n        steps = Number(args.value || 0);\n    });\n\n    const _Game_Player_increaseSteps = Game_Player.prototype.increaseSteps;\n    Game_Player.prototype.increaseSteps = function() {\n        _Game_Player_increaseSteps.call(this);\n        if (this.x < Number(area.width) && this.y < Number(area.height)) {\n            steps = Math.min(limit, steps + 1);\n            this._fixtureStepText = caption + ' ' + steps;\n        }\n    };\n})();\n"
+}

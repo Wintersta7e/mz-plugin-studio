@@ -1,0 +1,101 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_HandWritten_CRLF",
+    "version": "1.0.0",
+    "author": "",
+    "description": "Hand-written fixture plugin with a licence preamble.",
+    "help": "Fixture_HandWritten.js\r\n\nShows a label on the map and refreshes it every few frames.\r\nThe command shows the label a number of times.",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {
+      "ja": {
+        "description": "ライセンス表記付きの手書きフィクスチャ",
+        "help": "Fixture_HandWritten.js\r\n\nマップにラベルを表示し、数フレームごとに更新します。"
+      }
+    }
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Speed",
+      "text": "Speed",
+      "desc": "Frames between two label refreshes.",
+      "type": "number",
+      "default": 5,
+      "min": 1,
+      "max": 10
+    },
+    {
+      "id": "<id:3>",
+      "name": "Label",
+      "text": "Label",
+      "desc": "Text shown on the map.",
+      "type": "string",
+      "default": "Hello"
+    },
+    {
+      "id": "<id:4>",
+      "name": "Origin",
+      "text": "Origin",
+      "desc": "Where the label is drawn.",
+      "type": "struct",
+      "default": "{\"x\":\"0\",\"y\":\"0\"}",
+      "rawType": "struct<Point>",
+      "structType": "Point"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:5>",
+      "name": "ShowLabel",
+      "text": "Show Label",
+      "desc": "Shows the label a number of times.",
+      "args": [
+        {
+          "id": "<id:6>",
+          "name": "times",
+          "text": "Times",
+          "desc": "How often the label is shown.",
+          "type": "number",
+          "default": 1,
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "structs": [
+    {
+      "id": "<id:7>",
+      "name": "Point",
+      "parameters": [
+        {
+          "id": "<id:8>",
+          "name": "x",
+          "text": "X",
+          "desc": "",
+          "type": "number",
+          "default": 0,
+          "min": 0
+        },
+        {
+          "id": "<id:9>",
+          "name": "y",
+          "text": "Y",
+          "desc": "",
+          "type": "number",
+          "default": 0,
+          "min": 0
+        }
+      ]
+    }
+  ],
+  "codeBody": "const _Scene_Map_update = Scene_Map.prototype.update;\r\n    Scene_Map.prototype.update = function() {\r\n        _Scene_Map_update.call(this);\r\n        this._fixtureFrames = (this._fixtureFrames || 0) + 1;\r\n        if (this._fixtureFrames % speed === 0) {\r\n            this._fixtureLabel = formatLabel(this._fixtureFrames / speed);\r\n            this._fixtureLabelX = Number(origin.x);\r\n            this._fixtureLabelY = Number(origin.y);\r\n        }\r\n    };\r\n})();",
+  "customCode": "const _Scene_Map_update = Scene_Map.prototype.update;\r\n    Scene_Map.prototype.update = function() {\r\n        _Scene_Map_update.call(this);\r\n        this._fixtureFrames = (this._fixtureFrames || 0) + 1;\r\n        if (this._fixtureFrames % speed === 0) {\r\n            this._fixtureLabel = formatLabel(this._fixtureFrames / speed);\r\n            this._fixtureLabelX = Number(origin.x);\r\n            this._fixtureLabelY = Number(origin.y);\r\n        }\r\n    };\r\n})();",
+  "rawSource": "/*!\r\n * Fixture_HandWritten.js\r\n * Copyright (c) 2026 Example Author\r\n * Released under the MIT License.\r\n */\r\n\r\n/*:\r\n * @target MZ\r\n * @plugindesc Hand-written fixture plugin with a licence preamble.\r\n * @author Example Author\r\n * @url https://example.invalid/Fixture_HandWritten\r\n *\r\n * @help Fixture_HandWritten.js\r\n *\r\n * Shows a label on the map and refreshes it every few frames.\r\n * The command shows the label a number of times.\r\n *\r\n * @param Speed\r\n * @text Speed\r\n * @desc Frames between two label refreshes.\r\n * @type number\r\n * @min 1\r\n * @max 10\r\n * @default 5\r\n *\r\n * @param Label\r\n * @text Label\r\n * @desc Text shown on the map.\r\n * @type string\r\n * @default Hello\r\n *\r\n * @param Origin\r\n * @text Origin\r\n * @desc Where the label is drawn.\r\n * @type struct<Point>\r\n * @default {\"x\":\"0\",\"y\":\"0\"}\r\n *\r\n * @command ShowLabel\r\n * @text Show Label\r\n * @desc Shows the label a number of times.\r\n *\r\n * @arg times\r\n * @text Times\r\n * @desc How often the label is shown.\r\n * @type number\r\n * @min 1\r\n * @default 1\r\n */\r\n\r\n/*:ja\r\n * @target MZ\r\n * @plugindesc ライセンス表記付きの手書きフィクスチャ\r\n * @author Example Author\r\n * @url https://example.invalid/Fixture_HandWritten\r\n *\r\n * @help Fixture_HandWritten.js\r\n *\r\n * マップにラベルを表示し、数フレームごとに更新します。\r\n *\r\n * @param Speed\r\n * @text 速度\r\n * @desc ラベルを更新する間隔（フレーム）\r\n * @type number\r\n * @min 1\r\n * @max 10\r\n * @default 5\r\n *\r\n * @param Label\r\n * @text ラベル\r\n * @desc マップに表示する文字列\r\n * @type string\r\n * @default Hello\r\n *\r\n * @param Origin\r\n * @text 原点\r\n * @desc ラベルの表示位置\r\n * @type struct<Point>\r\n * @default {\"x\":\"0\",\"y\":\"0\"}\r\n *\r\n * @command ShowLabel\r\n * @text ラベル表示\r\n * @desc ラベルを指定回数表示します。\r\n *\r\n * @arg times\r\n * @text 回数\r\n * @desc ラベルを表示する回数\r\n * @type number\r\n * @min 1\r\n * @default 1\r\n */\r\n\r\n/*~struct~Point:\r\n * @param x\r\n * @text X\r\n * @type number\r\n * @min 0\r\n * @default 0\r\n *\r\n * @param y\r\n * @text Y\r\n * @type number\r\n * @min 0\r\n * @default 0\r\n */\r\n\r\n(() => {\r\n    'use strict';\r\n\r\n    const pluginName = 'Fixture_HandWritten';\r\n    const params = PluginManager.parameters(pluginName);\r\n    const speed = Number(params['Speed'] || 5);\r\n    const label = String(params[\"Label\"] || 'Hello');\r\n    const origin = JSON.parse(params['Origin'] || '{\"x\":\"0\",\"y\":\"0\"}');\r\n\r\n    /**\r\n     * Builds the text shown for a given count.\r\n     * @param {number} count How often the label was shown.\r\n     * @returns {string} The label with its count.\r\n     */\r\n    function formatLabel(count) {\r\n        return label + ' x' + count;\r\n    }\r\n\r\n    PluginManager.registerCommand(pluginName, 'ShowLabel', args => {\r\n        const times = Number(args.times || 1);\r\n        $gameMessage.add(formatLabel(times));\r\n    });\r\n\r\n    /**\r\n     * Counts map frames and refreshes the label text.\r\n     */\r\n    const _Scene_Map_update = Scene_Map.prototype.update;\r\n    Scene_Map.prototype.update = function() {\r\n        _Scene_Map_update.call(this);\r\n        this._fixtureFrames = (this._fixtureFrames || 0) + 1;\r\n        if (this._fixtureFrames % speed === 0) {\r\n            this._fixtureLabel = formatLabel(this._fixtureFrames / speed);\r\n            this._fixtureLabelX = Number(origin.x);\r\n            this._fixtureLabelY = Number(origin.y);\r\n        }\r\n    };\r\n})();\r\n"
+}

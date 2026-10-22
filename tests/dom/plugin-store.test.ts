@@ -473,7 +473,7 @@ describe('pluginStore file text of an imported plugin', () => {
     }
   }
 
-  it('reattachSource gives a tab its file text and that file as the baseline, keeping edits', () => {
+  describe('reattachSource', () => {
     const { rawSource: _rawSource, ...missing } = importedPlugin('Alpha')
     const other = createPlugin('Other')
     const text = `/*:\n * @plugindesc On disk\n * @param alpha\n */\n(() => {})();\n`
@@ -484,30 +484,47 @@ describe('pluginStore file text of an imported plugin', () => {
       rawSource: text,
       codeBody: '(() => {})();'
     }
+    const fromFile: PluginDefinition = {
+      ...parsed,
+      id: missing.id,
+      importedFrom: 'Alpha.js',
+      meta: { ...parsed.meta, name: 'Alpha' }
+    }
 
-    for (const active of [false, true]) {
+    /** Opens the tab without file text, edited, then reattaches `text` to it. */
+    function reattach(active: boolean, keepTab: boolean): void {
       resetPluginStore()
       usePluginStore.getState().openPlugin(missing)
       usePluginStore.getState().updateMeta({ description: 'Edited' })
       if (!active) usePluginStore.getState().openPlugin(other)
-      usePluginStore.getState().reattachSource(missing.id, text, parsed)
-
-      const state = usePluginStore.getState()
-      const tab = state.openPlugins.find((p) => p.id === missing.id)
-      expect(tab?.rawSource).toBe(text)
-      expect(tab?.meta.description).toBe('Edited')
-      expect(state.plugin.id).toBe(active ? missing.id : other.id)
-      if (active) expect(state.plugin.rawSource).toBe(text)
-      expect(state.dirtyByPluginId[missing.id]).toBe(true)
-      expect(state.baselineByPluginId[missing.id]).toEqual(
-        toBaseline({
-          ...parsed,
-          id: missing.id,
-          importedFrom: 'Alpha.js',
-          meta: { ...parsed.meta, name: 'Alpha' }
-        })
-      )
+      usePluginStore.getState().reattachSource(missing.id, text, parsed, { keepTab })
     }
+
+    it('keeping the tab gives it its file text and that file as the baseline', () => {
+      for (const active of [false, true]) {
+        reattach(active, true)
+        const state = usePluginStore.getState()
+        const tab = state.openPlugins.find((p) => p.id === missing.id)
+        expect(tab?.rawSource).toBe(text)
+        expect(tab?.meta.description).toBe('Edited')
+        expect(state.plugin.id).toBe(active ? missing.id : other.id)
+        if (active) expect(state.plugin.rawSource).toBe(text)
+        expect(state.dirtyByPluginId[missing.id]).toBe(true)
+        expect(state.baselineByPluginId[missing.id]).toEqual(toBaseline(fromFile))
+      }
+    })
+
+    it('replacing the tab makes it the file, keeping its id and file name, not dirty', () => {
+      for (const active of [false, true]) {
+        reattach(active, false)
+        const state = usePluginStore.getState()
+        expect(state.openPlugins.find((p) => p.id === missing.id)).toEqual(fromFile)
+        expect(state.plugin).toEqual(active ? fromFile : other)
+        expect(state.isDirty).toBe(false)
+        expect(state.dirtyByPluginId[missing.id]).toBeUndefined()
+        expect(state.baselineByPluginId[missing.id]).toEqual(toBaseline(fromFile))
+      }
+    })
   })
 
   it('recordSaved makes the written text the file text and the saved definition the baseline', () => {

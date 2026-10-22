@@ -63,6 +63,8 @@ export interface DialogAPI {
     title?: string
     message: string
     buttons?: string[]
+    /** The button Enter chooses */
+    defaultId?: number
   }) => Promise<number>
 }
 

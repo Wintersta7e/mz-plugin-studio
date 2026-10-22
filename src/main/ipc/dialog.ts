@@ -83,6 +83,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
         title?: string
         message: string
         buttons?: string[]
+        defaultId?: number
       }
     ) => {
       log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
@@ -90,7 +91,8 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
         type: options.type || 'info',
         title: options.title || 'MZ Plugin Studio',
         message: options.message,
-        buttons: options.buttons || ['OK']
+        buttons: options.buttons || ['OK'],
+        ...(options.defaultId !== undefined && { defaultId: options.defaultId })
       })
 
       return result.response

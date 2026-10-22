@@ -72,7 +72,12 @@ interface PluginState {
   setCustomCode: (code: string) => void
 
   // File text of an imported tab: loaded again from the project, or what a save wrote
-  reattachSource: (id: string, rawSource: string, parsed: PluginDefinition) => void
+  reattachSource: (
+    id: string,
+    rawSource: string,
+    parsed: PluginDefinition,
+    options: { keepTab: boolean }
+  ) => void
   recordSaved: (id: string, saved: PluginDefinition, written: string) => void
 
   // State
@@ -557,20 +562,33 @@ export const usePluginStore = create<PluginState>()(
           }))
         ),
 
-      reattachSource: (id, rawSource, parsed) =>
+      reattachSource: (id, rawSource, parsed, { keepTab }) =>
         set((state) => {
           const tab = state.openPlugins.find((p) => p.id === id)
           if (tab === undefined) return {}
           const fileName = (tab.importedFrom ?? '').replace(/\.js$/i, '')
-          const baseline = toBaseline({
+          const fromFile: PluginDefinition = {
             ...parsed,
             id,
             importedFrom: tab.importedFrom,
-            meta: { ...parsed.meta, name: fileName }
-          })
+            meta: { ...parsed.meta, name: fileName },
+            rawSource
+          }
+          const baselineByPluginId = { ...state.baselineByPluginId, [id]: toBaseline(fromFile) }
+          if (keepTab) {
+            // The tab's values now count as edits to the file
+            return {
+              ...withRawSource(state, id, rawSource),
+              baselineByPluginId,
+              dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, true),
+              ...(state.plugin.id === id && { isDirty: true })
+            }
+          }
           return {
-            ...withRawSource(state, id, rawSource),
-            baselineByPluginId: { ...state.baselineByPluginId, [id]: baseline }
+            openPlugins: upsertOpenPlugin(state.openPlugins, fromFile),
+            ...(state.plugin.id === id && { plugin: fromFile, isDirty: false }),
+            baselineByPluginId,
+            dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, false)
           }
         }),
       recordSaved: (id, saved, written) =>
