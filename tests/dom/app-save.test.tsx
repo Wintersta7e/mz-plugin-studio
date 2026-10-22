@@ -5,16 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import type { SaveResult } from '../../src/shared/ipc-types'
 import { createFakeApi } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
 const PROJECT = '/fixture/mz-project'
 
-type SaveResult = { success: boolean; path: string }
-
 const savedAs = (filename: string): SaveResult => ({
   success: true,
-  path: `${PROJECT}/js/plugins/${filename}`
+  path: `${PROJECT}/js/plugins/${filename}`,
+  sha256: ''
 })
 
 /** A fake api whose plugin saves succeed unless `save` is given. */

@@ -26,15 +26,23 @@ export interface PluginAPI {
   save: (
     projectPath: string,
     filename: string,
-    content: string
-  ) => Promise<{ success: boolean; path: string }>
-  saveToPath: (filePath: string, content: string) => Promise<{ success: boolean; path: string }>
+    content: string,
+    guard?: import('../shared/ipc-types').SaveGuard
+  ) => Promise<import('../shared/ipc-types').SaveResult>
+  saveToPath: (
+    filePath: string,
+    content: string,
+    guard?: import('../shared/ipc-types').SaveGuard
+  ) => Promise<import('../shared/ipc-types').SaveResult>
   load: (
     projectPath: string,
     filename: string
-  ) => Promise<import('../shared/types/plugin').PluginDefinition>
+  ) => Promise<import('../shared/ipc-types').LoadedPlugin>
   parse: (content: string) => Promise<import('../shared/types/plugin').PluginDefinition>
-  readRaw: (projectPath: string, filename: string) => Promise<string>
+  readRaw: (
+    projectPath: string,
+    filename: string
+  ) => Promise<import('../shared/ipc-types').RawPluginFile>
   list: (projectPath: string) => Promise<string[]>
   readByPath: (filePath: string) => Promise<string>
   scanHeaders: (projectPath: string) => Promise<
@@ -58,16 +66,7 @@ export interface DialogAPI {
   openFile: (options?: {
     filters?: { name: string; extensions: string[] }[]
   }) => Promise<string | null>
-  message: (options: {
-    type?: 'none' | 'info' | 'error' | 'question' | 'warning'
-    title?: string
-    message: string
-    buttons?: string[]
-    /** The button Enter chooses */
-    defaultId?: number
-    /** The button Escape chooses; main does not pass it on yet, so Escape picks a "Cancel" button */
-    cancelId?: number
-  }) => Promise<number>
+  message: (options: import('../shared/ipc-types').MessageDialogOptions) => Promise<number>
 }
 
 export interface WindowAPI {
@@ -106,10 +105,10 @@ const projectApi: ProjectAPI = {
 }
 
 const pluginApi: PluginAPI = {
-  save: (projectPath, filename, content) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE, projectPath, filename, content),
-  saveToPath: (filePath, content) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, filePath, content),
+  save: (projectPath, filename, content, guard) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE, projectPath, filename, content, guard),
+  saveToPath: (filePath, content, guard) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, filePath, content, guard),
   load: (projectPath, filename) =>
     ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LOAD, projectPath, filename),
   parse: (content) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_PARSE, content),

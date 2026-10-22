@@ -8,7 +8,8 @@ import {
   escapeLineComment,
   isOneLineExpression
 } from '../../src/renderer/src/lib/generator/escape'
-import { compilePlugin, evaluatePlugin } from '../helpers/evaluate-plugin'
+import { compileCheck } from '../../src/main/services/syntax-check'
+import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 const BLOCK_INPUTS = ['*/', '**/', '*/*/', 'a*/b', '*\\/', '', '/*', '*']
 const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u2028b', 'a\u2029b', '\r\n\r\n', '']
@@ -88,7 +89,7 @@ describe('isOneLineExpression', () => {
     expect(EXPRESSIONS.length * NOT_EXPRESSIONS.length).toBeGreaterThan(0)
     for (const text of EXPRESSIONS) {
       expect(isOneLineExpression(text), text).toBe(true)
-      expect(compilePlugin(`globalThis.__value = ${text};`), text).toBeNull()
+      expect(compileCheck(`globalThis.__value = ${text};`, 'plugin.js'), text).toBeNull()
     }
     for (const text of NOT_EXPRESSIONS) {
       expect(isOneLineExpression(text), JSON.stringify(text)).toBe(false)

@@ -2,6 +2,15 @@
 // an empty or smallest valid value, so a test sets only the members it drives.
 import { vi } from 'vitest'
 import { createEmptyPlugin } from '../../src/shared/types/plugin'
+import type { SaveResult } from '../../src/shared/ipc-types'
+
+/** A save that wrote nothing */
+const notWritten: SaveResult = {
+  success: false,
+  path: '',
+  conflict: 'exists-unrelated',
+  diskSha256: ''
+}
 
 export type FakeApiOverrides = { [K in keyof Window['api']]?: Partial<Window['api'][K]> }
 
@@ -47,11 +56,11 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
       getTroops: vi.fn(async () => [])
     },
     plugin: {
-      save: vi.fn(async () => ({ success: false, path: '' })),
-      saveToPath: vi.fn(async () => ({ success: false, path: '' })),
-      load: vi.fn(async () => createEmptyPlugin()),
+      save: vi.fn(async () => notWritten),
+      saveToPath: vi.fn(async () => notWritten),
+      load: vi.fn(async () => ({ plugin: createEmptyPlugin(), path: '', sha256: '' })),
       parse: vi.fn(async () => createEmptyPlugin()),
-      readRaw: vi.fn(async () => ''),
+      readRaw: vi.fn(async () => ({ content: '', path: '', sha256: '' })),
       list: vi.fn(async () => []),
       readByPath: vi.fn(async () => ''),
       scanHeaders: vi.fn(async () => [])

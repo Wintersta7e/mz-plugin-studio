@@ -214,7 +214,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     }
     if (!project?.path) return
     try {
-      const plugin = await window.api.plugin.load(project.path, row.filename)
+      const { plugin } = await window.api.plugin.load(project.path, row.filename)
       openPlugin(plugin)
     } catch (err) {
       log.error(`PluginBrowser: failed to load ${row.filename}`, err)

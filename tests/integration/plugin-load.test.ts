@@ -16,7 +16,7 @@ afterEach(async () => {
 describe('loading a plugin file', () => {
   it('records the file name and keeps the file text', async () => {
     project = await copyFixtureProject()
-    const plugin = await loadPluginFile(project, 'Fixture_HandWritten.js')
+    const { plugin } = await loadPluginFile(project, 'Fixture_HandWritten.js')
     const text = await readFile(join(project, 'js', 'plugins', 'Fixture_HandWritten.js'), 'utf-8')
     expect(plugin.importedFrom).toBe('Fixture_HandWritten.js')
     expect(plugin.rawSource).toBe(text)

@@ -2,7 +2,7 @@
 // definitions before the escaping work changes them.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
-import { compilePlugin } from '../helpers/evaluate-plugin'
+import { compileCheck } from '../../src/main/services/syntax-check'
 import { COMMENT_PAYLOADS } from '../helpers/hostile'
 import { GENERATOR_ENTRIES, countHostileLeaves, renderExports } from './corpus/generator'
 import type { GeneratorEntry } from './corpus/generator'
@@ -54,7 +54,7 @@ describe('generator goldens', () => {
 
   it('benign entries compile', () => {
     for (const name of BENIGN) {
-      expect(compilePlugin(generatePlugin(entry(name).def), `${name}.js`), name).toBeNull()
+      expect(compileCheck(generatePlugin(entry(name).def), `${name}.js`), name).toBeNull()
     }
   })
 })

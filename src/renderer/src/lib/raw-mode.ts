@@ -94,7 +94,7 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     keepTab = answer === 2
   }
   try {
-    const text = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
+    const { content: text } = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
     const parsed = await window.api.plugin.parse(text)
     usePluginStore.getState().reattachSource(pluginId, text, parsed, { keepTab })
     return true

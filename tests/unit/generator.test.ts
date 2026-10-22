@@ -11,7 +11,8 @@ import {
 import type { PluginDefinition, PluginParameter } from '../../src/renderer/src/types/plugin'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { toBaseline } from '../../src/shared/types/plugin'
-import { compilePlugin, evaluatePlugin } from '../helpers/evaluate-plugin'
+import { compileCheck } from '../../src/main/services/syntax-check'
+import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
   return {
@@ -224,7 +225,7 @@ describe('generatePlugin', () => {
       ]
     })
     const code = generatePlugin(plugin)
-    expect(compilePlugin(code, 'plugin.js')).toBeNull()
+    expect(compileCheck(code, 'plugin.js')).toBeNull()
   })
 
   it('generates struct definition blocks', () => {
@@ -406,7 +407,7 @@ describe('generateRawMode', () => {
     expect(result).toContain("const PLUGIN_NAME = 'RawPlugin';")
     expect(result).toContain('const params = PluginManager.parameters(PLUGIN_NAME);')
     expect(result).toContain('const newParam =')
-    expect(compilePlugin(result)).toBeNull()
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
   })
 
   it('scaffolds only parameters added since the file was opened', () => {
@@ -428,7 +429,7 @@ describe('generateRawMode', () => {
     expect(result.match(/const PLUGIN_NAME/g)).toHaveLength(1)
     expect(result.match(/const oldParam/g)).toHaveLength(1)
     expect(result).toContain("const newParam = Number(prm['newParam'] || 5);")
-    expect(compilePlugin(result)).toBeNull()
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
   })
 
   it('reads an added parameter through the object the file stores its parameters in', () => {
@@ -463,7 +464,7 @@ var speed = prm.speed;
       "    'RawPlugin'\n);\n\n{\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
     )
     expect(result).toContain('    // --- End new parameters ---\n}\nvar speed = prm.speed;\n')
-    expect(compilePlugin(result)).toBeNull()
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
   })
 
   it('falls back to IIFE-opening injection when no use strict present', () => {
@@ -501,7 +502,7 @@ var speed = prm.speed;
     const cmdIdx = result.indexOf("registerCommand(PLUGIN_NAME, 'NewCommand'")
     expect(cmdIdx).toBeGreaterThan(-1)
     expect(cmdIdx).toBeLessThan(result.lastIndexOf('})();'))
-    expect(compilePlugin(result)).toBeNull()
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
   })
 
   it('appends code for added items inside braces when the file has no IIFE', () => {
@@ -517,7 +518,7 @@ var Legacy = {};
     expect(result).toContain('var Legacy = {};\n')
     expect(result).toContain("registerCommand(PLUGIN_NAME, 'Go'")
     expect(result.trimEnd().endsWith('}')).toBe(true)
-    expect(compilePlugin(result)).toBeNull()
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
     expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
   })
 
@@ -1310,7 +1311,7 @@ describe('camelCase edge cases', () => {
       const plugin = createTestPlugin({
         parameters: [{ id: 'p1', name, text: name, desc: '', type: 'string', default: '' }]
       })
-      expect(compilePlugin(generatePlugin(plugin))).toBeNull()
+      expect(compileCheck(generatePlugin(plugin), 'plugin.js')).toBeNull()
       expect(validatePlugin(plugin).warnings).toContain(
         `Parameter "${name}" is a reserved name; the generated variable will be "${name}_"`
       )
@@ -1331,7 +1332,7 @@ describe('camelCase edge cases', () => {
           }
         ]
       })
-      expect(compilePlugin(generatePlugin(plugin))).toBeNull()
+      expect(compileCheck(generatePlugin(plugin), 'plugin.js')).toBeNull()
     }
   )
 

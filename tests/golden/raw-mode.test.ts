@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest'
 import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
 import { toBaseline } from '../../src/shared/types/plugin'
-import { compilePlugin } from '../helpers/evaluate-plugin'
+import { compileCheck } from '../../src/main/services/syntax-check'
 import { EDITS, fixturePlugins, loadFixture } from './corpus/raw-mode'
 
 const fixtures = fixturePlugins()
@@ -31,7 +31,7 @@ describe('raw-mode goldens', () => {
     for (const file of fixtures) {
       for (const edit of EDITS) {
         const out = rawMode(file, edit)
-        parses[`${stem(file)}.${edit.name}`] = compilePlugin(out, file) === null
+        parses[`${stem(file)}.${edit.name}`] = compileCheck(out, file) === null
       }
     }
     const total = Object.keys(parses).length

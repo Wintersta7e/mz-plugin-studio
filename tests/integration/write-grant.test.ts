@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Dialog, IpcMain, SaveDialogOptions } from 'electron'
 import { assertWriteGranted, recordWriteGrant } from '../../src/main/file-access'
 import { setupDialogHandlers, showSaveFileDialog } from '../../src/main/ipc/dialog'
-import { savePluginToPath, setupPluginHandlers } from '../../src/main/ipc/plugin'
+import { savePluginToPath, setupPluginHandlers, sha256Hex } from '../../src/main/ipc/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 
 let tmp: string
@@ -53,7 +53,8 @@ describe('save to path', () => {
     expect(await readFile(chosen, 'utf8')).toBe('first')
     await expect(savePluginToPath(chosen, 'second')).resolves.toEqual({
       success: true,
-      path: chosen
+      path: chosen,
+      sha256: sha256Hex(Buffer.from('second'))
     })
     expect(await readFile(chosen, 'utf8')).toBe('second')
   })
@@ -90,7 +91,8 @@ describe('save dialog', () => {
     await showSaveFileDialog(dialog, { defaultPath: 'Alpha.js' })
     expect(dialog.showSaveDialog).toHaveBeenCalledWith({
       defaultPath: 'Alpha.js',
-      filters: [{ name: 'JavaScript', extensions: ['js'] }]
+      filters: [{ name: 'JavaScript', extensions: ['js'] }],
+      properties: ['showOverwriteConfirmation']
     })
   })
 })

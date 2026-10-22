@@ -44,10 +44,11 @@ function savingApi(answers: number[] = []): Window['api'] {
   return createFakeApi({
     plugin: {
       save: vi.fn(async (_project: string, filename: string) => ({
-        success: true,
-        path: `${PROJECT}/js/plugins/${filename}`
+        success: true as const,
+        path: `${PROJECT}/js/plugins/${filename}`,
+        sha256: ''
       })),
-      saveToPath: vi.fn(async (path: string) => ({ success: true, path }))
+      saveToPath: vi.fn(async (path: string) => ({ success: true as const, path, sha256: '' }))
     },
     dialog: { message: vi.fn(async () => answers.shift() ?? 0) }
   })

@@ -3,6 +3,7 @@ import { usePluginStore } from '../stores/pluginStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
+import type { SaveResult } from '../../../shared/ipc-types'
 import { prepareSave } from './raw-mode'
 
 /** `save` is Ctrl+S (into the open project only); `export` is the preview's Export button. */
@@ -75,7 +76,7 @@ async function exportPlugin(pluginId: string): Promise<SaveOutcome> {
   const freshCode = prepared.code
   const defaultName = `${currentPlugin.meta.name || 'NewPlugin'}.js`
 
-  let write: () => Promise<{ success: boolean; path: string }>
+  let write: () => Promise<SaveResult>
   if (project) {
     write = () => window.api.plugin.save(project.path, defaultName, freshCode)
   } else {

@@ -36,6 +36,7 @@
 - Raw mode refuses to save code additions to a plugin that is not valid JavaScript, and any save whose result would not be valid JavaScript, with a message naming the file.
 - Code raw mode adds for new parameters of a plugin without an IIFE now sits in a block, so its names no longer clash with another plugin's and stop the game from loading.
 - The code preview's warning and error banners and validation messages have readable contrast in both themes, and screen readers announce the banners.
+- On Linux, the save dialog asks before replacing an existing file, as it already did on Windows and macOS.
 
 ### Changed
 

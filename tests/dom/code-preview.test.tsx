@@ -9,6 +9,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { savePluginToPath } from '../../src/main/ipc/plugin'
+import type { SaveResult } from '../../src/shared/ipc-types'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
@@ -134,11 +135,10 @@ describe('code preview export with no project', () => {
 describe('code preview export', () => {
   const PROJECT = '/fixture/mz-project'
 
-  type SaveResult = { success: boolean; path: string }
-
   const savedAs = (filename: string): SaveResult => ({
     success: true,
-    path: `${PROJECT}/js/plugins/${filename}`
+    path: `${PROJECT}/js/plugins/${filename}`,
+    sha256: ''
   })
 
   async function openProject(): Promise<void> {
@@ -174,7 +174,7 @@ describe('code preview export', () => {
     window.api = createFakeApi({
       plugin: {
         save: vi.fn(async (_project: string, filename: string) => savedAs(filename)),
-        saveToPath: vi.fn(async (path: string) => ({ success: true, path }))
+        saveToPath: vi.fn(async (path: string) => ({ success: true as const, path, sha256: '' }))
       },
       dialog: { saveFile: vi.fn(async () => chosen) }
     })

@@ -1,5 +1,6 @@
 // Shared IPC channel definitions
 // Used by main, preload, and renderer processes
+import type { PluginDefinition } from './types/plugin'
 
 export const IPC_CHANNELS = {
   // Project
@@ -61,4 +62,57 @@ export interface ScannedPluginHeader {
   orderAfter: string[]
   orderBefore: string[]
   overrides: string[]
+}
+
+/** The file a tab was read from or last saved to; `sha256` null = unknown (migrated) */
+export interface FileBase {
+  path: string
+  sha256: string | null
+}
+
+export type SaveConflict = 'exists-unrelated' | 'changed-on-disk' | 'would-break'
+
+/** What a save checks before replacing an existing file; `force` can only skip `would-break` */
+export interface SaveGuard {
+  base: FileBase | null
+  force?: Array<'would-break'>
+  checkSyntax: boolean
+}
+
+export interface SyntaxProblem {
+  message: string
+  line: number | null
+}
+
+export type SaveResult =
+  | { success: true; path: string; sha256: string; syntaxWarning?: SyntaxProblem }
+  | {
+      success: false
+      path: string
+      conflict: SaveConflict
+      diskSha256: string
+      syntaxError?: SyntaxProblem
+    }
+
+export interface LoadedPlugin {
+  plugin: PluginDefinition
+  path: string
+  sha256: string
+}
+
+export interface RawPluginFile {
+  content: string
+  path: string
+  sha256: string
+}
+
+export interface MessageDialogOptions {
+  type?: 'none' | 'info' | 'error' | 'question' | 'warning'
+  title?: string
+  message: string
+  buttons?: string[]
+  /** The button Enter chooses */
+  defaultId?: number
+  /** The button Escape or closing the dialog chooses */
+  cancelId?: number
 }

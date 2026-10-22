@@ -68,7 +68,7 @@ async function startStores(
 const apiReading = (text: string, answer = 1): Window['api'] =>
   createFakeApi({
     plugin: {
-      readRaw: vi.fn(async () => text),
+      readRaw: vi.fn(async () => ({ content: text, path: '', sha256: '' })),
       parse: vi.fn(async (content: string) => PluginParser.parsePlugin(content))
     },
     dialog: { message: vi.fn(async () => answer) }
@@ -114,7 +114,7 @@ describe('reloading an imported plugin from the project', () => {
     let parsed: PluginDefinition | null = null
     const api = createFakeApi({
       plugin: {
-        readRaw: vi.fn(async () => TEXT),
+        readRaw: vi.fn(async () => ({ content: TEXT, path: '', sha256: '' })),
         parse: vi.fn(async (content: string) => (parsed = PluginParser.parsePlugin(content)))
       },
       dialog: { message: vi.fn(async () => 2) }

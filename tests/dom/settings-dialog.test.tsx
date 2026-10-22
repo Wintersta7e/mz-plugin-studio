@@ -70,7 +70,7 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
   it('export writes the backup text to the file the save dialog names', async () => {
     localStorage.setItem(KEY, '{"state":')
     await loadSettings()
-    const saveToPath = vi.fn(async (path: string) => ({ success: true, path }))
+    const saveToPath = vi.fn(async (path: string) => ({ success: true as const, path, sha256: '' }))
     window.api = createFakeApi({
       dialog: { saveFile: vi.fn(async () => 'out/settings-backup.json') },
       plugin: { saveToPath }

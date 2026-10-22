@@ -11,7 +11,7 @@ import { toBaseline } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { EDITS } from '../golden/corpus/raw-mode'
 import type { Edit } from '../golden/corpus/raw-mode'
-import { compilePlugin } from '../helpers/evaluate-plugin'
+import { compileCheck } from '../../src/main/services/syntax-check'
 import { fixturePath } from '../helpers/fixture-project'
 
 type PropertyName =
@@ -174,7 +174,7 @@ function load(file: string): Loaded {
       const edited = edit.apply(base)
       return { edit, edited, out: attempt(edited, base) }
     })
-    loaded = { text, base, compiles: compilePlugin(text, file) === null, runs }
+    loaded = { text, base, compiles: compileCheck(text, file) === null, runs }
     cache.set(file, loaded)
   }
   return loaded

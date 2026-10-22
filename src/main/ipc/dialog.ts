@@ -1,6 +1,6 @@
 import { type IpcMain, type IpcMainInvokeEvent, type Dialog } from 'electron'
 import log from 'electron-log/main'
-import { IPC_CHANNELS } from '../../shared/ipc-types'
+import { IPC_CHANNELS, type MessageDialogOptions } from '../../shared/ipc-types'
 import { recordWriteGrant } from '../file-access'
 
 export interface SaveFileDialogOptions {
@@ -18,7 +18,9 @@ export async function showSaveFileDialog(
 ): Promise<string | null> {
   const result = await dialog.showSaveDialog({
     defaultPath: options.defaultPath,
-    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
+    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }],
+    // Windows and macOS always ask before replacing a file; Linux only with this
+    properties: ['showOverwriteConfirmation']
   })
 
   if (result.canceled || !result.filePath) {
@@ -34,13 +36,7 @@ export async function showSaveFileDialog(
 /** Shows a message box; returns the index of the button the user chose */
 export async function showMessageDialog(
   dialog: Pick<Dialog, 'showMessageBox'>,
-  options: {
-    type?: 'none' | 'info' | 'error' | 'question' | 'warning'
-    title?: string
-    message: string
-    buttons?: string[]
-    defaultId?: number
-  }
+  options: MessageDialogOptions
 ): Promise<number> {
   log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
   const result = await dialog.showMessageBox({
@@ -48,7 +44,8 @@ export async function showMessageDialog(
     title: options.title || 'MZ Plugin Studio',
     message: options.message,
     buttons: options.buttons || ['OK'],
-    ...(options.defaultId !== undefined && { defaultId: options.defaultId })
+    ...(options.defaultId !== undefined && { defaultId: options.defaultId }),
+    ...(options.cancelId !== undefined && { cancelId: options.cancelId })
   })
 
   return result.response
@@ -99,15 +96,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
 
   ipcMain.handle(
     IPC_CHANNELS.DIALOG_MESSAGE,
-    (
-      _event: IpcMainInvokeEvent,
-      options: {
-        type?: 'none' | 'info' | 'error' | 'question' | 'warning'
-        title?: string
-        message: string
-        buttons?: string[]
-        defaultId?: number
-      }
-    ) => showMessageDialog(dialog, options)
+    (_event: IpcMainInvokeEvent, options: MessageDialogOptions) =>
+      showMessageDialog(dialog, options)
   )
 }
