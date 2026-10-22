@@ -26,7 +26,7 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
-import { saveAllPlugins, savePlugin } from './lib/save-plugin'
+import { NOTICE_MS, saveAllPlugins, savePlugin } from './lib/save-plugin'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { cn } from './lib/utils'
@@ -170,7 +170,13 @@ function App() {
       try {
         const validation = await window.api.project.validate(path)
         if (!validation.valid) {
-          setError(validation.error || 'Invalid project')
+          const reason = validation.error || 'Invalid project'
+          setError(reason)
+          useToastStore.getState().addToast({
+            type: 'error',
+            message: `Could not open "${path}": not an RPG Maker MZ project (${reason}).`,
+            duration: NOTICE_MS
+          })
           setLoading(false)
           return
         }
@@ -201,6 +207,12 @@ function App() {
         await scanDependencies()
       } catch (error) {
         setError(String(error))
+        const message = error instanceof Error ? error.message : String(error)
+        useToastStore.getState().addToast({
+          type: 'error',
+          message: `Could not open "${path}": ${message}`,
+          duration: NOTICE_MS
+        })
       } finally {
         setLoading(false)
         isLoadingRef.current = false

@@ -43,6 +43,7 @@
 - Closing the window with the title-bar button, Alt+F4 or the taskbar now asks when any open plugin has unsaved changes; Cancel is the default in every prompt that would discard work.
 - Undo or redo after saving marks the plugin unsaved.
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
+- A project that fails to load now shows a message naming the folder and the reason.
 
 ### Changed
 

@@ -1,5 +1,5 @@
-// A project's optional data files: one that is missing or unreadable loads as an empty list,
-// and the parser logs it.
+// A project's optional data files: one that is missing or unreadable loads as an empty list.
+// A missing file is normal for a project and logged at debug; any other failure at error.
 import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -21,16 +21,19 @@ afterEach(async () => {
 })
 
 describe('optional project data files', () => {
-  it('a missing optional data file is logged as an error', async () => {
+  it('a missing optional data file is logged at debug, not as an error', async () => {
     expect(await ProjectParser.getSkills(root)).toEqual([])
-    expect(vi.mocked(log.error)).toHaveBeenCalledTimes(1)
-    expect(String(vi.mocked(log.error).mock.calls[0][0])).toContain('Skills.json')
+    expect(vi.mocked(log.error)).not.toHaveBeenCalled()
+    expect(vi.mocked(log.debug)).toHaveBeenCalledTimes(1)
+    expect(String(vi.mocked(log.debug).mock.calls[0][0])).toContain('Skills.json')
   })
 
   it('a malformed optional data file is logged as an error', async () => {
     await writeFile(join(root, 'data', 'Skills.json'), '[null, {"id": 1,')
     expect(await ProjectParser.getSkills(root)).toEqual([])
+    expect(vi.mocked(log.debug)).not.toHaveBeenCalled()
     expect(vi.mocked(log.error)).toHaveBeenCalledTimes(1)
     expect(String(vi.mocked(log.error).mock.calls[0][0])).toContain('Skills.json')
+    expect(vi.mocked(log.error).mock.calls[0][1]).toBeInstanceOf(SyntaxError)
   })
 })

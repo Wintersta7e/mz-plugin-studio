@@ -1,6 +1,6 @@
-// Opening a project from the keyboard (Ctrl+O): a folder that cannot be opened leaves the
-// project store's error set.
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+// Opening a project from the keyboard (Ctrl+O): a folder that cannot be opened shows a message
+// naming the folder and the reason, and leaves the project store's error set.
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { useProjectStore, useToastStore } from '../../src/renderer/src/stores'
@@ -31,30 +31,52 @@ describe('opening a project', { timeout: 30_000 }, () => {
 
   afterEach(() => {
     cleanup()
+    useToastStore.getState().dismissAll()
     vi.unstubAllGlobals()
   })
 
-  it('a folder that is not a project sets an error nobody shows', async () => {
+  it('a folder that is not a project shows the folder and the reason', async () => {
     await openFolder({
       validate: vi.fn(async () => ({
         valid: false,
         error: 'Missing required file: data/System.json'
       }))
     })
+    const message =
+      'Could not open "/fixture/not-a-project": not an RPG Maker MZ project ' +
+      '(Missing required file: data/System.json).'
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain(message)
+    expect(useToastStore.getState().toasts).toMatchObject([
+      { type: 'error', message, duration: 10_000 }
+    ])
     expect(useProjectStore.getState().error).toBe('Missing required file: data/System.json')
     expect(useProjectStore.getState().project).toBeNull()
-    expect(useToastStore.getState().toasts).toEqual([])
   })
 
-  it('a project that fails to load sets an error nobody shows', async () => {
+  it('a project that fails to load shows the folder and the reason', async () => {
     await openFolder({
       validate: vi.fn(async () => ({ valid: true })),
       load: vi.fn(async () => {
         throw new Error('Unexpected end of JSON input')
       })
     })
+    const message = 'Could not open "/fixture/not-a-project": Unexpected end of JSON input'
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain(message)
+    expect(useToastStore.getState().toasts).toMatchObject([
+      { type: 'error', message, duration: 10_000 }
+    ])
     expect(useProjectStore.getState().error).toBe('Error: Unexpected end of JSON input')
     expect(useProjectStore.getState().project).toBeNull()
-    expect(useToastStore.getState().toasts).toEqual([])
+  })
+
+  it('a load that rejects with a value that is not an Error shows that value', async () => {
+    await openFolder({
+      validate: vi.fn(async () => ({ valid: true })),
+      load: vi.fn(() => Promise.reject('data folder unreadable'))
+    })
+    const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
+    expect(await screen.findByText(message)).toBeTruthy()
   })
 })

@@ -731,6 +731,8 @@ Loading your RPG Maker MZ project enables powerful features.
 2. Navigate to your RPG Maker MZ project folder
 3. Select the folder (the one containing `Game.rpgproject`)
 
+If the folder cannot be opened as a project, a message names the folder and the reason.
+
 ### Plugin Browser
 
 With a project loaded, press **Ctrl+Shift+E** or click **Plugin Browser** in the sidebar to list every `.js` file in the project's `js/plugins/` folder. Search by name, filter or sort the list, and click a plugin to open it.

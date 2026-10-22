@@ -127,8 +127,13 @@ export class ProjectParser {
       return data
         .filter((d): d is { id: number; name: string } => d !== null)
         .map((d) => ({ id: d.id, name: d.name }))
-    } catch {
-      log.error(`[ProjectParser] Failed to load ${filename} from ${projectPath}`)
+    } catch (error) {
+      // Projects may leave out data files they do not use
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        log.debug(`[ProjectParser] No ${filename} in ${projectPath}`)
+      } else {
+        log.error(`[ProjectParser] Failed to load ${filename} from ${projectPath}`, error)
+      }
       return []
     }
   }

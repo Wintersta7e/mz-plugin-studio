@@ -21,8 +21,8 @@ export type SaveOutcome =
 type Written = Extract<SaveResult, { success: true }>
 type Refused = Extract<SaveResult, { success: false }>
 
-// Long enough to read a refusal or a Save All report
-const NOTICE_MS = 10_000
+// Long enough to read a refusal, a Save All report or why a project did not open
+export const NOTICE_MS = 10_000
 
 // Save All's reason for each kind of tab it did not save, shared by every tab of that kind
 const NOT_SAVED: Record<SaveRefusal | SaveConflict, string> = {
