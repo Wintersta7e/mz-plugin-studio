@@ -59,7 +59,7 @@ function without<T>(record: Record<string, T>, key: string): Record<string, T> {
   return next
 }
 
-export const UI_MIGRATIONS: readonly MigrationStep[] = [
+const UI_MIGRATIONS: readonly MigrationStep[] = [
   (state) => state,
   // Raw mode is on for imported plugins unless the user turns it off; v1.6.0 stored false
   // for plugins it had restored without their file text, so those entries are dropped.

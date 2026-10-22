@@ -116,7 +116,7 @@ function migrateImported(def: unknown): unknown {
   return rest
 }
 
-export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
+const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
   (state) => state,
   (state) => ({
     ...state,
@@ -129,11 +129,7 @@ export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
 
 // This store's maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
 // The ui store's tab-keyed maps are cleared by its clearRawModeForPlugin.
-export const TAB_KEYED_MAPS = [
-  'dirtyByPluginId',
-  'savedPathsByPluginId',
-  'baselineByPluginId'
-] as const
+const TAB_KEYED_MAPS = ['dirtyByPluginId', 'savedPathsByPluginId', 'baselineByPluginId'] as const
 type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
 
 /** Every tab-keyed map with only the entries whose plugin id `keep` accepts. */
@@ -146,7 +142,7 @@ function filterTabMaps(maps: TabKeyedMaps, keep: (id: string) => boolean): TabKe
 }
 
 /** Drops the saved entries of tabs that were closed without their entries being cleared. */
-export function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
+function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
   const open = new Set(persisted.openPlugins.map((p) => p.id))
   for (const name of TAB_KEYED_MAPS) {
     const closed = Object.keys(persisted[name]).filter((id) => !open.has(id))

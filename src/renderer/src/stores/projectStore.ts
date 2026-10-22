@@ -89,7 +89,7 @@ interface ProjectState {
   clearDependencyReport: () => void
 }
 
-export const PROJECT_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+const PROJECT_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useProjectStore = create<ProjectState>()(
   persist(

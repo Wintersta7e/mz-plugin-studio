@@ -20,7 +20,7 @@ const checkRecent: FieldCheck<RecentTemplate> = (value) =>
     ? { id: value.id, timestamp: value.timestamp }
     : undefined
 
-export const TEMPLATE_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+const TEMPLATE_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useTemplateStore = create<TemplateStoreState>()(
   persist(

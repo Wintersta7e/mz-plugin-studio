@@ -57,7 +57,7 @@ function checkOptions(elements: unknown[], dropped: string[]): SelectOption[] {
  * left out, and is named in `dropped` with every unknown key. Content is not checked; the
  * generator escapes what it writes. The caller assigns `id`.
  */
-export function checkParameterShape(value: unknown): ParameterShape {
+function checkParameterShape(value: unknown): ParameterShape {
   if (!isRecord(value) || typeof value.name !== 'string') return { ok: false, reason: 'shape' }
   if (!isParamType(value.type)) return { ok: false, reason: 'type' }
   const dropped: string[] = []

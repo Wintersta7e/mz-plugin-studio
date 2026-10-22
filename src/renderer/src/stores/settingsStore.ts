@@ -55,7 +55,7 @@ type SettingsPersisted = Pick<
 >
 
 // Schema 1 began checking each preset parameter; that check is the field check, run on every load.
-export const SETTINGS_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+const SETTINGS_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
