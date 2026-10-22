@@ -1,6 +1,7 @@
-// The title bar's close button: what it does with the open tabs' unsaved changes.
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+// The title bar's close button: it asks main to close the window, and main asks about unsaved
+// changes in any open tab, so the button itself never prompts.
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { TitleBar } from '../../src/renderer/src/components/layout/TitleBar'
 import { usePluginStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
@@ -18,8 +19,7 @@ function openTab(name?: string): string {
 }
 
 const clickClose = (): void => {
-  const buttons = screen.getAllByRole('button')
-  fireEvent.click(buttons[buttons.length - 1])
+  fireEvent.click(screen.getByRole('button', { name: 'Close window' }))
 }
 
 describe('title bar close', () => {
@@ -30,15 +30,15 @@ describe('title bar close', () => {
 
   afterEach(cleanup)
 
-  it('title-bar close with no unsaved tab force-closes', async () => {
+  it('title-bar close with no unsaved tab asks main to close the window', () => {
     openTab()
     render(<TitleBar />)
     clickClose()
-    await waitFor(() => expect(window.api.window.forceClose).toHaveBeenCalledTimes(1))
-    expect(window.api.window.close).not.toHaveBeenCalled()
+    expect(window.api.window.close).toHaveBeenCalledTimes(1)
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 
-  it('title-bar close with only a background tab unsaved force-closes without asking', async () => {
+  it('title-bar close with only a background tab unsaved leaves the question to main', () => {
     const background = openTab('Edited')
     const active = openTab()
     const { dirtyByPluginId, activePluginId } = usePluginStore.getState()
@@ -46,19 +46,15 @@ describe('title bar close', () => {
     expect(activePluginId).toBe(active)
     render(<TitleBar />)
     clickClose()
-    await waitFor(() => expect(window.api.window.forceClose).toHaveBeenCalledTimes(1))
+    expect(window.api.window.close).toHaveBeenCalledTimes(1)
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 
-  it('title-bar close with the active tab unsaved asks with the destructive button first', async () => {
+  it('title-bar close with the active tab unsaved leaves the question to main', () => {
     openTab('Edited')
     render(<TitleBar />)
     clickClose()
-    await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
-    const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
-    expect(options.buttons?.[0]).toBe('Close Without Saving')
-    expect(options).not.toHaveProperty('defaultId')
-    // The fake answers 0, the destructive button
-    await waitFor(() => expect(window.api.window.forceClose).toHaveBeenCalledTimes(1))
+    expect(window.api.window.close).toHaveBeenCalledTimes(1)
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 })

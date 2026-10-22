@@ -1,5 +1,6 @@
 // Every renderer message dialog that offers Cancel, read from the source with the TypeScript
-// compiler: which button Enter (defaultId) and Esc (cancelId) choose.
+// compiler: Enter (defaultId) and Esc (cancelId) must both choose Cancel, so no key press
+// discards work.
 import { readdirSync, readFileSync } from 'fs'
 import { join, relative } from 'path'
 import ts from 'typescript'
@@ -10,9 +11,6 @@ const ROOT = join(process.cwd(), 'src', 'renderer', 'src')
 interface CancelDialog {
   /** Path under the renderer source, with the call's line */
   where: string
-  file: string
-  /** The `defaultId` and `cancelId` initializers as written, `-` when absent */
-  settings: string
   /** Why Cancel is not provably both buttons; null when it is */
   problem: string | null
 }
@@ -58,43 +56,37 @@ function cancelIndex(buttons: ts.ArrayLiteralExpression): number | null {
   return -1
 }
 
-/** The dialog's Cancel setup, or undefined when its buttons hold no Cancel. */
-function readDialog(
-  options: ts.Expression | undefined
-): Omit<CancelDialog, 'where' | 'file'> | undefined {
+/** Why the dialog's Cancel is not its default (null when it is); undefined without Cancel. */
+function cancelProblem(options: ts.Expression | undefined): string | null | undefined {
   const value = options === undefined ? undefined : unwrap(options)
   if (value === undefined || !ts.isObjectLiteralExpression(value)) {
-    return { settings: '?', problem: 'options are not an object literal' }
+    return 'options are not an object literal'
   }
   const props = new Map<string, ts.Expression>()
   for (const prop of value.properties) {
     if (!ts.isPropertyAssignment(prop) || !ts.isIdentifier(prop.name)) {
-      return { settings: '?', problem: 'options hold a property that is not a plain assignment' }
+      return 'options hold a property that is not a plain assignment'
     }
     props.set(prop.name.text, prop.initializer)
   }
   const buttons = props.get('buttons')
   if (buttons === undefined) return undefined
-  const text = (name: string): string => props.get(name)?.getText() ?? '-'
-  const settings = `defaultId=${text('defaultId')} cancelId=${text('cancelId')}`
   const arrays = buttonArrays(buttons)
-  if (arrays === null) return { settings, problem: 'buttons are not an array literal' }
+  if (arrays === null) return 'buttons are not an array literal'
   const indices = arrays.map(cancelIndex)
-  if (indices.includes(null)) return { settings, problem: 'a button before Cancel is not a string' }
+  if (indices.includes(null)) return 'a button before Cancel is not a string'
   const withCancel = indices.filter((i): i is number => i !== null && i >= 0)
   if (withCancel.length === 0) return undefined
-  if (new Set(withCancel).size > 1) return { settings, problem: 'Cancel moves between branches' }
+  if (new Set(withCancel).size > 1) return 'Cancel moves between branches'
   const cancel = withCancel[0]
   for (const name of ['defaultId', 'cancelId']) {
     const initializer = props.get(name)
     if (initializer === undefined || !ts.isNumericLiteral(initializer)) {
-      return { settings, problem: `${name} is not a number literal` }
+      return `${name} is not a number literal`
     }
-    if (Number(initializer.text) !== cancel) {
-      return { settings, problem: `${name} is not Cancel's index ${cancel}` }
-    }
+    if (Number(initializer.text) !== cancel) return `${name} is not Cancel's index ${cancel}`
   }
-  return { settings, problem: null }
+  return null
 }
 
 function scanRenderer(): Scan {
@@ -113,10 +105,10 @@ function scanRenderer(): Scan {
         if (callee === 'window.confirm' || callee === 'confirm') scan.confirms.push(file)
         if (callee.endsWith('dialog.message')) {
           scan.dialogs++
-          const dialog = readDialog(node.arguments[0])
-          if (dialog !== undefined) {
+          const problem = cancelProblem(node.arguments[0])
+          if (problem !== undefined) {
             const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1
-            scan.cancelDialogs.push({ where: `${file}:${line}`, file, ...dialog })
+            scan.cancelDialogs.push({ where: `${file}:${line}`, problem })
           }
         }
       }
@@ -128,25 +120,18 @@ function scanRenderer(): Scan {
 }
 
 describe('renderer dialog defaults', () => {
-  it('renderer dialogs with a Cancel button set no default', () => {
+  it('renderer dialogs with a Cancel button make Cancel the Enter and Esc button', () => {
     const { dialogs, cancelDialogs, confirms } = scanRenderer()
+    const checked = cancelDialogs.filter((d) => d.problem === null).length
+    console.log(`dialogs checked ${checked}/${cancelDialogs.length}`)
     console.log(
       `dialogs found ${dialogs}; with Cancel ${cancelDialogs.length}; window.confirm ${confirms.length}`
     )
     expect(cancelDialogs.length).toBeGreaterThan(0)
-    const withoutCancelDefault = cancelDialogs
-      .filter((d) => d.problem !== null)
-      .map((d) => `${d.file} ${d.settings}`)
-      .sort()
-    expect(withoutCancelDefault).toEqual([
-      'components/layout/Sidebar.tsx defaultId=- cancelId=-',
-      'components/layout/TitleBar.tsx defaultId=- cancelId=-',
-      'components/plugin/ParameterBuilder.tsx defaultId=- cancelId=-',
-      'components/plugin/ParameterBuilder.tsx defaultId=- cancelId=-',
-      'components/plugin/PluginBrowser.tsx defaultId=- cancelId=-',
-      'lib/raw-mode.ts defaultId=- cancelId=-',
-      'lib/raw-mode.ts defaultId=1 cancelId=-'
-    ])
-    expect(confirms).toEqual(['components/plugin/MetaEditor.tsx'])
+    expect(
+      cancelDialogs.filter((d) => d.problem !== null).map((d) => `${d.where}: ${d.problem}`)
+    ).toEqual([])
+    expect(checked).toBe(cancelDialogs.length)
+    expect(confirms).toEqual([])
   })
 })

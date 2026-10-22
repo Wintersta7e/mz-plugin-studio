@@ -841,7 +841,7 @@ Turning raw mode off saves regenerated code instead, after asking.
 When the file text is not loaded, the banner in the code preview has a **Reload from project** button. With the plugin's project open, it reads the plugin from the project's `js/plugins/` folder again and makes it the tab's file text:
 
 - A tab with no unsaved edits takes the file as it is now, without asking.
-- A tab with unsaved edits asks first. **Replace with file** (the default) drops the edits; **Keep tab values** applies the tab's values to the reloaded file and leaves the tab marked unsaved; **Cancel** changes nothing.
+- A tab with unsaved edits asks first. **Cancel** (the default) changes nothing; **Replace with file** drops the edits; **Keep tab values** applies the tab's values to the reloaded file and leaves the tab marked unsaved.
 
 The button is disabled until a project is open. If the file cannot be read, an error names the path.
 
@@ -874,6 +874,8 @@ If the original plugin has text before the `/*:` annotation block (license heade
 3. Before replacing a file, the app asks when the file was not opened or saved by this tab, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
 
 **Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, one at a time. It never asks: a plugin whose save would need one of the questions above is not saved. One report gives the number saved and names the plugins not saved, grouped by reason.
+
+Closing the window — the title-bar close button, Alt+F4 or the taskbar — asks first when any open plugin has unsaved changes, not only the one on screen. Closing a tab with unsaved changes asks the same way. **Cancel** is the default in every such prompt.
 
 **Export in Other Formats**
 Click the **chevron dropdown** next to the Export button:

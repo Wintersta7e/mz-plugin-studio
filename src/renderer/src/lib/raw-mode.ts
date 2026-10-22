@@ -55,12 +55,13 @@ export async function prepareSave(
         reason: 'needs confirmation: save it with Ctrl+S'
       }
     }
-    // Cancel is the first button, so closing the dialog cancels
     const answer = await window.api.dialog.message({
       type: 'warning',
       title: 'Save without raw mode?',
       message: `Saving ${plugin.importedFrom} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
-      buttons: ['Cancel', 'Show Diff', 'Save']
+      buttons: ['Cancel', 'Show Diff', 'Save'],
+      defaultId: 0,
+      cancelId: 0
     })
     if (answer === 1) useUIStore.getState().requestDiff(pluginId)
     if (answer !== 2) return { status: 'cancelled' }
@@ -91,13 +92,13 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
   let keepTab = false
   // A tab read by an older parser differs from its file with no edit, so only edits are kept
   if (dirtyByPluginId[pluginId]) {
-    // Cancel is the first button, so closing the dialog cancels
     const answer = await window.api.dialog.message({
       type: 'question',
       title: 'Reload from project?',
       message: `${path} may not match this tab: the tab was read by an older version of the app, or the file changed since it was opened. Replace the tab with the file, dropping its unsaved edits, or keep the tab's values and apply them to the reloaded file?`,
       buttons: ['Cancel', 'Replace with file', 'Keep tab values'],
-      defaultId: 1
+      defaultId: 0,
+      cancelId: 0
     })
     if (answer !== 1 && answer !== 2) return false
     keepTab = answer === 2

@@ -56,7 +56,9 @@ export function Sidebar({
         type: 'question',
         title: 'Unsaved Changes',
         message: 'You have unsaved changes. Close anyway?',
-        buttons: ['Cancel', 'Close Without Saving']
+        buttons: ['Cancel', 'Close Without Saving'],
+        defaultId: 0,
+        cancelId: 0
       })
       if (result === 0) return // Cancel
     }

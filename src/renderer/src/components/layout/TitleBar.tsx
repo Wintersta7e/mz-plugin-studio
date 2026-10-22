@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Minus, Square, X, Maximize2 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { useProjectStore, usePluginStore } from '../../stores'
+import { useProjectStore } from '../../stores'
 
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false)
   const project = useProjectStore((s) => s.project)
-  const isDirty = usePluginStore((s) => s.isDirty)
 
   useEffect(() => {
     window.api.window.isMaximized().then(setIsMaximized)
@@ -16,21 +15,8 @@ export function TitleBar() {
 
   const handleMinimize = () => window.api.window.minimize()
   const handleMaximize = () => window.api.window.maximize()
-  const handleClose = async () => {
-    if (isDirty) {
-      const result = await window.api.dialog.message({
-        type: 'question',
-        title: 'Unsaved Changes',
-        message: 'You have unsaved changes. Do you want to close without saving?',
-        buttons: ['Close Without Saving', 'Cancel']
-      })
-      if (result === 0) {
-        window.api.window.forceClose()
-      }
-    } else {
-      window.api.window.forceClose()
-    }
-  }
+  // Main asks about unsaved changes in any tab, as for Alt+F4 or the taskbar
+  const handleClose = () => window.api.window.close()
 
   return (
     <div className="titlebar-drag-region flex h-10 items-center justify-between border-b border-border bg-card px-2">
@@ -64,6 +50,7 @@ export function TitleBar() {
           size="icon"
           className="h-8 w-10 rounded-none hover:bg-destructive hover:text-destructive-foreground"
           onClick={handleClose}
+          aria-label="Close window"
         >
           <X className="h-4 w-4" />
         </Button>

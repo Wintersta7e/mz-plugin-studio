@@ -9,6 +9,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupProjectHandlers } from './ipc/project'
 import { setupPluginHandlers } from './ipc/plugin'
 import { setupDialogHandlers } from './ipc/dialog'
+import { handleWillPreventUnload } from './close-prompt'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
@@ -47,6 +48,12 @@ function createWindow(): void {
     }
   })
 
+  // The page holds back its unload while any plugin is unsaved: ask before the window closes
+  const win = mainWindow
+  win.webContents.on('will-prevent-unload', (event) =>
+    handleWillPreventUnload(event, (options) => dialog.showMessageBoxSync(win, options))
+  )
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     try {
       const parsed = new URL(details.url)
@@ -81,10 +88,6 @@ ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, () => {
 
 ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {
   mainWindow?.close()
-})
-
-ipcMain.on(IPC_CHANNELS.WINDOW_FORCE_CLOSE, () => {
-  mainWindow?.destroy()
 })
 
 ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, () => {

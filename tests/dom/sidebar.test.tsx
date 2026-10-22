@@ -15,7 +15,7 @@ describe('sidebar tab close', () => {
 
   afterEach(cleanup)
 
-  it('closing an unsaved tab asks without a default', async () => {
+  it('closing an unsaved tab asks with Cancel as the default', async () => {
     const plugin = createEmptyPlugin()
     act(() => {
       usePluginStore.getState().openPlugin(plugin)
@@ -28,8 +28,8 @@ describe('sidebar tab close', () => {
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
-    expect(options).not.toHaveProperty('defaultId')
-    expect(options).not.toHaveProperty('cancelId')
+    expect(options.cancelId).toBe(options.defaultId)
+    expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
     // The fake answers 0, Cancel
     expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual([plugin.id])
   })

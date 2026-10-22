@@ -37,12 +37,19 @@ export function MetaEditor() {
     return meta.localizations?.[lang] || { description: '', help: '' }
   }
 
-  const handleAutoGenerateHelp = useCallback(() => {
+  const handleAutoGenerateHelp = useCallback(async () => {
     const currentHelp = meta.help
 
     if (currentHelp && currentHelp.trim()) {
-      const confirmed = window.confirm('This will replace the existing help text. Continue?')
-      if (!confirmed) return
+      const answer = await window.api.dialog.message({
+        type: 'question',
+        title: 'Replace help text',
+        message: 'This will replace the existing help text. Continue?',
+        buttons: ['Cancel', 'Replace'],
+        defaultId: 0,
+        cancelId: 0
+      })
+      if (answer !== 1) return
     }
 
     const fullPlugin = usePluginStore.getState().plugin

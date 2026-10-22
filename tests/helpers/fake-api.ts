@@ -75,7 +75,6 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
       minimize: vi.fn(),
       maximize: vi.fn(),
       close: vi.fn(),
-      forceClose: vi.fn(),
       isMaximized: vi.fn(async () => false),
       onMaximizeChange: vi.fn(() => () => {})
     },

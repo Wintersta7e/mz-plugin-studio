@@ -73,7 +73,6 @@ export interface WindowAPI {
   minimize: () => void
   maximize: () => void
   close: () => void
-  forceClose: () => void
   isMaximized: () => Promise<boolean>
   onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
 }
@@ -130,7 +129,6 @@ const windowApi: WindowAPI = {
   minimize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
   maximize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
   close: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE),
-  forceClose: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_FORCE_CLOSE),
   isMaximized: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED),
   onMaximizeChange: (callback) => {
     const handler = (_event: unknown, isMaximized: boolean) => callback(isMaximized)

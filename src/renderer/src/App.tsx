@@ -142,8 +142,8 @@ function App() {
     return () => clearTimeout(timeoutId)
   }, [plugin, pushHistory])
 
-  // Warn about unsaved changes on window close (browser refresh only)
-  // Note: Window close via titlebar is handled by the close button directly
+  // Holding back the unload while any tab is unsaved makes main ask before the window closes,
+  // however it is closed
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent): string | void => {
       // Check ALL open plugins for unsaved changes, not just the active one
@@ -246,6 +246,7 @@ function App() {
             // Restore rawSource from current plugin since history strips it to save memory
             const currentRawSource = usePluginStore.getState().plugin.rawSource
             setPlugin(prev.rawSource ? prev : { ...prev, rawSource: currentRawSource })
+            usePluginStore.getState().setDirty(true)
           }
           break
         }
@@ -255,6 +256,7 @@ function App() {
             isUndoRedoRef.current = true
             const currentRawSource = usePluginStore.getState().plugin.rawSource
             setPlugin(next.rawSource ? next : { ...next, rawSource: currentRawSource })
+            usePluginStore.getState().setDirty(true)
           }
           break
         }

@@ -40,6 +40,8 @@
 - Saving no longer replaces a file without asking: the app asks first when the file was not opened or saved by that tab (for example a second new plugin named NewPlugin), changed on disk, or would stop compiling; Cancel is the default.
 - Ctrl+S without a loaded project opens a save dialog instead of doing nothing.
 - Edits made while a save is in progress keep the plugin marked unsaved.
+- Closing the window with the title-bar button, Alt+F4 or the taskbar now asks when any open plugin has unsaved changes; Cancel is the default in every prompt that would discard work.
+- Undo or redo after saving marks the plugin unsaved.
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 
 ### Changed

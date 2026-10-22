@@ -14,6 +14,7 @@ import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import type { MessageDialogOptions } from '../../src/shared/ipc-types'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { ALL_PAYLOADS } from '../helpers/hostile'
@@ -185,18 +186,23 @@ describe('parameter prompts that discard work', () => {
     return message
   }
 
-  it('deleting the selected parameters asks without a default', async () => {
+  /** Checks that Enter and Esc both choose Cancel in the dialog `options` describe. */
+  function expectCancelDefault(options: MessageDialogOptions): void {
+    expect(options.cancelId).toBe(options.defaultId)
+    expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
+  }
+
+  it('deleting the selected parameters asks with Cancel as the default', async () => {
     const message = renderSelected()
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
     const options = message.mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Delete'])
-    expect(options).not.toHaveProperty('defaultId')
-    expect(options).not.toHaveProperty('cancelId')
+    expectCancelDefault(options)
     expect(parameterNames()).toEqual(['Existing'])
   })
 
-  it('overwriting a preset asks without a default', async () => {
+  it('overwriting a preset asks with Cancel as the default', async () => {
     const kept = { ...createEmptyParameter(), name: 'Kept' }
     useSettingsStore.setState({ parameterPresets: { Mine: [kept] } })
     const message = renderSelected()
@@ -207,8 +213,7 @@ describe('parameter prompts that discard work', () => {
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
     const options = message.mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
-    expect(options).not.toHaveProperty('defaultId')
-    expect(options).not.toHaveProperty('cancelId')
+    expectCancelDefault(options)
     expect(useSettingsStore.getState().parameterPresets).toEqual({ Mine: [kept] })
   })
 })

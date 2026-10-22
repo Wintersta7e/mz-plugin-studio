@@ -395,7 +395,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(id)).toBe(false)
   })
 
-  it('undo after a save leaves the tab marked saved', async () => {
+  it('undo after a save marks the tab unsaved', async () => {
     window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
     const id = openTab()
     render(<App />)
@@ -407,10 +407,10 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(id)).toBe(false)
     pressUndo()
     expect(useHistoryStore.getState().future).toHaveLength(1)
-    expect(isDirty(id)).toBe(false)
+    expect(isDirty(id)).toBe(true)
   })
 
-  it('redo after a save leaves the tab marked saved', async () => {
+  it('redo after a save marks the tab unsaved', async () => {
     window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
     const id = openTab()
     render(<App />)
@@ -423,7 +423,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(id)).toBe(false)
     pressRedo()
     expect(useHistoryStore.getState().future).toHaveLength(0)
-    expect(isDirty(id)).toBe(false)
+    expect(isDirty(id)).toBe(true)
   })
 
   it('checked the dialog of every save conflict', () => {
