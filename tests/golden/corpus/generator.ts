@@ -384,6 +384,9 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   row('localization-key-comment', (def) => {
     def.meta.localizations = { 'ja */ x': { description: 'Localized description' } }
   }),
+  row('custom-code', (def) => {
+    def.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
+  }),
   ...COMMENT_PAYLOADS.map((p) => ({ name: `hostile-${p.name}`, def: hostileDefinition(p.text) })),
   { name: 'hostile-control', def: hostileDefinition('Safe') }
 ]
