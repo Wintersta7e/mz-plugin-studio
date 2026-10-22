@@ -31,11 +31,16 @@ export interface PersistSpec<S, P> {
   onRehydrateStorage?: PersistOptions<S, P>['onRehydrateStorage']
 }
 
+// kept: the backup entry holds this data; earlier-copy-kept: it holds older data, so this was not
+// copied; failed: writing the copy threw
+export type BackupOutcome = 'kept' | 'earlier-copy-kept' | 'failed'
+
 export interface RestoreReportEntry {
   name: PersistedKey
   area: string
-  kind: 'unparseable' | 'newer-schema' | 'fields-reset' | 'not-backed-up'
+  kind: 'unparseable' | 'newer-schema' | 'fields-reset' | 'entries-dropped'
   fields: string[]
+  backup: BackupOutcome
 }
 
 let pendingReport: RestoreReportEntry[] = []
@@ -45,9 +50,10 @@ function report(
   name: PersistedKey,
   area: string,
   kind: RestoreReportEntry['kind'],
+  backup: BackupOutcome,
   fields: string[] = []
 ): void {
-  pendingReport.push({ name, area, kind, fields })
+  pendingReport.push({ name, area, kind, fields, backup })
 }
 
 /** Everything reported since the last call, in load order. */
@@ -57,21 +63,36 @@ export function takeRestoreReport(): RestoreReportEntry[] {
   return entries
 }
 
+function backupText(key: string, backup: BackupOutcome): string {
+  switch (backup) {
+    case 'kept':
+      return `a copy was kept as ${key}.`
+    case 'earlier-copy-kept':
+      return `it was not copied because ${key} already holds an earlier copy, and it will be replaced at the next save.`
+    case 'failed':
+      return `it could not be copied to ${key} because storage is full, and it will be replaced at the next save.`
+  }
+}
+
+function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
+  switch (kind) {
+    case 'unparseable':
+      return 'the saved data could not be read, so defaults were loaded'
+    case 'newer-schema':
+      return 'saved by a newer version; the parts this version understands were kept'
+    case 'fields-reset':
+      return `${fields.join(', ')} had unexpected values and were reset`
+    case 'entries-dropped':
+      return `${fields.join(', ')} could not be read and were left out`
+  }
+}
+
 export function formatRestoreReport(entries: RestoreReportEntry[]): string {
   return entries
-    .map(({ name, area, kind, fields }) => {
-      const backup = name + BACKUP_SUFFIX
-      switch (kind) {
-        case 'unparseable':
-          return `${area}: the saved data could not be read, so defaults were loaded; a copy was kept as ${backup}.`
-        case 'newer-schema':
-          return `${area}: saved by a newer version; the parts this version understands were kept and a copy was kept as ${backup}.`
-        case 'fields-reset':
-          return `${area}: ${fields.join(', ')} had unexpected values and were reset.`
-        case 'not-backed-up':
-          return `${area}: the saved data could not be copied because ${backup} already holds an earlier copy; it will be replaced at the next save.`
-      }
-    })
+    .map(
+      ({ name, area, kind, fields, backup }) =>
+        `${area}: ${loadText(kind, fields)}; ${backupText(name + BACKUP_SUFFIX, backup)}`
+    )
     .join(' ')
 }
 
@@ -95,14 +116,22 @@ export function checkOneOf<T extends string>(values: readonly T[]): FieldCheck<T
   return (value) => (values.includes(value as T) ? (value as T) : undefined)
 }
 
-/** An array whose elements are checked one by one; a rejected element is dropped and named. */
-export function checkArrayOf<T>(element: FieldCheck<T>): FieldCheck<T[]> {
+/**
+ * An array whose elements are checked one by one; a rejected element is dropped and named by its
+ * index and, when `label` reads one from it, its name.
+ */
+export function checkArrayOf<T>(
+  element: FieldCheck<T>,
+  label?: (item: unknown) => string | undefined
+): FieldCheck<T[]> {
   return (value, drop) => {
     if (!Array.isArray(value)) return undefined
     const kept: T[] = []
     value.forEach((item, i) => {
-      const checked = element(item, (what) => drop(`[${i}]${what}`))
-      if (checked === undefined) drop(`[${i}]`)
+      const name = label?.(item)
+      const at = (what: string) => `[${i}]${what}${name === undefined ? '' : ` (${name})`}`
+      const checked = element(item, (what) => drop(at(what)))
+      if (checked === undefined) drop(at(''))
       else kept.push(checked)
     })
     return kept
@@ -137,21 +166,19 @@ function isEnvelope(value: unknown): value is { state: Record<string, unknown>; 
   )
 }
 
-/** Keeps the first copy of saved data this build could not use; false when no copy of it exists. */
-function backUp(name: PersistedKey, area: string, raw: string): boolean {
+/** Keeps the first copy of saved data this build could not use. */
+function backUp(name: PersistedKey, raw: string): BackupOutcome {
   const key = name + BACKUP_SUFFIX
   const existing = localStorage.getItem(key)
-  if (existing === raw) return true
-  if (existing === null) {
-    try {
-      localStorage.setItem(key, raw)
-      return true
-    } catch (error) {
-      log.error(`Could not back up ${name}:`, error)
-    }
+  if (existing === raw) return 'kept'
+  if (existing !== null) return 'earlier-copy-kept'
+  try {
+    localStorage.setItem(key, raw)
+    return 'kept'
+  } catch (error) {
+    log.error(`Could not back up ${name}:`, error)
+    return 'failed'
   }
-  report(name, area, 'not-backed-up')
-  return false
 }
 
 function isQuotaError(error: unknown): boolean {
@@ -179,12 +206,12 @@ function guardedStorage<P>(
       }
       if (!isEnvelope(value)) {
         log.error(`Saved ${name} could not be read; defaults loaded`)
-        if (backUp(name, area, raw)) report(name, area, 'unparseable')
+        report(name, area, 'unparseable', backUp(name, raw))
         return null
       }
       if (schemaOf(value.state) > currentSchema) {
         log.warn(`Saved ${name} was written by a newer version`)
-        if (backUp(name, area, raw)) report(name, area, 'newer-schema')
+        report(name, area, 'newer-schema', backUp(name, raw))
       }
       return value as StorageValue<P>
     },
@@ -225,14 +252,16 @@ export function definePersist<S, P extends object>(
       const defaults = current as Record<string, unknown>
       const checked: Record<string, unknown> = {}
       const reset: string[] = []
+      const dropped: string[] = []
       for (const [field, check] of Object.entries(spec.fields) as [string, FieldCheck<unknown>][]) {
         if (!Object.hasOwn(state, field)) {
           checked[field] = defaults[field]
           continue
         }
-        const value = check(state[field], (what) =>
+        const value = check(state[field], (what) => {
           log.warn(`Saved ${spec.name}: dropped ${field}${what}`)
-        )
+          dropped.push(field + what)
+        })
         if (value === undefined) {
           log.warn(`Saved ${spec.name}: ${field} had an unexpected value and was reset`)
           reset.push(field)
@@ -241,7 +270,13 @@ export function definePersist<S, P extends object>(
           checked[field] = value
         }
       }
-      if (reset.length > 0) report(spec.name, spec.area, 'fields-reset', reset)
+      // merge runs on what the storage's getItem just read, so the key still holds that text
+      const raw = localStorage.getItem(spec.name)
+      if (raw !== null && (reset.length > 0 || dropped.length > 0)) {
+        const backup = backUp(spec.name, raw)
+        if (reset.length > 0) report(spec.name, spec.area, 'fields-reset', backup, reset)
+        if (dropped.length > 0) report(spec.name, spec.area, 'entries-dropped', backup, dropped)
+      }
       const pruned = spec.prune ? spec.prune(checked as P) : checked
       return { ...current, ...pruned }
     },

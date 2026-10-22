@@ -176,6 +176,12 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   return plugin as unknown as PluginDefinition
 }
 
+/** The plugin name a saved tab shows, if it has one, to name it when it cannot be loaded. */
+const tabName = (value: unknown): string | undefined =>
+  isRecord(value) && isRecord(value.meta) && typeof value.meta.name === 'string'
+    ? value.meta.name
+    : undefined
+
 const checkBaseline: FieldCheck<PluginBaseline> = (value, drop) => {
   const def = checkDefinition(value, drop)
   return def === undefined ? undefined : toBaseline(def)
@@ -632,7 +638,7 @@ export const usePluginStore = create<PluginState>()(
       migrations: PLUGIN_MIGRATIONS,
       fields: {
         plugin: checkDefinition,
-        openPlugins: checkArrayOf(checkDefinition),
+        openPlugins: checkArrayOf(checkDefinition, tabName),
         activePluginId: checkStringOrNull,
         isDirty: checkBoolean,
         savedPath: checkStringOrNull,
