@@ -31,7 +31,9 @@ export function isRawMode(
   return isImported(plugin) && (choice ?? true)
 }
 
-const fileOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? `${plugin.meta.name}.js`
+/** The `.js` file a save writes: the file an imported plugin came from, else one named after it. */
+export const saveFileName = (plugin: Pick<PluginDefinition, 'importedFrom' | 'meta'>): string =>
+  plugin.importedFrom ?? `${plugin.meta.name}.js`
 
 /** The code a save writes, or why raw mode cannot save it. */
 export function generatePluginOutput(
@@ -44,7 +46,7 @@ export function generatePluginOutput(
     return {
       ok: false,
       refusal: 'source-missing',
-      message: `Not saved: the original file ${fileOf(plugin)} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
+      message: `Not saved: the original file ${saveFileName(plugin)} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
     }
   }
   if (
@@ -54,7 +56,7 @@ export function generatePluginOutput(
     return {
       ok: false,
       refusal: 'header-without-main-block',
-      message: `Header changes cannot be saved: ${fileOf(plugin)} has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.`
+      message: `Header changes cannot be saved: ${saveFileName(plugin)} has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.`
     }
   }
   let code: string
@@ -65,7 +67,7 @@ export function generatePluginOutput(
     return {
       ok: false,
       refusal: 'unparsable-source',
-      message: `Not saved: ${fileOf(plugin)} is not valid JavaScript (${error.parseError}), so raw mode cannot place added parameters, commands or structs in it. Undo those additions, or turn raw mode off to save regenerated code.`
+      message: `Not saved: ${saveFileName(plugin)} is not valid JavaScript (${error.parseError}), so raw mode cannot place added parameters, commands or structs in it. Undo those additions, or turn raw mode off to save regenerated code.`
     }
   }
   // A plugin that does not parse stops the game loading it; a file that did not parse before is
@@ -76,7 +78,7 @@ export function generatePluginOutput(
       return {
         ok: false,
         refusal: 'invalid-output',
-        message: `Not saved: the code raw mode built for ${fileOf(plugin)} is not valid JavaScript (${problem}), so the game could not load it. Undo the last edits, or turn raw mode off to save regenerated code.`
+        message: `Not saved: the code raw mode built for ${saveFileName(plugin)} is not valid JavaScript (${problem}), so the game could not load it. Undo the last edits, or turn raw mode off to save regenerated code.`
       }
     }
   }

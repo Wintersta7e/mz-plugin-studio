@@ -301,6 +301,23 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(id)).toBe(false)
   })
 
+  it('a tab loaded from a file cannot be renamed, and Ctrl+S writes the file it came from', async () => {
+    const project = await copyProject()
+    window.api = createMainApi()
+    await openProject(project)
+    const id = await openFromProject(project, FILE)
+    render(<App />)
+    expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
+    // A name that differs from the file, as a tab restored from an older version can hold
+    act(() => usePluginStore.getState().updateMeta({ name: 'Renamed', description: 'Kept' }))
+    pressSave()
+    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    expect(vi.mocked(window.api.plugin.save).mock.calls.map((call) => call[1])).toEqual([FILE])
+    expect(await readFile(fileIn(FILE, project), 'utf8')).toContain('Kept')
+    await expect(readFile(fileIn('Renamed.js', project))).rejects.toThrow(/ENOENT/)
+    expect(isDirty(id)).toBe(false)
+  })
+
   it('a file changed on disk while its prompt is open is asked about again', async () => {
     const project = await copyProject()
     const path = fileIn(FILE, project)

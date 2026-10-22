@@ -21,6 +21,15 @@ export function MetaEditor() {
   const localizedReadOnly = rawMode
     ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
     : { readOnly: false }
+  // A plugin loaded from a file is saved back to that file, so its name stays the file's
+  const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
+  const nameReadOnly =
+    importedFrom !== undefined
+      ? {
+          readOnly: true,
+          title: `Loaded from ${importedFrom}: the plugin name is the file name, so it cannot be changed here.`
+        }
+      : { readOnly: false }
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
     const currentLocalizations = meta.localizations || {}
@@ -70,6 +79,7 @@ export function MetaEditor() {
               value={meta.name}
               onChange={(e) => updateMeta({ name: e.target.value })}
               placeholder="MyPlugin"
+              {...nameReadOnly}
             />
           </div>
 

@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-types'
-import { isImported } from './plugin-output'
+import { isImported, saveFileName } from './plugin-output'
 import { prepareSave, reloadFromProject } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
 
@@ -142,11 +142,11 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
     const project = useProjectStore.getState().project
     let write: (guard: SaveGuard) => Promise<SaveResult>
     if (mode === 'save' && project !== null && plugin.meta.name) {
-      const filename = `${plugin.meta.name}.js`
+      const filename = saveFileName(plugin)
       write = (guard) => window.api.plugin.save(project.path, filename, code, guard)
     } else {
       const filePath = await window.api.dialog.saveFile({
-        defaultPath: `${plugin.meta.name || 'NewPlugin'}.js`,
+        defaultPath: plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js',
         filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
       })
       if (!filePath) return { status: 'cancelled' }
@@ -211,7 +211,7 @@ export async function saveAllPlugins(): Promise<void> {
       const { plugin, code } = prepared
       const result = await window.api.plugin.save(
         project.path,
-        `${plugin.meta.name}.js`,
+        saveFileName(plugin),
         code,
         guardFor(plugin.id)
       )
