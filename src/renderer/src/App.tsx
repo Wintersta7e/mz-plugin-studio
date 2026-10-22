@@ -26,11 +26,9 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
-import type { PluginDefinition } from './types/plugin'
-import { prepareSave } from './lib/raw-mode'
+import { saveAllPlugins, savePlugin } from './lib/save-plugin'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import log from 'electron-log/renderer'
 import { cn } from './lib/utils'
 
 const pluginFade = { duration: 0.12 }
@@ -262,117 +260,18 @@ function App() {
         }
         case 'ctrl+s': {
           if (isSavingRef.current) break
-          const ps = usePluginStore.getState()
-          const proj = useProjectStore.getState().project
-          if (proj && ps.plugin.meta.name) {
-            isSavingRef.current = true
-            const filename = `${ps.plugin.meta.name}.js`
-            prepareSave(ps.plugin.id, { ask: true })
-              .then(async (prepared) => {
-                if (prepared.status === 'refused') {
-                  useToastStore.getState().addToast({ type: 'error', message: prepared.reason })
-                }
-                if (prepared.status !== 'ready') return
-                const result = await window.api.plugin.save(proj.path, filename, prepared.code)
-                if (result.success) {
-                  usePluginStore.getState().setSavedPath(result.path)
-                  usePluginStore.getState().setDirty(false)
-                  usePluginStore
-                    .getState()
-                    .recordSaved(prepared.plugin.id, prepared.plugin, prepared.code)
-                  useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
-                }
-              })
-              .catch((error: unknown) => {
-                useToastStore.getState().addToast({
-                  type: 'error',
-                  message: `Save failed: ${error instanceof Error ? error.message : String(error)}`
-                })
-              })
-              .finally(() => {
-                isSavingRef.current = false
-              })
-          }
+          isSavingRef.current = true
+          void savePlugin(usePluginStore.getState().plugin.id, 'save').finally(() => {
+            isSavingRef.current = false
+          })
           break
         }
         case 'ctrl+shift+s': {
           if (isSavingRef.current) break
           isSavingRef.current = true
-          const ps = usePluginStore.getState()
-          const proj = useProjectStore.getState().project
-          if (!proj) {
+          void saveAllPlugins().finally(() => {
             isSavingRef.current = false
-            break
-          }
-          const dirtyPlugins = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
-          const savePromises = dirtyPlugins.map(async (p) => {
-            const filename = `${p.meta.name}.js`
-            const prepared = await prepareSave(p.id, { ask: false })
-            if (prepared.status === 'refused') {
-              // The toast says "Not saved:" once, before every refused plugin
-              const reason = prepared.reason.replace(/^Not saved: /, '')
-              return { id: p.id, refused: `${p.meta.name} (${reason})` }
-            }
-            if (prepared.status === 'cancelled') return { id: p.id }
-            try {
-              const result = await window.api.plugin.save(proj.path, filename, prepared.code)
-              if (result.success) {
-                return { id: p.id, path: result.path, saved: prepared.plugin, code: prepared.code }
-              }
-              return { id: p.id, error: new Error('save returned success=false') }
-            } catch (error: unknown) {
-              log.error('[save-all]', p.meta.name, error)
-              return { id: p.id, error }
-            }
           })
-          void Promise.all(savePromises)
-            .then((results) => {
-              const succeeded = results.filter(
-                (r): r is { id: string; path: string; saved: PluginDefinition; code: string } =>
-                  'path' in r
-              )
-              for (const r of succeeded)
-                usePluginStore.getState().recordSaved(r.id, r.saved, r.code)
-              const failed = results.filter((r) => 'error' in r)
-              const refused = results.flatMap((r) => ('refused' in r ? [r.refused] : []))
-              if (succeeded.length > 0) {
-                usePluginStore.setState((state) => {
-                  const nextDirty = { ...state.dirtyByPluginId }
-                  const nextPaths = { ...state.savedPathsByPluginId }
-                  let activeUpdate: { isDirty: false; savedPath: string } | null = null
-                  for (const r of succeeded) {
-                    delete nextDirty[r.id]
-                    nextPaths[r.id] = r.path
-                    if (state.activePluginId === r.id) {
-                      activeUpdate = { isDirty: false, savedPath: r.path }
-                    }
-                  }
-                  return {
-                    dirtyByPluginId: nextDirty,
-                    savedPathsByPluginId: nextPaths,
-                    ...(activeUpdate ?? {})
-                  }
-                })
-              }
-              if (refused.length > 0) {
-                const failures = failed.length > 0 ? `, failed ${failed.length}` : ''
-                useToastStore.getState().addToast({
-                  type: 'warning',
-                  message: `Saved ${succeeded.length}${failures}. Not saved: ${refused.join(', ')}`
-                })
-              } else if (succeeded.length > 0 || failed.length > 0) {
-                useToastStore.getState().addToast({
-                  type: failed.length > 0 ? 'warning' : 'success',
-                  message:
-                    failed.length > 0
-                      ? `Saved ${succeeded.length}, failed ${failed.length}`
-                      : `${succeeded.length} plugin${succeeded.length > 1 ? 's' : ''} saved`
-                })
-              }
-            })
-            .finally(() => {
-              isSavingRef.current = false
-            })
           break
         }
         case 'ctrl+b':

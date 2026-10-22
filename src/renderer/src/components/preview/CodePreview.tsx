@@ -27,7 +27,8 @@ import {
 } from '../../lib/exportFormats'
 import { generatePluginOutput, isImported, isRawMode } from '../../lib/plugin-output'
 import type { PluginOutput } from '../../lib/plugin-output'
-import { prepareSave, reloadFromProject } from '../../lib/raw-mode'
+import { reloadFromProject } from '../../lib/raw-mode'
+import { savePlugin } from '../../lib/save-plugin'
 import { DiffView } from './DiffView'
 import { cn } from '../../lib/utils'
 import log from 'electron-log/renderer'
@@ -36,9 +37,6 @@ export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)
   const project = useProjectStore((s) => s.project)
   const savedPath = usePluginStore((s) => s.savedPath)
-  const setSavedPath = usePluginStore((s) => s.setSavedPath)
-  const setDirty = usePluginStore((s) => s.setDirty)
-  const recordSaved = usePluginStore((s) => s.recordSaved)
 
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
   const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
@@ -190,59 +188,8 @@ export function CodePreview() {
 
   const handleExport = useCallback(async () => {
     // Generate from immediate state (not deferred) to avoid saving stale code (R3-01)
-    const currentPlugin = usePluginStore.getState().plugin
-    const prepared = await prepareSave(currentPlugin.id, { ask: true })
-    if (prepared.status === 'refused') {
-      addToast({ type: 'error', message: prepared.reason })
-      return
-    }
-    if (prepared.status === 'cancelled') return
-    const freshCode = prepared.code
-
-    if (!project) {
-      const filePath = await window.api.dialog.saveFile({
-        defaultPath: `${currentPlugin.meta.name || 'NewPlugin'}.js`,
-        filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
-      })
-      if (filePath) {
-        try {
-          const result = await window.api.plugin.saveToPath(filePath, freshCode)
-          if (result.success) {
-            setSavedPath(result.path)
-            setDirty(false)
-            recordSaved(prepared.plugin.id, prepared.plugin, freshCode)
-            addToast({ type: 'success', message: 'Plugin exported successfully' })
-            log.info('[save] Plugin saved successfully')
-          }
-        } catch (error) {
-          log.error('Failed to save plugin:', error)
-          addToast({
-            type: 'error',
-            message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
-          })
-        }
-      }
-      return
-    }
-
-    const filename = `${currentPlugin.meta.name || 'NewPlugin'}.js`
-    try {
-      const result = await window.api.plugin.save(project.path, filename, freshCode)
-      if (result.success) {
-        setSavedPath(result.path)
-        setDirty(false)
-        recordSaved(prepared.plugin.id, prepared.plugin, freshCode)
-        addToast({ type: 'success', message: 'Plugin exported successfully' })
-        log.info('[save] Plugin saved successfully')
-      }
-    } catch (error) {
-      log.error('Failed to save plugin:', error)
-      addToast({
-        type: 'error',
-        message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
-      })
-    }
-  }, [project, setSavedPath, setDirty, recordSaved, addToast])
+    await savePlugin(usePluginStore.getState().plugin.id, 'export')
+  }, [])
 
   const openDiff = useCallback(async () => {
     // Try to load on-disk version
