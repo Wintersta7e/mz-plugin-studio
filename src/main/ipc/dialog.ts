@@ -31,6 +31,29 @@ export async function showSaveFileDialog(
   return result.filePath
 }
 
+/** Shows a message box; returns the index of the button the user chose */
+export async function showMessageDialog(
+  dialog: Pick<Dialog, 'showMessageBox'>,
+  options: {
+    type?: 'none' | 'info' | 'error' | 'question' | 'warning'
+    title?: string
+    message: string
+    buttons?: string[]
+    defaultId?: number
+  }
+): Promise<number> {
+  log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
+  const result = await dialog.showMessageBox({
+    type: options.type || 'info',
+    title: options.title || 'MZ Plugin Studio',
+    message: options.message,
+    buttons: options.buttons || ['OK'],
+    ...(options.defaultId !== undefined && { defaultId: options.defaultId })
+  })
+
+  return result.response
+}
+
 export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
   ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async (_event: IpcMainInvokeEvent) => {
     const result = await dialog.showOpenDialog({
@@ -76,7 +99,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
 
   ipcMain.handle(
     IPC_CHANNELS.DIALOG_MESSAGE,
-    async (
+    (
       _event: IpcMainInvokeEvent,
       options: {
         type?: 'none' | 'info' | 'error' | 'question' | 'warning'
@@ -85,17 +108,6 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
         buttons?: string[]
         defaultId?: number
       }
-    ) => {
-      log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
-      const result = await dialog.showMessageBox({
-        type: options.type || 'info',
-        title: options.title || 'MZ Plugin Studio',
-        message: options.message,
-        buttons: options.buttons || ['OK'],
-        ...(options.defaultId !== undefined && { defaultId: options.defaultId })
-      })
-
-      return result.response
-    }
+    ) => showMessageDialog(dialog, options)
   )
 }

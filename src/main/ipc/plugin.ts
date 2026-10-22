@@ -56,26 +56,43 @@ export async function loadPluginFile(
   }
 }
 
+/** Writes `content` to `js/plugins/<filename>` of a project; creates the folder when missing */
+export async function savePluginFile(
+  projectPath: string,
+  filename: string,
+  content: string
+): Promise<{ success: boolean; path: string }> {
+  assertSafeProjectPath(projectPath)
+  assertSafeFilename(filename)
+  log.debug(`[plugin:save] ${filename} to ${projectPath}`)
+  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  const dir = dirname(pluginPath)
+
+  try {
+    await access(dir)
+  } catch {
+    await mkdir(dir, { recursive: true })
+  }
+
+  await writeFile(pluginPath, content, 'utf-8')
+  log.info(`[plugin:save] Saved ${filename} to ${pluginPath}`)
+  return { success: true, path: pluginPath }
+}
+
+/** Reads the text of `js/plugins/<filename>` of a project */
+export async function readRawPlugin(projectPath: string, filename: string): Promise<string> {
+  assertSafeProjectPath(projectPath)
+  assertSafeFilename(filename)
+  log.debug(`[plugin:read-raw] ${filename}`)
+  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  return readFile(pluginPath, 'utf-8')
+}
+
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE,
-    async (_event: IpcMainInvokeEvent, projectPath: string, filename: string, content: string) => {
-      assertSafeProjectPath(projectPath)
-      assertSafeFilename(filename)
-      log.debug(`[plugin:save] ${filename} to ${projectPath}`)
-      const pluginPath = join(projectPath, 'js', 'plugins', filename)
-      const dir = dirname(pluginPath)
-
-      try {
-        await access(dir)
-      } catch {
-        await mkdir(dir, { recursive: true })
-      }
-
-      await writeFile(pluginPath, content, 'utf-8')
-      log.info(`[plugin:save] Saved ${filename} to ${pluginPath}`)
-      return { success: true, path: pluginPath }
-    }
+    (_event: IpcMainInvokeEvent, projectPath: string, filename: string, content: string) =>
+      savePluginFile(projectPath, filename, content)
   )
 
   ipcMain.handle(
@@ -98,13 +115,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_READ_RAW,
-    async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
-      assertSafeProjectPath(projectPath)
-      assertSafeFilename(filename)
-      log.debug(`[plugin:read-raw] ${filename}`)
-      const pluginPath = join(projectPath, 'js', 'plugins', filename)
-      return readFile(pluginPath, 'utf-8')
-    }
+    (_event: IpcMainInvokeEvent, projectPath: string, filename: string) =>
+      readRawPlugin(projectPath, filename)
   )
 
   ipcMain.handle(
