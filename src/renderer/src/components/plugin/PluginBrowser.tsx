@@ -15,9 +15,10 @@ import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { useProjectStore, usePluginStore } from '../../stores'
+import { useProjectStore, usePluginStore, useToastStore } from '../../stores'
+import { NOTICE_MS } from '../../stores/toastStore'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
-import { cn } from '../../lib/utils'
+import { cn, userMessage } from '../../lib/utils'
 import log from 'electron-log/renderer'
 
 interface PluginBrowserProps {
@@ -220,6 +221,12 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
       setBase(loaded.plugin.id, { path: loaded.path, sha256: loaded.sha256 })
     } catch (err) {
       log.error(`PluginBrowser: failed to load ${row.filename}`, err)
+      // Main's message names the file and says why it was not opened
+      useToastStore.getState().addToast({
+        type: 'error',
+        message: userMessage(err),
+        duration: NOTICE_MS
+      })
     }
   }
 
