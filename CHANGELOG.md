@@ -29,6 +29,7 @@
 - Raw mode reads an imported plugin as JavaScript to place the code for added parameters and commands. Plugins whose IIFE ends with `}());`, that hold a quote in a regular expression, read their parameters through `JSON.parse` or across lines, or already use an added parameter's name no longer fail to load after such a save, and a block after `'use strict'` is no longer garbled.
 - Raw mode refuses to save code additions to a plugin that is not valid JavaScript, and any save whose result would not be valid JavaScript, with a message naming the file.
 - Code raw mode adds for new parameters of a plugin without an IIFE now sits in a block, so its names no longer clash with another plugin's and stop the game from loading.
+- The code preview's warning and error banners and validation messages have readable contrast in both themes, and screen readers announce the banners.
 
 ### Changed
 

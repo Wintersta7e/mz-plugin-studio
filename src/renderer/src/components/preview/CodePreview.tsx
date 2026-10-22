@@ -331,7 +331,7 @@ export function CodePreview() {
               {!validation.valid && (
                 <span
                   className={cn(
-                    'text-destructive',
+                    'text-destructive-text',
                     badgeBounce && validation.errors.length > 0 && 'animate-badge-bounce'
                   )}
                 >
@@ -341,7 +341,7 @@ export function CodePreview() {
               {validation.warnings && validation.warnings.length > 0 && (
                 <span
                   className={cn(
-                    'text-yellow-500',
+                    'text-warning-text',
                     badgeBounce && validation.warnings.length > 0 && 'animate-badge-bounce'
                   )}
                 >
@@ -462,7 +462,7 @@ export function CodePreview() {
         <>
           {!validation.valid && (
             <div className="border-b border-border bg-destructive/10 p-3">
-              <ul className="space-y-1 text-sm text-destructive">
+              <ul className="space-y-1 text-sm text-destructive-text">
                 {validation.errors.map((error, i) => (
                   <li key={i}>{error}</li>
                 ))}
@@ -471,7 +471,7 @@ export function CodePreview() {
           )}
           {validation.warnings && validation.warnings.length > 0 && (
             <div className="border-b border-border bg-yellow-500/10 p-3">
-              <ul className="space-y-1 text-sm text-yellow-500">
+              <ul className="space-y-1 text-sm text-warning-text">
                 {validation.warnings.map((warning, i) => (
                   <li key={i}>{warning}</li>
                 ))}
@@ -483,11 +483,12 @@ export function CodePreview() {
 
       {banner !== null && (
         <div
+          role={sourceMissing ? 'status' : 'alert'}
           className={cn(
             'flex items-center gap-3 border-b border-border p-3 text-sm',
             sourceMissing
-              ? 'bg-yellow-500/10 text-yellow-500'
-              : 'bg-destructive/10 text-destructive'
+              ? 'bg-yellow-500/10 text-warning-text'
+              : 'bg-destructive/10 text-destructive-text'
           )}
         >
           <span className="flex-1">{banner}</span>

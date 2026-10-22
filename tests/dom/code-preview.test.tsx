@@ -155,8 +155,9 @@ describe('code preview banner', () => {
     openImported(FILE, { withSource: false })
     render(<CodePreview />)
     const banner = await bannerOf(missingText)
-    expect(banner).toHaveClass('bg-yellow-500/10', 'text-yellow-500')
-    expect(banner).not.toHaveClass('text-destructive')
+    expect(banner).toHaveAttribute('role', 'status')
+    expect(banner).toHaveClass('bg-yellow-500/10', 'text-warning-text')
+    expect(banner).not.toHaveClass('text-destructive-text')
     const button = screen.getByRole('button', { name: RELOAD })
     expect(button).toBeEnabled()
     expect(button).not.toHaveAttribute('title')
@@ -182,7 +183,7 @@ describe('code preview banner', () => {
     const banner = await bannerOf(
       `The app's copy of ${FILE} as it was last read is missing, so raw mode cannot tell what changed. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
     )
-    expect(banner).not.toHaveClass('text-destructive')
+    expect(banner).toHaveAttribute('role', 'status')
   })
 
   it('shows no reload banner with raw mode off', async () => {
@@ -203,8 +204,9 @@ describe('code preview banner', () => {
     const banner = await bannerOf(
       'Header changes cannot be saved: Fixture_NoBlock.js has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.'
     )
-    expect(banner).toHaveClass('bg-destructive/10', 'text-destructive')
-    expect(banner).not.toHaveClass('text-yellow-500')
+    expect(banner).toHaveAttribute('role', 'alert')
+    expect(banner).toHaveClass('bg-destructive/10', 'text-destructive-text')
+    expect(banner).not.toHaveClass('text-warning-text')
     expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
   })
 })
