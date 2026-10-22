@@ -245,7 +245,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
     async (_event: IpcMainInvokeEvent, filePath: string) => {
       assertSafeFilePath(filePath)
       log.debug(`[plugin:read-by-path] ${filePath}`)
-      return readFile(filePath, 'utf-8')
+      return (await readWithSha(filePath)).content
     }
   )
 
