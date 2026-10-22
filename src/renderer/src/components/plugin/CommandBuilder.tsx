@@ -16,6 +16,7 @@ import {
   type ParamType
 } from '../../types/plugin'
 import { generateCommandSkeleton } from '../../lib/generator'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
 
 const ARG_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -57,6 +58,7 @@ export function CommandBuilder() {
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const headerReadOnly = useHeaderReadOnly()
 
   const handleAddCommand = () => {
     const cmd = createEmptyCommand()
@@ -70,7 +72,11 @@ export function CommandBuilder() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <fieldset
+      disabled={headerReadOnly}
+      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
+      className="flex h-full min-w-0 flex-col"
+    >
       <div className="flex items-center justify-between border-b border-border p-4">
         <h2 className="text-lg font-semibold">Plugin Commands</h2>
         <Button size="sm" onClick={handleAddCommand}>
@@ -78,6 +84,11 @@ export function CommandBuilder() {
           Add Command
         </Button>
       </div>
+      {headerReadOnly && (
+        <p className="px-4 pt-2 text-sm text-muted-foreground">
+          {RAW_MODE_HEADER_READ_ONLY_NOTICE}
+        </p>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="space-y-2 p-4">
@@ -122,7 +133,7 @@ export function CommandBuilder() {
           )}
         </div>
       </ScrollArea>
-    </div>
+    </fieldset>
   )
 }
 

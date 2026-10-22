@@ -16,6 +16,7 @@ import {
   type PluginParameter,
   type ParamType
 } from '../../types/plugin'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -58,6 +59,7 @@ export function StructBuilder() {
   const removeStructParam = usePluginStore((s) => s.removeStructParam)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const headerReadOnly = useHeaderReadOnly()
 
   const handleAddStruct = () => {
     const struct = createEmptyStruct()
@@ -66,7 +68,11 @@ export function StructBuilder() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <fieldset
+      disabled={headerReadOnly}
+      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
+      className="flex h-full min-w-0 flex-col"
+    >
       <div className="flex items-center justify-between border-b border-border p-4">
         <h2 className="text-lg font-semibold">Structs</h2>
         <Button size="sm" onClick={handleAddStruct}>
@@ -74,6 +80,11 @@ export function StructBuilder() {
           Add Struct
         </Button>
       </div>
+      {headerReadOnly && (
+        <p className="px-4 pt-2 text-sm text-muted-foreground">
+          {RAW_MODE_HEADER_READ_ONLY_NOTICE}
+        </p>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="space-y-2 p-4">
@@ -100,7 +111,7 @@ export function StructBuilder() {
           )}
         </div>
       </ScrollArea>
-    </div>
+    </fieldset>
   )
 }
 

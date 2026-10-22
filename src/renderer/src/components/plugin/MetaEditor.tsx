@@ -9,7 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { usePluginStore, useProjectStore } from '../../stores'
 import { generateHelpText } from '../../lib/exportFormats'
 import type { LocalizedContent, NoteParam } from '../../types/plugin'
-import { RAW_MODE_READ_ONLY_NOTICE, useActiveRawMode } from '../../lib/raw-mode'
+import {
+  RAW_MODE_HEADER_READ_ONLY_NOTICE,
+  RAW_MODE_READ_ONLY_NOTICE,
+  useActiveRawMode,
+  useHeaderReadOnly
+} from '../../lib/raw-mode'
 
 export function MetaEditor() {
   const meta = usePluginStore((s) => s.plugin.meta)
@@ -30,6 +35,12 @@ export function MetaEditor() {
           title: `Loaded from ${importedFrom}: the plugin name is the file name, so it cannot be changed here.`
         }
       : { readOnly: false }
+  // A file with no main annotation block cannot take header changes in raw mode
+  const headerReadOnly = useHeaderReadOnly()
+  const headerFieldset = {
+    disabled: headerReadOnly,
+    title: headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+  }
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
     const currentLocalizations = meta.localizations || {}
@@ -69,50 +80,55 @@ export function MetaEditor() {
   return (
     <div className="space-y-4 p-4">
       <h2 className="text-lg font-semibold">Plugin Metadata</h2>
+      {headerReadOnly && (
+        <p className="text-sm text-muted-foreground">{RAW_MODE_HEADER_READ_ONLY_NOTICE}</p>
+      )}
 
       <div className="grid gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <fieldset {...headerFieldset} className="grid min-w-0 gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Plugin Name</Label>
+              <Input
+                id="name"
+                value={meta.name}
+                onChange={(e) => updateMeta({ name: e.target.value })}
+                placeholder="MyPlugin"
+                {...nameReadOnly}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="version">Version</Label>
+              <Input
+                id="version"
+                value={meta.version}
+                onChange={(e) => updateMeta({ version: e.target.value })}
+                placeholder="1.0.0"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="name">Plugin Name</Label>
+            <Label htmlFor="author">Author</Label>
             <Input
-              id="name"
-              value={meta.name}
-              onChange={(e) => updateMeta({ name: e.target.value })}
-              placeholder="MyPlugin"
-              {...nameReadOnly}
+              id="author"
+              value={meta.author}
+              onChange={(e) => updateMeta({ author: e.target.value })}
+              placeholder="Your name"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="version">Version</Label>
+            <Label htmlFor="url">URL</Label>
             <Input
-              id="version"
-              value={meta.version}
-              onChange={(e) => updateMeta({ version: e.target.value })}
-              placeholder="1.0.0"
+              id="url"
+              value={meta.url}
+              onChange={(e) => updateMeta({ url: e.target.value })}
+              placeholder="https://example.com"
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="author">Author</Label>
-          <Input
-            id="author"
-            value={meta.author}
-            onChange={(e) => updateMeta({ author: e.target.value })}
-            placeholder="Your name"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="url">URL</Label>
-          <Input
-            id="url"
-            value={meta.url}
-            onChange={(e) => updateMeta({ url: e.target.value })}
-            placeholder="https://example.com"
-          />
-        </div>
+        </fieldset>
 
         {/* Localized Description and Help with Tabs */}
         <div className="space-y-2">
@@ -125,39 +141,41 @@ export function MetaEditor() {
             </TabsList>
 
             <TabsContent value="en" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description-en">Description</Label>
-                <Textarea
-                  id="description-en"
-                  value={meta.description}
-                  onChange={(e) => updateMeta({ description: e.target.value })}
-                  placeholder="A brief description of your plugin"
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="help-en">Help Text</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={handleAutoGenerateHelp}
-                    title="Auto-generate help text from plugin metadata"
-                  >
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    Auto-generate
-                  </Button>
+              <fieldset {...headerFieldset} className="min-w-0 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description-en">Description</Label>
+                  <Textarea
+                    id="description-en"
+                    value={meta.description}
+                    onChange={(e) => updateMeta({ description: e.target.value })}
+                    placeholder="A brief description of your plugin"
+                    rows={2}
+                  />
                 </div>
-                <Textarea
-                  id="help-en"
-                  value={meta.help}
-                  onChange={(e) => updateMeta({ help: e.target.value })}
-                  placeholder="Detailed help and usage instructions"
-                  rows={6}
-                  className="font-mono text-sm"
-                />
-              </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="help-en">Help Text</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={handleAutoGenerateHelp}
+                      title="Auto-generate help text from plugin metadata"
+                    >
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      Auto-generate
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="help-en"
+                    value={meta.help}
+                    onChange={(e) => updateMeta({ help: e.target.value })}
+                    placeholder="Detailed help and usage instructions"
+                    rows={6}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </fieldset>
             </TabsContent>
 
             <TabsContent value="ja" className="space-y-4">
@@ -220,147 +238,149 @@ export function MetaEditor() {
           </Tabs>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="dependencies">Dependencies (one per line)</Label>
-          <Textarea
-            id="dependencies"
-            value={meta.dependencies.join('\n')}
-            onChange={(e) =>
-              updateMeta({
-                dependencies: e.target.value.split('\n').filter((s) => s.trim())
-              })
-            }
-            placeholder="PluginName1&#10;PluginName2"
-            rows={3}
-            className="font-mono text-sm"
-          />
-          {dependencyReport && dependencyReport.pluginNames.length > 0 && (
-            <div className="text-xs text-muted-foreground">
-              <button
-                type="button"
-                className="hover:text-foreground underline decoration-dotted"
-                onClick={() => setShowPluginNames(!showPluginNames)}
-              >
-                {dependencyReport.pluginNames.length} project plugins available
-              </button>
-              {showPluginNames && (
-                <div className="mt-1 max-h-32 overflow-y-auto rounded border border-border bg-muted/50 p-2 font-mono">
-                  {dependencyReport.pluginNames.map((name) => (
-                    <div key={name}>{name}</div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="orderAfter">Order After (one per line)</Label>
-          <Textarea
-            id="orderAfter"
-            value={(meta.orderAfter || []).join('\n')}
-            onChange={(e) =>
-              updateMeta({
-                orderAfter: e.target.value.split('\n').filter((s) => s.trim())
-              })
-            }
-            placeholder="PluginName (plugins that must load before this one)"
-            rows={2}
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-muted-foreground">Plugins that must load before this one</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="orderBefore">Order Before (one per line)</Label>
-          <Textarea
-            id="orderBefore"
-            value={(meta.orderBefore || []).join('\n')}
-            onChange={(e) =>
-              updateMeta({
-                orderBefore: e.target.value.split('\n').filter((s) => s.trim())
-              })
-            }
-            placeholder="PluginName (plugins that must load after this one)"
-            rows={2}
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="requiredAssets">Required Assets (one per line)</Label>
-          <Textarea
-            id="requiredAssets"
-            value={(meta.requiredAssets || []).join('\n')}
-            onChange={(e) =>
-              updateMeta({
-                requiredAssets: e.target.value.split('\n').filter((s) => s.trim())
-              })
-            }
-            placeholder="img/pictures/title&#10;audio/bgm/theme"
-            rows={3}
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            Assets preserved during MZ&apos;s &quot;Exclude unused files&quot; deployment (relative
-            paths).
-          </p>
-        </div>
-
-        {/* Note Parameters for deployment */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Note Parameters (deployment)</Label>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => {
-                const current = meta.noteParams || []
+        <fieldset {...headerFieldset} className="grid min-w-0 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="dependencies">Dependencies (one per line)</Label>
+            <Textarea
+              id="dependencies"
+              value={meta.dependencies.join('\n')}
+              onChange={(e) =>
                 updateMeta({
-                  noteParams: [...current, { name: '', type: 'file' }]
+                  dependencies: e.target.value.split('\n').filter((s) => s.trim())
                 })
-              }}
-            >
-              <Plus className="mr-1 h-3 w-3" />
-              Add
-            </Button>
+              }
+              placeholder="PluginName1&#10;PluginName2"
+              rows={3}
+              className="font-mono text-sm"
+            />
+            {dependencyReport && dependencyReport.pluginNames.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                <button
+                  type="button"
+                  className="hover:text-foreground underline decoration-dotted"
+                  onClick={() => setShowPluginNames(!showPluginNames)}
+                >
+                  {dependencyReport.pluginNames.length} project plugins available
+                </button>
+                {showPluginNames && (
+                  <div className="mt-1 max-h-32 overflow-y-auto rounded border border-border bg-muted/50 p-2 font-mono">
+                    {dependencyReport.pluginNames.map((name) => (
+                      <div key={name}>{name}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {(meta.noteParams || []).length > 0 && (
-            <div className="space-y-3 rounded-md border border-border p-3">
-              {(meta.noteParams || []).map((np, idx) => (
-                <NoteParamRow
-                  key={idx}
-                  noteParam={np}
-                  onUpdate={(updates) => {
-                    const current = [...(meta.noteParams || [])]
-                    current[idx] = { ...current[idx], ...updates }
-                    updateMeta({ noteParams: current })
-                  }}
-                  onDelete={() => {
-                    const current = [...(meta.noteParams || [])]
-                    current.splice(idx, 1)
-                    updateMeta({ noteParams: current })
-                  }}
-                />
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Declares which notetags reference files for MZ deployment packaging
-          </p>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="target">Target</Label>
-          <Input
-            id="target"
-            value={meta.target}
-            onChange={(e) => updateMeta({ target: e.target.value })}
-            placeholder="MZ"
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="orderAfter">Order After (one per line)</Label>
+            <Textarea
+              id="orderAfter"
+              value={(meta.orderAfter || []).join('\n')}
+              onChange={(e) =>
+                updateMeta({
+                  orderAfter: e.target.value.split('\n').filter((s) => s.trim())
+                })
+              }
+              placeholder="PluginName (plugins that must load before this one)"
+              rows={2}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">Plugins that must load before this one</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="orderBefore">Order Before (one per line)</Label>
+            <Textarea
+              id="orderBefore"
+              value={(meta.orderBefore || []).join('\n')}
+              onChange={(e) =>
+                updateMeta({
+                  orderBefore: e.target.value.split('\n').filter((s) => s.trim())
+                })
+              }
+              placeholder="PluginName (plugins that must load after this one)"
+              rows={2}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requiredAssets">Required Assets (one per line)</Label>
+            <Textarea
+              id="requiredAssets"
+              value={(meta.requiredAssets || []).join('\n')}
+              onChange={(e) =>
+                updateMeta({
+                  requiredAssets: e.target.value.split('\n').filter((s) => s.trim())
+                })
+              }
+              placeholder="img/pictures/title&#10;audio/bgm/theme"
+              rows={3}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Assets preserved during MZ&apos;s &quot;Exclude unused files&quot; deployment
+              (relative paths).
+            </p>
+          </div>
+
+          {/* Note Parameters for deployment */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Note Parameters (deployment)</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => {
+                  const current = meta.noteParams || []
+                  updateMeta({
+                    noteParams: [...current, { name: '', type: 'file' }]
+                  })
+                }}
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                Add
+              </Button>
+            </div>
+            {(meta.noteParams || []).length > 0 && (
+              <div className="space-y-3 rounded-md border border-border p-3">
+                {(meta.noteParams || []).map((np, idx) => (
+                  <NoteParamRow
+                    key={idx}
+                    noteParam={np}
+                    onUpdate={(updates) => {
+                      const current = [...(meta.noteParams || [])]
+                      current[idx] = { ...current[idx], ...updates }
+                      updateMeta({ noteParams: current })
+                    }}
+                    onDelete={() => {
+                      const current = [...(meta.noteParams || [])]
+                      current.splice(idx, 1)
+                      updateMeta({ noteParams: current })
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Declares which notetags reference files for MZ deployment packaging
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="target">Target</Label>
+            <Input
+              id="target"
+              value={meta.target}
+              onChange={(e) => updateMeta({ target: e.target.value })}
+              placeholder="MZ"
+            />
+          </div>
+        </fieldset>
       </div>
     </div>
   )

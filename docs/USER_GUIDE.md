@@ -832,7 +832,7 @@ In raw mode the Code tab, the template inserter and the localized description an
 Raw mode does not write a file it cannot keep intact. The code preview shows why, naming the file, and **Ctrl+S** and **Save All** report it as not saved:
 
 - **The file text is not loaded** — the tab was opened in an older version of the app, or the app's copy of the file as last read is missing. The banner offers **Reload from project** (below).
-- **Header changes to a file without a main block** — the file has no `/*:` or `/*:en` annotation block to rewrite. Undo the header changes.
+- **Header changes to a file without a main block** — the file has no `/*:` or `/*:en` annotation block to rewrite. Undo the header changes. For such a file the Meta fields outside the language tabs, the English description and help, and the Parameters, Commands and Structs tabs are read-only in raw mode, with a notice saying why, so header edits cannot be made in the first place.
 - **Additions to a file that is not valid JavaScript** — new parameters, commands or struct blocks need the file's structure. Edits to existing annotations still save.
 - **A result that would not be valid JavaScript** — the game could not load it, so the edit is refused. Undo the last edits.
 

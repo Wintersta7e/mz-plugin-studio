@@ -4,8 +4,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
+import { CommandBuilder } from '../../src/renderer/src/components/plugin/CommandBuilder'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
+import { StructBuilder } from '../../src/renderer/src/components/plugin/StructBuilder'
 import { TemplateInserter } from '../../src/renderer/src/components/plugin/TemplateInserter'
 import {
   generatePluginsJsonEntry,
@@ -14,7 +16,7 @@ import {
 } from '../../src/renderer/src/lib/exportFormats'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
-import { createEmptyParameter, toBaseline } from '../../src/shared/types/plugin'
+import { createEmptyParameter, createEmptyStruct, toBaseline } from '../../src/shared/types/plugin'
 import type {
   PluginCommand,
   PluginDefinition,
@@ -293,5 +295,80 @@ describe('raw mode controls of an imported plugin', () => {
   it('counts the controls it checked', () => {
     console.log(`controls checked ${checked}`)
     expect(checked).toBeGreaterThan(0)
+  })
+})
+
+describe('header editors of an imported file with no main annotation block', () => {
+  const JA_ONLY = 'Fixture_JaOnly.js'
+  const HEADER_NOTICE =
+    'This file has no main annotation block (/*: or /*:en), so raw mode cannot save changes to its header and it is read-only here. Turn raw mode off in the preview to edit it.'
+
+  beforeEach(() => {
+    resetStores()
+    window.api = createFakeApi()
+    usePluginStore.getState().openPlugin({ ...loadFixture(JA_ONLY), importedFrom: JA_ONLY })
+    usePluginStore.getState().addStruct(createEmptyStruct())
+  })
+
+  /** One editing control of each kind the header editors render. */
+  function headerControls(): HTMLElement[] {
+    const { parameters, commands, structs } = usePluginStore.getState().plugin
+    const controls: HTMLElement[] = []
+    const meta = render(<MetaEditor />)
+    for (const id of ['name', 'version', 'author', 'url', 'description-en', 'help-en', 'target']) {
+      controls.push(document.getElementById(id)!)
+    }
+    controls.push(screen.getByRole('button', { name: /Auto-generate/ }))
+    meta.unmount()
+    const params = render(<ParameterBuilder />)
+    controls.push(screen.getByRole('button', { name: /Add Parameter/ }))
+    fireEvent.click(screen.getByText(parameters[0].text || parameters[0].name))
+    controls.push(screen.getByDisplayValue(parameters[0].name))
+    params.unmount()
+    const cmds = render(<CommandBuilder />)
+    controls.push(screen.getByRole('button', { name: /Add Command/ }))
+    fireEvent.click(screen.getByText(commands[0].text || commands[0].name))
+    controls.push(screen.getByDisplayValue(commands[0].name))
+    controls.push(screen.getByRole('button', { name: /Add Argument/ }))
+    cmds.unmount()
+    const structEditor = render(<StructBuilder />)
+    controls.push(screen.getByRole('button', { name: /Add Struct/ }))
+    fireEvent.click(screen.getByText(structs[0].name))
+    controls.push(screen.getByDisplayValue(structs[0].name))
+    structEditor.unmount()
+    return controls
+  }
+
+  it('Meta, Parameters, Commands and Structs are read-only in raw mode and say why', () => {
+    for (const Editor of [MetaEditor, ParameterBuilder, CommandBuilder, StructBuilder]) {
+      const { unmount } = render(<Editor />)
+      expect(screen.getByText(HEADER_NOTICE), Editor.name).toBeInTheDocument()
+      unmount()
+    }
+    const controls = headerControls()
+    for (const control of controls) {
+      expect(control).toBeDisabled()
+      expect(control.closest('fieldset')).toHaveAttribute('title', HEADER_NOTICE)
+    }
+    console.log(`header controls checked ${controls.length}`)
+  })
+
+  it('a parameter cannot be dragged to a new place in raw mode', () => {
+    render(<ParameterBuilder />)
+    const first = usePluginStore.getState().plugin.parameters[0]
+    const card = screen.getByText(first.text || first.name).closest('[draggable]')!
+    const dataTransfer = { setData: vi.fn(), setDragImage: vi.fn() }
+    expect(fireEvent.dragStart(card, { dataTransfer })).toBe(false)
+    expect(dataTransfer.setData).not.toHaveBeenCalled()
+  })
+
+  it('the header editors are editable with raw mode off', () => {
+    useUIStore.getState().setRawModeForPlugin(usePluginStore.getState().plugin.id, false)
+    for (const control of headerControls()) expect(control).toBeEnabled()
+    for (const Editor of [MetaEditor, ParameterBuilder, CommandBuilder, StructBuilder]) {
+      const { unmount } = render(<Editor />)
+      expect(screen.queryByText(HEADER_NOTICE), Editor.name).toBeNull()
+      unmount()
+    }
   })
 })

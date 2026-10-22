@@ -1,14 +1,19 @@
 import log from 'electron-log/renderer'
+import { useMemo } from 'react'
 import { usePluginStore } from '../stores/pluginStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
 import type { PluginDefinition } from '../types/plugin'
+import { hasMainBlock } from './generator'
 import { generatePluginOutput, isImported, isRawMode } from './plugin-output'
 import type { OutputRefusal } from './plugin-output'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
   "Raw mode keeps this plugin's own code and language blocks, so this is read-only here. Turn raw mode off in the preview to edit it."
+
+export const RAW_MODE_HEADER_READ_ONLY_NOTICE =
+  'This file has no main annotation block (/*: or /*:en), so raw mode cannot save changes to its header and it is read-only here. Turn raw mode off in the preview to edit it.'
 
 /** Why a save is refused: raw mode cannot build the file, or a regenerating save is unconfirmed */
 export type SaveRefusal = OutputRefusal | 'needs-confirmation'
@@ -24,6 +29,16 @@ export function useActiveRawMode(): boolean {
   const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
   const choice = useUIStore((s) => s.rawModeByPluginId[id])
   return isRawMode({ importedFrom }, choice)
+}
+
+/** Whether the active tab's header is read-only: raw mode cannot save header changes to its file. */
+export function useHeaderReadOnly(): boolean {
+  const rawMode = useActiveRawMode()
+  const rawSource = usePluginStore((s) => s.plugin.rawSource)
+  return useMemo(
+    () => rawMode && rawSource !== undefined && !hasMainBlock(rawSource),
+    [rawMode, rawSource]
+  )
 }
 
 /**

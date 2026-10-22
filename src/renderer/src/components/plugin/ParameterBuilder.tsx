@@ -41,6 +41,7 @@ import {
   duplicateParams,
   type ParamImportResult
 } from '../../lib/param-io'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
 import { cn } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
@@ -393,19 +394,28 @@ export function ParameterBuilder() {
     setExpandedId(param.id)
   }
 
-  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
-    setDraggedId(id)
-    draggedIdRef.current = id
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', id)
-    // Create a minimal drag image
-    const dragImage = document.createElement('div')
-    dragImage.style.cssText =
-      'position:absolute;top:-1000px;width:200px;height:40px;background:#333;border-radius:8px;'
-    document.body.appendChild(dragImage)
-    e.dataTransfer.setDragImage(dragImage, 100, 20)
-    setTimeout(() => document.body.removeChild(dragImage), 0)
-  }, [])
+  const headerReadOnly = useHeaderReadOnly()
+
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, id: string) => {
+      if (headerReadOnly) {
+        e.preventDefault()
+        return
+      }
+      setDraggedId(id)
+      draggedIdRef.current = id
+      e.dataTransfer.effectAllowed = 'move'
+      e.dataTransfer.setData('text/plain', id)
+      // Create a minimal drag image
+      const dragImage = document.createElement('div')
+      dragImage.style.cssText =
+        'position:absolute;top:-1000px;width:200px;height:40px;background:#333;border-radius:8px;'
+      document.body.appendChild(dragImage)
+      e.dataTransfer.setDragImage(dragImage, 100, 20)
+      setTimeout(() => document.body.removeChild(dragImage), 0)
+    },
+    [headerReadOnly]
+  )
 
   const handleDragEnd = useCallback(() => {
     draggedIdRef.current = null
@@ -439,7 +449,11 @@ export function ParameterBuilder() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col">
+    <fieldset
+      disabled={headerReadOnly}
+      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
+      className="flex h-full min-w-0 flex-col"
+    >
       <div className="flex flex-col border-b border-border">
         <div className="flex items-center justify-between p-4">
           <h2 className="text-lg font-semibold">Parameters</h2>
@@ -448,6 +462,11 @@ export function ParameterBuilder() {
             Add Parameter
           </Button>
         </div>
+        {headerReadOnly && (
+          <p className="px-4 pb-2 text-sm text-muted-foreground">
+            {RAW_MODE_HEADER_READ_ONLY_NOTICE}
+          </p>
+        )}
 
         {/* Toolbar - visible when parameters exist */}
         {parameters.length > 0 && (
@@ -698,7 +717,7 @@ export function ParameterBuilder() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </fieldset>
   )
 }
 
