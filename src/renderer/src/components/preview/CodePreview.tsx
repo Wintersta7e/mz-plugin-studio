@@ -187,7 +187,7 @@ export function CodePreview() {
   }, [addToast])
 
   const handleExport = useCallback(async () => {
-    // Generate from immediate state (not deferred) to avoid saving stale code (R3-01)
+    // Generate from immediate state (not deferred) to avoid saving stale code
     await savePlugin(usePluginStore.getState().plugin.id, 'export')
   }, [])
 

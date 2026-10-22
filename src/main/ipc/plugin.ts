@@ -143,13 +143,13 @@ export async function loadPluginFile(projectPath: string, filename: string): Pro
 
 /**
  * Writes `content` to `js/plugins/<filename>` of a project; creates the folder when missing.
- * With a guard, an existing file is replaced only when it is the guard's base, unchanged.
+ * An existing file is replaced only when it is the guard's base, unchanged.
  */
 export async function savePluginFile(
   projectPath: string,
   filename: string,
   content: string,
-  guard?: SaveGuard
+  guard: SaveGuard
 ): Promise<SaveResult> {
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
@@ -177,7 +177,7 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
       projectPath: string,
       filename: string,
       content: string,
-      guard?: SaveGuard
+      guard: SaveGuard
     ) => savePluginFile(projectPath, filename, content, guard)
   )
 

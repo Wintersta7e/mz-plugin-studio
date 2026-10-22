@@ -93,7 +93,7 @@ Switch to the **Code** tab to write your plugin's implementation logic. Code ske
 In the Code tab, click the template icon to add boilerplate code for common patterns.
 
 ### Step 7: Export
-With a project loaded, press **Ctrl+S** or click **Export** to save your plugin to the project's `js/plugins/` folder. Without a project, click **Export** and choose where to save.
+Press **Ctrl+S** to save into the loaded project's `js/plugins/` folder, or click **Export** to choose where to save. The app asks before replacing a file this plugin did not come from.
 
 ---
 
@@ -869,10 +869,11 @@ If the original plugin has text before the `/*:` annotation block (license heade
 ### Export Options
 
 **Export as .js Plugin**
-1. With a project loaded, click **Export** or press **Ctrl+S**: the plugin is saved to `js/plugins/YourPlugin.js`, and a file of the same name there is replaced without asking
-2. Without a project, click **Export** and choose where to save; **Ctrl+S** does nothing
+1. **Ctrl+S** saves to `js/plugins/<Name>.js` in the loaded project; with no project loaded it opens a save dialog.
+2. **Export** always opens a save dialog.
+3. Before replacing a file, the app asks when the file was not opened or saved by this tab, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
 
-**Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, replacing files of the same name without asking, and reports how many were saved and how many failed.
+**Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, one at a time. It never asks: a plugin whose save would need one of the questions above is not saved. One report gives the number saved and names the plugins not saved, grouped by reason.
 
 **Export in Other Formats**
 Click the **chevron dropdown** next to the Export button:

@@ -114,7 +114,7 @@ describe('reloading an imported plugin from the project', () => {
     let parsed: PluginDefinition | null = null
     const api = createFakeApi({
       plugin: {
-        readRaw: vi.fn(async () => ({ content: TEXT, path: '', sha256: '' })),
+        readRaw: vi.fn(async () => ({ content: TEXT, path: PATH, sha256: 'sha-of-file' })),
         parse: vi.fn(async (content: string) => (parsed = PluginParser.parsePlugin(content)))
       },
       dialog: { message: vi.fn(async () => 2) }
@@ -122,6 +122,11 @@ describe('reloading an imported plugin from the project', () => {
     const stores = await startApp(api, true)
     const tab = (): PluginDefinition => stores.usePluginStore.getState().plugin
     expect(tab().rawSource).toBeUndefined()
+    // Saved by v1.6.0, so the tab knows its file but not what it held
+    expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
+      path: PATH,
+      sha256: null
+    })
 
     fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
     await waitFor(() => expect(tab().rawSource).toBe(TEXT))
@@ -137,6 +142,10 @@ describe('reloading an imported plugin from the project', () => {
         meta: { ...loaded.meta, name: 'Fixture_HandWritten' }
       })
     )
+    expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
+      path: PATH,
+      sha256: 'sha-of-file'
+    })
     expect(tab().meta.description).toBe('Edited before reload')
     expect(stores.usePluginStore.getState().dirtyByPluginId[TAB]).toBe(true)
     expect(stores.usePluginStore.getState().openPlugins.find((p) => p.id === TAB)?.rawSource).toBe(
@@ -188,6 +197,13 @@ describe('reloading an imported plugin from the project', () => {
       ).toContain(`error: Could not read ${PATH}: missing`)
     )
     expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
+    // The app's own copy of the logger, imported afresh with it
+    const { default: log } = await import('electron-log/renderer')
+    expect(log.error).toHaveBeenCalledWith('[reload]', PATH, new Error('missing'))
+    expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
+      path: PATH,
+      sha256: null
+    })
   }, 60_000)
 
   it('without a project the button is disabled and says why', async () => {

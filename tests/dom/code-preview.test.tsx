@@ -9,7 +9,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { savePluginToPath } from '../../src/main/ipc/plugin'
-import type { SaveResult } from '../../src/shared/ipc-types'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
@@ -37,8 +36,14 @@ afterEach(async () => {
   await rm(tmp, { recursive: true, force: true })
 })
 
-/** Wires `window.api` to the main-process save functions; `saveFile` answers `chosen`. */
-function wireMainSave(chosen: string, { throughDialog = true } = {}): void {
+/**
+ * Wires `window.api` to the main-process save functions; `saveFile` answers `chosen`, a save
+ * waits for `gate` when given.
+ */
+function wireMainSave(
+  chosen: string,
+  { throughDialog = true, gate }: { throughDialog?: boolean; gate?: Promise<void> } = {}
+): void {
   const dialog = {
     showSaveDialog: vi.fn(async (_options: SaveDialogOptions) => ({
       canceled: false,
@@ -48,10 +53,15 @@ function wireMainSave(chosen: string, { throughDialog = true } = {}): void {
   window.api = createFakeApi({
     dialog: {
       saveFile: throughDialog
-        ? (options) => showSaveFileDialog(dialog, options ?? {})
+        ? vi.fn((options) => showSaveFileDialog(dialog, options ?? {}))
         : vi.fn(async () => chosen)
     },
-    plugin: { saveToPath: (filePath, content) => savePluginToPath(filePath, content) }
+    plugin: {
+      saveToPath: vi.fn(async (...args: Parameters<typeof savePluginToPath>) => {
+        await gate
+        return savePluginToPath(...args)
+      })
+    }
   })
 }
 
@@ -68,6 +78,12 @@ const errorToasts = (): string[] =>
   useToastStore
     .getState()
     .toasts.filter((t) => t.type === 'error')
+    .map((t) => t.message)
+
+const successToasts = (): string[] =>
+  useToastStore
+    .getState()
+    .toasts.filter((t) => t.type === 'success')
     .map((t) => t.message)
 
 describe('code preview export with no project', () => {
@@ -93,13 +109,37 @@ describe('code preview export with no project', () => {
     const target = join(tmp, 'Alpha.js')
     wireMainSave(target)
     render(<CodePreview />)
+    clickExport()
+    const first = generatePlugin(usePluginStore.getState().plugin)
+    await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(first))
+    act(() => usePluginStore.getState().updateMeta({ description: 'Exported again' }))
     const expected = generatePlugin(usePluginStore.getState().plugin)
     clickExport()
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
-    await writeFile(target, 'stale')
-    clickExport()
-    await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
     expect(errorToasts()).toEqual([])
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
+  })
+
+  it('asks before exporting over its own file changed on disk; Cancel leaves the file', async () => {
+    const target = join(tmp, 'Alpha.js')
+    wireMainSave(target)
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(successToasts()).toHaveLength(1))
+    await writeFile(target, '// changed elsewhere\n')
+    clickExport()
+    await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(window.api.dialog.message).mock.calls[0][0]).toEqual({
+      type: 'warning',
+      title: 'Overwrite file?',
+      message: `"${target}" has changed on disk since this tab last read or saved it. Overwrite it?`,
+      buttons: ['Cancel', 'Overwrite'],
+      defaultId: 0,
+      cancelId: 0
+    })
+    await act(async () => {})
+    expect(await readFile(target, 'utf8')).toBe('// changed elsewhere\n')
+    expect(successToasts()).toHaveLength(1)
   })
 
   it('shows an error and writes nothing when the chosen file type cannot be saved', async () => {
@@ -135,49 +175,31 @@ describe('code preview export with no project', () => {
 describe('code preview export', () => {
   const PROJECT = '/fixture/mz-project'
 
-  const savedAs = (filename: string): SaveResult => ({
-    success: true,
-    path: `${PROJECT}/js/plugins/${filename}`,
-    sha256: ''
-  })
-
   async function openProject(): Promise<void> {
     const project = { ...(await window.api.project.load(PROJECT)), path: PROJECT }
     act(() => useProjectStore.getState().setProject(project))
   }
 
-  const successToasts = (): string[] =>
-    useToastStore
-      .getState()
-      .toasts.filter((t) => t.type === 'success')
-      .map((t) => t.message)
-
-  it('an edit made while Export is in flight is marked saved', async () => {
-    let resolveSave!: (result: SaveResult) => void
-    const save = vi.fn(() => new Promise<SaveResult>((resolve) => (resolveSave = resolve)))
-    window.api = createFakeApi({ plugin: { save } })
+  it('an edit made while Export is in flight stays unsaved', async () => {
+    const target = join(tmp, 'Alpha.js')
+    let release!: () => void
+    wireMainSave(target, { gate: new Promise<void>((resolve) => (release = resolve)) })
     await openProject()
     const id = usePluginStore.getState().plugin.id
     render(<CodePreview />)
     clickExport()
-    await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1))
     act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
-    expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
-    await act(async () => resolveSave(savedAs('Alpha.js')))
+    await act(async () => release())
     await waitFor(() => expect(successToasts()).toEqual(['Plugin exported successfully']))
     expect(usePluginStore.getState().plugin.meta.description).toBe('edited during save')
-    expect(usePluginStore.getState().dirtyByPluginId[id] ?? false).toBe(false)
+    expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
+    expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
   })
 
-  it('Export with a project saves into the project; without one it asks for a path', async () => {
+  it('Export asks for a path also with a project open, and writes there', async () => {
     const chosen = join(tmp, 'Chosen.js')
-    window.api = createFakeApi({
-      plugin: {
-        save: vi.fn(async (_project: string, filename: string) => savedAs(filename)),
-        saveToPath: vi.fn(async (path: string) => ({ success: true as const, path, sha256: '' }))
-      },
-      dialog: { saveFile: vi.fn(async () => chosen) }
-    })
+    wireMainSave(chosen)
     const { plugin, dialog } = window.api
     await openProject()
     const expected = generatePlugin(usePluginStore.getState().plugin)
@@ -185,18 +207,14 @@ describe('code preview export', () => {
 
     clickExport()
     await waitFor(() => expect(successToasts()).toHaveLength(1))
-    expect(vi.mocked(plugin.save).mock.calls).toEqual([[PROJECT, 'Alpha.js', expected]])
-    expect(dialog.saveFile).not.toHaveBeenCalled()
-    expect(plugin.saveToPath).not.toHaveBeenCalled()
-
-    act(() => useProjectStore.getState().setProject(null))
-    clickExport()
-    await waitFor(() => expect(successToasts()).toHaveLength(2))
-    expect(vi.mocked(plugin.saveToPath).mock.calls).toEqual([[chosen, expected]])
+    expect(await readFile(chosen, 'utf8')).toBe(expected)
+    expect(vi.mocked(dialog.saveFile).mock.calls).toEqual([
+      [{ defaultPath: 'Alpha.js', filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }]
+    ])
     expect(vi.mocked(dialog.saveFile).mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(plugin.saveToPath).mock.invocationCallOrder[0]
     )
-    expect(plugin.save).toHaveBeenCalledTimes(1)
+    expect(plugin.save).not.toHaveBeenCalled()
   })
 })
 

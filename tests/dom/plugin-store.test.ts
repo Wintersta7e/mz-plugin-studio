@@ -430,7 +430,7 @@ describe('pluginStore baseline of an imported plugin', () => {
     const alpha = importedPlugin('Alpha')
     usePluginStore.getState().openPlugin(alpha)
     const saved = JSON.parse(localStorage.getItem('mz-plugin-studio-plugin') ?? '{}').state
-    expect(saved.schemaVersion).toBe(2)
+    expect(saved.schemaVersion).toBe(3)
     for (const def of [saved.plugin, saved.openPlugins[0]]) {
       expect(def.rawSource).toBe(alpha.rawSource)
       expect(def.importedFrom).toBe('Alpha.js')
@@ -510,29 +510,93 @@ describe('pluginStore file text of an imported plugin', () => {
     })
   })
 
-  it('recordSaved makes the written text the file text and the saved definition the baseline', () => {
+  it('recordSaves makes the written text the file text and the saved definition the baseline', () => {
     const alpha = importedPlugin('Alpha')
     usePluginStore.getState().openPlugin(alpha)
     usePluginStore.getState().updateMeta({ description: 'Edited' })
     const saved = usePluginStore.getState().plugin
     usePluginStore.getState().updateMeta({ description: 'Edited after the save started' })
-    usePluginStore.getState().recordSaved(alpha.id, saved, 'written text')
+    usePluginStore
+      .getState()
+      .recordSaves([
+        { id: alpha.id, saved, path: '/p/Alpha.js', sha256: 'aa', written: 'written text' }
+      ])
 
     const state = usePluginStore.getState()
     expect(state.plugin.rawSource).toBe('written text')
     expect(state.plugin.meta.description).toBe('Edited after the save started')
     expect(state.openPlugins[0].rawSource).toBe('written text')
     expect(state.baselineByPluginId[alpha.id]).toEqual(toBaseline(saved))
+    // Edited after the save started, so what is in the tab is still unsaved
+    expect(state.dirtyByPluginId[alpha.id]).toBe(true)
+    expect(state.isDirty).toBe(true)
+    expect(state.savedPath).toBe('/p/Alpha.js')
+    expect(state.baseByPluginId[alpha.id]).toEqual({ path: '/p/Alpha.js', sha256: 'aa' })
   })
 
-  it('recordSaved leaves a plugin created here without file text or baseline', () => {
+  it('recordSaves leaves a plugin created here without file text or baseline', () => {
     const created = createPlugin('Created')
     usePluginStore.getState().openPlugin(created)
-    usePluginStore.getState().recordSaved(created.id, created, 'written text')
+    usePluginStore.getState().updateMeta({ description: 'Edited' })
+    const saved = usePluginStore.getState().plugin
+    usePluginStore
+      .getState()
+      .recordSaves([
+        { id: created.id, saved, path: '/p/Created.js', sha256: 'cc', written: 'text' }
+      ])
     const state = usePluginStore.getState()
     expect(state.plugin.rawSource).toBeUndefined()
     expect(state.openPlugins[0].rawSource).toBeUndefined()
     expect(state.baselineByPluginId).toEqual({})
+    expect(state.dirtyByPluginId).toEqual({})
+    expect(state.isDirty).toBe(false)
+  })
+
+  it('recordSaves records each saved tab by its id in one update, whichever tab is active', () => {
+    const [alpha, beta, gamma] = ['Alpha', 'Beta', 'Gamma'].map(createPlugin)
+    for (const plugin of [alpha, beta, gamma]) {
+      usePluginStore.getState().openPlugin(plugin)
+      usePluginStore.getState().updateMeta({ description: 'Edited' })
+    }
+    const tabOf = (id: string): PluginDefinition =>
+      usePluginStore.getState().openPlugins.find((p) => p.id === id) as PluginDefinition
+    const records = [alpha, beta].map((p) => ({
+      id: p.id,
+      saved: tabOf(p.id),
+      path: `/p/${p.meta.name}.js`,
+      sha256: p.meta.name,
+      written: 'text'
+    }))
+    let updates = 0
+    const unsubscribe = usePluginStore.subscribe(() => updates++)
+    usePluginStore.getState().recordSaves(records)
+    unsubscribe()
+
+    const state = usePluginStore.getState()
+    expect(updates).toBe(1)
+    expect(state.dirtyByPluginId).toEqual({ [gamma.id]: true })
+    expect(state.savedPathsByPluginId).toEqual({
+      [alpha.id]: '/p/Alpha.js',
+      [beta.id]: '/p/Beta.js'
+    })
+    expect(state.baseByPluginId).toEqual({
+      [alpha.id]: { path: '/p/Alpha.js', sha256: 'Alpha' },
+      [beta.id]: { path: '/p/Beta.js', sha256: 'Beta' }
+    })
+    expect(state.plugin.id).toBe(gamma.id)
+    expect(state.isDirty).toBe(true)
+    expect(state.savedPath).toBeNull()
+  })
+
+  it('setBase records the file a tab was read from; closing the tab drops it', () => {
+    const alpha = importedPlugin('Alpha')
+    usePluginStore.getState().openPlugin(alpha)
+    usePluginStore.getState().setBase(alpha.id, { path: '/p/Alpha.js', sha256: 'aa' })
+    expect(usePluginStore.getState().baseByPluginId).toEqual({
+      [alpha.id]: { path: '/p/Alpha.js', sha256: 'aa' }
+    })
+    usePluginStore.getState().closePlugin(alpha.id)
+    expect(usePluginStore.getState().baseByPluginId).toEqual({})
   })
 })
 

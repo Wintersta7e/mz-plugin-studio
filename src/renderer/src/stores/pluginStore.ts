@@ -12,6 +12,7 @@ import type {
   PluginStruct
 } from '../types/plugin'
 import { createEmptyPlugin, toBaseline } from '../types/plugin'
+import type { FileBase } from '../../../shared/ipc-types'
 import { checkSavedParameter, PARAMETER_LABELS } from '../lib/param-io'
 import { isImported } from '../lib/plugin-output'
 import {
@@ -40,6 +41,8 @@ interface PluginState {
   savedPathsByPluginId: Record<string, string>
   // The definition each imported tab was opened with; raw mode saves against it
   baselineByPluginId: Record<string, PluginBaseline>
+  // The file each tab was read from or last saved to; a save asks before replacing any other
+  baseByPluginId: Record<string, FileBase>
 
   setPlugin: (plugin: PluginDefinition) => void
   updateMeta: (meta: Partial<PluginDefinition['meta']>) => void
@@ -82,7 +85,8 @@ interface PluginState {
     parsed: PluginDefinition,
     options: { keepTab: boolean }
   ) => void
-  recordSaved: (id: string, saved: PluginDefinition, written: string) => void
+  setBase: (id: string, base: FileBase) => void
+  recordSaves: (records: SaveRecord[]) => void
 
   // State
   setDirty: (dirty: boolean) => void
@@ -99,7 +103,17 @@ type PluginPersisted = Pick<
   | 'dirtyByPluginId'
   | 'savedPathsByPluginId'
   | 'baselineByPluginId'
+  | 'baseByPluginId'
 >
+
+/** A tab written to `path`: `saved` is the definition the code was generated from. */
+export interface SaveRecord {
+  id: string
+  saved: PluginDefinition
+  path: string
+  sha256: string
+  written: string
+}
 
 /** A v1.6.0 tab with a code body was imported; it keeps no code body from now on. */
 function migrateImported(def: unknown): unknown {
@@ -124,12 +138,26 @@ const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
     openPlugins: Array.isArray(state.openPlugins)
       ? state.openPlugins.map(migrateImported)
       : state.openPlugins
-  })
+  }),
+  // A tab's saved path is the file it last saved, its contents then unknown
+  (state) => {
+    const saved = isRecord(state.savedPathsByPluginId) ? state.savedPathsByPluginId : {}
+    const bases = isRecord(state.baseByPluginId) ? state.baseByPluginId : {}
+    const added = Object.entries(saved)
+      .filter(([id]) => !Object.hasOwn(bases, id))
+      .map(([id, path]) => [id, { path, sha256: null }])
+    return { ...state, baseByPluginId: { ...bases, ...Object.fromEntries(added) } }
+  }
 ]
 
 // This store's maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
 // The ui store's tab-keyed maps are cleared by its clearRawModeForPlugin.
-const TAB_KEYED_MAPS = ['dirtyByPluginId', 'savedPathsByPluginId', 'baselineByPluginId'] as const
+const TAB_KEYED_MAPS = [
+  'dirtyByPluginId',
+  'savedPathsByPluginId',
+  'baselineByPluginId',
+  'baseByPluginId'
+] as const
 type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
 
 /** Every tab-keyed map with only the entries whose plugin id `keep` accepts. */
@@ -258,6 +286,13 @@ const checkBaseline: FieldCheck<PluginBaseline> = (value, drop) => {
   return def === undefined ? undefined : toBaseline(def)
 }
 
+const checkFileBase: FieldCheck<FileBase> = (value) =>
+  isRecord(value) &&
+  typeof value.path === 'string' &&
+  (typeof value.sha256 === 'string' || value.sha256 === null)
+    ? { path: value.path, sha256: value.sha256 }
+    : undefined
+
 /** A definition as saved: the code body is not kept, it is part of the file text. */
 function toStored({ codeBody: _codeBody, ...plugin }: PluginDefinition): PluginDefinition {
   return plugin
@@ -378,6 +413,7 @@ export const usePluginStore = create<PluginState>()(
       dirtyByPluginId: {},
       savedPathsByPluginId: {},
       baselineByPluginId: {},
+      baseByPluginId: {},
 
       setPlugin: (plugin) =>
         set((state) => ({
@@ -668,13 +704,43 @@ export const usePluginStore = create<PluginState>()(
             dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, false)
           }
         }),
-      recordSaved: (id, saved, written) =>
+      setBase: (id, base) =>
+        set((state) => ({ baseByPluginId: { ...state.baseByPluginId, [id]: base } })),
+      recordSaves: (records) =>
         set((state) => {
-          const tab = state.openPlugins.find((p) => p.id === id)
-          if (tab === undefined || !isImported(tab)) return {}
+          let { openPlugins, plugin } = state
+          const dirtyByPluginId = { ...state.dirtyByPluginId }
+          const savedPathsByPluginId = { ...state.savedPathsByPluginId }
+          const baseByPluginId = { ...state.baseByPluginId }
+          const baselineByPluginId = { ...state.baselineByPluginId }
+          for (const { id, saved, path, sha256, written } of records) {
+            const tab = plugin.id === id ? plugin : openPlugins.find((p) => p.id === id)
+            if (tab === undefined) continue
+            savedPathsByPluginId[id] = path
+            baseByPluginId[id] = { path, sha256 }
+            // An edit made while the file was written is not in it
+            if (tab === saved) delete dirtyByPluginId[id]
+            if (isImported(tab)) {
+              ;({ openPlugins, plugin } = withRawSource(
+                { ...state, openPlugins, plugin },
+                id,
+                written
+              ))
+              baselineByPluginId[id] = toBaseline(saved)
+            }
+          }
+          const activeSaved = records.some((r) => r.id === plugin.id)
           return {
-            ...withRawSource(state, id, written),
-            baselineByPluginId: { ...state.baselineByPluginId, [id]: toBaseline(saved) }
+            openPlugins,
+            plugin,
+            dirtyByPluginId,
+            savedPathsByPluginId,
+            baseByPluginId,
+            baselineByPluginId,
+            ...(activeSaved && {
+              isDirty: getPluginDirty(dirtyByPluginId, plugin.id),
+              savedPath: getPluginSavedPath(savedPathsByPluginId, plugin.id)
+            })
           }
         }),
 
@@ -706,7 +772,8 @@ export const usePluginStore = create<PluginState>()(
         savedPath: checkStringOrNull,
         dirtyByPluginId: checkRecordOf(checkBoolean),
         savedPathsByPluginId: checkRecordOf(checkString),
-        baselineByPluginId: checkRecordOf(checkBaseline)
+        baselineByPluginId: checkRecordOf(checkBaseline),
+        baseByPluginId: checkRecordOf(checkFileBase)
       },
       labels: {
         plugin: 'the active plugin',
@@ -717,6 +784,7 @@ export const usePluginStore = create<PluginState>()(
         dirtyByPluginId: { all: 'unsaved-changes marks', one: 'unsaved-changes mark of tab' },
         savedPathsByPluginId: { all: 'saved file paths', one: 'saved file path of tab' },
         baselineByPluginId: { all: 'last-saved copies', one: 'last-saved copy of tab' },
+        baseByPluginId: { all: 'files read or saved', one: 'file read or saved by tab' },
         // inside a plugin definition
         meta: '',
         parameters: { all: 'parameters', one: 'parameter' },
@@ -740,7 +808,8 @@ export const usePluginStore = create<PluginState>()(
         savedPath: state.savedPath,
         dirtyByPluginId: state.dirtyByPluginId,
         savedPathsByPluginId: state.savedPathsByPluginId,
-        baselineByPluginId: state.baselineByPluginId
+        baselineByPluginId: state.baselineByPluginId,
+        baseByPluginId: state.baseByPluginId
       }),
       prune: pruneClosedTabs
     })

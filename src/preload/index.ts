@@ -27,7 +27,7 @@ export interface PluginAPI {
     projectPath: string,
     filename: string,
     content: string,
-    guard?: import('../shared/ipc-types').SaveGuard
+    guard: import('../shared/ipc-types').SaveGuard
   ) => Promise<import('../shared/ipc-types').SaveResult>
   saveToPath: (
     filePath: string,

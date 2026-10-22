@@ -50,7 +50,10 @@ function savingApi(answers: number[] = []): Window['api'] {
       })),
       saveToPath: vi.fn(async (path: string) => ({ success: true as const, path, sha256: '' }))
     },
-    dialog: { message: vi.fn(async () => answers.shift() ?? 0) }
+    dialog: {
+      message: vi.fn(async () => answers.shift() ?? 0),
+      saveFile: vi.fn(async () => `/chosen/${FILE}`)
+    }
   })
 }
 
@@ -81,26 +84,35 @@ describe('saving an imported plugin', () => {
     const stores = await startApp(api)
     let checked = 0
 
+    // The app's own copy of the logger, imported afresh with it
+    const { default: log } = await import('electron-log/renderer')
+    const durations = (): number[] =>
+      stores.useToastStore.getState().toasts.map((toast) => toast.duration)
+
     press('KeyS')
     await waitFor(() => expect(toastsOf(stores)).toContain(`error: ${SOURCE_MISSING}`))
     expect(savedFiles(api)).toEqual([])
+    expect(durations()[0]).toBeGreaterThanOrEqual(10_000)
+    expect(log.warn).toHaveBeenCalledWith('[save] refused', FILE, 'source-missing')
     checked++
 
+    stores.useToastStore.setState({ toasts: [] })
     press('KeyS', true)
     await waitFor(() =>
-      expect(toastsOf(stores)).toContain(
-        `warning: Saved 1. Not saved: Fixture_HandWritten (${SOURCE_MISSING.replace('Not saved: ', '')})`
-      )
+      expect(toastsOf(stores)).toEqual([
+        'warning: Saved 1. Not saved, file text not loaded (reload it from the project): Fixture_HandWritten.'
+      ])
     )
-    const saveAllToast = toastsOf(stores).find((t) => t.startsWith('warning: Saved 1.'))!
-    expect(saveAllToast.split('Not saved:').length - 1).toBe(1)
+    expect(durations()[0]).toBeGreaterThanOrEqual(10_000)
     expect(savedFiles(api)).toEqual(['NewPlugin.js'])
+    expect(log.warn).toHaveBeenCalledTimes(2)
     checked++
 
     stores.useToastStore.setState({ toasts: [] })
     fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
     await waitFor(() => expect(toastsOf(stores)).toEqual([`error: ${SOURCE_MISSING}`]))
     expect(savedFiles(api)).toEqual(['NewPlugin.js'])
+    expect(api.dialog.saveFile).not.toHaveBeenCalled()
     expect(api.plugin.saveToPath).not.toHaveBeenCalled()
     checked++
 
@@ -133,7 +145,13 @@ describe('saving an imported plugin', () => {
 
     press('KeyS')
     await waitFor(() => expect(savedFiles(api)).toEqual([FILE]))
-    expect(vi.mocked(api.plugin.save).mock.calls[0]).toEqual([PROJECT, FILE, generatePlugin(tab())])
+    // v1.6.0 saved this tab to its file, so the save checks against that file
+    expect(vi.mocked(api.plugin.save).mock.calls[0]).toEqual([
+      PROJECT,
+      FILE,
+      generatePlugin(tab()),
+      { base: { path: `${PROJECT}/js/plugins/${FILE}`, sha256: null }, checkSyntax: true }
+    ])
     expect(asked()).toBe(2)
 
     await waitFor(() => expect(toastsOf(stores)).toContain('success: Plugin saved'))

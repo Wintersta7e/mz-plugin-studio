@@ -82,10 +82,15 @@ async function expectWritten(result: SaveResult, target: string, content: string
   expect(result).toMatchObject({ success: true, path: target, sha256: sha(bytes) })
 }
 
-describe('saving over an existing file without a guard', () => {
-  it('plugin:save replaces an existing file without reading it', async () => {
+describe('saving over an existing file', () => {
+  it('plugin:save leaves an existing file the tab did not come from as it was', async () => {
     const target = await projectFile('A')
-    await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B'), target, 'B')
+    await expectConflict(
+      await savePluginFile(tmp, 'Foo.js', 'B', guard(null)),
+      'exists-unrelated',
+      target,
+      'A'
+    )
   })
 
   it('plugin:save-to-path replaces an existing granted file', async () => {
@@ -210,7 +215,9 @@ describe('the save guard', () => {
     await expect(savePluginFile(tmp, 'Foo.js', 'B', guard(null))).rejects.toMatchObject({
       code: 'EISDIR'
     })
-    await expect(savePluginFile(tmp, 'Foo.js', 'B')).rejects.toMatchObject({ code: 'EISDIR' })
+    await expect(
+      savePluginFile(tmp, 'Foo.js', 'B', guard({ path: target, sha256: null }))
+    ).rejects.toMatchObject({ code: 'EISDIR' })
     cases++
   })
 

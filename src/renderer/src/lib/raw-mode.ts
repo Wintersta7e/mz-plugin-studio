@@ -1,16 +1,21 @@
+import log from 'electron-log/renderer'
 import { usePluginStore } from '../stores/pluginStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
 import type { PluginDefinition } from '../types/plugin'
 import { generatePluginOutput, isImported, isRawMode } from './plugin-output'
+import type { OutputRefusal } from './plugin-output'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
   "Raw mode keeps this plugin's own code and language blocks, so this is read-only here. Turn raw mode off in the preview to edit it."
 
+/** Why a save is refused: raw mode cannot build the file, or a regenerating save is unconfirmed */
+export type SaveRefusal = OutputRefusal | 'needs-confirmation'
+
 export type SavePreparation =
   | { status: 'ready'; code: string; plugin: PluginDefinition }
-  | { status: 'refused'; reason: string }
+  | { status: 'refused'; refusal: SaveRefusal; reason: string }
   | { status: 'cancelled' }
 
 /** Whether the active tab is in raw mode. */
@@ -39,12 +44,16 @@ export async function prepareSave(
     const out = generatePluginOutput(plugin, true, baselineByPluginId[pluginId] ?? null)
     return out.ok
       ? { status: 'ready', code: out.code, plugin }
-      : { status: 'refused', reason: out.message }
+      : { status: 'refused', refusal: out.refusal, reason: out.message }
   }
 
   if (isImported(plugin) && !ui.structuralSaveConfirmedByPluginId[pluginId]) {
     if (!options.ask) {
-      return { status: 'refused', reason: 'needs confirmation: save it with Ctrl+S' }
+      return {
+        status: 'refused',
+        refusal: 'needs-confirmation',
+        reason: 'needs confirmation: save it with Ctrl+S'
+      }
     }
     // Cancel is the first button, so closing the dialog cancels
     const answer = await window.api.dialog.message({
@@ -63,14 +72,14 @@ export async function prepareSave(
   const out = generatePluginOutput(plugin, false, null)
   return out.ok
     ? { status: 'ready', code: out.code, plugin }
-    : { status: 'refused', reason: out.message }
+    : { status: 'refused', refusal: out.refusal, reason: out.message }
 }
 
 /**
- * Reads an imported tab's file from the open project again and makes it the tab's file text
- * and baseline. A tab with no unsaved edits takes the file's values; a tab with edits asks
- * whether to replace them with the file or keep them. False when there is no project, the user
- * cancels or the file cannot be read.
+ * Reads an imported tab's file from the open project again and makes it the tab's file text,
+ * baseline and the file it was read from. A tab with no unsaved edits takes the file's values; a
+ * tab with edits asks whether to replace them with the file or keep them. False when there is no
+ * project, the user cancels or the file cannot be read.
  */
 export async function reloadFromProject(pluginId: string): Promise<boolean> {
   const project = useProjectStore.getState().project
@@ -94,11 +103,14 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     keepTab = answer === 2
   }
   try {
-    const { content: text } = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
-    const parsed = await window.api.plugin.parse(text)
-    usePluginStore.getState().reattachSource(pluginId, text, parsed, { keepTab })
+    const file = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
+    const parsed = await window.api.plugin.parse(file.content)
+    const store = usePluginStore.getState()
+    store.reattachSource(pluginId, file.content, parsed, { keepTab })
+    store.setBase(pluginId, { path: file.path, sha256: file.sha256 })
     return true
   } catch (error) {
+    log.error('[reload]', path, error)
     useToastStore.getState().addToast({
       type: 'error',
       message: `Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`

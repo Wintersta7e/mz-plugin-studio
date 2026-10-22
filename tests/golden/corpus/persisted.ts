@@ -142,7 +142,11 @@ export const POPULATED: Record<string, Record<string, unknown>> = {
       'created-plugin': `${ROOT}/js/plugins/Fixture_Created.js`,
       'imported-plugin': `${ROOT}/js/plugins/Fixture_Imported.js`
     },
-    baselineByPluginId: { 'imported-plugin': toBaseline(imported) }
+    baselineByPluginId: { 'imported-plugin': toBaseline(imported) },
+    baseByPluginId: {
+      'created-plugin': { path: `${ROOT}/js/plugins/Fixture_Created.js`, sha256: null },
+      'imported-plugin': { path: `${ROOT}/js/plugins/Fixture_Imported.js`, sha256: '0'.repeat(64) }
+    }
   },
   'mz-plugin-studio-ui': {
     sidebarWidth: 320,

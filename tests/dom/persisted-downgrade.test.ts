@@ -4,6 +4,7 @@ import { readFileSync } from 'fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { isImported } from '../../src/renderer/src/lib/plugin-output'
+import type { FileBase } from '../../src/shared/ipc-types'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'
 import { PERSISTED_KEYS, createV160Stores, readV160Payloads } from '../helpers/persist-v160'
@@ -39,13 +40,21 @@ describe('downgrade to v1.6.0', () => {
     seed(payloads)
     const current = await loadStores()
     await flushPrune()
-    // A tab imported in this version, so the saved state holds its file text and baseline.
+    // A tab imported in this version, so the saved state holds its file text, baseline and file.
     const file = 'Fixture_HandWritten.js'
     const text = readFileSync(fixturePath('js', 'plugins', file), 'utf-8')
     const plugin = current['mz-plugin-studio-plugin'].getState() as unknown as {
       openPlugin(def: PluginDefinition): void
+      setBase(id: string, base: FileBase): void
     }
-    plugin.openPlugin({ ...PluginParser.parsePlugin(text, file), importedFrom: file })
+    const opened = { ...PluginParser.parsePlugin(text, file), importedFrom: file }
+    plugin.openPlugin(opened)
+    plugin.setBase(opened.id, { path: fixturePath('js', 'plugins', file), sha256: 'ab' })
+    const savedPaths = current['mz-plugin-studio-plugin'].getState().savedPathsByPluginId as Record<
+      string,
+      string
+    >
+    expect(Object.keys(savedPaths)).toHaveLength(2)
     const before = Object.fromEntries(
       PERSISTED_KEYS.map((key) => [key, JSON.stringify(current[key].getState())])
     )
@@ -53,6 +62,7 @@ describe('downgrade to v1.6.0', () => {
     const written = writeAll(current)
     expect(written['mz-plugin-studio-plugin']).toContain('"rawSource"')
     expect(written['mz-plugin-studio-plugin']).toContain('"baselineByPluginId"')
+    expect(written['mz-plugin-studio-plugin']).toContain('"baseByPluginId"')
 
     seed(written)
     const old = createV160Stores()
@@ -66,6 +76,7 @@ describe('downgrade to v1.6.0', () => {
     }
     expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"rawSource"')
     expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"baselineByPluginId"')
+    expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"baseByPluginId"')
 
     seed(downgraded)
     const again = await loadStores()
@@ -80,6 +91,12 @@ describe('downgrade to v1.6.0', () => {
     expect(tabs.map((p) => p.importedFrom)).toEqual(beforeTabs.map((p) => p.importedFrom))
     expect(tabs.filter(isImported).map((p) => 'rawSource' in p)).toEqual([false, false, false])
     expect(pluginState.baselineByPluginId).toEqual({})
+    // The file each tab last saved comes back from its saved path, contents unknown
+    expect(pluginState.baseByPluginId).toEqual(
+      Object.fromEntries(
+        Object.entries(savedPaths).map(([id, path]) => [id, { path, sha256: null }])
+      )
+    )
     expect(tabIds(pluginState).slice(0, -1)).toEqual(
       tabIds(JSON.parse(payloads['mz-plugin-studio-plugin'] as string).state)
     )

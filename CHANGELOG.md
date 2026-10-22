@@ -37,10 +37,15 @@
 - Code raw mode adds for new parameters of a plugin without an IIFE now sits in a block, so its names no longer clash with another plugin's and stop the game from loading.
 - The code preview's warning and error banners and validation messages have readable contrast in both themes, and screen readers announce the banners.
 - On Linux, the save dialog asks before replacing an existing file, as it already did on Windows and macOS.
+- Saving no longer replaces a file without asking: the app asks first when the file was not opened or saved by that tab (for example a second new plugin named NewPlugin), changed on disk, or would stop compiling; Cancel is the default.
+- Ctrl+S without a loaded project opens a save dialog instead of doing nothing.
+- Edits made while a save is in progress keep the plugin marked unsaved.
+- Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 
 ### Changed
 
 - In raw mode the Code tab, template inserter and localized description and help fields are read-only, and saving an imported plugin with raw mode off asks first. Save All lists such a plugin as not saved until a Ctrl+S save of it has been confirmed.
+- Export always asks where to save, also when a project is loaded.
 
 ## [1.6.1] - 2026-10-21
 

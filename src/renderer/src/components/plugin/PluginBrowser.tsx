@@ -46,6 +46,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
   const activePluginId = usePluginStore((s) => s.activePluginId)
   const dirtyByPluginId = usePluginStore((s) => s.dirtyByPluginId)
   const openPlugin = usePluginStore((s) => s.openPlugin)
+  const setBase = usePluginStore((s) => s.setBase)
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
@@ -214,8 +215,9 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     }
     if (!project?.path) return
     try {
-      const { plugin } = await window.api.plugin.load(project.path, row.filename)
-      openPlugin(plugin)
+      const loaded = await window.api.plugin.load(project.path, row.filename)
+      openPlugin(loaded.plugin)
+      setBase(loaded.plugin.id, { path: loaded.path, sha256: loaded.sha256 })
     } catch (err) {
       log.error(`PluginBrowser: failed to load ${row.filename}`, err)
     }

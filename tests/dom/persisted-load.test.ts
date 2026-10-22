@@ -18,7 +18,7 @@ const IMPORTED_UNSHOWN = '00000000-0000-4000-8000-000000000029'
 
 // The schema each store writes now.
 const SCHEMA: Record<PersistedKey, number> = {
-  'mz-plugin-studio-plugin': 2,
+  'mz-plugin-studio-plugin': 3,
   'mz-plugin-studio-ui': 2,
   'mz-plugin-studio-settings': 1,
   'mz-plugin-studio-project': 1,
@@ -160,6 +160,37 @@ describe('loading the state v1.6.0 saved', () => {
     expect(generatePluginOutput(tab, true, null)).toMatchObject({
       ok: false,
       refusal: 'source-missing'
+    })
+  })
+
+  it('each tab v1.6.0 saved to a file has that file as the one it last saved, contents unknown', async () => {
+    seed(payloads)
+    const stores = await loadStores()
+    await flushPrune()
+    const state = stores['mz-plugin-studio-plugin'].getState()
+    const saved = stateOf('mz-plugin-studio-plugin').savedPathsByPluginId as Record<string, string>
+    expect(Object.keys(saved)).toHaveLength(2)
+    expect(state.baseByPluginId).toEqual(
+      Object.fromEntries(Object.entries(saved).map(([id, path]) => [id, { path, sha256: null }]))
+    )
+    const unsaved = (state.openPlugins as PluginDefinition[]).filter((p) => !(p.id in saved))
+    expect(unsaved.map((p) => p.meta.name)).toContain('NewPlugin')
+  })
+
+  it('a file entry already saved is kept and a damaged one is dropped', async () => {
+    const saved = JSON.parse(payloads['mz-plugin-studio-plugin'] as string) as {
+      state: Record<string, unknown>
+    }
+    const ids = Object.keys(saved.state.savedPathsByPluginId as object)
+    saved.state.baseByPluginId = {
+      [ids[0]]: { path: '/fixture/mz-project/js/plugins/Synthetic_Tool.js', sha256: 'ab' },
+      [ids[1]]: { path: 3, sha256: null }
+    }
+    seed({ ...payloads, 'mz-plugin-studio-plugin': JSON.stringify(saved) })
+    const stores = await loadStores()
+    await flushPrune()
+    expect(stores['mz-plugin-studio-plugin'].getState().baseByPluginId).toEqual({
+      [ids[0]]: { path: '/fixture/mz-project/js/plugins/Synthetic_Tool.js', sha256: 'ab' }
     })
   })
 
