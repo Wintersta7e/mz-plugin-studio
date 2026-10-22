@@ -21,6 +21,7 @@
 - Translated struct blocks (`/*~struct~Name:ja` and the like) are read as translations of their struct instead of as extra structs.
 - Raw mode keeps the `@require` and `@noteRequire` lines of an imported plugin when it rewrites a block.
 - Opening a plugin with a long run of spaces after a "custom code" or "main logic" comment no longer freezes the app.
+- Opening a plugin whose help text or a parameter, argument, parent or required-asset entry contains a long run of spaces or blank lines no longer freezes the app.
 
 ### Changed
 

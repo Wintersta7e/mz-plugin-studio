@@ -26,6 +26,43 @@ interface ParsedMeta {
   localizations: Record<string, LocalizedContent>
 }
 
+/** Same result as header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1], in linear time. */
+export function matchHelp(header: string): string | undefined {
+  const n = header.length
+  const isWs = (i: number): boolean => i < n && /\s/.test(header[i])
+  // nextNonWs[i]: first index >= i that is not whitespace (n if none)
+  const nextNonWs = new Int32Array(n + 1)
+  nextNonWs[n] = n
+  for (let i = n - 1; i >= 0; i--) nextNonWs[i] = isWs(i) ? nextNonWs[i + 1] : i
+  // A help body ends before a newline followed by `*` and then a tag (`@` + letter) or `/`
+  const endsAt = (p: number): boolean => {
+    if (header[p] !== '\n') return false
+    const star = nextNonWs[p + 1]
+    if (header[star] !== '*') return false
+    if (header[star + 1] === '/') return true
+    const at = nextNonWs[star + 1]
+    return header[at] === '@' && at + 1 < n && /[a-z]/i.test(header[at + 1])
+  }
+  // nextEnd[p]: first index >= p where the body can end (-1 if none)
+  const nextEnd = new Int32Array(n + 1)
+  nextEnd[n] = -1
+  for (let p = n - 1; p >= 0; p--) nextEnd[p] = endsAt(p) ? p : nextEnd[p + 1]
+  for (const m of header.matchAll(/@help/gi)) {
+    const s0 = m.index + m[0].length
+    const e = nextNonWs[s0]
+    if (nextEnd[e] !== -1) return header.slice(e, nextEnd[e])
+    // The regex gives back leading whitespace to reach an end inside it, capturing nothing
+    if (nextEnd[s0] !== -1 && nextEnd[s0] < e) return ''
+  }
+  return undefined
+}
+
+/** Same result as value.replace(/\s*\*?\s*$/, ''), in linear time. */
+export function stripTrailingStar(value: string): string {
+  const trimmed = value.trimEnd()
+  return trimmed.endsWith('*') ? trimmed.slice(0, -1).trimEnd() : trimmed
+}
+
 export class PluginParser {
   static parsePlugin(content: string, filename?: string): PluginDefinition {
     // Values are read from an LF copy, so a CRLF file parses the same as its LF twin
@@ -314,9 +351,9 @@ export class PluginParser {
     }
 
     // Parse @help
-    const helpMatch = header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)
-    if (helpMatch) {
-      meta.help = helpMatch[1]
+    const help = matchHelp(header)
+    if (help !== undefined) {
+      meta.help = help
         .split('\n')
         .map((line) => line.replace(/^\s*\*\s?/, ''))
         .join('\n')
@@ -345,7 +382,7 @@ export class PluginParser {
     // Also match a final entry that lacks a trailing newline (right before */).
     const requiredAssetMatches = header.matchAll(/@requiredAssets\s+(.+?)(?=\n|\r|\*\/|$)/gi)
     for (const match of requiredAssetMatches) {
-      const value = match[1].replace(/\s*\*?\s*$/, '').trim()
+      const value = stripTrailingStar(match[1]).trim()
       if (value) meta.requiredAssets.push(value)
     }
 
@@ -397,17 +434,18 @@ export class PluginParser {
     for (const [lang, langHeader] of languages) {
       if (lang) {
         const locDesc = langHeader.match(/@plugindesc\s+(.+?)(?=\n\s*\*\s*@|\n\s*\*\/)/s)
-        const locHelp = langHeader.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)
+        const locHelp = matchHelp(langHeader)
 
         localizations[lang] = {
           description: locDesc ? locDesc[1].trim().replace(/\n\s*\*\s*/g, ' ') : '',
-          help: locHelp
-            ? locHelp[1]
-                .split('\n')
-                .map((line) => line.replace(/^\s*\*\s?/, ''))
-                .join('\n')
-                .trim()
-            : ''
+          help:
+            locHelp !== undefined
+              ? locHelp
+                  .split('\n')
+                  .map((line) => line.replace(/^\s*\*\s?/, ''))
+                  .join('\n')
+                  .trim()
+              : ''
         }
       }
     }
@@ -423,7 +461,7 @@ export class PluginParser {
     let match
 
     while ((match = paramRegex.exec(header)) !== null) {
-      const rawParamName = match[1].replace(/\s*\*?\s*$/, '').trim()
+      const rawParamName = stripTrailingStar(match[1]).trim()
       // Skip empty @param lines (used as visual separators)
       if (!rawParamName) continue
       const paramBlock = match[2]
@@ -475,7 +513,7 @@ export class PluginParser {
 
       // Parse @parent for nested parameters
       const parentMatch = effectiveBlock.match(/@parent\s+([^\n\r]+)/i)
-      if (parentMatch) param.parent = parentMatch[1].replace(/\s*\*?\s*$/, '').trim()
+      if (parentMatch) param.parent = stripTrailingStar(parentMatch[1]).trim()
 
       // Parse @dir for file type
       const dirMatch = effectiveBlock.match(/@dir\s+([^\n\r]+)/i)
@@ -550,7 +588,7 @@ export class PluginParser {
     let match
 
     while ((match = argRegex.exec(block)) !== null) {
-      const argName = match[1].replace(/\s*\*?\s*$/, '').trim()
+      const argName = stripTrailingStar(match[1]).trim()
       if (!argName) continue
       const argBlock = match[2]
 
@@ -636,7 +674,7 @@ export class PluginParser {
   private static extractTag(block: string, tag: string): string | null {
     const regex = new RegExp(`@${tag}\\s+([^\\n\\r]+)`, 'i')
     const match = block.match(regex)
-    return match ? match[1].replace(/\s*\*?\s*$/, '').trim() : null
+    return match ? stripTrailingStar(match[1]).trim() : null
   }
 
   /**
