@@ -1301,6 +1301,39 @@ describe('camelCase edge cases', () => {
     expect(camelCase('const')).toBe('const_')
   })
 
+  // `params` and `args` are names the generated code declares itself; `eval` and `arguments`
+  // cannot be declared in strict mode.
+  it.each(['params', 'args', 'eval', 'arguments'])(
+    'a parameter named %s generates a plugin that compiles',
+    (name) => {
+      const plugin = createTestPlugin({
+        parameters: [{ id: 'p1', name, text: name, desc: '', type: 'string', default: '' }]
+      })
+      expect(compilePlugin(generatePlugin(plugin))).toBeNull()
+      expect(validatePlugin(plugin).warnings).toContain(
+        `Parameter "${name}" is a reserved name; the generated variable will be "${name}_"`
+      )
+    }
+  )
+
+  it.each(['args', 'eval'])(
+    'a command argument named %s generates a plugin that compiles',
+    (name) => {
+      const plugin = createTestPlugin({
+        commands: [
+          {
+            id: 'c1',
+            name: 'Run',
+            text: 'Run',
+            desc: '',
+            args: [{ id: 'a1', name, text: name, desc: '', type: 'string', default: '' }]
+          }
+        ]
+      })
+      expect(compilePlugin(generatePlugin(plugin))).toBeNull()
+    }
+  )
+
   it('prefixes underscore on digit-start names', () => {
     expect(camelCase('123abc')).toBe('_123abc')
     expect(camelCase('7')).toBe('_7')

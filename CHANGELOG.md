@@ -25,6 +25,7 @@
 - An empty `@default`, `@desc` or similar tag in an imported plugin no longer takes the next line as its value.
 - Changing the type of a parameter in an imported plugin now changes it in the saved file.
 - Help text and plugin descriptions written as the last tag of an annotation block are no longer read as empty.
+- Parameters and arguments named `params`, `args`, `eval` or `arguments` no longer produce a plugin that fails to load.
 
 ### Changed
 

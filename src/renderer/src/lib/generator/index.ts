@@ -805,8 +805,10 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
 
 // Reserved words that would cause a SyntaxError if used as `const <name>`.
 // Includes ES2024 reserved + strict-mode reserved + contextual keywords that
-// collide inside `'use strict'` IIFEs. Suffixing with `_` is safer than
-// prefixing because it preserves the visible name in generated code.
+// collide inside `'use strict'` IIFEs, plus `eval`/`arguments` (not bindable in
+// strict mode) and `params`/`args` (declared by the generated code itself).
+// Suffixing with `_` is safer than prefixing because it preserves the visible
+// name in generated code.
 const JS_RESERVED: ReadonlySet<string> = new Set([
   'break',
   'case',
@@ -855,7 +857,11 @@ const JS_RESERVED: ReadonlySet<string> = new Set([
   'yield',
   'async',
   'await',
-  'of'
+  'of',
+  'eval',
+  'arguments',
+  'params',
+  'args'
 ])
 
 /**
@@ -1013,7 +1019,7 @@ export function validatePlugin(plugin: PluginDefinition): {
       if (identifier !== param.name) {
         if (JS_RESERVED.has(param.name)) {
           warnings.push(
-            `Parameter "${param.name}" is a JS reserved word; the generated variable will be "${identifier}"`
+            `Parameter "${param.name}" is a reserved name; the generated variable will be "${identifier}"`
           )
         } else if (/^[0-9]/.test(param.name)) {
           warnings.push(
