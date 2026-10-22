@@ -1,7 +1,8 @@
 // Checks the golden-file rules over a range of commits, from the repository root:
 //   - a commit that changes src/ adds no golden file and no case to an existing golden;
 //   - a commit that changes no src/ file deletes no golden line;
-//   - a changed user-visible golden (generated output) comes with a CHANGELOG.md change.
+//   - a changed user-visible golden (generated output) comes with a CHANGELOG.md change,
+//     unless a commit that changes no src/ file only adds whole cases (or index lines) to it.
 // Usage: node scripts/check-golden-commits.mjs <base>..<head>
 //        node scripts/check-golden-commits.mjs --github-event   (range from the CI event)
 import { execFileSync } from 'node:child_process'
@@ -73,6 +74,23 @@ function goldenLines(sha) {
   return files
 }
 
+/**
+ * A golden split into the units a case adds: one line per entry of a JSON index, else the text
+ * before the first case header and then each case block.
+ */
+const caseUnits = (path, text) =>
+  path.endsWith('.json') ? text.split('\n') : ('\n' + text).split(/\n(?=\/\/ ==== case:)/)
+
+/** True when the commit's version of a golden keeps every earlier unit, in order, and only adds units. */
+function onlyAddsCases(sha, path) {
+  const [oldHead, ...oldUnits] = caseUnits(path, git(['show', `${sha}^:${path}`]))
+  const [newHead, ...newUnits] = caseUnits(path, git(['show', `${sha}:${path}`]))
+  if (oldHead !== newHead) return false
+  let next = 0
+  for (const unit of newUnits) if (unit === oldUnits[next]) next++
+  return next === oldUnits.length
+}
+
 /** Counts every rule over the range; returns the exit code. */
 function checkRange(range) {
   const commits = git(['rev-list', '--no-merges', '--reverse', range])
@@ -103,7 +121,12 @@ function checkRange(range) {
         fail(sha, 'case header added in src commit', path)
       }
       const existing = status === 'M' || status === 'D'
-      if (existing && !touchesChangelog && USER_VISIBLE.some((dir) => path.startsWith(dir))) {
+      if (
+        existing &&
+        !touchesChangelog &&
+        USER_VISIBLE.some((dir) => path.startsWith(dir)) &&
+        !(!touchesSrc && status === 'M' && onlyAddsCases(sha, path))
+      ) {
         counts.z++
         fail(sha, 'user-visible golden changed without CHANGELOG', path)
       }

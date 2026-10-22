@@ -140,6 +140,69 @@ describe('golden commit check', () => {
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
   })
 
+  it('passes a test-only commit that only adds whole cases to a user-visible golden', () => {
+    const { dir, base } = makeRepo()
+    write(dir, `${GOLDEN}/templates/a.js`, '// ==== case: one\nlet a\n\n// ==== case: two\nlet b\n')
+    commit(dir, 'test: add a golden')
+    write(
+      dir,
+      `${GOLDEN}/templates/a.js`,
+      '// ==== case: one\nlet a\n\n// ==== case: new\nlet n\n\n// ==== case: two\nlet b\n\n' +
+        '// ==== case: last\nlet z\n'
+    )
+    commit(dir, 'test: add two cases')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
+  })
+
+  it('fails a test-only commit that adds a case and changes a line of an existing case', () => {
+    const { dir, base } = makeRepo()
+    write(dir, `${GOLDEN}/templates/a.js`, '// ==== case: one\nlet a\n')
+    commit(dir, 'test: add a golden')
+    write(dir, `${GOLDEN}/templates/a.js`, '// ==== case: one\nlet b\n\n// ==== case: two\nlet c\n')
+    const sha = commit(dir, 'test: add a case and change another')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(2, 0, 0, 0, 1, 1),
+        `FAIL ${short(sha)} user-visible golden changed without CHANGELOG: ${GOLDEN}/templates/a.js`,
+        `FAIL ${short(sha)} golden lines deleted in test-only commit: ${GOLDEN}/templates/a.js`
+      ]
+    })
+  })
+
+  it('passes a test-only commit that only adds entries to a user-visible index', () => {
+    const { dir, base } = makeRepo()
+    write(dir, `${GOLDEN}/raw-mode/_parses.json`, '{\n  "a.none": false,\n  "c.none": true\n}\n')
+    commit(dir, 'test: add an index')
+    write(
+      dir,
+      `${GOLDEN}/raw-mode/_parses.json`,
+      '{\n  "a.none": false,\n  "b.none": true,\n  "c.none": true\n}\n'
+    )
+    commit(dir, 'test: add an entry')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
+  })
+
+  it('fails a test-only commit that adds an index entry and changes another', () => {
+    const { dir, base } = makeRepo()
+    write(dir, `${GOLDEN}/raw-mode/_parses.json`, '{\n  "a.none": false,\n  "c.none": true\n}\n')
+    commit(dir, 'test: add an index')
+    write(
+      dir,
+      `${GOLDEN}/raw-mode/_parses.json`,
+      '{\n  "a.none": true,\n  "b.none": true,\n  "c.none": true\n}\n'
+    )
+    const sha = commit(dir, 'test: add an entry and change another')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(2, 0, 0, 0, 1, 1),
+        `FAIL ${short(sha)} user-visible golden changed without CHANGELOG: ${GOLDEN}/raw-mode/_parses.json`,
+        `FAIL ${short(sha)} golden lines deleted in test-only commit: ${GOLDEN}/raw-mode/_parses.json`
+      ]
+    })
+  })
+
   it('passes a parser golden change without a CHANGELOG change', () => {
     const { dir, base } = makeRepo()
     write(dir, `${GOLDEN}/parser/p.json`, '{\n  "a": 1\n}\n')
