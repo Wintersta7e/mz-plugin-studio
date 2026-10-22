@@ -1,7 +1,18 @@
 import type { PluginBaseline, PluginDefinition } from '../types/plugin'
-import { generateHeaderOnly, generatePlugin, generateRawMode, hasMainBlock } from './generator'
+import {
+  RawModeParseError,
+  generateHeaderOnly,
+  generatePlugin,
+  generateRawMode,
+  hasMainBlock,
+  scriptParseError
+} from './generator'
 
-export type OutputRefusal = 'source-missing' | 'header-without-main-block'
+export type OutputRefusal =
+  | 'source-missing'
+  | 'header-without-main-block'
+  | 'unparsable-source'
+  | 'invalid-output'
 
 export type PluginOutput =
   | { ok: true; code: string }
@@ -51,5 +62,28 @@ export function generatePluginOutput(
       message: `Header changes cannot be saved: ${fileOf(plugin)} has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.`
     }
   }
-  return { ok: true, code: generateRawMode(plugin, baseline) }
+  let code: string
+  try {
+    code = generateRawMode(plugin, baseline)
+  } catch (error) {
+    if (!(error instanceof RawModeParseError)) throw error
+    return {
+      ok: false,
+      refusal: 'unparsable-source',
+      message: `Not saved: ${fileOf(plugin)} is not valid JavaScript (${error.parseError}), so raw mode cannot place added parameters, commands or structs in it. Undo those additions, or turn raw mode off to save regenerated code.`
+    }
+  }
+  // A plugin that does not parse stops the game loading it; a file that did not parse before is
+  // still written as edited
+  if (code !== plugin.rawSource) {
+    const problem = scriptParseError(code)
+    if (problem !== null && scriptParseError(plugin.rawSource) === null) {
+      return {
+        ok: false,
+        refusal: 'invalid-output',
+        message: `Not saved: the code raw mode built for ${fileOf(plugin)} is not valid JavaScript (${problem}), so the game could not load it. Undo the last edits, or turn raw mode off to save regenerated code.`
+      }
+    }
+  }
+  return { ok: true, code }
 }

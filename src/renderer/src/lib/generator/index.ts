@@ -6,9 +6,17 @@ import type {
   PluginStruct,
   ParamType
 } from '../../types/plugin'
+import { parse } from 'acorn'
+import type {
+  AnyNode,
+  ArrowFunctionExpression,
+  BlockStatement,
+  FunctionExpression,
+  Program
+} from 'acorn'
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
-import { stripCommentsAndStrings, stripCommentsOnly } from '../../../../shared/override-extractor'
+import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
 
 /** Receives each field's text as it is written into an annotation comment, with its label. */
@@ -520,23 +528,204 @@ export function hasMainBlock(source: string): boolean {
 /** A separator parameter only groups others in the MZ editor; no code reads it. */
 const isSeparator = (name: string): boolean => name.includes('---') || name.includes('===')
 
-const IIFE_OPEN = /\(\s*\(\s*\)\s*(?:=>)?\s*\{/
-const IIFE_CLOSE_LINE = /^\s*\}\s*\)\s*\(\s*\)\s*;?\s*$/gm
-
-/** Index just past the line holding `index`, or the end of the text. */
-function afterLine(text: string, index: number): number {
-  const lineEnd = text.indexOf('\n', index)
-  return lineEnd === -1 ? text.length : lineEnd + 1
+/** Raw mode had code to place in a file that does not parse as JavaScript. */
+export class RawModeParseError extends Error {
+  constructor(readonly parseError: string) {
+    super(`The file is not valid JavaScript: ${parseError}`)
+    this.name = 'RawModeParseError'
+  }
 }
 
-/** Index of the parenthesis closing the one at `open`, in comment- and string-stripped code. */
-function closingParen(stripped: string, open: number): number {
-  let depth = 0
-  for (let i = open; i < stripped.length; i++) {
-    if (stripped[i] === '(') depth++
-    else if (stripped[i] === ')' && --depth === 0) return i
+/** Parses code the way MZ loads a plugin: as a classic script. */
+const parseScript = (code: string): Program =>
+  parse(code, { ecmaVersion: 'latest', sourceType: 'script' })
+
+/** Why `code` does not parse as a classic script, or null when it does. */
+export function scriptParseError(code: string): string | null {
+  try {
+    parseScript(code)
+    return null
+  } catch (error) {
+    if (error instanceof SyntaxError) return error.message
+    throw error
   }
-  return -1
+}
+
+const isNode = (value: unknown): value is AnyNode =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { type?: unknown }).type === 'string'
+
+function childNodes(node: AnyNode): AnyNode[] {
+  const children: AnyNode[] = []
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) children.push(...value.filter(isNode))
+    else if (isNode(value)) children.push(value)
+  }
+  return children
+}
+
+/** Adds every name the code declares or reads to `names`; property names and labels are not names. */
+function collectNames(node: AnyNode, names: Set<string>): void {
+  if (node.type === 'Identifier') {
+    names.add(node.name)
+    return
+  }
+  const notAName =
+    node.type === 'MemberExpression' && !node.computed
+      ? node.property
+      : (node.type === 'Property' ||
+            node.type === 'MethodDefinition' ||
+            node.type === 'PropertyDefinition') &&
+          !node.computed
+        ? node.key
+        : node.type === 'LabeledStatement' ||
+            node.type === 'BreakStatement' ||
+            node.type === 'ContinueStatement'
+          ? node.label
+          : null
+  for (const child of childNodes(node)) if (child !== notAName) collectNames(child, names)
+}
+
+type CalledFunction = (FunctionExpression | ArrowFunctionExpression) & { body: BlockStatement }
+
+/** The function a statement calls in place: `(function () {…})()`, `(function () {…}())`, `(() => {…})()`. */
+function calledFunction(statement: AnyNode): CalledFunction | null {
+  if (statement.type !== 'ExpressionStatement') return null
+  if (statement.expression.type !== 'CallExpression') return null
+  const callee = statement.expression.callee
+  return (callee.type === 'FunctionExpression' || callee.type === 'ArrowFunctionExpression') &&
+    callee.body.type === 'BlockStatement'
+    ? (callee as CalledFunction)
+    : null
+}
+
+/** Whether the code calls `PluginManager.parameters`, outside the functions it defines. */
+function readsParameters(node: AnyNode): boolean {
+  if (
+    node.type === 'CallExpression' &&
+    node.callee.type === 'MemberExpression' &&
+    !node.callee.computed &&
+    node.callee.object.type === 'Identifier' &&
+    node.callee.object.name === 'PluginManager' &&
+    node.callee.property.type === 'Identifier' &&
+    node.callee.property.name === 'parameters'
+  ) {
+    return true
+  }
+  if (
+    node.type === 'FunctionExpression' ||
+    node.type === 'ArrowFunctionExpression' ||
+    node.type === 'FunctionDeclaration'
+  ) {
+    return false
+  }
+  return childNodes(node).some(readsParameters)
+}
+
+function declares(statement: AnyNode, name: string): boolean {
+  if (statement.type === 'VariableDeclaration') {
+    return statement.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === name)
+  }
+  return (
+    (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') &&
+    statement.id?.name === name
+  )
+}
+
+/** Index `end`, or the start of the next line when only blanks or a line comment follow it. */
+function afterNode(source: string, end: number): number {
+  const lineEnd = source.indexOf('\n', end)
+  const rest = source.slice(end, lineEnd === -1 ? source.length : lineEnd)
+  if (!/^[ \t]*(?:\/\/.*)?\r?$/.test(rest)) return end
+  return lineEnd === -1 ? source.length : lineEnd + 1
+}
+
+/** Where raw mode puts code it adds to a file, read from the file's syntax tree. */
+interface Placement {
+  /** Start of the first top-level IIFE: a struct block without a block of its own goes there */
+  iifeStart: number | null
+  /** The body of the IIFE added code goes into; null for the script's top level */
+  body: BlockStatement | null
+  /** The variable the file reads its parameters into, and the end of its declaration */
+  parameters: { name: string; end: number } | null
+  /** Where code for added parameters goes when the file has no parameters variable */
+  start: number
+  /** The index from which the file's own `PLUGIN_NAME` holds its value in that scope */
+  pluginNameFrom: number | null
+  /** Every name the file declares or reads; a name added code declares is added here */
+  names: Set<string>
+}
+
+/** Where added code goes: the parameters variable's scope, else the first IIFE, else the top level. */
+function placementOf(source: string): Placement {
+  let program: Program
+  try {
+    program = parseScript(source)
+  } catch (error) {
+    if (error instanceof SyntaxError) throw new RawModeParseError(error.message)
+    throw error
+  }
+  const statements = program.body
+  const called = statements.map(calledFunction)
+  const first = called.findIndex((fn) => fn !== null)
+
+  // The first declaration of the top level or of a top-level IIFE body reading the parameters
+  let parameters: { name: string; end: number; owner: number | null } | null = null
+  for (let i = 0; i < statements.length && parameters === null; i++) {
+    const fn = called[i]
+    for (const statement of fn === null ? [statements[i]] : fn.body.body) {
+      if (statement.type !== 'VariableDeclaration') continue
+      const declarator = statement.declarations.find(
+        (d) => d.id.type === 'Identifier' && d.init != null && readsParameters(d.init)
+      )
+      if (declarator !== undefined && declarator.id.type === 'Identifier') {
+        parameters = { name: declarator.id.name, end: statement.end, owner: fn === null ? null : i }
+        break
+      }
+    }
+  }
+  const owner = parameters !== null ? parameters.owner : first === -1 ? null : first
+  const fn = owner === null ? null : called[owner]
+  const scope = fn === null ? statements : fn.body.body
+
+  const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
+  let pluginNameFrom = own === undefined ? null : own.end
+  if (fn !== null && owner !== null && pluginNameFrom === null) {
+    const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
+    const isParam = fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
+    if (isParam || (outer !== undefined && outer.end <= statements[owner].start)) {
+      pluginNameFrom = fn.body.start
+    }
+  }
+
+  let start = source.length
+  if (fn !== null) {
+    const directives = scope.filter(
+      (s) => s.type === 'ExpressionStatement' && s.directive !== undefined
+    )
+    start = afterNode(source, directives.at(-1)?.end ?? fn.body.start + 1)
+    if (own !== undefined) start = Math.max(start, afterNode(source, own.end))
+  }
+
+  const names = new Set<string>()
+  collectNames(program, names)
+  return {
+    iifeStart: first === -1 ? null : statements[first].start,
+    body: fn === null ? null : fn.body,
+    parameters: parameters && { name: parameters.name, end: parameters.end },
+    start,
+    pluginNameFrom,
+    names
+  }
+}
+
+/** `name`, suffixed with `_` until no name of the file uses it; then taken. */
+function freeName(place: Placement, name: string): string {
+  let free = name
+  while (place.names.has(free)) free += '_'
+  place.names.add(free)
+  return free
 }
 
 /**
@@ -552,9 +741,11 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   }
   const eol = source.includes('\r\n') ? '\r\n' : '\n'
   const blocks = findAnnotationBlocks(source)
-  const stripped = stripCommentsAndStrings(source)
   // Replacements of [start, end) in the source; text is built with \n
   const edits: { start: number; end: number; text: string }[] = []
+  // Read from the syntax tree, only when code or a block is added
+  let parsed: Placement | undefined
+  const placement = (): Placement => (parsed ??= placementOf(source))
 
   // 1. The main block, when its rendering changed
   const main = blocks.find((b) => b.kind === 'main')
@@ -569,7 +760,6 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
 
   // 2. Struct blocks: a struct's own block (bare, else :en) is rewritten when its rendering
   // changed; translated blocks stay; a struct without its own block is added before the IIFE
-  const iifeOpen = IIFE_OPEN.exec(stripped)
   for (const struct of plugin.structs) {
     const text = generateStructDefinition(struct, undefined, true)
     const before = baseline.structs.find((s) => s.name === struct.name)
@@ -582,108 +772,119 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
         end: block.end,
         text: block.opener + text.slice(text.indexOf('\n'))
       })
-    } else if (iifeOpen !== null) {
-      edits.push({ start: iifeOpen.index, end: iifeOpen.index, text: `${text}\n\n` })
     } else {
-      edits.push({ start: source.length, end: source.length, text: `\n\n${text}` })
+      const at = placement().iifeStart
+      edits.push(
+        at === null
+          ? { start: source.length, end: source.length, text: `\n\n${text}` }
+          : { start: at, end: at, text: `${text}\n\n` }
+      )
     }
   }
 
   const pluginName = plugin.meta.name || 'NewPlugin'
-  const nameLine = `    const PLUGIN_NAME = '${escapeJSString(pluginName)}';`
-  const hasPluginName = /\bPLUGIN_NAME\b/.test(stripped)
-  let declaredPluginName = false
+  // The constant added code declares for the plugin name when the file's own is out of reach,
+  // and whether it went into the IIFE body, where later added code can read it too
+  let nameConstant: string | undefined
+  let nameInBody = false
+  const pluginNameAt = (place: Placement, at: number): { name: string; line?: string } => {
+    if (place.pluginNameFrom !== null && place.pluginNameFrom <= at) return { name: 'PLUGIN_NAME' }
+    nameConstant ??= freeName(place, 'PLUGIN_NAME')
+    return {
+      name: nameConstant,
+      line: `    const ${nameConstant} = '${escapeJSString(pluginName)}';`
+    }
+  }
+  // At the script top level a block keeps added names out of the scope every plugin shares
+  const wrap = (place: Placement, lines: string[]): string =>
+    place.body === null ? `{\n${lines.join('\n')}\n}` : lines.join('\n')
 
-  // 3. Parsing code for parameters added since load, after the parameters call when there is one
+  // 3. Parsing code for parameters added since load, after the file's parameters variable when
+  // it has one
   const knownParams = new Set(baseline.parameters.map((p) => p.name))
   const newParams = plugin.parameters.filter(
     (p) => !isSeparator(p.name) && !knownParams.has(p.name)
   )
   if (newParams.length > 0) {
+    const place = placement()
     const lines: string[] = []
-    const call = stripped.indexOf('PluginManager.parameters(')
-    const close =
-      call === -1 ? -1 : closingParen(stripped, call + 'PluginManager.parameters'.length)
-    // The variable the file keeps its parameters in, when the call is assigned to one
-    const variable =
-      close === -1
-        ? undefined
-        : /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*$/.exec(
-            stripped.slice(stripped.lastIndexOf('\n', call) + 1, call)
-          )?.[1]
+    let variable = place.parameters?.name
+    const at = place.parameters === null ? place.start : afterNode(source, place.parameters.end)
     if (variable === undefined) {
-      if (!hasPluginName) {
-        lines.push(nameLine)
-        declaredPluginName = true
+      const { name, line } = pluginNameAt(place, at)
+      if (line !== undefined) {
+        lines.push(line)
+        nameInBody = place.body !== null
       }
-      lines.push(`    const params = PluginManager.parameters(PLUGIN_NAME);`)
+      variable = freeName(place, 'params')
+      lines.push(`    const ${variable} = PluginManager.parameters(${name});`)
     }
     lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
     for (const param of newParams) {
-      const accessor = `${variable ?? 'params'}['${escapeJSString(param.name)}']`
-      lines.push(`    const ${camelCase(param.name)} = ${generateAccessorParser(accessor, param)};`)
+      const accessor = `${variable}['${escapeJSString(param.name)}']`
+      const constant = freeName(place, camelCase(param.name))
+      lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
     }
     lines.push(`    // --- End new parameters ---`)
-    const strict = stripCommentsOnly(source).indexOf("'use strict'")
-    const at =
-      variable !== undefined
-        ? afterLine(source, close)
-        : strict !== -1
-          ? afterLine(source, strict)
-          : iifeOpen !== null
-            ? afterLine(source, iifeOpen.index + iifeOpen[0].length)
-            : -1
-    if (at === -1) {
-      edits.push({
-        start: source.length,
-        end: source.length,
-        text: `\n{\n${lines.join('\n')}\n}\n`
-      })
-      declaredPluginName = false
-    } else {
-      edits.push({ start: at, end: at, text: `\n${lines.join('\n')}\n` })
-    }
+    const text = at === source.length ? wrap(place, lines) : lines.join('\n')
+    edits.push({ start: at, end: at, text: `\n${text}\n` })
   }
 
-  // 4. Registration code for commands added since load, before the closing IIFE line
+  // 4. Registration code for commands added since load, at the end of the IIFE body
   const knownCommands = new Set(baseline.commands.map((c) => c.name))
   const newCommands = plugin.commands.filter((cmd) => !knownCommands.has(cmd.name))
   if (newCommands.length > 0) {
-    let closing = -1
-    for (const match of stripped.matchAll(IIFE_CLOSE_LINE)) {
-      // The start of the line holding the closing brace (the match may begin on a blank line)
-      closing = stripped.lastIndexOf('\n', match.index + match[0].indexOf('}')) + 1
+    const place = placement()
+    // The start of the line closing the body, or the closing brace when code shares its line
+    let at = source.length
+    if (place.body !== null) {
+      const close = place.body.end - 1
+      const lineStart = source.lastIndexOf('\n', close) + 1
+      at = /^[ \t]*$/.test(source.slice(lineStart, close)) ? lineStart : close
     }
     const lines: string[] = []
-    if (!hasPluginName && (!declaredPluginName || closing === -1)) lines.push(nameLine)
+    let name = nameConstant
+    if (!nameInBody || name === undefined) {
+      const reach = pluginNameAt(place, at)
+      name = reach.name
+      if (reach.line !== undefined) lines.push(reach.line)
+    }
     lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
     for (const cmd of newCommands) {
       lines.push(
-        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
+        `    PluginManager.registerCommand(${name}, '${escapeJSString(cmd.name)}', function(args) {`
       )
-      for (const arg of cmd.args) {
-        lines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
-      }
+      const argNames = new Set<string>()
+      const constants = cmd.args.map((arg) => {
+        let constant = camelCase(arg.name)
+        while (argNames.has(constant)) constant += '_'
+        argNames.add(constant)
+        return constant
+      })
+      cmd.args.forEach((arg, i) => {
+        lines.push(`        const ${constants[i]} = ${generateArgParser(arg)};`)
+      })
       lines.push('')
       lines.push('        // TODO: Implement command logic')
       if (cmd.args.length > 0) {
-        lines.push(
-          `        // Parsed args available as: ${cmd.args.map((a) => camelCase(a.name)).join(', ')}`
-        )
+        lines.push(`        // Parsed args available as: ${constants.join(', ')}`)
       }
       lines.push('    });')
     }
     lines.push(`    // --- End new commands ---`)
     edits.push(
-      closing === -1
-        ? { start: source.length, end: source.length, text: `\n{\n${lines.join('\n')}\n}\n` }
-        : { start: closing, end: closing, text: `\n${lines.join('\n')}\n\n` }
+      place.body === null
+        ? { start: at, end: at, text: `\n${wrap(place, lines)}\n` }
+        : { start: at, end: at, text: `\n${lines.join('\n')}\n\n` }
     )
   }
 
-  // Apply from the end so earlier offsets stay valid; equal offsets keep their order
+  // Apply from the end so earlier offsets stay valid; at one offset a replacement goes before
+  // an insertion, and insertions keep their order
   let output = source
-  const ordered = edits.map((e, i) => ({ ...e, i })).sort((a, b) => b.start - a.start || b.i - a.i)
+  const ordered = edits
+    .map((e, i) => ({ ...e, i }))
+    .sort((a, b) => b.start - a.start || b.end - a.end || b.i - a.i)
   for (const edit of ordered) {
     const text = eol === '\n' ? edit.text : edit.text.replace(/\n/g, eol)
     output = output.slice(0, edit.start) + text + output.slice(edit.end)

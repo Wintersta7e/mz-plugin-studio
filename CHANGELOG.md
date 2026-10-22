@@ -26,6 +26,8 @@
 - Changing the type of a parameter in an imported plugin now changes it in the saved file.
 - Help text and plugin descriptions written as the last tag of an annotation block are no longer read as empty.
 - Parameters and arguments named `params`, `args`, `eval` or `arguments` no longer produce a plugin that fails to load.
+- Raw mode reads an imported plugin as JavaScript to place the code for added parameters and commands. Plugins whose IIFE ends with `}());`, that hold a quote in a regular expression, read their parameters through `JSON.parse` or across lines, or already use an added parameter's name no longer fail to load after such a save, and a block after `'use strict'` is no longer garbled.
+- Raw mode refuses to save code additions to a plugin that is not valid JavaScript, and any save whose result would not be valid JavaScript, with a message naming the file.
 
 ### Changed
 
