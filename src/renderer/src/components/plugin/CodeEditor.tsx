@@ -6,11 +6,13 @@ import { usePluginStore, useSettingsStore } from '../../stores'
 import { Button } from '../ui/button'
 import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
+import { RAW_MODE_READ_ONLY_NOTICE, useActiveRawMode } from '../../lib/raw-mode'
 
 export function CodeEditor() {
   const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
+  const rawMode = useActiveRawMode()
 
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const completionDisposableRef = useRef<IDisposable | null>(null)
@@ -47,7 +49,7 @@ export function CodeEditor() {
 
   const editorOptions = useMemo(
     () => ({
-      readOnly: false,
+      readOnly: rawMode,
       minimap: { enabled: editorMinimap },
       fontSize: editorFontSize,
       lineNumbers: editorLineNumbers ? ('on' as const) : ('off' as const),
@@ -56,7 +58,7 @@ export function CodeEditor() {
       scrollBeyondLastLine: false,
       padding: { top: 16, bottom: 16 }
     }),
-    [editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
+    [rawMode, editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
   )
 
   const handleInsertTemplate = (code: string) => {
@@ -114,12 +116,18 @@ export function CodeEditor() {
           variant="outline"
           size="sm"
           onClick={() => setIsTemplateOpen(true)}
+          disabled={rawMode}
+          title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
           className="shrink-0 gap-2"
         >
           <Wand2 className="h-4 w-4" />
           Insert Template
         </Button>
       </div>
+
+      {rawMode && (
+        <p className="px-4 pb-2 text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
+      )}
 
       {/* Monaco Editor fills remaining space */}
       <div className="flex-1 min-h-0">
@@ -147,6 +155,7 @@ export function CodeEditor() {
         open={isTemplateOpen}
         onClose={() => setIsTemplateOpen(false)}
         onInsert={handleInsertTemplate}
+        readOnly={rawMode}
       />
     </div>
   )

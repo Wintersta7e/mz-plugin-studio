@@ -14,13 +14,40 @@ describe('uiStore raw mode state', () => {
   it('stores raw mode by plugin id and supports clearing closed plugin state', () => {
     useUIStore.getState().setRawModeForPlugin('plugin-a', true)
     useUIStore.getState().setRawModeForPlugin('plugin-b', false)
-
-    expect(useUIStore.getState().getRawModeForPlugin('plugin-a')).toBe(true)
-    expect(useUIStore.getState().getRawModeForPlugin('plugin-b', true)).toBe(false)
-    expect(useUIStore.getState().getRawModeForPlugin('missing-plugin', true)).toBe(true)
+    expect(useUIStore.getState().rawModeByPluginId).toEqual({
+      'plugin-a': true,
+      'plugin-b': false
+    })
 
     useUIStore.getState().clearRawModeForPlugin('plugin-a')
-    expect(useUIStore.getState().getRawModeForPlugin('plugin-a')).toBe(false)
+    expect(useUIStore.getState().rawModeByPluginId).toEqual({ 'plugin-b': false })
+  })
+
+  it('keeps a confirmed save without raw mode until raw mode is turned off again or cleared', () => {
+    const ui = (): ReturnType<typeof useUIStore.getState> => useUIStore.getState()
+    ui().setRawModeForPlugin('plugin-a', false)
+    ui().confirmStructuralSave('plugin-a')
+    ui().confirmStructuralSave('plugin-b')
+    expect(ui().structuralSaveConfirmedByPluginId).toEqual({ 'plugin-a': true, 'plugin-b': true })
+
+    ui().setRawModeForPlugin('plugin-a', true)
+    expect(ui().structuralSaveConfirmedByPluginId).toHaveProperty('plugin-a')
+    ui().setRawModeForPlugin('plugin-a', false)
+    expect(ui().structuralSaveConfirmedByPluginId).not.toHaveProperty('plugin-a')
+
+    ui().clearRawModeForPlugin('plugin-b')
+    expect(ui().structuralSaveConfirmedByPluginId).toEqual({})
+    expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('structuralSave')
+  })
+
+  it('holds one diff request until it is cleared, and shows the preview for it', () => {
+    useUIStore.getState().setPreviewCollapsed(true)
+    useUIStore.getState().requestDiff('plugin-a')
+    expect(useUIStore.getState().diffRequestPluginId).toBe('plugin-a')
+    expect(useUIStore.getState().previewCollapsed).toBe(false)
+    useUIStore.getState().clearDiffRequest()
+    expect(useUIStore.getState().diffRequestPluginId).toBeNull()
+    expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('diffRequest')
   })
 
   it('clamps preview width and persists only the intended ui fields', () => {
@@ -43,7 +70,7 @@ describe('uiStore raw mode state', () => {
       previewCollapsed: false,
       lastTemplateCategory: 'method-alias',
       rawModeByPluginId: { 'plugin-a': true },
-      schemaVersion: 1
+      schemaVersion: 2
     })
     expect(persisted.state).not.toHaveProperty('activeTab')
     expect(persisted.state).not.toHaveProperty('mainView')

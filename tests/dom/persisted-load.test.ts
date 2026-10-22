@@ -1,9 +1,16 @@
 // What the app loads from the values v1.6.0 saved: each store is imported afresh over the
 // captured localStorage, so the real persist middleware hydrates it.
+import { readFileSync } from 'fs'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import type { PluginDefinition } from '../../src/shared/types/plugin'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import {
+  generatePluginOutput,
+  isRawMode,
+  isSourceMissing
+} from '../../src/renderer/src/lib/plugin-output'
+import { toBaseline } from '../../src/shared/types/plugin'
+import type { PluginBaseline, PluginDefinition } from '../../src/shared/types/plugin'
+import { fixturePath } from '../helpers/fixture-project'
 import { PERSISTED_KEYS, readV160Payloads } from '../helpers/persist-v160'
 import type { PersistedKey } from '../helpers/persist-v160'
 import { flushPrune, loadStores, seed, writeAll } from './support/load-persisted'
@@ -12,6 +19,15 @@ import type { PersistedHook } from './support/load-persisted'
 const payloads = readV160Payloads()
 const IMPORTED_SAVED = '00000000-0000-4000-8000-000000000013'
 const IMPORTED_UNSHOWN = '00000000-0000-4000-8000-000000000029'
+
+// The schema each store writes now.
+const SCHEMA: Record<PersistedKey, number> = {
+  'mz-plugin-studio-plugin': 2,
+  'mz-plugin-studio-ui': 2,
+  'mz-plugin-studio-settings': 1,
+  'mz-plugin-studio-project': 1,
+  'mz-plugin-studio-templates': 1
+}
 
 const stateOf = (key: PersistedKey): Record<string, unknown> =>
   (JSON.parse(payloads[key] as string) as { state: Record<string, unknown> }).state
@@ -26,6 +42,24 @@ function persistedFields(
     fields[key] = Object.fromEntries(Object.keys(stateOf(key)).map((f) => [f, state[f]]))
   }
   return fields
+}
+
+/** A v1.6.0 tab with a code body was imported from `<name>.js`; the code body is not kept. */
+function asImported(tab: Record<string, unknown>): Record<string, unknown> {
+  if (typeof tab.codeBody !== 'string') return tab
+  const { codeBody: _codeBody, ...rest } = tab
+  return { ...rest, importedFrom: `${(tab.meta as { name: string }).name}.js` }
+}
+
+/** What a v1.6.0 field value loads as now. */
+function expectedField(field: string, value: unknown): unknown {
+  if (field === 'parameterPresets') return withoutNullLimits(value)
+  if (field === 'plugin') return asImported(value as Record<string, unknown>)
+  if (field === 'openPlugins') return (value as Record<string, unknown>[]).map(asImported)
+  if (field === 'rawModeByPluginId') {
+    return Object.fromEntries(Object.entries(value as object).filter(([, on]) => on !== false))
+  }
+  return value
 }
 
 /** v1.6.0 saved a cleared number limit as null; the parameter check leaves it out. */
@@ -43,7 +77,7 @@ describe('loading the state v1.6.0 saved', () => {
     localStorage.clear()
   })
 
-  it('each saved store loads every field and writes schema 1', async () => {
+  it('each saved store loads every field and writes its current schema', async () => {
     const keys = PERSISTED_KEYS.filter((key) => payloads[key] !== undefined)
     seed(payloads)
     const stores = await loadStores()
@@ -52,8 +86,7 @@ describe('loading the state v1.6.0 saved', () => {
     for (const key of keys) {
       const state = stores[key].getState()
       for (const [field, value] of Object.entries(stateOf(key))) {
-        const expected = field === 'parameterPresets' ? withoutNullLimits(value) : value
-        expect(state[field], `${key}.${field}`).toEqual(expected)
+        expect(state[field], `${key}.${field}`).toEqual(expectedField(field, value))
         fields++
       }
       expect(stores[key].persist.getOptions().version, key).toBe(0)
@@ -61,7 +94,7 @@ describe('loading the state v1.6.0 saved', () => {
     const written = writeAll(stores)
     for (const key of keys) {
       const envelope = JSON.parse(written[key]) as { state: { schemaVersion?: number } }
-      expect(envelope.state.schemaVersion, key).toBe(1)
+      expect(envelope.state.schemaVersion, key).toBe(SCHEMA[key])
     }
     console.log(`keys ${keys.length}/${PERSISTED_KEYS.length}, fields ${fields}`)
     expect(keys).toHaveLength(5)
@@ -94,23 +127,27 @@ describe('loading the state v1.6.0 saved', () => {
     expect(persistedFields(third)).toEqual(loaded)
   })
 
-  it('an imported tab comes back without its file text', async () => {
+  it('an imported tab v1.6.0 saved comes back imported, in raw mode, with its file missing', async () => {
     seed(payloads)
     const stores = await loadStores()
     await flushPrune()
     const tabs = stores['mz-plugin-studio-plugin'].getState().openPlugins as PluginDefinition[]
     const tab = tabs.find((p) => p.id === IMPORTED_SAVED) as PluginDefinition
-    expect(tab.codeBody).toEqual(expect.any(String))
-    expect(tab).not.toHaveProperty('rawSource')
-    const ui = stores['mz-plugin-studio-ui'].getState() as {
-      getRawModeForPlugin(id: string, fallback?: boolean): boolean
-    }
-    expect(generatePluginOutput(tab, ui.getRawModeForPlugin(tab.id, false))).toBe(
-      generatePlugin(tab)
-    )
+    expect(tab.importedFrom).toBe('Fixture_HandWritten.js')
+    expect(tab).not.toHaveProperty('codeBody')
+    expect(isSourceMissing(tab)).toBe(true)
+    const rawMode = stores['mz-plugin-studio-ui'].getState().rawModeByPluginId as Record<
+      string,
+      boolean
+    >
+    expect(isRawMode(tab, rawMode[tab.id])).toBe(true)
+    expect(generatePluginOutput(tab, true, null)).toMatchObject({
+      ok: false,
+      refusal: 'source-missing'
+    })
   })
 
-  it('layout keeps the stored false raw-mode entry', async () => {
+  it('layout drops stored false raw-mode entries and keeps the true ones', async () => {
     seed(payloads)
     const stores = await loadStores()
     await flushPrune()
@@ -118,8 +155,38 @@ describe('loading the state v1.6.0 saved', () => {
       string,
       boolean
     >
-    expect(rawMode[IMPORTED_SAVED]).toBe(false)
+    expect(rawMode).not.toHaveProperty(IMPORTED_SAVED)
     expect(rawMode[IMPORTED_UNSHOWN]).toBe(true)
+  })
+
+  it('an imported tab keeps its file text and raw mode across a restart', async () => {
+    seed({})
+    const first = await loadStores()
+    const file = 'Fixture_HandWritten.js'
+    const text = readFileSync(fixturePath('js', 'plugins', file), 'utf-8')
+    const opened: PluginDefinition = { ...PluginParser.parsePlugin(text, file), importedFrom: file }
+    const plugin = first['mz-plugin-studio-plugin'].getState() as unknown as {
+      openPlugin(def: PluginDefinition): void
+    }
+    plugin.openPlugin(opened)
+    const written = writeAll(first)
+    expect(written['mz-plugin-studio-plugin']).not.toContain('codeBody')
+
+    seed(written)
+    const again = await loadStores()
+    await flushPrune()
+    const state = again['mz-plugin-studio-plugin'].getState()
+    const tab = (state.openPlugins as PluginDefinition[])[0]
+    expect(tab.rawSource).toBe(text)
+    expect(tab.importedFrom).toBe(file)
+    expect((state.baselineByPluginId as Record<string, PluginBaseline>)[tab.id]).toEqual(
+      JSON.parse(JSON.stringify(toBaseline(opened)))
+    )
+    const rawMode = again['mz-plugin-studio-ui'].getState().rawModeByPluginId as Record<
+      string,
+      boolean
+    >
+    expect(isRawMode(tab, rawMode[tab.id])).toBe(true)
   })
 
   it('entries of closed tabs are dropped while loading and hydration finishes', async () => {

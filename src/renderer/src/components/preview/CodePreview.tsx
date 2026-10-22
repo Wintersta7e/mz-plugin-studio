@@ -19,13 +19,20 @@ import {
   useToastStore,
   useUIStore
 } from '../../stores'
-import { generateRawMode, validatePlugin } from '../../lib/generator'
+import { validatePlugin } from '../../lib/generator'
 import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
   generateReadme
 } from '../../lib/exportFormats'
-import { generatePluginOutput } from '../../lib/plugin-output'
+import {
+  generatePluginOutput,
+  isImported,
+  isRawMode,
+  isSourceMissing
+} from '../../lib/plugin-output'
+import type { PluginOutput } from '../../lib/plugin-output'
+import { prepareSave } from '../../lib/raw-mode'
 import { DiffView } from './DiffView'
 import { cn } from '../../lib/utils'
 import log from 'electron-log/renderer'
@@ -44,11 +51,12 @@ export function CodePreview() {
   const theme = useSettingsStore((s) => s.theme)
 
   const addToast = useToastStore((s) => s.addToast)
-  const previewRawMode = useUIStore((s) =>
-    s.getRawModeForPlugin(plugin.id, Boolean(plugin.rawSource))
+  const previewRawMode = isRawMode(
+    plugin,
+    useUIStore((s) => s.rawModeByPluginId[plugin.id])
   )
   const setRawModeForPlugin = useUIStore((s) => s.setRawModeForPlugin)
-  const getRawModeForPlugin = useUIStore((s) => s.getRawModeForPlugin)
+  const diffRequested = useUIStore((s) => s.diffRequestPluginId === plugin.id)
 
   const [copied, setCopied] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
@@ -82,51 +90,37 @@ export function CodePreview() {
     []
   )
 
-  const hasRawSource = Boolean(plugin.rawSource)
+  const imported = isImported(plugin)
   const hasSavedVersion = Boolean(savedPath || plugin.rawSource)
 
   // Defer expensive computations so keystrokes aren't blocked by code gen + validation
   const deferredPlugin = useDeferredValue(plugin)
 
-  // Preserve the user's raw-mode choice per plugin while keeping imported plugins in raw mode by default.
-  useEffect(() => {
-    const currentRawMode = useUIStore.getState().rawModeByPluginId[plugin.id]
-    if (hasRawSource) {
-      if (currentRawMode === undefined) {
-        setRawModeForPlugin(plugin.id, true)
-      }
-      return
-    }
-
-    if (currentRawMode) {
-      setRawModeForPlugin(plugin.id, false)
-    }
-  }, [plugin.id, hasRawSource, setRawModeForPlugin])
-
   // Derive raw mode from deferred plugin to keep code gen consistent (R3-02)
-  const deferredRawMode = useMemo(
-    () => getRawModeForPlugin(deferredPlugin.id, Boolean(deferredPlugin.rawSource)),
-    [deferredPlugin.id, deferredPlugin.rawSource, getRawModeForPlugin]
+  const deferredRawMode = isRawMode(
+    deferredPlugin,
+    useUIStore((s) => s.rawModeByPluginId[deferredPlugin.id])
   )
+  const deferredBaseline = usePluginStore((s) => s.baselineByPluginId[deferredPlugin.id]) ?? null
 
-  const code = useMemo(() => {
+  const output = useMemo((): PluginOutput => {
     try {
-      return generatePluginOutput(deferredPlugin, deferredRawMode)
+      return generatePluginOutput(deferredPlugin, deferredRawMode, deferredBaseline)
     } catch (e) {
       log.error('Code generation error:', e)
-      return `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
+      return {
+        ok: true,
+        code: `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
+      }
     }
-  }, [deferredPlugin, deferredRawMode])
-
-  // Diff always uses raw mode for imported plugins (shows meaningful metadata changes, not full regeneration noise)
-  const diffModifiedCode = useMemo(() => {
-    if (!hasRawSource) return code
-    try {
-      return generateRawMode(deferredPlugin)
-    } catch {
-      return code
-    }
-  }, [deferredPlugin, hasRawSource, code])
+  }, [deferredPlugin, deferredRawMode, deferredBaseline])
+  // The diff shows the code a save would write
+  const code = output.ok ? output.code : ''
+  const banner = isSourceMissing(deferredPlugin)
+    ? `The original file of this plugin is not loaded (${deferredPlugin.importedFrom}). Raw mode cannot save it; turning raw mode off saves regenerated code instead.`
+    : output.ok
+      ? null
+      : output.message
 
   const validation = useMemo(() => {
     try {
@@ -172,12 +166,21 @@ export function CodePreview() {
 
   const handleCopy = useCallback(async () => {
     // Generate fresh code from immediate state, not deferred (R3-06)
-    const currentPlugin = usePluginStore.getState().plugin
-    const rawMode = useUIStore
-      .getState()
-      .getRawModeForPlugin(currentPlugin.id, Boolean(currentPlugin.rawSource))
-    const freshCode = generatePluginOutput(currentPlugin, rawMode)
-    await navigator.clipboard.writeText(freshCode)
+    const { plugin: currentPlugin, baselineByPluginId } = usePluginStore.getState()
+    const rawMode = isRawMode(
+      currentPlugin,
+      useUIStore.getState().rawModeByPluginId[currentPlugin.id]
+    )
+    const fresh = generatePluginOutput(
+      currentPlugin,
+      rawMode,
+      baselineByPluginId[currentPlugin.id] ?? null
+    )
+    if (!fresh.ok) {
+      addToast({ type: 'error', message: fresh.message })
+      return
+    }
+    await navigator.clipboard.writeText(fresh.code)
     setCopied(true)
     addToast({ type: 'success', message: 'Code copied to clipboard' })
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
@@ -187,10 +190,13 @@ export function CodePreview() {
   const handleExport = useCallback(async () => {
     // Generate from immediate state (not deferred) to avoid saving stale code (R3-01)
     const currentPlugin = usePluginStore.getState().plugin
-    const rawMode = useUIStore
-      .getState()
-      .getRawModeForPlugin(currentPlugin.id, Boolean(currentPlugin.rawSource))
-    const freshCode = generatePluginOutput(currentPlugin, rawMode)
+    const prepared = await prepareSave(currentPlugin.id, { ask: true })
+    if (prepared.status === 'refused') {
+      addToast({ type: 'error', message: prepared.reason })
+      return
+    }
+    if (prepared.status === 'cancelled') return
+    const freshCode = prepared.code
 
     if (!project) {
       const filePath = await window.api.dialog.saveFile({
@@ -235,12 +241,7 @@ export function CodePreview() {
     }
   }, [project, setSavedPath, setDirty, addToast])
 
-  const handleDiffToggle = useCallback(async () => {
-    if (showDiff) {
-      setShowDiff(false)
-      return
-    }
-
+  const openDiff = useCallback(async () => {
     // Try to load on-disk version
     try {
       if (savedPath) {
@@ -253,7 +254,22 @@ export function CodePreview() {
     } catch (error) {
       log.error('Failed to load on-disk version:', error)
     }
-  }, [showDiff, savedPath, plugin.rawSource])
+  }, [savedPath, plugin.rawSource])
+
+  const handleDiffToggle = useCallback(async () => {
+    if (showDiff) {
+      setShowDiff(false)
+      return
+    }
+    await openDiff()
+  }, [showDiff, openDiff])
+
+  // "Show Diff" in the save confirmation opens the diff of the plugin it asked about
+  useEffect(() => {
+    if (!diffRequested) return
+    useUIStore.getState().clearDiffRequest()
+    void openDiff()
+  }, [diffRequested, openDiff])
 
   const handleExportFormat = useCallback(
     async (format: 'readme' | 'dts' | 'plugins-json') => {
@@ -336,20 +352,20 @@ export function CodePreview() {
 
         <div className="flex items-center gap-2">
           <Button
-            variant={previewRawMode && hasRawSource ? 'default' : 'outline'}
+            variant={previewRawMode ? 'default' : 'outline'}
             size="sm"
             onClick={() => setRawModeForPlugin(plugin.id, !previewRawMode)}
-            disabled={!hasRawSource}
+            disabled={!imported}
             title={
-              hasRawSource
+              imported
                 ? previewRawMode
-                  ? 'Raw mode ON: only headers are regenerated, your code body is preserved'
-                  : 'Raw mode OFF: full plugin is generated from visual editor'
+                  ? "Raw mode ON: the file's own code and unchanged blocks are kept"
+                  : 'Raw mode OFF: the whole plugin is regenerated from the editor'
                 : 'Raw mode unavailable: plugin was not imported from a file'
             }
           >
             <FileCode2 className="mr-1 h-4 w-4" />
-            {previewRawMode && hasRawSource ? 'Raw ON' : 'Raw'}
+            {previewRawMode ? 'Raw ON' : 'Raw'}
           </Button>
 
           <Button
@@ -462,9 +478,15 @@ export function CodePreview() {
         </>
       )}
 
+      {banner !== null && (
+        <div className="border-b border-border bg-destructive/10 p-3 text-sm text-destructive">
+          {banner}
+        </div>
+      )}
+
       <div className="flex-1">
         {showDiff && onDiskCode !== null ? (
-          <DiffView original={onDiskCode} modified={diffModifiedCode} />
+          <DiffView original={onDiskCode} modified={code} />
         ) : (
           <Editor
             height="100%"

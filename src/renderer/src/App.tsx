@@ -26,7 +26,7 @@ import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
 import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
-import { generatePluginOutput } from './lib/plugin-output'
+import { prepareSave } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import log from 'electron-log/renderer'
@@ -262,17 +262,17 @@ function App() {
         case 'ctrl+s': {
           if (isSavingRef.current) break
           const ps = usePluginStore.getState()
-          const rawMode = useUIStore
-            .getState()
-            .getRawModeForPlugin(ps.plugin.id, Boolean(ps.plugin.rawSource))
           const proj = useProjectStore.getState().project
           if (proj && ps.plugin.meta.name) {
             isSavingRef.current = true
-            const code = generatePluginOutput(ps.plugin, rawMode)
             const filename = `${ps.plugin.meta.name}.js`
-            window.api.plugin
-              .save(proj.path, filename, code)
-              .then((result) => {
+            prepareSave(ps.plugin.id, { ask: true })
+              .then(async (prepared) => {
+                if (prepared.status === 'refused') {
+                  useToastStore.getState().addToast({ type: 'error', message: prepared.reason })
+                }
+                if (prepared.status !== 'ready') return
+                const result = await window.api.plugin.save(proj.path, filename, prepared.code)
                 if (result.success) {
                   usePluginStore.getState().setSavedPath(result.path)
                   usePluginStore.getState().setDirty(false)
@@ -302,11 +302,16 @@ function App() {
           }
           const dirtyPlugins = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
           const savePromises = dirtyPlugins.map(async (p) => {
-            const rawMode = useUIStore.getState().getRawModeForPlugin(p.id, Boolean(p.rawSource))
-            const code = generatePluginOutput(p, rawMode)
             const filename = `${p.meta.name}.js`
+            const prepared = await prepareSave(p.id, { ask: false })
+            if (prepared.status === 'refused') {
+              // The toast says "Not saved:" once, before every refused plugin
+              const reason = prepared.reason.replace(/^Not saved: /, '')
+              return { id: p.id, refused: `${p.meta.name} (${reason})` }
+            }
+            if (prepared.status === 'cancelled') return { id: p.id }
             try {
-              const result = await window.api.plugin.save(proj.path, filename, code)
+              const result = await window.api.plugin.save(proj.path, filename, prepared.code)
               if (result.success) return { id: p.id, path: result.path }
               return { id: p.id, error: new Error('save returned success=false') }
             } catch (error: unknown) {
@@ -320,6 +325,7 @@ function App() {
                 (r): r is { id: string; path: string } => 'path' in r
               )
               const failed = results.filter((r) => 'error' in r)
+              const refused = results.flatMap((r) => ('refused' in r ? [r.refused] : []))
               if (succeeded.length > 0) {
                 usePluginStore.setState((state) => {
                   const nextDirty = { ...state.dirtyByPluginId }
@@ -339,7 +345,13 @@ function App() {
                   }
                 })
               }
-              if (succeeded.length > 0 || failed.length > 0) {
+              if (refused.length > 0) {
+                const failures = failed.length > 0 ? `, failed ${failed.length}` : ''
+                useToastStore.getState().addToast({
+                  type: 'warning',
+                  message: `Saved ${succeeded.length}${failures}. Not saved: ${refused.join(', ')}`
+                })
+              } else if (succeeded.length > 0 || failed.length > 0) {
                 useToastStore.getState().addToast({
                   type: failed.length > 0 ? 'warning' : 'success',
                   message:

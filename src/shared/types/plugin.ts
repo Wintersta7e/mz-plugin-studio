@@ -111,6 +111,15 @@ export interface PluginDefinition {
   codeBody?: string // Original full body (for reference/fallback)
   customCode?: string // User's custom implementation (extracted from body, always preserved)
   rawSource?: string // Original full file content (for raw mode)
+  importedFrom?: string // File name the plugin was loaded from; unset for plugins created here
+}
+
+/** The definition an imported plugin was loaded with, without the file text it came from. */
+export type PluginBaseline = Omit<PluginDefinition, 'rawSource' | 'codeBody' | 'customCode'>
+
+export function toBaseline(def: PluginDefinition): PluginBaseline {
+  const { rawSource: _rawSource, codeBody: _codeBody, customCode: _customCode, ...baseline } = def
+  return baseline
 }
 
 // Default empty plugin

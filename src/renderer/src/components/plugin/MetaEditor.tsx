@@ -9,12 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { usePluginStore, useProjectStore } from '../../stores'
 import { generateHelpText } from '../../lib/exportFormats'
 import type { LocalizedContent, NoteParam } from '../../types/plugin'
+import { RAW_MODE_READ_ONLY_NOTICE, useActiveRawMode } from '../../lib/raw-mode'
 
 export function MetaEditor() {
   const meta = usePluginStore((s) => s.plugin.meta)
   const updateMeta = usePluginStore((s) => s.updateMeta)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
   const [showPluginNames, setShowPluginNames] = useState(false)
+  // Raw mode keeps the file's language blocks, so their fields are read-only
+  const rawMode = useActiveRawMode()
+  const localizedReadOnly = rawMode
+    ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
+    : { readOnly: false }
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
     const currentLocalizations = meta.localizations || {}
@@ -138,10 +144,14 @@ export function MetaEditor() {
             </TabsContent>
 
             <TabsContent value="ja" className="space-y-4">
+              {rawMode && (
+                <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="description-ja">Description (Japanese)</Label>
                 <Textarea
                   id="description-ja"
+                  {...localizedReadOnly}
                   value={getLocalization('ja').description || ''}
                   onChange={(e) => updateLocalization('ja', { description: e.target.value })}
                   placeholder="プラグインの説明"
@@ -152,6 +162,7 @@ export function MetaEditor() {
                 <Label htmlFor="help-ja">Help Text (Japanese)</Label>
                 <Textarea
                   id="help-ja"
+                  {...localizedReadOnly}
                   value={getLocalization('ja').help || ''}
                   onChange={(e) => updateLocalization('ja', { help: e.target.value })}
                   placeholder="詳細なヘルプと使用方法"
@@ -162,10 +173,14 @@ export function MetaEditor() {
             </TabsContent>
 
             <TabsContent value="zh" className="space-y-4">
+              {rawMode && (
+                <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="description-zh">Description (Chinese)</Label>
                 <Textarea
                   id="description-zh"
+                  {...localizedReadOnly}
                   value={getLocalization('zh').description || ''}
                   onChange={(e) => updateLocalization('zh', { description: e.target.value })}
                   placeholder="插件描述"
@@ -176,6 +191,7 @@ export function MetaEditor() {
                 <Label htmlFor="help-zh">Help Text (Chinese)</Label>
                 <Textarea
                   id="help-zh"
+                  {...localizedReadOnly}
                   value={getLocalization('zh').help || ''}
                   onChange={(e) => updateLocalization('zh', { help: e.target.value })}
                   placeholder="详细帮助和使用说明"

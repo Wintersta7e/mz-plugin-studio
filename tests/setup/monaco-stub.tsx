@@ -32,12 +32,20 @@ export type FakeEditor = ReturnType<typeof createFakeEditor>
 interface EditorProps {
   value?: string
   defaultValue?: string
+  options?: { readOnly?: boolean }
   beforeMount?: (monaco: FakeMonaco) => void
   onMount?: (editor: FakeEditor, monaco: FakeMonaco) => void
   onChange?: (value: string | undefined) => void
 }
 
-export function Editor({ value, defaultValue, beforeMount, onMount, onChange }: EditorProps) {
+export function Editor({
+  value,
+  defaultValue,
+  options,
+  beforeMount,
+  onMount,
+  onChange
+}: EditorProps) {
   const [text, setText] = useState(defaultValue ?? '')
   const shown = value ?? text
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -62,6 +70,7 @@ export function Editor({ value, defaultValue, beforeMount, onMount, onChange }: 
     <textarea
       ref={textareaRef}
       data-testid="monaco-editor"
+      readOnly={options?.readOnly}
       value={shown}
       onChange={(e) => {
         setText(e.target.value)

@@ -2,12 +2,14 @@ import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
+  PluginBaseline,
   PluginDefinition,
   PluginParameter,
   PluginCommand,
   PluginStruct
 } from '../types/plugin'
-import { createEmptyPlugin } from '../types/plugin'
+import { createEmptyPlugin, toBaseline } from '../types/plugin'
+import { isImported } from '../lib/plugin-output'
 import {
   checkArrayOf,
   checkBoolean,
@@ -32,6 +34,8 @@ interface PluginState {
   savedPath: string | null
   dirtyByPluginId: Record<string, boolean>
   savedPathsByPluginId: Record<string, string>
+  // The definition each imported tab was opened with; raw mode saves against it
+  baselineByPluginId: Record<string, PluginBaseline>
 
   setPlugin: (plugin: PluginDefinition) => void
   updateMeta: (meta: Partial<PluginDefinition['meta']>) => void
@@ -82,12 +86,41 @@ type PluginPersisted = Pick<
   | 'savedPath'
   | 'dirtyByPluginId'
   | 'savedPathsByPluginId'
+  | 'baselineByPluginId'
 >
 
-export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+/** A v1.6.0 tab with a code body was imported; it keeps no code body from now on. */
+function migrateImported(def: unknown): unknown {
+  if (!isRecord(def)) return def
+  const { codeBody, ...rest } = def
+  if (
+    typeof codeBody === 'string' &&
+    !Object.hasOwn(rest, 'importedFrom') &&
+    isRecord(rest.meta) &&
+    typeof rest.meta.name === 'string'
+  ) {
+    rest.importedFrom = `${rest.meta.name}.js`
+  }
+  return rest
+}
+
+export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
+  (state) => state,
+  (state) => ({
+    ...state,
+    plugin: migrateImported(state.plugin),
+    openPlugins: Array.isArray(state.openPlugins)
+      ? state.openPlugins.map(migrateImported)
+      : state.openPlugins
+  })
+]
 
 // Maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
-export const TAB_KEYED_MAPS = ['dirtyByPluginId', 'savedPathsByPluginId'] as const
+export const TAB_KEYED_MAPS = [
+  'dirtyByPluginId',
+  'savedPathsByPluginId',
+  'baselineByPluginId'
+] as const
 type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
 
 /** Every tab-keyed map with only the entries whose plugin id `keep` accepts. */
@@ -109,7 +142,7 @@ export function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
   return { ...persisted, ...filterTabMaps(persisted, (id) => open.has(id)) }
 }
 
-const OPTIONAL_STRING_FIELDS = ['codeBody', 'customCode', 'rawSource'] as const
+const OPTIONAL_STRING_FIELDS = ['codeBody', 'customCode', 'rawSource', 'importedFrom'] as const
 
 /** A saved plugin definition: rejected unless every editor can read it. */
 const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
@@ -132,6 +165,16 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
     }
   }
   return plugin as unknown as PluginDefinition
+}
+
+const checkBaseline: FieldCheck<PluginBaseline> = (value, drop) => {
+  const def = checkDefinition(value, drop)
+  return def === undefined ? undefined : toBaseline(def)
+}
+
+/** A definition as saved: the code body is not kept, it is part of the file text. */
+function toStored({ codeBody: _codeBody, ...plugin }: PluginDefinition): PluginDefinition {
+  return plugin
 }
 
 function upsertOpenPlugin(
@@ -225,6 +268,7 @@ export const usePluginStore = create<PluginState>()(
       savedPath: null,
       dirtyByPluginId: {},
       savedPathsByPluginId: {},
+      baselineByPluginId: {},
 
       setPlugin: (plugin) =>
         set((state) => ({
@@ -414,7 +458,12 @@ export const usePluginStore = create<PluginState>()(
       // Multi-plugin
       openPlugin: (plugin) =>
         set((state) => {
+          const recordBaseline =
+            isImported(plugin) && plugin.rawSource && !(plugin.id in state.baselineByPluginId)
           return {
+            ...(recordBaseline && {
+              baselineByPluginId: { ...state.baselineByPluginId, [plugin.id]: toBaseline(plugin) }
+            }),
             openPlugins: upsertOpenPlugin(state.openPlugins, plugin),
             activePluginId: plugin.id,
             plugin,
@@ -515,16 +564,18 @@ export const usePluginStore = create<PluginState>()(
         isDirty: checkBoolean,
         savedPath: checkStringOrNull,
         dirtyByPluginId: checkRecordOf(checkBoolean),
-        savedPathsByPluginId: checkRecordOf(checkString)
+        savedPathsByPluginId: checkRecordOf(checkString),
+        baselineByPluginId: checkRecordOf(checkBaseline)
       },
       partialize: (state) => ({
-        plugin: { ...state.plugin, rawSource: undefined },
-        openPlugins: state.openPlugins.map((p) => ({ ...p, rawSource: undefined })),
+        plugin: toStored(state.plugin),
+        openPlugins: state.openPlugins.map(toStored),
         activePluginId: state.activePluginId,
         isDirty: state.isDirty,
         savedPath: state.savedPath,
         dirtyByPluginId: state.dirtyByPluginId,
-        savedPathsByPluginId: state.savedPathsByPluginId
+        savedPathsByPluginId: state.savedPathsByPluginId,
+        baselineByPluginId: state.baselineByPluginId
       }),
       prune: pruneClosedTabs
     })

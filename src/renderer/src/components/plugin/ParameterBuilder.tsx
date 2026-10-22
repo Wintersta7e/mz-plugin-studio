@@ -1340,34 +1340,15 @@ const ParameterCard = memo(function ParameterCard({
                     </div>
                   )}
 
-                  {/* File/Animation directory and require */}
+                  {/* File/Animation directory */}
                   {(param.type === 'file' || param.type === 'animation') && (
-                    <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label>Directory (relative to project)</Label>
-                        <Input
-                          value={param.dir || ''}
-                          onChange={(e) => onUpdate({ dir: e.target.value })}
-                          placeholder={
-                            param.type === 'animation' ? 'img/animations' : 'img/pictures'
-                          }
-                        />
-                      </div>
-                      <label className="flex items-center gap-2 text-sm opacity-60">
-                        <input
-                          type="checkbox"
-                          checked={param.require || false}
-                          onChange={(e) => onUpdate({ require: e.target.checked || undefined })}
-                          className="h-4 w-4"
-                        />
-                        <span>
-                          Required for deployment{' '}
-                          <span className="text-xs text-muted-foreground">
-                            (MV-era @require — discontinued in MZ; use plugin-level @requiredAssets
-                            instead)
-                          </span>
-                        </span>
-                      </label>
+                    <div className="space-y-2">
+                      <Label>Directory (relative to project)</Label>
+                      <Input
+                        value={param.dir || ''}
+                        onChange={(e) => onUpdate({ dir: e.target.value })}
+                        placeholder={param.type === 'animation' ? 'img/animations' : 'img/pictures'}
+                      />
                     </div>
                   )}
                 </>

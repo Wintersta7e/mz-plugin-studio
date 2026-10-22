@@ -355,10 +355,21 @@ describe('generateRawMode injection paths', () => {
     }
   }
 
-  it('falls back to generatePlugin when rawSource is missing', () => {
-    const plugin = createTestPlugin()
-    const result = generateRawMode(plugin)
-    expect(result).toContain('(() => {')
+  it('refuses to run without rawSource', () => {
+    expect(() => generateRawMode(createTestPlugin())).toThrow('generateRawMode needs rawSource')
+  })
+
+  it('keeps a file without a bare /*: block as it is', () => {
+    const raw = `/*:ja
+ * @plugindesc テスト
+ */
+
+(() => {
+    'use strict';
+    console.log('hello');
+})();
+`
+    expect(generateRawMode(makeRawPlugin(raw))).toBe(raw)
   })
 
   it('injects PLUGIN_NAME + params declaration when body has no PluginManager.parameters()', () => {

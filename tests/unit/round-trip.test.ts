@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
+import { toBaseline } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { EDITS } from '../golden/corpus/raw-mode'
 import type { Edit } from '../golden/corpus/raw-mode'
@@ -73,14 +74,6 @@ const KNOWN_FAILING: Record<string, PropertyName[]> = {
     'scaffold-once',
     'no-structural-fallback'
   ],
-  'Fixture_NoBlock.js': [
-    'unedited',
-    'revert',
-    'edited-regions',
-    'idempotent',
-    'scaffold-once',
-    'no-structural-fallback'
-  ],
   'Fixture_NoIife.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
   'Fixture_NonAscii.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
   'Fixture_Require.js': ['unedited', 'revert', 'edited-regions', 'idempotent', 'scaffold-once'],
@@ -107,8 +100,10 @@ const read = (file: string): string => readFileSync(join(PLUGIN_DIR, file), 'utf
 const open = (text: string, file: string): PluginDefinition => PluginParser.parsePlugin(text, file)
 
 /** The save under test: raw mode on, the definition loaded from the file as the baseline. */
-function save(def: PluginDefinition, _opened: PluginDefinition): string {
-  return generatePluginOutput(def, true)
+function save(def: PluginDefinition, opened: PluginDefinition): string {
+  const out = generatePluginOutput(def, true, toBaseline(opened))
+  if (!out.ok) throw new Error(out.message)
+  return out.code
 }
 
 /** A save that refuses throws; `null` stands for the refusal. */

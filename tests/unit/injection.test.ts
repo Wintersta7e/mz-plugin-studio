@@ -64,7 +64,10 @@ const definitionFields = {
   structs: 'not-string',
   codeBody: { code: 'the kept body of an imported plugin is written as code by design' },
   customCode: { code: "the user's own code is written as code by design" },
-  rawSource: { code: 'raw mode edits the imported file in place' }
+  rawSource: { code: 'raw mode edits the imported file in place' },
+  importedFrom: (d, t) => {
+    d.importedFrom = t
+  }
 } satisfies Record<keyof PluginDefinition, FieldUse<PluginDefinition>>
 
 const metaFields = {

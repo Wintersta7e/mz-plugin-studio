@@ -499,51 +499,57 @@ function generateBody(plugin: PluginDefinition): string {
 }
 
 /**
+ * The main /*: block: /*: followed by whitespace/newline, not a language code like /*:ja
+ * or /*:en (BUG-13 fix), and closed by a later *\/. `end` is the index of that *\/.
+ */
+function findMainBlock(source: string): { start: number; end: number } | null {
+  const match = /\/\*:(?![a-z]{2})/.exec(source)
+  if (!match) return null
+  const end = source.indexOf('*/', match.index + 3)
+  return end === -1 ? null : { start: match.index, end }
+}
+
+/** Whether raw mode can regenerate the file's main annotation block. */
+export function hasMainBlock(source: string): boolean {
+  return findMainBlock(source) !== null
+}
+
+/**
  * Generate plugin output in "raw mode": only regenerate the metadata header
  * blocks (main header, localized headers, struct definitions) while preserving
  * the original code body verbatim from rawSource.
  *
  * This ensures maximum round-trip fidelity for imported plugins — only the
  * structured metadata that the UI can edit is regenerated; all code remains
- * exactly as the original author wrote it.
+ * exactly as the original author wrote it. A file without a main block keeps
+ * its blocks as they are; only struct blocks and scaffolding are added.
  */
 export function generateRawMode(plugin: PluginDefinition): string {
   if (!plugin.rawSource) {
-    return generatePlugin(plugin)
+    throw new Error('generateRawMode needs rawSource')
   }
 
   let output = plugin.rawSource
 
   // 1. Replace the main /*: ... */ block with regenerated header
-  // The main header is /*: followed by whitespace/newline (not a language code like /*:ja or /*:en).
-  // Use a regex to find /*: that is NOT followed by two lowercase letters (BUG-13 fix).
-  const mainHeaderRe = /\/\*:(?![a-z]{2})/g
-  const mainHeaderMatch = mainHeaderRe.exec(output)
-  if (!mainHeaderMatch) {
-    return generatePlugin(plugin)
+  const main = findMainBlock(output)
+  if (main !== null) {
+    // Extract preamble (license, version history, etc.) from original block
+    const originalBlock = output.slice(main.start, main.end + 2)
+    const preamble = extractHeaderPreamble(originalBlock)
+
+    // Build replacement header with preamble injected
+    const header = generateHeader(plugin)
+    let newMain: string
+    if (preamble) {
+      const firstNL = header.indexOf('\n')
+      newMain = header.slice(0, firstNL + 1) + preamble + header.slice(firstNL + 1)
+    } else {
+      newMain = header
+    }
+
+    output = output.slice(0, main.start) + newMain + output.slice(main.end + 2)
   }
-  const mainStart = mainHeaderMatch.index
-
-  const mainEnd = output.indexOf('*/', mainStart + 3)
-  if (mainEnd === -1) {
-    return generatePlugin(plugin)
-  }
-
-  // Extract preamble (license, version history, etc.) from original block
-  const originalBlock = output.slice(mainStart, mainEnd + 2)
-  const preamble = extractHeaderPreamble(originalBlock)
-
-  // Build replacement header with preamble injected
-  const header = generateHeader(plugin)
-  let newMain: string
-  if (preamble) {
-    const firstNL = header.indexOf('\n')
-    newMain = header.slice(0, firstNL + 1) + preamble + header.slice(firstNL + 1)
-  } else {
-    newMain = header
-  }
-
-  output = output.slice(0, mainStart) + newMain + output.slice(mainEnd + 2)
 
   // 2. Replace existing /*~struct~Name: ... */ blocks and add new ones
   for (const struct of plugin.structs) {

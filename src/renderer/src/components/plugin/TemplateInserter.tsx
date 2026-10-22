@@ -40,6 +40,7 @@ import {
 import { Switch } from '../ui/switch'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../ui/tooltip'
 import { cn } from '../../lib/utils'
+import { RAW_MODE_READ_ONLY_NOTICE } from '../../lib/raw-mode'
 import {
   CATEGORIES,
   getTemplatesByCategory,
@@ -73,6 +74,8 @@ interface TemplateInserterProps {
   open: boolean
   onClose: () => void
   onInsert: (code: string) => void
+  // Raw mode: the code cannot be inserted
+  readOnly?: boolean
 }
 
 // Map icon names to components
@@ -211,7 +214,12 @@ function highlightCode(code: string): React.ReactNode {
   })
 }
 
-export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterProps) {
+export function TemplateInserter({
+  open,
+  onClose,
+  onInsert,
+  readOnly = false
+}: TemplateInserterProps) {
   const lastTemplateCategory = useUIStore((s) => s.lastTemplateCategory)
   const persistCategory = useUIStore((s) => s.setLastTemplateCategory)
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory>(
@@ -401,7 +409,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
   }, [open])
 
   const handleInsert = useCallback(() => {
-    if (validationErrors.length > 0) return
+    if (readOnly || validationErrors.length > 0) return
     if (previewCode && !previewCode.startsWith('// Error')) {
       if (selectedTemplateId) {
         addToRecent(selectedTemplateId)
@@ -409,7 +417,7 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
       onInsert(previewCode)
       onClose()
     }
-  }, [validationErrors, previewCode, selectedTemplateId, addToRecent, onInsert, onClose])
+  }, [readOnly, validationErrors, previewCode, selectedTemplateId, addToRecent, onInsert, onClose])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -1130,7 +1138,8 @@ export function TemplateInserter({ open, onClose, onInsert }: TemplateInserterPr
             <Button
               ref={insertButtonRef}
               onClick={handleInsert}
-              disabled={!canInsert}
+              disabled={readOnly || !canInsert}
+              title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
               className="gap-2"
             >
               <Sparkles className="h-4 w-4" />

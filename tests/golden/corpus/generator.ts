@@ -103,7 +103,8 @@ export function hostileDefinition(payload: string): HostileDefinition {
         ]
       }
     ],
-    structs: [{ id: payload, name: payload, parameters: [hostileParameter(payload, 'file')] }]
+    structs: [{ id: payload, name: payload, parameters: [hostileParameter(payload, 'file')] }],
+    importedFrom: payload
   }
 }
 

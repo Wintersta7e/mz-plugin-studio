@@ -1,19 +1,19 @@
-/*:
- * @plugindesc Edited description
- *
- */
+// Fixture_NoBlock.js
+// A plugin without an annotation block: the Plugin Manager shows no description or parameters.
 
 (() => {
     'use strict';
 
-    const PLUGIN_NAME = 'Fixture_NoBlock';
+    let flashes = 0;
 
-    // ========== Custom Plugin Code ==========
+    PluginManager.registerCommand('Fixture_NoBlock', 'Flash', () => {
+        flashes++;
+        $gameScreen.startFlash([255, 255, 255, 128], 8);
+    });
+
     const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;
-        Game_System.prototype.onAfterLoad = function() {
-            _Game_System_onAfterLoad.call(this);
-            flashes = 0;
-        };
-    })();
-
+    Game_System.prototype.onAfterLoad = function() {
+        _Game_System_onAfterLoad.call(this);
+        flashes = 0;
+    };
 })();

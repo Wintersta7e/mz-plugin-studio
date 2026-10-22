@@ -10,7 +10,7 @@ import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
-import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
+import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useToastStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
@@ -68,7 +68,7 @@ describe('code preview export with no project', () => {
     wireMainSave(target)
     render(<CodePreview />)
     clickExport()
-    const expected = generatePluginOutput(usePluginStore.getState().plugin, false)
+    const expected = generatePlugin(usePluginStore.getState().plugin)
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
   })
 
@@ -85,7 +85,7 @@ describe('code preview export with no project', () => {
     const target = join(tmp, 'Alpha.js')
     wireMainSave(target)
     render(<CodePreview />)
-    const expected = generatePluginOutput(usePluginStore.getState().plugin, false)
+    const expected = generatePlugin(usePluginStore.getState().plugin)
     clickExport()
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
     await writeFile(target, 'stale')

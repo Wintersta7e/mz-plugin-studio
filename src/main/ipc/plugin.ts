@@ -5,6 +5,7 @@ import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
 import { IPC_CHANNELS } from '../../shared/ipc-types'
 import type { ScannedPluginHeader } from '../../shared/ipc-types'
+import type { PluginDefinition } from '../../shared/types/plugin'
 import { extractOverrides } from '../../shared/override-extractor'
 import {
   assertSafeFilePath,
@@ -32,6 +33,29 @@ export async function savePluginToPath(
   return { success: true, path: filePath }
 }
 
+/** Parses `js/plugins/<filename>` of a project, recording the file it came from */
+export async function loadPluginFile(
+  projectPath: string,
+  filename: string
+): Promise<PluginDefinition> {
+  assertSafeProjectPath(projectPath)
+  assertSafeFilename(filename)
+  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  try {
+    const content = await readFile(pluginPath, 'utf-8')
+    const result = PluginParser.parsePlugin(content, filename)
+    log.info(
+      `[plugin:load] ${filename} — params: ${result.parameters.length}, commands: ${result.commands.length}`
+    )
+    return { ...result, importedFrom: filename }
+  } catch (error) {
+    log.error(`[plugin:load] Failed to load ${filename}:`, error)
+    throw new Error(
+      `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
+
 export function setupPluginHandlers(ipcMain: IpcMain): void {
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_SAVE,
@@ -56,24 +80,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
 
   ipcMain.handle(
     IPC_CHANNELS.PLUGIN_LOAD,
-    async (_event: IpcMainInvokeEvent, projectPath: string, filename: string) => {
-      assertSafeProjectPath(projectPath)
-      assertSafeFilename(filename)
-      const pluginPath = join(projectPath, 'js', 'plugins', filename)
-      try {
-        const content = await readFile(pluginPath, 'utf-8')
-        const result = PluginParser.parsePlugin(content, filename)
-        log.info(
-          `[plugin:load] ${filename} — params: ${result.parameters.length}, commands: ${result.commands.length}`
-        )
-        return result
-      } catch (error) {
-        log.error(`[plugin:load] Failed to load ${filename}:`, error)
-        throw new Error(
-          `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`
-        )
-      }
-    }
+    (_event: IpcMainInvokeEvent, projectPath: string, filename: string) =>
+      loadPluginFile(projectPath, filename)
   )
 
   ipcMain.handle(IPC_CHANNELS.PLUGIN_PARSE, async (_event: IpcMainInvokeEvent, content: string) => {

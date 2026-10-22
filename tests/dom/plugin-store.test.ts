@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { toBaseline } from '../../src/shared/types/plugin'
 import type {
+  PluginDefinition,
   PluginParameter,
   PluginCommand,
   PluginStruct
@@ -385,6 +387,72 @@ describe('pluginStore CRUD operations', () => {
       expect(state.openPlugins).toHaveLength(0)
       expect(state.activePluginId).toBeNull()
       expect(state.isDirty).toBe(false)
+    })
+  })
+})
+
+describe('pluginStore baseline of an imported plugin', () => {
+  beforeEach(() => {
+    resetPluginStore()
+  })
+
+  function importedPlugin(name: string): PluginDefinition {
+    const plugin = createPlugin(name)
+    return {
+      ...plugin,
+      parameters: [makeParam('p1', 'alpha')],
+      codeBody: '(() => {})();',
+      customCode: '',
+      rawSource: `/*:\n * @param alpha\n */\n(() => {})();\n`,
+      importedFrom: `${name}.js`
+    }
+  }
+
+  const baselines = (): Record<string, unknown> => usePluginStore.getState().baselineByPluginId
+
+  it('records the definition an imported plugin was opened with, once', () => {
+    const alpha = importedPlugin('Alpha')
+    usePluginStore.getState().openPlugin(alpha)
+    expect(baselines()).toEqual({ [alpha.id]: toBaseline(alpha) })
+    expect(baselines()[alpha.id]).not.toHaveProperty('rawSource')
+    expect(baselines()[alpha.id]).not.toHaveProperty('codeBody')
+    expect(baselines()[alpha.id]).not.toHaveProperty('customCode')
+
+    usePluginStore.getState().updateMeta({ description: 'Edited' })
+    usePluginStore.getState().openPlugin(usePluginStore.getState().plugin)
+    expect(baselines()).toEqual({ [alpha.id]: toBaseline(alpha) })
+  })
+
+  it('records none for a plugin created here or an import without its file text', () => {
+    const { rawSource: _rawSource, ...missing } = importedPlugin('Beta')
+    usePluginStore.getState().openPlugin(createPlugin('Alpha'))
+    usePluginStore.getState().openPlugin(missing)
+    expect(baselines()).toEqual({})
+  })
+
+  it('drops the baseline when its tab closes or the store resets', () => {
+    const alpha = importedPlugin('Alpha')
+    const beta = importedPlugin('Beta')
+    usePluginStore.getState().openPlugin(alpha)
+    usePluginStore.getState().openPlugin(beta)
+    usePluginStore.getState().closePlugin(alpha.id)
+    expect(Object.keys(baselines())).toEqual([beta.id])
+    usePluginStore.getState().resetPlugin()
+    expect(baselines()).toEqual({})
+  })
+
+  it('saves the file text, file name and baseline but not the code body', () => {
+    const alpha = importedPlugin('Alpha')
+    usePluginStore.getState().openPlugin(alpha)
+    const saved = JSON.parse(localStorage.getItem('mz-plugin-studio-plugin') ?? '{}').state
+    expect(saved.schemaVersion).toBe(2)
+    for (const def of [saved.plugin, saved.openPlugins[0]]) {
+      expect(def.rawSource).toBe(alpha.rawSource)
+      expect(def.importedFrom).toBe('Alpha.js')
+      expect(def).not.toHaveProperty('codeBody')
+    }
+    expect(saved.baselineByPluginId).toEqual({
+      [alpha.id]: JSON.parse(JSON.stringify(toBaseline(alpha)))
     })
   })
 })

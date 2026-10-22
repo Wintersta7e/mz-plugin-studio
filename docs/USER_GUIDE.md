@@ -40,7 +40,7 @@ Tabs for different aspects of your plugin:
 | **Parameters** | Configuration options users can set |
 | **Commands** | Plugin commands callable from events |
 | **Structs** | Complex nested data structures |
-| **Code** | Your plugin's own code (editable) |
+| **Code** | The plugin's own code (read-only in raw mode) |
 
 ### Code Editor (Left Panel - Code Tab)
 - **Monaco Editor** - Same editor used in VS Code
@@ -808,6 +808,8 @@ When you import an existing plugin, MZ Plugin Studio stores the complete origina
 
 Raw mode is **automatically enabled** when you import an existing plugin. This ensures imported plugins maintain maximum fidelity by default.
 
+In raw mode the Code tab, the template inserter and the localized description and help fields are read-only, because raw mode keeps the file's own code and language blocks. The first save of an imported plugin with raw mode off asks first, because it regenerates the whole file.
+
 ### When to Use Raw Mode
 
 - Editing metadata of complex third-party plugins
@@ -832,7 +834,7 @@ If the original plugin has text before the `/*:` annotation block (license heade
 | Aspect | Normal Mode | Raw Mode |
 |--------|-------------|----------|
 | Headers | Regenerated | Regenerated |
-| Code body | Generated from template + custom code | Preserved from original + new params/commands injected |
+| Code body | Generated from template + custom code | Kept from the file; regenerated only when raw mode is off and the save is confirmed |
 | Preamble | Not applicable | Preserved verbatim |
 | Best for | New plugins, plugins you own | Third-party plugins, metadata edits |
 

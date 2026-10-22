@@ -5,7 +5,8 @@ import {
   checkFiniteNumber,
   checkRecordOf,
   checkString,
-  definePersist
+  definePersist,
+  isRecord
 } from './persist'
 import type { MigrationStep } from './persist'
 import { usePluginStore } from './pluginStore'
@@ -19,6 +20,10 @@ interface UIState {
   selectedStructId: string | null
   mainView: 'editor' | 'analysis'
   rawModeByPluginId: Record<string, boolean>
+  // Imported plugins whose save without raw mode was confirmed this session (not persisted)
+  structuralSaveConfirmedByPluginId: Record<string, true>
+  // A plugin whose diff the preview opens next (not persisted)
+  diffRequestPluginId: string | null
   previewCollapsed: boolean
   lastTemplateCategory: string
 
@@ -32,9 +37,11 @@ interface UIState {
   setLastTemplateCategory: (cat: string) => void
   setPreviewCollapsed: (collapsed: boolean) => void
   togglePreview: () => void
-  getRawModeForPlugin: (pluginId: string, fallback?: boolean) => boolean
   setRawModeForPlugin: (pluginId: string, enabled: boolean) => void
   clearRawModeForPlugin: (pluginId: string) => void
+  confirmStructuralSave: (pluginId: string) => void
+  requestDiff: (pluginId: string) => void
+  clearDiffRequest: () => void
 }
 
 type PersistedField =
@@ -44,11 +51,32 @@ type PersistedField =
   | 'lastTemplateCategory'
   | 'rawModeByPluginId'
 
-export const UI_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+/** The record without `key`; the same record when it has no such key. */
+function without<T>(record: Record<string, T>, key: string): Record<string, T> {
+  if (!(key in record)) return record
+  const next = { ...record }
+  delete next[key]
+  return next
+}
+
+export const UI_MIGRATIONS: readonly MigrationStep[] = [
+  (state) => state,
+  // Raw mode is on for imported plugins unless the user turns it off; v1.6.0 stored false
+  // for plugins it had restored without their file text, so those entries are dropped.
+  (state) =>
+    isRecord(state.rawModeByPluginId)
+      ? {
+          ...state,
+          rawModeByPluginId: Object.fromEntries(
+            Object.entries(state.rawModeByPluginId).filter(([, on]) => on !== false)
+          )
+        }
+      : state
+]
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       sidebarWidth: 280,
       previewWidth: 500,
       activeTab: 'meta',
@@ -57,6 +85,8 @@ export const useUIStore = create<UIState>()(
       selectedStructId: null,
       mainView: 'editor',
       rawModeByPluginId: {},
+      structuralSaveConfirmedByPluginId: {},
+      diffRequestPluginId: null,
       previewCollapsed: false,
       lastTemplateCategory: 'method-alias',
 
@@ -71,29 +101,47 @@ export const useUIStore = create<UIState>()(
       setLastTemplateCategory: (lastTemplateCategory) => set({ lastTemplateCategory }),
       setPreviewCollapsed: (previewCollapsed) => set({ previewCollapsed }),
       togglePreview: () => set((state) => ({ previewCollapsed: !state.previewCollapsed })),
-      getRawModeForPlugin: (pluginId, fallback = false) =>
-        get().rawModeByPluginId[pluginId] ?? fallback,
       setRawModeForPlugin: (pluginId, enabled) =>
         set((state) => {
-          if (state.rawModeByPluginId[pluginId] === enabled) {
-            return {}
+          const next: Partial<UIState> = {}
+          if (state.rawModeByPluginId[pluginId] !== enabled) {
+            next.rawModeByPluginId = { ...state.rawModeByPluginId, [pluginId]: enabled }
           }
-          return {
-            rawModeByPluginId: {
-              ...state.rawModeByPluginId,
-              [pluginId]: enabled
-            }
+          // Turning raw mode off asks again before the next save regenerates the file
+          if (!enabled && pluginId in state.structuralSaveConfirmedByPluginId) {
+            next.structuralSaveConfirmedByPluginId = without(
+              state.structuralSaveConfirmedByPluginId,
+              pluginId
+            )
           }
+          return next
         }),
       clearRawModeForPlugin: (pluginId) =>
         set((state) => {
-          if (!(pluginId in state.rawModeByPluginId)) {
+          if (
+            !(pluginId in state.rawModeByPluginId) &&
+            !(pluginId in state.structuralSaveConfirmedByPluginId)
+          ) {
             return {}
           }
-          const next = { ...state.rawModeByPluginId }
-          delete next[pluginId]
-          return { rawModeByPluginId: next }
-        })
+          return {
+            rawModeByPluginId: without(state.rawModeByPluginId, pluginId),
+            structuralSaveConfirmedByPluginId: without(
+              state.structuralSaveConfirmedByPluginId,
+              pluginId
+            )
+          }
+        }),
+      confirmStructuralSave: (pluginId) =>
+        set((state) => ({
+          structuralSaveConfirmedByPluginId: {
+            ...state.structuralSaveConfirmedByPluginId,
+            [pluginId]: true
+          }
+        })),
+      // The preview shows the diff, so it opens when collapsed
+      requestDiff: (pluginId) => set({ diffRequestPluginId: pluginId, previewCollapsed: false }),
+      clearDiffRequest: () => set({ diffRequestPluginId: null })
     }),
     definePersist<UIState, Pick<UIState, PersistedField>>({
       name: 'mz-plugin-studio-ui',

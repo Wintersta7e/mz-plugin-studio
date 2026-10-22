@@ -2,6 +2,7 @@
 // Every store that saves itself to localStorage, and a populated state for each: what a user
 // who has worked in the app for a while has saved. Names and paths are synthetic.
 import { fileURLToPath } from 'url'
+import { toBaseline } from '../../../src/shared/types/plugin'
 import type { PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
 import { FROZEN_TIME } from './normalise'
 
@@ -101,7 +102,8 @@ const imported: PluginDefinition = {
   codeBody:
     "(() => {\n    const label = PluginManager.parameters('Fixture_Imported')['Label'];\n})();",
   rawSource:
-    "/*:\n * @target MZ\n * @param Label\n * @default Hello\n */\n(() => {\n    const label = PluginManager.parameters('Fixture_Imported')['Label'];\n})();\n"
+    "/*:\n * @target MZ\n * @param Label\n * @default Hello\n */\n(() => {\n    const label = PluginManager.parameters('Fixture_Imported')['Label'];\n})();\n",
+  importedFrom: 'Fixture_Imported.js'
 }
 
 const unsaved: PluginDefinition = {
@@ -139,7 +141,8 @@ export const POPULATED: Record<string, Record<string, unknown>> = {
     savedPathsByPluginId: {
       'created-plugin': `${ROOT}/js/plugins/Fixture_Created.js`,
       'imported-plugin': `${ROOT}/js/plugins/Fixture_Imported.js`
-    }
+    },
+    baselineByPluginId: { 'imported-plugin': toBaseline(imported) }
   },
   'mz-plugin-studio-ui': {
     sidebarWidth: 320,
