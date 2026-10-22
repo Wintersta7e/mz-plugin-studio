@@ -1,4 +1,4 @@
-// Export from the code preview with no project open, and the banner above the code. Behind
+// Export from the code preview, and the banner above the code. With no project open, behind
 // `window.api` sit the main-process save dialog and save-to-path functions, writing to a fresh
 // temporary folder.
 import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
@@ -129,6 +129,75 @@ describe('code preview export with no project', () => {
       await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
+})
+
+describe('code preview export', () => {
+  const PROJECT = '/fixture/mz-project'
+
+  type SaveResult = { success: boolean; path: string }
+
+  const savedAs = (filename: string): SaveResult => ({
+    success: true,
+    path: `${PROJECT}/js/plugins/${filename}`
+  })
+
+  async function openProject(): Promise<void> {
+    const project = { ...(await window.api.project.load(PROJECT)), path: PROJECT }
+    act(() => useProjectStore.getState().setProject(project))
+  }
+
+  const successToasts = (): string[] =>
+    useToastStore
+      .getState()
+      .toasts.filter((t) => t.type === 'success')
+      .map((t) => t.message)
+
+  it('an edit made while Export is in flight is marked saved', async () => {
+    let resolveSave!: (result: SaveResult) => void
+    const save = vi.fn(() => new Promise<SaveResult>((resolve) => (resolveSave = resolve)))
+    window.api = createFakeApi({ plugin: { save } })
+    await openProject()
+    const id = usePluginStore.getState().plugin.id
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
+    act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
+    expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
+    await act(async () => resolveSave(savedAs('Alpha.js')))
+    await waitFor(() => expect(successToasts()).toEqual(['Plugin exported successfully']))
+    expect(usePluginStore.getState().plugin.meta.description).toBe('edited during save')
+    expect(usePluginStore.getState().dirtyByPluginId[id] ?? false).toBe(false)
+  })
+
+  it('Export with a project saves into the project; without one it asks for a path', async () => {
+    const chosen = join(tmp, 'Chosen.js')
+    window.api = createFakeApi({
+      plugin: {
+        save: vi.fn(async (_project: string, filename: string) => savedAs(filename)),
+        saveToPath: vi.fn(async (path: string) => ({ success: true, path }))
+      },
+      dialog: { saveFile: vi.fn(async () => chosen) }
+    })
+    const { plugin, dialog } = window.api
+    await openProject()
+    const expected = generatePlugin(usePluginStore.getState().plugin)
+    render(<CodePreview />)
+
+    clickExport()
+    await waitFor(() => expect(successToasts()).toHaveLength(1))
+    expect(vi.mocked(plugin.save).mock.calls).toEqual([[PROJECT, 'Alpha.js', expected]])
+    expect(dialog.saveFile).not.toHaveBeenCalled()
+    expect(plugin.saveToPath).not.toHaveBeenCalled()
+
+    act(() => useProjectStore.getState().setProject(null))
+    clickExport()
+    await waitFor(() => expect(successToasts()).toHaveLength(2))
+    expect(vi.mocked(plugin.saveToPath).mock.calls).toEqual([[chosen, expected]])
+    expect(vi.mocked(dialog.saveFile).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(plugin.saveToPath).mock.invocationCallOrder[0]
+    )
+    expect(plugin.save).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('code preview banner', () => {
