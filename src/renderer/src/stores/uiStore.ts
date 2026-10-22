@@ -1,5 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import {
+  checkBoolean,
+  checkFiniteNumber,
+  checkRecordOf,
+  checkString,
+  definePersist
+} from './persist'
+import type { MigrationStep } from './persist'
 import { usePluginStore } from './pluginStore'
 
 interface UIState {
@@ -28,6 +36,15 @@ interface UIState {
   setRawModeForPlugin: (pluginId: string, enabled: boolean) => void
   clearRawModeForPlugin: (pluginId: string) => void
 }
+
+type PersistedField =
+  | 'sidebarWidth'
+  | 'previewWidth'
+  | 'previewCollapsed'
+  | 'lastTemplateCategory'
+  | 'rawModeByPluginId'
+
+export const UI_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useUIStore = create<UIState>()(
   persist(
@@ -78,8 +95,17 @@ export const useUIStore = create<UIState>()(
           return { rawModeByPluginId: next }
         })
     }),
-    {
+    definePersist<UIState, Pick<UIState, PersistedField>>({
       name: 'mz-plugin-studio-ui',
+      area: 'Layout',
+      migrations: UI_MIGRATIONS,
+      fields: {
+        sidebarWidth: checkFiniteNumber,
+        previewWidth: checkFiniteNumber,
+        previewCollapsed: checkBoolean,
+        lastTemplateCategory: checkString,
+        rawModeByPluginId: checkRecordOf(checkBoolean)
+      },
       partialize: (state) => ({
         sidebarWidth: state.sidebarWidth,
         previewWidth: state.previewWidth,
@@ -105,6 +131,6 @@ export const useUIStore = create<UIState>()(
           }
         }, 0)
       }
-    }
+    })
   )
 )

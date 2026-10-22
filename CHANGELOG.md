@@ -6,6 +6,11 @@
 
 - The app no longer checks GitHub for updates; download new versions from the Releases page.
 
+### Fixed
+
+- Saved settings, layout, recent projects, template favorites and open plugins that cannot be read are now kept in a backup entry and reported at startup instead of being silently replaced; a full storage quota is reported once instead of breaking every change.
+- Closed plugin tabs no longer leave saved dirty flags and file paths behind in stored state.
+
 ## [1.6.1] - 2026-10-21
 
 ### Security

@@ -42,7 +42,8 @@ describe('uiStore raw mode state', () => {
       previewWidth: 1200,
       previewCollapsed: false,
       lastTemplateCategory: 'method-alias',
-      rawModeByPluginId: { 'plugin-a': true }
+      rawModeByPluginId: { 'plugin-a': true },
+      schemaVersion: 1
     })
     expect(persisted.state).not.toHaveProperty('activeTab')
     expect(persisted.state).not.toHaveProperty('mainView')

@@ -1,3 +1,4 @@
+import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
@@ -7,6 +8,16 @@ import type {
   PluginStruct
 } from '../types/plugin'
 import { createEmptyPlugin } from '../types/plugin'
+import {
+  checkArrayOf,
+  checkBoolean,
+  checkRecordOf,
+  checkString,
+  checkStringOrNull,
+  definePersist,
+  isRecord
+} from './persist'
+import type { FieldCheck, MigrationStep } from './persist'
 // Cross-store imports — safe because getState() is only called at runtime (inside
 // store actions), never during module initialization. ESM circular bindings resolve
 // by the time any user interaction triggers these actions.
@@ -60,6 +71,67 @@ interface PluginState {
   setDirty: (dirty: boolean) => void
   setSavedPath: (path: string | null) => void
   resetPlugin: () => void
+}
+
+type PluginPersisted = Pick<
+  PluginState,
+  | 'plugin'
+  | 'openPlugins'
+  | 'activePluginId'
+  | 'isDirty'
+  | 'savedPath'
+  | 'dirtyByPluginId'
+  | 'savedPathsByPluginId'
+>
+
+export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+
+// Maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
+export const TAB_KEYED_MAPS = ['dirtyByPluginId', 'savedPathsByPluginId'] as const
+type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
+
+/** Every tab-keyed map with only the entries whose plugin id `keep` accepts. */
+function filterTabMaps(maps: TabKeyedMaps, keep: (id: string) => boolean): TabKeyedMaps {
+  const next: Record<string, Record<string, unknown>> = {}
+  for (const name of TAB_KEYED_MAPS) {
+    next[name] = Object.fromEntries(Object.entries(maps[name]).filter(([id]) => keep(id)))
+  }
+  return next as TabKeyedMaps
+}
+
+/** Drops the saved entries of tabs that were closed without their entries being cleared. */
+export function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
+  const open = new Set(persisted.openPlugins.map((p) => p.id))
+  for (const name of TAB_KEYED_MAPS) {
+    const closed = Object.keys(persisted[name]).filter((id) => !open.has(id))
+    if (closed.length > 0) log.debug(`Dropped ${closed.length} closed-tab entries from ${name}`)
+  }
+  return { ...persisted, ...filterTabMaps(persisted, (id) => open.has(id)) }
+}
+
+const OPTIONAL_STRING_FIELDS = ['codeBody', 'customCode', 'rawSource'] as const
+
+/** A saved plugin definition: rejected unless every editor can read it. */
+const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    !isRecord(value.meta) ||
+    typeof value.meta.name !== 'string' ||
+    !Array.isArray(value.parameters) ||
+    !Array.isArray(value.commands) ||
+    !Array.isArray(value.structs)
+  ) {
+    return undefined
+  }
+  const plugin = { ...value }
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    if (Object.hasOwn(plugin, field) && typeof plugin[field] !== 'string') {
+      delete plugin[field]
+      drop(`.${field}`)
+    }
+  }
+  return plugin as unknown as PluginDefinition
 }
 
 function upsertOpenPlugin(
@@ -356,8 +428,7 @@ export const usePluginStore = create<PluginState>()(
         useHistoryStore.getState().clear()
         set((state) => {
           const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
-          const dirtyByPluginId = markPluginDirty(state.dirtyByPluginId, id, false)
-          const savedPathsByPluginId = setPluginSavedPath(state.savedPathsByPluginId, id, null)
+          const maps = filterTabMaps(state, (key) => key !== id)
           const newActive =
             state.activePluginId === id
               ? newOpenPlugins.length > 0
@@ -372,10 +443,9 @@ export const usePluginStore = create<PluginState>()(
             openPlugins: newOpenPlugins,
             activePluginId: newActive,
             plugin: newPlugin,
-            isDirty: getPluginDirty(dirtyByPluginId, newActive),
-            savedPath: getPluginSavedPath(savedPathsByPluginId, newActive),
-            dirtyByPluginId,
-            savedPathsByPluginId
+            isDirty: getPluginDirty(maps.dirtyByPluginId, newActive),
+            savedPath: getPluginSavedPath(maps.savedPathsByPluginId, newActive),
+            ...maps
           }
         })
       },
@@ -425,18 +495,28 @@ export const usePluginStore = create<PluginState>()(
           )
         })),
       resetPlugin: () =>
-        set({
+        set((state) => ({
           plugin: createEmptyPlugin(),
           openPlugins: [],
           activePluginId: null,
           isDirty: false,
           savedPath: null,
-          dirtyByPluginId: {},
-          savedPathsByPluginId: {}
-        })
+          ...filterTabMaps(state, () => false)
+        }))
     }),
-    {
+    definePersist<PluginState, PluginPersisted>({
       name: 'mz-plugin-studio-plugin',
+      area: 'Open plugins',
+      migrations: PLUGIN_MIGRATIONS,
+      fields: {
+        plugin: checkDefinition,
+        openPlugins: checkArrayOf(checkDefinition),
+        activePluginId: checkStringOrNull,
+        isDirty: checkBoolean,
+        savedPath: checkStringOrNull,
+        dirtyByPluginId: checkRecordOf(checkBoolean),
+        savedPathsByPluginId: checkRecordOf(checkString)
+      },
       partialize: (state) => ({
         plugin: { ...state.plugin, rawSource: undefined },
         openPlugins: state.openPlugins.map((p) => ({ ...p, rawSource: undefined })),
@@ -446,33 +526,7 @@ export const usePluginStore = create<PluginState>()(
         dirtyByPluginId: state.dirtyByPluginId,
         savedPathsByPluginId: state.savedPathsByPluginId
       }),
-      // Prune stale map entries for plugins no longer in openPlugins (LEAK-05)
-      onRehydrateStorage: () => (state) => {
-        if (!state) return
-        const liveIds = new Set(state.openPlugins.map((p) => p.id))
-        let dirtyChanged = false
-        let pathsChanged = false
-        const nextDirty = { ...state.dirtyByPluginId }
-        const nextPaths = { ...state.savedPathsByPluginId }
-        for (const key of Object.keys(nextDirty)) {
-          if (!liveIds.has(key)) {
-            delete nextDirty[key]
-            dirtyChanged = true
-          }
-        }
-        for (const key of Object.keys(nextPaths)) {
-          if (!liveIds.has(key)) {
-            delete nextPaths[key]
-            pathsChanged = true
-          }
-        }
-        if (dirtyChanged || pathsChanged) {
-          usePluginStore.setState({
-            ...(dirtyChanged ? { dirtyByPluginId: nextDirty } : {}),
-            ...(pathsChanged ? { savedPathsByPluginId: nextPaths } : {})
-          })
-        }
-      }
-    }
+      prune: pruneClosedTabs
+    })
   )
 )

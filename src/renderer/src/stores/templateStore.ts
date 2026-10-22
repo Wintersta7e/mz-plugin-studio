@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { checkArrayOf, checkString, definePersist, isRecord } from './persist'
+import type { FieldCheck, MigrationStep } from './persist'
 
 interface TemplateStoreState {
   favorites: string[] // template IDs
@@ -10,6 +12,15 @@ interface TemplateStoreState {
   isFavorite: (id: string) => boolean
   clearRecent: () => void
 }
+
+type RecentTemplate = TemplateStoreState['recentlyUsed'][number]
+
+const checkRecent: FieldCheck<RecentTemplate> = (value) =>
+  isRecord(value) && typeof value.id === 'string' && typeof value.timestamp === 'number'
+    ? { id: value.id, timestamp: value.timestamp }
+    : undefined
+
+export const TEMPLATE_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useTemplateStore = create<TemplateStoreState>()(
   persist(
@@ -35,12 +46,18 @@ export const useTemplateStore = create<TemplateStoreState>()(
       isFavorite: (id) => get().favorites.includes(id),
       clearRecent: () => set({ recentlyUsed: [] })
     }),
-    {
+    definePersist<TemplateStoreState, Pick<TemplateStoreState, 'favorites' | 'recentlyUsed'>>({
       name: 'mz-plugin-studio-templates',
+      area: 'Template favorites',
+      migrations: TEMPLATE_MIGRATIONS,
+      fields: {
+        favorites: checkArrayOf(checkString),
+        recentlyUsed: checkArrayOf(checkRecent)
+      },
       partialize: (state) => ({
         favorites: state.favorites,
         recentlyUsed: state.recentlyUsed
       })
-    }
+    })
   )
 )

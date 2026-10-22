@@ -1,6 +1,8 @@
 import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { checkArrayOf, checkString, definePersist } from './persist'
+import type { MigrationStep } from './persist'
 import type {
   MZProject,
   MZSwitch,
@@ -86,6 +88,8 @@ interface ProjectState {
   scanDependencies: () => Promise<void>
   clearDependencyReport: () => void
 }
+
+export const PROJECT_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
 export const useProjectStore = create<ProjectState>()(
   persist(
@@ -181,9 +185,12 @@ export const useProjectStore = create<ProjectState>()(
       },
       clearDependencyReport: () => set({ dependencyReport: null, conflictReport: null })
     }),
-    {
+    definePersist<ProjectState, Pick<ProjectState, 'recentProjects'>>({
       name: 'mz-plugin-studio-project',
+      area: 'Recent projects',
+      migrations: PROJECT_MIGRATIONS,
+      fields: { recentProjects: checkArrayOf(checkString) },
       partialize: (state) => ({ recentProjects: state.recentProjects })
-    }
+    })
   )
 )

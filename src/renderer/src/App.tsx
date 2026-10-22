@@ -20,6 +20,7 @@ import {
   useSettingsStore,
   useToastStore
 } from './stores'
+import { formatRestoreReport, takeRestoreReport } from './stores/persist'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
@@ -67,6 +68,18 @@ function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
+
+  // Report saved state that could not be loaded as stored, once per startup
+  useEffect(() => {
+    const entries = takeRestoreReport()
+    if (entries.length > 0) {
+      useToastStore.getState().addToast({
+        type: 'warning',
+        message: formatRestoreReport(entries),
+        duration: 0
+      })
+    }
+  }, [])
 
   // Guard: skip history push when the plugin change originated from undo/redo
   const isUndoRedoRef = useRef(false)
