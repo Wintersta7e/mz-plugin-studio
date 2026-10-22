@@ -110,4 +110,21 @@ describe('generatePluginOutput', () => {
     expect(code).toContain(' * @plugindesc Edited description\n')
     expect(code.endsWith(text.slice(text.indexOf('/*:ja')))).toBe(true)
   })
+
+  it('keeps help written as the last tag of the block when a parameter is edited', () => {
+    const plugin = imported('Fixture_Generated.js')
+    const text = plugin.rawSource ?? ''
+    const helpStart = text.indexOf(' * @help\n')
+    const help = text.slice(helpStart, text.indexOf('*/', helpStart) + 2)
+    const edited = {
+      ...plugin,
+      parameters: plugin.parameters.map((p, i) => (i === 0 ? { ...p, default: 42 } : p))
+    }
+    const out = generatePluginOutput(edited, true, toBaseline(plugin))
+    expect(out.ok).toBe(true)
+    const code = out.ok ? out.code : ''
+    expect(code).toContain(' * @default 42\n')
+    expect(help).toContain('Generated from a fixed definition.')
+    expect(code).toContain(help)
+  })
 })

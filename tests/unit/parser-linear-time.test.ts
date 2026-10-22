@@ -94,8 +94,11 @@ function checkEquivalence<T>(
   expect(mismatches.length).toBe(0)
 }
 
+// The old expression, except that help with no end after it (written last in a block) runs to
+// the end of the header instead of reading as missing.
 const oldHelp = (header: string): string | undefined =>
-  header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1]
+  header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1] ??
+  header.match(/@help\s*([\s\S]*)$/i)?.[1]
 const oldStrip = (value: string): string => value.replace(/\s*\*?\s*$/, '')
 
 describe('linear-time help and tag readers match the regular expressions they replace', () => {

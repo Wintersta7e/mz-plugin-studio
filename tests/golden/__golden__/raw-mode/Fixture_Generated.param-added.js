@@ -37,6 +37,8 @@
  * @type number
  * @default 1
  *
+ * @help
+ * Generated from a fixed definition.
  */
 
 /*~struct~Point:

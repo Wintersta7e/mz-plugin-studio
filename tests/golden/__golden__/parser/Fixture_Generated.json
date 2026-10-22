@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "author": "Example Author",
     "description": "Generated fixture plugin",
-    "help": "",
+    "help": "Generated from a fixed definition.",
     "url": "https://example.invalid/fixture-generated",
     "target": "MZ",
     "dependencies": [],

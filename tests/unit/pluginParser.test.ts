@@ -4,6 +4,7 @@
 // in Vitest's node environment.
 import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
+import { loadFixture } from '../golden/corpus/raw-mode'
 
 describe('PluginParser', () => {
   describe('parseMeta', () => {
@@ -66,6 +67,44 @@ describe('PluginParser', () => {
       const result = PluginParser.parsePlugin(content)
       expect(result.meta.help).toContain('This is help text.')
       expect(result.meta.help).toContain('It spans multiple lines.')
+    })
+
+    it('reads @help written as the last tag of a block', () => {
+      const content = `/*:
+ * @plugindesc Test plugin
+ * @help
+ * This is help text.
+ * It spans multiple lines.
+ */
+
+/*:ja
+ * @plugindesc 説明
+ * @help
+ * ヘルプテキスト
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.meta.help).toBe('This is help text.\nIt spans multiple lines.')
+      expect(result.meta.localizations!['ja'].help).toBe('ヘルプテキスト')
+    })
+
+    it('reads @plugindesc written as the last tag of a block', () => {
+      const content = `/*:
+ * @author Test
+ * @plugindesc Last description
+ */
+
+/*:ja
+ * @plugindesc 最後の説明
+ */`
+      const result = PluginParser.parsePlugin(content)
+      expect(result.meta.description).toBe('Last description')
+      expect(result.meta.localizations!['ja'].description).toBe('最後の説明')
+    })
+
+    it('reads the help of a fixture plugin that writes @help last', () => {
+      expect(loadFixture('Fixture_Generated.js').meta.help).toBe(
+        'Generated from a fixed definition.'
+      )
     })
 
     it('uses filename for plugin name when provided', () => {

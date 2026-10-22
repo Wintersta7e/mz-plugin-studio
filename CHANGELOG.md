@@ -24,6 +24,7 @@
 - Opening a plugin whose help text or a parameter, argument, parent or required-asset entry contains a long run of spaces or blank lines no longer freezes the app.
 - An empty `@default`, `@desc` or similar tag in an imported plugin no longer takes the next line as its value.
 - Changing the type of a parameter in an imported plugin now changes it in the saved file.
+- Help text and plugin descriptions written as the last tag of an annotation block are no longer read as empty.
 
 ### Changed
 

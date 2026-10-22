@@ -35,6 +35,8 @@
  * @text Added Command
  * @desc Added command
  *
+ * @help
+ * Generated from a fixed definition.
  */
 
 /*~struct~Point:

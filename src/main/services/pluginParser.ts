@@ -26,7 +26,10 @@ interface ParsedMeta {
   localizations: Record<string, LocalizedContent>
 }
 
-/** Same result as header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1], in linear time. */
+/**
+ * Same result as header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1], in linear time,
+ * except that a body with no end after it runs to the end of the header (help written last in a block).
+ */
 export function matchHelp(header: string): string | undefined {
   const n = header.length
   const isWs = (i: number): boolean => i < n && /\s/.test(header[i])
@@ -47,14 +50,15 @@ export function matchHelp(header: string): string | undefined {
   const nextEnd = new Int32Array(n + 1)
   nextEnd[n] = -1
   for (let p = n - 1; p >= 0; p--) nextEnd[p] = endsAt(p) ? p : nextEnd[p + 1]
-  for (const m of header.matchAll(/@help/gi)) {
-    const s0 = m.index + m[0].length
-    const e = nextNonWs[s0]
-    if (nextEnd[e] !== -1) return header.slice(e, nextEnd[e])
-    // The regex gives back leading whitespace to reach an end inside it, capturing nothing
-    if (nextEnd[s0] !== -1 && nextEnd[s0] < e) return ''
-  }
-  return undefined
+  const m = /@help/i.exec(header)
+  if (m === null) return undefined
+  const s0 = m.index + m[0].length
+  const e = nextNonWs[s0]
+  if (nextEnd[e] !== -1) return header.slice(e, nextEnd[e])
+  // The regex gives back leading whitespace to reach an end inside it, capturing nothing
+  if (nextEnd[s0] !== -1) return ''
+  // No end after the tag: the body runs to the end of the header
+  return header.slice(e)
 }
 
 /** Same result as value.replace(/\s*\*?\s*$/, ''), in linear time. */
@@ -326,8 +330,8 @@ export class PluginParser {
     const localizations = this.parseLocalizations(languages)
     if (!header) return { ...meta, localizations }
 
-    // Parse @plugindesc
-    const descMatch = header.match(/@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/)/s)
+    // Parse @plugindesc (written last in the block, it runs to the end of the header)
+    const descMatch = header.match(/@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s)
     if (descMatch) {
       meta.description = descMatch[1].replace(/\n\s*\*\s*/g, ' ').trim()
     }
@@ -439,7 +443,7 @@ export class PluginParser {
     for (const [lang, langHeader] of languages) {
       if (lang) {
         const locDesc = langHeader.match(
-          /@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/)/s
+          /@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s
         )
         const locHelp = matchHelp(langHeader)
 
