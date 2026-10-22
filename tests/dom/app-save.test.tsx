@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { savePluginFile } from '../../src/main/ipc/plugin'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { reloadFromProject } from '../../src/renderer/src/lib/raw-mode'
 import {
   useHistoryStore,
   usePluginStore,
@@ -316,6 +317,82 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(await readFile(fileIn(FILE, project), 'utf8')).toContain('Kept')
     await expect(readFile(fileIn('Renamed.js', project))).rejects.toThrow(/ENOENT/)
     expect(isDirty(id)).toBe(false)
+  })
+
+  it("a tab read from another project asks before replacing the open project's file", async () => {
+    const first = await copyProject()
+    const second = await copyProject()
+    window.api = createMainApi()
+    const id = await openFromProject(first, FILE)
+    act(() => usePluginStore.getState().updateMeta({ description: 'Edited in the first' }))
+    await openProject(second)
+    const firstBytes = await readFile(fileIn(FILE, first))
+    const secondBytes = await readFile(fileIn(FILE, second))
+    render(<App />)
+    pressSave()
+    await waitFor(() => expect(messages()).toHaveLength(1))
+    await settle()
+    const options = conflictDialog(0, 'exists-unrelated')
+    expect(options.message).toBe(
+      `"${fileIn(FILE, second)}" already exists and was not opened or saved by this tab. Overwrite it?`
+    )
+    expect(await readFile(fileIn(FILE, second))).toEqual(secondBytes)
+    expect(await readFile(fileIn(FILE, first))).toEqual(firstBytes)
+    expect(isDirty(id)).toBe(true)
+    expect(usePluginStore.getState().baseByPluginId[id]?.path).toBe(fileIn(FILE, first))
+  })
+
+  it('Reload of a tab read from another project asks first, and Cancel reads nothing', async () => {
+    const first = await copyProject()
+    const second = await copyProject()
+    window.api = createMainApi()
+    const id = await openFromProject(first, FILE)
+    await openProject(second)
+    expect(await act(() => reloadFromProject(id))).toBe(false)
+    expect(messages()).toEqual([
+      {
+        type: 'question',
+        title: 'Reload from another project?',
+        message: `This tab was last read from or saved to ${fileIn(FILE, first)}, which is not in the open project's plugins folder. Reload it from ${fileIn(FILE, second)} instead?`,
+        buttons: ['Cancel', 'Reload'],
+        defaultId: 0,
+        cancelId: 0
+      }
+    ])
+    expect(window.api.plugin.readRaw).not.toHaveBeenCalled()
+    expect(usePluginStore.getState().baseByPluginId[id]?.path).toBe(fileIn(FILE, first))
+  })
+
+  it("Reload of a tab read from another project, confirmed, takes the open project's file", async () => {
+    const first = await copyProject()
+    const second = await copyProject()
+    const text = `${await readFile(fileIn(FILE, second), 'utf8')}// the second copy\n`
+    await writeFile(fileIn(FILE, second), text)
+    window.api = createMainApi({ answers: [1] })
+    const id = await openFromProject(first, FILE)
+    await openProject(second)
+    expect(await act(() => reloadFromProject(id))).toBe(true)
+    expect(messages()).toHaveLength(1)
+    expect(plugin().rawSource).toBe(text)
+    expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
+      path: fileIn(FILE, second),
+      sha256: sha(text)
+    })
+  })
+
+  it('Reload of a tab in the open project, or with no file recorded, does not ask', async () => {
+    const project = await copyProject()
+    window.api = createMainApi()
+    await openProject(project)
+    const read = await openFromProject(project, FILE)
+    expect(await act(() => reloadFromProject(read))).toBe(true)
+    const loaded = await window.api.plugin.load(project, FILE)
+    act(() => usePluginStore.getState().openPlugin(loaded.plugin))
+    expect(await act(() => reloadFromProject(loaded.plugin.id))).toBe(true)
+    expect(messages()).toEqual([])
+    expect(usePluginStore.getState().baseByPluginId[loaded.plugin.id]?.path).toBe(
+      fileIn(FILE, project)
+    )
   })
 
   it('a file changed on disk while its prompt is open is asked about again', async () => {

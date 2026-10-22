@@ -844,6 +844,7 @@ When the file text is not loaded, the banner in the code preview has a **Reload 
 
 - A tab with no unsaved edits takes the file as it is now, without asking.
 - A tab with unsaved edits asks first. **Cancel** (the default) changes nothing; **Replace with file** drops the edits; **Keep tab values** applies the tab's values to the reloaded file and leaves the tab marked unsaved.
+- A tab last read from or saved to a file outside the open project's `js/plugins/` folder, such as the same plugin in another project, asks before reading the open project's copy; **Cancel** is the default.
 
 The button is disabled until a project is open. If the file cannot be read, an error names the path.
 

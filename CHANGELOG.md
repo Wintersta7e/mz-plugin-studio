@@ -45,6 +45,7 @@
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 - A project that fails to load now shows a message naming the folder and the reason.
 - A plugin loaded from a file is always saved back to that file: its Plugin Name, which is the file name, is read-only, so renaming it can no longer write a second file while Reload from project keeps reading the first.
+- Reload from project asks first when the tab was read from another project, instead of silently attaching the open project's copy of the plugin.
 
 ### Changed
 

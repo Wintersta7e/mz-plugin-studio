@@ -76,19 +76,44 @@ export async function prepareSave(
     : { status: 'refused', refusal: out.refusal, reason: out.message }
 }
 
+/** Whether `file` lies directly in `dir`; Windows paths compare case-insensitively, as main does */
+function isFileIn(dir: string, file: string): boolean {
+  const windows = /^[a-z]:|\\/i.test(dir)
+  const normal = (p: string): string => {
+    const slashed = p.replace(/[\\/]+/g, '/').replace(/\/$/, '')
+    return windows ? slashed.toLowerCase() : slashed
+  }
+  const target = normal(file)
+  return target.slice(0, target.lastIndexOf('/')) === normal(dir)
+}
+
 /**
  * Reads an imported tab's file from the open project again and makes it the tab's file text,
- * baseline and the file it was read from. A tab with no unsaved edits takes the file's values; a
- * tab with edits asks whether to replace them with the file or keep them. False when there is no
- * project, the user cancels or the file cannot be read.
+ * baseline and the file it was read from. A tab last read or saved outside the open project asks
+ * first. A tab with no unsaved edits takes the file's values; a tab with edits asks whether to
+ * replace them with the file or keep them. False when there is no project, the user cancels or
+ * the file cannot be read.
  */
 export async function reloadFromProject(pluginId: string): Promise<boolean> {
   const project = useProjectStore.getState().project
-  const { openPlugins, dirtyByPluginId } = usePluginStore.getState()
+  const { openPlugins, dirtyByPluginId, baseByPluginId } = usePluginStore.getState()
   const plugin = openPlugins.find((p) => p.id === pluginId)
   if (project === null || plugin?.importedFrom === undefined) return false
   const sep = project.path.includes('\\') ? '\\' : '/'
-  const path = [project.path, 'js', 'plugins', plugin.importedFrom].join(sep)
+  const pluginsDir = [project.path, 'js', 'plugins'].join(sep)
+  const path = [pluginsDir, plugin.importedFrom].join(sep)
+  const base = baseByPluginId[pluginId]
+  if (base !== undefined && !isFileIn(pluginsDir, base.path)) {
+    const answer = await window.api.dialog.message({
+      type: 'question',
+      title: 'Reload from another project?',
+      message: `This tab was last read from or saved to ${base.path}, which is not in the open project's plugins folder. Reload it from ${path} instead?`,
+      buttons: ['Cancel', 'Reload'],
+      defaultId: 0,
+      cancelId: 0
+    })
+    if (answer !== 1) return false
+  }
   let keepTab = false
   // A tab read by an older parser differs from its file with no edit, so only edits are kept
   if (dirtyByPluginId[pluginId]) {
