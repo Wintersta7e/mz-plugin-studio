@@ -18,6 +18,7 @@
 ### Fixed
 
 - Saved settings, layout, recent projects, template favorites and open plugins that cannot be read, in whole or in part, are now kept in a backup entry and reported at startup instead of being silently replaced. The report names each entry left out, such as one open plugin tab, and says when no copy could be kept because an earlier one exists or storage is full. A full storage quota is reported once instead of breaking every change.
+- A saved plugin tab with a damaged detail, parameter, command or struct no longer crashes the editor at every start: the damaged entry is left out and named in the startup report, and the saved data is backed up. Saved parameter presets get the same check on every start.
 - Closed plugin tabs no longer leave saved dirty flags and file paths behind in stored state.
 - Imported plugins stay in raw mode after a restart and keep their file text, so the app no longer regenerates an imported plugin's code without asking.
 - Saving an imported plugin in raw mode writes an unedited UTF-8 file back byte-for-byte, keeps CRLF line endings and the byte order mark, rewrites only the annotation blocks that changed, and adds code only for parameters and commands added since loading.

@@ -121,6 +121,21 @@ export function checkParameterShape(value: unknown): ParameterShape {
   return { ok: true, parameter, dropped }
 }
 
+/**
+ * A parameter from saved app state through the same shape check, keeping its id (a new one if it
+ * has none); each field left out is named through `drop`.
+ */
+export function checkSavedParameter(
+  value: unknown,
+  drop: (what: string) => void
+): PluginParameter | undefined {
+  const shape = checkParameterShape(value)
+  if (!shape.ok) return undefined
+  for (const field of shape.dropped) drop(`.${field}`)
+  const id = isRecord(value) && typeof value.id === 'string' ? value.id : crypto.randomUUID()
+  return { id, ...shape.parameter }
+}
+
 export type ParamImportResult =
   | {
       success: true

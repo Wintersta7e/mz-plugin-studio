@@ -47,11 +47,20 @@ function asImported(tab: Record<string, unknown>): Record<string, unknown> {
   return { ...rest, importedFrom: `${(tab.meta as { name: string }).name}.js` }
 }
 
+type Params = Record<string, unknown>[]
+
 /** What a v1.6.0 field value loads as now. */
 function expectedField(field: string, value: unknown): unknown {
-  if (field === 'parameterPresets') return withoutNullLimits(value)
-  if (field === 'plugin') return asImported(value as Record<string, unknown>)
-  if (field === 'openPlugins') return (value as Record<string, unknown>[]).map(asImported)
+  if (field === 'parameterPresets') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, Params>).map(([name, params]) => [
+        name,
+        withoutNullLimits(params)
+      ])
+    )
+  }
+  if (field === 'plugin') return loadedTab(value as Record<string, unknown>)
+  if (field === 'openPlugins') return (value as Params).map(loadedTab)
   if (field === 'rawModeByPluginId') {
     return Object.fromEntries(Object.entries(value as object).filter(([, on]) => on !== false))
   }
@@ -59,13 +68,24 @@ function expectedField(field: string, value: unknown): unknown {
 }
 
 /** v1.6.0 saved a cleared number limit as null; the parameter check leaves it out. */
-function withoutNullLimits(presets: unknown): unknown {
-  return Object.fromEntries(
-    Object.entries(presets as Record<string, Record<string, unknown>[]>).map(([name, params]) => [
-      name,
-      params.map((p) => Object.fromEntries(Object.entries(p).filter(([, v]) => v !== null)))
-    ])
-  )
+function withoutNullLimits(params: Params): Params {
+  return params.map((p) => Object.fromEntries(Object.entries(p).filter(([, v]) => v !== null)))
+}
+
+/** A v1.6.0 tab as loaded now: imported tabs named, each parameter through the parameter check. */
+function loadedTab(tab: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...asImported(tab),
+    parameters: withoutNullLimits(tab.parameters as Params),
+    commands: (tab.commands as Params).map((c) => ({
+      ...c,
+      args: withoutNullLimits(c.args as Params)
+    })),
+    structs: (tab.structs as Params).map((s) => ({
+      ...s,
+      parameters: withoutNullLimits(s.parameters as Params)
+    }))
+  }
 }
 
 describe('loading the state v1.6.0 saved', () => {

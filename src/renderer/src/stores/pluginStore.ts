@@ -2,13 +2,17 @@ import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
+  LocalizedContent,
+  NoteParam,
   PluginBaseline,
   PluginDefinition,
+  PluginMeta,
   PluginParameter,
   PluginCommand,
   PluginStruct
 } from '../types/plugin'
 import { createEmptyPlugin, toBaseline } from '../types/plugin'
+import { checkSavedParameter } from '../lib/param-io'
 import { isImported } from '../lib/plugin-output'
 import {
   checkArrayOf,
@@ -152,8 +156,72 @@ export function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
 }
 
 const OPTIONAL_STRING_FIELDS = ['codeBody', 'customCode', 'rawSource', 'importedFrom'] as const
+const META_STRING_FIELDS = ['version', 'author', 'description', 'help', 'url', 'target'] as const
+const META_OPTIONAL_LISTS = ['orderAfter', 'orderBefore', 'requiredAssets'] as const
 
-/** A saved plugin definition: rejected unless every editor can read it. */
+const checkStringList = checkArrayOf(checkString)
+const checkParameters = checkArrayOf(checkSavedParameter)
+
+const checkNoteParam: FieldCheck<NoteParam> = (value) =>
+  isRecord(value) && typeof value.name === 'string' && typeof value.type === 'string'
+    ? (value as unknown as NoteParam)
+    : undefined
+
+const checkLocalized: FieldCheck<LocalizedContent> = (value) =>
+  isRecord(value) &&
+  ['description', 'help'].every((key) => value[key] === undefined || typeof value[key] === 'string')
+    ? (value as LocalizedContent)
+    : undefined
+
+/**
+ * `meta` as the editors read it: a field of the wrong type takes its default, or is left out when
+ * optional, and is named through `drop`.
+ */
+function checkMeta(meta: Record<string, unknown>, drop: (what: string) => void): PluginMeta {
+  const checked = { ...meta }
+  const take = (field: string, check: FieldCheck<unknown>, fallback?: unknown): void => {
+    if (fallback === undefined && !Object.hasOwn(checked, field)) return
+    const value = check(checked[field], (what) => drop(`.${field}${what}`))
+    if (value !== undefined) {
+      checked[field] = value
+      return
+    }
+    drop(`.${field}`)
+    if (fallback === undefined) delete checked[field]
+    else checked[field] = fallback
+  }
+  for (const field of META_STRING_FIELDS) take(field, checkString, '')
+  take('dependencies', checkStringList, [])
+  for (const field of META_OPTIONAL_LISTS) take(field, checkStringList)
+  take('noteParams', checkArrayOf(checkNoteParam))
+  take('localizations', checkRecordOf(checkLocalized))
+  return checked as unknown as PluginMeta
+}
+
+const idOf = (value: Record<string, unknown>): string =>
+  typeof value.id === 'string' ? value.id : crypto.randomUUID()
+
+const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
+  if (!isRecord(value) || typeof value.name !== 'string') return undefined
+  const args = checkParameters(value.args, (what) => drop(`.args${what}`))
+  if (args === undefined) return undefined
+  for (const field of ['text', 'desc']) if (typeof value[field] !== 'string') drop(`.${field}`)
+  return {
+    id: idOf(value),
+    name: value.name,
+    text: typeof value.text === 'string' ? value.text : value.name,
+    desc: typeof value.desc === 'string' ? value.desc : '',
+    args
+  }
+}
+
+const checkStruct: FieldCheck<PluginStruct> = (value, drop) => {
+  if (!isRecord(value) || typeof value.name !== 'string') return undefined
+  const parameters = checkParameters(value.parameters, (what) => drop(`.parameters${what}`))
+  return parameters === undefined ? undefined : { id: idOf(value), name: value.name, parameters }
+}
+
+/** A saved plugin definition: rejected unless every editor can read it, elements one by one. */
 const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   if (
     !isRecord(value) ||
@@ -166,7 +234,14 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   ) {
     return undefined
   }
-  const plugin = { ...value }
+  const within = (field: string) => (what: string) => drop(`.${field}${what}`)
+  const plugin: Record<string, unknown> = {
+    ...value,
+    meta: checkMeta(value.meta, within('meta')),
+    parameters: checkParameters(value.parameters, within('parameters')),
+    commands: checkArrayOf(checkCommand)(value.commands, within('commands')),
+    structs: checkArrayOf(checkStruct)(value.structs, within('structs'))
+  }
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (Object.hasOwn(plugin, field) && typeof plugin[field] !== 'string') {
       delete plugin[field]
