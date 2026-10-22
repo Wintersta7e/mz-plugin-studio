@@ -12,7 +12,7 @@ export type PersistedKey =
   | 'mz-plugin-studio-settings'
   | 'mz-plugin-studio-plugin'
 
-export const BACKUP_SUFFIX = '.backup'
+const BACKUP_SUFFIX = '.backup'
 
 // undefined = wrong type → the field takes its default; drop(what) records an element-level drop
 export type FieldCheck<T> = (value: unknown, drop: (what: string) => void) => T | undefined
@@ -46,6 +46,10 @@ export interface RestoreReportEntry {
 let pendingReport: RestoreReportEntry[] = []
 // Writes of each store that failed on a full quota since its last successful write
 const quotaFailures = new Map<PersistedKey, number>()
+// Each store's user-facing name, to label its backup
+const areas = new Map<PersistedKey, string>()
+
+const BACKUPS_PLACE = 'Settings > Data > Saved-state backups'
 
 function report(
   name: PersistedKey,
@@ -89,12 +93,11 @@ function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
 }
 
 export function formatRestoreReport(entries: RestoreReportEntry[]): string {
-  return entries
-    .map(
-      ({ name, area, kind, fields, backup }) =>
-        `${area}: ${loadText(kind, fields)}; ${backupText(name + BACKUP_SUFFIX, backup)}`
-    )
-    .join(' ')
+  const lines = entries.map(
+    ({ name, area, kind, fields, backup }) =>
+      `${area}: ${loadText(kind, fields)}; ${backupText(name + BACKUP_SUFFIX, backup)}`
+  )
+  return [...lines, `Backups can be exported or deleted in ${BACKUPS_PLACE}.`].join(' ')
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -187,7 +190,26 @@ function isQuotaError(error: unknown): boolean {
 }
 
 function backupKeys(): string[] {
-  return Object.keys(localStorage).filter((key) => key.endsWith(BACKUP_SUFFIX))
+  return Object.keys(localStorage)
+    .filter((key) => key.endsWith(BACKUP_SUFFIX))
+    .sort()
+}
+
+export interface SavedBackup {
+  key: string
+  area: string // the store it was copied from, or its key when no loaded store owns it
+  text: string
+}
+
+export function listBackups(): SavedBackup[] {
+  return backupKeys().map((key) => {
+    const name = key.slice(0, -BACKUP_SUFFIX.length) as PersistedKey
+    return { key, area: areas.get(name) ?? name, text: localStorage.getItem(key) ?? '' }
+  })
+}
+
+export function deleteBackup(key: string): void {
+  localStorage.removeItem(key)
 }
 
 function guardedStorage<P>(
@@ -235,7 +257,7 @@ function guardedStorage<P>(
         const backups = backupKeys()
         useToastStore.getState().addToast({
           type: 'error',
-          message: `Storage is full: recent changes to ${area.toLowerCase()} were not saved. Backup entries present: ${backups.length > 0 ? backups.join(', ') : 'none'}. Nothing was deleted.`,
+          message: `Storage is full: recent changes to ${area.toLowerCase()} were not saved. Backup entries present: ${backups.length > 0 ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}` : 'none'}. Nothing was deleted.`,
           duration: 0
         })
       }
@@ -248,6 +270,7 @@ export function definePersist<S, P extends object>(
   spec: PersistSpec<S, P>
 ): PersistOptions<S, P & { schemaVersion: number }> {
   const currentSchema = spec.migrations.length
+  areas.set(spec.name, spec.area)
   // The envelope keeps the middleware's default version 0, which v1.6.0 also writes and reads;
   // schema changes are tracked by schemaVersion inside the state instead.
   return {

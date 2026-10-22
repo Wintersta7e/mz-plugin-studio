@@ -962,8 +962,11 @@ Manage persisted data stored in your browser:
 | Clear Template Favorites | Remove all favorited templates |
 | Clear Recently Used Templates | Clear the recently used templates history |
 | **Parameter Presets** | Manage saved parameter presets (delete individual or clear all) |
+| **Saved-state backups** | Export or delete the copies kept of saved data the app could not load |
 
 Each button shows the current count and confirms when cleared.
+
+When saved settings, layout, recent projects, template favorites or open plugins cannot be read at startup, the app loads what it can, keeps a copy of the saved data as a backup and says so in a startup message. **Saved-state backups** lists each copy with the kind of data it holds and its size. **Export** saves a copy to a file you choose; **Delete** removes it after asking (Cancel is the default). Only one copy of each kind is kept, so a later problem with the same kind of data is not backed up until you delete the earlier copy; export it first if you want to keep it. Backups count against the same storage as everything else the app saves, so deleting them also frees space when storage is full.
 
 ---
 

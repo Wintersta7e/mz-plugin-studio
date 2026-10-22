@@ -65,6 +65,8 @@ export interface DialogAPI {
     buttons?: string[]
     /** The button Enter chooses */
     defaultId?: number
+    /** The button Escape chooses; main does not pass it on yet, so Escape picks a "Cancel" button */
+    cancelId?: number
   }) => Promise<number>
 }
 

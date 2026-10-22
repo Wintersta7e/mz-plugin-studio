@@ -9,6 +9,7 @@
 ### Added
 
 - Reload from project restores an imported plugin's file text. A tab with no unsaved edits takes the file as it is now; a tab with edits asks whether to replace them with the file or keep them.
+- **Settings > Data > Saved-state backups** lists the copies kept of saved data that could not be loaded, and exports each to a file or deletes it, so the next problem can be backed up too. The startup report and the full-storage message point there.
 
 ### Removed
 

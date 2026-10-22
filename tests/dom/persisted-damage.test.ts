@@ -8,6 +8,7 @@ import { createFakeApi } from '../helpers/fake-api'
 const KEY = 'mz-plugin-studio-settings'
 const BACKUP = `${KEY}.backup`
 const PLUGIN_KEY = 'mz-plugin-studio-plugin'
+const SEE_BACKUPS = 'Backups can be exported or deleted in Settings > Data > Saved-state backups.'
 
 /** A saved tab every editor can read. */
 const tab = (id: string, name: string) => ({
@@ -126,7 +127,7 @@ describe('damaged saved state', () => {
       { name: KEY, area: 'Settings', kind: 'unparseable', fields: [], backup: 'earlier-copy-kept' }
     ])
     expect(persist.formatRestoreReport(entries)).toBe(
-      `Settings: the saved data could not be read, so defaults were loaded; it was not copied because ${BACKUP} already holds an earlier copy, and it will be replaced at the next save.`
+      `Settings: the saved data could not be read, so defaults were loaded; it was not copied because ${BACKUP} already holds an earlier copy, and it will be replaced at the next save. ${SEE_BACKUPS}`
     )
   })
 
@@ -142,7 +143,7 @@ describe('damaged saved state', () => {
     ])
     const text = persist.formatRestoreReport(entries)
     expect(text).toBe(
-      `Settings: the saved data could not be read, so defaults were loaded; it could not be copied to ${BACKUP} because storage is full, and it will be replaced at the next save.`
+      `Settings: the saved data could not be read, so defaults were loaded; it could not be copied to ${BACKUP} because storage is full, and it will be replaced at the next save. ${SEE_BACKUPS}`
     )
     expect(text).not.toContain('already holds an earlier copy')
   })
@@ -194,7 +195,7 @@ describe('damaged saved state', () => {
       }
     ])
     expect(persist.formatRestoreReport(entries)).toBe(
-      `Settings: theme, editorFontSize had unexpected values and were reset; a copy was kept as ${BACKUP}.`
+      `Settings: theme, editorFontSize had unexpected values and were reset; a copy was kept as ${BACKUP}. ${SEE_BACKUPS}`
     )
     expect(localStorage.getItem(BACKUP)).toBe(raw)
     expect(log.warn).toHaveBeenCalled()
@@ -228,7 +229,7 @@ describe('damaged saved state', () => {
       }
     ])
     expect(persist.formatRestoreReport(entries)).toBe(
-      `Open plugins: openPlugins[0].rawSource (Good), openPlugins[1] (Broken) could not be read and were left out; a copy was kept as ${PLUGIN_KEY}.backup.`
+      `Open plugins: openPlugins[0].rawSource (Good), openPlugins[1] (Broken) could not be read and were left out; a copy was kept as ${PLUGIN_KEY}.backup. ${SEE_BACKUPS}`
     )
   })
 
@@ -352,7 +353,7 @@ describe('damaged saved state', () => {
     const toasts = useToastStore.getState().toasts
     expect(toasts).toHaveLength(1)
     expect(toasts[0].message).toBe(
-      'Storage is full: recent changes to settings were not saved. Backup entries present: mz-plugin-studio-ui.backup. Nothing was deleted.'
+      'Storage is full: recent changes to settings were not saved. Backup entries present: mz-plugin-studio-ui.backup; export or delete them in Settings > Data > Saved-state backups. Nothing was deleted.'
     )
     expect(Object.keys(localStorage)).toHaveLength(keysBefore)
   })

@@ -32,7 +32,7 @@ describe('restore report at startup', () => {
     expect(toasts).toHaveLength(1)
     expect(toasts[0].type).toBe('warning')
     expect(toasts[0].message).toBe(
-      'Layout: the saved data could not be read, so defaults were loaded; a copy was kept as mz-plugin-studio-ui.backup. Settings: theme had unexpected values and were reset; a copy was kept as mz-plugin-studio-settings.backup.'
+      'Layout: the saved data could not be read, so defaults were loaded; a copy was kept as mz-plugin-studio-ui.backup. Settings: theme had unexpected values and were reset; a copy was kept as mz-plugin-studio-settings.backup. Backups can be exported or deleted in Settings > Data > Saved-state backups.'
     )
 
     cleanup()

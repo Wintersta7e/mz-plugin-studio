@@ -1,16 +1,109 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Sun, Moon, FolderOpen } from 'lucide-react'
+import log from 'electron-log/renderer'
+import { Trash2, Sun, Moon, FolderOpen, Download } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
-import { useSettingsStore, useProjectStore, useTemplateStore } from '../../stores'
+import { useSettingsStore, useProjectStore, useTemplateStore, useToastStore } from '../../stores'
+import { deleteBackup, listBackups, type SavedBackup } from '../../stores/persist'
 
 interface SettingsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+function formatSize(text: string): string {
+  const bytes = new Blob([text]).size
+  return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
+}
+
+/** Copies of saved state the app could not load; mounted with the Data tab, so it lists afresh. */
+function BackupsSection() {
+  const [backups, setBackups] = useState(listBackups)
+  const addToast = useToastStore((s) => s.addToast)
+
+  const handleExport = async (backup: SavedBackup) => {
+    const filePath = await window.api.dialog.saveFile({
+      defaultPath: `${backup.key}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    })
+    if (!filePath) return
+    try {
+      await window.api.plugin.saveToPath(filePath, backup.text)
+      addToast({ type: 'success', message: `Backup exported to ${filePath}` })
+    } catch (error) {
+      log.error('Failed to export backup:', error)
+      addToast({
+        type: 'error',
+        message: `Export failed: ${error instanceof Error ? error.message : String(error)}`
+      })
+    }
+  }
+
+  const handleDelete = async (backup: SavedBackup) => {
+    const choice = await window.api.dialog.message({
+      type: 'warning',
+      title: 'Delete backup',
+      message: `Delete the ${backup.area} backup? Export it first to keep a copy.`,
+      buttons: ['Cancel', 'Delete'],
+      defaultId: 0,
+      cancelId: 0
+    })
+    if (choice !== 1) return
+    deleteBackup(backup.key)
+    setBackups(listBackups())
+  }
+
+  return (
+    <div className="space-y-2">
+      <div>
+        <p className="text-sm font-medium">Saved-state backups</p>
+        <p className="text-xs text-muted-foreground">
+          Copies of saved data the app could not load. Only one copy per kind is kept, so delete one
+          once exported to make room for the next.
+        </p>
+      </div>
+      {backups.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No backups.</p>
+      ) : (
+        <div className="space-y-1 rounded border border-border p-2">
+          {backups.map((backup) => (
+            <div key={backup.key} className="flex items-center justify-between gap-2 text-sm">
+              <div className="min-w-0">
+                <p>{backup.area}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  <span>{backup.key}</span> · {formatSize(backup.text)}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  aria-label={`Export the ${backup.area} backup`}
+                  onClick={() => void handleExport(backup)}
+                >
+                  <Download className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  aria-label={`Delete the ${backup.area} backup`}
+                  onClick={() => void handleDelete(backup)}
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
@@ -353,6 +446,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </div>
               )}
             </div>
+
+            <BackupsSection />
           </TabsContent>
         </Tabs>
       </DialogContent>
