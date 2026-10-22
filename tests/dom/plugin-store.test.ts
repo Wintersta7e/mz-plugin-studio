@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { toBaseline } from '../../src/shared/types/plugin'
+import { PluginParser } from '../../src/main/services/pluginParser'
+import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
 import type {
   PluginDefinition,
   PluginParameter,
@@ -531,5 +533,73 @@ describe('pluginStore file text of an imported plugin', () => {
     expect(state.plugin.rawSource).toBeUndefined()
     expect(state.openPlugins[0].rawSource).toBeUndefined()
     expect(state.baselineByPluginId).toEqual({})
+  })
+})
+
+describe('pluginStore type edits on an imported plugin', () => {
+  const SOURCE = `/*:
+ * @target MZ
+ * @plugindesc Type edits
+ *
+ * @param rate
+ * @type Number
+ * @default 1
+ *
+ * @param list
+ * @type struct<Entry>[]
+ * @default []
+ *
+ * @command run
+ * @arg mode
+ * @type multiline_string
+ */
+/*~struct~Entry:
+ * @param label
+ * @type multiline_string
+ */
+/*~struct~Other:
+ * @param x
+ */
+(() => {})();
+`
+
+  beforeEach(() => {
+    resetPluginStore()
+  })
+
+  it('a changed type reaches the saved file; other edits keep the imported type text', () => {
+    const imported = {
+      ...PluginParser.parsePlugin(SOURCE, 'TypeEdits.js'),
+      importedFrom: 'TypeEdits.js'
+    }
+    const store = usePluginStore.getState()
+    store.openPlugin(imported)
+    const id = (name: string) => imported.parameters.find((p) => p.name === name)!.id
+    const command = imported.commands[0]
+    const entry = imported.structs.find((s) => s.name === 'Entry')!
+
+    store.updateParameter(id('rate'), { desc: 'Edited' })
+    expect(usePluginStore.getState().plugin.parameters[0].rawType).toBe('Number')
+
+    store.updateParameter(id('rate'), { type: 'string' })
+    store.updateParameter(id('list'), { structType: 'Other' })
+    store.updateCommandArg(command.id, command.args[0].id, { type: 'number' })
+    store.updateStructParam(entry.id, entry.parameters[0].id, { type: 'string' })
+
+    const state = usePluginStore.getState()
+    const saved = PluginParser.parsePlugin(
+      generateRawMode(state.plugin, state.baselineByPluginId[imported.id]),
+      'TypeEdits.js'
+    )
+    const types = (params: PluginParameter[]) =>
+      params.map((p) => [p.name, p.rawType ?? p.type, p.structType])
+    expect(types(saved.parameters)).toEqual([
+      ['rate', 'string', undefined],
+      ['list', 'struct<Other>[]', 'Other']
+    ])
+    expect(types(saved.commands[0].args)).toEqual([['mode', 'number', undefined]])
+    expect(types(saved.structs.find((s) => s.name === 'Entry')!.parameters)).toEqual([
+      ['label', 'string', undefined]
+    ])
   })
 })

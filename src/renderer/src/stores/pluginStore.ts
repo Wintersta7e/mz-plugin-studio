@@ -249,6 +249,17 @@ function setPluginSavedPath(
   return next
 }
 
+/**
+ * Applies an edit to a parameter or argument. A changed type drops the `@type` text it was
+ * imported with, so the generated `@type` follows the edit.
+ */
+function editParameter(param: PluginParameter, edit: Partial<PluginParameter>): PluginParameter {
+  const retyped = (['type', 'arrayType', 'structType'] as const).some(
+    (key) => key in edit && edit[key] !== param[key]
+  )
+  return retyped ? { ...param, rawType: undefined, ...edit } : { ...param, ...edit }
+}
+
 /** Sets the file text of an open tab, in the tab list and on the active plugin; not an edit. */
 function withRawSource(
   state: PluginState,
@@ -322,7 +333,7 @@ export const usePluginStore = create<PluginState>()(
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
-            parameters: plugin.parameters.map((p) => (p.id === id ? { ...p, ...param } : p))
+            parameters: plugin.parameters.map((p) => (p.id === id ? editParameter(p, param) : p))
           }))
         ),
       removeParameter: (id) =>
@@ -399,7 +410,7 @@ export const usePluginStore = create<PluginState>()(
             ...plugin,
             commands: plugin.commands.map((c) =>
               c.id === cmdId
-                ? { ...c, args: c.args.map((a) => (a.id === argId ? { ...a, ...arg } : a)) }
+                ? { ...c, args: c.args.map((a) => (a.id === argId ? editParameter(a, arg) : a)) }
                 : c
             )
           }))
@@ -453,7 +464,9 @@ export const usePluginStore = create<PluginState>()(
               s.id === structId
                 ? {
                     ...s,
-                    parameters: s.parameters.map((p) => (p.id === paramId ? { ...p, ...param } : p))
+                    parameters: s.parameters.map((p) =>
+                      p.id === paramId ? editParameter(p, param) : p
+                    )
                   }
                 : s
             )
