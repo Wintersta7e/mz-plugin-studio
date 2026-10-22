@@ -67,9 +67,11 @@ export function generatePlugin(plugin: PluginDefinition): string {
 }
 
 /**
- * Generate the plugin header comment block with all metadata, parameters, and commands
+ * Generate the plugin header comment block with all metadata, parameters, and commands.
+ * `keepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
+ * raw mode keeps when it rewrites the file's blocks.
  */
-function generateHeader(plugin: PluginDefinition, sink?: BlockSink): string {
+function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire = false): string {
   const lines: string[] = []
 
   lines.push('/*:')
@@ -112,12 +114,13 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink): string {
   // Note Parameters (deployment notetag groups)
   // The official MZ annotation reference documents only four note-asset tags:
   // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
-  // of the spec and is dropped.
+  // of the spec and is dropped, except where raw mode keeps an imported file's lines.
   for (const np of plugin.meta.noteParams || []) {
     lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
     lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
     if (np.dir) lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
     if (np.data) lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
+    if (keepRequire && np.require) lines.push(' * @noteRequire 1')
   }
 
   // Required assets — preserved during "Exclude unused files" deployment.
@@ -129,13 +132,15 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink): string {
 
   // Parameters
   for (const param of plugin.parameters) {
-    lines.push(...generateParameterBlock(param, ' * ', `Parameter "${param.name}"`, sink))
+    lines.push(
+      ...generateParameterBlock(param, ' * ', `Parameter "${param.name}"`, sink, keepRequire)
+    )
     lines.push(' *')
   }
 
   // Commands
   for (const cmd of plugin.commands) {
-    lines.push(...generateCommandBlock(cmd, sink))
+    lines.push(...generateCommandBlock(cmd, sink, keepRequire))
     lines.push(' *')
   }
 
@@ -159,7 +164,8 @@ function generateParameterBlock(
   param: PluginParameter,
   prefix: string = ' * ',
   owner: string = `Parameter "${param.name}"`,
-  sink?: BlockSink
+  sink?: BlockSink,
+  keepRequire = false
 ): string[] {
   const lines: string[] = []
 
@@ -205,7 +211,8 @@ function generateParameterBlock(
     lines.push(`${prefix}@dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
   }
   // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
-  // Use @requiredAssets at the plugin level instead.
+  // Use @requiredAssets at the plugin level instead. Raw mode keeps an imported file's line.
+  if (keepRequire && param.require) lines.push(`${prefix}@require 1`)
 
   // Options for select/combo type
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
@@ -280,7 +287,7 @@ function formatDefaultValue(
 /**
  * Generate a command block for the header
  */
-function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink): string[] {
+function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink, keepRequire = false): string[] {
   const lines: string[] = []
   const owner = `Command "${cmd.name}"`
 
@@ -330,7 +337,8 @@ function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink): string[] {
     if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
       lines.push(` * @dir ${blockValue(sink, `${argOwner} @dir`, arg.dir)}`)
     }
-    // @require dropped (MV-era, discontinued in MZ)
+    // @require dropped (MV-era, discontinued in MZ), except where raw mode keeps the file's line
+    if (keepRequire && arg.require) lines.push(' * @require 1')
 
     if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
       for (const opt of arg.options) {
@@ -392,14 +400,18 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
 /**
  * Generate struct definition comment block
  */
-function generateStructDefinition(struct: PluginStruct, sink?: BlockSink): string {
+function generateStructDefinition(
+  struct: PluginStruct,
+  sink?: BlockSink,
+  keepRequire = false
+): string {
   const lines: string[] = []
 
   lines.push(`/*~struct~${blockValue(sink, `Struct "${struct.name}"`, struct.name)}:`)
 
   for (const param of struct.parameters) {
     const owner = `Struct "${struct.name}" field "${param.name}"`
-    lines.push(...generateParameterBlock(param, ' * ', owner, sink))
+    lines.push(...generateParameterBlock(param, ' * ', owner, sink, keepRequire))
     lines.push(' *')
   }
 
@@ -546,8 +558,8 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
 
   // 1. The main block, when its rendering changed
   const main = blocks.find((b) => b.kind === 'main')
-  const header = generateHeader(plugin)
-  if (main !== undefined && header !== generateHeader(baseline)) {
+  const header = generateHeader(plugin, undefined, true)
+  if (main !== undefined && header !== generateHeader(baseline, undefined, true)) {
     const preamble = extractHeaderPreamble(
       source.slice(main.start, main.end).replace(/\r\n/g, '\n')
     )
@@ -559,9 +571,9 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   // changed; translated blocks stay; a struct without its own block is added before the IIFE
   const iifeOpen = IIFE_OPEN.exec(stripped)
   for (const struct of plugin.structs) {
-    const text = generateStructDefinition(struct)
+    const text = generateStructDefinition(struct, undefined, true)
     const before = baseline.structs.find((s) => s.name === struct.name)
-    if (before !== undefined && generateStructDefinition(before) === text) continue
+    if (before !== undefined && generateStructDefinition(before, undefined, true) === text) continue
     const own = blocks.filter((b) => b.kind === 'struct' && b.structName === struct.name)
     const block = own.find((b) => b.lang === '') ?? own.find((b) => b.lang === 'en')
     if (block !== undefined) {

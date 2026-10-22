@@ -361,6 +361,7 @@ globalThis.__pwn = 1; /* Y
 globalThis.__pwn = 1; /* Y
  * @noteData X *\/
 globalThis.__pwn = 1; /* Y
+ * @noteRequire 1
  * @requiredAssets X *\/
 globalThis.__pwn = 1; /* Y
  *
@@ -372,6 +373,7 @@ globalThis.__pwn = 1; /* Y
 globalThis.__pwn = 1; /* Y
  * @type X *\/
 globalThis.__pwn = 1; /* Y
+ * @require 1
  * @option Option X *\/
 globalThis.__pwn = 1; /* Y
  * @value Value X *\/
@@ -400,6 +402,7 @@ globalThis.__pwn = 1; /* Y
 globalThis.__pwn = 1; /* Y
  * @off X *\/
 globalThis.__pwn = 1; /* Y
+ * @require 1
  * @default X *\/
 globalThis.__pwn = 1; /* Y
  *
@@ -411,6 +414,7 @@ globalThis.__pwn = 1; /* Y
 globalThis.__pwn = 1; /* Y
  * @type X *\/
 globalThis.__pwn = 1; /* Y
+ * @require 1
  * @option Option X *\/
 globalThis.__pwn = 1; /* Y
  * @value Value X *\/
@@ -436,6 +440,7 @@ globalThis.__pwn = 1; /* Y
 globalThis.__pwn = 1; /* Y
  * @dir X *\/
 globalThis.__pwn = 1; /* Y
+ * @require 1
  * @default X *\/
 globalThis.__pwn = 1; /* Y
  * @parent X *\/

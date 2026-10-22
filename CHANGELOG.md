@@ -19,6 +19,7 @@
 - Saving an imported plugin in raw mode writes an unedited file back byte-for-byte, keeps CRLF line endings and the byte order mark, rewrites only the annotation blocks that changed, and adds code only for parameters and commands added since loading.
 - Plugins with CRLF line endings, a Japanese block before the main block, or command text written before the arguments are read correctly.
 - Translated struct blocks (`/*~struct~Name:ja` and the like) are read as translations of their struct instead of as extra structs.
+- Raw mode keeps the `@require` and `@noteRequire` lines of an imported plugin when it rewrites a block.
 - Opening a plugin with a long run of spaces after a "custom code" or "main logic" comment no longer freezes the app.
 
 ### Changed

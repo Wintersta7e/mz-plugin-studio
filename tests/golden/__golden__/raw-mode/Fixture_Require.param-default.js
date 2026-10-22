@@ -12,6 +12,7 @@
  * @desc Picture shown by the command.
  * @type file
  * @dir img/pictures/
+ * @require 1
  * @default edited
  *
  * @param Opacity

@@ -220,12 +220,14 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Safe', function(args) {
  * @noteType Safe
  * @noteDir Safe
  * @noteData Safe
+ * @noteRequire 1
  * @requiredAssets Safe
  *
  * @param Safe
  * @text Text Safe
  * @desc Safe
  * @type Safe
+ * @require 1
  * @option Option Safe
  * @value Value Safe
  * @default Safe
@@ -241,12 +243,14 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Safe', function(args) {
  * @type Safe
  * @on Safe
  * @off Safe
+ * @require 1
  * @default Safe
  *
  * @arg ComboSafe
  * @text Text Safe
  * @desc Safe
  * @type Safe
+ * @require 1
  * @option Option Safe
  * @value Value Safe
  * @default Safe
@@ -262,6 +266,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Safe', function(args) {
  * @desc Safe
  * @type Safe
  * @dir Safe
+ * @require 1
  * @default Safe
  * @parent Safe
  *

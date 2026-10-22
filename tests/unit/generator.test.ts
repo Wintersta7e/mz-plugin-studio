@@ -614,6 +614,67 @@ var Legacy = {};
     expect(result).toContain(' * @param y\n')
     expect(result).toContain('/*~struct~Pos:ja\n * @param x\n * @text 横\n */')
   })
+
+  describe('note and require lines', () => {
+    const raw = `/*:
+ * @plugindesc Assets
+ *
+ * @noteParam Face
+ * @noteType file
+ * @noteDir img/faces/
+ * @noteData actors
+ * @noteRequire 1
+ *
+ * @param Picture
+ * @type file
+ * @dir img/pictures/
+ * @require 1
+ *
+ * @command Show
+ *
+ * @arg picture
+ * @type file
+ * @dir img/pictures/
+ * @require 1
+ */
+
+/*~struct~Slot:
+ * @param image
+ * @type file
+ * @dir img/pictures/
+ * @require 1
+ */
+`
+    const requireLines = (text: string): number =>
+      (text.match(/^ \* @(?:noteRequire|require) 1$/gm) ?? []).length
+
+    it('are kept byte for byte in blocks that did not change', () => {
+      const { opened, plugin } = open(raw)
+      plugin.meta.description = 'Edited'
+      const result = save(plugin, opened)
+      const struct = raw.slice(raw.indexOf('/*~struct~'))
+      expect(result.endsWith(struct)).toBe(true)
+      plugin.meta.description = opened.meta.description
+      plugin.structs[0].parameters[0].desc = 'Edited'
+      expect(save(plugin, opened).startsWith(raw.slice(0, raw.indexOf('/*~struct~')))).toBe(true)
+    })
+
+    it('are written again when their block is rewritten', () => {
+      const { opened, plugin } = open(raw)
+      plugin.meta.description = 'Edited'
+      plugin.structs[0].parameters[0].desc = 'Edited'
+      const result = save(plugin, opened)
+      expect(result).toContain('@plugindesc Edited')
+      expect(result).toContain(' * @noteData actors\n * @noteRequire 1\n')
+      expect(requireLines(result)).toBe(requireLines(raw))
+      expect(requireLines(raw)).toBe(4)
+    })
+
+    it('stay out of a plugin generated without raw mode', () => {
+      const { opened } = open(raw)
+      expect(requireLines(generatePlugin(opened))).toBe(0)
+    })
+  })
 })
 
 describe('generateHeaderOnly', () => {
