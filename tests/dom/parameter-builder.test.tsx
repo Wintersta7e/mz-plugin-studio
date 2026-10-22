@@ -12,7 +12,7 @@ import { savePluginToPath } from '../../src/main/ipc/plugin'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
-import { usePluginStore } from '../../src/renderer/src/stores'
+import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { createFakeApi } from '../helpers/fake-api'
@@ -172,5 +172,43 @@ describe('parameter export to a file', () => {
       message: `Access denied: ${target} was not chosen in a save dialog`
     })
     await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+})
+
+describe('parameter prompts that discard work', () => {
+  /** Renders the tab with every parameter selected; the message dialog answers Cancel. */
+  function renderSelected(): ReturnType<typeof vi.fn> {
+    const message = vi.fn(async () => 0)
+    window.api = createFakeApi({ dialog: { message } })
+    render(<ParameterBuilder />)
+    fireEvent.click(screen.getByRole('button', { name: 'Select All' }))
+    return message
+  }
+
+  it('deleting the selected parameters asks without a default', async () => {
+    const message = renderSelected()
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    const options = message.mock.calls[0][0]
+    expect(options.buttons).toEqual(['Cancel', 'Delete'])
+    expect(options).not.toHaveProperty('defaultId')
+    expect(options).not.toHaveProperty('cancelId')
+    expect(parameterNames()).toEqual(['Existing'])
+  })
+
+  it('overwriting a preset asks without a default', async () => {
+    const kept = { ...createEmptyParameter(), name: 'Kept' }
+    useSettingsStore.setState({ parameterPresets: { Mine: [kept] } })
+    const message = renderSelected()
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Presets' }), { key: 'Enter' })
+    fireEvent.click(screen.getByText('Save Selection as Preset...'))
+    fireEvent.change(screen.getByLabelText('Preset Name'), { target: { value: 'Mine' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    const options = message.mock.calls[0][0]
+    expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
+    expect(options).not.toHaveProperty('defaultId')
+    expect(options).not.toHaveProperty('cancelId')
+    expect(useSettingsStore.getState().parameterPresets).toEqual({ Mine: [kept] })
   })
 })

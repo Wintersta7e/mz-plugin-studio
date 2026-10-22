@@ -10,7 +10,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { savePluginFile } from '../../src/main/ipc/plugin'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
+import {
+  useHistoryStore,
+  usePluginStore,
+  useProjectStore,
+  useToastStore
+} from '../../src/renderer/src/stores'
 import { createEmptyPlugin, toBaseline } from '../../src/renderer/src/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 import type { MessageDialogOptions, SaveConflict } from '../../src/shared/ipc-types'
@@ -81,6 +86,18 @@ const pressSave = (): void => {
 const pressSaveAll = (): void => {
   fireEvent.keyDown(window, { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true })
 }
+
+const pressUndo = (): void => {
+  fireEvent.keyDown(window, { key: 'z', code: 'KeyZ', ctrlKey: true })
+}
+
+const pressRedo = (): void => {
+  fireEvent.keyDown(window, { key: 'Z', code: 'KeyZ', ctrlKey: true, shiftKey: true })
+}
+
+/** Waits for the app's delayed history record to hold `count` states of the tab. */
+const historyHolds = (count: number): Promise<void> =>
+  waitFor(() => expect(useHistoryStore.getState().past).toHaveLength(count))
 
 /** Lets a save that is not waiting on the test run to its end. */
 const settle = async (): Promise<void> => {
@@ -375,6 +392,37 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(toasts()[1]).toBe('success: Plugin saved')
     expect(toasts()[2]).toMatch(/^warning: Saved, but the file does not compile \(line \d+\): .+/)
     expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('let broken = ;')
+    expect(isDirty(id)).toBe(false)
+  })
+
+  it('undo after a save leaves the tab marked saved', async () => {
+    window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
+    const id = openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    await historyHolds(2)
+    pressSave()
+    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    expect(isDirty(id)).toBe(false)
+    pressUndo()
+    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(isDirty(id)).toBe(false)
+  })
+
+  it('redo after a save leaves the tab marked saved', async () => {
+    window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
+    const id = openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    await historyHolds(2)
+    pressUndo()
+    pressSave()
+    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    expect(isDirty(id)).toBe(false)
+    pressRedo()
+    expect(useHistoryStore.getState().future).toHaveLength(0)
     expect(isDirty(id)).toBe(false)
   })
 

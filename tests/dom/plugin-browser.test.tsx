@@ -40,4 +40,19 @@ describe('plugin browser', () => {
     const { plugin, baseByPluginId } = usePluginStore.getState()
     expect(baseByPluginId).toEqual({ [plugin.id]: { path, sha256 } })
   })
+
+  it('closing an unsaved tab asks without a default', async () => {
+    render(<PluginBrowser onClose={() => {}} />)
+    fireEvent.click(await screen.findByTitle(FILE))
+    await waitFor(() => expect(usePluginStore.getState().plugin.importedFrom).toBe(FILE))
+    const id = usePluginStore.getState().plugin.id
+    act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+    fireEvent.click(screen.getByRole('button', { name: `Close ${FILE.replace(/\.js$/, '')}` }))
+    await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
+    const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+    expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
+    expect(options).not.toHaveProperty('defaultId')
+    expect(options).not.toHaveProperty('cancelId')
+    expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual([id])
+  })
 })
