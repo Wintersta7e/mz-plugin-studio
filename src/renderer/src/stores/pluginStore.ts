@@ -87,7 +87,6 @@ interface PluginState {
   // State
   setDirty: (dirty: boolean) => void
   setSavedPath: (path: string | null) => void
-  resetPlugin: () => void
 }
 
 type PluginPersisted = Pick<
@@ -128,7 +127,8 @@ export const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
   })
 ]
 
-// Maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
+// This store's maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
+// The ui store's tab-keyed maps are cleared by its clearRawModeForPlugin.
 export const TAB_KEYED_MAPS = [
   'dirtyByPluginId',
   'savedPathsByPluginId',
@@ -696,15 +696,6 @@ export const usePluginStore = create<PluginState>()(
             state.plugin.id,
             savedPath
           )
-        })),
-      resetPlugin: () =>
-        set((state) => ({
-          plugin: createEmptyPlugin(),
-          openPlugins: [],
-          activePluginId: null,
-          isDirty: false,
-          savedPath: null,
-          ...filterTabMaps(state, () => false)
         }))
     }),
     definePersist<PluginState, PluginPersisted>({

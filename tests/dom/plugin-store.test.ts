@@ -376,21 +376,6 @@ describe('pluginStore CRUD operations', () => {
       expect(inOpenPlugins?.meta.version).toBe('2.0.0')
     })
   })
-
-  describe('resetPlugin', () => {
-    it('resets the full store to initial state', () => {
-      usePluginStore.getState().addParameter(makeParam('p1', 'alpha'))
-      expect(usePluginStore.getState().isDirty).toBe(true)
-
-      usePluginStore.getState().resetPlugin()
-      const state = usePluginStore.getState()
-      // After reset: empty plugin, no open plugins, not dirty
-      expect(state.plugin.parameters).toHaveLength(0)
-      expect(state.openPlugins).toHaveLength(0)
-      expect(state.activePluginId).toBeNull()
-      expect(state.isDirty).toBe(false)
-    })
-  })
 })
 
 describe('pluginStore baseline of an imported plugin', () => {
@@ -432,15 +417,13 @@ describe('pluginStore baseline of an imported plugin', () => {
     expect(baselines()).toEqual({})
   })
 
-  it('drops the baseline when its tab closes or the store resets', () => {
+  it('drops the baseline when its tab closes', () => {
     const alpha = importedPlugin('Alpha')
     const beta = importedPlugin('Beta')
     usePluginStore.getState().openPlugin(alpha)
     usePluginStore.getState().openPlugin(beta)
     usePluginStore.getState().closePlugin(alpha.id)
     expect(Object.keys(baselines())).toEqual([beta.id])
-    usePluginStore.getState().resetPlugin()
-    expect(baselines()).toEqual({})
   })
 
   it('saves the file text, file name and baseline but not the code body', () => {
