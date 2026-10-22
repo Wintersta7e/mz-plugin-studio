@@ -1,18 +1,20 @@
-// Export from the code preview with no project open. Behind `window.api` sit the main-process
-// save dialog and save-to-path functions, writing to a fresh temporary folder.
+// Export from the code preview with no project open, and the banner above the code. Behind
+// `window.api` sit the main-process save dialog and save-to-path functions, writing to a fresh
+// temporary folder.
 import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { usePluginStore, useToastStore } from '../../src/renderer/src/stores'
+import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
@@ -122,4 +124,59 @@ describe('code preview export with no project', () => {
       await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
+})
+
+describe('code preview banner', () => {
+  const FILE = 'Fixture_HandWritten.js'
+  const RELOAD = 'Reload from project'
+
+  /** Opens `file` as an imported tab, without its file text unless `withSource`. */
+  function openImported(file: string, { withSource }: { withSource: boolean }): void {
+    const { rawSource, ...rest } = loadFixture(file)
+    usePluginStore
+      .getState()
+      .openPlugin({ ...rest, importedFrom: file, ...(withSource && { rawSource }) })
+  }
+
+  /** The banner holding `text`. */
+  const bannerOf = async (text: string): Promise<HTMLElement> =>
+    (await screen.findByText(text)).parentElement as HTMLElement
+
+  const missingText = `This plugin's file text (${FILE}) is not loaded — plugins opened in an older version of the app did not keep it. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
+
+  it('names the remedy as a warning when the file text is not loaded', async () => {
+    window.api = createFakeApi()
+    useProjectStore.setState({ project: await window.api.project.load('/fixture/mz-project') })
+    openImported(FILE, { withSource: false })
+    render(<CodePreview />)
+    const banner = await bannerOf(missingText)
+    expect(banner).toHaveClass('bg-yellow-500/10', 'text-yellow-500')
+    expect(banner).not.toHaveClass('text-destructive')
+    const button = screen.getByRole('button', { name: RELOAD })
+    expect(button).toBeEnabled()
+    expect(button).not.toHaveAttribute('title')
+  })
+
+  it('without a project the reload button is disabled and says why', async () => {
+    window.api = createFakeApi()
+    openImported(FILE, { withSource: false })
+    render(<CodePreview />)
+    await bannerOf(missingText)
+    const button = screen.getByRole('button', { name: RELOAD })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('title', 'Open the project first.')
+  })
+
+  it('shows a save that raw mode refuses as an error', async () => {
+    window.api = createFakeApi()
+    openImported('Fixture_NoBlock.js', { withSource: true })
+    render(<CodePreview />)
+    act(() => usePluginStore.getState().updateMeta({ description: 'Edited description' }))
+    const banner = await bannerOf(
+      'Header changes cannot be saved: Fixture_NoBlock.js has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.'
+    )
+    expect(banner).toHaveClass('bg-destructive/10', 'text-destructive')
+    expect(banner).not.toHaveClass('text-yellow-500')
+    expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
+  })
 })

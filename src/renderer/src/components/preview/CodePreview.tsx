@@ -117,8 +117,9 @@ export function CodePreview() {
   }, [deferredPlugin, deferredRawMode, deferredBaseline])
   // The diff shows the code a save would write
   const code = output.ok ? output.code : ''
-  const banner = isSourceMissing(deferredPlugin)
-    ? `The original file of this plugin is not loaded (${deferredPlugin.importedFrom}). Raw mode cannot save it; turning raw mode off saves regenerated code instead.`
+  const sourceMissing = isSourceMissing(deferredPlugin)
+  const banner = sourceMissing
+    ? `This plugin's file text (${deferredPlugin.importedFrom}) is not loaded — plugins opened in an older version of the app did not keep it. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
     : output.ok
       ? null
       : output.message
@@ -482,9 +483,16 @@ export function CodePreview() {
       )}
 
       {banner !== null && (
-        <div className="flex items-center gap-3 border-b border-border bg-destructive/10 p-3 text-sm text-destructive">
+        <div
+          className={cn(
+            'flex items-center gap-3 border-b border-border p-3 text-sm',
+            sourceMissing
+              ? 'bg-yellow-500/10 text-yellow-500'
+              : 'bg-destructive/10 text-destructive'
+          )}
+        >
           <span className="flex-1">{banner}</span>
-          {isSourceMissing(deferredPlugin) && (
+          {sourceMissing && (
             <Button
               variant="outline"
               size="sm"
