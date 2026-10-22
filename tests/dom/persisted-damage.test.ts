@@ -310,6 +310,35 @@ describe('damaged saved state', () => {
     ])
   })
 
+  it('a full storage quota is logged once per store, counted after that, and each store reports it', async () => {
+    const { useSettingsStore, useToastStore, log } = await loadSettings()
+    const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
+    const full = () =>
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('full', 'QuotaExceededError')
+      })
+    vi.mocked(log.error).mockClear()
+    full()
+    for (let size = 0; size < 50; size++) useSettingsStore.getState().setEditorFontSize(10 + size)
+    expect(log.error).toHaveBeenCalledTimes(1)
+    usePluginStore.getState().setDirty(true)
+    expect(log.error).toHaveBeenCalledTimes(2)
+    expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
+      expect.stringContaining('recent changes to settings were not saved'),
+      expect.stringContaining('recent changes to open plugins were not saved')
+    ])
+
+    vi.mocked(Storage.prototype.setItem).mockRestore()
+    useSettingsStore.getState().setTheme('light')
+    expect(log.warn).toHaveBeenCalledWith(
+      'mz-plugin-studio-settings could not be saved 49 more times while storage was full'
+    )
+    full()
+    useSettingsStore.getState().setTheme('dark')
+    expect(log.error).toHaveBeenCalledTimes(3)
+    expect(useToastStore.getState().toasts).toHaveLength(3)
+  })
+
   it('a full storage quota is logged and reported once, and set does not throw', async () => {
     localStorage.setItem('mz-plugin-studio-ui.backup', '{"state":')
     const { useSettingsStore, useToastStore, log } = await loadSettings()

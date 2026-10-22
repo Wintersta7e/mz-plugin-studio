@@ -44,7 +44,8 @@ export interface RestoreReportEntry {
 }
 
 let pendingReport: RestoreReportEntry[] = []
-let quotaReported = false
+// Writes of each store that failed on a full quota since its last successful write
+const quotaFailures = new Map<PersistedKey, number>()
 
 function report(
   name: PersistedKey,
@@ -218,11 +219,19 @@ function guardedStorage<P>(
     setItem: (key, value) => {
       try {
         localStorage.setItem(key, JSON.stringify(value))
+        const failed = quotaFailures.get(name)
+        if (failed === undefined) return
+        quotaFailures.delete(name)
+        if (failed > 1) {
+          log.warn(`${name} could not be saved ${failed - 1} more times while storage was full`)
+        }
       } catch (error) {
         if (!isQuotaError(error)) throw error
+        const failures = (quotaFailures.get(name) ?? 0) + 1
+        quotaFailures.set(name, failures)
+        // every change writes, so only the first failure is logged; the rest are counted
+        if (failures > 1) return
         log.error(`Storage is full; ${name} was not saved:`, error)
-        if (quotaReported) return
-        quotaReported = true
         const backups = backupKeys()
         useToastStore.getState().addToast({
           type: 'error',
