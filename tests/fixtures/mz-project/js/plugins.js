@@ -10,5 +10,7 @@ var $plugins =
 {"name":"Fixture_Require","status":true,"description":"Fixture plugin that declares the assets it needs.","parameters":{"Picture":"FixturePicture","Opacity":"255","Caption":"Fixture","Anchor":"{\"x\":\"408\",\"y\":\"312\"}"}},
 {"name":"Fixture_NonAscii","status":true,"description":"Fixture plugin with non-ASCII text — café, naïve, 日本語 ★","parameters":{"Pause":"30","Greeting":"こんにちは","Symbol":"{\"char\":\"★\",\"size\":\"28\"}"}},
 {"name":"Fixture_Dependent","status":true,"description":"Fixture plugin that builds on Fixture_HandWritten.","parameters":{"Delay":"60","Badge":"New","Placement":"{\"x\":\"16\",\"y\":\"16\"}"}},
-{"name":"Fixture_Generated","status":true,"description":"Generated fixture plugin","parameters":{"Speed":"5","Label":"Hello","Points":"[]"}}
+{"name":"Fixture_Generated","status":true,"description":"Generated fixture plugin","parameters":{"Speed":"5","Label":"Hello","Points":"[]"}},
+{"name":"Fixture_JaOnly","status":true,"description":"日本語のブロックだけを持つフィクスチャ","parameters":{"Interval":"10","Message":"歩きました"}},
+{"name":"Fixture_NoBlock","status":true,"description":"","parameters":{}}
 ];

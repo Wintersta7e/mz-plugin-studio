@@ -1,0 +1,24 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_NoBlock",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "// Fixture_NoBlock.js\n// A plugin without an annotation block: the Plugin Manager shows no description or parameters.\n\n(() => {\n    'use strict';\n\n    let flashes = 0;\n\n    PluginManager.registerCommand('Fixture_NoBlock', 'Flash', () => {\n        flashes++;\n        $gameScreen.startFlash([255, 255, 255, 128], 8);\n    });\n\n    const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;\n    Game_System.prototype.onAfterLoad = function() {\n        _Game_System_onAfterLoad.call(this);\n        flashes = 0;\n    };\n})();",
+  "customCode": "const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;\n    Game_System.prototype.onAfterLoad = function() {\n        _Game_System_onAfterLoad.call(this);\n        flashes = 0;\n    };\n})();",
+  "rawSource": "// Fixture_NoBlock.js\n// A plugin without an annotation block: the Plugin Manager shows no description or parameters.\n\n(() => {\n    'use strict';\n\n    let flashes = 0;\n\n    PluginManager.registerCommand('Fixture_NoBlock', 'Flash', () => {\n        flashes++;\n        $gameScreen.startFlash([255, 255, 255, 128], 8);\n    });\n\n    const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;\n    Game_System.prototype.onAfterLoad = function() {\n        _Game_System_onAfterLoad.call(this);\n        flashes = 0;\n    };\n})();\n"
+}

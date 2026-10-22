@@ -1,0 +1,61 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_JaOnly",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Interval",
+      "text": "間隔",
+      "desc": "メッセージを表示する歩数",
+      "type": "number",
+      "default": 10,
+      "min": 1,
+      "max": 99
+    },
+    {
+      "id": "<id:3>",
+      "name": "Message",
+      "text": "メッセージ",
+      "desc": "表示するメッセージ",
+      "type": "string",
+      "default": "歩きました"
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:4>",
+      "name": "ResetSteps",
+      "text": "歩数リセット",
+      "desc": "数えた歩数を戻します。",
+      "args": [
+        {
+          "id": "<id:5>",
+          "name": "steps",
+          "text": "歩数",
+          "desc": "新しい歩数",
+          "type": "number",
+          "default": 0,
+          "min": 0
+        }
+      ]
+    }
+  ],
+  "structs": [],
+  "codeBody": "(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_JaOnly');\n    const interval = Number(params['Interval'] || 10);\n    const message = String(params['Message'] || '');\n    let steps = 0;\n\n    PluginManager.registerCommand('Fixture_JaOnly', 'ResetSteps', args => {\n        steps = Number(args.steps || 0);\n    });\n\n    const _Game_Party_increaseSteps = Game_Party.prototype.increaseSteps;\n    Game_Party.prototype.increaseSteps = function() {\n        _Game_Party_increaseSteps.call(this);\n        steps++;\n        if (steps % interval === 0) {\n            $gameMessage.add(message);\n        }\n    };\n})();",
+  "customCode": "const _Game_Party_increaseSteps = Game_Party.prototype.increaseSteps;\nGame_Party.prototype.increaseSteps = function() {\n    _Game_Party_increaseSteps.call(this);\n    steps++;\n    if (steps % interval === 0) {\n        $gameMessage.add(message);\n    }\n};",
+  "rawSource": "/*:ja\n * @target MZ\n * @plugindesc 日本語のブロックだけを持つフィクスチャ\n * @author Example Author\n * @url https://example.invalid/Fixture_JaOnly\n *\n * @help Fixture_JaOnly.js\n *\n * 歩数を数え、一定の歩数ごとにメッセージを表示します。\n *\n * @param Interval\n * @text 間隔\n * @desc メッセージを表示する歩数\n * @type number\n * @min 1\n * @max 99\n * @default 10\n *\n * @param Message\n * @text メッセージ\n * @desc 表示するメッセージ\n * @type string\n * @default 歩きました\n *\n * @command ResetSteps\n * @text 歩数リセット\n * @desc 数えた歩数を戻します。\n *\n * @arg steps\n * @text 歩数\n * @desc 新しい歩数\n * @type number\n * @min 0\n * @default 0\n */\n\n(() => {\n    'use strict';\n\n    const params = PluginManager.parameters('Fixture_JaOnly');\n    const interval = Number(params['Interval'] || 10);\n    const message = String(params['Message'] || '');\n    let steps = 0;\n\n    PluginManager.registerCommand('Fixture_JaOnly', 'ResetSteps', args => {\n        steps = Number(args.steps || 0);\n    });\n\n    const _Game_Party_increaseSteps = Game_Party.prototype.increaseSteps;\n    Game_Party.prototype.increaseSteps = function() {\n        _Game_Party_increaseSteps.call(this);\n        steps++;\n        if (steps % interval === 0) {\n            $gameMessage.add(message);\n        }\n    };\n})();\n"
+}

@@ -24,6 +24,8 @@ const PLUGIN_DIR = 'js/plugins/'
 const HAND_WRITTEN = 'Fixture_HandWritten.js'
 const CRLF_TWIN = 'Fixture_HandWritten_CRLF.js'
 const BOM_FILE = 'Fixture_Bom.js'
+const JA_ONLY = 'Fixture_JaOnly.js'
+const NO_BLOCK = 'Fixture_NoBlock.js'
 const PLUGIN_FILES = [
   HAND_WRITTEN,
   CRLF_TWIN,
@@ -36,6 +38,8 @@ const PLUGIN_FILES = [
   'Fixture_NonAscii.js',
   'Fixture_Dependent.js',
   'Fixture_Generated.js',
+  JA_ONLY,
+  NO_BLOCK,
   '_Fixture_Ignored.js'
 ]
 const PLUGIN_STEMS = PLUGIN_FILES.map((f) => f.replace(/\.js$/, ''))
@@ -248,7 +252,8 @@ const ROWS: Row[] = [
           }
         : { file, property: 'no BOM', holds: (_t, b) => !b.subarray(0, 3).equals(BOM) }
   ),
-  ...PLUGIN_FILES.filter((f) => f !== CRLF_TWIN).map(
+  // The two files without a bare or `/*:en` block have no main block to carry them.
+  ...PLUGIN_FILES.filter((f) => ![CRLF_TWIN, JA_ONLY, NO_BLOCK].includes(f)).map(
     (file): Row => ({
       file: plugin(file),
       property: 'header tags, number and string params, command argument, referenced struct',
@@ -452,6 +457,33 @@ const ROWS: Row[] = [
     holds: (t) =>
       t.startsWith('/*:\n * @target MZ\n * @plugindesc Generated fixture plugin\n') &&
       t.includes("PluginManager.registerCommand(PLUGIN_NAME, 'ShowLabel'")
+  },
+  {
+    file: plugin(JA_ONLY),
+    property: 'only /*:ja',
+    holds: (t) => {
+      const blocks = headerBlocks(t)
+      return blocks.length === 1 && blocks[0].name === 'ja' && params(blocks[0].body).length >= 2
+    }
+  },
+  {
+    file: plugin(JA_ONLY),
+    property: 'IIFE reading PluginManager.parameters',
+    holds: (t) =>
+      new RegExp(`^\\s*${IIFE_OPEN.source}`).test(code(t)) &&
+      code(t).includes('PluginManager.parameters(')
+  },
+  {
+    file: plugin(NO_BLOCK),
+    property: 'no annotation block',
+    holds: (t) => !t.includes('/*:') && !t.includes('/*~struct~')
+  },
+  {
+    file: plugin(NO_BLOCK),
+    property: 'IIFE with one registerCommand',
+    holds: (t) =>
+      new RegExp(`^\\s*${IIFE_OPEN.source}`).test(code(t).replace(/^(?:\/\/.*\n)+/, '')) &&
+      t.split('PluginManager.registerCommand(').length === 2
   },
   {
     file: plugin('_Fixture_Ignored.js'),
