@@ -15,6 +15,8 @@ export default defineConfig({
   test: {
     globals: true,
     update: 'none',
+    // Gate logs are read by the count lines tests print.
+    silent: false,
     // Floors live in scripts/check-coverage.mjs, so a golden-only run never meets suite floors.
     coverage: {
       provider: 'v8',
