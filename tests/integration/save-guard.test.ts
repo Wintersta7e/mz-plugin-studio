@@ -210,6 +210,15 @@ describe('the save guard', () => {
     expect(result).toMatchObject({ syntaxWarning: { line: 1 } })
   })
 
+  it('writes code nested too deeply for the compiler to check', async () => {
+    const target = await projectFile(COMPILES)
+    const base = { path: target, sha256: sha(COMPILES) }
+    const deep = '(function(){'.repeat(600) + '})()'.repeat(600)
+    const result = await savePluginFile(tmp, 'Foo.js', deep, guard(base))
+    await expectWritten(result, target, deep)
+    expect(result).not.toHaveProperty('syntaxWarning')
+  })
+
   it('force skips exactly the compile check', async () => {
     const target = await projectFile(COMPILES)
     const base = { path: target, sha256: sha(COMPILES) }
