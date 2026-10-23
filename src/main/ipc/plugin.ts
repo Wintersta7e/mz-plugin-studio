@@ -1,6 +1,6 @@
 import { type IpcMain, type IpcMainInvokeEvent } from 'electron'
-import { createHash } from 'crypto'
-import { readFile, readdir, writeFile, mkdir } from 'fs/promises'
+import { createHash, randomBytes } from 'crypto'
+import { mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'fs/promises'
 import path, { join, dirname } from 'path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
@@ -48,6 +48,54 @@ async function readExisting(target: string): Promise<Buffer | null> {
   }
 }
 
+// Windows returns these for a moment while antivirus or the indexer holds a newly written file
+const RENAME_LOCKED = new Set(['EPERM', 'EACCES', 'EBUSY'])
+const RENAME_RETRY_MS = 3000
+
+/** Renames `from` over `to`, retrying with a growing wait while the rename is locked */
+async function renameRetrying(from: string, to: string): Promise<void> {
+  const start = Date.now()
+  for (let wait = 10; ; wait = Math.min(wait + 10, 100)) {
+    try {
+      return await rename(from, to)
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code ?? ''
+      if (!RENAME_LOCKED.has(code) || Date.now() - start >= RENAME_RETRY_MS) throw error
+      await new Promise((resolve) => setTimeout(resolve, wait))
+    }
+  }
+}
+
+/**
+ * Replaces `target` with `bytes` through a temporary file beside it, so a write that fails
+ * part-way leaves the file as it was. An existing target keeps its permissions, and a link is
+ * written through to the file it names.
+ */
+async function replaceFile(target: string, bytes: Uint8Array, exists: boolean): Promise<void> {
+  const dest = exists ? await realpath(target) : target
+  // On Windows a mode can only mark a file read-only, which would block the rename
+  const mode = exists && process.platform !== 'win32' ? (await stat(dest)).mode & 0o7777 : null
+  const suffix = `${process.pid}-${randomBytes(4).toString('hex')}`
+  const temp = join(dirname(dest), `.${path.basename(dest)}.${suffix}.tmp`)
+  try {
+    const handle = await open(temp, 'wx')
+    try {
+      await handle.writeFile(bytes)
+      if (mode !== null) await handle.chmod(mode)
+      // On disk before the rename, so a power loss cannot leave the name on an empty file
+      await handle.sync()
+    } finally {
+      await handle.close()
+    }
+    await renameRetrying(temp, dest)
+  } catch (error) {
+    await rm(temp, { force: true }).catch((cleanup: unknown) =>
+      log.warn('[plugin] could not remove temporary file', temp, cleanup)
+    )
+    throw error
+  }
+}
+
 /**
  * Writes `content` to `target` unless `guard` finds a reason to ask first; then nothing is
  * written and the result names the conflict and the sha256 of the bytes on disk. Without a
@@ -90,7 +138,7 @@ export async function writeGuarded(
   }
   if (disk === null) await mkdir(dirname(target), { recursive: true })
   const bytes = Buffer.from(content, 'utf-8')
-  await writeFile(target, bytes)
+  await replaceFile(target, bytes, disk !== null)
   return {
     success: true,
     path: target,

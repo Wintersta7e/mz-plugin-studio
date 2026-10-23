@@ -3,10 +3,22 @@
 // when it is the tab's own file, unchanged since the tab read or saved it, and still compiles
 // unless the user chose to break it; otherwise nothing is written and the result says why.
 import { createHash } from 'crypto'
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
+import {
+  chmod,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  symlink,
+  writeFile
+} from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { recordWriteGrant } from '../../src/main/file-access'
 import {
   loadPluginFile,
@@ -16,6 +28,37 @@ import {
   savePluginToPath
 } from '../../src/main/ipc/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../src/shared/ipc-types'
+import type * as FsPromises from 'fs/promises'
+
+// A full disk: while set, every write of a file's bytes stores only the first half, then fails
+const disk = vi.hoisted(() => ({ full: false }))
+
+vi.mock('fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof FsPromises>()
+  const half = (data: any): Buffer => {
+    const bytes = Buffer.from(data)
+    return bytes.subarray(0, Math.floor(bytes.length / 2))
+  }
+  const noSpace = (): Error =>
+    Object.assign(new Error('ENOSPC: no space left on device, write'), { code: 'ENOSPC' })
+  const writeFile = async (file: any, data: any, options?: any): Promise<void> => {
+    if (!disk.full) return actual.writeFile(file, data, options)
+    await actual.writeFile(file, half(data), options)
+    throw noSpace()
+  }
+  const open = async (...args: Parameters<typeof actual.open>): ReturnType<typeof actual.open> => {
+    const handle = await actual.open(...args)
+    if (!disk.full) return handle
+    const write = handle.writeFile.bind(handle)
+    return Object.assign(handle, {
+      writeFile: async (data: any, options?: any): Promise<void> => {
+        await write(half(data), options)
+        throw noSpace()
+      }
+    })
+  }
+  return { ...actual, writeFile, open, rename: vi.fn(actual.rename) }
+})
 
 let tmp: string
 let cases = 0
@@ -233,6 +276,69 @@ describe('the save guard', () => {
     }
     expect(await readFile(target, 'utf8')).toBe('A')
     cases++
+  })
+})
+
+describe('replacing a file', () => {
+  const pluginsFolder = (): Promise<string[]> => readdir(join(tmp, 'js', 'plugins'))
+  const unchanged = (target: string): SaveGuard => guard({ path: target, sha256: sha(COMPILES) })
+
+  afterEach(() => {
+    disk.full = false
+    vi.mocked(rename).mockClear()
+  })
+
+  it('leaves the file as it was when the disk fills mid-write', async () => {
+    const target = await projectFile(COMPILES)
+    disk.full = true
+    const save = savePluginFile(tmp, 'Foo.js', 'var b = 2;\n'.repeat(100), unchanged(target))
+    await expect(save).rejects.toMatchObject({ code: 'ENOSPC' })
+    disk.full = false
+    expect(await readFile(target, 'utf8')).toBe(COMPILES)
+    expect(await pluginsFolder()).toEqual(['Foo.js'])
+    cases++
+  })
+
+  it('retries a rename the system refuses for a moment', async () => {
+    const target = await projectFile(COMPILES)
+    const locked = Object.assign(new Error('EPERM: operation not permitted, rename'), {
+      code: 'EPERM'
+    })
+    vi.mocked(rename).mockRejectedValueOnce(locked).mockRejectedValueOnce(locked)
+    await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+    expect(rename).toHaveBeenCalledTimes(3)
+    expect(await pluginsFolder()).toEqual(['Foo.js'])
+  })
+
+  it('leaves the file as it was and no temporary file when the rename fails', async () => {
+    const target = await projectFile(COMPILES)
+    const across = Object.assign(new Error('EXDEV: cross-device link not permitted, rename'), {
+      code: 'EXDEV'
+    })
+    vi.mocked(rename).mockRejectedValueOnce(across)
+    const save = savePluginFile(tmp, 'Foo.js', 'B', unchanged(target))
+    await expect(save).rejects.toMatchObject({ code: 'EXDEV' })
+    expect(await readFile(target, 'utf8')).toBe(COMPILES)
+    expect(await pluginsFolder()).toEqual(['Foo.js'])
+    cases++
+  })
+
+  it("keeps the file's permissions", async () => {
+    const target = await projectFile(COMPILES)
+    await chmod(target, 0o640)
+    await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+    expect((await stat(target)).mode & 0o777).toBe(0o640)
+  })
+
+  it('writes through a link to the file it names', async () => {
+    const target = await projectFile(null)
+    const shared = join(tmp, 'Shared.js')
+    await writeFile(shared, COMPILES)
+    await mkdir(join(tmp, 'js', 'plugins'), { recursive: true })
+    await symlink(shared, target)
+    await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+    expect((await lstat(target)).isSymbolicLink()).toBe(true)
+    expect(await readFile(shared, 'utf8')).toBe('B')
   })
 })
 
