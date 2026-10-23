@@ -180,17 +180,24 @@ export async function offerReloadFromProject(projectPath: string): Promise<void>
     log.warn('[reload] could not list the plugins of', projectPath, error)
     return
   }
-  const ids = sourceMissingTabs()
-    .filter((p) => p.importedFrom !== undefined && files.has(p.importedFrom))
-    .map((p) => p.id)
-  if (ids.length === 0) return
-  const plugins = ids.length === 1 ? '1 plugin' : `${ids.length} plugins`
+  const tabs = sourceMissingTabs().filter(
+    (p) => p.importedFrom !== undefined && files.has(p.importedFrom)
+  )
+  if (tabs.length === 0) return
+  // Naming the tabs and the folder makes clicking the button the consent to reload them from it
+  const names = tabs.map((p) => p.importedFrom)
+  const named =
+    names.length > 3
+      ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`
+      : names.join(', ')
+  const folder = projectPath.split(/[\\/]/).filter(Boolean).pop() ?? projectPath
+  const ids = tabs.map((p) => p.id)
   useToastStore.getState().addToast({
     type: 'info',
-    message: `Raw mode cannot save ${plugins} open in tabs until reloaded: the file text is not loaded.`,
+    message: `Raw mode cannot save ${named} until reloaded: the file text is not loaded. The project folder ${folder} has ${tabs.length === 1 ? 'this file' : 'these files'}.`,
     duration: 0,
     action: {
-      label: `Reload ${plugins} from this project`,
+      label: `Reload ${named} from ${folder}`,
       run: () => void reloadAllFromProject(ids)
     }
   })

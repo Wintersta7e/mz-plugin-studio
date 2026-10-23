@@ -2,6 +2,7 @@
 // naming the folder and the reason, and leaves the project store's error set. A project that
 // opens offers to reload the imported tabs whose file text is not loaded in one action.
 import { readFileSync } from 'fs'
+import { basename } from 'path'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
@@ -122,8 +123,14 @@ describe(
       return stale.id
     }
 
-    /** Renders the app over the fixture project, whose plugin folder lists `FILES`, and opens it. */
-    async function openFixtureProject(answers: number[] = []): Promise<void> {
+    const FOLDER_NAME = basename(PROJECT)
+    const RELOAD = `Reload ${FILES.join(', ')} from ${FOLDER_NAME}`
+
+    /** Renders the app over the fixture project, whose plugin folder lists `listed`, and opens it. */
+    async function openFixtureProject(
+      answers: number[] = [],
+      listed = [...FILES, 'Fixture_JaOnly.js']
+    ): Promise<void> {
       const project = await createFakeApi().project.load(PROJECT)
       window.api = createMainApi({
         answers,
@@ -133,7 +140,7 @@ describe(
             validate: vi.fn(async () => ({ valid: true })),
             load: vi.fn(async () => ({ ...project, path: PROJECT }))
           },
-          plugin: { list: vi.fn(async () => [...FILES, 'Fixture_JaOnly.js']) }
+          plugin: { list: vi.fn(async () => listed) }
         }
       })
       render(<App />)
@@ -158,9 +165,7 @@ describe(
       const ids = FILES.map((file) => openStaleTab(file))
       const elsewhere = openStaleTab(FILES[0], 'Fixture_Elsewhere.js')
       await openFixtureProject()
-      fireEvent.click(
-        await screen.findByRole('button', { name: 'Reload 2 plugins from this project' })
-      )
+      fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
       await waitFor(() => {
         for (const [i, id] of ids.entries()) expect(tab(id)?.rawSource).toBe(textOf(FILES[i]))
       })
@@ -178,9 +183,7 @@ describe(
       const [clean, edited] = FILES.map((file) => openStaleTab(file))
       act(() => usePluginStore.getState().updateMeta({ description: 'Edited before reload' }))
       await openFixtureProject([0])
-      fireEvent.click(
-        await screen.findByRole('button', { name: 'Reload 2 plugins from this project' })
-      )
+      fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
       await waitFor(() => expect(tab(clean)?.rawSource).toBe(textOf(FILES[0])))
       await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
       const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
@@ -203,7 +206,29 @@ describe(
       openStaleTab(FILES[0], 'Fixture_Elsewhere.js')
       await openFixtureProject()
       await waitFor(() => expect(window.api.plugin.list).toHaveBeenCalledWith(PROJECT))
-      expect(screen.queryByRole('button', { name: /plugins? from this project/ })).toBeNull()
+      await act(async () => {})
+      expect(useToastStore.getState().toasts).toEqual([])
+    })
+
+    it('the notice names the project folder and each tab it would reload', async () => {
+      for (const file of FILES) openStaleTab(file)
+      await openFixtureProject()
+      await screen.findByRole('button', { name: RELOAD })
+      expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
+        `Raw mode cannot save ${FILES.join(', ')} until reloaded: the file text is not loaded. ` +
+          `The project folder ${FOLDER_NAME} has these files.`
+      ])
+    })
+
+    it('the notice names three tabs and counts the rest', async () => {
+      const files = [...FILES, 'Fixture_JaOnly.js', 'Fixture_NoIife.js', 'Fixture_Require.js']
+      for (const file of files) openStaleTab(file)
+      await openFixtureProject([], files)
+      const named = `${files.slice(0, 3).join(', ')} and 2 more`
+      await screen.findByRole('button', { name: `Reload ${named} from ${FOLDER_NAME}` })
+      expect(useToastStore.getState().toasts[0].message).toMatch(
+        new RegExp(`^Raw mode cannot save ${named} until`)
+      )
     })
   }
 )

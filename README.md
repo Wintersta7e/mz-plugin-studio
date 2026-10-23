@@ -49,7 +49,7 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
     confirmed.
 - **Upgrading from 1.6.x** ([details](./docs/USER_GUIDE.md#upgrading-from-16x)):
   - Imported plugin tabs opened in 1.6.x have no file text, and raw mode refuses to save them
-    until you open the project and click **Reload N plugins from this project** in the notice, or
+    until you open the project and click **Reload** in the notice that names them, or
     **Reload from project** in each such tab.
   - Plugin tabs saved in 1.6.x cannot confirm their file is unchanged: **Save All** leaves them
     unsaved until one **Ctrl+S** of each, whose prompt asks before replacing the file.
