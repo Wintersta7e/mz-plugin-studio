@@ -53,12 +53,11 @@ function openTab(name?: string, description?: string): string {
 /** Opens `file` of `project` as the plugin browser does: the tab and the file it was read from. */
 async function openFromProject(project: string, file: string): Promise<string> {
   const loaded = await window.api.plugin.load(project, file)
-  act(() => {
-    usePluginStore.getState().openPlugin(loaded.plugin)
+  act(() =>
     usePluginStore
       .getState()
-      .setBase(loaded.plugin.id, { path: loaded.path, sha256: loaded.sha256 })
-  })
+      .openPlugin(loaded.plugin, { path: loaded.path, sha256: loaded.sha256 })
+  )
   return loaded.plugin.id
 }
 
@@ -107,6 +106,18 @@ const settle = async (): Promise<void> => {
 }
 
 const toasts = (): string[] => useToastStore.getState().toasts.map((t) => `${t.type}: ${t.message}`)
+
+/** How many times `run` writes the open plugins to storage. */
+async function pluginWrites(run: () => unknown): Promise<number> {
+  const setItem = vi.spyOn(Storage.prototype, 'setItem')
+  try {
+    await run()
+    await settle()
+    return setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin').length
+  } finally {
+    setItem.mockRestore()
+  }
+}
 
 const plugin = (): PluginDefinition => usePluginStore.getState().plugin
 
@@ -250,6 +261,34 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
     setItem.mockRestore()
     expect(writes).toHaveLength(1)
+  })
+
+  it('one undo step and one redo step each write the open plugins to storage once', async () => {
+    window.api = createMainApi()
+    openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    await historyHolds(2)
+    await settle()
+    expect(await pluginWrites(pressUndo)).toBe(1)
+    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(isDirty(plugin().id)).toBe(true)
+    expect(await pluginWrites(pressRedo)).toBe(1)
+    expect(useHistoryStore.getState().future).toHaveLength(0)
+  })
+
+  it('one reload writes the open plugins to storage once', async () => {
+    const project = await copyProject()
+    window.api = createMainApi()
+    await openProject(project)
+    const id = await openFromProject(project, FILE)
+    let reloaded = false
+    const writes = await pluginWrites(async () => {
+      reloaded = await act(() => reloadFromProject(id))
+    })
+    expect(reloaded).toBe(true)
+    expect(writes).toBe(1)
   })
 
   it.each([

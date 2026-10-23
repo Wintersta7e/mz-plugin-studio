@@ -259,8 +259,7 @@ function App() {
             isUndoRedoRef.current = true
             // Restore rawSource from current plugin since history strips it to save memory
             const currentRawSource = usePluginStore.getState().plugin.rawSource
-            setPlugin(prev.rawSource ? prev : { ...prev, rawSource: currentRawSource })
-            usePluginStore.getState().setDirty(true)
+            setPlugin(prev.rawSource ? prev : { ...prev, rawSource: currentRawSource }, true)
           }
           break
         }
@@ -269,8 +268,7 @@ function App() {
           if (next) {
             isUndoRedoRef.current = true
             const currentRawSource = usePluginStore.getState().plugin.rawSource
-            setPlugin(next.rawSource ? next : { ...next, rawSource: currentRawSource })
-            usePluginStore.getState().setDirty(true)
+            setPlugin(next.rawSource ? next : { ...next, rawSource: currentRawSource }, true)
           }
           break
         }

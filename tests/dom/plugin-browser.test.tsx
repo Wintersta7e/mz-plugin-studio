@@ -30,10 +30,15 @@ describe('plugin browser', () => {
     await rm(dirname(project), { recursive: true, force: true })
   })
 
-  it('opening a plugin records the file it was read from', async () => {
+  it('opening a plugin records the file it was read from in one storage write', async () => {
     render(<PluginBrowser onClose={() => {}} />)
-    fireEvent.click(await screen.findByTitle(FILE))
+    const row = await screen.findByTitle(FILE)
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    fireEvent.click(row)
     await waitFor(() => expect(usePluginStore.getState().plugin.importedFrom).toBe(FILE))
+    const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
+    setItem.mockRestore()
+    expect(writes).toHaveLength(1)
     const path = join(project, 'js', 'plugins', FILE)
     const sha256 = createHash('sha256')
       .update(await readFile(path))

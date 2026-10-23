@@ -44,12 +44,10 @@ describe('downgrade to v1.6.0', () => {
     const file = 'Fixture_HandWritten.js'
     const text = readFileSync(fixturePath('js', 'plugins', file), 'utf-8')
     const plugin = current['mz-plugin-studio-plugin'].getState() as unknown as {
-      openPlugin(def: PluginDefinition): void
-      setBase(id: string, base: FileBase): void
+      openPlugin(def: PluginDefinition, base: FileBase): void
     }
     const opened = { ...PluginParser.parsePlugin(text, file), importedFrom: file }
-    plugin.openPlugin(opened)
-    plugin.setBase(opened.id, { path: fixturePath('js', 'plugins', file), sha256: 'ab' })
+    plugin.openPlugin(opened, { path: fixturePath('js', 'plugins', file), sha256: 'ab' })
     const savedPaths = current['mz-plugin-studio-plugin'].getState().savedPathsByPluginId as Record<
       string,
       string

@@ -141,9 +141,10 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
   try {
     const file = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
     const parsed = await window.api.plugin.parse(file.content)
-    const store = usePluginStore.getState()
-    store.reattachSource(pluginId, file.content, parsed, { keepTab })
-    store.setBase(pluginId, { path: file.path, sha256: file.sha256 })
+    usePluginStore.getState().reattachSource(pluginId, file.content, parsed, {
+      keepTab,
+      base: { path: file.path, sha256: file.sha256 }
+    })
     return true
   } catch (error) {
     log.error('[reload]', path, error)

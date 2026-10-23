@@ -485,6 +485,7 @@ describe('pluginStore file text of an imported plugin', () => {
       importedFrom: 'Alpha.js',
       meta: { ...parsed.meta, name: 'Alpha' }
     }
+    const base = { path: '/p/js/plugins/Alpha.js', sha256: 'on disk' }
 
     /** Opens the tab without file text, edited, then reattaches `text` to it. */
     function reattach(active: boolean, keepTab: boolean): void {
@@ -492,8 +493,15 @@ describe('pluginStore file text of an imported plugin', () => {
       usePluginStore.getState().openPlugin(missing)
       usePluginStore.getState().updateMeta({ description: 'Edited' })
       if (!active) usePluginStore.getState().openPlugin(other)
-      usePluginStore.getState().reattachSource(missing.id, text, parsed, { keepTab })
+      usePluginStore.getState().reattachSource(missing.id, text, parsed, { keepTab, base })
     }
+
+    it('keeping or replacing the tab records the file it was read from', () => {
+      for (const keepTab of [false, true]) {
+        reattach(true, keepTab)
+        expect(usePluginStore.getState().baseByPluginId).toEqual({ [missing.id]: base })
+      }
+    })
 
     it('keeping the tab gives it its file text and that file as the baseline', () => {
       for (const active of [false, true]) {
@@ -600,10 +608,9 @@ describe('pluginStore file text of an imported plugin', () => {
     expect(state.savedPath).toBeNull()
   })
 
-  it('setBase records the file a tab was read from; closing the tab drops it', () => {
+  it('openPlugin records the file a tab was read from; closing the tab drops it', () => {
     const alpha = importedPlugin('Alpha')
-    usePluginStore.getState().openPlugin(alpha)
-    usePluginStore.getState().setBase(alpha.id, { path: '/p/Alpha.js', sha256: 'aa' })
+    usePluginStore.getState().openPlugin(alpha, { path: '/p/Alpha.js', sha256: 'aa' })
     expect(usePluginStore.getState().baseByPluginId).toEqual({
       [alpha.id]: { path: '/p/Alpha.js', sha256: 'aa' }
     })

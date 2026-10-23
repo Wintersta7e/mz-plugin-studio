@@ -44,7 +44,8 @@ interface PluginState {
   // The file each tab was read from or last saved to; a save asks before replacing any other
   baseByPluginId: Record<string, FileBase>
 
-  setPlugin: (plugin: PluginDefinition) => void
+  // `dirty` also sets the tab's unsaved state in the same update (undo and redo)
+  setPlugin: (plugin: PluginDefinition, dirty?: boolean) => void
   updateMeta: (meta: Partial<PluginDefinition['meta']>) => void
 
   // Parameters
@@ -70,22 +71,21 @@ interface PluginState {
   updateStructParam: (structId: string, paramId: string, param: Partial<PluginParameter>) => void
   removeStructParam: (structId: string, paramId: string) => void
 
-  // Multi-plugin
-  openPlugin: (plugin: PluginDefinition) => void
+  // Multi-plugin; `base` is the file the tab was read from
+  openPlugin: (plugin: PluginDefinition, base?: FileBase) => void
   closePlugin: (id: string) => void
   setActivePlugin: (id: string) => void
 
   // Code
   setCustomCode: (code: string) => void
 
-  // File text of an imported tab: loaded again from the project, or what a save wrote
+  // File text of an imported tab loaded again from `base`, the project's file
   reattachSource: (
     id: string,
     rawSource: string,
     parsed: PluginDefinition,
-    options: { keepTab: boolean }
+    options: { keepTab: boolean; base: FileBase }
   ) => void
-  setBase: (id: string, base: FileBase) => void
   recordSaves: (records: SaveRecord[]) => void
 
   // State
@@ -396,16 +396,21 @@ export const usePluginStore = create<PluginState>()(
       baselineByPluginId: {},
       baseByPluginId: {},
 
-      setPlugin: (plugin) =>
+      setPlugin: (plugin, dirty) =>
         set((state) => ({
           plugin,
           activePluginId: plugin.id,
           openPlugins: upsertOpenPlugin(state.openPlugins, plugin),
-          isDirty: getPluginDirty(
-            state.dirtyByPluginId,
-            plugin.id,
-            state.activePluginId === plugin.id ? state.isDirty : false
-          ),
+          ...(dirty !== undefined && {
+            dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, plugin.id, dirty)
+          }),
+          isDirty:
+            dirty ??
+            getPluginDirty(
+              state.dirtyByPluginId,
+              plugin.id,
+              state.activePluginId === plugin.id ? state.isDirty : false
+            ),
           savedPath: getPluginSavedPath(
             state.savedPathsByPluginId,
             plugin.id,
@@ -584,13 +589,16 @@ export const usePluginStore = create<PluginState>()(
         ),
 
       // Multi-plugin
-      openPlugin: (plugin) =>
+      openPlugin: (plugin, base) =>
         set((state) => {
           const recordBaseline =
             isImported(plugin) && plugin.rawSource && !(plugin.id in state.baselineByPluginId)
           return {
             ...(recordBaseline && {
               baselineByPluginId: { ...state.baselineByPluginId, [plugin.id]: toBaseline(plugin) }
+            }),
+            ...(base !== undefined && {
+              baseByPluginId: { ...state.baseByPluginId, [plugin.id]: base }
             }),
             openPlugins: upsertOpenPlugin(state.openPlugins, plugin),
             activePluginId: plugin.id,
@@ -656,7 +664,7 @@ export const usePluginStore = create<PluginState>()(
           }))
         ),
 
-      reattachSource: (id, rawSource, parsed, { keepTab }) =>
+      reattachSource: (id, rawSource, parsed, { keepTab, base }) =>
         set((state) => {
           const tab = state.openPlugins.find((p) => p.id === id)
           if (tab === undefined) return {}
@@ -669,11 +677,13 @@ export const usePluginStore = create<PluginState>()(
             rawSource
           }
           const baselineByPluginId = { ...state.baselineByPluginId, [id]: toBaseline(fromFile) }
+          const baseByPluginId = { ...state.baseByPluginId, [id]: base }
           if (keepTab) {
             // The tab's values now count as edits to the file
             return {
               ...withRawSource(state, id, rawSource),
               baselineByPluginId,
+              baseByPluginId,
               dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, true),
               ...(state.plugin.id === id && { isDirty: true })
             }
@@ -682,11 +692,10 @@ export const usePluginStore = create<PluginState>()(
             openPlugins: upsertOpenPlugin(state.openPlugins, fromFile),
             ...(state.plugin.id === id && { plugin: fromFile, isDirty: false }),
             baselineByPluginId,
+            baseByPluginId,
             dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, false)
           }
         }),
-      setBase: (id, base) =>
-        set((state) => ({ baseByPluginId: { ...state.baseByPluginId, [id]: base } })),
       recordSaves: (records) =>
         set((state) => {
           let { openPlugins, plugin } = state
