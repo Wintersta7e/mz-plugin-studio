@@ -35,6 +35,17 @@ export function isRawMode(
 export const saveFileName = (plugin: Pick<PluginDefinition, 'importedFrom' | 'meta'>): string =>
   plugin.importedFrom ?? `${plugin.meta.name}.js`
 
+/**
+ * The file text raw mode builds on and the values it was read with; null when either is not
+ * loaded, which is when raw mode refuses with `source-missing`.
+ */
+export function loadedSource(
+  plugin: Pick<PluginDefinition, 'rawSource'>,
+  baseline: PluginBaseline | null
+): { rawSource: string; baseline: PluginBaseline } | null {
+  return plugin.rawSource && baseline !== null ? { rawSource: plugin.rawSource, baseline } : null
+}
+
 /** The code a save writes, or why raw mode cannot save it. */
 export function generatePluginOutput(
   plugin: PluginDefinition,
@@ -42,16 +53,18 @@ export function generatePluginOutput(
   baseline: PluginBaseline | null
 ): PluginOutput {
   if (!rawMode) return { ok: true, code: generatePlugin(plugin) }
-  if (!plugin.rawSource || baseline === null) {
+  const source = loadedSource(plugin, baseline)
+  if (source === null) {
     return {
       ok: false,
       refusal: 'source-missing',
       message: `Not saved: the original file ${saveFileName(plugin)} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
     }
   }
+  const { rawSource } = source
   if (
-    !hasMainBlock(plugin.rawSource) &&
-    generateHeaderOnly(plugin) !== generateHeaderOnly(baseline)
+    !hasMainBlock(rawSource) &&
+    generateHeaderOnly(plugin) !== generateHeaderOnly(source.baseline)
   ) {
     return {
       ok: false,
@@ -61,7 +74,7 @@ export function generatePluginOutput(
   }
   let code: string
   try {
-    code = generateRawMode(plugin, baseline)
+    code = generateRawMode(plugin, source.baseline)
   } catch (error) {
     if (!(error instanceof RawModeParseError)) throw error
     return {
@@ -72,9 +85,9 @@ export function generatePluginOutput(
   }
   // A plugin that does not parse stops the game loading it; a file that did not parse before is
   // still written as edited
-  if (code !== plugin.rawSource) {
+  if (code !== rawSource) {
     const problem = scriptParseError(code)
-    if (problem !== null && scriptParseError(plugin.rawSource) === null) {
+    if (problem !== null && scriptParseError(rawSource) === null) {
       return {
         ok: false,
         refusal: 'invalid-output',

@@ -6,7 +6,7 @@ import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
 import type { PluginDefinition } from '../types/plugin'
 import { hasMainBlock } from './generator'
-import { generatePluginOutput, isImported, isRawMode } from './plugin-output'
+import { generatePluginOutput, isImported, isRawMode, loadedSource } from './plugin-output'
 import type { OutputRefusal } from './plugin-output'
 import { userMessage } from './utils'
 
@@ -161,11 +161,11 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
 function sourceMissingTabs(): PluginDefinition[] {
   const { openPlugins, baselineByPluginId } = usePluginStore.getState()
   const { rawModeByPluginId } = useUIStore.getState()
-  return openPlugins.filter((p) => {
-    if (!isRawMode(p, rawModeByPluginId[p.id])) return false
-    const out = generatePluginOutput(p, true, baselineByPluginId[p.id] ?? null)
-    return !out.ok && out.refusal === 'source-missing'
-  })
+  return openPlugins.filter(
+    (p) =>
+      isRawMode(p, rawModeByPluginId[p.id]) &&
+      loadedSource(p, baselineByPluginId[p.id] ?? null) === null
+  )
 }
 
 /**

@@ -7,6 +7,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { PluginParser } from '../../src/main/services/pluginParser'
+import * as generator from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
@@ -229,6 +230,22 @@ describe(
       expect(useToastStore.getState().toasts[0].message).toMatch(
         new RegExp(`^Raw mode cannot save ${named} until`)
       )
+    })
+
+    it('finding those tabs builds no code for a tab whose file text is loaded', async () => {
+      const loaded = PluginParser.parsePlugin(textOf(FILES[1]), FILES[1])
+      act(() => usePluginStore.getState().openPlugin({ ...loaded, importedFrom: FILES[1] }))
+      act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+      // The active tab has no file text, so the code preview builds nothing either
+      openStaleTab(FILES[0])
+      const build = vi.spyOn(generator, 'generateRawMode')
+      try {
+        await openFixtureProject()
+        await screen.findByRole('button', { name: `Reload ${FILES[0]} from ${FOLDER_NAME}` })
+        expect(build).not.toHaveBeenCalled()
+      } finally {
+        build.mockRestore()
+      }
     })
   }
 )
