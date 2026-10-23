@@ -90,7 +90,6 @@ interface PluginState {
 
   // State
   setDirty: (dirty: boolean) => void
-  setSavedPath: (path: string | null) => void
 }
 
 type PluginPersisted = Pick<
@@ -344,24 +343,6 @@ function markPluginDirty(
   }
 
   const next = { ...dirtyByPluginId }
-  delete next[pluginId]
-  return next
-}
-
-function setPluginSavedPath(
-  savedPathsByPluginId: Record<string, string>,
-  pluginId: string,
-  savedPath: string | null
-): Record<string, string> {
-  if (savedPath) {
-    return { ...savedPathsByPluginId, [pluginId]: savedPath }
-  }
-
-  if (!(pluginId in savedPathsByPluginId)) {
-    return savedPathsByPluginId
-  }
-
-  const next = { ...savedPathsByPluginId }
   delete next[pluginId]
   return next
 }
@@ -749,15 +730,6 @@ export const usePluginStore = create<PluginState>()(
         set((state) => ({
           isDirty,
           dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, state.plugin.id, isDirty)
-        })),
-      setSavedPath: (savedPath) =>
-        set((state) => ({
-          savedPath,
-          savedPathsByPluginId: setPluginSavedPath(
-            state.savedPathsByPluginId,
-            state.plugin.id,
-            savedPath
-          )
         }))
     }),
     definePersist<PluginState, PluginPersisted>({

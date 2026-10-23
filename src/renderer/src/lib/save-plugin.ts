@@ -13,12 +13,6 @@ import { userMessage } from './utils'
 /** `save` is Ctrl+S (into the open project when there is one); `export` is the preview's Export button. */
 export type SaveMode = 'save' | 'export'
 
-export type SaveOutcome =
-  | { status: 'saved'; path: string }
-  | { status: 'cancelled' }
-  | { status: 'skipped'; reason: string }
-  | { status: 'failed'; error: string }
-
 type Written = Extract<SaveResult, { success: true }>
 type Refused = Extract<SaveResult, { success: false }>
 
@@ -133,16 +127,16 @@ async function writeAsking(
  * Writes one open plugin's `.js`, reporting the result in a toast. Ctrl+S writes into the open
  * project's `js/plugins`; Export, and Ctrl+S with no project, ask where to save.
  */
-export async function savePlugin(pluginId: string, mode: SaveMode): Promise<SaveOutcome> {
+export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void> {
   const addToast = useToastStore.getState().addToast
   try {
     const prepared = await prepareSave(pluginId, { ask: true })
     if (prepared.status === 'refused') {
       log.warn('[save] refused', nameOf(findOpenPlugin(pluginId)), prepared.refusal)
       addToast({ type: 'error', message: prepared.reason, duration: NOTICE_MS })
-      return { status: 'skipped', reason: prepared.reason }
+      return
     }
-    if (prepared.status === 'cancelled') return { status: 'cancelled' }
+    if (prepared.status === 'cancelled') return
     const { plugin, code } = prepared
     const project = useProjectStore.getState().project
     let write: (guard: SaveGuard) => Promise<SaveResult>
@@ -162,12 +156,12 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
               defaultPath: known ?? (plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js'),
               filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
             })
-      if (!filePath) return { status: 'cancelled' }
+      if (!filePath) return
       chosenPaths.add(filePath)
       write = (guard) => window.api.plugin.saveToPath(filePath, code, guard)
     }
     const result = await writeAsking(plugin, write)
-    if (result === null) return { status: 'cancelled' }
+    if (result === null) return
     // With a project open, Export writes a copy: the tab's file is still the project's
     if (mode === 'save' || project === null) {
       usePluginStore.getState().recordSaves([recordOf(plugin, result, code)])
@@ -185,7 +179,6 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
       })
     }
     log.info(`[save] Saved ${result.path}`)
-    return { status: 'saved', path: result.path }
   } catch (error: unknown) {
     log.error('[save]', error)
     addToast({
@@ -193,7 +186,6 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
       message: `${mode === 'save' ? 'Save' : 'Export'} failed: ${userMessage(error)}`,
       duration: NOTICE_MS
     })
-    return { status: 'failed', error: userMessage(error) }
   }
 }
 

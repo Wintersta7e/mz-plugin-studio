@@ -34,6 +34,15 @@ function createPlugin(name: string) {
   return plugin
 }
 
+/** Records that tab `id` was written to `path` from `saved`, as every save of the app does. */
+function recordSave(id: string, path: string, saved = usePluginStore.getState().plugin) {
+  usePluginStore
+    .getState()
+    .recordSaves([{ id, saved, path, sha256: `sha of ${path}`, written: '' }])
+}
+
+const baseOf = (path: string) => ({ path, sha256: `sha of ${path}` })
+
 describe('pluginStore multi-plugin state', () => {
   beforeEach(() => {
     resetPluginStore()
@@ -68,8 +77,10 @@ describe('pluginStore multi-plugin state', () => {
     const beta = createPlugin('Beta')
 
     usePluginStore.getState().openPlugin(alpha)
+    const beforeEdit = usePluginStore.getState().plugin
     usePluginStore.getState().updateMeta({ version: '1.1.0' })
-    usePluginStore.getState().setSavedPath('/tmp/alpha.js')
+    // The edit was made while the file was written, so the tab stays unsaved
+    recordSave(alpha.id, '/tmp/alpha.js', beforeEdit)
 
     const alphaSnapshot = { ...usePluginStore.getState().plugin }
     usePluginStore.getState().setPlugin(alphaSnapshot)
@@ -80,12 +91,16 @@ describe('pluginStore multi-plugin state', () => {
     usePluginStore.getState().openPlugin(beta)
     expect(usePluginStore.getState().savedPath).toBeNull()
 
-    usePluginStore.getState().setSavedPath('/tmp/beta.js')
+    recordSave(beta.id, '/tmp/beta.js')
     usePluginStore.getState().setActivePlugin(alpha.id)
     expect(usePluginStore.getState().savedPath).toBe('/tmp/alpha.js')
 
     usePluginStore.getState().setActivePlugin(beta.id)
     expect(usePluginStore.getState().savedPath).toBe('/tmp/beta.js')
+    expect(usePluginStore.getState().baseByPluginId).toEqual({
+      [alpha.id]: baseOf('/tmp/alpha.js'),
+      [beta.id]: baseOf('/tmp/beta.js')
+    })
   })
 
   it('closes the active plugin and restores the previous tab with its saved state', () => {
@@ -93,12 +108,12 @@ describe('pluginStore multi-plugin state', () => {
     const beta = createPlugin('Beta')
 
     usePluginStore.getState().openPlugin(alpha)
+    recordSave(alpha.id, '/tmp/alpha.js')
     usePluginStore.getState().updateMeta({ description: 'Alpha changed' })
-    usePluginStore.getState().setSavedPath('/tmp/alpha.js')
 
     usePluginStore.getState().openPlugin(beta)
+    recordSave(beta.id, '/tmp/beta.js')
     usePluginStore.getState().updateMeta({ description: 'Beta changed' })
-    usePluginStore.getState().setSavedPath('/tmp/beta.js')
 
     usePluginStore.getState().closePlugin(beta.id)
 
@@ -111,35 +126,31 @@ describe('pluginStore multi-plugin state', () => {
     expect(usePluginStore.getState().savedPathsByPluginId).toEqual({
       [alpha.id]: '/tmp/alpha.js'
     })
+    expect(usePluginStore.getState().baseByPluginId).toEqual({
+      [alpha.id]: baseOf('/tmp/alpha.js')
+    })
   })
 
-  it('clears per-plugin bookkeeping when dirty and saved path state are reset', () => {
+  it('clears per-plugin dirty bookkeeping when dirty state is reset', () => {
     const alpha = createPlugin('Alpha')
 
     usePluginStore.getState().openPlugin(alpha)
     usePluginStore.getState().setDirty(true)
-    usePluginStore.getState().setSavedPath('/tmp/alpha.js')
 
     expect(usePluginStore.getState().dirtyByPluginId).toEqual({ [alpha.id]: true })
-    expect(usePluginStore.getState().savedPathsByPluginId).toEqual({
-      [alpha.id]: '/tmp/alpha.js'
-    })
 
     usePluginStore.getState().setDirty(false)
-    usePluginStore.getState().setSavedPath(null)
 
     expect(usePluginStore.getState().isDirty).toBe(false)
-    expect(usePluginStore.getState().savedPath).toBeNull()
     expect(usePluginStore.getState().dirtyByPluginId).toEqual({})
-    expect(usePluginStore.getState().savedPathsByPluginId).toEqual({})
   })
 
   it('resets to a fresh editor state when the last open plugin is closed', () => {
     const alpha = createPlugin('Alpha')
 
     usePluginStore.getState().openPlugin(alpha)
+    recordSave(alpha.id, '/tmp/alpha.js')
     usePluginStore.getState().updateMeta({ description: 'Unsaved changes' })
-    usePluginStore.getState().setSavedPath('/tmp/alpha.js')
 
     usePluginStore.getState().closePlugin(alpha.id)
 
@@ -149,6 +160,7 @@ describe('pluginStore multi-plugin state', () => {
     expect(usePluginStore.getState().savedPath).toBeNull()
     expect(usePluginStore.getState().dirtyByPluginId).toEqual({})
     expect(usePluginStore.getState().savedPathsByPluginId).toEqual({})
+    expect(usePluginStore.getState().baseByPluginId).toEqual({})
     expect(usePluginStore.getState().plugin.meta.name).toBe('NewPlugin')
     expect(usePluginStore.getState().plugin.id).not.toBe(alpha.id)
   })
