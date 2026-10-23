@@ -94,6 +94,12 @@ export function MetaEditor() {
                 placeholder="MyPlugin"
                 {...nameReadOnly}
               />
+              {importedFrom !== undefined && (
+                <p className="text-xs text-muted-foreground">
+                  Loaded from {importedFrom}: the name is the file name. To save a copy under
+                  another name, use Export in the preview.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

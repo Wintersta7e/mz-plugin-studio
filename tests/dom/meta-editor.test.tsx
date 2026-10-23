@@ -55,6 +55,9 @@ describe('meta editor help text', () => {
 })
 
 describe('meta editor plugin name', () => {
+  const NAME_NOTICE =
+    'Loaded from Loaded.js: the name is the file name. To save a copy under another name, use Export in the preview.'
+
   beforeEach(() => {
     resetStores()
     window.api = createFakeApi()
@@ -78,9 +81,18 @@ describe('meta editor plugin name', () => {
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('title', notice)
   })
 
+  it('says under the name of a plugin loaded from a file why it cannot change', () => {
+    act(() =>
+      usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), importedFrom: 'Loaded.js' })
+    )
+    render(<MetaEditor />)
+    expect(screen.getByText(NAME_NOTICE)).toBeInTheDocument()
+  })
+
   it('is editable for a plugin made in the app', () => {
     act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
     render(<MetaEditor />)
+    expect(screen.queryByText(NAME_NOTICE)).toBeNull()
     const name = screen.getByLabelText('Plugin Name')
     expect(name).not.toHaveAttribute('readonly')
     fireEvent.change(name, { target: { value: 'Renamed' } })

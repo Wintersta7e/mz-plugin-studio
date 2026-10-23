@@ -47,7 +47,7 @@
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 - A project that fails to load now shows a message naming the folder and the reason.
 - Error messages from loading, reading, saving and exporting show the reason alone, without the internal "Error invoking remote method" prefix, and error notifications stay up for 10 seconds.
-- A plugin loaded from a file is always saved back to that file: its Plugin Name, which is the file name, is read-only, so renaming it can no longer write a second file while Reload from project keeps reading the first.
+- A plugin loaded from a file is always saved back to that file: its Plugin Name, which is the file name, is read-only, so renaming it can no longer write a second file while Reload from project keeps reading the first. A line under the name says so and points to Export for a copy under another name.
 - Reload from project asks first when the tab was read from another project, instead of silently attaching the open project's copy of the plugin.
 - A plugin file that is not UTF-8 is refused when opened, reloaded or picked in Parameters' Import from Plugin, with an error naming the file, instead of being read with its non-UTF-8 text replaced and then saved that way.
 - In raw mode, a plugin file with no main annotation block (`/*:` or `/*:en`) has its header editors (Meta, Parameters, Commands, Structs) read-only with a notice saying why, instead of taking edits that could never be saved. Select All, Export and Save Selection as Preset still work on its parameters.
