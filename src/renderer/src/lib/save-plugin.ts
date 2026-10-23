@@ -26,7 +26,7 @@ const NOT_SAVED: Record<NotSavedKind, string> = {
   'unparsable-source': 'raw mode cannot add to a file that is not valid JavaScript',
   'invalid-output': 'raw mode built code that is not valid JavaScript',
   'needs-confirmation': 'saving regenerates the whole file (save it with Ctrl+S to confirm)',
-  'exists-unrelated': 'a different file with this name exists',
+  'exists-unrelated': 'the file there is not the one this tab last opened or saved',
   'changed-on-disk': 'changed on disk',
   'would-break': 'would stop the file compiling',
   unconfirmed: 'cannot confirm the file is unchanged (save it with Ctrl+S to confirm)'
@@ -81,7 +81,7 @@ function conflictMessage(plugin: PluginDefinition, guard: SaveGuard, result: Ref
     return `This tab cannot confirm that "${path}" is unchanged since it was last read or saved. Overwrite it?`
   }
   return result.conflict === 'exists-unrelated'
-    ? `"${path}" already exists and was not opened or saved by this tab. Overwrite it?`
+    ? `"${path}" is not the file this tab last opened or saved. Overwrite it?`
     : `"${path}" has changed on disk since this tab last read or saved it. Overwrite it?`
 }
 

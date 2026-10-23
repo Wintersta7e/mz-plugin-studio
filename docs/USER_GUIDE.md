@@ -878,7 +878,7 @@ If the original plugin has text before the `/*:` annotation block (license heade
 **Export as .js Plugin**
 1. **Ctrl+S** saves to `js/plugins/<Name>.js` in the loaded project. With no project loaded it opens a save dialog at the file the plugin was last saved to; once you choose a file, later **Ctrl+S** presses in the same session save there without asking.
 2. **Export** always opens a save dialog. With a project loaded it writes a copy: the plugin stays marked unsaved, and **Ctrl+S** still saves it into the project.
-3. Before replacing a file, the app asks when the file was not opened or saved by this tab, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
+3. Before replacing a file, the app asks when the file is not the one this tab last opened or saved, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
 
 **Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, one at a time. It never asks: a plugin whose save would need one of the questions above is not saved. One report gives the number saved and names the plugins not saved, grouped by reason, and each save that failed with its error. Tabs with unsaved changes and no Plugin Name are not saved; the report counts them.
 

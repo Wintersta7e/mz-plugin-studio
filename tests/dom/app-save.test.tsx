@@ -175,7 +175,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await settle()
     const options = conflictDialog(0, 'exists-unrelated')
     expect(options.message).toBe(
-      `"${fileIn('NewPlugin.js')}" already exists and was not opened or saved by this tab. Overwrite it?`
+      `"${fileIn('NewPlugin.js')}" is not the file this tab last opened or saved. Overwrite it?`
     )
     expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
     expect(await readFile(fileIn('NewPlugin.js'), 'utf8')).toBe(written)
@@ -340,7 +340,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressSaveAll()
     await waitFor(() =>
       expect(toasts()).toEqual([
-        'warning: Saved 1, failed 1. Not saved, a different file with this name exists: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
+        'warning: Saved 1, failed 1. Not saved, the file there is not the one this tab last opened or saved: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
       ])
     )
     expect(useToastStore.getState().toasts[0].duration).toBeGreaterThanOrEqual(10_000)
@@ -360,7 +360,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressSaveAll()
     await waitFor(() =>
       expect(toasts()).toEqual([
-        'warning: Saved 1. Not saved, a different file with this name exists: NewPlugin.'
+        'warning: Saved 1. Not saved, the file there is not the one this tab last opened or saved: NewPlugin.'
       ])
     )
     expect(await readFile(fileIn('NewPlugin.js'), 'utf8')).toBe(firstCode)
@@ -421,7 +421,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await settle()
     const options = conflictDialog(0, 'exists-unrelated')
     expect(options.message).toBe(
-      `"${fileIn(FILE, second)}" already exists and was not opened or saved by this tab. Overwrite it?`
+      `"${fileIn(FILE, second)}" is not the file this tab last opened or saved. Overwrite it?`
     )
     expect(await readFile(fileIn(FILE, second))).toEqual(secondBytes)
     expect(await readFile(fileIn(FILE, first))).toEqual(firstBytes)
