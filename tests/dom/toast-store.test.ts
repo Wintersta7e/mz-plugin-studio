@@ -164,16 +164,52 @@ describe('toastStore', () => {
     clearTimeoutSpy.mockRestore()
   })
 
-  it('does not attempt timer cleanup when evicting persistent toasts', () => {
-    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
-
+  it('never evicts a persistent toast', () => {
     for (let i = 0; i < 6; i++) {
       useToastStore.getState().addToast({ type: 'info', message: `Toast ${i}`, duration: 0 })
     }
 
-    expect(useToastStore.getState().toasts).toHaveLength(5)
-    expect(clearTimeoutSpy).not.toHaveBeenCalled()
+    expect(useToastStore.getState().toasts).toHaveLength(6)
+  })
 
-    clearTimeoutSpy.mockRestore()
+  it('shows a new timed toast even when persistent toasts fill the stack', () => {
+    const { addToast } = useToastStore.getState()
+    for (let i = 0; i < 5; i++) addToast({ type: 'info', message: `Toast ${i}`, duration: 0 })
+    addToast({ type: 'error', message: 'Save failed' })
+
+    expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
+      'Toast 0',
+      'Toast 1',
+      'Toast 2',
+      'Toast 3',
+      'Toast 4',
+      'Save failed'
+    ])
+  })
+
+  it('evicts the oldest timed toast without an action, keeping persistent and action toasts', () => {
+    const { addToast } = useToastStore.getState()
+    addToast({
+      type: 'info',
+      message: 'Reload',
+      duration: 0,
+      action: { label: 'Go', run: vi.fn() }
+    })
+    addToast({
+      type: 'info',
+      message: 'Read me',
+      duration: 10_000,
+      action: { label: 'Go', run: vi.fn() }
+    })
+    addToast({ type: 'warning', message: 'Storage full', duration: 0 })
+    for (let i = 0; i < 5; i++) addToast({ type: 'error', message: `Refused ${i}` })
+
+    expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
+      'Reload',
+      'Read me',
+      'Storage full',
+      'Refused 3',
+      'Refused 4'
+    ])
   })
 })

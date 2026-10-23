@@ -196,10 +196,27 @@ export async function offerReloadFromProject(projectPath: string): Promise<void>
   })
 }
 
-/** Reloads the tabs one after another, so each question comes on its own; skips reloaded tabs. */
+/**
+ * Reloads the tabs one after another, so each question comes on its own; skips reloaded tabs.
+ * Reports how many it reloaded, naming those it did not.
+ */
 async function reloadAllFromProject(pluginIds: readonly string[]): Promise<void> {
-  const missing = new Set(sourceMissingTabs().map((p) => p.id))
-  for (const id of pluginIds) {
-    if (missing.has(id)) await reloadFromProject(id)
+  const missing = sourceMissingTabs().filter((p) => pluginIds.includes(p.id))
+  if (missing.length === 0) return
+  const notReloaded: string[] = []
+  for (const plugin of missing) {
+    if (!(await reloadFromProject(plugin.id)))
+      notReloaded.push(plugin.importedFrom ?? plugin.meta.name)
   }
+  const total = missing.length === 1 ? '1 plugin' : `${missing.length} plugins`
+  const message = `Reloaded ${missing.length - notReloaded.length} of ${total}`
+  useToastStore.getState().addToast(
+    notReloaded.length === 0
+      ? { type: 'success', message }
+      : {
+          type: 'warning',
+          message: `${message}. Not reloaded: ${notReloaded.join(', ')}.`,
+          duration: NOTICE_MS
+        }
+  )
 }

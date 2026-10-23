@@ -848,7 +848,7 @@ When the file text is not loaded, the banner in the code preview has a **Reload 
 
 The button is disabled until a project is open. If the file cannot be read, an error names the path.
 
-When you open a project while tabs have no file text loaded and their files are in that project's `js/plugins/` folder, a notice offers **Reload N plugins from this project**. It reloads those tabs one after another, each as **Reload from project** does, asking about a tab only where that button would ask.
+When you open a project while tabs have no file text loaded and their files are in that project's `js/plugins/` folder, a notice offers **Reload N plugins from this project**. It reloads those tabs one after another, each as **Reload from project** does, asking about a tab only where that button would ask, and then reports how many it reloaded, naming any it did not. The notice stays until you click it or dismiss it.
 
 ### Upgrading from 1.6.x
 

@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { useToastStore, type ToastAction, type ToastType } from '../../stores/toastStore'
@@ -42,7 +43,22 @@ function ToastItem({
   action?: ToastAction
 }): React.ReactElement {
   const dismiss = useToastStore((s) => s.dismiss)
+  const pause = useToastStore((s) => s.pause)
+  const resume = useToastStore((s) => s.resume)
   const Icon = icons[type]
+  // The countdown waits while the pointer is over the toast or focus is inside it
+  const holds = useRef({ pointer: false, focus: false })
+  const [paused, setPaused] = useState(false)
+
+  const hold = (reason: 'pointer' | 'focus', on: boolean): void => {
+    const was = holds.current.pointer || holds.current.focus
+    holds.current[reason] = on
+    const now = holds.current.pointer || holds.current.focus
+    if (now === was) return
+    if (now) pause(id)
+    else resume(id)
+    setPaused(now)
+  }
 
   return (
     <motion.div
@@ -50,6 +66,12 @@ function ToastItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
       transition={toastSpring}
+      onPointerEnter={() => hold('pointer', true)}
+      onPointerLeave={() => hold('pointer', false)}
+      onFocus={() => hold('focus', true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) hold('focus', false)
+      }}
       className={cn(
         'pointer-events-auto relative flex items-start gap-3 rounded-lg border border-border border-l-4 bg-card p-3 pr-8 shadow-lg',
         accentColors[type]
@@ -86,7 +108,8 @@ function ToastItem({
               animationName: 'progress-shrink',
               animationDuration: `${duration}ms`,
               animationTimingFunction: 'linear',
-              animationFillMode: 'forwards'
+              animationFillMode: 'forwards',
+              animationPlayState: paused ? 'paused' : 'running'
             }}
           />
         </div>

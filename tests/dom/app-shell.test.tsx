@@ -167,6 +167,11 @@ describe(
       expect(tab(elsewhere)?.rawSource).toBeUndefined()
       expect(window.api.dialog.message).not.toHaveBeenCalled()
       expect(window.api.plugin.readRaw).toHaveBeenCalledTimes(2)
+      await waitFor(() =>
+        expect(useToastStore.getState().toasts).toMatchObject([
+          { type: 'success', message: 'Reloaded 2 of 2 plugins' }
+        ])
+      )
     })
 
     it('a tab with unsaved edits asks first, and Cancel keeps it as it is', async () => {
@@ -183,6 +188,15 @@ describe(
       expect(options.buttons?.[0]).toBe('Cancel')
       expect(tab(edited)?.rawSource).toBeUndefined()
       expect(tab(edited)?.meta.description).toBe('Edited before reload')
+      await waitFor(() =>
+        expect(useToastStore.getState().toasts).toMatchObject([
+          {
+            type: 'warning',
+            message: `Reloaded 1 of 2 plugins. Not reloaded: ${FILES[1]}.`,
+            duration: 10_000
+          }
+        ])
+      )
     })
 
     it('offers nothing when no such tab has its file in the project', async () => {
