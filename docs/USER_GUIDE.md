@@ -832,7 +832,7 @@ In raw mode the Code tab, the template inserter and the localized description an
 Raw mode does not write a file it cannot keep intact. The code preview shows why, naming the file, and **Ctrl+S** and **Save All** report it as not saved:
 
 - **The file text is not loaded** — the tab was opened in an older version of the app, or the app's copy of the file as last read is missing. The banner offers **Reload from project** (below).
-- **Header changes to a file without a main block** — the file has no `/*:` or `/*:en` annotation block to rewrite. Undo the header changes. For such a file the Meta fields outside the language tabs, the English description and help, and the Parameters, Commands and Structs tabs are read-only in raw mode, with a notice saying why, so header edits cannot be made in the first place. The Parameters toolbar still offers **Select All**, **Export** and **Save Selection as Preset**, so its parameters can be copied out.
+- **Header changes to a file without a main block** — the file has no `/*:` or `/*:en` annotation block to rewrite. Undo the header changes. For such a file the Meta fields outside the language tabs, the English description and help, and the Parameters, Commands and Structs tabs are read-only in raw mode, with a notice saying why, so header edits cannot be made in the first place. The Parameters toolbar still offers **Select All**, **Export** and **Save Selection as Preset**, so its parameters can be copied out, all of them together: single parameters cannot be selected on such a file.
 - **Additions to a file that is not valid JavaScript** — new parameters, commands or struct blocks need the file's structure. Edits to existing annotations still save.
 - **A result that would not be valid JavaScript** — the game could not load it, so the edit is refused. Undo the last edits.
 
@@ -848,7 +848,7 @@ When the file text is not loaded, the banner in the code preview has a **Reload 
 
 The button is disabled until a project is open. If the file cannot be read, an error names the path.
 
-When you open a project while tabs have no file text loaded and their files are in that project's `js/plugins/` folder, a notice names up to three of those tabs and the project folder, and its **Reload** button (for example **Reload MyPlugin.js from MyGame**) reloads those tabs one after another, each as **Reload from project** does, asking about a tab only where that button would ask, and then reports how many it reloaded, naming any it did not. The notice stays until you click it or dismiss it.
+When you open a project while tabs have no file text loaded and their files are in that project's `js/plugins/` folder, a notice names up to three of those tabs and the project folder, and its **Reload** button (for example **Reload MyPlugin.js from MyGame**) reloads those tabs one after another, each as **Reload from project** does, asking about a tab only where that button would ask, and then reports how many it reloaded, naming any it did not. The notice stays until you click its button or dismiss it.
 
 ### Upgrading from 1.6.x
 

@@ -39,7 +39,8 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
 
 - **Raw mode** keeps an imported plugin's own file text when it saves; the
   [User Guide](./docs/USER_GUIDE.md#raw-mode) says what a save changes. Its limits:
-  - Files are read as UTF-8 only: a plugin in another encoding is refused when you open it.
+  - Files are read as UTF-8 only: a plugin or `.mzparams` file in another encoding is refused
+    when you open it or import parameters from it.
   - Header edits are refused for a file without a `/*:` or `/*:en` annotation block.
   - Added parameters, commands or structs are refused for a file that is not valid JavaScript,
     and any save whose result would not be valid JavaScript is refused.
