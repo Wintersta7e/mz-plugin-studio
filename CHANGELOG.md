@@ -5,6 +5,7 @@
 ### Upgrading from 1.6.x
 
 - Plugin tabs imported in 1.6.x were saved without their file text. After upgrading, the code preview shows a warning on each one and raw mode refuses to save it until you open its project and click **Reload from project**, or **Reload N plugins from this project** in the notice that opening the project shows.
+- Plugin tabs saved in 1.6.x know their file but not what it held. Until one **Ctrl+S** of such a tab, Ctrl+S asks before replacing the file and Save All leaves it unsaved, listed as "cannot confirm the file is unchanged". Click **Overwrite** in that Ctrl+S prompt once; after that both save it as usual.
 
 ### Added
 

@@ -854,6 +854,8 @@ When you open a project while tabs have no file text loaded and their files are 
 
 Version 1.6.x did not keep an imported plugin's file text, so after upgrading every imported plugin tab that was open shows the "file text is not loaded" banner, and raw mode refuses to save it. Open the plugin's project and click **Reload N plugins from this project** in the notice, or **Reload from project** in each such tab.
 
+Plugin tabs saved in 1.6.x know their file but not what it held. Until one **Ctrl+S** of such a tab, Ctrl+S asks before replacing the file and **Save All** leaves it unsaved, listed as "cannot confirm the file is unchanged". Click **Overwrite** in that Ctrl+S prompt once; after that both save it as usual.
+
 ### Header Preamble Preservation
 
 If the original plugin has text before the `/*:` annotation block (license headers, version history, social links), raw mode preserves this preamble verbatim.

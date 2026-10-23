@@ -47,9 +47,12 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
     raw mode is missing from them and the editor in that language does not show it.
   - **Save All** skips an imported plugin with raw mode off until a **Ctrl+S** save of it is
     confirmed.
-- **Upgrading from 1.6.x**: imported plugin tabs opened in 1.6.x have no file text, and raw mode
-  refuses to save them until you open the project and click **Reload from project** in the code
-  preview.
+- **Upgrading from 1.6.x** ([details](./docs/USER_GUIDE.md#upgrading-from-16x)):
+  - Imported plugin tabs opened in 1.6.x have no file text, and raw mode refuses to save them
+    until you open the project and click **Reload N plugins from this project** in the notice, or
+    **Reload from project** in each such tab.
+  - Plugin tabs saved in 1.6.x cannot confirm their file is unchanged: **Save All** leaves them
+    unsaved until one **Ctrl+S** of each, whose prompt asks before replacing the file.
 - The app does not update itself: new versions are on the
   [Releases](https://github.com/Wintersta7e/mz-plugin-studio/releases) page.
 

@@ -2,6 +2,9 @@
 // preview's Export button. The app starts over the state v1.6.0 saved, whose second tab was
 // imported and comes back without its file text.
 import { readFileSync } from 'fs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import { dirname, join } from 'path'
 import { createElement } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -13,9 +16,12 @@ import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
 import { seed } from './support/load-persisted'
+import { createMainApi } from './support/main-api'
 
 const payloads = readV160Payloads()
 const TAB = '00000000-0000-4000-8000-000000000013'
+// v1.6.0 saved this tab, which is not imported, to its file
+const SAVED_TAB = '00000000-0000-4000-8000-000000000004'
 const FILE = 'Fixture_HandWritten.js'
 const PROJECT = '/fixture/mz-project'
 const SOURCE_MISSING = `Not saved: the original file ${FILE} is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.`
@@ -25,13 +31,13 @@ const RAW_OFF = 'Raw mode OFF: the whole plugin is regenerated from the editor'
 type Stores = typeof StoresModule
 
 /** Imports the app afresh over what localStorage holds, opens the project and shows the tab. */
-async function startApp(api: Window['api']): Promise<Stores> {
+async function startApp(api: Window['api'], path = PROJECT): Promise<Stores> {
   window.api = api
   vi.resetModules()
   const { default: App } = await import('../../src/renderer/src/App')
   const stores = await import('../../src/renderer/src/stores')
   render(createElement(App))
-  const project = { ...(await api.project.load(PROJECT)), path: PROJECT }
+  const project = { ...(await api.project.load(PROJECT)), path }
   act(() => {
     stores.useProjectStore.setState({ project })
     stores.usePluginStore.getState().setActivePlugin(TAB)
@@ -221,4 +227,35 @@ describe('saving an imported plugin', () => {
     console.log(`save paths checked ${checked}`)
     expect(checked).toBe(3)
   }, 90_000)
+
+  it('Save All names a tab last saved by v1.6.0 as unconfirmed, not changed on disk', async () => {
+    const project = await mkdtemp(join(tmpdir(), 'save-all-upgrade-'))
+    try {
+      const file = join(project, 'js', 'plugins', 'Synthetic_Tool.js')
+      await mkdir(dirname(file), { recursive: true })
+      await writeFile(file, '// saved by v1.6.0\n')
+      const persisted = JSON.parse(payloads['mz-plugin-studio-plugin'] as string)
+      persisted.state.savedPathsByPluginId[SAVED_TAB] = file
+      persisted.state.dirtyByPluginId[SAVED_TAB] = true
+      seed({ ...payloads, 'mz-plugin-studio-plugin': JSON.stringify(persisted) })
+      const api = createMainApi()
+      const stores = await startApp(api, project)
+      expect(stores.usePluginStore.getState().baseByPluginId[SAVED_TAB]).toEqual({
+        path: file,
+        sha256: null
+      })
+
+      press('KeyS', true)
+      await waitFor(() => expect(toastsOf(stores)).toHaveLength(1))
+      const report = toastsOf(stores)[0]
+      expect(report).not.toContain('changed on disk')
+      expect(report).toContain(
+        'Not saved, cannot confirm the file is unchanged (save it with Ctrl+S to confirm): Synthetic_Tool.'
+      )
+      expect(await readFile(file, 'utf8')).toBe('// saved by v1.6.0\n')
+      expect(api.dialog.message).not.toHaveBeenCalled()
+    } finally {
+      await rm(project, { recursive: true, force: true })
+    }
+  }, 60_000)
 })

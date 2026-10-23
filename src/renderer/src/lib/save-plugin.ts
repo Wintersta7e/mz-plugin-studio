@@ -22,8 +22,11 @@ export type SaveOutcome =
 type Written = Extract<SaveResult, { success: true }>
 type Refused = Extract<SaveResult, { success: false }>
 
+// A refused save of a tab that cannot tell whether the file changed since it was read or saved
+type NotSavedKind = SaveRefusal | SaveConflict | 'unconfirmed'
+
 // Save All's reason for each kind of tab it did not save, shared by every tab of that kind
-const NOT_SAVED: Record<SaveRefusal | SaveConflict, string> = {
+const NOT_SAVED: Record<NotSavedKind, string> = {
   'source-missing': 'file text not loaded (reload it from the project)',
   'header-without-main-block': 'header changes in a file with no main annotation block',
   'unparsable-source': 'raw mode cannot add to a file that is not valid JavaScript',
@@ -31,7 +34,8 @@ const NOT_SAVED: Record<SaveRefusal | SaveConflict, string> = {
   'needs-confirmation': 'saving regenerates the whole file (save it with Ctrl+S to confirm)',
   'exists-unrelated': 'a different file with this name exists',
   'changed-on-disk': 'changed on disk',
-  'would-break': 'would stop the file compiling'
+  'would-break': 'would stop the file compiling',
+  unconfirmed: 'cannot confirm the file is unchanged (save it with Ctrl+S to confirm)'
 }
 
 const nameOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? plugin.meta.name
@@ -57,6 +61,17 @@ const recordOf = (plugin: PluginDefinition, result: Written, written: string): S
   written
 })
 
+/**
+ * Whether `result`, the answer to a save with `guard`, refused the file only because the tab
+ * cannot tell what it held: a tab restored from an older version knows its file but not its bytes.
+ */
+function isUnconfirmed(plugin: PluginDefinition, guard: SaveGuard, result: Refused): boolean {
+  if (result.conflict === 'would-break') return false
+  return result.conflict === 'changed-on-disk'
+    ? guard.base?.sha256 === null
+    : guard.base === null && plugin.importedFrom === fileNameOf(result.path)
+}
+
 /** What the conflict prompt says about `result`, the answer to a save with `guard`. */
 function conflictMessage(plugin: PluginDefinition, guard: SaveGuard, result: Refused): string {
   const path = result.path
@@ -65,12 +80,7 @@ function conflictMessage(plugin: PluginDefinition, guard: SaveGuard, result: Ref
     const at = problem?.line != null ? `line ${problem.line}: ` : ''
     return `Saving would stop "${path}" from compiling (${at}${problem?.message ?? 'syntax error'}). Overwrite it anyway?`
   }
-  // A tab restored from an older version knows its file but not what the file held
-  const unconfirmed =
-    result.conflict === 'changed-on-disk'
-      ? guard.base?.sha256 === null
-      : guard.base === null && plugin.importedFrom === fileNameOf(path)
-  if (unconfirmed) {
+  if (isUnconfirmed(plugin, guard, result)) {
     return `This tab cannot confirm that "${path}" is unchanged since it was last read or saved. Overwrite it?`
   }
   return result.conflict === 'exists-unrelated'
@@ -186,13 +196,9 @@ export async function saveAllPlugins(): Promise<void> {
   if (!project) return
   const dirtyPlugins = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
   const records: SaveRecord[] = []
-  const notSaved = new Map<SaveRefusal | SaveConflict, string[]>()
+  const notSaved = new Map<NotSavedKind, string[]>()
   let failed = 0
-  const skip = (
-    plugin: PluginDefinition,
-    kind: SaveRefusal | SaveConflict,
-    label: string
-  ): void => {
+  const skip = (plugin: PluginDefinition, kind: NotSavedKind, label: string): void => {
     log.warn('[save] refused', nameOf(plugin), kind)
     notSaved.set(kind, [...(notSaved.get(kind) ?? []), label])
   }
@@ -205,19 +211,15 @@ export async function saveAllPlugins(): Promise<void> {
       }
       if (prepared.status === 'cancelled') continue
       const { plugin, code } = prepared
-      const result = await window.api.plugin.save(
-        project.path,
-        saveFileName(plugin),
-        code,
-        guardFor(plugin.id)
-      )
+      const guard = guardFor(plugin.id)
+      const result = await window.api.plugin.save(project.path, saveFileName(plugin), code, guard)
       if (result.success) {
         records.push(recordOf(plugin, result, code))
       } else {
         const line = result.syntaxError?.line
         skip(
           plugin,
-          result.conflict,
+          isUnconfirmed(plugin, guard, result) ? 'unconfirmed' : result.conflict,
           line != null ? `${plugin.meta.name} (line ${line})` : plugin.meta.name
         )
       }
