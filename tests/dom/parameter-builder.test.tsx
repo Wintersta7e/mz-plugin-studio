@@ -165,8 +165,9 @@ describe('parameter export to a file', () => {
   })
 
   /**
-   * Exports every parameter through the main-process save functions; `saveFile` answers
-   * `target`, through the save dialog or not. Returns the message dialog mock.
+   * Exports every parameter through the main-process save functions, rejecting as
+   * `ipcRenderer.invoke` does; `saveFile` answers `target`, through the save dialog or not.
+   * Returns the message dialog mock.
    */
   function exportTo(target: string, { throughDialog = true } = {}): ReturnType<typeof vi.fn> {
     const dialog = {
@@ -183,7 +184,7 @@ describe('parameter export to a file', () => {
           : vi.fn(async () => target),
         message
       },
-      plugin: { saveToPath: (filePath, content) => savePluginToPath(filePath, content) }
+      plugin: { saveToPath: viaIpc(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, savePluginToPath) }
     })
     render(<ParameterBuilder />)
     fireEvent.click(screen.getByRole('button', { name: 'Select All' }))
