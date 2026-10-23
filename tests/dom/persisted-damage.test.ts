@@ -190,7 +190,7 @@ describe('damaged saved state', () => {
         name: KEY,
         area: 'Settings',
         kind: 'fields-reset',
-        fields: ['theme', 'editorFontSize'],
+        fields: [[{ key: 'theme' }], [{ key: 'editorFontSize' }]],
         backup: 'kept'
       }
     ])
@@ -224,7 +224,10 @@ describe('damaged saved state', () => {
         name: PLUGIN_KEY,
         area: 'Open plugins',
         kind: 'entries-dropped',
-        fields: ['openPlugins[0].rawSource (Good)', 'openPlugins[1] (Broken)'],
+        fields: [
+          [{ key: 'openPlugins' }, { index: 0, name: 'Good' }, { key: 'rawSource' }],
+          [{ key: 'openPlugins' }, { index: 1, name: 'Broken' }]
+        ],
         backup: 'kept'
       }
     ])
@@ -278,14 +281,39 @@ describe('damaged saved state', () => {
     expect(structs.map((s) => s.parameters.map((p) => [p.name, p.desc]))).toEqual([[['X', '']]])
     expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).toBe(raw)
     const dropped = persist.takeRestoreReport().find((e) => e.kind === 'entries-dropped')
-    expect(dropped?.fields.filter((f) => f.startsWith('openPlugins'))).toEqual([
-      'openPlugins[0].parameters[0] (Good)',
-      'openPlugins[0].parameters[1] (Good)',
-      'openPlugins[0].commands[0].args[0] (Good)',
-      'openPlugins[0].commands[1] (Good)',
-      'openPlugins[0].structs[0].parameters[0].desc (Good)',
-      'openPlugins[0].structs[1] (Good)'
+    const inGood = (...steps: Record<string, unknown>[]) => [
+      { key: 'openPlugins' },
+      { index: 0, name: 'Good' },
+      ...steps
+    ]
+    const at = (index: number) => ({ index })
+    expect(dropped?.fields.filter((f) => 'key' in f[0] && f[0].key === 'openPlugins')).toEqual([
+      inGood({ key: 'parameters' }, at(0)),
+      inGood({ key: 'parameters' }, at(1)),
+      inGood({ key: 'commands' }, at(0), { key: 'args' }, at(0)),
+      inGood({ key: 'commands' }, at(1)),
+      inGood({ key: 'structs' }, at(0), { key: 'parameters' }, at(0), { key: 'desc' }),
+      inGood({ key: 'structs' }, at(1))
     ])
+  })
+
+  it('an unknown key of any spelling is named as written and the report still names its tab', async () => {
+    const keys = ['old (v1)', 'x.y', 'a["\\q"]', 'toString']
+    localStorage.setItem(
+      PLUGIN_KEY,
+      savedTabs([
+        { ...tab('a', 'Good'), parameters: keys.map((key) => ({ ...param('p', 'X'), [key]: 1 })) }
+      ])
+    )
+    const { usePluginStore, persist } = await loadPlugins()
+    expect(usePluginStore.getState().openPlugins[0].parameters).toHaveLength(keys.length)
+    const entries = persist.takeRestoreReport()
+    let text = ''
+    expect(() => (text = persist.formatRestoreReport(entries))).not.toThrow()
+    const named = keys.map((key, i) => `${key} of parameter ${i + 1} of open plugin Good`)
+    named[3] = 'to string of parameter 4 of open plugin Good'
+    for (const words of named) expect(text).toContain(words)
+    expect(text).not.toContain('v1) (Good')
   })
 
   it('a preset parameter that cannot be read is left out on every load', async () => {
@@ -305,7 +333,7 @@ describe('damaged saved state', () => {
         name: KEY,
         area: 'Settings',
         kind: 'entries-dropped',
-        fields: ['parameterPresets["Mixed"][0]'],
+        fields: [[{ key: 'parameterPresets' }, { entry: 'Mixed' }, { index: 0 }]],
         backup: 'kept'
       }
     ])

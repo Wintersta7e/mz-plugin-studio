@@ -14,8 +14,14 @@ export type PersistedKey =
 
 const BACKUP_SUFFIX = '.backup'
 
-// undefined = wrong type → the field takes its default; drop(what) records an element-level drop
-export type FieldCheck<T> = (value: unknown, drop: (what: string) => void) => T | undefined
+// One step into a saved field: a key, an array element (with the name a check reads from it), or a
+// record entry
+export type PathStep = { key: string } | { index: number; name?: string } | { entry: string }
+export type FieldPath = PathStep[]
+
+// undefined = wrong type → the field takes its default; drop(path) records an element-level drop
+// at that path below the checked value
+export type FieldCheck<T> = (value: unknown, drop: (path: FieldPath) => void) => T | undefined
 
 // migrations[i] takes a payload from schema i to i + 1; the current schema is migrations.length
 export type MigrationStep = (state: Record<string, unknown>) => Record<string, unknown>
@@ -46,7 +52,7 @@ export interface RestoreReportEntry {
   name: PersistedKey
   area: string
   kind: 'unparseable' | 'newer-schema' | 'fields-reset' | 'entries-dropped'
-  fields: string[]
+  fields: FieldPath[]
   backup: BackupOutcome
 }
 
@@ -63,7 +69,7 @@ function report(
   area: string,
   kind: RestoreReportEntry['kind'],
   backup: BackupOutcome,
-  fields: string[] = []
+  fields: FieldPath[] = []
 ): void {
   pendingReport.push({ name, area, kind, fields, backup })
 }
@@ -99,30 +105,38 @@ function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
   }
 }
 
-// One step of a field path as the checks write it: `[index]`, `["record key"]`, `key` or `.key`
-const PATH_STEP = /\[(\d+)\]|\[("(?:[^"\\]|\\.)*")\]|\.?([^.[\]]+)/g
+/** A field path as code writes it, for logs: `openPlugins[0].parameters[1].desc`. */
+export function pathText(path: FieldPath): string {
+  return path
+    .map((step, i) =>
+      'key' in step
+        ? `${i === 0 ? '' : '.'}${step.key}`
+        : `[${'index' in step ? step.index : JSON.stringify(step.entry)}]`
+    )
+    .join('')
+}
 
 /**
- * A field path in the store's words, innermost first: `openPlugins[0].parameters[1] (Good)` →
- * "parameter 2 of open plugin Good". The name a check adds names the outermost entry.
+ * A field path in the store's words, innermost first: `openPlugins[0].parameters[1]` with the tab
+ * named Good → "parameter 2 of open plugin Good".
  */
-function describeField(path: string, labels: FieldLabels): string {
-  const named = / \((.*)\)$/.exec(path)
+function describeField(path: FieldPath, labels: FieldLabels): string {
   const parts: { label: FieldLabel; at?: string }[] = []
-  for (const [, index, entry, key] of (named ? path.slice(0, named.index) : path).matchAll(
-    PATH_STEP
-  )) {
-    if (key !== undefined) {
-      parts.push({ label: labels[key] ?? key.replace(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase() })
+  for (const step of path) {
+    if ('key' in step) {
+      const { key } = step
+      parts.push({
+        label: Object.hasOwn(labels, key)
+          ? labels[key]
+          : key.replace(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase()
+      })
       continue
     }
-    const at = index !== undefined ? String(Number(index) + 1) : (JSON.parse(entry) as string)
+    const at = 'entry' in step ? step.entry : (step.name ?? String(step.index + 1))
     const last = parts.at(-1)
     if (last !== undefined && last.at === undefined) last.at = at
     else parts.push({ label: 'entry', at })
   }
-  const outermost = parts.find((part) => part.at !== undefined)
-  if (named && outermost) outermost.at = named[1]
   return parts
     .map(({ label, at }) => {
       const noun = typeof label === 'string' ? label : at === undefined ? label.all : label.one
@@ -175,9 +189,9 @@ export function checkArrayOf<T>(
     const kept: T[] = []
     value.forEach((item, i) => {
       const name = label?.(item)
-      const at = (what: string) => `[${i}]${what}${name === undefined ? '' : ` (${name})`}`
-      const checked = element(item, (what) => drop(at(what)))
-      if (checked === undefined) drop(at(''))
+      const step: PathStep = name === undefined ? { index: i } : { index: i, name }
+      const checked = element(item, (path) => drop([step, ...path]))
+      if (checked === undefined) drop([step])
       else kept.push(checked)
     })
     return kept
@@ -190,9 +204,9 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
     if (!isRecord(value)) return undefined
     const kept: Record<string, T> = {}
     for (const [key, item] of Object.entries(value)) {
-      const at = `[${JSON.stringify(key)}]`
-      const checked = entry(item, (what) => drop(at + what))
-      if (checked === undefined) drop(at)
+      const step: PathStep = { entry: key }
+      const checked = entry(item, (path) => drop([step, ...path]))
+      if (checked === undefined) drop([step])
       else kept[key] = checked
     }
     return kept
@@ -326,20 +340,21 @@ export function definePersist<S, P extends object>(
       for (const step of spec.migrations.slice(schemaOf(persisted))) state = step(state)
       const defaults = current as Record<string, unknown>
       const checked: Record<string, unknown> = {}
-      const reset: string[] = []
-      const dropped: string[] = []
+      const reset: FieldPath[] = []
+      const dropped: FieldPath[] = []
       for (const [field, check] of Object.entries(spec.fields) as [string, FieldCheck<unknown>][]) {
         if (!Object.hasOwn(state, field)) {
           checked[field] = defaults[field]
           continue
         }
-        const value = check(state[field], (what) => {
-          log.warn(`Saved ${spec.name}: dropped ${field}${what}`)
-          dropped.push(field + what)
+        const value = check(state[field], (path) => {
+          const full = [{ key: field }, ...path]
+          log.warn(`Saved ${spec.name}: dropped ${pathText(full)}`)
+          dropped.push(full)
         })
         if (value === undefined) {
           log.warn(`Saved ${spec.name}: ${field} had an unexpected value and was reset`)
-          reset.push(field)
+          reset.push([{ key: field }])
           checked[field] = defaults[field]
         } else {
           checked[field] = value

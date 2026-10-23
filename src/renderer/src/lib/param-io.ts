@@ -1,6 +1,7 @@
 import type { ParamType, PluginParameter, SelectOption } from '../types/plugin'
 import { ALL_PARAM_TYPES } from '../types/plugin'
-import type { FieldLabels } from '../stores/persist'
+import { pathText } from '../stores/persist'
+import type { FieldLabels, FieldPath } from '../stores/persist'
 
 /** File format for .mzparams export */
 export interface ParameterExport {
@@ -22,7 +23,7 @@ export function serializeParams(params: PluginParameter[], sourceName: string): 
 }
 
 export type ParameterShape =
-  | { ok: true; parameter: Omit<PluginParameter, 'id'>; dropped: string[] }
+  | { ok: true; parameter: Omit<PluginParameter, 'id'>; dropped: FieldPath[] }
   | { ok: false; reason: 'shape' | 'type' }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -34,7 +35,7 @@ function isParamType(value: unknown): value is ParamType {
 }
 
 /** Options that are `{ value, text }` strings; other elements and keys are named in `dropped`. */
-function checkOptions(elements: unknown[], dropped: string[]): SelectOption[] {
+function checkOptions(elements: unknown[], dropped: FieldPath[]): SelectOption[] {
   const options: SelectOption[] = []
   elements.forEach((element, i) => {
     if (
@@ -42,12 +43,13 @@ function checkOptions(elements: unknown[], dropped: string[]): SelectOption[] {
       typeof element.value !== 'string' ||
       typeof element.text !== 'string'
     ) {
-      dropped.push(`options[${i}]`)
+      dropped.push([{ key: 'options' }, { index: i }])
       return
     }
     options.push({ value: element.value, text: element.text })
     for (const key of Object.keys(element)) {
-      if (key !== 'value' && key !== 'text') dropped.push(`options[${i}].${key}`)
+      if (key !== 'value' && key !== 'text')
+        dropped.push([{ key: 'options' }, { index: i }, { key }])
     }
   })
   return options
@@ -61,11 +63,11 @@ function checkOptions(elements: unknown[], dropped: string[]): SelectOption[] {
 function checkParameterShape(value: unknown): ParameterShape {
   if (!isRecord(value) || typeof value.name !== 'string') return { ok: false, reason: 'shape' }
   if (!isParamType(value.type)) return { ok: false, reason: 'type' }
-  const dropped: string[] = []
+  const dropped: FieldPath[] = []
   const name = value.name
   const take = <T>(key: string, accepted: boolean, fallback: T): T => {
     if (accepted) return value[key] as T
-    dropped.push(key)
+    dropped.push([{ key }])
     return fallback
   }
   const parameter: Omit<PluginParameter, 'id'> = {
@@ -92,7 +94,7 @@ function checkParameterShape(value: unknown): ParameterShape {
       case 'max':
       case 'decimals':
         if (typeof field === 'number') parameter[key] = field
-        else if (field !== null) dropped.push(key)
+        else if (field !== null) dropped.push([{ key }])
         break
       case 'structType':
       case 'dir':
@@ -101,22 +103,22 @@ function checkParameterShape(value: unknown): ParameterShape {
       case 'onLabel':
       case 'offLabel':
         if (typeof field === 'string') parameter[key] = field
-        else if (field !== null) dropped.push(key)
+        else if (field !== null) dropped.push([{ key }])
         break
       case 'arrayType':
         if (isParamType(field)) parameter.arrayType = field
-        else if (field !== null) dropped.push(key)
+        else if (field !== null) dropped.push([{ key }])
         break
       case 'require':
         if (typeof field === 'boolean') parameter.require = field
-        else if (field !== null) dropped.push(key)
+        else if (field !== null) dropped.push([{ key }])
         break
       case 'options':
         if (Array.isArray(field)) parameter.options = checkOptions(field, dropped)
-        else dropped.push(key)
+        else dropped.push([{ key }])
         break
       default:
-        dropped.push(key)
+        dropped.push([{ key }])
     }
   }
   return { ok: true, parameter, dropped }
@@ -128,11 +130,11 @@ function checkParameterShape(value: unknown): ParameterShape {
  */
 export function checkSavedParameter(
   value: unknown,
-  drop: (what: string) => void
+  drop: (path: FieldPath) => void
 ): PluginParameter | undefined {
   const shape = checkParameterShape(value)
   if (!shape.ok) return undefined
-  for (const field of shape.dropped) drop(`.${field}`)
+  for (const path of shape.dropped) drop(path)
   const id = isRecord(value) && typeof value.id === 'string' ? value.id : crypto.randomUUID()
   return { id, ...shape.parameter }
 }
@@ -181,7 +183,9 @@ export function deserializeParams(content: string): ParamImportResult {
       return
     }
     parameters.push({ ...shape.parameter, id: crypto.randomUUID() })
-    for (const field of shape.dropped) dropped.push({ param: shape.parameter.name, field })
+    for (const path of shape.dropped) {
+      dropped.push({ param: shape.parameter.name, field: pathText(path) })
+    }
   })
   const source = typeof data.source === 'string' && data.source !== '' ? data.source : 'Unknown'
   return { success: true, parameters, source, skipped, dropped }

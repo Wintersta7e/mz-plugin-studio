@@ -24,7 +24,7 @@ import {
   definePersist,
   isRecord
 } from './persist'
-import type { FieldCheck, MigrationStep } from './persist'
+import type { FieldCheck, FieldPath, MigrationStep } from './persist'
 // Cross-store imports — safe because getState() is only called at runtime (inside
 // store actions), never during module initialization. ESM circular bindings resolve
 // by the time any user interaction triggers these actions.
@@ -200,16 +200,16 @@ const checkLocalized: FieldCheck<LocalizedContent> = (value) =>
  * `meta` as the editors read it: a field of the wrong type takes its default, or is left out when
  * optional, and is named through `drop`.
  */
-function checkMeta(meta: Record<string, unknown>, drop: (what: string) => void): PluginMeta {
+function checkMeta(meta: Record<string, unknown>, drop: (path: FieldPath) => void): PluginMeta {
   const checked = { ...meta }
   const take = (field: string, check: FieldCheck<unknown>, fallback?: unknown): void => {
     if (fallback === undefined && !Object.hasOwn(checked, field)) return
-    const value = check(checked[field], (what) => drop(`.${field}${what}`))
+    const value = check(checked[field], (path) => drop([{ key: field }, ...path]))
     if (value !== undefined) {
       checked[field] = value
       return
     }
-    drop(`.${field}`)
+    drop([{ key: field }])
     if (fallback === undefined) delete checked[field]
     else checked[field] = fallback
   }
@@ -226,9 +226,9 @@ const idOf = (value: Record<string, unknown>): string =>
 
 const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
   if (!isRecord(value) || typeof value.name !== 'string') return undefined
-  const args = checkParameters(value.args, (what) => drop(`.args${what}`))
+  const args = checkParameters(value.args, (path) => drop([{ key: 'args' }, ...path]))
   if (args === undefined) return undefined
-  for (const field of ['text', 'desc']) if (typeof value[field] !== 'string') drop(`.${field}`)
+  for (const field of ['text', 'desc']) if (typeof value[field] !== 'string') drop([{ key: field }])
   return {
     id: idOf(value),
     name: value.name,
@@ -240,7 +240,9 @@ const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
 
 const checkStruct: FieldCheck<PluginStruct> = (value, drop) => {
   if (!isRecord(value) || typeof value.name !== 'string') return undefined
-  const parameters = checkParameters(value.parameters, (what) => drop(`.parameters${what}`))
+  const parameters = checkParameters(value.parameters, (path) =>
+    drop([{ key: 'parameters' }, ...path])
+  )
   return parameters === undefined ? undefined : { id: idOf(value), name: value.name, parameters }
 }
 
@@ -257,7 +259,7 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   ) {
     return undefined
   }
-  const within = (field: string) => (what: string) => drop(`.${field}${what}`)
+  const within = (field: string) => (path: FieldPath) => drop([{ key: field }, ...path])
   const plugin: Record<string, unknown> = {
     ...value,
     meta: checkMeta(value.meta, within('meta')),
@@ -268,7 +270,7 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (Object.hasOwn(plugin, field) && typeof plugin[field] !== 'string') {
       delete plugin[field]
-      drop(`.${field}`)
+      drop([{ key: field }])
     }
   }
   return plugin as unknown as PluginDefinition
