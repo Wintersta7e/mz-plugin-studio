@@ -194,6 +194,49 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     })
   })
 
+  it('Ctrl+S without a project asks once, then writes the chosen file without asking', async () => {
+    const target = join(root, 'Chosen.js')
+    window.api = createMainApi({ chosen: () => target })
+    const id = openTab('Alpha')
+    render(<App />)
+    pressSave()
+    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
+    pressSave()
+    await waitFor(() => expect(toasts()).toHaveLength(2))
+    expect(toasts()[1]).toBe('success: Plugin saved')
+    expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1)
+    expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+    expect(isDirty(id)).toBe(false)
+  })
+
+  it('Ctrl+S without a project, in a new session, offers the file the tab was saved to', async () => {
+    const target = join(root, 'Saved.js')
+    await writeFile(target, 'saved last session\n')
+    window.api = createMainApi({ chosen: () => target })
+    const id = openTab('Alpha')
+    act(() =>
+      usePluginStore.getState().recordSaves([
+        {
+          id,
+          saved: plugin(),
+          path: target,
+          sha256: sha('saved last session\n'),
+          written: 'saved last session\n'
+        }
+      ])
+    )
+    act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+    render(<App />)
+    pressSave()
+    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
+      defaultPath: target,
+      filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+    })
+    expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+  })
+
   it('one Ctrl+S writes the open plugins to storage once', async () => {
     window.api = createMainApi()
     await openProject()

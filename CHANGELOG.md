@@ -41,7 +41,7 @@
 - On Linux, the save dialog asks before replacing an existing file, as it already did on Windows and macOS.
 - Saving no longer replaces a file without asking: the app asks first when the file was not opened or saved by that tab (for example a second new plugin named NewPlugin), changed on disk, or would stop compiling; Cancel is the default.
 - A save that fails part-way, for example on a full disk, leaves the file as it was instead of cut short. A file locked for a moment by antivirus or the search indexer on Windows no longer fails the save.
-- Ctrl+S without a loaded project opens a save dialog instead of doing nothing.
+- Ctrl+S without a loaded project opens a save dialog instead of doing nothing. The dialog starts at the file the plugin was last saved to, and once a file is chosen, later Ctrl+S presses in the same session save there without asking.
 - Edits made while a save is in progress keep the plugin marked unsaved.
 - Closing the window with the title-bar button, Alt+F4 or the taskbar now asks when any open plugin has unsaved changes; Cancel is the default in every prompt that would discard work.
 - Undo or redo after saving marks the plugin unsaved.

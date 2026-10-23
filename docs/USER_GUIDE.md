@@ -876,7 +876,7 @@ If the original plugin has text before the `/*:` annotation block (license heade
 ### Export Options
 
 **Export as .js Plugin**
-1. **Ctrl+S** saves to `js/plugins/<Name>.js` in the loaded project; with no project loaded it opens a save dialog.
+1. **Ctrl+S** saves to `js/plugins/<Name>.js` in the loaded project. With no project loaded it opens a save dialog at the file the plugin was last saved to; once you choose a file, later **Ctrl+S** presses in the same session save there without asking.
 2. **Export** always opens a save dialog. With a project loaded it writes a copy: the plugin stays marked unsaved, and **Ctrl+S** still saves it into the project.
 3. Before replacing a file, the app asks when the file was not opened or saved by this tab, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
 

@@ -38,6 +38,9 @@ const NOT_SAVED: Record<NotSavedKind, string> = {
   unconfirmed: 'cannot confirm the file is unchanged (save it with Ctrl+S to confirm)'
 }
 
+// Paths the save dialog returned this session: main lets the app write them again until it quits
+const chosenPaths = new Set<string>()
+
 const nameOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? plugin.meta.name
 
 const fileNameOf = (path: string): string => path.split(/[\\/]/).pop() ?? path
@@ -147,11 +150,20 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
       const filename = saveFileName(plugin)
       write = (guard) => window.api.plugin.save(project.path, filename, code, guard)
     } else {
-      const filePath = await window.api.dialog.saveFile({
-        defaultPath: plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js',
-        filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
-      })
+      const { baseByPluginId, savedPathsByPluginId } = usePluginStore.getState()
+      const known =
+        mode === 'save'
+          ? (baseByPluginId[plugin.id]?.path ?? savedPathsByPluginId[plugin.id])
+          : undefined
+      const filePath =
+        known !== undefined && chosenPaths.has(known)
+          ? known
+          : await window.api.dialog.saveFile({
+              defaultPath: known ?? (plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js'),
+              filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+            })
       if (!filePath) return { status: 'cancelled' }
+      chosenPaths.add(filePath)
       write = (guard) => window.api.plugin.saveToPath(filePath, code, guard)
     }
     const result = await writeAsking(plugin, write)
