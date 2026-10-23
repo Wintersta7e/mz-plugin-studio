@@ -258,4 +258,35 @@ describe('saving an imported plugin', () => {
       await rm(project, { recursive: true, force: true })
     }
   }, 60_000)
+
+  it('Save All names an imported tab with no record of its file as unconfirmed, not a different file', async () => {
+    const project = await mkdtemp(join(tmpdir(), 'save-all-no-base-'))
+    try {
+      const text = readFileSync(fixturePath('js', 'plugins', FILE), 'utf-8')
+      const file = join(project, 'js', 'plugins', FILE)
+      await mkdir(dirname(file), { recursive: true })
+      await writeFile(file, text)
+      const api = createMainApi()
+      const stores = await startApp(api, project)
+      const opened = { ...PluginParser.parsePlugin(text, FILE), importedFrom: FILE }
+      act(() => {
+        stores.usePluginStore.getState().closePlugin(TAB)
+        stores.usePluginStore.getState().openPlugin(opened)
+        stores.usePluginStore.getState().updateMeta({ description: 'Edited' })
+      })
+      expect(stores.usePluginStore.getState().baseByPluginId[opened.id]).toBeUndefined()
+
+      press('KeyS', true)
+      await waitFor(() => expect(toastsOf(stores)).toHaveLength(1))
+      const report = toastsOf(stores)[0]
+      expect(report).not.toContain('a different file')
+      expect(report).toContain(
+        'Not saved, cannot confirm the file is unchanged (save it with Ctrl+S to confirm): Fixture_HandWritten.'
+      )
+      expect(await readFile(file, 'utf8')).toBe(text)
+      expect(api.dialog.message).not.toHaveBeenCalled()
+    } finally {
+      await rm(project, { recursive: true, force: true })
+    }
+  }, 60_000)
 })
