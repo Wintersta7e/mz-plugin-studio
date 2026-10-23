@@ -19,9 +19,10 @@ import {
 } from '../../src/renderer/src/stores'
 import { createEmptyPlugin, toBaseline } from '../../src/renderer/src/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
+import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { MessageDialogOptions, SaveConflict } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../helpers/fixture-project'
-import { createMainApi } from './support/main-api'
+import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
 const FILE = 'Fixture_HandWritten.js'
@@ -231,32 +232,39 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     })
   })
 
-  it('Save All skips a tab whose file it did not write, names it in one report and saves the rest', async () => {
+  it('Save All skips a tab whose file it did not write, names it and every tab not saved in one report and saves the rest', async () => {
     await mkdir(join(root, 'js', 'plugins'), { recursive: true })
     await writeFile(fileIn('Beta.js'), 'unrelated')
     window.api = createMainApi({
       overrides: {
         plugin: {
-          save: vi.fn(async (...args: Parameters<typeof savePluginFile>) => {
-            if (args[1] === 'Gamma.js') throw new Error('disk full')
-            return savePluginFile(...args)
-          })
+          save: vi.fn(
+            viaIpc(IPC_CHANNELS.PLUGIN_SAVE, async (...args: Parameters<typeof savePluginFile>) => {
+              if (args[1] === 'Gamma.js') throw new Error('disk full')
+              return savePluginFile(...args)
+            })
+          )
         }
       }
     })
     await openProject()
-    const [alpha, beta, gamma] = [openTab('Alpha'), openTab('Beta'), openTab('Gamma')]
+    const [alpha, beta, gamma, unnamed] = [
+      openTab('Alpha'),
+      openTab('Beta'),
+      openTab('Gamma'),
+      openTab('')
+    ]
     render(<App />)
     pressSaveAll()
     await waitFor(() =>
       expect(toasts()).toEqual([
-        'warning: Saved 1, failed 1. Not saved, a different file with this name exists: Beta.'
+        'warning: Saved 1, failed 1. Not saved, a different file with this name exists: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
       ])
     )
     expect(useToastStore.getState().toasts[0].duration).toBeGreaterThanOrEqual(10_000)
     expect(await readFile(fileIn('Beta.js'), 'utf8')).toBe('unrelated')
     expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('@target MZ')
-    expect([alpha, beta, gamma].map(isDirty)).toEqual([false, true, true])
+    expect([alpha, beta, gamma, unnamed].map(isDirty)).toEqual([false, true, true, true])
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 

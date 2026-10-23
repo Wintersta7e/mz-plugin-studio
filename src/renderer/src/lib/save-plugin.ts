@@ -194,10 +194,12 @@ export async function saveAllPlugins(): Promise<void> {
   const ps = usePluginStore.getState()
   const project = useProjectStore.getState().project
   if (!project) return
-  const dirtyPlugins = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] && p.meta.name)
+  const dirty = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id])
+  const dirtyPlugins = dirty.filter((p) => p.meta.name)
+  const unnamed = dirty.length - dirtyPlugins.length
   const records: SaveRecord[] = []
   const notSaved = new Map<NotSavedKind, string[]>()
-  let failed = 0
+  const failed: string[] = []
   const skip = (plugin: PluginDefinition, kind: NotSavedKind, label: string): void => {
     log.warn('[save] refused', nameOf(plugin), kind)
     notSaved.set(kind, [...(notSaved.get(kind) ?? []), label])
@@ -225,23 +227,23 @@ export async function saveAllPlugins(): Promise<void> {
       }
     } catch (error: unknown) {
       log.error('[save-all]', p.meta.name, error)
-      failed++
+      failed.push(`${p.meta.name} (${userMessage(error)})`)
     }
   }
   if (records.length > 0) usePluginStore.getState().recordSaves(records)
 
   const addToast = useToastStore.getState().addToast
   const saved = records.length
-  if (notSaved.size > 0 || failed > 0) {
+  if (notSaved.size > 0 || unnamed > 0 || failed.length > 0) {
     const reasons = [...notSaved].map(
       ([kind, names]) => ` Not saved, ${NOT_SAVED[kind]}: ${names.join(', ')}.`
     )
+    if (unnamed > 0)
+      reasons.push(` Not saved, no plugin name: ${unnamed} tab${unnamed > 1 ? 's' : ''}.`)
+    if (failed.length > 0) reasons.push(` Failed: ${failed.join(', ')}.`)
     addToast({
       type: 'warning',
-      message:
-        notSaved.size > 0
-          ? `Saved ${saved}${failed > 0 ? `, failed ${failed}` : ''}.${reasons.join('')}`
-          : `Saved ${saved}, failed ${failed}`,
+      message: `Saved ${saved}${failed.length > 0 ? `, failed ${failed.length}` : ''}.${reasons.join('')}`,
       duration: NOTICE_MS
     })
   } else if (saved > 0) {

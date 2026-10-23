@@ -880,7 +880,7 @@ If the original plugin has text before the `/*:` annotation block (license heade
 2. **Export** always opens a save dialog. With a project loaded it writes a copy: the plugin stays marked unsaved, and **Ctrl+S** still saves it into the project.
 3. Before replacing a file, the app asks when the file was not opened or saved by this tab, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
 
-**Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, one at a time. It never asks: a plugin whose save would need one of the questions above is not saved. One report gives the number saved and names the plugins not saved, grouped by reason.
+**Save All** — with a project loaded, **Ctrl+Shift+S** saves every open plugin that has unsaved changes to `js/plugins/`, one at a time. It never asks: a plugin whose save would need one of the questions above is not saved. One report gives the number saved and names the plugins not saved, grouped by reason, and each save that failed with its error. Tabs with unsaved changes and no Plugin Name are not saved; the report counts them.
 
 Closing the window — the title-bar close button, Alt+F4 or the taskbar — asks first when any open plugin has unsaved changes, not only the one on screen. Closing a tab with unsaved changes asks the same way. **Cancel** is the default in every such prompt.
 
