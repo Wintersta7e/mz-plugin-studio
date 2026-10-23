@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-23
+
 ### Upgrading from 1.6.x
 
 - Plugin tabs imported in 1.6.x were saved without their file text. After upgrading, the code preview shows a warning on each one and raw mode refuses to save it until you open its project and click **Reload from project**, or the **Reload** button in the notice that opening the project shows, which names those tabs and the project folder.

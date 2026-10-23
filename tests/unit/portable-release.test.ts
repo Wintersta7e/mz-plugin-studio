@@ -61,14 +61,14 @@ describe('portable release without an updater', () => {
     expect(pkg.dependencies).not.toHaveProperty('electron-updater')
   })
 
-  it('the changelog tells users where new versions come from', () => {
+  it('the 1.7.0 notes tell users where new versions come from', () => {
     const changelog = read('CHANGELOG.md').split(/\r?\n/)
-    const start = changelog.indexOf('## [Unreleased]')
+    const start = changelog.findIndex((line) => line.startsWith('## [1.7.0] - '))
     expect(start).toBeGreaterThanOrEqual(0)
     const end = changelog.findIndex((line, index) => index > start && line.startsWith('## ['))
-    const unreleased = changelog.slice(start, end < 0 ? undefined : end)
-    const removed = unreleased.indexOf('### Removed')
+    const release = changelog.slice(start, end < 0 ? undefined : end)
+    const removed = release.indexOf('### Removed')
     expect(removed).toBeGreaterThan(0)
-    expect(unreleased.indexOf(REMOVED_LINE)).toBeGreaterThan(removed)
+    expect(release.indexOf(REMOVED_LINE)).toBeGreaterThan(removed)
   })
 })
