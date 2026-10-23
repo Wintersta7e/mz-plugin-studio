@@ -46,8 +46,7 @@ function findOpenPlugin(pluginId: string): PluginDefinition {
 }
 
 const guardFor = (pluginId: string): SaveGuard => ({
-  base: usePluginStore.getState().baseByPluginId[pluginId] ?? null,
-  checkSyntax: true
+  base: usePluginStore.getState().baseByPluginId[pluginId] ?? null
 })
 
 const recordOf = (plugin: PluginDefinition, result: Written, written: string): SaveRecord => ({
@@ -114,8 +113,8 @@ async function writeAsking(
     }
     guard =
       result.conflict === 'would-break'
-        ? { ...guard, force: ['would-break'] }
-        : { base: { path: result.path, sha256: result.diskSha256 }, checkSyntax: true }
+        ? { ...guard, overwriteBroken: true }
+        : { base: { path: result.path, sha256: result.diskSha256 } }
   }
 }
 

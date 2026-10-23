@@ -430,10 +430,10 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       expect(options.buttons).toEqual(['Cancel', 'Overwrite', 'Reload from project'])
     }
     expect(guards()).toEqual([
-      { base: { path, sha256: sha(text) }, checkSyntax: true },
-      { base: { path, sha256: sha(changed) }, checkSyntax: true }
+      { base: { path, sha256: sha(text) } },
+      { base: { path, sha256: sha(changed) } }
     ])
-    expect(guards()[1]).not.toHaveProperty('force')
+    expect(guards()[1]).not.toHaveProperty('overwriteBroken')
     expect(await readFile(path, 'utf8')).toBe(changedAgain)
     expect(isDirty(id)).toBe(true)
   })
@@ -449,10 +449,10 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
     conflictDialog(0, 'exists-unrelated')
     expect(guards()).toEqual([
-      { base: null, checkSyntax: true },
-      { base: { path: fileIn('Alpha.js'), sha256: sha('// old file\n') }, checkSyntax: true }
+      { base: null },
+      { base: { path: fileIn('Alpha.js'), sha256: sha('// old file\n') } }
     ])
-    expect(guards()[1]).not.toHaveProperty('force')
+    expect(guards()[1]).not.toHaveProperty('overwriteBroken')
     const bytes = await readFile(fileIn('Alpha.js'))
     expect(bytes.toString('utf8')).toBe(generatePlugin(plugin()))
     expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
@@ -479,10 +479,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       )
     )
     const base = { path: fileIn('Alpha.js'), sha256: sha(compiling) }
-    expect(guards().slice(1)).toEqual([
-      { base, checkSyntax: true },
-      { base, checkSyntax: true, force: ['would-break'] }
-    ])
+    expect(guards().slice(1)).toEqual([{ base }, { base, overwriteBroken: true }])
     expect(toasts()[1]).toBe('success: Plugin saved')
     expect(toasts()[2]).toMatch(/^warning: Saved, but the file does not compile \(line \d+\): .+/)
     expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('let broken = ;')

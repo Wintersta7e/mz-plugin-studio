@@ -101,7 +101,6 @@ async function chosenFile(text: string): Promise<string> {
 
 const guard = (base: SaveGuard['base'], extra: Partial<SaveGuard> = {}): SaveGuard => ({
   base,
-  checkSyntax: true,
   ...extra
 })
 
@@ -219,26 +218,25 @@ describe('the save guard', () => {
     expect(result).not.toHaveProperty('syntaxWarning')
   })
 
-  it('force skips exactly the compile check', async () => {
+  it('overwriteBroken skips exactly the compile check', async () => {
     const target = await projectFile(COMPILES)
     const base = { path: target, sha256: sha(COMPILES) }
-    const forced = guard(base, { force: ['would-break'] })
+    const forced = guard(base, { overwriteBroken: true })
     const result = await savePluginFile(tmp, 'Foo.js', BROKEN, forced)
     await expectWritten(result, target, BROKEN)
     expect(result).toMatchObject({ syntaxWarning: { line: 1 } })
   })
 
-  it('force cannot skip a changed or unrelated file', async () => {
+  it('overwriteBroken does not skip a changed or unrelated file', async () => {
     const target = await projectFile('A')
-    const force = ['changed-on-disk', 'exists-unrelated'] as unknown as SaveGuard['force']
-    const changed = guard({ path: target, sha256: sha('other') }, { force })
+    const changed = guard({ path: target, sha256: sha('other') }, { overwriteBroken: true })
     await expectConflict(
       await savePluginFile(tmp, 'Foo.js', 'B', changed),
       'changed-on-disk',
       target,
       'A'
     )
-    const unrelated = guard(null, { force })
+    const unrelated = guard(null, { overwriteBroken: true })
     await expectConflict(
       await savePluginFile(tmp, 'Foo.js', 'B', unrelated),
       'exists-unrelated',

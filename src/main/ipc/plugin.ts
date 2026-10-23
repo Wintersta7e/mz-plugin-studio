@@ -102,7 +102,7 @@ async function replaceFile(target: string, bytes: Uint8Array, exists: boolean): 
  * guard the file is written unchecked. Another program writing between the read and the write
  * is not detected.
  */
-export async function writeGuarded(
+async function writeGuarded(
   target: string,
   content: string,
   guard: SaveGuard | undefined,
@@ -110,7 +110,7 @@ export async function writeGuarded(
 ): Promise<SaveResult> {
   const disk = await readExisting(target)
   const filename = path.basename(target)
-  const problem = guard?.checkSyntax ? compileCheck(content, filename) : null
+  const problem = guard !== undefined ? compileCheck(content, filename) : null
   if (disk !== null && guard !== undefined) {
     const diskSha256 = sha256Hex(disk)
     const refuse = (conflict: SaveConflict, syntaxError?: SyntaxProblem): SaveResult => ({
@@ -129,7 +129,7 @@ export async function writeGuarded(
     }
     if (
       problem !== null &&
-      !guard.force?.includes('would-break') &&
+      guard.overwriteBroken !== true &&
       // Only whether the file on disk compiles matters here, so a lossy decode is enough
       compileCheck(disk.toString('utf-8'), filename) === null
     ) {

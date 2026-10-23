@@ -152,7 +152,7 @@ describe('saving an imported plugin', () => {
       PROJECT,
       FILE,
       generatePlugin(tab()),
-      { base: { path: `${PROJECT}/js/plugins/${FILE}`, sha256: null }, checkSyntax: true }
+      { base: { path: `${PROJECT}/js/plugins/${FILE}`, sha256: null } }
     ])
     expect(asked()).toBe(2)
 

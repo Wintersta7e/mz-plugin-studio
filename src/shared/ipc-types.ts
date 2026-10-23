@@ -71,11 +71,13 @@ export interface FileBase {
 
 export type SaveConflict = 'exists-unrelated' | 'changed-on-disk' | 'would-break'
 
-/** What a save checks before replacing an existing file; `force` can only skip `would-break` */
+/**
+ * What a save checks before replacing an existing file; a guarded save also checks the syntax.
+ * `overwriteBroken` skips only `would-break`
+ */
 export interface SaveGuard {
   base: FileBase | null
-  force?: Array<'would-break'>
-  checkSyntax: boolean
+  overwriteBroken?: boolean
 }
 
 export interface SyntaxProblem {
