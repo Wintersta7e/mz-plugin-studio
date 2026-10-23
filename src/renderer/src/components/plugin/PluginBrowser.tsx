@@ -237,9 +237,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
         type: 'question',
         title: 'Unsaved Changes',
         message: `"${pluginName}" has unsaved changes. Close anyway?`,
-        buttons: ['Cancel', 'Close Without Saving'],
-        defaultId: 0,
-        cancelId: 0
+        buttons: ['Cancel', 'Close Without Saving']
       })
       if (result === 0) return
     }

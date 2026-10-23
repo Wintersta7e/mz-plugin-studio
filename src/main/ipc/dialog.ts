@@ -33,19 +33,26 @@ export async function showSaveFileDialog(
   return result.filePath
 }
 
-/** Shows a message box; returns the index of the button the user chose */
+/**
+ * Shows a message box; returns the index of the button the user chose. A Cancel button is both
+ * the Enter and the Esc button unless the caller names others, so no key press discards work.
+ */
 export async function showMessageDialog(
   dialog: Pick<Dialog, 'showMessageBox'>,
   options: MessageDialogOptions
 ): Promise<number> {
   log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
+  const buttons = options.buttons || ['OK']
+  const cancel = buttons.indexOf('Cancel')
+  const defaultId = options.defaultId ?? (cancel >= 0 ? cancel : undefined)
+  const cancelId = options.cancelId ?? (cancel >= 0 ? cancel : undefined)
   const result = await dialog.showMessageBox({
     type: options.type || 'info',
     title: options.title || 'MZ Plugin Studio',
     message: options.message,
-    buttons: options.buttons || ['OK'],
-    ...(options.defaultId !== undefined && { defaultId: options.defaultId }),
-    ...(options.cancelId !== undefined && { cancelId: options.cancelId })
+    buttons,
+    ...(defaultId !== undefined && { defaultId }),
+    ...(cancelId !== undefined && { cancelId })
   })
 
   return result.response

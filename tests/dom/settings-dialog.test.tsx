@@ -61,7 +61,7 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete the Settings backup' }))
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     expect(window.api.dialog.message).toHaveBeenCalledWith(
-      expect.objectContaining({ buttons: ['Cancel', 'Delete'], defaultId: 0, cancelId: 0 })
+      expect.objectContaining({ buttons: ['Cancel', 'Delete'] })
     )
     expect(localStorage.getItem(BACKUP)).toBe('{"state":')
     expect(screen.getByText(BACKUP)).toBeInTheDocument()

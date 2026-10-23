@@ -20,7 +20,18 @@ describe('dialog options', () => {
     expect(recorded.cancelId).toBe(1)
   })
 
-  it('dialog:message leaves both out when the caller names neither', async () => {
+  it('dialog:message makes Cancel both the Enter and the Esc button', async () => {
+    const dialog = {
+      showMessageBox: vi.fn(async (_options: MessageBoxOptions) => ({ response: 0 }))
+    }
+    const options = { message: 'Discard?', buttons: ['Cancel', 'Discard'] }
+    await showMessageDialog(dialog as unknown as Dialog, options)
+    const recorded = dialog.showMessageBox.mock.calls[0][0]
+    expect(recorded.defaultId).toBe(0)
+    expect(recorded.cancelId).toBe(0)
+  })
+
+  it('dialog:message leaves both out when the caller names neither and offers no Cancel', async () => {
     const dialog = {
       showMessageBox: vi.fn(async (_options: MessageBoxOptions) => ({ response: 0 }))
     }

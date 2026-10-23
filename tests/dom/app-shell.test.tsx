@@ -179,7 +179,7 @@ describe(
       await waitFor(() => expect(tab(clean)?.rawSource).toBe(textOf(FILES[0])))
       await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
       const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
-      expect(options).toMatchObject({ title: 'Reload from project?', defaultId: 0, cancelId: 0 })
+      expect(options).toMatchObject({ title: 'Reload from project?' })
       expect(options.buttons?.[0]).toBe('Cancel')
       expect(tab(edited)?.rawSource).toBeUndefined()
       expect(tab(edited)?.meta.description).toBe('Edited before reload')

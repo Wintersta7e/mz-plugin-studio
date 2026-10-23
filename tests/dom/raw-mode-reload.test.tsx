@@ -27,9 +27,7 @@ const QUESTION = {
   type: 'question',
   title: 'Reload from project?',
   message: `${PATH} may not match this tab: the tab was read by an older version of the app, or the file changed since it was opened. Replace the tab with the file, dropping its unsaved edits, or keep the tab's values and apply them to the reloaded file?`,
-  buttons: ['Cancel', 'Replace with file', 'Keep tab values'],
-  defaultId: 0,
-  cancelId: 0
+  buttons: ['Cancel', 'Replace with file', 'Keep tab values']
 }
 
 type Stores = typeof StoresModule

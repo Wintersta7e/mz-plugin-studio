@@ -252,9 +252,7 @@ export function ParameterBuilder() {
       type: 'question',
       title: 'Delete Parameters',
       message: 'Delete ' + count + ' selected parameter' + (count > 1 ? 's' : '') + '?',
-      buttons: ['Cancel', 'Delete'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Delete']
     })
     if (result === 1) {
       removeParameters(ids)
@@ -360,9 +358,7 @@ export function ParameterBuilder() {
           type: 'question',
           title: 'Overwrite Preset',
           message: `A preset named "${trimmed}" already exists. Overwrite it?`,
-          buttons: ['Cancel', 'Overwrite'],
-          defaultId: 0,
-          cancelId: 0
+          buttons: ['Cancel', 'Overwrite']
         })
         if (overwrite !== 1) return
       }

@@ -72,8 +72,6 @@ describe('plugin browser', () => {
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
-    expect(options.cancelId).toBe(options.defaultId)
-    expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
     expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual([id])
   })
 })

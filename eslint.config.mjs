@@ -47,7 +47,9 @@ export default config(
       ],
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error'] }]
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // A window.confirm dialog cannot make Cancel its Enter button; dialog.message does
+      'no-alert': 'error'
     }
   },
   {

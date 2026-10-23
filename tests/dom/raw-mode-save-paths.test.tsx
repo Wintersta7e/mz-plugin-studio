@@ -137,9 +137,7 @@ describe('saving an imported plugin', () => {
       type: 'warning',
       title: 'Save without raw mode?',
       message: `Saving ${FILE} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
-      buttons: ['Cancel', 'Show Diff', 'Save'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Show Diff', 'Save']
     })
     await waitFor(() => expect(answers).toEqual([2]))
     await act(async () => {})

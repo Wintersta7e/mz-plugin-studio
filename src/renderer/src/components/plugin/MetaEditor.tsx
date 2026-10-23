@@ -65,9 +65,7 @@ export function MetaEditor() {
         type: 'question',
         title: 'Replace help text',
         message: 'This will replace the existing help text. Continue?',
-        buttons: ['Cancel', 'Replace'],
-        defaultId: 0,
-        cancelId: 0
+        buttons: ['Cancel', 'Replace']
       })
       if (answer !== 1) return
     }

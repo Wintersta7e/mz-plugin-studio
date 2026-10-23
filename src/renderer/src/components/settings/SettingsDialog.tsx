@@ -51,9 +51,7 @@ function BackupsSection() {
       type: 'warning',
       title: 'Delete backup',
       message: `Delete the ${backup.area} backup? Export it first to keep a copy.`,
-      buttons: ['Cancel', 'Delete'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Delete']
     })
     if (choice !== 1) return
     deleteBackup(backup.key)

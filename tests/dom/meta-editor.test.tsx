@@ -41,9 +41,7 @@ describe('meta editor help text', () => {
       type: 'question',
       title: 'Replace help text',
       message: 'This will replace the existing help text. Continue?',
-      buttons: ['Cancel', 'Replace'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Replace']
     })
     await act(async () => {})
     expect(usePluginStore.getState().plugin.meta.help).toBe(HELP)

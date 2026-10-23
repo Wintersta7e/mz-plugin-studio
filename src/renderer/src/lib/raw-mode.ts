@@ -75,9 +75,7 @@ export async function prepareSave(
       type: 'warning',
       title: 'Save without raw mode?',
       message: `Saving ${plugin.importedFrom} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
-      buttons: ['Cancel', 'Show Diff', 'Save'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Show Diff', 'Save']
     })
     if (answer === 1) useUIStore.getState().requestDiff(pluginId)
     if (answer !== 2) return { status: 'cancelled' }
@@ -124,9 +122,7 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
       type: 'question',
       title: 'Reload from another project?',
       message: `This tab was last read from or saved to ${base.path}, which is not in the open project's plugins folder. Reload it from ${path} instead?`,
-      buttons: ['Cancel', 'Reload'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Reload']
     })
     if (answer !== 1) return false
   }
@@ -137,9 +133,7 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
       type: 'question',
       title: 'Reload from project?',
       message: `${path} may not match this tab: the tab was read by an older version of the app, or the file changed since it was opened. Replace the tab with the file, dropping its unsaved edits, or keep the tab's values and apply them to the reloaded file?`,
-      buttons: ['Cancel', 'Replace with file', 'Keep tab values'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Replace with file', 'Keep tab values']
     })
     if (answer !== 1 && answer !== 2) return false
     keepTab = answer === 2

@@ -119,13 +119,10 @@ const messages = (): MessageDialogOptions[] =>
 const checkedKinds = new Set<SaveConflict>()
 let dialogsChecked = 0
 
-/** The `index`th message dialog, checked as a save conflict's: Cancel is Enter's and Esc's button. */
+/** The `index`th message dialog, checked as a save conflict's. */
 function conflictDialog(index: number, kind: SaveConflict): MessageDialogOptions {
   const options = messages()[index]
   expect(options.title).toBe('Overwrite file?')
-  expect(options.defaultId).toBe(0)
-  expect(options.cancelId).toBe(options.defaultId)
-  expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
   checkedKinds.add(kind)
   dialogsChecked++
   return options
@@ -354,9 +351,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
         type: 'question',
         title: 'Reload from another project?',
         message: `This tab was last read from or saved to ${fileIn(FILE, first)}, which is not in the open project's plugins folder. Reload it from ${fileIn(FILE, second)} instead?`,
-        buttons: ['Cancel', 'Reload'],
-        defaultId: 0,
-        cancelId: 0
+        buttons: ['Cancel', 'Reload']
       }
     ])
     expect(window.api.plugin.readRaw).not.toHaveBeenCalled()

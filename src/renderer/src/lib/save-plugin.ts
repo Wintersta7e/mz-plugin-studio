@@ -99,9 +99,7 @@ async function writeAsking(
       type: 'warning',
       title: 'Overwrite file?',
       message: conflictMessage(plugin, guard, result),
-      buttons: ['Cancel', 'Overwrite', ...(offerReload ? ['Reload from project'] : [])],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Overwrite', ...(offerReload ? ['Reload from project'] : [])]
     })
     if (offerReload && answer === 2) {
       await reloadFromProject(plugin.id)

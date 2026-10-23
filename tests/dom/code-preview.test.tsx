@@ -133,9 +133,7 @@ describe('code preview export with no project', () => {
       type: 'warning',
       title: 'Overwrite file?',
       message: `"${target}" has changed on disk since this tab last read or saved it. Overwrite it?`,
-      buttons: ['Cancel', 'Overwrite'],
-      defaultId: 0,
-      cancelId: 0
+      buttons: ['Cancel', 'Overwrite']
     })
     await act(async () => {})
     expect(await readFile(target, 'utf8')).toBe('// changed elsewhere\n')
