@@ -180,7 +180,7 @@ describe('saving an imported plugin', () => {
     expect(savedFiles(api)).toEqual([FILE, FILE])
   }, 90_000)
 
-  it('every save path makes what it wrote the file text and baseline of the tab', async () => {
+  it('every save into the project makes what it wrote the file text and baseline of the tab; Export writes a copy', async () => {
     const api = savingApi()
     const stores = await startApp(api)
     const text = readFileSync(fixturePath('js', 'plugins', FILE), 'utf-8')
@@ -193,8 +193,7 @@ describe('saving an imported plugin', () => {
     ]
     const saves: [string, () => void][] = [
       ['Ctrl+S', () => press('KeyS')],
-      ['Save All', () => press('KeyS', true)],
-      ['Export', () => fireEvent.click(screen.getByRole('button', { name: 'Export' }))]
+      ['Save All', () => press('KeyS', true)]
     ]
     let checked = 0
     for (const [path, run] of saves) {
@@ -208,7 +207,18 @@ describe('saving an imported plugin', () => {
       expect(written?.startsWith(text.slice(0, text.indexOf('/*:')))).toBe(true)
       checked++
     }
-    console.log(`save paths recording the written file ${checked}`)
+    const before = state().plugin.rawSource
+    act(() => state().updateMeta({ description: 'Saved by Export' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() =>
+      expect(writes().some((code) => code.includes('Saved by Export'))).toBe(true)
+    )
+    await act(async () => {})
+    expect(state().plugin.rawSource).toBe(before)
+    expect(state().baselineByPluginId[opened.id].meta.description).toBe('Saved by Save All')
+    expect(state().dirtyByPluginId[opened.id]).toBe(true)
+    checked++
+    console.log(`save paths checked ${checked}`)
     expect(checked).toBe(3)
   }, 90_000)
 })

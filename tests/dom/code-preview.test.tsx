@@ -1,6 +1,5 @@
-// Export from the code preview, and the banner above the code. With no project open, behind
-// `window.api` sit the main-process save dialog and save-to-path functions, writing to a fresh
-// temporary folder.
+// Export from the code preview, and the banner above the code. Behind `window.api` sit the
+// main-process save dialog and save functions, writing to a fresh temporary folder.
 import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
@@ -8,10 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
-import { savePluginToPath } from '../../src/main/ipc/plugin'
+import { savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { savePlugin } from '../../src/renderer/src/lib/save-plugin'
 import {
   usePluginStore,
   useProjectStore,
@@ -19,8 +19,10 @@ import {
   useUIStore
 } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
+import { viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
 let tmp: string
@@ -37,8 +39,8 @@ afterEach(async () => {
 })
 
 /**
- * Wires `window.api` to the main-process save functions; `saveFile` answers `chosen`, a save
- * waits for `gate` when given.
+ * Wires `window.api` to the main-process save functions, rejecting as `ipcRenderer.invoke` does;
+ * `saveFile` answers `chosen`, an export waits for `gate` when given.
  */
 function wireMainSave(
   chosen: string,
@@ -57,10 +59,16 @@ function wireMainSave(
         : vi.fn(async () => chosen)
     },
     plugin: {
-      saveToPath: vi.fn(async (...args: Parameters<typeof savePluginToPath>) => {
-        await gate
-        return savePluginToPath(...args)
-      })
+      save: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_SAVE, savePluginFile)),
+      saveToPath: vi.fn(
+        viaIpc(
+          IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
+          async (...args: Parameters<typeof savePluginToPath>) => {
+            await gate
+            return savePluginToPath(...args)
+          }
+        )
+      )
     }
   })
 }
@@ -120,6 +128,22 @@ describe('code preview export with no project', () => {
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 
+  it('an edit made while Export is in flight stays unsaved', async () => {
+    const target = join(tmp, 'Alpha.js')
+    let release!: () => void
+    wireMainSave(target, { gate: new Promise<void>((resolve) => (release = resolve)) })
+    const id = usePluginStore.getState().plugin.id
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1))
+    act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
+    await act(async () => release())
+    await waitFor(() => expect(successToasts()).toEqual([`Exported to ${target}`]))
+    expect(usePluginStore.getState().plugin.meta.description).toBe('edited during save')
+    expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
+    expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
+  })
+
   it('asks before exporting over its own file changed on disk; Cancel leaves the file', async () => {
     const target = join(tmp, 'Alpha.js')
     wireMainSave(target)
@@ -173,26 +197,37 @@ describe('code preview export with no project', () => {
 describe('code preview export', () => {
   const PROJECT = '/fixture/mz-project'
 
-  async function openProject(): Promise<void> {
-    const project = { ...(await window.api.project.load(PROJECT)), path: PROJECT }
+  async function openProject(path = PROJECT): Promise<void> {
+    const project = { ...(await window.api.project.load(PROJECT)), path }
     act(() => useProjectStore.getState().setProject(project))
   }
 
-  it('an edit made while Export is in flight stays unsaved', async () => {
-    const target = join(tmp, 'Alpha.js')
-    let release!: () => void
-    wireMainSave(target, { gate: new Promise<void>((resolve) => (release = resolve)) })
-    await openProject()
+  it('Export writes a copy and leaves the tab unsaved and saving into the project', async () => {
+    const project = join(tmp, 'project')
+    const projectFile = join(project, 'js', 'plugins', 'Alpha.js')
+    const exported = join(tmp, 'out', 'Alpha.js')
+    wireMainSave(exported)
+    await openProject(project)
     const id = usePluginStore.getState().plugin.id
+    await act(() => savePlugin(id, 'save'))
+    const saved = await readFile(projectFile, 'utf8')
+    act(() => usePluginStore.getState().updateMeta({ description: 'edited' }))
+    const expected = generatePlugin(usePluginStore.getState().plugin)
     render(<CodePreview />)
+
     clickExport()
-    await waitFor(() => expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1))
-    act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
-    await act(async () => release())
-    await waitFor(() => expect(successToasts()).toEqual(['Plugin exported successfully']))
-    expect(usePluginStore.getState().plugin.meta.description).toBe('edited during save')
-    expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
-    expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
+    await waitFor(() => expect(successToasts()).toContain(`Exported to ${exported}`))
+    expect(await readFile(exported, 'utf8')).toBe(expected)
+    expect(await readFile(projectFile, 'utf8')).toBe(saved)
+    const state = usePluginStore.getState()
+    expect(state.dirtyByPluginId[id]).toBe(true)
+    expect(state.baseByPluginId[id]?.path).toBe(projectFile)
+    expect(state.savedPathsByPluginId[id]).toBe(projectFile)
+
+    await act(() => savePlugin(id, 'save'))
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(await readFile(projectFile, 'utf8')).toBe(expected)
+    expect(usePluginStore.getState().dirtyByPluginId[id]).toBeUndefined()
   })
 
   it('Export asks for a path also with a project open, and writes there', async () => {

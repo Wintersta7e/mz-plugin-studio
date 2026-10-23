@@ -55,7 +55,7 @@
 ### Changed
 
 - In raw mode the Code tab, template inserter and localized description and help fields are read-only, and saving an imported plugin with raw mode off asks first. Save All lists such a plugin as not saved until a Ctrl+S save of it has been confirmed.
-- Export always asks where to save, also when a project is loaded.
+- Export always asks where to save, also when a project is loaded. With a project loaded it writes a copy: the plugin stays marked unsaved and Ctrl+S still saves it into the project. The message after an export names the file written.
 
 ## [1.6.1] - 2026-10-21
 

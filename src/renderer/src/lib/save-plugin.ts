@@ -146,10 +146,13 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<Save
     }
     const result = await writeAsking(plugin, write)
     if (result === null) return { status: 'cancelled' }
-    usePluginStore.getState().recordSaves([recordOf(plugin, result, code)])
+    // With a project open, Export writes a copy: the tab's file is still the project's
+    if (mode === 'save' || project === null) {
+      usePluginStore.getState().recordSaves([recordOf(plugin, result, code)])
+    }
     addToast({
       type: 'success',
-      message: mode === 'save' ? 'Plugin saved' : 'Plugin exported successfully'
+      message: mode === 'save' ? 'Plugin saved' : `Exported to ${result.path}`
     })
     if (result.syntaxWarning !== undefined) {
       const { line, message } = result.syntaxWarning
