@@ -15,6 +15,20 @@ function createPlugin(name: string) {
   return plugin
 }
 
+/** One undo step, its result shown as the app shows it. */
+function undoShown() {
+  const result = useHistoryStore.getState().undo()
+  if (result) usePluginStore.getState().setPlugin(result)
+  return result
+}
+
+/** One redo step, its result shown as the app shows it. */
+function redoShown() {
+  const result = useHistoryStore.getState().redo()
+  if (result) usePluginStore.getState().setPlugin(result)
+  return result
+}
+
 describe('historyStore', () => {
   beforeEach(() => {
     resetStores()
@@ -39,8 +53,9 @@ describe('historyStore', () => {
 
       // Set up a future entry via undo
       useHistoryStore.getState().push(pluginA)
-      usePluginStore.getState().openPlugin(pluginA)
-      useHistoryStore.getState().undo()
+      useHistoryStore.getState().push(pluginB)
+      usePluginStore.getState().openPlugin(pluginB)
+      undoShown()
       expect(useHistoryStore.getState().future).toHaveLength(1)
 
       // Push should clear future
@@ -86,7 +101,7 @@ describe('historyStore', () => {
   })
 
   describe('undo', () => {
-    it('returns the previous plugin and pushes current to future', () => {
+    it('returns the state before the one shown and moves the shown state to future', () => {
       const pluginV1 = createPlugin('Alpha')
       const pluginV2 = createPlugin('Alpha')
       pluginV2.id = pluginV1.id
@@ -99,16 +114,38 @@ describe('historyStore', () => {
       usePluginStore.getState().openPlugin(pluginV2)
 
       const result = useHistoryStore.getState().undo()
-      expect(result?.id).toBe(pluginV2.id) // last entry in past (rawSource stripped)
-      expect(result?.meta?.description).toBe('v2')
+      expect(result?.id).toBe(pluginV1.id)
+      expect(result?.meta?.description).toBe('')
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future).toHaveLength(1)
-      expect(useHistoryStore.getState().future[0].plugin.id).toBe(pluginV2.id)
+      expect(useHistoryStore.getState().future[0].plugin.meta.description).toBe('v2')
+    })
+
+    it('returns the newest entry when the state shown is not recorded yet', () => {
+      const pluginV1 = createPlugin('Alpha')
+      const pluginV2 = { ...pluginV1, meta: { ...pluginV1.meta, description: 'v2' } }
+
+      useHistoryStore.getState().push(pluginV1)
+      usePluginStore.getState().openPlugin(pluginV2)
+
+      expect(useHistoryStore.getState().undo()?.meta.description).toBe('')
+      expect(useHistoryStore.getState().past).toHaveLength(1)
+      expect(useHistoryStore.getState().future[0].plugin.meta.description).toBe('v2')
     })
 
     it('returns null when past is empty', () => {
       const result = useHistoryStore.getState().undo()
       expect(result).toBeNull()
+    })
+
+    it('returns null and changes nothing when past holds only the state shown', () => {
+      const plugin = createPlugin('Alpha')
+      useHistoryStore.getState().push(plugin)
+      usePluginStore.getState().openPlugin(plugin)
+
+      expect(useHistoryStore.getState().undo()).toBeNull()
+      expect(useHistoryStore.getState().past).toHaveLength(1)
+      expect(useHistoryStore.getState().future).toHaveLength(0)
     })
 
     it('allows multiple undo operations', () => {
@@ -128,18 +165,18 @@ describe('historyStore', () => {
 
       expect(useHistoryStore.getState().past).toHaveLength(3)
 
-      useHistoryStore.getState().undo()
+      expect(undoShown()?.meta.description).toBe('xx')
       expect(useHistoryStore.getState().past).toHaveLength(2)
       expect(useHistoryStore.getState().future).toHaveLength(1)
 
-      useHistoryStore.getState().undo()
+      expect(undoShown()?.meta.description).toBe('x')
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future).toHaveLength(2)
     })
   })
 
   describe('redo', () => {
-    it('returns the next plugin from future and pushes current to past', () => {
+    it('returns the next plugin from future and records it as the state shown', () => {
       const pluginV1 = createPlugin('Alpha')
       const pluginV2 = createPlugin('Alpha')
       pluginV2.id = pluginV1.id
@@ -150,14 +187,14 @@ describe('historyStore', () => {
       usePluginStore.getState().openPlugin(pluginV2)
 
       // Undo first to populate future
-      useHistoryStore.getState().undo()
+      undoShown()
 
       // Now redo
-      const result = useHistoryStore.getState().redo()
-      expect(result).not.toBeNull()
-      expect(result!.id).toBe(pluginV2.id)
+      const result = redoShown()
+      expect(result?.meta.description).toBe('v2')
       expect(useHistoryStore.getState().future).toHaveLength(0)
       expect(useHistoryStore.getState().past).toHaveLength(2)
+      expect(undoShown()?.meta.description).toBe('')
     })
 
     it('returns null when future is empty', () => {
@@ -181,31 +218,6 @@ describe('historyStore', () => {
 
       expect(useHistoryStore.getState().past).toHaveLength(0)
       expect(useHistoryStore.getState().future).toHaveLength(0)
-    })
-  })
-
-  describe('canUndo / canRedo', () => {
-    it('returns false when history is empty', () => {
-      expect(useHistoryStore.getState().canUndo()).toBe(false)
-      expect(useHistoryStore.getState().canRedo()).toBe(false)
-    })
-
-    it('returns true for canUndo after push', () => {
-      const plugin = createPlugin('Alpha')
-      useHistoryStore.getState().push(plugin)
-
-      expect(useHistoryStore.getState().canUndo()).toBe(true)
-      expect(useHistoryStore.getState().canRedo()).toBe(false)
-    })
-
-    it('returns true for canRedo after undo', () => {
-      const plugin = createPlugin('Alpha')
-      useHistoryStore.getState().push(plugin)
-      usePluginStore.getState().openPlugin(plugin)
-      useHistoryStore.getState().undo()
-
-      expect(useHistoryStore.getState().canUndo()).toBe(false)
-      expect(useHistoryStore.getState().canRedo()).toBe(true)
     })
   })
 
@@ -289,12 +301,11 @@ describe('historyStore', () => {
       usePluginStore.getState().openPlugin(pluginV2)
 
       // Undo back to v1
-      const undone = useHistoryStore.getState().undo()
-      expect(undone?.meta.description).toBe('updated')
+      const undone = undoShown()
+      expect(undone?.meta.description).toBe('')
 
       // Redo forward
-      const redone = useHistoryStore.getState().redo()
-      expect(redone).not.toBeNull()
+      const redone = redoShown()
       expect(redone?.meta?.description).toBe('updated')
     })
   })

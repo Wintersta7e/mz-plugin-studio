@@ -37,6 +37,21 @@ interface HistoryEntry {
   fingerprint: string
 }
 
+function entryOf(plugin: PluginDefinition): HistoryEntry {
+  // Strip rawSource to avoid retaining large strings in history
+  const { rawSource: _raw, ...snapshot } = plugin
+  return {
+    plugin: snapshot as HistoryPluginSnapshot,
+    timestamp: Date.now(),
+    fingerprint: pluginFingerprint(plugin)
+  }
+}
+
+/** Whether `entry` holds exactly `plugin`, apart from the file text history never keeps. */
+function shows(entry: HistoryEntry, plugin: PluginDefinition): boolean {
+  return JSON.stringify(entry.plugin) === JSON.stringify(entryOf(plugin).plugin)
+}
+
 interface HistoryState {
   past: HistoryEntry[]
   future: HistoryEntry[]
@@ -47,8 +62,6 @@ interface HistoryState {
   undo: () => HistoryPluginSnapshot | null
   redo: () => HistoryPluginSnapshot | null
   clear: () => void
-  canUndo: () => boolean
-  canRedo: () => boolean
   /** Call when switching plugins to reset history for the new context */
   setActivePluginId: (id: string | null) => void
 }
@@ -67,14 +80,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
   push: (plugin) =>
     set((state) => {
-      // Strip rawSource to avoid retaining large strings in history
-      const { rawSource: _raw, ...pluginSnapshot } = plugin
-      const fp = pluginFingerprint(plugin)
-      const entry: HistoryEntry = {
-        plugin: pluginSnapshot as HistoryPluginSnapshot,
-        timestamp: Date.now(),
-        fingerprint: fp
-      }
+      const entry = entryOf(plugin)
 
       // If plugin switched without explicit setActivePluginId, clear history
       if (state.activePluginId !== null && plugin.id !== state.activePluginId) {
@@ -86,7 +92,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
       }
       // Skip duplicate consecutive pushes (compare cached fingerprints — avoids double serialization)
       const last = state.past[state.past.length - 1]
-      if (last && last.fingerprint === fp) {
+      if (last && last.fingerprint === entry.fingerprint) {
         return {}
       }
       return {
@@ -96,26 +102,19 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
       }
     }),
 
+  // The app records each state once edits pause, so the newest entry of `past` is the state
+  // shown unless an edit is still waiting to be recorded
   undo: () => {
     const { past, future } = get()
-    if (past.length === 0) return null
+    const current = usePluginStore.getState().plugin
+    const top = past[past.length - 1]
+    const shown = top !== undefined && shows(top, current)
+    const earlier = shown ? past.slice(0, -1) : past
+    const previous = earlier[earlier.length - 1]
+    if (previous === undefined) return null
 
-    const previous = past[past.length - 1]
-    const currentPlugin = usePluginStore.getState().plugin
-    const { rawSource: _raw, ...snapshot } = currentPlugin
-
-    set({
-      past: past.slice(0, -1),
-      future: [
-        {
-          plugin: snapshot as HistoryPluginSnapshot,
-          timestamp: Date.now(),
-          fingerprint: pluginFingerprint(currentPlugin)
-        },
-        ...future
-      ]
-    })
-
+    // `previous` stays the newest entry: it is the state shown from now on
+    set({ past: earlier, future: [shown ? top : entryOf(current), ...future] })
     return previous.plugin
   },
 
@@ -124,25 +123,13 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     if (future.length === 0) return null
 
     const next = future[0]
-    const currentPlugin = usePluginStore.getState().plugin
-    const { rawSource: _raw, ...snapshot } = currentPlugin
+    const top = past[past.length - 1]
+    const current = usePluginStore.getState().plugin
+    const unrecorded = top !== undefined && shows(top, current) ? [] : [entryOf(current)]
 
-    set({
-      past: [
-        ...past,
-        {
-          plugin: snapshot as HistoryPluginSnapshot,
-          timestamp: Date.now(),
-          fingerprint: pluginFingerprint(currentPlugin)
-        }
-      ],
-      future: future.slice(1)
-    })
-
+    set({ past: [...past, ...unrecorded, next], future: future.slice(1) })
     return next.plugin
   },
 
-  clear: () => set({ past: [], future: [], activePluginId: null }),
-  canUndo: () => get().past.length > 0,
-  canRedo: () => get().future.length > 0
+  clear: () => set({ past: [], future: [], activePluginId: null })
 }))

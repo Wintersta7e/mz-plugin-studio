@@ -602,6 +602,48 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(id)).toBe(true)
   })
 
+  it('one undo after one edit restores the state before the edit, and redo applies it again', async () => {
+    window.api = createMainApi()
+    openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    await historyHolds(2)
+    pressUndo()
+    expect(plugin().meta.name).toBe('NewPlugin')
+    pressRedo()
+    expect(plugin().meta.name).toBe('Alpha')
+  })
+
+  it('undo steps back through two edits one at a time, and redo forward again', async () => {
+    window.api = createMainApi()
+    openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    await historyHolds(2)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Beta' }))
+    await historyHolds(3)
+    const names: string[] = []
+    for (const press of [pressUndo, pressUndo, pressUndo, pressRedo, pressRedo, pressRedo]) {
+      press()
+      names.push(plugin().meta.name)
+    }
+    expect(names).toEqual(['Alpha', 'NewPlugin', 'NewPlugin', 'Alpha', 'Beta', 'Beta'])
+  })
+
+  it('undo right after an edit, before it is recorded, restores the state before the edit', async () => {
+    window.api = createMainApi()
+    openTab()
+    render(<App />)
+    await historyHolds(1)
+    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    pressUndo()
+    expect(plugin().meta.name).toBe('NewPlugin')
+    pressRedo()
+    expect(plugin().meta.name).toBe('Alpha')
+  })
+
   it('checked the dialog of every save conflict', () => {
     console.log(`save conflict dialogs checked ${dialogsChecked}`)
     expect(dialogsChecked).toBeGreaterThan(0)
