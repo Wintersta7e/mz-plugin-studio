@@ -330,6 +330,24 @@ describe('replacing a file', () => {
     cases++
   })
 
+  it('refuses a read-only file up front and leaves it as it was', async () => {
+    const target = await projectFile(COMPILES)
+    // On win32 this sets the read-only attribute, which the system reports as EPERM
+    await chmod(target, 0o444)
+    try {
+      const save = savePluginFile(tmp, 'Foo.js', 'B', unchanged(target))
+      await expect(save).rejects.toMatchObject({
+        code: process.platform === 'win32' ? 'EPERM' : 'EACCES'
+      })
+    } finally {
+      await chmod(target, 0o644)
+    }
+    expect(await readFile(target, 'utf8')).toBe(COMPILES)
+    expect(await pluginsFolder()).toEqual(['Foo.js'])
+    expect(rename).not.toHaveBeenCalled()
+    cases++
+  })
+
   it("keeps the file's permissions", async () => {
     const target = await projectFile(COMPILES)
     await chmod(target, 0o640)

@@ -1,6 +1,7 @@
 import { type IpcMain, type IpcMainInvokeEvent } from 'electron'
 import { createHash, randomBytes } from 'crypto'
-import { mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'fs/promises'
+import { constants } from 'fs'
+import { access, mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'fs/promises'
 import path, { join, dirname } from 'path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
@@ -73,6 +74,8 @@ async function renameRetrying(from: string, to: string): Promise<void> {
  */
 async function replaceFile(target: string, bytes: Uint8Array, exists: boolean): Promise<void> {
   const dest = exists ? await realpath(target) : target
+  // A rename replaces a read-only file on POSIX, so refuse it here as a direct write would
+  if (exists) await access(dest, constants.W_OK)
   // On Windows a mode can only mark a file read-only, which would block the rename
   const mode = exists && process.platform !== 'win32' ? (await stat(dest)).mode & 0o7777 : null
   const suffix = `${process.pid}-${randomBytes(4).toString('hex')}`
