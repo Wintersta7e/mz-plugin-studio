@@ -68,7 +68,7 @@ describe('loading a plugin file', () => {
       join(project, 'js', 'plugins', 'NotUtf8.js'),
       Buffer.concat([Buffer.from('/*:\n * @plugindesc '), shiftJis, Buffer.from('\n */\n')])
     )
-    const notUtf8 = 'NotUtf8.js is not UTF-8, so the app cannot keep its text unchanged'
+    const notUtf8 = 'NotUtf8.js is not UTF-8. The app reads only UTF-8 files'
     await expect(loadPluginFile(project, 'NotUtf8.js')).rejects.toThrow(
       `Failed to load plugin "NotUtf8.js": ${notUtf8}`
     )
@@ -88,7 +88,7 @@ describe('loading a plugin file', () => {
       Buffer.concat([Buffer.from('/*:\n * @plugindesc '), shiftJis, Buffer.from('\n */\n')])
     )
     await expect(handlerFor(IPC_CHANNELS.PLUGIN_READ_BY_PATH)(file)).rejects.toThrow(
-      'NotUtf8.js is not UTF-8, so the app cannot keep its text unchanged'
+      'NotUtf8.js is not UTF-8. The app reads only UTF-8 files'
     )
   })
 })

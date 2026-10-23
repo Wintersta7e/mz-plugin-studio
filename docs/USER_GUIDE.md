@@ -806,7 +806,7 @@ You can import existing .js plugins to edit them.
 
 When you import an existing plugin, MZ Plugin Studio stores the complete original source. For a UTF-8 file, an imported plugin saved without edits is written back byte-identical, line endings and byte order mark kept; after edits only the annotation blocks whose content changed are rewritten, and code is added only for parameters and commands added since the file was loaded. The app never regenerates an imported plugin's code unless you turn raw mode off and confirm.
 
-Plugin files are read as UTF-8 only. A file saved in another encoding (Shift_JIS, for example) is refused when you open or reload it or import parameters from it, with an error naming the file, because its text could not be saved back unchanged. Convert the file to UTF-8 in a text editor to open it here.
+Plugin and `.mzparams` files are read as UTF-8 only. A file saved in another encoding (Shift_JIS, for example) is refused when you open or reload it, import parameters from it (from a plugin or a `.mzparams` file) or compare it in the diff view, with an error naming the file, because its text could not be saved back unchanged. Convert the file to UTF-8 in a text editor and try again.
 
 ### Auto-Enable
 
@@ -924,7 +924,7 @@ The diff view shows a side-by-side comparison of the on-disk file vs your curren
 3. Right panel shows the current generated output
 4. Click **Diff** again to return to normal view
 
-The Diff button is disabled for new plugins that haven't been saved or imported yet.
+The Diff button is disabled for new plugins that haven't been saved or imported yet. If the saved file cannot be read, for example because it is no longer UTF-8, an error says why and the diff does not open.
 
 ---
 

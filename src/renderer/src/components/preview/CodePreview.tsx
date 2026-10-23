@@ -204,8 +204,13 @@ export function CodePreview() {
       setShowDiff(true)
     } catch (error) {
       log.error('Failed to load on-disk version:', error)
+      addToast({
+        type: 'error',
+        message: `Could not compare with the saved file: ${userMessage(error)}`,
+        duration: NOTICE_MS
+      })
     }
-  }, [savedPath, plugin.rawSource])
+  }, [savedPath, plugin.rawSource, addToast])
 
   const handleDiffToggle = useCallback(async () => {
     if (showDiff) {

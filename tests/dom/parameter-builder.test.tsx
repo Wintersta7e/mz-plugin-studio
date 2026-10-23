@@ -1,22 +1,24 @@
 // The parameter tab's Import menu (what a .mzparams file does once it is read in) and its Export
 // button (where the selected parameters are written).
 import { readFileSync } from 'fs'
-import { access, mkdtemp, readFile, rm } from 'fs/promises'
+import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, resolve } from 'path'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
-import { savePluginToPath } from '../../src/main/ipc/plugin'
+import { readFileByPath, savePluginToPath } from '../../src/main/ipc/plugin'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { ALL_PAYLOADS } from '../helpers/hostile'
+import { viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
 const fixtureText = (name: string): string =>
@@ -112,6 +114,42 @@ describe('parameter import from a file', () => {
     expect(result.compileProblem).toBeNull()
     expect(result.threw).toBeNull()
     expect(result.sentinel).toBe(false)
+  })
+})
+
+describe('parameter import from a file that is not UTF-8', () => {
+  let tmp: string
+
+  beforeEach(async () => {
+    tmp = await mkdtemp(join(tmpdir(), 'param-import-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmp, { recursive: true, force: true })
+  })
+
+  it.each([
+    ['From File (.mzparams)', 'Shift.mzparams', 'Could not read the file. '],
+    ['From Plugin (.js)', 'Shift.js', 'Could not read or parse the plugin file. ']
+  ])('%s says why the file is refused and how to use it', async (item, name, lead) => {
+    const file = join(tmp, name)
+    // Shift_JIS text, which is not valid UTF-8
+    await writeFile(file, Buffer.from([0x7b, 0x83, 0x65, 0x83, 0x58, 0x7d]))
+    const message = vi.fn(async () => 0)
+    window.api = createFakeApi({
+      dialog: { openFile: vi.fn(async () => file), message },
+      plugin: { readByPath: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_READ_BY_PATH, readFileByPath)) }
+    })
+    render(<ParameterBuilder />)
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Import' }), { key: 'Enter' })
+    fireEvent.click(screen.getByText(item))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message).toHaveBeenCalledWith({
+      type: 'error',
+      title: 'Import Failed',
+      message: `${lead}${name} is not UTF-8. The app reads only UTF-8 files, so it can save a plugin's text back unchanged; convert it to UTF-8 and try again`
+    })
+    expect(parameterNames()).toEqual(['Existing'])
   })
 })
 

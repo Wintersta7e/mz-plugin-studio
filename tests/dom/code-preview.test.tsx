@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
-import { savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
+import { readFileByPath, savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
@@ -248,6 +248,25 @@ describe('code preview export', () => {
       vi.mocked(plugin.saveToPath).mock.invocationCallOrder[0]
     )
     expect(plugin.save).not.toHaveBeenCalled()
+  })
+})
+
+describe('code preview diff', () => {
+  it('says why the saved file cannot be compared when it is not UTF-8', async () => {
+    const saved = join(tmp, 'Alpha.js')
+    // Shift_JIS text, which is not valid UTF-8
+    await writeFile(saved, Buffer.from([0x2f, 0x2f, 0x83, 0x65, 0x83, 0x58]))
+    window.api = createFakeApi({
+      plugin: { readByPath: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_READ_BY_PATH, readFileByPath)) }
+    })
+    usePluginStore.setState({ savedPath: saved })
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    await waitFor(() =>
+      expect(errorToasts()).toEqual([
+        "Could not compare with the saved file: Alpha.js is not UTF-8. The app reads only UTF-8 files, so it can save a plugin's text back unchanged; convert it to UTF-8 and try again"
+      ])
+    )
   })
 })
 

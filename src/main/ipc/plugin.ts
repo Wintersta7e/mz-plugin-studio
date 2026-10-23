@@ -183,7 +183,7 @@ async function readWithSha(filePath: string): Promise<{ content: string; sha256:
     const name = path.basename(filePath)
     log.warn(`[plugin] ${name} is not UTF-8:`, filePath)
     throw new NotUtf8Error(
-      `${name} is not UTF-8, so the app cannot keep its text unchanged; convert it to UTF-8 to open it here`
+      `${name} is not UTF-8. The app reads only UTF-8 files, so it can save a plugin's text back unchanged; convert it to UTF-8 and try again`
     )
   }
   return { content, sha256: sha256Hex(bytes) }
@@ -236,6 +236,13 @@ export async function readRawPlugin(projectPath: string, filename: string): Prom
   log.debug(`[plugin:read-raw] ${filename}`)
   const pluginPath = join(projectPath, 'js', 'plugins', filename)
   return { ...(await readWithSha(pluginPath)), path: pluginPath }
+}
+
+/** Reads the text of a file the user picked, or a tab's saved file */
+export async function readFileByPath(filePath: string): Promise<string> {
+  assertSafeFilePath(filePath)
+  log.debug(`[plugin:read-by-path] ${filePath}`)
+  return (await readWithSha(filePath)).content
 }
 
 export function setupPluginHandlers(ipcMain: IpcMain): void {
@@ -291,13 +298,8 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
     }
   )
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_READ_BY_PATH,
-    async (_event: IpcMainInvokeEvent, filePath: string) => {
-      assertSafeFilePath(filePath)
-      log.debug(`[plugin:read-by-path] ${filePath}`)
-      return (await readWithSha(filePath)).content
-    }
+  ipcMain.handle(IPC_CHANNELS.PLUGIN_READ_BY_PATH, (_event: IpcMainInvokeEvent, filePath: string) =>
+    readFileByPath(filePath)
   )
 
   ipcMain.handle(
