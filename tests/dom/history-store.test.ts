@@ -63,7 +63,7 @@ describe('historyStore', () => {
       expect(useHistoryStore.getState().future).toHaveLength(0)
     })
 
-    it('skips duplicate consecutive pushes with identical fingerprints', () => {
+    it('skips duplicate consecutive pushes of the same state', () => {
       const plugin = createPlugin('Alpha')
       useHistoryStore.getState().push(plugin)
       useHistoryStore.getState().push(plugin)
@@ -71,7 +71,7 @@ describe('historyStore', () => {
       expect(useHistoryStore.getState().past).toHaveLength(1)
     })
 
-    it('allows pushes with different fingerprints', () => {
+    it('allows pushes of different states', () => {
       const pluginA = createPlugin('Alpha')
       const pluginB = createPlugin('Alpha')
       pluginB.id = pluginA.id
@@ -153,7 +153,7 @@ describe('historyStore', () => {
       const plugins = Array.from({ length: 3 }, (_, i) => {
         const p = createPlugin('Alpha')
         p.id = sharedId
-        // Use varying-length descriptions so fingerprints differ
+        // A different description each time, so no push is skipped
         p.meta.description = 'x'.repeat(i + 1)
         return p
       })
@@ -271,7 +271,7 @@ describe('historyStore', () => {
       for (let i = 0; i < 51; i++) {
         const plugin = createPlugin(`Plugin`)
         plugin.id = baseId
-        // Vary parameters length to ensure unique fingerprints
+        // A different parameter count each time, so no push is skipped
         plugin.parameters = Array.from({ length: i }, () => ({
           name: `param${i}`,
           type: 'string' as const,
@@ -311,45 +311,40 @@ describe('historyStore', () => {
   })
 })
 
-// COV-21: pluginFingerprint - fingerprint dedup behavior
-describe('pluginFingerprint dedup behavior', () => {
+// A push of the state recorded last is skipped; any other state is its own step
+describe('duplicate pushes', () => {
   beforeEach(() => {
     resetStores()
   })
 
-  it('two plugins with same meta/params/commands but different customCode LENGTH share same fingerprint', () => {
-    // The fingerprint uses code LENGTH (customCode?.length), not content.
-    // Two plugins with different code content but same length → same fingerprint → dedup fires.
-    const baseId = createPlugin('A').id
-    const pluginA = createPlugin('A')
-    pluginA.id = baseId
-    pluginA.customCode = 'abc' // length 3
+  it('two custom-code edits of the same length are two undo steps', () => {
+    const states = ['', 'abc', 'xyz'].map((customCode) => ({ ...createPlugin('A'), customCode }))
+    for (const state of states) state.id = states[0].id
+    for (const state of states) useHistoryStore.getState().push(state)
+    usePluginStore.getState().openPlugin(states[2])
 
-    const pluginB = createPlugin('A')
-    pluginB.id = baseId
-    pluginB.customCode = 'xyz' // length 3, same as abc — same fingerprint!
-
-    useHistoryStore.getState().push(pluginA)
-    useHistoryStore.getState().push(pluginB)
-
-    // Same fingerprint → deduplication fires → only one entry
-    expect(useHistoryStore.getState().past).toHaveLength(1)
+    expect(useHistoryStore.getState().past).toHaveLength(3)
+    expect(undoShown()?.customCode).toBe('abc')
+    expect(undoShown()?.customCode).toBe('')
   })
 
-  it('two plugins with different customCode length have different fingerprints and both are pushed', () => {
-    const baseId = createPlugin('A').id
-    const pluginA = createPlugin('A')
-    pluginA.id = baseId
-    pluginA.customCode = 'ab' // length 2
-
-    const pluginB = createPlugin('A')
-    pluginB.id = baseId
-    pluginB.customCode = 'abc' // length 3 — different fingerprint!
-
-    useHistoryStore.getState().push(pluginA)
-    useHistoryStore.getState().push(pluginB)
-
-    expect(useHistoryStore.getState().past).toHaveLength(2)
+  it('an edit to any field of a parameter or command is its own undo step', () => {
+    const base = createPlugin('A')
+    base.parameters = [
+      { id: 'p', name: 'speed', text: 'Speed', desc: '', type: 'number', default: 1 }
+    ]
+    base.commands = [{ id: 'c', name: 'run', text: 'Run', desc: '', args: [] }]
+    const edits = [
+      { ...base, parameters: [{ ...base.parameters[0], text: 'Pace' }] },
+      { ...base, parameters: [{ ...base.parameters[0], min: 0 }] },
+      { ...base, commands: [{ ...base.commands[0], text: 'Go' }] }
+    ]
+    for (const edit of edits) {
+      resetStores()
+      useHistoryStore.getState().push(base)
+      useHistoryStore.getState().push(edit)
+      expect(useHistoryStore.getState().past).toHaveLength(2)
+    }
   })
 
   it('rawSource is stripped from history entries (not stored)', () => {

@@ -5,36 +5,10 @@ import { usePluginStore } from './pluginStore'
 /** Plugin snapshot stored in history — rawSource is always stripped to save memory (R3-07) */
 type HistoryPluginSnapshot = Omit<PluginDefinition, 'rawSource'> & { rawSource?: undefined }
 
-/** Lightweight fingerprint to detect duplicate consecutive pushes */
-function pluginFingerprint(plugin: PluginDefinition): string {
-  return JSON.stringify({
-    id: plugin.id,
-    meta: plugin.meta,
-    params: plugin.parameters.map((p) => ({
-      n: p.name,
-      t: p.type,
-      d: p.default,
-      desc: p.desc,
-      parent: p.parent,
-      options: p.options
-    })),
-    cmds: plugin.commands.map((c) => ({
-      n: c.name,
-      d: c.desc,
-      args: c.args.map((a) => ({ n: a.name, t: a.type, d: a.default }))
-    })),
-    structs: plugin.structs.map((s) => ({
-      n: s.name,
-      params: s.parameters.map((p) => ({ n: p.name, t: p.type, d: p.default }))
-    })),
-    code: plugin.customCode?.length ?? 0
-  })
-}
-
 interface HistoryEntry {
   plugin: HistoryPluginSnapshot
   timestamp: number
-  fingerprint: string
+  json: string // `plugin` serialized, to compare states exactly
 }
 
 function entryOf(plugin: PluginDefinition): HistoryEntry {
@@ -43,13 +17,13 @@ function entryOf(plugin: PluginDefinition): HistoryEntry {
   return {
     plugin: snapshot as HistoryPluginSnapshot,
     timestamp: Date.now(),
-    fingerprint: pluginFingerprint(plugin)
+    json: JSON.stringify(snapshot)
   }
 }
 
 /** Whether `entry` holds exactly `plugin`, apart from the file text history never keeps. */
 function shows(entry: HistoryEntry, plugin: PluginDefinition): boolean {
-  return JSON.stringify(entry.plugin) === JSON.stringify(entryOf(plugin).plugin)
+  return entry.json === entryOf(plugin).json
 }
 
 interface HistoryState {
@@ -90,9 +64,9 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
           activePluginId: plugin.id
         }
       }
-      // Skip duplicate consecutive pushes (compare cached fingerprints — avoids double serialization)
+      // Skip a push of the state already recorded last
       const last = state.past[state.past.length - 1]
-      if (last && last.fingerprint === entry.fingerprint) {
+      if (last && last.json === entry.json) {
         return {}
       }
       return {

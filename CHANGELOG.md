@@ -45,7 +45,7 @@
 - Edits made while a save is in progress keep the plugin marked unsaved.
 - Closing the window with the title-bar button, Alt+F4 or the taskbar now asks when any open plugin has unsaved changes; Cancel is the default in every prompt that would discard work.
 - Undo or redo after saving marks the plugin unsaved.
-- The first Ctrl+Z after an edit undoes that edit, and Ctrl+Shift+Z applies it again; before, the first Ctrl+Z left the plugin as it was.
+- Each edit is its own undo step: the first Ctrl+Z after an edit undoes that edit, and Ctrl+Shift+Z applies it again. Before, the first Ctrl+Z left the plugin as it was, and an edit that kept the custom code the same length, or changed only a parameter's display name or limits or a command's display name, was undone together with the edit before it.
 - Save All saves plugins one at a time and names the plugins it did not save, grouped by reason, and each save that failed with its error, and counts unsaved tabs with no plugin name, in a report that stays up for 10 seconds; a refused save's message stays up as long.
 - A project that fails to load now shows a message naming the folder and the reason.
 - Error messages from loading, reading, saving and exporting show the reason alone, without the internal "Error invoking remote method" prefix, and error notifications stay up for 10 seconds.
