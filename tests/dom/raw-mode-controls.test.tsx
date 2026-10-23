@@ -2,7 +2,7 @@
 // saved (the plugin file or one of the export formats), or its control is read-only and says
 // why, or no control edits it. A field added to a type fails the typecheck here until listed.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
 import { CommandBuilder } from '../../src/renderer/src/components/plugin/CommandBuilder'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
@@ -15,7 +15,7 @@ import {
   generateTypeDeclaration
 } from '../../src/renderer/src/lib/exportFormats'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
+import { usePluginStore, useSettingsStore, useUIStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyStruct, toBaseline } from '../../src/shared/types/plugin'
 import type {
   PluginCommand,
@@ -351,6 +351,25 @@ describe('header editors of an imported file with no main annotation block', () 
       expect(control.closest('fieldset')).toHaveAttribute('title', HEADER_NOTICE)
     }
     console.log(`header controls checked ${controls.length}`)
+  })
+
+  it('parameters can still be selected, exported and saved as a preset in raw mode', () => {
+    const kept = { ...createEmptyParameter(), name: 'Kept' }
+    useSettingsStore.setState({ parameterPresets: { Mine: [kept] } })
+    render(<ParameterBuilder />)
+    expect(screen.getByRole('button', { name: /Add Parameter/ })).toBeDisabled()
+    const selectAll = screen.getByRole('button', { name: /Select All/ })
+    expect(selectAll).toBeEnabled()
+    fireEvent.click(selectAll)
+    const toolbar = within(selectAll.parentElement!)
+    expect(toolbar.getByRole('button', { name: 'Export' })).toBeEnabled()
+    expect(toolbar.getByRole('button', { name: 'Duplicate' })).toBeDisabled()
+    expect(toolbar.getByRole('button', { name: 'Delete' })).toBeDisabled()
+    expect(toolbar.getByRole('button', { name: /Import/ })).toBeDisabled()
+    fireEvent.keyDown(toolbar.getByRole('button', { name: /Presets/ }), { key: 'Enter' })
+    const item = (name: RegExp): HTMLElement => screen.getByRole('menuitem', { name })
+    expect(item(/Save Selection as Preset/)).not.toHaveAttribute('aria-disabled')
+    expect(item(/Mine/)).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('a parameter cannot be dragged to a new place in raw mode', () => {

@@ -441,25 +441,29 @@ export function ParameterBuilder() {
     setDropTargetId(null)
   }, [])
 
+  // The selection toolbar stays outside the lock: selecting, exporting and saving a preset only read
+  const lock = {
+    disabled: headerReadOnly,
+    title: headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+  }
+
   return (
-    <fieldset
-      disabled={headerReadOnly}
-      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
-      className="flex h-full min-w-0 flex-col"
-    >
+    <div className="flex h-full min-w-0 flex-col">
       <div className="flex flex-col border-b border-border">
-        <div className="flex items-center justify-between p-4">
-          <h2 className="text-lg font-semibold">Parameters</h2>
-          <Button size="sm" onClick={handleAddParameter}>
-            <Plus className="mr-1 h-4 w-4" />
-            Add Parameter
-          </Button>
-        </div>
-        {headerReadOnly && (
-          <p className="px-4 pb-2 text-sm text-muted-foreground">
-            {RAW_MODE_HEADER_READ_ONLY_NOTICE}
-          </p>
-        )}
+        <fieldset {...lock} className="min-w-0">
+          <div className="flex items-center justify-between p-4">
+            <h2 className="text-lg font-semibold">Parameters</h2>
+            <Button size="sm" onClick={handleAddParameter}>
+              <Plus className="mr-1 h-4 w-4" />
+              Add Parameter
+            </Button>
+          </div>
+          {headerReadOnly && (
+            <p className="px-4 pb-2 text-sm text-muted-foreground">
+              {RAW_MODE_HEADER_READ_ONLY_NOTICE}
+            </p>
+          )}
+        </fieldset>
 
         {/* Toolbar - visible when parameters exist */}
         {parameters.length > 0 && (
@@ -480,7 +484,7 @@ export function ParameterBuilder() {
               variant="ghost"
               size="sm"
               onClick={handleDuplicate}
-              disabled={!hasSelection}
+              disabled={!hasSelection || headerReadOnly}
               className="text-xs"
             >
               <Copy className="mr-1 h-3.5 w-3.5" /> Duplicate
@@ -490,7 +494,7 @@ export function ParameterBuilder() {
               variant="ghost"
               size="sm"
               onClick={handleBulkDelete}
-              disabled={!hasSelection}
+              disabled={!hasSelection || headerReadOnly}
               className="text-xs text-destructive"
             >
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
@@ -510,7 +514,7 @@ export function ParameterBuilder() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs">
+                <Button variant="ghost" size="sm" className="text-xs" disabled={headerReadOnly}>
                   <Upload className="mr-1 h-3.5 w-3.5" /> Import
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
@@ -540,7 +544,11 @@ export function ParameterBuilder() {
                   <>
                     <DropdownMenuSeparator />
                     {Object.entries(parameterPresets).map(([name, params]) => (
-                      <DropdownMenuItem key={name} onClick={() => handleApplyPreset(name)}>
+                      <DropdownMenuItem
+                        key={name}
+                        onClick={() => handleApplyPreset(name)}
+                        disabled={headerReadOnly}
+                      >
                         {name} ({params.length} params)
                       </DropdownMenuItem>
                     ))}
@@ -552,46 +560,48 @@ export function ParameterBuilder() {
         )}
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-2 p-4">
-          {parameters.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <p>No parameters defined</p>
-              <p className="text-sm">Click &quot;Add Parameter&quot; to create one</p>
-            </div>
-          ) : (
-            parameters.map((param) => (
-              <MemoizedParamRow
-                key={param.id}
-                param={param}
-                isExpanded={expandedId === param.id}
-                isSelected={selectedIds.has(param.id)}
-                isDragging={draggedId === param.id}
-                isDropTarget={dropTargetId === param.id}
-                anyDragging={draggedId !== null}
-                toggleSelect={toggleSelect}
-                setExpandedId={setExpandedId}
-                updateParameter={updateParameter}
-                removeParameter={removeParameter}
-                setCustomCode={setCustomCode}
-                setSelectedIds={setSelectedIds}
-                handleDragStart={handleDragStart}
-                handleDragEnd={handleDragEnd}
-                handleDragOver={handleDragOver}
-                handleDragLeave={handleDragLeave}
-                handleDrop={handleDrop}
-                structNames={structNames}
-                structs={structs}
-                paramNameMap={paramNameMap}
-                switches={switches}
-                variables={variables}
-                actors={actors}
-                items={items}
-              />
-            ))
-          )}
-        </div>
-      </ScrollArea>
+      <fieldset {...lock} className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <ScrollArea className="flex-1">
+          <div className="space-y-2 p-4">
+            {parameters.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                <p>No parameters defined</p>
+                <p className="text-sm">Click &quot;Add Parameter&quot; to create one</p>
+              </div>
+            ) : (
+              parameters.map((param) => (
+                <MemoizedParamRow
+                  key={param.id}
+                  param={param}
+                  isExpanded={expandedId === param.id}
+                  isSelected={selectedIds.has(param.id)}
+                  isDragging={draggedId === param.id}
+                  isDropTarget={dropTargetId === param.id}
+                  anyDragging={draggedId !== null}
+                  toggleSelect={toggleSelect}
+                  setExpandedId={setExpandedId}
+                  updateParameter={updateParameter}
+                  removeParameter={removeParameter}
+                  setCustomCode={setCustomCode}
+                  setSelectedIds={setSelectedIds}
+                  handleDragStart={handleDragStart}
+                  handleDragEnd={handleDragEnd}
+                  handleDragOver={handleDragOver}
+                  handleDragLeave={handleDragLeave}
+                  handleDrop={handleDrop}
+                  structNames={structNames}
+                  structs={structs}
+                  paramNameMap={paramNameMap}
+                  switches={switches}
+                  variables={variables}
+                  actors={actors}
+                  items={items}
+                />
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </fieldset>
 
       {/* Preset Name dialog */}
       <Dialog
@@ -710,7 +720,7 @@ export function ParameterBuilder() {
           </div>
         </DialogContent>
       </Dialog>
-    </fieldset>
+    </div>
   )
 }
 
