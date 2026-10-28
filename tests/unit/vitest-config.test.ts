@@ -7,6 +7,10 @@ describe('vitest config', () => {
     expect(config.test?.silent).toBe(false)
   })
 
+  it('rejects a focused test outside CI too', () => {
+    expect(config.test?.allowOnly).toBe(false)
+  })
+
   it('every project fails a test on unexpected console output', () => {
     const projects = config.test?.projects ?? []
     console.log(`projects ${projects.length}`)

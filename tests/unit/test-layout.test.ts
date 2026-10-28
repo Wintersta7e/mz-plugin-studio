@@ -54,7 +54,8 @@ const SPECIFIER_PATTERNS = [
 
 const ENV_PRAGMA = '@vitest-' + 'environment'
 const MODULE_ONLY_SYNTAX = 'import' + '.meta'
-const MARKER = /\b(?:it|test|describe)(?:\.\w+)*\.(?:skip|only|todo|fails)\s*\(/
+const MARKER =
+  /\b(?:it|test|describe|suite|bench)(?:\.\w+)*\.(?:skip|only|todo|fails|skipIf|runIf)\b|\bx(?:it|test|describe)\s*\(/
 
 const TESTS_ROOT = join(process.cwd(), 'tests')
 
@@ -117,6 +118,22 @@ describe('test layout', () => {
     expect(markers).toEqual([])
     expect(pragmas).toEqual([])
     expect(helperModuleSyntax).toEqual([])
+  })
+
+  it('counts chained, conditional and x-prefixed markers, and nothing else', () => {
+    // Split so this file does not carry the markers it lists.
+    const cases: [string, boolean][] = [
+      ['it.' + 'skip.each([1])("x", f)', true],
+      ['test.' + 'skipIf(true)("x", f)', true],
+      ['describe.' + 'runIf(false)("x", f)', true],
+      ['suite.' + 'only("x", f)', true],
+      ['x' + 'it("x", f)', true],
+      ['it.each([1])("x", f)', false],
+      ['test("skip this", f)', false]
+    ]
+    console.log(`marker cases ${cases.length}`)
+    for (const [source, marked] of cases)
+      expect([source, MARKER.test(source)]).toEqual([source, marked])
   })
 
   it('mirrors the routed list in the ESLint routing block', () => {

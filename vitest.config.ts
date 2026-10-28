@@ -17,6 +17,8 @@ export default defineConfig({
   test: {
     globals: true,
     update: 'none',
+    // A focused test fails the run locally as well as in CI.
+    allowOnly: false,
     // Gate logs are read by the count lines tests print.
     silent: false,
     // Floors live in scripts/check-coverage.mjs, so a golden-only run never meets suite floors.
