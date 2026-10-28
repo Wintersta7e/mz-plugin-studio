@@ -5,7 +5,8 @@ import { PluginParser } from '../../src/main/services/pluginParser'
 import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
-  generateReadme
+  generateReadme,
+  typeDeclaration
 } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
@@ -145,6 +146,15 @@ describe('generatePluginsJsonEntry', () => {
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
 
     expect(parsed.parameters.emptyStr).toBe('')
+  })
+
+  it('writes a parameter named __proto__ as a parameter', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: '__proto__', default: 'a' }), makeParam({ name: 'speed' })]
+    })
+    const { parameters } = JSON.parse(generatePluginsJsonEntry(plugin))
+    expect(Object.keys(parameters)).toEqual(['__proto__', 'speed'])
+    expect(Object.getOwnPropertyDescriptor(parameters, '__proto__')?.value).toBe('a')
   })
 })
 
@@ -622,8 +632,8 @@ describe('exports against the generated header', () => {
     expect(generated.length).toBeGreaterThan(0)
   })
 
-  // A command whose name the validator refuses as not an identifier gets no arguments
-  // interface: its name cannot name one
+  // A command whose name is not an identifier gets no arguments interface: its name cannot name
+  // one. The corpus's refused command names are none of them identifiers to TypeScript either
   it('the type declaration parses and declares every parameter and argument the header stores', () => {
     let skipped = 0
     for (const c of generated) {
@@ -693,7 +703,10 @@ describe('type declaration namespace', () => {
       ['Good_Name1', 'Good_Name1'],
       ['My-Plugin v2', 'My_Plugin_v2'],
       ['1Plugin', '_1Plugin'],
-      ['Plügin', 'Pl_gin'],
+      ['Plügin', 'Plügin'],
+      ['class', 'class_'],
+      ['delete', 'delete_'],
+      ['undefined', 'undefined_'],
       ['', 'NewPlugin']
     ]
     for (const [name, expected] of table) {
@@ -701,6 +714,41 @@ describe('type declaration namespace', () => {
       expect(declarations(text).diagnostics, name).toEqual([])
       expect(namespaceOf(text), name).toBe(expected)
     }
+  })
+
+  it('parses for a plugin named after any word TypeScript reserves', () => {
+    const words: string[] = []
+    for (const [first, last] of [
+      [ts.SyntaxKind.FirstReservedWord, ts.SyntaxKind.LastReservedWord],
+      [ts.SyntaxKind.FirstFutureReservedWord, ts.SyntaxKind.LastFutureReservedWord]
+    ]) {
+      for (let kind = first; kind <= last; kind++) words.push(ts.tokenToString(kind) ?? '')
+    }
+    for (const name of words) {
+      const text = generateTypeDeclaration(createMinimalPlugin({ metaOverrides: { name } }))
+      expect.soft(declarations(text).diagnostics, name).toEqual([])
+    }
+    console.log(`type declaration namespace reserved words: ${words.length}`)
+    expect(words).toContain('delete')
+  })
+
+  it('notes each name it declares otherwise and each command it gives no interface', () => {
+    const plugin = createMinimalPlugin({
+      metaOverrides: { name: 'My-Plugin' },
+      commands: [
+        makeCommand({ name: 'Show-Text', args: [makeParam()] }),
+        makeCommand({ name: 'Zeigé', args: [makeParam()] }),
+        makeCommand({ name: 'Hide', args: [makeParam()] })
+      ]
+    })
+    const { content, notes } = typeDeclaration(plugin)
+    expect(content).toBe(generateTypeDeclaration(plugin))
+    expect(declarations(content).interfaces).toHaveProperty('ZeigéArgs')
+    expect(notes).toEqual([
+      'plugin name "My-Plugin" is declared as My_Plugin',
+      'command "Show-Text" has no Args interface: its name is not an identifier'
+    ])
+    expect(typeDeclaration(createMinimalPlugin()).notes).toEqual([])
   })
 
   it('keeps the original name in the header comment', () => {

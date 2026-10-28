@@ -113,6 +113,20 @@ describe('code preview export with no project', () => {
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
   })
 
+  it('says what the type declarations declare otherwise than the plugin names it', async () => {
+    const target = join(tmp, 'My-Plugin.d.ts')
+    wireMainSave(target)
+    act(() => usePluginStore.getState().updateMeta({ name: 'My-Plugin' }))
+    render(<CodePreview />)
+    clickExportDts()
+    await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+    expect(useToastStore.getState().toasts[0]).toMatchObject({
+      type: 'warning',
+      message:
+        'Exported, with 1 change to fit TypeScript: plugin name "My-Plugin" is declared as My_Plugin'
+    })
+  })
+
   it('writes the plugin again on a second export to the same path', async () => {
     const target = join(tmp, 'Alpha.js')
     wireMainSave(target)
