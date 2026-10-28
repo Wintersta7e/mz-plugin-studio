@@ -380,6 +380,9 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   row('param-name-lf', (def) => {
     def.parameters[0].name = 'a\nb'
   }),
+  row('default-lf', (def) => {
+    def.parameters[0].default = 'l1\nl2'
+  }),
   row('dts-description-block-comment', (def) => {
     def.parameters[0].desc = 'x */ declare const injected: 1; /* y'
   }),

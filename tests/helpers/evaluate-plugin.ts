@@ -5,6 +5,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { Script, createContext } from 'vm'
+import type { Context } from 'vm'
 import { SENTINEL } from './hostile'
 
 /** A syntax error: its message and 1-based line, null when the stack names no line. */
@@ -112,11 +113,20 @@ export function listTemplateGlobals(): {
   }
 }
 
-function bootstrap(mode: 'generator' | 'template'): string {
-  if (mode === 'generator') return STUB_SOURCE
+function standInSource(): string {
   templateGlobals ??= listTemplateGlobals()
   const names = `const NAMES = ${JSON.stringify(templateGlobals.names)};`
-  return `(() => {${names}${STAND_IN_SOURCE}})();${STUB_SOURCE}`
+  return `(() => {${names}${STAND_IN_SOURCE}})();`
+}
+
+/** Defines a stand-in, created inside `context`, for every name of `listTemplateGlobals()`. */
+export function installStandIns(context: Context): void {
+  new Script(standInSource(), { filename: 'stand-ins.js' }).runInContext(context)
+}
+
+function bootstrap(mode: 'generator' | 'template'): string {
+  if (mode === 'generator') return STUB_SOURCE
+  return `${standInSource()}${STUB_SOURCE}`
 }
 
 function describeThrown(error: unknown): string {
