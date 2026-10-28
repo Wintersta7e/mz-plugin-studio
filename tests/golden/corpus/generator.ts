@@ -383,6 +383,13 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   row('default-lf', (def) => {
     def.parameters[0].default = 'l1\nl2'
   }),
+  row('desc-lf', (def) => {
+    def.parameters[0].desc = 'd1\nd2'
+    def.commands[0].text = 't1\nt2'
+  }),
+  row('help-tag-line', (def) => {
+    def.meta.help = 'Usage:\n@param injected\n@type number\nEnd'
+  }),
   row('dts-description-block-comment', (def) => {
     def.parameters[0].desc = 'x */ declare const injected: 1; /* y'
   }),

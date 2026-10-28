@@ -116,6 +116,8 @@ export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {
   'generator:dts-description-block-comment': ['empty-string-replaced'],
   'generator:localization-key-comment': ['empty-string-replaced'],
   'generator:custom-code': ['empty-string-replaced'],
+  'generator:desc-lf': ['empty-string-replaced'],
+  'generator:help-tag-line': ['empty-string-replaced'],
   'raw-mode:Fixture_Bom.param-added': ['empty-string-replaced'],
   'raw-mode:Fixture_Dependent.param-added': ['empty-string-replaced'],
   'raw-mode:Fixture_EnJaOnly.param-added': ['empty-string-replaced'],
@@ -470,7 +472,7 @@ const show = (value: unknown): string => JSON.stringify(value) ?? 'undefined'
 const UNDECLARED_COMMAND = 'UndeclaredCommand'
 
 /** Command names `validatePlugin` refuses as not being identifiers. */
-function refusedCommandNames(def: PluginDefinition): Set<string> {
+export function refusedCommandNames(def: PluginDefinition): Set<string> {
   const errors = validatePlugin(def).errors
   return new Set(
     def.commands
