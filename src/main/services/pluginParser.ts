@@ -102,6 +102,15 @@ export function matchPlugindesc(header: string): string | undefined {
   return header.slice(start)
 }
 
+/**
+ * Same result as content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1], in linear time: a
+ * name is tried right after the tag and then only where a word starts, since a name tried inside
+ * a long word would re-read the rest of the word at every character.
+ */
+export function matchScriptName(content: string): string | undefined {
+  return content.match(/\*\s+@plugindesc(?:|[\s\S]*?\b)(\w+)\.js/i)?.[1]
+}
+
 // Same result as text.replace(/\n\s*\*\s*/g, ' '), in linear time
 export function joinStarLines(text: string): string {
   const nextNonWs = nextNonWsTable(text)
@@ -489,9 +498,9 @@ export class PluginParser {
     }
 
     // Infer name from filename comment or plugin structure
-    const nameMatch = content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)
-    if (nameMatch) {
-      meta.name = nameMatch[1]
+    const name = matchScriptName(content)
+    if (name !== undefined) {
+      meta.name = name
     }
 
     meta.localizations = localizations

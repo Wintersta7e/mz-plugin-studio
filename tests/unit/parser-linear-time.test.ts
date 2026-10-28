@@ -6,6 +6,7 @@ import {
   joinStarLines,
   matchHelp,
   matchPlugindesc,
+  matchScriptName,
   stripTrailingStar
 } from '../../src/main/services/pluginParser'
 
@@ -49,7 +50,8 @@ const LEGS: [string, (size: number) => string][] = [
   [
     'language plugindesc',
     (size) => '/*:\n * @plugindesc x\n */\n/*:ja\n * @plugindesc x' + '\n'.repeat(size) + 'y\n */\n'
-  ]
+  ],
+  ['word run', (size) => "/*:\n * @plugindesc x\n */\nconst D = '" + 'a'.repeat(size) + "';\n"]
 ]
 
 describe('parse time of help text and tag values', () => {
@@ -117,6 +119,8 @@ const oldPlugindesc = (header: string): string | undefined =>
     /(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s
   )?.[1]
 const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
+const oldScriptName = (content: string): string | undefined =>
+  content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1]
 
 describe('linear-time help and tag readers match the regular expressions they replace', () => {
   it('help text, any header', () => {
@@ -172,6 +176,15 @@ describe('linear-time help and tag readers match the regular expressions they re
       strings(['\n', ' ', '*', 'a', '\t', ' '], 6),
       oldJoin,
       joinStarLines
+    )
+  })
+
+  it('script name after a plugindesc tag', () => {
+    checkEquivalence(
+      'script name',
+      strings(['* @plugindesc', '*', ' ', 'a', '_', '.js', '.', '\n'], 5),
+      oldScriptName,
+      matchScriptName
     )
   })
 })
