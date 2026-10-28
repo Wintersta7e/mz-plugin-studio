@@ -37,6 +37,29 @@ function tagRegex(rest: string, flags = ''): RegExp {
   return new RegExp(`${LINE_START}@${rest}`, flags)
 }
 
+/** nextNonWs[i]: first index >= i of `text` that is not whitespace (the length if none). */
+function nextNonWsTable(text: string): Int32Array {
+  const n = text.length
+  const nextNonWs = new Int32Array(n + 1)
+  nextNonWs[n] = n
+  for (let i = n - 1; i >= 0; i--) nextNonWs[i] = /\s/.test(text[i]) ? nextNonWs[i + 1] : i
+  return nextNonWs
+}
+
+/**
+ * Whether a tag body can end at `p`: a newline followed by `*` and then `/` or `@` (an `@` and a
+ * letter when `letter` is set), with only whitespace in between.
+ */
+function bodyEndsAt(text: string, nextNonWs: Int32Array, p: number, letter: boolean): boolean {
+  if (text[p] !== '\n') return false
+  const star = nextNonWs[p + 1]
+  if (text[star] !== '*') return false
+  if (text[star + 1] === '/') return true
+  const at = nextNonWs[star + 1]
+  if (text[at] !== '@') return false
+  return !letter || (at + 1 < text.length && /[a-z]/i.test(text[at + 1]))
+}
+
 /**
  * Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1],
  * in linear time, except that a body with no end after it runs to the end of the header (help
@@ -44,24 +67,13 @@ function tagRegex(rest: string, flags = ''): RegExp {
  */
 export function matchHelp(header: string): string | undefined {
   const n = header.length
-  const isWs = (i: number): boolean => i < n && /\s/.test(header[i])
-  // nextNonWs[i]: first index >= i that is not whitespace (n if none)
-  const nextNonWs = new Int32Array(n + 1)
-  nextNonWs[n] = n
-  for (let i = n - 1; i >= 0; i--) nextNonWs[i] = isWs(i) ? nextNonWs[i + 1] : i
-  // A help body ends before a newline followed by `*` and then a tag (`@` + letter) or `/`
-  const endsAt = (p: number): boolean => {
-    if (header[p] !== '\n') return false
-    const star = nextNonWs[p + 1]
-    if (header[star] !== '*') return false
-    if (header[star + 1] === '/') return true
-    const at = nextNonWs[star + 1]
-    return header[at] === '@' && at + 1 < n && /[a-z]/i.test(header[at + 1])
-  }
+  const nextNonWs = nextNonWsTable(header)
   // nextEnd[p]: first index >= p where the body can end (-1 if none)
   const nextEnd = new Int32Array(n + 1)
   nextEnd[n] = -1
-  for (let p = n - 1; p >= 0; p--) nextEnd[p] = endsAt(p) ? p : nextEnd[p + 1]
+  for (let p = n - 1; p >= 0; p--) {
+    nextEnd[p] = bodyEndsAt(header, nextNonWs, p, true) ? p : nextEnd[p + 1]
+  }
   const m = tagRegex('help', 'i').exec(header)
   if (m === null) return undefined
   const s0 = m.index + m[0].length
@@ -71,6 +83,39 @@ export function matchHelp(header: string): string | undefined {
   if (nextEnd[s0] !== -1) return ''
   // No end after the tag: the body runs to the end of the header
   return header.slice(e)
+}
+
+/**
+ * Same result as
+ * header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s)?.[1],
+ * in linear time.
+ */
+export function matchPlugindesc(header: string): string | undefined {
+  const m = tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*`).exec(header)
+  if (m === null) return undefined
+  const start = m.index + m[0].length
+  const nextNonWs = nextNonWsTable(header)
+  for (let p = start; p < header.length; p++) {
+    if (bodyEndsAt(header, nextNonWs, p, false)) return header.slice(start, p)
+  }
+  // Written last in the block, it runs to the end of the header
+  return header.slice(start)
+}
+
+// Same result as text.replace(/\n\s*\*\s*/g, ' '), in linear time
+export function joinStarLines(text: string): string {
+  const nextNonWs = nextNonWsTable(text)
+  let out = ''
+  let copied = 0
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== '\n') continue
+    const star = nextNonWs[i + 1]
+    if (text[star] !== '*') continue
+    out += text.slice(copied, i) + ' '
+    copied = nextNonWs[star + 1]
+    i = copied - 1
+  }
+  return out + text.slice(copied)
 }
 
 /** Same result as value.replace(/\s*\*?\s*$/, ''), in linear time. */
@@ -343,11 +388,9 @@ export class PluginParser {
     if (!header) return { ...meta, localizations }
 
     // Parse @plugindesc (written last in the block, it runs to the end of the header)
-    const descMatch = header.match(
-      tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)`, 's')
-    )
-    if (descMatch) {
-      meta.description = descMatch[1].replace(/\n\s*\*\s*/g, ' ').trim()
+    const desc = matchPlugindesc(header)
+    if (desc !== undefined) {
+      meta.description = joinStarLines(desc).trim()
     }
 
     // Parse @author
@@ -461,13 +504,11 @@ export class PluginParser {
     const localizations: Record<string, LocalizedContent> = {}
     for (const [lang, langHeader] of languages) {
       if (lang) {
-        const locDesc = langHeader.match(
-          tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)`, 's')
-        )
+        const locDesc = matchPlugindesc(langHeader)
         const locHelp = matchHelp(langHeader)
 
         localizations[lang] = {
-          description: locDesc ? locDesc[1].replace(/\n\s*\*\s*/g, ' ').trim() : '',
+          description: locDesc !== undefined ? joinStarLines(locDesc).trim() : '',
           help:
             locHelp !== undefined
               ? locHelp

@@ -1,7 +1,13 @@
 // Parse time of the custom-code marker patterns on a long run of spaces after the marker,
 // and of help text and tag values on long runs of spaces or blank lines.
 import { describe, it, expect } from 'vitest'
-import { PluginParser, matchHelp, stripTrailingStar } from '../../src/main/services/pluginParser'
+import {
+  PluginParser,
+  joinStarLines,
+  matchHelp,
+  matchPlugindesc,
+  stripTrailingStar
+} from '../../src/main/services/pluginParser'
 
 const BOUND_MS = 250
 
@@ -38,7 +44,12 @@ const LEGS: [string, (size: number) => string][] = [
   ['param name', (size) => '/*:\n * @param a' + ' '.repeat(size) + 'b\n */\n'],
   ['parent', (size) => '/*:\n * @param p\n * @parent a' + ' '.repeat(size) + 'b\n */\n'],
   ['arg name', (size) => '/*:\n * @command c\n * @arg a' + ' '.repeat(size) + 'b\n */\n'],
-  ['tag', (size) => '/*:\n * @param p\n * @desc a' + ' '.repeat(size) + 'b\n */\n']
+  ['tag', (size) => '/*:\n * @param p\n * @desc a' + ' '.repeat(size) + 'b\n */\n'],
+  ['plugindesc', (size) => '/*:\n * @plugindesc x' + '\n'.repeat(size) + 'y\n */\n'],
+  [
+    'language plugindesc',
+    (size) => '/*:\n * @plugindesc x\n */\n/*:ja\n * @plugindesc x' + '\n'.repeat(size) + 'y\n */\n'
+  ]
 ]
 
 describe('parse time of help text and tag values', () => {
@@ -101,6 +112,11 @@ const oldHelp = (header: string): string | undefined =>
     /(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i
   )?.[1] ?? header.match(/(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@help\s*([\s\S]*)$/i)?.[1]
 const oldStrip = (value: string): string => value.replace(/\s*\*?\s*$/, '')
+const oldPlugindesc = (header: string): string | undefined =>
+  header.match(
+    /(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s
+  )?.[1]
+const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
 
 describe('linear-time help and tag readers match the regular expressions they replace', () => {
   it('help text, any header', () => {
@@ -128,6 +144,34 @@ describe('linear-time help and tag readers match the regular expressions they re
       strings([' ', '\t', '*', 'a', ' ', '﻿', '/'], 6),
       oldStrip,
       stripTrailingStar
+    )
+  })
+
+  it('description, any header', () => {
+    checkEquivalence(
+      'plugindesc',
+      strings(['\n', ' ', '*', '/', '@', 'a', '@plugindesc', '@PluginDesc'], 5),
+      oldPlugindesc,
+      matchPlugindesc
+    )
+  })
+
+  it('description after a plugindesc tag', () => {
+    const after = (s: string): string => ' * @plugindesc' + s
+    checkEquivalence(
+      'plugindesc after tag',
+      strings(['\n', ' ', '*', '/', '@', 'a', '\t'], 6),
+      (s) => oldPlugindesc(after(s)),
+      (s) => matchPlugindesc(after(s))
+    )
+  })
+
+  it('description lines joined', () => {
+    checkEquivalence(
+      'description join',
+      strings(['\n', ' ', '*', 'a', '\t', ' '], 6),
+      oldJoin,
+      joinStarLines
     )
   })
 })
