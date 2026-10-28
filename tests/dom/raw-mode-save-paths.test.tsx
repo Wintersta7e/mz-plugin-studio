@@ -102,7 +102,7 @@ describe('saving an imported plugin', () => {
     expect(log.warn).toHaveBeenCalledWith('[save] refused', FILE, 'source-missing')
     checked++
 
-    stores.useToastStore.setState({ toasts: [] })
+    act(() => stores.useToastStore.setState({ toasts: [] }))
     press('KeyS', true)
     await waitFor(() =>
       expect(toastsOf(stores)).toEqual([
@@ -114,7 +114,7 @@ describe('saving an imported plugin', () => {
     expect(log.warn).toHaveBeenCalledTimes(2)
     checked++
 
-    stores.useToastStore.setState({ toasts: [] })
+    act(() => stores.useToastStore.setState({ toasts: [] }))
     fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
     await waitFor(() => expect(toastsOf(stores)).toEqual([`error: ${SOURCE_MISSING}`]))
     expect(savedFiles(api)).toEqual(['NewPlugin.js'])

@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 
 const mocks = 'tests/setup/mocks.ts'
 const dom = 'tests/setup/dom.ts'
+// Fails a test on console.error/console.warn output it does not expect.
+const consoleGuard = 'tests/setup/console.ts'
 
 export default defineConfig({
   plugins: [react()],
@@ -33,7 +35,7 @@ export default defineConfig({
           environment: 'node',
           include: ['tests/**/*.test.{ts,tsx}'],
           exclude: ['tests/dom/**', 'tests/golden/**', 'tests/fixtures/**'],
-          setupFiles: [mocks]
+          setupFiles: [consoleGuard, mocks]
         }
       },
       {
@@ -42,7 +44,7 @@ export default defineConfig({
           name: 'golden',
           environment: 'jsdom',
           include: ['tests/golden/**/*.test.ts'],
-          setupFiles: [mocks, dom]
+          setupFiles: [consoleGuard, mocks, dom]
         }
       },
       {
@@ -51,7 +53,7 @@ export default defineConfig({
           name: 'dom',
           environment: 'jsdom',
           include: ['tests/dom/**/*.test.{ts,tsx}'],
-          setupFiles: [mocks, dom]
+          setupFiles: [consoleGuard, mocks, dom]
         }
       }
     ]
