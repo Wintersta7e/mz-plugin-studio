@@ -63,7 +63,7 @@
     const params = PluginManager.parameters(PLUGIN_NAME);
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
 
     const speed = Number(params['Speed'] || 5);

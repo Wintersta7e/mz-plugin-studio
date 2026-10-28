@@ -108,7 +108,7 @@
     const params = PluginManager.parameters('Fixture_EnJaOnly');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     let rate = Number(params['Rate'] || 2);
     const title = String(params['Title'] || 'Status');

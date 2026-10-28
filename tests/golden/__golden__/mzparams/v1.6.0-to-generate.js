@@ -75,11 +75,11 @@ and goes on.
 
     const speed = Number(params['Speed'] || 5);
     const count = Number(params['Count'] || 3);
-    const mode = params['Mode'] || 'fast';
+    const mode = params['Mode'] ?? 'fast';
     const enabled = (params['Enabled'] ?? 'true') === 'true';
-    const picture = params['Picture'] || '';
+    const picture = params['Picture'] ?? '';
     const points = JSON.parse(params['Points'] || '[]').map(s => JSON.parse(s));
-    const tint = params['Tint'] || '0';
+    const tint = params['Tint'] ?? '0';
 
     // Custom plugin code goes here
 

@@ -70,13 +70,13 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const safe = params['Safe'] || 'Safe';
+    const safe = params['Safe'] ?? 'Safe';
 
     // Register plugin commands
 
     PluginManager.registerCommand(PLUGIN_NAME, 'Safe', function(args) {
         const safe = (args['Safe'] ?? 'false') === 'true';
-        const comboSafe = args['ComboSafe'] || 'Safe';
+        const comboSafe = args['ComboSafe'] ?? 'Safe';
 
         // TODO: Implement command logic
         // Parsed args available as: safe, comboSafe

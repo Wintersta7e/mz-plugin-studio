@@ -7,7 +7,7 @@
     const PLUGIN_NAME = 'Fixture_NoBlock';
     const params = PluginManager.parameters(PLUGIN_NAME);
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
 
     let flashes = 0;

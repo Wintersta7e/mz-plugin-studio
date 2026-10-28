@@ -65,7 +65,7 @@
     const params = PluginManager.parameters('Fixture_Dependent');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const delay = Number(params['Delay'] || 60);
     const badge = String(params['Badge'] || 'New');

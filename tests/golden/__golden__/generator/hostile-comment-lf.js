@@ -118,13 +118,13 @@ globalThis.__pwn = 1; /* Y
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const xGlobalThisPwn1Y = params['X */\nglobalThis.__pwn = 1; /* Y'] || 'X *\\/\nglobalThis.__pwn = 1; /* Y';
+    const xGlobalThisPwn1Y = params['X */\nglobalThis.__pwn = 1; /* Y'] ?? 'X *\\/\nglobalThis.__pwn = 1; /* Y';
 
     // Register plugin commands
 
     PluginManager.registerCommand(PLUGIN_NAME, 'X */\nglobalThis.__pwn = 1; /* Y', function(args) {
         const xGlobalThisPwn1Y = (args['X */\nglobalThis.__pwn = 1; /* Y'] ?? 'false') === 'true';
-        const comboXGlobalThisPwn1Y = args['ComboX */\nglobalThis.__pwn = 1; /* Y'] || 'X *\\/\nglobalThis.__pwn = 1; /* Y';
+        const comboXGlobalThisPwn1Y = args['ComboX */\nglobalThis.__pwn = 1; /* Y'] ?? 'X *\\/\nglobalThis.__pwn = 1; /* Y';
 
         // TODO: Implement command logic
         // Parsed args available as: xGlobalThisPwn1Y, comboXGlobalThisPwn1Y

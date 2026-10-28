@@ -60,7 +60,7 @@
     const params = PluginManager.parameters('_Fixture_Ignored');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const level = Number(params['Level'] || 1);
     const note = String(params['Note'] || 'Draft');

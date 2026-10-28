@@ -66,7 +66,7 @@
     const params = PluginManager.parameters('Fixture_NonAscii');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const pause = Number(params['Pause'] || 30);
     const greeting = String(params['Greeting'] || 'こんにちは');

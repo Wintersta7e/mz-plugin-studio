@@ -40,7 +40,7 @@
     const params = PluginManager.parameters('Fixture_JaOnly');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const interval = Number(params['Interval'] || 10);
     const message = String(params['Message'] || '');

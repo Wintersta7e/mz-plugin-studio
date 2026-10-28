@@ -57,7 +57,7 @@
     const params = PluginManager.parameters(PLUGIN_NAME);
 
     const speed = Number(params['Speed'] || 5);
-    const label = params['Label'] || 'Hello';
+    const label = params['Label'] ?? 'Hello';
     const points = JSON.parse(params['Points'] || '[]').map(s => JSON.parse(s));
 
     // Register plugin commands

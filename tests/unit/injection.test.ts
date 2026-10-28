@@ -156,6 +156,7 @@ const parameterFields = {
   },
   arrayType: (p, t) => {
     p.type = 'array'
+    p.default = ''
     p.arrayType = t as ParamType
   },
   dir: (p, t) => {

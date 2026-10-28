@@ -114,7 +114,7 @@
     const params = PluginManager.parameters(pluginName);
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const speed = Number(params['Speed'] || 5);
     const label = String(params["Label"] || 'Hello');

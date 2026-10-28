@@ -947,36 +947,40 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
     case 'location':
       return `JSON.parse(${accessor} || '{"mapId":"0","x":"0","y":"0"}')`
 
-    case 'struct': {
-      const fallback =
-        param.default && typeof param.default === 'string' && param.default !== ''
-          ? escapeJSString(escapeBlockComment(param.default))
-          : '{}'
-      return `JSON.parse(${accessor} || '${fallback}')`
-    }
+    case 'struct':
+      return `JSON.parse(${accessor} || '${jsonFallback(param, '{}')}')`
 
     case 'array': {
       // MZ double-encodes struct<X>[]: outer JSON array of JSON strings.
       // Without the inner parse each element remains a string literal.
+      const parsed = `JSON.parse(${accessor} || '${jsonFallback(param, '[]')}')`
       const inner = param.arrayType
       if (inner === 'struct' && param.structType) {
-        return `JSON.parse(${accessor} || '[]').map(s => JSON.parse(s))`
+        return `${parsed}.map(s => JSON.parse(s))`
       }
       if (inner === 'number' || (inner && ID_BASED_PARAM_TYPES.has(inner))) {
-        return `JSON.parse(${accessor} || '[]').map(Number)`
+        return `${parsed}.map(Number)`
       }
       if (inner === 'boolean') {
-        return `JSON.parse(${accessor} || '[]').map(v => v === 'true')`
+        return `${parsed}.map(v => v === 'true')`
       }
-      return `JSON.parse(${accessor} || '[]')`
+      return parsed
     }
 
     default:
       if (ID_BASED_PARAM_TYPES.has(param.type)) {
         return `Number(${accessor} || ${defaultVal})`
       }
-      return `${accessor} || ${defaultVal}`
+      // `??`, not `||`: a value set to empty in MZ is stored as "" and must stay empty
+      return `${accessor} ?? ${defaultVal}`
   }
+}
+
+/** The JSON text a struct or array reads when its key is absent: its `@default`, else `empty`. */
+function jsonFallback(param: PluginParameter, empty: string): string {
+  return typeof param.default === 'string' && param.default !== ''
+    ? escapeJSString(escapeBlockComment(param.default))
+    : empty
 }
 
 function generateParamParser(param: PluginParameter): string {

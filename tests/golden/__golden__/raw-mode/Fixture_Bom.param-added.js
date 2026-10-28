@@ -65,7 +65,7 @@
     const params = PluginManager.parameters('Fixture_Bom');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const volume = Number(params['Volume'] || 90);
     const prefix = String(params['Prefix'] || 'Bom');

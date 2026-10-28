@@ -64,7 +64,7 @@
     const params = PluginManager.parameters('Fixture_Structs');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const entries = JSON.parse(params['Entries'] || '[]').map(e => JSON.parse(e));
     const highlight = JSON.parse(params['Highlight'] || '{}');

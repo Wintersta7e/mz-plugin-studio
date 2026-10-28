@@ -580,11 +580,11 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const paramString = params['param_string'] || '';
+    const paramString = params['param_string'] ?? '';
     const paramNumber = Number(params['param_number'] || 3);
     const paramBoolean = (params['param_boolean'] ?? 'true') === 'true';
-    const paramSelect = params['param_select'] || 'first';
-    const paramCombo = params['param_combo'] || 'first';
+    const paramSelect = params['param_select'] ?? 'first';
+    const paramCombo = params['param_combo'] ?? 'first';
     const paramVariable = Number(params['param_variable'] || 1);
     const paramSwitch = Number(params['param_switch'] || 1);
     const paramActor = Number(params['param_actor'] || 1);
@@ -599,25 +599,25 @@
     const paramAnimation = Number(params['param_animation'] || 1);
     const paramTileset = Number(params['param_tileset'] || 1);
     const paramCommonEvent = Number(params['param_common_event'] || 1);
-    const paramFile = params['param_file'] || 'Fixture_Picture';
+    const paramFile = params['param_file'] ?? 'Fixture_Picture';
     const paramIcon = Number(params['param_icon'] || 1);
     const paramMap = Number(params['param_map'] || 1);
     const paramLocation = JSON.parse(params['param_location'] || '{"mapId":"0","x":"0","y":"0"}');
-    const paramNote = params['param_note'] || '"Line"';
-    const paramColor = params['param_color'] || '';
-    const paramText = params['param_text'] || '';
-    const paramHidden = params['param_hidden'] || '';
+    const paramNote = params['param_note'] ?? '"Line"';
+    const paramColor = params['param_color'] ?? '';
+    const paramText = params['param_text'] ?? '';
+    const paramHidden = params['param_hidden'] ?? '';
     const paramStruct = JSON.parse(params['param_struct'] || '{"x":"1"}');
-    const paramArray = JSON.parse(params['param_array'] || '[]').map(Number);
+    const paramArray = JSON.parse(params['param_array'] || '["1","2"]').map(Number);
 
     // Register plugin commands
 
     PluginManager.registerCommand(PLUGIN_NAME, 'cmd', function(args) {
-        const argString = args['arg_string'] || '';
+        const argString = args['arg_string'] ?? '';
         const argNumber = Number(args['arg_number'] || 3);
         const argBoolean = (args['arg_boolean'] ?? 'true') === 'true';
-        const argSelect = args['arg_select'] || 'first';
-        const argCombo = args['arg_combo'] || 'first';
+        const argSelect = args['arg_select'] ?? 'first';
+        const argCombo = args['arg_combo'] ?? 'first';
         const argVariable = Number(args['arg_variable'] || 1);
         const argSwitch = Number(args['arg_switch'] || 1);
         const argActor = Number(args['arg_actor'] || 1);
@@ -632,16 +632,16 @@
         const argAnimation = Number(args['arg_animation'] || 1);
         const argTileset = Number(args['arg_tileset'] || 1);
         const argCommonEvent = Number(args['arg_common_event'] || 1);
-        const argFile = args['arg_file'] || 'Fixture_Picture';
+        const argFile = args['arg_file'] ?? 'Fixture_Picture';
         const argIcon = Number(args['arg_icon'] || 1);
         const argMap = Number(args['arg_map'] || 1);
         const argLocation = JSON.parse(args['arg_location'] || '{"mapId":"0","x":"0","y":"0"}');
-        const argNote = args['arg_note'] || '"Line"';
-        const argColor = args['arg_color'] || '';
-        const argText = args['arg_text'] || '';
-        const argHidden = args['arg_hidden'] || '';
+        const argNote = args['arg_note'] ?? '"Line"';
+        const argColor = args['arg_color'] ?? '';
+        const argText = args['arg_text'] ?? '';
+        const argHidden = args['arg_hidden'] ?? '';
         const argStruct = JSON.parse(args['arg_struct'] || '{"x":"1"}');
-        const argArray = JSON.parse(args['arg_array'] || '[]').map(Number);
+        const argArray = JSON.parse(args['arg_array'] || '["1","2"]').map(Number);
 
         // TODO: Implement command logic
         // Parsed args available as: argString, argNumber, argBoolean, argSelect, argCombo, argVariable, argSwitch, argActor, argClass, argSkill, argItem, argWeapon, argArmor, argEnemy, argTroop, argState, argAnimation, argTileset, argCommonEvent, argFile, argIcon, argMap, argLocation, argNote, argColor, argText, argHidden, argStruct, argArray

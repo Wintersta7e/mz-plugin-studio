@@ -78,7 +78,7 @@
     const params = PluginManager.parameters('Fixture_Require');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = params['AddedParam'] || 'added';
+    const addedParam = params['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const picture = String(params['Picture'] || '');
     const opacity = Number(params['Opacity'] || 255);

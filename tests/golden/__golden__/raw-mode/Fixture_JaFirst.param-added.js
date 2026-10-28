@@ -104,7 +104,7 @@
     const parameters = PluginManager.parameters('Fixture_JaFirst');
 
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = parameters['AddedParam'] || 'added';
+    const addedParam = parameters['AddedParam'] ?? 'added';
     // --- End new parameters ---
     const limit = Number(parameters['Limit'] || 3);
     const caption = String(parameters['Caption'] || 'Steps');

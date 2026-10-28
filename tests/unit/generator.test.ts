@@ -444,7 +444,7 @@ describe('generateRawMode', () => {
     const { opened, plugin } = open(raw)
     plugin.parameters.push(param('label', { default: 'x' }))
     const result = save(plugin, opened)
-    expect(result).toContain("const label = parameters['label'] || 'x';")
+    expect(result).toContain("const label = parameters['label'] ?? 'x';")
     expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
   })
 
@@ -713,14 +713,14 @@ describe('camelCase', () => {
 // COV-02: generateAccessorParser for all 26 param types
 describe('generatePlugin - accessor parser for all param types', () => {
   const cases: Array<{ type: string; expectContains: string; default?: unknown }> = [
-    { type: 'string', expectContains: "params['greeting'] || ''", default: '' },
+    { type: 'string', expectContains: "params['greeting'] ?? ''", default: '' },
     { type: 'number', expectContains: "Number(params['speed'] || 0)", default: 0 },
     { type: 'boolean', expectContains: "(params['flag'] ?? 'false') === 'true'", default: false },
-    { type: 'select', expectContains: "params['mode'] || 'easy'", default: 'easy' },
-    { type: 'combo', expectContains: "params['combo'] || ''", default: '' },
-    { type: 'note', expectContains: "params['note'] || ''", default: '' },
-    { type: 'text', expectContains: "params['txt'] || ''", default: '' },
-    { type: 'hidden', expectContains: "params['hid'] || ''", default: '' },
+    { type: 'select', expectContains: "params['mode'] ?? 'easy'", default: 'easy' },
+    { type: 'combo', expectContains: "params['combo'] ?? ''", default: '' },
+    { type: 'note', expectContains: "params['note'] ?? ''", default: '' },
+    { type: 'text', expectContains: "params['txt'] ?? ''", default: '' },
+    { type: 'hidden', expectContains: "params['hid'] ?? ''", default: '' },
     { type: 'variable', expectContains: "Number(params['variable'] || 0)", default: 0 },
     { type: 'switch', expectContains: "Number(params['sw'] || 0)", default: 0 },
     { type: 'actor', expectContains: "Number(params['actor'] || 0)", default: 0 },
@@ -737,8 +737,8 @@ describe('generatePlugin - accessor parser for all param types', () => {
     { type: 'common_event', expectContains: "Number(params['common_event'] || 0)", default: 0 },
     { type: 'icon', expectContains: "Number(params['icon'] || 0)", default: 0 },
     { type: 'map', expectContains: "Number(params['map'] || 0)", default: 0 },
-    { type: 'file', expectContains: "params['file'] || ''", default: '' },
-    { type: 'color', expectContains: "params['color'] || ''", default: '' },
+    { type: 'file', expectContains: "params['file'] ?? ''", default: '' },
+    { type: 'color', expectContains: "params['color'] ?? ''", default: '' },
     {
       type: 'struct',
       expectContains: "JSON.parse(params['settings'] || '{}')",
@@ -1000,7 +1000,7 @@ describe('generatePlugin - formatJSDefault', () => {
     })
     const output = generatePlugin(plugin)
     // The default in the accessor should escape the quote
-    expect(output).toContain("params['msg'] || 'it\\'s fine'")
+    expect(output).toContain("params['msg'] ?? 'it\\'s fine'")
   })
 
   it('escapes backslashes in string defaults', () => {
@@ -1017,7 +1017,7 @@ describe('generatePlugin - formatJSDefault', () => {
       ]
     })
     const output = generatePlugin(plugin)
-    expect(output).toContain("params['path'] || 'C:\\\\Users'")
+    expect(output).toContain("params['path'] ?? 'C:\\\\Users'")
   })
 })
 

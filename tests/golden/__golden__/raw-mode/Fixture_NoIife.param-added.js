@@ -71,7 +71,7 @@ var prm = PluginManager.parameters(
 
 {
     // --- New parameters (added by MZ Plugin Studio) ---
-    const addedParam = prm['AddedParam'] || 'added';
+    const addedParam = prm['AddedParam'] ?? 'added';
     // --- End new parameters ---
 }
 Fixture.NoIife.step = Number(prm.Step || 2);

@@ -35,7 +35,7 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const label = params['Label'] || 'Hello';
+    const label = params['Label'] ?? 'Hello';
     const pair = JSON.parse(params['Pair'] || '{"a":"b"}');
 
     // Register plugin commands
