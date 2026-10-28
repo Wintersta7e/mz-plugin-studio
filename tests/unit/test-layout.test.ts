@@ -54,8 +54,6 @@ const SPECIFIER_PATTERNS = [
 
 const ENV_PRAGMA = '@vitest-' + 'environment'
 const MODULE_ONLY_SYNTAX = 'import' + '.meta'
-const MARKER =
-  /\b(?:it|test|describe|suite|bench)(?:\.\w+)*\.(?:skip|only|todo|fails|skipIf|runIf)\b|\bx(?:it|test|describe)\s*\(/
 
 const TESTS_ROOT = join(process.cwd(), 'tests')
 
@@ -105,35 +103,19 @@ describe('test layout', () => {
     expect(routedOutsideDom).toEqual([])
   })
 
-  it('has no skip markers, environment pragmas or module-only syntax in shared helpers', () => {
-    const markers = allFiles.filter((f) => MARKER.test(read(f)))
+  // Skipped, todo and expected-to-fail tests are counted from the run itself, by
+  // tests/setup/no-skips-reporter.ts; a focused test fails the run through allowOnly.
+  it('has no environment pragmas or module-only syntax in shared helpers', () => {
     const pragmas = allFiles.filter((f) => read(f).includes(ENV_PRAGMA))
     const helperModuleSyntax = allFiles.filter(
       (f) => f.startsWith('helpers/') && read(f).includes(MODULE_ONLY_SYNTAX)
     )
     console.log(
-      `test layout: skip/only/todo/fails markers ${markers.length}, environment pragmas ${pragmas.length}, ` +
+      `test layout: environment pragmas ${pragmas.length}, ` +
         `module-only syntax in shared helpers ${helperModuleSyntax.length}`
     )
-    expect(markers).toEqual([])
     expect(pragmas).toEqual([])
     expect(helperModuleSyntax).toEqual([])
-  })
-
-  it('counts chained, conditional and x-prefixed markers, and nothing else', () => {
-    // Split so this file does not carry the markers it lists.
-    const cases: [string, boolean][] = [
-      ['it.' + 'skip.each([1])("x", f)', true],
-      ['test.' + 'skipIf(true)("x", f)', true],
-      ['describe.' + 'runIf(false)("x", f)', true],
-      ['suite.' + 'only("x", f)', true],
-      ['x' + 'it("x", f)', true],
-      ['it.each([1])("x", f)', false],
-      ['test("skip this", f)', false]
-    ]
-    console.log(`marker cases ${cases.length}`)
-    for (const [source, marked] of cases)
-      expect([source, MARKER.test(source)]).toEqual([source, marked])
   })
 
   it('mirrors the routed list in the ESLint routing block', () => {

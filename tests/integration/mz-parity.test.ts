@@ -35,15 +35,8 @@ function lowerCasedCommandKeys(): MzRuntime {
   return mz
 }
 
-describe('plugin loader stand-in against a local MZ install', () => {
-  if (dir === '') {
-    it('is skipped without MZ_CORESCRIPT_DIR', () => {
-      console.log('mz parity: skipped: MZ_CORESCRIPT_DIR unset')
-      expect(dir).toBe('')
-    })
-    return
-  }
-
+// Skipped, not passed, without the variable: the run's skip counter allows this file by name.
+describe.skipIf(dir === '')('plugin loader stand-in against a local MZ install', () => {
   const cases = conformanceCases()
   const core = (): MzRuntime => createMzCorescript(dir)
 
