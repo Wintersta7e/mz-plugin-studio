@@ -8,7 +8,7 @@ import { Script } from 'vm'
 import {
   generatePlugin,
   generateRawMode,
-  validatePlugin
+  isIdentifierName
 } from '../../src/renderer/src/lib/generator/index'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
@@ -112,8 +112,6 @@ export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {}
 
 // --- Cases ---------------------------------------------------------------------------------
 
-const PLUGIN_NAME_REFUSED = /^Plugin name must be/
-
 /**
  * Every generator corpus entry as the app writes it, and every fixture written back by raw mode
  * after each edit. An entry whose plugin name is not a file name cannot be loaded at all, so it
@@ -125,7 +123,7 @@ export function conformanceCases(): ConformanceCase[] {
   for (const entry of GENERATOR_ENTRIES) {
     let def = entry.def
     let renamedFrom: string | undefined
-    if (validatePlugin(def).errors.some((e) => PLUGIN_NAME_REFUSED.test(e))) {
+    if (!isIdentifierName(def.meta.name)) {
       renamedFrom = def.meta.name
       const { importedFrom: _importedFrom, ...rest } = def
       def = { ...rest, meta: { ...def.meta, name: `Hostile_${++renamed}` } }
@@ -444,12 +442,7 @@ const UNDECLARED_COMMAND = 'UndeclaredCommand'
 
 /** Command names `validatePlugin` refuses as not being identifiers. */
 export function refusedCommandNames(def: PluginDefinition): Set<string> {
-  const errors = validatePlugin(def).errors
-  return new Set(
-    def.commands
-      .map((cmd) => cmd.name)
-      .filter((name) => errors.includes(`Invalid command name: ${name} (must be valid identifier)`))
-  )
+  return new Set(def.commands.map((cmd) => cmd.name).filter((name) => !isIdentifierName(name)))
 }
 
 /**

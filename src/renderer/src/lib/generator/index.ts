@@ -1211,7 +1211,7 @@ export function validatePlugin(plugin: PluginDefinition): {
 
     // Warn (not error) if parameter name isn't a valid identifier - it will still work in MZ
     // but won't be easily accessible in code
-    if (param.name && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(param.name)) {
+    if (param.name && !isIdentifierName(param.name)) {
       if (!isSectionDivider) {
         warnings.push(
           `Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`
