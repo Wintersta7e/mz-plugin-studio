@@ -206,7 +206,7 @@ use the latest release.
 
 ## Contributing
 
-Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run check` and `npm run check:commits`.
+Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run check` and `npm run check:commits`. Each commit's subject is at most 72 characters, and its message carries no trailer (`Signed-off-by:`, `Co-authored-by:` and the like) but `Co-Authored-By: Rooty` or `Co-Authored-By: Leafy`.
 
 ## License
 

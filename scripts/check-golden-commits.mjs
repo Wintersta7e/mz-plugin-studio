@@ -5,7 +5,9 @@
 //     unless a commit that changes no src/ file only adds whole cases (or index lines) to it.
 // And the commit-message rules over the same range (older history predates them):
 //   - a subject is at most 72 characters;
-//   - the only trailer is `Co-Authored-By:` (exact case), naming an allowed co-author;
+//   - the only trailer is `Co-Authored-By:` (exact case), naming an allowed co-author, read from
+//     the whole body: a line with a hyphenated key (`Some-Key: value`) in any paragraph, and every
+//     line of a last paragraph made only of `Key: value` lines (the block git reads as trailers);
 //   - commits by the dependency-update bot are counted as skipped, not checked.
 // Usage: node scripts/check-golden-commits.mjs <base>..<head>
 //        node scripts/check-golden-commits.mjs --github-event   (range from the CI event)
@@ -21,13 +23,26 @@ const NO_COMMIT = /^0+$/
 const MAX_SUBJECT = 72
 const CO_AUTHOR_KEY = 'Co-Authored-By'
 const CO_AUTHORS = ['Rooty', 'Leafy']
+const RULES =
+  `commit message rules: a subject of at most ${MAX_SUBJECT} characters; allowed trailer, ` +
+  `in any paragraph: ${CO_AUTHORS.map((name) => `${CO_AUTHOR_KEY}: ${name}`).join(' or ')} ` +
+  '(exact case)'
+// A prose line such as `Goldens: a.js` has a one-word key, so only these count everywhere.
+const HYPHENATED_KEY = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+[ \t]*:/
+const KEY_LINE = /^([A-Za-z0-9][A-Za-z0-9-]*)[ \t]*:[ \t]*([\s\S]*)$/
 // The bot always signs off and writes long subjects; its pull requests would otherwise be red.
-const BOT_AUTHORS = ['49699333+dependabot[bot]@users.noreply.github.com']
+// Its author email is settable by anyone, so it never decides alone. In a pull request the
+// opener's login decides, which only the hosting service sets. A push or a local run has no such
+// signal without the service's API or signing key, so there the skip also needs the service's
+// committer email: still settable, it limits the skip to commits forged on purpose.
+const BOT_LOGIN = 'dependabot[bot]'
+const BOT_EMAIL = '49699333+dependabot[bot]@users.noreply.github.com'
+const HOST_COMMITTER_EMAIL = 'noreply@github.com'
 
 /**
  * The commit range a CI event pushed, or why there is none.
  * @param {{ name: string; payload: object; sha: string }} event
- * @returns {{ range: string } | { skip: string }}
+ * @returns {{ range: string; openedBy?: string } | { skip: string }}
  */
 export function resolveRange({ name, payload, sha }) {
   if (name === 'push') {
@@ -38,27 +53,44 @@ export function resolveRange({ name, payload, sha }) {
     return { range: `${payload.before}..${sha}` }
   }
   if (name === 'pull_request') {
-    return { range: `${payload.pull_request.base.sha}..${payload.pull_request.head.sha}` }
+    const { base, head, user } = payload.pull_request
+    return { range: `${base.sha}..${head.sha}`, openedBy: user?.login ?? '' }
   }
   return { skip: `${name} (no pushed range)` }
 }
 
 /**
- * What breaks the commit-message rules in one commit's subject and trailer lines.
- * @param {{ subject: string; trailers: string[] }} message
+ * The trailer-shaped lines of a commit body (everything after the subject paragraph).
+ * @param {string} body
  * @returns {string[]}
  */
-export function messageProblems({ subject, trailers }) {
+export function trailerLines(body) {
+  const paragraphs = body
+    .trim()
+    .split(/\n[ \t]*\n/)
+    .map((paragraph) => paragraph.split('\n').filter((line) => line.trim() !== ''))
+  const last = paragraphs.length - 1
+  const block = paragraphs[last].every((line) => KEY_LINE.test(line) || /^[ \t]/.test(line))
+  return paragraphs.flatMap((lines, i) =>
+    lines.filter(
+      (line) => HYPHENATED_KEY.test(line) || (block && i === last && KEY_LINE.test(line))
+    )
+  )
+}
+
+/**
+ * What breaks the commit-message rules in one commit's subject and body.
+ * @param {{ subject: string; body: string }} message
+ * @returns {string[]}
+ */
+export function messageProblems({ subject, body }) {
   const problems = []
   const length = [...subject].length
   if (length > MAX_SUBJECT) problems.push(`subject over ${MAX_SUBJECT} characters (${length})`)
-  for (const trailer of trailers) {
-    const split = trailer.indexOf(': ')
-    const key = split === -1 ? trailer : trailer.slice(0, split)
+  for (const line of trailerLines(body)) {
+    const [, key, value] = KEY_LINE.exec(line)
     if (key !== CO_AUTHOR_KEY) problems.push(`trailer not allowed: ${key}`)
-    else if (!CO_AUTHORS.includes(trailer.slice(split + 2))) {
-      problems.push(`co-author not allowed: ${trailer.slice(split + 2)}`)
-    }
+    else if (!CO_AUTHORS.includes(value)) problems.push(`co-author not allowed: ${value}`)
   }
   return problems
 }
@@ -120,15 +152,29 @@ function onlyAddsCases(sha, path) {
   return next === oldUnits.length
 }
 
-/** A commit's subject (first paragraph joined, as git shows it), author email and trailer lines. */
+/** A commit's subject (first paragraph joined, as git shows it), author and committer emails and body. */
 function commitMessage(sha) {
-  const format = '%s%x00%ae%x00%(trailers:only,unfold)'
-  const [subject, email, trailers] = git(['show', '-s', `--format=${format}`, sha]).split('\0')
-  return { subject, email, trailers: trailers.split('\n').filter((line) => line !== '') }
+  const format = '%s%x00%ae%x00%ce%x00%b'
+  const [subject, email, committer, body] = git(['show', '-s', `--format=${format}`, sha]).split(
+    '\0'
+  )
+  return { subject, email, committer, body }
 }
 
-/** Counts every rule over the range; returns the exit code. */
-function checkRange(range) {
+/**
+ * True for a dependency-update bot commit: in a pull request the bot must have opened it, else
+ * the hosting service must have committed it.
+ */
+const isBotCommit = ({ email, committer }, openedBy) =>
+  email === BOT_EMAIL &&
+  (openedBy === undefined ? committer === HOST_COMMITTER_EMAIL : openedBy === BOT_LOGIN)
+
+/**
+ * Counts every rule over the range; returns the exit code.
+ * @param {string} range
+ * @param {string} [openedBy] who opened the pull request the range belongs to
+ */
+function checkRange(range, openedBy) {
   const commits = git(['rev-list', '--no-merges', '--reverse', range])
     .split('\n')
     .filter((sha) => sha !== '')
@@ -141,7 +187,7 @@ function checkRange(range) {
   const fail = (sha, rule, path) => failures.push(`FAIL ${sha.slice(0, 7)} ${rule}: ${path}`)
   for (const sha of commits) {
     const message = commitMessage(sha)
-    if (BOT_AUTHORS.includes(message.email)) {
+    if (isBotCommit(message, openedBy)) {
       counts.bots++
     } else {
       for (const problem of messageProblems(message)) {
@@ -192,8 +238,10 @@ function checkRange(range) {
       `co-authors not allowed ${counts.coAuthors}; bot commits skipped ${counts.bots}`
   )
   for (const line of failures) print(line)
+  const messages = counts.subjects + counts.trailers + counts.coAuthors
+  if (messages > 0) print(RULES)
   const golden = counts.x + counts.y + counts.z + counts.w
-  return golden + counts.subjects + counts.trailers + counts.coAuthors > 0 ? 1 : 0
+  return golden + messages > 0 ? 1 : 0
 }
 
 function main(arg) {
@@ -207,7 +255,7 @@ function main(arg) {
       print(`G5 skipped: ${resolved.skip}`)
       return 0
     }
-    return checkRange(resolved.range)
+    return checkRange(resolved.range, resolved.openedBy)
   }
   if (arg === undefined || !arg.includes('..')) {
     print('usage: node scripts/check-golden-commits.mjs <base>..<head> | --github-event')

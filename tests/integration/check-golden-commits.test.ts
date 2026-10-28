@@ -69,6 +69,38 @@ const counts = (
 
 const short = (sha: string): string => sha.slice(0, 7)
 
+const RULES =
+  'commit message rules: a subject of at most 72 characters; allowed trailer, in any paragraph: ' +
+  'Co-Authored-By: Rooty or Co-Authored-By: Leafy (exact case)'
+// The committer the hosting service writes on the bot's commits.
+const HOST_IDENTITY = ['-c', 'user.name=GitHub', '-c', 'user.email=noreply@github.com']
+
+/** A dependency-update bot commit with a long subject and a sign-off; returns the full SHA. */
+function botCommit(dir: string, committer: string[]): string {
+  write(dir, 'notes.txt', 'a\n')
+  git(dir, 'add', '-A')
+  git(
+    dir,
+    ...committer,
+    'commit',
+    '-q',
+    '--author=dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>',
+    '-m',
+    `chore(deps): ${'x'.repeat(70)}\n\nSigned-off-by: dependabot[bot] <support@example.invalid>`
+  )
+  return git(dir, 'rev-parse', 'HEAD')
+}
+
+const botFailure = (sha: string): Run => ({
+  status: 1,
+  lines: [
+    counts(1, 0, 0, 0, 0, 0, { subjects: 1, trailers: 1 }),
+    `FAIL ${short(sha)} commit message: subject over 72 characters (83)`,
+    `FAIL ${short(sha)} commit message: trailer not allowed: Signed-off-by`,
+    RULES
+  ]
+})
+
 afterEach(() => {
   for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
@@ -244,7 +276,8 @@ describe('golden commit check', () => {
       status: 1,
       lines: [
         counts(1, 0, 0, 0, 0, 0, { subjects: 1 }),
-        `FAIL ${short(sha)} commit message: subject over 72 characters (73)`
+        `FAIL ${short(sha)} commit message: subject over 72 characters (73)`,
+        RULES
       ]
     })
   })
@@ -257,28 +290,92 @@ describe('golden commit check', () => {
       status: 1,
       lines: [
         counts(1, 0, 0, 0, 0, 0, { trailers: 1 }),
-        `FAIL ${short(sha)} commit message: trailer not allowed: Signed-off-by`
+        `FAIL ${short(sha)} commit message: trailer not allowed: Signed-off-by`,
+        RULES
       ]
     })
   })
 
-  it('skips the message rules for a dependency-update bot commit', () => {
+  it.each([
+    [
+      'in a paragraph that also holds prose',
+      'Why, said here.\nClaude-Session: x\nCo-Authored-By: Rooty'
+    ],
+    ['in an earlier paragraph', 'Why.\n\nClaude-Session: x\n\nCo-Authored-By: Rooty'],
+    ['in the final trailer block', 'Why.\n\nCo-Authored-By: Rooty\nClaude-Session: x']
+  ])('fails a machine trailer %s', (_, body) => {
     const { dir, base } = makeRepo()
     write(dir, 'notes.txt', 'a\n')
-    git(dir, 'add', '-A')
-    git(
+    const sha = commit(dir, `docs: add notes\n\n${body}`)
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(1, 0, 0, 0, 0, 0, { trailers: 1 }),
+        `FAIL ${short(sha)} commit message: trailer not allowed: Claude-Session`,
+        RULES
+      ]
+    })
+  })
+
+  it('passes prose lines that read like a key and a value', () => {
+    const { dir, base } = makeRepo()
+    write(dir, 'notes.txt', 'a\n')
+    commit(
       dir,
-      ...IDENTITY,
-      'commit',
-      '-q',
-      '--author=dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>',
-      '-m',
-      `chore(deps): ${'x'.repeat(70)}\n\nSigned-off-by: dependabot[bot] <support@example.invalid>`
+      'docs: add notes\n\nGoldens: a.js, b.js\nWhy: they drifted.\n\nCo-Authored-By: Leafy'
     )
+    write(dir, 'notes.txt', 'b\n')
+    commit(dir, 'docs: change notes\n\nWhy: the notes drifted, so\nthey are rewritten.')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
+  })
+
+  it('states the allowed trailer when a co-author line has another case', () => {
+    const { dir, base } = makeRepo()
+    write(dir, 'notes.txt', 'a\n')
+    const sha = commit(dir, 'docs: add notes\n\nCo-authored-by: X <x@example.invalid>')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(1, 0, 0, 0, 0, 0, { trailers: 1 }),
+        `FAIL ${short(sha)} commit message: trailer not allowed: Co-authored-by`,
+        RULES
+      ]
+    })
+  })
+
+  it('skips the message rules for a bot commit that the hosting service committed', () => {
+    const { dir, base } = makeRepo()
+    botCommit(dir, HOST_IDENTITY)
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 0,
       lines: [counts(1, 0, 0, 0, 0, 0, { bots: 1 })]
     })
+  })
+
+  it('checks a commit that only carries the bot author email', () => {
+    const { dir, base } = makeRepo()
+    const sha = botCommit(dir, IDENTITY)
+    expect(check(dir, [`${base}..HEAD`])).toEqual(botFailure(sha))
+  })
+
+  it('skips bot commits in a pull request only when the bot opened it', () => {
+    const { dir, base } = makeRepo()
+    const sha = botCommit(dir, HOST_IDENTITY)
+    const event = join(dir, 'event.json')
+    const run = (login: string): Run => {
+      const pull = { base: { sha: base }, head: { sha }, user: { login } }
+      writeFileSync(event, JSON.stringify({ pull_request: pull }))
+      return check(dir, ['--github-event'], {
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_EVENT_PATH: event,
+        GITHUB_SHA: sha
+      })
+    }
+    expect(run('dependabot[bot]')).toEqual({
+      status: 0,
+      lines: [counts(1, 0, 0, 0, 0, 0, { bots: 1 })]
+    })
+    expect(run('someone')).toEqual(botFailure(sha))
   })
 
   it('fails an empty range', () => {
