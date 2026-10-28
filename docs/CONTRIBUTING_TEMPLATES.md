@@ -14,24 +14,24 @@ src/renderer/src/lib/generator/templates/
 
 Key files:
 
-| File | Purpose |
-|------|---------|
-| `types.ts` | TypeScript interfaces (`CodeTemplate`, `TemplateField`, `CategoryInfo`, etc.) |
-| `index.ts` | Template registry (`registerTemplate`, `getAllTemplates`, `getTemplatesByCategory`, etc.) |
-| `method-alias.ts` | Method Aliasing templates |
-| `custom-window.ts` | Custom Windows templates |
-| `scene-hooks.ts` | Scene Hooks templates |
-| `database-ext.ts` | Notetag templates |
-| `plugin-commands.ts` | Plugin Command templates |
-| `save-load.ts` | Save/Load templates |
-| `input-handler.ts` | Input Handler templates |
-| `battle-system.ts` | Battle System templates |
-| `sprite-system.ts` | Sprite System templates |
-| `map-events.ts` | Map & Events templates |
-| `menu-system.ts` | Menu System templates |
-| `audio-system.ts` | Audio System templates |
-| `message-system.ts` | Message System templates |
-| `actor-party.ts` | Actor & Party templates |
+| File                 | Purpose                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `types.ts`           | TypeScript interfaces (`CodeTemplate`, `TemplateField`, `CategoryInfo`, etc.)             |
+| `index.ts`           | Template registry (`registerTemplate`, `getAllTemplates`, `getTemplatesByCategory`, etc.) |
+| `method-alias.ts`    | Method Aliasing templates                                                                 |
+| `custom-window.ts`   | Custom Windows templates                                                                  |
+| `scene-hooks.ts`     | Scene Hooks templates                                                                     |
+| `database-ext.ts`    | Notetag templates                                                                         |
+| `plugin-commands.ts` | Plugin Command templates                                                                  |
+| `save-load.ts`       | Save/Load templates                                                                       |
+| `input-handler.ts`   | Input Handler templates                                                                   |
+| `battle-system.ts`   | Battle System templates                                                                   |
+| `sprite-system.ts`   | Sprite System templates                                                                   |
+| `map-events.ts`      | Map & Events templates                                                                    |
+| `menu-system.ts`     | Menu System templates                                                                     |
+| `audio-system.ts`    | Audio System templates                                                                    |
+| `message-system.ts`  | Message System templates                                                                  |
+| `actor-party.ts`     | Actor & Party templates                                                                   |
 
 The UI component that renders templates is `TemplateInserter.tsx` in `src/renderer/src/components/plugin/`.
 
@@ -213,15 +213,15 @@ Template fields define the configuration form shown to the user. Each field has 
 
 ### Available Field Types
 
-| Type | Renders As | Key Properties |
-|------|-----------|---------------|
-| `text` | Text input | `placeholder`, `required` |
-| `number` | Numeric input | `min`, `max`, `placeholder` |
-| `boolean` | Toggle switch | (renders as a bordered row with label + switch) |
-| `select` | Dropdown menu | `options[]` (array of `{ value, label }`) |
-| `class-select` | Grouped MZ class dropdown | Populated from `class-registry.ts`, grouped by category |
-| `method-select` | MZ method dropdown | Populated from `class-registry.ts`, depends on selected `className` |
-| `key-select` | Keyboard key dropdown | Grouped into Letter Keys, Modifier Keys, Navigation Keys |
+| Type            | Renders As                | Key Properties                                                      |
+| --------------- | ------------------------- | ------------------------------------------------------------------- |
+| `text`          | Text input                | `placeholder`, `required`                                           |
+| `number`        | Numeric input             | `min`, `max`, `placeholder`                                         |
+| `boolean`       | Toggle switch             | (renders as a bordered row with label + switch)                     |
+| `select`        | Dropdown menu             | `options[]` (array of `{ value, label }`)                           |
+| `class-select`  | Grouped MZ class dropdown | Populated from `class-registry.ts`, grouped by category             |
+| `method-select` | MZ method dropdown        | Populated from `class-registry.ts`, depends on selected `className` |
+| `key-select`    | Keyboard key dropdown     | Grouped into Letter Keys, Modifier Keys, Navigation Keys            |
 
 ### The `TemplateField` Interface
 

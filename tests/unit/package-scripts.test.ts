@@ -95,10 +95,9 @@ describe('package.json scripts', () => {
     )
   })
 
-  it('the format check covers code and config, never the prose docs', () => {
-    expect(scripts['format:check']).toBe(
-      'node node_modules/prettier/bin/prettier.cjs --check src/ tests/ scripts/ tools/ .github/ "*.ts" "*.mjs" "*.js" "*.json" "*.yml"'
-    )
+  it('the format check covers the whole tree the formatter writes', () => {
+    expect(scripts['format:check']).toBe('node node_modules/prettier/bin/prettier.cjs --check .')
+    expect(scripts['format:check']).toBe(scripts.format.replace('--write', '--check'))
   })
 
   it('a script runs the golden commit rules outside check, and the README names it', () => {

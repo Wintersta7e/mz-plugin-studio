@@ -7,6 +7,7 @@ A comprehensive guide to creating RPG Maker MZ plugins with MZ Plugin Studio.
 ### Launching the Application
 
 **Development Mode:**
+
 ```bash
 cd mz-plugin-studio
 npm run dev
@@ -18,6 +19,7 @@ Run the executable from the `dist/` folder after building with `npm run build:wi
 ### First Launch
 
 When you first open MZ Plugin Studio, you'll see:
+
 - An empty sidebar on the left (your plugin list)
 - The main editing area (currently empty)
 - Project and plugin controls in the sidebar
@@ -27,28 +29,32 @@ When you first open MZ Plugin Studio, you'll see:
 ## Interface Overview
 
 ### Sidebar (Left Panel)
+
 - **Plugin List** - All open plugins as tabs
 - **+ Button** - Create a new plugin
 - **Folder Icon** - Load an RPG Maker MZ project
 
 ### Main Editor (Center)
+
 Tabs for different aspects of your plugin:
 
-| Tab | Purpose |
-|-----|---------|
-| **Meta** | Plugin name, version, author, description, dependencies, note parameters |
-| **Parameters** | Configuration options users can set |
-| **Commands** | Plugin commands callable from events |
-| **Structs** | Complex nested data structures |
-| **Code** | The plugin's own code (read-only in raw mode) |
+| Tab            | Purpose                                                                  |
+| -------------- | ------------------------------------------------------------------------ |
+| **Meta**       | Plugin name, version, author, description, dependencies, note parameters |
+| **Parameters** | Configuration options users can set                                      |
+| **Commands**   | Plugin commands callable from events                                     |
+| **Structs**    | Complex nested data structures                                           |
+| **Code**       | The plugin's own code (read-only in raw mode)                            |
 
 ### Code Editor (Left Panel - Code Tab)
+
 - **Monaco Editor** - Same editor used in VS Code
 - **MZ Autocomplete** - RPG Maker MZ classes and global objects with IntelliSense, sorted by real-world popularity
 - **Code Snippets** - Type a snippet prefix such as `alias` or `plugincmd` for quick scaffolding
 - **Template Insertion** - Click **Insert Template** (the wand icon) to browse and insert code templates
 
 ### Generated Code Preview (Right Panel)
+
 - Real-time JavaScript preview (read-only)
 - Syntax highlighting
 - Validation errors and warnings
@@ -62,37 +68,44 @@ Tabs for different aspects of your plugin:
 ## Creating Your First Plugin
 
 ### Step 1: Create a New Plugin
+
 Click the **+** button in the sidebar or use **Ctrl+N**.
 
 ### Step 2: Set Metadata
+
 In the **Meta** tab, fill in:
 
-| Field | Example | Required |
-|-------|---------|----------|
-| Plugin Name | MyFirstPlugin | Yes |
-| Version | 1.0.0 | Yes |
-| Author | YourName | Yes |
-| Description | Adds cool features | Yes |
-| URL | https://... | No |
-| Target | MZ | Yes (default) |
-| Help | Detailed instructions... | No |
-| Dependencies | PluginBase | No |
-| Order After | AnotherPlugin | No |
-| Order Before | LoadMeLater | No |
+| Field        | Example                  | Required      |
+| ------------ | ------------------------ | ------------- |
+| Plugin Name  | MyFirstPlugin            | Yes           |
+| Version      | 1.0.0                    | Yes           |
+| Author       | YourName                 | Yes           |
+| Description  | Adds cool features       | Yes           |
+| URL          | https://...              | No            |
+| Target       | MZ                       | Yes (default) |
+| Help         | Detailed instructions... | No            |
+| Dependencies | PluginBase               | No            |
+| Order After  | AnotherPlugin            | No            |
+| Order Before | LoadMeLater              | No            |
 
 ### Step 3: Add Parameters (Optional)
+
 Click **Add Parameter** in the Parameters tab to add configuration options.
 
 ### Step 4: Add Commands (Optional)
+
 Click **Add Command** in the Commands tab to add plugin commands. A code skeleton is automatically inserted into the Code tab so you can immediately write the implementation logic.
 
 ### Step 5: Write Custom Code
+
 Switch to the **Code** tab to write your plugin's implementation logic. Code skeletons for commands and parameter usage comments are auto-generated when you add them. The Monaco editor provides MZ-specific autocomplete — type a class name like `Game_Actor` to see available methods.
 
 ### Step 6: Insert Code Templates (Optional)
+
 In the Code tab, click the template icon to add boilerplate code for common patterns.
 
 ### Step 7: Export
+
 Press **Ctrl+S** to save into the loaded project's `js/plugins/` folder, or click **Export** to choose where to save. The app asks before replacing a file this plugin did not come from.
 
 ---
@@ -109,13 +122,13 @@ Parameters are configuration options that users can set in the Plugin Manager.
 
 ### Parameter Properties
 
-| Property | Description |
-|----------|-------------|
-| **Name** | Internal identifier (no spaces) |
-| **Text** | Display label in Plugin Manager |
-| **Description** | Help text shown to users |
-| **Type** | Data type (see below) |
-| **Default** | Default value |
+| Property        | Description                     |
+| --------------- | ------------------------------- |
+| **Name**        | Internal identifier (no spaces) |
+| **Text**        | Display label in Plugin Manager |
+| **Description** | Help text shown to users        |
+| **Type**        | Data type (see below)           |
+| **Default**     | Default value                   |
 
 ### Parameter Types
 
@@ -124,6 +137,7 @@ The examples below cover common types; the type dropdown in the **Parameters** t
 #### Basic Types
 
 **String**
+
 ```
 Name: playerName
 Text: Player Name
@@ -132,6 +146,7 @@ Default: Hero
 ```
 
 **Number**
+
 ```
 Name: maxHealth
 Text: Maximum Health
@@ -143,6 +158,7 @@ Decimals: 0
 ```
 
 **Boolean**
+
 ```
 Name: enableFeature
 Text: Enable Feature
@@ -153,6 +169,7 @@ Off Label: Disabled
 ```
 
 **Select (Dropdown)**
+
 ```
 Name: difficulty
 Text: Difficulty
@@ -182,6 +199,7 @@ Default: GameFont
 Options are entered one per line. Use `value|Display Text` format for separate internal values and display labels.
 
 **Note (Multiline Text)**
+
 ```
 Name: customScript
 Text: Custom Script
@@ -193,26 +211,27 @@ Default: // Your code here
 
 These types create dropdowns populated with your game's data:
 
-| Type | Shows |
-|------|-------|
-| variable | Game variables |
-| switch | Game switches |
-| actor | Actors |
-| class | Classes |
-| skill | Skills |
-| item | Items |
-| weapon | Weapons |
-| armor | Armors |
-| enemy | Enemies |
-| troop | Troops |
-| state | States |
-| animation | Animations |
-| tileset | Tilesets |
-| common_event | Common events |
-| map | Maps |
-| icon | Icon index (MZ shows icon sheet browser) |
+| Type         | Shows                                    |
+| ------------ | ---------------------------------------- |
+| variable     | Game variables                           |
+| switch       | Game switches                            |
+| actor        | Actors                                   |
+| class        | Classes                                  |
+| skill        | Skills                                   |
+| item         | Items                                    |
+| weapon       | Weapons                                  |
+| armor        | Armors                                   |
+| enemy        | Enemies                                  |
+| troop        | Troops                                   |
+| state        | States                                   |
+| animation    | Animations                               |
+| tileset      | Tilesets                                 |
+| common_event | Common events                            |
+| map          | Maps                                     |
+| icon         | Icon index (MZ shows icon sheet browser) |
 
 **Example: Variable Selection**
+
 ```
 Name: targetVariable
 Text: Target Variable
@@ -221,6 +240,7 @@ Default: 1
 ```
 
 **Example: Map Selection**
+
 ```
 Name: targetMap
 Text: Target Map
@@ -229,6 +249,7 @@ Default: 1
 ```
 
 **Example: Location**
+
 ```
 Name: startPosition
 Text: Start Position
@@ -240,6 +261,7 @@ MZ shows a map-and-position picker. The generated code reads the value as an obj
 #### Advanced Types
 
 **File**
+
 ```
 Name: backgroundImage
 Text: Background Image
@@ -248,6 +270,7 @@ Directory: img/pictures
 ```
 
 **Struct (Complex Object)**
+
 ```
 Name: characterData
 Text: Character Data
@@ -256,6 +279,7 @@ Struct Type: CharacterInfo
 ```
 
 **Array**
+
 ```
 Name: itemList
 Text: Item List
@@ -315,20 +339,20 @@ When working with plugins that have many parameters, bulk operations save time.
 
 Click the **checkbox** next to any parameter to select it. A toolbar appears with bulk actions:
 
-| Action | Description |
-|--------|-------------|
-| **Select All** | Select all parameters |
-| **Duplicate** | Copy selected parameters (adds `_copy` suffix) |
-| **Delete** | Delete all selected parameters |
-| **Export** | Save selected parameters to a `.mzparams` file |
+| Action         | Description                                    |
+| -------------- | ---------------------------------------------- |
+| **Select All** | Select all parameters                          |
+| **Duplicate**  | Copy selected parameters (adds `_copy` suffix) |
+| **Delete**     | Delete all selected parameters                 |
+| **Export**     | Save selected parameters to a `.mzparams` file |
 
 ### Import Parameters
 
 Click the **Import** dropdown to import parameters from:
 
-| Source | Description |
-|--------|-------------|
-| **From File** | Load a `.mzparams` file previously exported |
+| Source          | Description                                                     |
+| --------------- | --------------------------------------------------------------- |
+| **From File**   | Load a `.mzparams` file previously exported                     |
 | **From Plugin** | Browse project plugins and pick individual parameters to import |
 
 The Import from Plugin option opens a picker dialog showing all plugins in your loaded MZ project. Select a plugin, check the parameters you want, and click Import.
@@ -364,17 +388,18 @@ Plugin commands let event makers call your plugin's features.
 
 ### Command Properties
 
-| Property | Description |
-|----------|-------------|
-| **Name** | Internal identifier |
-| **Text** | Display name in event editor |
-| **Description** | Help text |
+| Property        | Description                  |
+| --------------- | ---------------------------- |
+| **Name**        | Internal identifier          |
+| **Text**        | Display name in event editor |
+| **Description** | Help text                    |
 
 ### Command Arguments
 
 Arguments are inputs to your command. They support all the same types as parameters.
 
 **Example: Spawn Enemy Command**
+
 ```
 Command Name: spawnEnemy
 Display Text: Spawn Enemy
@@ -424,6 +449,7 @@ Understanding the two panels is important:
 **Code Tab (left panel)** — Your editable custom code. This is where you write implementation logic, and where auto-generated skeletons appear when you add commands or parameters. This code is stored in the plugin and preserved across edits.
 
 **Generated Code Preview (right panel)** — The final plugin output (read-only). This combines the auto-generated header block (metadata, parameters, commands) with your custom code inside an IIFE wrapper. The generator automatically:
+
 - Parses parameters into variables
 - Registers commands (skipping any already in your custom code)
 - Wraps everything in an IIFE with `'use strict'`
@@ -446,6 +472,7 @@ Structs define complex, reusable data structures.
 Struct fields work like parameters but define the structure of your custom data type.
 
 **Example: CharacterInfo Struct**
+
 ```
 Struct Name: CharacterInfo
 
@@ -468,6 +495,7 @@ Struct Type: CharacterInfo
 ```
 
 Or in arrays:
+
 ```
 Name: partyMembers
 Text: Party Members
@@ -481,16 +509,19 @@ Struct Type: CharacterInfo
 When a parameter uses a struct type, an inline default value editor appears below the struct type selector. This lets you set the initial values for each struct field without writing JSON by hand.
 
 **Using the editor:**
+
 1. Select a struct type for your parameter
 2. The editor displays each struct field with a type-appropriate input (number fields, boolean toggles, select dropdowns, text inputs)
 3. Fill in the values you want as defaults
 4. The generated `@default` annotation is updated automatically
 
 **Buttons:**
+
 - **Fill from struct defaults** — populates each field with its own `@default` value from the struct definition
 - **Clear** — removes the default value entirely
 
 **Validation:**
+
 - A green checkmark indicates valid JSON
 - A yellow warning appears for unknown field names
 - A red error appears for malformed JSON (rare when using the form)
@@ -571,11 +602,11 @@ MZ Plugin Studio tracks dependencies between plugins in your project.
 
 In the **Meta** tab, you can declare:
 
-| Field | Annotation | Meaning |
-|-------|-----------|---------|
-| **Dependencies** | `@base` | Hard dependency — plugin will not work without this. Shows as an error if missing. |
-| **Order After** | `@orderAfter` | Soft hint — plugin should load after this. Shows as a warning if missing. |
-| **Order Before** | `@orderBefore` | Soft hint — plugin should load before this. Shows as a warning if missing. |
+| Field            | Annotation     | Meaning                                                                            |
+| ---------------- | -------------- | ---------------------------------------------------------------------------------- |
+| **Dependencies** | `@base`        | Hard dependency — plugin will not work without this. Shows as an error if missing. |
+| **Order After**  | `@orderAfter`  | Soft hint — plugin should load after this. Shows as a warning if missing.          |
+| **Order Before** | `@orderBefore` | Soft hint — plugin should load before this. Shows as a warning if missing.         |
 
 ### Dependency Analysis
 
@@ -591,11 +622,11 @@ When you load an MZ project, the studio scans all plugin files in `js/plugins/` 
 
 A colored badge appears in the status bar:
 
-| Color | Meaning |
-|-------|---------|
-| Green | All dependencies satisfied, correct load order |
+| Color  | Meaning                                               |
+| ------ | ----------------------------------------------------- |
+| Green  | All dependencies satisfied, correct load order        |
 | Yellow | Warnings only (missing soft hints, load order issues) |
-| Red | Errors (missing hard dependencies, circular deps) |
+| Red    | Errors (missing hard dependencies, circular deps)     |
 
 Click the badge to see the full issues list.
 
@@ -619,16 +650,17 @@ The conflict detector scans all plugins in your project for **prototype method o
 
 Shows quick stats at a glance:
 
-| Stat | Description |
-|------|-------------|
-| **Plugins** | Total plugins scanned in the project |
-| **Overrides** | Total prototype method overrides across all plugins |
-| **Conflicts** | Number of methods overridden by 2+ plugins |
-| **Dependency Issues** | Errors and warnings from dependency analysis |
+| Stat                  | Description                                         |
+| --------------------- | --------------------------------------------------- |
+| **Plugins**           | Total plugins scanned in the project                |
+| **Overrides**         | Total prototype method overrides across all plugins |
+| **Conflicts**         | Number of methods overridden by 2+ plugins          |
+| **Dependency Issues** | Errors and warnings from dependency analysis        |
 
 ### Conflicts Card
 
 Each conflict shows:
+
 - **Method name** — e.g., `Game_Map.prototype.update`
 - **Severity badge** — `warning` (popular class, popularity >= 10) or `info` (unpopular/unknown class)
 - **Plugin chain** — Which plugins override this method, in load order
@@ -646,10 +678,10 @@ The detector looks for two patterns in plugin code (ignoring comments and string
 
 Severity is based on the class's popularity across the MZ plugin ecosystem:
 
-| Severity | Meaning |
-|----------|---------|
+| Severity    | Meaning                                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
 | **Warning** | A frequently-overridden class (e.g., `Game_Map`, `Scene_Battle`) — conflicts here are more likely to cause issues |
-| **Info** | A rarely-overridden or custom class — conflicts may be intentional |
+| **Info**    | A rarely-overridden or custom class — conflicts may be intentional                                                |
 
 ### Rescanning
 
@@ -671,12 +703,12 @@ Note parameters (`@noteParam` groups) tell RPG Maker MZ's deployment packager wh
 
 In the **Meta** tab, scroll to the **Note Parameters** section and click **Add Note Parameter**. Each entry has:
 
-| Field | Annotation | Description |
-|-------|-----------|-------------|
-| **Name** | `@noteParam` | The note tag name (e.g., `Portrait`) |
-| **Type** | `@noteType` | Usually `file` |
-| **Directory** | `@noteDir` | Asset directory (e.g., `img/pictures/`) |
-| **Data** | `@noteData` | Database target (e.g., `actors`, `enemies`) |
+| Field         | Annotation   | Description                                 |
+| ------------- | ------------ | ------------------------------------------- |
+| **Name**      | `@noteParam` | The note tag name (e.g., `Portrait`)        |
+| **Type**      | `@noteType`  | Usually `file`                              |
+| **Directory** | `@noteDir`   | Asset directory (e.g., `img/pictures/`)     |
+| **Data**      | `@noteData`  | Database target (e.g., `actors`, `enemies`) |
 
 ### Example
 
@@ -690,6 +722,7 @@ Data: actors
 ```
 
 This generates:
+
 ```javascript
  * @noteParam Portrait
  * @noteType file
@@ -714,6 +747,7 @@ The auto-doc feature generates help text from your plugin's metadata.
 3. Review and edit the generated text as needed
 
 The generated help includes:
+
 - Plugin description
 - Parameter list with types and defaults
 - Command reference with argument details
@@ -740,32 +774,34 @@ With a project loaded, press **Ctrl+Shift+E** or click **Plugin Browser** in the
 ### Benefits of Loading a Project
 
 **Populated Dropdowns**
+
 - Variable parameters show your game's variables with names
 - Switch parameters show your game's switches with names
 - Actor, item, skill, etc. parameters show actual game data
 
 **Direct Save**
+
 - **Ctrl+S** saves directly to your project's `js/plugins/` folder
 - Plugins are immediately ready to use
 
 ### What Gets Loaded
 
-| Data | Source File |
-|------|-------------|
-| Actors | data/Actors.json |
-| Classes | data/Classes.json |
-| Skills | data/Skills.json |
-| Items | data/Items.json |
-| Weapons | data/Weapons.json |
-| Armors | data/Armors.json |
-| Enemies | data/Enemies.json |
-| Troops | data/Troops.json |
-| States | data/States.json |
-| Animations | data/Animations.json |
-| Tilesets | data/Tilesets.json |
+| Data          | Source File            |
+| ------------- | ---------------------- |
+| Actors        | data/Actors.json       |
+| Classes       | data/Classes.json      |
+| Skills        | data/Skills.json       |
+| Items         | data/Items.json        |
+| Weapons       | data/Weapons.json      |
+| Armors        | data/Armors.json       |
+| Enemies       | data/Enemies.json      |
+| Troops        | data/Troops.json       |
+| States        | data/States.json       |
+| Animations    | data/Animations.json   |
+| Tilesets      | data/Tilesets.json     |
 | Common Events | data/CommonEvents.json |
-| Switches | data/System.json |
-| Variables | data/System.json |
+| Switches      | data/System.json       |
+| Variables     | data/System.json       |
 
 ---
 
@@ -823,7 +859,7 @@ In raw mode the Code tab, the template inserter and the localized description an
 ### How It Works
 
 1. Import a plugin (raw mode is auto-enabled, the **Raw** button is active)
-2. Only the annotation blocks whose content changed are rewritten; language blocks (/*:ja and others) are kept as they are, so a parameter or command you add is missing from them and RPG Maker MZ in that language does not show it
+2. Only the annotation blocks whose content changed are rewritten; language blocks (/\*:ja and others) are kept as they are, so a parameter or command you add is missing from them and RPG Maker MZ in that language does not show it
 3. **New parameters** and **new commands** added since the file was loaded get parsing or registerCommand code added once; nothing is added for items the file already had. Raw mode reads the file as JavaScript to place this code
 4. **New struct definitions** are added as new `/*~struct~` blocks
 
@@ -862,12 +898,12 @@ If the original plugin has text before the `/*:` annotation block (license heade
 
 ### Normal Mode vs Raw Mode
 
-| Aspect | Normal Mode | Raw Mode |
-|--------|-------------|----------|
-| Headers | Regenerated | Kept from the file; only blocks whose content changed are rewritten |
+| Aspect    | Normal Mode                           | Raw Mode                                                                         |
+| --------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| Headers   | Regenerated                           | Kept from the file; only blocks whose content changed are rewritten              |
 | Code body | Generated from template + custom code | Kept from the file; code added only for parameters and commands added since load |
-| Preamble | Not applicable | Preserved verbatim |
-| Best for | New plugins, plugins you own | Third-party plugins, metadata edits |
+| Preamble  | Not applicable                        | Preserved verbatim                                                               |
+| Best for  | New plugins, plugins you own          | Third-party plugins, metadata edits                                              |
 
 ---
 
@@ -876,6 +912,7 @@ If the original plugin has text before the `/*:` annotation block (license heade
 ### Export Options
 
 **Export as .js Plugin**
+
 1. **Ctrl+S** saves to `js/plugins/<Name>.js` in the loaded project. With no project loaded it opens a save dialog at the file the plugin was last saved to; once you choose a file, later **Ctrl+S** presses in the same session save there without asking.
 2. **Export** always opens a save dialog. With a project loaded it writes a copy: the plugin stays marked unsaved, and **Ctrl+S** still saves it into the project.
 3. Before replacing a file, the app asks when the file is not the one this tab last opened or saved, when it changed on disk since this tab read or saved it, or when the new code would stop it from compiling. **Cancel** is the default and leaves the file as it was. If the saved code does not compile, a warning names the line.
@@ -887,23 +924,25 @@ Closing the window — the title-bar close button, Alt+F4 or the taskbar — ask
 **Export in Other Formats**
 Click the **chevron dropdown** next to the Export button:
 
-| Format | Description |
-|--------|-------------|
-| **README.md** | Markdown documentation with installation instructions, parameter table, and command reference |
-| **.d.ts** | TypeScript declaration file with parameter and command argument interfaces |
-| **plugins.json entry** | JSON entry for RPG Maker's plugins.js configuration file |
+| Format                 | Description                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| **README.md**          | Markdown documentation with installation instructions, parameter table, and command reference |
+| **.d.ts**              | TypeScript declaration file with parameter and command argument interfaces                    |
+| **plugins.json entry** | JSON entry for RPG Maker's plugins.js configuration file                                      |
 
 ### Validation
 
 Before exporting, the studio validates your plugin:
 
 **Errors** (must fix)
+
 - Missing or invalid plugin name
 - Duplicate parameter or command names
 - Parameters referencing nonexistent parent
 - Translations whose language code has characters other than letters and underscores (the translation is left out)
 
 **Warnings** (review recommended)
+
 - Unused struct definitions (defined but not referenced)
 - Invalid JSON in struct parameter defaults
 - Commands with no implementation in custom code
@@ -936,43 +975,45 @@ Click the **gear icon** in the bottom of the sidebar to open the Settings dialog
 
 Configure the code editor and preview:
 
-| Setting | Description |
-|---------|-------------|
-| Theme | Dark or Light mode (applies to entire app and Monaco editors) |
-| Font Size | Code font size (10-24) |
-| Word Wrap | Wrap long lines in the code preview |
-| Minimap | Show the minimap scroll overview |
-| Line Numbers | Show line numbers |
-| Debug Logging | Enable verbose logging for troubleshooting |
+| Setting       | Description                                                   |
+| ------------- | ------------------------------------------------------------- |
+| Theme         | Dark or Light mode (applies to entire app and Monaco editors) |
+| Font Size     | Code font size (10-24)                                        |
+| Word Wrap     | Wrap long lines in the code preview                           |
+| Minimap       | Show the minimap scroll overview                              |
+| Line Numbers  | Show line numbers                                             |
+| Debug Logging | Enable verbose logging for troubleshooting                    |
 
 Changes apply immediately to the Code tab editor, Generated Code preview, and Diff View.
 
 The **Diagnostics** section at the bottom of the Editor tab provides:
+
 - **Debug Logging** toggle — enables verbose debug-level logging (default: info level in production, debug in dev mode)
 - **Open Log Folder** button — opens the folder containing `main.log` for easy access when reporting bugs
 
 **Log file locations:**
+
 - Windows: `%APPDATA%\mz-plugin-studio\logs\main.log`
 - Linux: `~/.config/mz-plugin-studio/logs/main.log`
 - macOS: `~/Library/Logs/mz-plugin-studio/main.log`
 
 ### Defaults Tab
 
-| Setting | Description |
-|---------|-------------|
+| Setting        | Description                                          |
+| -------------- | ---------------------------------------------------- |
 | Default Author | Pre-fills the author field when creating new plugins |
 
 ### Data Tab
 
 Manage persisted data stored in your browser:
 
-| Action | Description |
-|--------|-------------|
-| Clear Recent Projects | Remove all entries from the recent projects list |
-| Clear Template Favorites | Remove all favorited templates |
-| Clear Recently Used Templates | Clear the recently used templates history |
-| **Parameter Presets** | Manage saved parameter presets (delete individual or clear all) |
-| **Saved-state backups** | Export or delete the copies kept of saved data the app could not load |
+| Action                        | Description                                                           |
+| ----------------------------- | --------------------------------------------------------------------- |
+| Clear Recent Projects         | Remove all entries from the recent projects list                      |
+| Clear Template Favorites      | Remove all favorited templates                                        |
+| Clear Recently Used Templates | Clear the recently used templates history                             |
+| **Parameter Presets**         | Manage saved parameter presets (delete individual or clear all)       |
+| **Saved-state backups**       | Export or delete the copies kept of saved data the app could not load |
 
 Each button shows the current count and confirms when cleared.
 
@@ -984,12 +1025,12 @@ When saved settings, layout, recent projects, template favorites or open plugins
 
 ### Naming Conventions
 
-| Item | Convention | Example |
-|------|------------|---------|
+| Item        | Convention | Example         |
+| ----------- | ---------- | --------------- |
 | Plugin Name | PascalCase | MyAwesomePlugin |
-| Parameters | camelCase | maxHealth |
-| Commands | camelCase | spawnEnemy |
-| Structs | PascalCase | CharacterInfo |
+| Parameters  | camelCase  | maxHealth       |
+| Commands    | camelCase  | spawnEnemy      |
+| Structs     | PascalCase | CharacterInfo   |
 
 ### Parameter Organization
 
@@ -1001,6 +1042,7 @@ When saved settings, layout, recent projects, template favorites or open plugins
 ### Help Text
 
 Write clear help text that includes:
+
 - What the plugin does
 - How to use each parameter
 - Example use cases
@@ -1010,6 +1052,7 @@ Write clear help text that includes:
 ### Version Numbering
 
 Use semantic versioning: `MAJOR.MINOR.PATCH`
+
 - MAJOR: Breaking changes
 - MINOR: New features
 - PATCH: Bug fixes
@@ -1031,11 +1074,13 @@ Example: `1.2.3`
 ### Plugin Not Appearing in RPG Maker MZ
 
 **Causes:**
+
 - File not in `js/plugins/` folder
 - Syntax error in generated code
 - Missing target declaration
 
 **Solutions:**
+
 1. Verify the file is in the correct location
 2. Check for errors in the Code tab
 3. Ensure `@target MZ` is present
@@ -1043,11 +1088,13 @@ Example: `1.2.3`
 ### Parameters Not Showing Up
 
 **Causes:**
+
 - Parameter name conflicts
 - Invalid type specification
 - Parent parameter doesn't exist
 
 **Solutions:**
+
 1. Ensure unique parameter names
 2. Verify type is spelled correctly
 3. Check parent references exist
@@ -1055,11 +1102,13 @@ Example: `1.2.3`
 ### Commands Not Working
 
 **Causes:**
+
 - Command not registered
 - Argument types mismatch
 - Missing implementation code
 
 **Solutions:**
+
 1. Check command appears in generated header
 2. Verify argument types match expectations
 3. Add implementation code in the body
@@ -1067,11 +1116,13 @@ Example: `1.2.3`
 ### Import Fails
 
 **Causes:**
+
 - Non-standard plugin format
 - Corrupted file
 - Unsupported features
 
 **Solutions:**
+
 1. Try importing a simpler plugin first
 2. Check the plugin opens in a text editor
 3. Create new plugin and manually copy settings
@@ -1081,17 +1132,20 @@ Example: `1.2.3`
 If the app shows a red error screen with a stack trace, this is the built-in error recovery:
 
 **Solutions:**
+
 1. Click **Try Again** to reset and continue
 2. If the error persists, note the error message and file a GitHub issue
 
 ### Build Errors
 
 **Causes:**
+
 - Missing dependencies
 - Node version mismatch
 - Corrupted node_modules
 
 **Solutions:**
+
 1. Run `npm install` again
 2. Ensure your Node.js version is the one in `package.json` `engines`
 3. Delete `node_modules` and reinstall
