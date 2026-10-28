@@ -401,9 +401,8 @@ export class PluginParser {
     for (let i = 0; i < noteParamMatches.length; i++) {
       const npMatch = noteParamMatches[i]
       // Get the text between this @noteParam and the next one (or end of header)
-      const startIdx = npMatch.index! + npMatch[0].length
-      const endIdx =
-        i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index! : header.length
+      const startIdx = npMatch.index + npMatch[0].length
+      const endIdx = i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index : header.length
       const groupBlock = header.slice(startIdx, endIdx)
 
       const noteParam: NoteParam = {

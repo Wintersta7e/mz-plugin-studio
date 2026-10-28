@@ -326,7 +326,8 @@ export function generateHelpText(plugin: PluginDefinition): string {
 
   // Dependencies section
   const hasDeps = plugin.meta.dependencies.length > 0
-  const hasOrderAfter = (plugin.meta.orderAfter || []).length > 0
+  const orderAfter = plugin.meta.orderAfter || []
+  const hasOrderAfter = orderAfter.length > 0
   if (hasDeps || hasOrderAfter) {
     lines.push('')
     lines.push(SEP_LIGHT)
@@ -338,7 +339,7 @@ export function generateHelpText(plugin: PluginDefinition): string {
       lines.push(' Required: ' + plugin.meta.dependencies.join(', '))
     }
     if (hasOrderAfter) {
-      lines.push(' Load After: ' + plugin.meta.orderAfter!.join(', '))
+      lines.push(' Load After: ' + orderAfter.join(', '))
     }
   }
 
