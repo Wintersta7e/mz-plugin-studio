@@ -323,36 +323,15 @@ export function setupPluginHandlers(ipcMain: IpcMain): void {
             const filePath = join(pluginsDir, file)
             const content = await readFile(filePath, 'utf-8')
 
-            // Only read the MZ annotation block (/*: ... */)
-            const headerMatch = content.match(/\/\*:[\s\S]*?\*\//)
-            const header = headerMatch ? headerMatch[0] : ''
-
-            const baseEntries: string[] = []
-            const orderAfterEntries: string[] = []
-            const orderBeforeEntries: string[] = []
-
-            const baseRegex = /@base\s+(\S+)/g
-            let match: RegExpExecArray | null
-            while ((match = baseRegex.exec(header)) !== null) {
-              baseEntries.push(match[1])
-            }
-
-            const orderAfterRegex = /@orderAfter\s+(\S+)/g
-            while ((match = orderAfterRegex.exec(header)) !== null) {
-              orderAfterEntries.push(match[1])
-            }
-
-            const orderBeforeRegex = /@orderBefore\s+(\S+)/g
-            while ((match = orderBeforeRegex.exec(header)) !== null) {
-              orderBeforeEntries.push(match[1])
-            }
+            // Read the load-order tags as the importer does, so the analyzer and editor agree
+            const { meta } = PluginParser.parsePlugin(content, file)
 
             return {
               filename: file,
               name: file.replace(/\.js$/, ''),
-              base: baseEntries,
-              orderAfter: orderAfterEntries,
-              orderBefore: orderBeforeEntries,
+              base: meta.dependencies,
+              orderAfter: meta.orderAfter ?? [],
+              orderBefore: meta.orderBefore ?? [],
               overrides: extractOverrides(content)
             }
           })
