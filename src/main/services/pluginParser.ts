@@ -27,8 +27,20 @@ interface ParsedMeta {
 }
 
 /**
- * Same result as header.match(/@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1], in linear time,
- * except that a body with no end after it runs to the end of the header (help written last in a block).
+ * A tag counts only at the start of a line (optional whitespace, an optional `*`, optional
+ * whitespace), so an `@` inside a value or after a zero-width space in help text is not a tag.
+ */
+const LINE_START = String.raw`(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?`
+
+/** `@` followed by `rest`, where a tag can start. */
+function tagRegex(rest: string, flags = ''): RegExp {
+  return new RegExp(`${LINE_START}@${rest}`, flags)
+}
+
+/**
+ * Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1],
+ * in linear time, except that a body with no end after it runs to the end of the header (help
+ * written last in a block).
  */
 export function matchHelp(header: string): string | undefined {
   const n = header.length
@@ -50,7 +62,7 @@ export function matchHelp(header: string): string | undefined {
   const nextEnd = new Int32Array(n + 1)
   nextEnd[n] = -1
   for (let p = n - 1; p >= 0; p--) nextEnd[p] = endsAt(p) ? p : nextEnd[p + 1]
-  const m = /@help/i.exec(header)
+  const m = tagRegex('help', 'i').exec(header)
   if (m === null) return undefined
   const s0 = m.index + m[0].length
   const e = nextNonWs[s0]
@@ -331,25 +343,27 @@ export class PluginParser {
     if (!header) return { ...meta, localizations }
 
     // Parse @plugindesc (written last in the block, it runs to the end of the header)
-    const descMatch = header.match(/@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s)
+    const descMatch = header.match(
+      tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)`, 's')
+    )
     if (descMatch) {
       meta.description = descMatch[1].replace(/\n\s*\*\s*/g, ' ').trim()
     }
 
     // Parse @author
-    const authorMatch = header.match(/@author(?!\S)[^\S\r\n]*(.*?)(?=\n)/i)
+    const authorMatch = header.match(tagRegex(String.raw`author(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
     if (authorMatch) {
       meta.author = authorMatch[1].trim()
     }
 
     // Parse @target
-    const targetMatch = header.match(/@target(?!\S)[^\S\r\n]*(.*?)(?=\n)/i)
+    const targetMatch = header.match(tagRegex(String.raw`target(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
     if (targetMatch) {
       meta.target = targetMatch[1].trim()
     }
 
     // Parse @url
-    const urlMatch = header.match(/@url(?!\S)[^\S\r\n]*(.*?)(?=\n)/i)
+    const urlMatch = header.match(tagRegex(String.raw`url(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
     if (urlMatch) {
       meta.url = urlMatch[1].trim()
     }
@@ -365,21 +379,25 @@ export class PluginParser {
     }
 
     // Parse @base (dependencies)
-    const baseMatches = header.matchAll(/@base(?!\S)[^\S\r\n]*(.*?)(?=\n)/gi)
+    const baseMatches = header.matchAll(tagRegex(String.raw`base(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi'))
     for (const match of baseMatches) {
       const value = match[1].trim()
       if (value) meta.dependencies.push(value)
     }
 
     // Parse @orderAfter (same pattern as @base)
-    const orderMatches = header.matchAll(/@orderAfter(?!\S)[^\S\r\n]*(.*?)(?=\n)/gi)
+    const orderMatches = header.matchAll(
+      tagRegex(String.raw`orderAfter(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi')
+    )
     for (const match of orderMatches) {
       const value = match[1].trim()
       if (value) meta.orderAfter.push(value)
     }
 
     // Parse @orderBefore (same pattern as @orderAfter)
-    const orderBeforeMatches = header.matchAll(/@orderBefore(?!\S)[^\S\r\n]*(.*?)(?=\n)/gi)
+    const orderBeforeMatches = header.matchAll(
+      tagRegex(String.raw`orderBefore(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi')
+    )
     for (const match of orderBeforeMatches) {
       const value = match[1].trim()
       if (value) meta.orderBefore.push(value)
@@ -388,7 +406,7 @@ export class PluginParser {
     // Parse @requiredAssets (assets preserved during "Exclude unused files" deploy)
     // Also match a final entry that lacks a trailing newline (right before */).
     const requiredAssetMatches = header.matchAll(
-      /@requiredAssets(?!\S)[^\S\r\n]*(.*?)(?=\n|\r|\*\/|$)/gi
+      tagRegex(String.raw`requiredAssets(?!\S)[^\S\r\n]*(.*?)(?=\n|\r|\*\/|$)`, 'gi')
     )
     for (const match of requiredAssetMatches) {
       const value = stripTrailingStar(match[1]).trim()
@@ -397,7 +415,9 @@ export class PluginParser {
 
     // Parse @noteParam groups
     // Each @noteParam starts a new group; subsequent @noteType/@noteDir/@noteData/@noteRequire belong to it
-    const noteParamMatches = [...header.matchAll(/@noteParam(?!\S)[^\S\r\n]*(.*?)(?=\n)/gi)]
+    const noteParamMatches = [
+      ...header.matchAll(tagRegex(String.raw`noteParam(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi'))
+    ]
     for (let i = 0; i < noteParamMatches.length; i++) {
       const npMatch = noteParamMatches[i]
       // Get the text between this @noteParam and the next one (or end of header)
@@ -419,7 +439,7 @@ export class PluginParser {
       const noteData = this.tagValue(groupBlock, 'noteData')
       if (noteData) noteParam.data = noteData
 
-      const noteRequireMatch = groupBlock.match(/@noteRequire\s+1/i)
+      const noteRequireMatch = groupBlock.match(tagRegex(String.raw`noteRequire\s+1`, 'i'))
       if (noteRequireMatch) noteParam.require = true
 
       meta.noteParams.push(noteParam)
@@ -442,7 +462,7 @@ export class PluginParser {
     for (const [lang, langHeader] of languages) {
       if (lang) {
         const locDesc = langHeader.match(
-          /@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s
+          tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)`, 's')
         )
         const locHelp = matchHelp(langHeader)
 
@@ -467,8 +487,10 @@ export class PluginParser {
 
     // Match @param blocks - capture full name (may include spaces) to end of line
     // Uses [^\n\r]+ to handle both LF and CRLF line endings
-    const paramRegex =
-      /@param(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=\*\s*@param\s|\*\s*@command\s|$)/g
+    const paramRegex = tagRegex(
+      String.raw`param(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=${LINE_START}@param\s|${LINE_START}@command\s|$)`,
+      'g'
+    )
     let match
 
     while ((match = paramRegex.exec(header)) !== null) {
@@ -512,14 +534,14 @@ export class PluginParser {
       }
 
       // Parse type-specific attributes
-      const minMatch = effectiveBlock.match(/@min\s+(-?[\d.]+)/i)
+      const minMatch = effectiveBlock.match(tagRegex(String.raw`min\s+(-?[\d.]+)`, 'i'))
       if (minMatch) param.min = parseFloat(minMatch[1])
 
-      const maxMatch = effectiveBlock.match(/@max\s+(-?[\d.]+)/i)
+      const maxMatch = effectiveBlock.match(tagRegex(String.raw`max\s+(-?[\d.]+)`, 'i'))
       if (maxMatch) param.max = parseFloat(maxMatch[1])
 
       // Parse @decimals
-      const decimalsMatch = effectiveBlock.match(/@decimals\s+(\d+)/i)
+      const decimalsMatch = effectiveBlock.match(tagRegex(String.raw`decimals\s+(\d+)`, 'i'))
       if (decimalsMatch) param.decimals = parseInt(decimalsMatch[1], 10)
 
       // Parse @parent for nested parameters
@@ -531,7 +553,7 @@ export class PluginParser {
       if (dir) param.dir = dir
 
       // Parse @require for file/animation type
-      const requireMatch = effectiveBlock.match(/@require\s+1/i)
+      const requireMatch = effectiveBlock.match(tagRegex(String.raw`require\s+1`, 'i'))
       if (requireMatch) param.require = true
 
       // Parse options for select/combo type
@@ -542,7 +564,7 @@ export class PluginParser {
 
       // Parse struct reference (only if not already set by array type parsing)
       if (!param.structType) {
-        const structMatch = effectiveBlock.match(/@type\s+struct<(\w+)>/i)
+        const structMatch = effectiveBlock.match(tagRegex(String.raw`type\s+struct<(\w+)>`, 'i'))
         if (structMatch) {
           param.structType = structMatch[1]
         }
@@ -567,7 +589,10 @@ export class PluginParser {
     const commands: PluginCommand[] = []
 
     // Match @command blocks
-    const cmdRegex = /@command(?!\S)[^\S\r\n]*(\S*)([\s\S]*?)(?=@command\s+\S|\*\/|$)/g
+    const cmdRegex = tagRegex(
+      String.raw`command(?!\S)[^\S\r\n]*(\S*)([\s\S]*?)(?=${LINE_START}@command\s+\S|\*\/|$)`,
+      'g'
+    )
     let match
 
     while ((match = cmdRegex.exec(header)) !== null) {
@@ -575,7 +600,7 @@ export class PluginParser {
       if (!cmdName) continue
       const cmdBlock = match[2]
       // The command's own tags come before its first @arg
-      const firstArg = cmdBlock.search(/@arg\s/)
+      const firstArg = cmdBlock.search(tagRegex(String.raw`arg\s`))
       const cmdHead = firstArg === -1 ? cmdBlock : cmdBlock.slice(0, firstArg)
 
       const command: PluginCommand = {
@@ -596,7 +621,10 @@ export class PluginParser {
     const args: PluginParameter[] = []
 
     // Arg names can include spaces (same as param names)
-    const argRegex = /@arg(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=\*\s*@arg\s|\*\s*@command\s|$)/g
+    const argRegex = tagRegex(
+      String.raw`arg(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=${LINE_START}@arg\s|${LINE_START}@command\s|$)`,
+      'g'
+    )
     let match
 
     while ((match = argRegex.exec(block)) !== null) {
@@ -624,25 +652,25 @@ export class PluginParser {
       }
 
       // Parse type-specific attributes for args
-      const minMatch = argBlock.match(/@min\s+(-?[\d.]+)/i)
+      const minMatch = argBlock.match(tagRegex(String.raw`min\s+(-?[\d.]+)`, 'i'))
       if (minMatch) arg.min = parseFloat(minMatch[1])
 
-      const maxMatch = argBlock.match(/@max\s+(-?[\d.]+)/i)
+      const maxMatch = argBlock.match(tagRegex(String.raw`max\s+(-?[\d.]+)`, 'i'))
       if (maxMatch) arg.max = parseFloat(maxMatch[1])
 
-      const decimalsMatch = argBlock.match(/@decimals\s+(\d+)/i)
+      const decimalsMatch = argBlock.match(tagRegex(String.raw`decimals\s+(\d+)`, 'i'))
       if (decimalsMatch) arg.decimals = parseInt(decimalsMatch[1], 10)
 
       const dir = this.tagValue(argBlock, 'dir')
       if (dir) arg.dir = dir
 
       // Parse @require for file/animation type
-      const requireMatch = argBlock.match(/@require\s+1/i)
+      const requireMatch = argBlock.match(tagRegex(String.raw`require\s+1`, 'i'))
       if (requireMatch) arg.require = true
 
       // Parse struct reference for args (only if not set by array type)
       if (!arg.structType) {
-        const structMatch = argBlock.match(/@type\s+struct<(\w+)>/i)
+        const structMatch = argBlock.match(tagRegex(String.raw`type\s+struct<(\w+)>`, 'i'))
         if (structMatch) arg.structType = structMatch[1]
       }
 
@@ -690,7 +718,7 @@ export class PluginParser {
 
   /** The rest of the line after the first `@tag`: '' when the tag has no value, null without the tag. */
   private static tagValue(block: string, tag: string): string | null {
-    const match = block.match(new RegExp(`@${tag}(?!\\S)[^\\S\\r\\n]*([^\\r\\n]*)`, 'i'))
+    const match = block.match(tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i'))
     return match ? match[1].trim() : null
   }
 
@@ -724,7 +752,7 @@ export class PluginParser {
     // Matches @tag followed by value up to next @tag or end.
     const block = attrsPart
       .replace(
-        /@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s)/gi,
+        /@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s|require\s)/gi,
         '\n@'
       )
       .trim()
@@ -822,14 +850,14 @@ export class PluginParser {
   private static parseOptions(block: string): { value: string; text: string }[] {
     const options: { value: string; text: string }[] = []
 
-    const optionRegex = /@option(?!\S)[^\S\r\n]*([^\n\r]*)/gi
+    const optionRegex = tagRegex(String.raw`option(?!\S)[^\S\r\n]*([^\n\r]*)`, 'gi')
     let match
 
     while ((match = optionRegex.exec(block)) !== null) {
       const optText = match[1].trim()
       // Only look for @value between this @option and the next @option (or end of block)
       const afterOption = match.index + match[0].length
-      const nextOptionMatch = block.slice(afterOption).search(/@option\s/i)
+      const nextOptionMatch = block.slice(afterOption).search(tagRegex(String.raw`option\s`, 'i'))
       const searchEnd = nextOptionMatch !== -1 ? afterOption + nextOptionMatch : block.length
       const searchSlice = block.slice(afterOption, searchEnd)
       const value = this.tagValue(searchSlice, 'value') ?? optText

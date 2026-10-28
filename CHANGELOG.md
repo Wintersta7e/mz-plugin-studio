@@ -8,6 +8,7 @@
 - The close button on an open plugin in the plugin browser and the favorite star on a template card are separate controls instead of buttons nested inside the row's button, and the favorite star names the template it adds or removes.
 - A text, file, select or combo parameter or command argument set to an empty value in RPG Maker MZ now reads as empty in the generated plugin instead of falling back to its default, and an array parameter or argument with no stored value reads its default instead of an empty list.
 - A line break in a parameter, argument or command name, text, description or default no longer splits the plugin's annotation comment: it is written as a space, and the generated code now reads each parameter, argument, command and default exactly as RPG Maker MZ reads it from the header.
+- Importing a plugin reads an annotation tag only where it starts a line, so an "@" word inside a description or help text no longer adds a parameter, command or argument or changes another tag's value.
 
 ## [1.7.0] - 2026-10-23
 

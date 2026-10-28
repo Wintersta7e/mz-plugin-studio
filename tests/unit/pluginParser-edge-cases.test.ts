@@ -483,3 +483,64 @@ describe('empty tags', () => {
     expect(parsed.meta.description).toBe('Short text')
   })
 })
+
+describe('tags count only at the start of a line', () => {
+  // A help line that starts with "@" is written with a zero-width space before the "@"
+  const guarded = [
+    '@param injected',
+    '@type number',
+    '@command injectedCommand',
+    '@arg injectedArg',
+    '@base Other'
+  ].map((line) => String.fromCodePoint(0x200b) + line)
+  const guardedHelp = [' * @help Usage', ...guarded.map((line) => ` * ${line}`), ' * End'].join(
+    '\n'
+  )
+  const helpText = ['Usage', ...guarded, 'End'].join('\n')
+
+  it('a guarded help line after the last parameter adds no parameter and no tag', () => {
+    const plugin = PluginParser.parsePlugin(
+      `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n * @text Label\n *\n${guardedHelp}\n */\n`
+    )
+    expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
+    expect(plugin.commands).toEqual([])
+    expect(plugin.meta.dependencies).toEqual([])
+    expect(plugin.meta.help).toBe(helpText)
+  })
+
+  it('a guarded help line after a command adds no parameter, command or argument', () => {
+    const plugin = PluginParser.parsePlugin(
+      `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n *\n * @command go\n * @text Go\n *\n${guardedHelp}\n */\n`
+    )
+    expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
+    expect(plugin.commands.map((c) => [c.name, c.args.length])).toEqual([['go', 0]])
+    expect(plugin.meta.dependencies).toEqual([])
+    expect(plugin.meta.help).toBe(helpText)
+  })
+
+  it('a tag inside a description is part of the description', () => {
+    const plugin = PluginParser.parsePlugin(`/*:
+ * @target MZ
+ * @plugindesc Set @param Hidden first
+ *
+ * @param A
+ * @desc Works like @param B, see @type number
+ *
+ * @param C
+ * @desc Read @help first
+ *
+ * @command go
+ * @desc Runs @command stop and @arg x
+ */
+`)
+    expect(plugin.meta.description).toBe('Set @param Hidden first')
+    expect(plugin.parameters.map((p) => [p.name, p.type, p.desc])).toEqual([
+      ['A', 'string', 'Works like @param B, see @type number'],
+      ['C', 'string', 'Read @help first']
+    ])
+    expect(plugin.meta.help).toBe('')
+    expect(plugin.commands.map((c) => [c.name, c.desc, c.args.length])).toEqual([
+      ['go', 'Runs @command stop and @arg x', 0]
+    ])
+  })
+})
