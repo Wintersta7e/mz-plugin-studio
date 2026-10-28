@@ -4,7 +4,7 @@
   "status": true,
   "description": "Output rows",
   "parameters": {
-    "a\nb": "Hello",
+    "a b": "Hello",
     "Pair": "{\"a\":\"b\"}"
   }
 }
@@ -16,8 +16,7 @@
 declare namespace Fixture_Rows {
   interface Parameters {
     /** Text to show. */
-    a
-b: string
+    "a b": string
     /** Two values. */
     Pair: Record<string, unknown>
   }

@@ -11,6 +11,7 @@
 - Importing a plugin reads an annotation tag only where it starts a line, so an "@" word inside a description or help text no longer adds a parameter, command or argument or changes another tag's value.
 - A line of plugin help text that starts with "@" is no longer read by RPG Maker MZ as a parameter or other annotation; it is written with an invisible zero-width space before the "@".
 - Exporting or saving a plugin to a file not named after it now asks first, because RPG Maker MZ finds a plugin's commands by its exact file name; under another name they silently do nothing.
+- The plugins.json entry and TypeScript declaration exports now include parameters nested under another parameter and use the names and defaults the plugin's header holds, the plugins.json entry writes an empty value instead of "undefined" for a parameter without a default, and the declaration file stays valid when the plugin's name or version, a parameter name or a command argument name holds a line break or other text that is not a plain name.
 
 ## [1.7.0] - 2026-10-23
 

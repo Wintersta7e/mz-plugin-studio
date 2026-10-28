@@ -33,6 +33,9 @@ function blockValue(sink: BlockSink | undefined, field: string, value: string): 
 /** Whether a help line would be read as a tag: its first non-space character is `@`. */
 const HELP_TAG_LINE = /^(\s*)@/
 
+/** A command name the validator accepts: an identifier, as code that names the command uses it. */
+export const isCommandName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+
 /**
  * A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
  * as help instead of reading it as a tag. A guarded line starts with that space, which is not
@@ -1254,7 +1257,7 @@ export function validatePlugin(plugin: PluginDefinition): {
     }
     cmdNames.add(cmd.name)
 
-    if (!cmd.name || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(cmd.name)) {
+    if (!isCommandName(cmd.name)) {
       errors.push(`Invalid command name: ${cmd.name} (must be valid identifier)`)
     }
 

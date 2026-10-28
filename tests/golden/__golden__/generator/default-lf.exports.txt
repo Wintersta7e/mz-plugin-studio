@@ -4,7 +4,7 @@
   "status": true,
   "description": "Output rows",
   "parameters": {
-    "Label": "l1\nl2",
+    "Label": "l1 l2",
     "Pair": "{\"a\":\"b\"}"
   }
 }

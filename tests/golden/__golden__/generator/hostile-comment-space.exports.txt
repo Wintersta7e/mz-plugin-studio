@@ -3,7 +3,9 @@
   "name": "X */ globalThis.__pwn = 1; /* Y",
   "status": true,
   "description": "X */ globalThis.__pwn = 1; /* Y",
-  "parameters": {}
+  "parameters": {
+    "X *\\/ globalThis.__pwn = 1; /* Y": "X *\\/ globalThis.__pwn = 1; /* Y"
+  }
 }
 
 // ==== case: generateTypeDeclaration
@@ -12,13 +14,8 @@
 
 declare namespace X */ globalThis.__pwn = 1; /* Y {
   interface Parameters {
-  }
-
-  interface X */ globalThis.__pwn = 1; /* YArgs {
     /** X *\/ globalThis.__pwn = 1; /* Y */
-    X */ globalThis.__pwn = 1; /* Y: boolean
-    /** X *\/ globalThis.__pwn = 1; /* Y */
-    ComboX */ globalThis.__pwn = 1; /* Y: string
+    "X *\\/ globalThis.__pwn = 1; /* Y": string
   }
 
 }

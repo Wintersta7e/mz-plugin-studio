@@ -1,10 +1,14 @@
 // Tests for export format generators (plugins.json entry, .d.ts, README)
 import { describe, it, expect } from 'vitest'
+import ts from 'typescript'
+import { PluginParser } from '../../src/main/services/pluginParser'
 import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
   generateReadme
 } from '../../src/renderer/src/lib/exportFormats'
+import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance'
 import type {
   PluginDefinition,
   PluginParameter,
@@ -91,18 +95,17 @@ describe('generatePluginsJsonEntry', () => {
     expect(parsed.parameters).toEqual({})
   })
 
-  it('skips nested parameters (those with parent field)', () => {
+  it('writes nested parameters as top-level keys', () => {
     const plugin = createMinimalPlugin({
       parameters: [
         makeParam({ name: 'topLevel', text: 'Top Level', default: 'visible' }),
-        makeParam({ name: 'nested', text: 'Nested', default: 'hidden', parent: 'SomeStruct' })
+        makeParam({ name: 'nested', text: 'Nested', default: 'hidden', parent: 'topLevel' })
       ]
     })
 
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
 
-    expect(parsed.parameters).toHaveProperty('topLevel')
-    expect(parsed.parameters).not.toHaveProperty('nested')
+    expect(parsed.parameters).toEqual({ topLevel: 'visible', nested: 'hidden' })
   })
 
   it('stringifies boolean defaults correctly', () => {
@@ -214,18 +217,18 @@ describe('generateTypeDeclaration', () => {
     expect(result).not.toContain('interface resetAllArgs')
   })
 
-  it('skips nested parameters in Parameters interface', () => {
+  it('declares nested parameters in Parameters interface', () => {
     const plugin = createMinimalPlugin({
       parameters: [
         makeParam({ name: 'topLevel', text: 'Top', type: 'string' }),
-        makeParam({ name: 'nestedField', text: 'Nested', type: 'number', parent: 'SomeStruct' })
+        makeParam({ name: 'nestedField', text: 'Nested', type: 'number', parent: 'topLevel' })
       ]
     })
 
     const result = generateTypeDeclaration(plugin)
 
     expect(result).toContain('topLevel: string')
-    expect(result).not.toContain('nestedField')
+    expect(result).toContain('nestedField: number')
   })
 
   it('maps all numeric ID-based param types to number', () => {
@@ -553,5 +556,125 @@ describe('generatePluginsJsonEntry - COV-20 edge types', () => {
     })
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
     expect(parsed.parameters.bg).toBe('#ffffff')
+  })
+})
+
+// --------------------------------------------------------------------------
+// Both exports against the header of the generated plugin, read back as the app imports it
+// --------------------------------------------------------------------------
+const DTS = 'plugin.d.ts'
+
+/** The syntax errors of a declaration file, and the member names of each interface it declares. */
+function declarations(text: string): {
+  diagnostics: string[]
+  interfaces: Record<string, string[]>
+} {
+  const options: ts.CompilerOptions = { noLib: true, noResolve: true, types: [] }
+  const sf = ts.createSourceFile(DTS, text, ts.ScriptTarget.Latest, true)
+  const host = ts.createCompilerHost(options)
+  host.getSourceFile = (name) => (name === DTS ? sf : undefined)
+  host.fileExists = (name) => name === DTS
+  host.readFile = (name) => (name === DTS ? text : undefined)
+  const diagnostics = ts
+    .createProgram([DTS], options, host)
+    .getSyntacticDiagnostics(sf)
+    .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
+  const interfaces: Record<string, string[]> = {}
+  const visit = (node: ts.Node): void => {
+    if (ts.isInterfaceDeclaration(node)) {
+      interfaces[node.name.text] = node.members.flatMap((m) => {
+        const name = m.name
+        if (name === undefined) return []
+        return [ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : name.getText(sf)]
+      })
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(sf)
+  return { diagnostics, interfaces }
+}
+
+/** The member names of `interface Parameters` in a declaration file, and its syntax errors. */
+function declaredParameters(text: string): { diagnostics: string[]; members: string[] } {
+  const { diagnostics, interfaces } = declarations(text)
+  return { diagnostics, members: interfaces.Parameters ?? [] }
+}
+
+/** The parameters the generated plugin's header declares, read back as the app imports them. */
+const headerParameters = (code: string, fileName: string): PluginParameter[] =>
+  PluginParser.parsePlugin(code, fileName).parameters
+
+const storedValues = (parameters: PluginParameter[]): Record<string, string> =>
+  Object.fromEntries(parameters.map((p) => [p.name, String(p.default)]))
+
+describe('exports against the generated header', () => {
+  const generated = conformanceCases().filter((c) => c.kind === 'generated')
+
+  it('the plugins.json entry holds every parameter the header stores, with its value', () => {
+    for (const c of generated) {
+      const header = headerParameters(c.code, c.fileName)
+      expect
+        .soft(JSON.parse(generatePluginsJsonEntry(c.definition)).parameters, c.id)
+        .toEqual(storedValues(header))
+    }
+    console.log(`plugins.json: ${generated.length} cases`)
+    expect(generated.length).toBeGreaterThan(0)
+  })
+
+  // A command whose name the validator refuses as not an identifier gets no arguments
+  // interface: its name cannot name one
+  it('the type declaration parses and declares every parameter and argument the header stores', () => {
+    let skipped = 0
+    for (const c of generated) {
+      const refused = refusedCommandNames(c.definition)
+      const header = PluginParser.parsePlugin(c.code, c.fileName)
+      expect(header.commands.length, c.id).toBe(c.definition.commands.length)
+      const expected: Record<string, string[]> = {}
+      if (header.parameters.length > 0) expected.Parameters = header.parameters.map((p) => p.name)
+      header.commands.forEach((cmd, i) => {
+        if (cmd.args.length === 0) return
+        // The header's reading of a refused name is not the name, so match by position
+        if (refused.has(c.definition.commands[i].name)) skipped++
+        else expected[`${cmd.name}Args`] = cmd.args.map((a) => a.name)
+      })
+      const { diagnostics, interfaces } = declarations(generateTypeDeclaration(c.definition))
+      expect.soft(diagnostics, c.id).toEqual([])
+      expect.soft(interfaces, c.id).toEqual(expected)
+    }
+    console.log(
+      `type declaration: ${generated.length} cases, refused command names skipped ${skipped}`
+    )
+    expect(generated.length).toBeGreaterThan(0)
+  })
+
+  it('a nested parameter and one with no default are written as the header stores them', () => {
+    const noDefault = { ...makeParam({ name: 'noDefault' }), default: undefined }
+    const plugin = createMinimalPlugin({
+      parameters: [
+        makeParam({ name: 'Group', type: 'string', default: 'top' }),
+        makeParam({ name: 'nested', type: 'number', default: 5, parent: 'Group' }),
+        noDefault as unknown as PluginParameter
+      ]
+    })
+    const header = headerParameters(generatePlugin(plugin), 'TestPlugin.js')
+    expect(JSON.parse(generatePluginsJsonEntry(plugin)).parameters).toEqual({
+      Group: 'top',
+      nested: '5',
+      noDefault: ''
+    })
+    expect(JSON.parse(generatePluginsJsonEntry(plugin)).parameters).toEqual(storedValues(header))
+    expect(declaredParameters(generateTypeDeclaration(plugin)).members).toEqual(
+      header.map((p) => p.name)
+    )
+  })
+
+  it('quotes a declared parameter name that is not an identifier', () => {
+    const plugin = createMinimalPlugin({
+      parameters: [makeParam({ name: 'Move Speed' }), makeParam({ name: 'speed' })]
+    })
+    const text = generateTypeDeclaration(plugin)
+    expect(text).toContain('    "Move Speed": string\n')
+    expect(text).toContain('    speed: string\n')
+    expect(declaredParameters(text)).toEqual({ diagnostics: [], members: ['Move Speed', 'speed'] })
   })
 })
