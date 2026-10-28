@@ -11,7 +11,7 @@
   "scripts": {
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check src/ tests/ scripts/ tools/ .github/ \"*.ts\" \"*.mjs\" \"*.js\" \"*.json\" \"*.yml\"",
-    "lint": "node node_modules/eslint/bin/eslint.js src/ tests/",
+    "lint": "node node_modules/eslint/bin/eslint.js --max-warnings 0 src/ tests/",
     "lint:scripts": "node node_modules/eslint/bin/eslint.js --max-warnings 0 scripts/",
     "typecheck:node": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.web.json --composite false",

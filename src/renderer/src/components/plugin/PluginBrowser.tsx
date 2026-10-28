@@ -378,7 +378,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                   {/* Close-if-open button — only visible on hover for open plugins */}
                   {row.openId && (
                     <button
-                      onClick={(e) => handleClose(e, row.openId!, row.name)}
+                      onClick={(e) => row.openId && handleClose(e, row.openId, row.name)}
                       className="ml-1 hidden h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive hover:text-destructive-foreground group-hover:flex"
                       aria-label={`Close ${row.name}`}
                     >

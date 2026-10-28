@@ -136,7 +136,7 @@ export function AnalysisView() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {conflictReport!.conflicts.map((conflict, i) => (
+                    {conflictReport?.conflicts.map((conflict, i) => (
                       <div key={i} className="py-3">
                         <div className="flex items-center gap-2">
                           {conflict.severity === 'warning' ? (
@@ -202,7 +202,7 @@ export function AnalysisView() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {dependencyReport!.issues.map((issue, i) => (
+                    {dependencyReport?.issues.map((issue, i) => (
                       <div key={i} className="py-3">
                         <div className="flex items-center gap-2">
                           {issue.severity === 'error' ? (

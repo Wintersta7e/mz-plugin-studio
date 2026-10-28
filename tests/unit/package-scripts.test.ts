@@ -85,6 +85,10 @@ describe('package.json scripts', () => {
     ])
   })
 
+  it('the source lint fails on any warning', () => {
+    expect(scripts.lint).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 src/ tests/')
+  })
+
   it('the scripts lint fails on any warning in scripts/', () => {
     expect(scripts['lint:scripts']).toBe(
       'node node_modules/eslint/bin/eslint.js --max-warnings 0 scripts/'

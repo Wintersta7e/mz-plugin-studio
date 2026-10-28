@@ -123,7 +123,8 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
 
   // 4. Detect load order violations (uses graph edges which include reverse @orderBefore)
   for (const header of headers) {
-    const myPos = positionIndex.get(header.name)!
+    const myPos = positionIndex.get(header.name)
+    if (myPos === undefined) continue
     const allDeps = [...new Set(graph.edges.get(header.name) || [])]
     for (const dep of allDeps) {
       const depPos = positionIndex.get(dep)
@@ -172,10 +173,10 @@ function detectCycles(graph: DependencyGraph): DependencyIssue[] {
       if (color.get(dep) === GRAY) {
         // Found cycle - reconstruct path
         const cycle = [dep, node]
-        let curr = node
-        while (parent.has(curr) && parent.get(curr) !== dep) {
-          curr = parent.get(curr)!
-          cycle.push(curr)
+        let next = parent.get(node)
+        while (next !== undefined && next !== dep) {
+          cycle.push(next)
+          next = parent.get(next)
         }
         cycle.reverse()
         issues.push({

@@ -38,7 +38,7 @@ export default defineConfig(
           varsIgnorePattern: '^_'
         }
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         {
@@ -47,8 +47,8 @@ export default defineConfig(
         }
       ],
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'react-hooks/exhaustive-deps': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       // A window.confirm dialog cannot make Cancel its Enter button; dialog.message does
       'no-alert': 'error'
     }

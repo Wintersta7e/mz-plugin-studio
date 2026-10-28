@@ -12,7 +12,7 @@ import { getAllClassNames, getClassInfo } from './generator/class-registry'
 // Pre-computed class data (static, built once on first use)
 let cachedClassData: { name: string; detail: string; documentation: string }[] | null = null
 
-function getClassData(): typeof cachedClassData {
+function getClassData(): NonNullable<typeof cachedClassData> {
   if (!cachedClassData) {
     cachedClassData = getAllClassNames().map((name) => {
       const info = getClassInfo(name)
@@ -91,7 +91,7 @@ export function registerMZCompletions(monaco: Monaco): IDisposable {
       }
 
       // Class names from registry (cached)
-      for (const cls of getClassData()!) {
+      for (const cls of getClassData()) {
         suggestions.push({
           label: cls.name,
           kind: monaco.languages.CompletionItemKind.Class,
