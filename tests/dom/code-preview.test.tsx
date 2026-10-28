@@ -18,7 +18,7 @@ import {
   useToastStore,
   useUIStore
 } from '../../src/renderer/src/stores'
-import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { createEmptyCommand, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
@@ -192,6 +192,53 @@ describe('code preview export with no project', () => {
       await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
+})
+
+describe('code preview export under another file name', () => {
+  const RENAMED = {
+    type: 'warning',
+    title: 'File name differs from plugin name',
+    message:
+      '"Renamed.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands would not work in a game. Save anyway?',
+    buttons: ['Cancel', 'Save anyway']
+  }
+
+  beforeEach(() => {
+    act(() => usePluginStore.getState().addCommand(createEmptyCommand()))
+  })
+
+  it('asks first; Cancel writes nothing', async () => {
+    const target = join(tmp, 'Renamed.js')
+    wireMainSave(target)
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledWith(RENAMED))
+    await act(async () => {})
+    expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
+    await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(successToasts()).toEqual([])
+  })
+
+  it('asks first; Save anyway writes the file once', async () => {
+    const target = join(tmp, 'Renamed.js')
+    wireMainSave(target)
+    vi.mocked(window.api.dialog.message).mockResolvedValueOnce(1)
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(successToasts()).toHaveLength(1))
+    expect(vi.mocked(window.api.dialog.message).mock.calls).toEqual([[RENAMED]])
+    expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
+    expect(await readFile(target, 'utf8')).toBe(generatePlugin(usePluginStore.getState().plugin))
+  })
+
+  it('does not ask for a file named after the plugin', async () => {
+    const target = join(tmp, 'Alpha.js')
+    wireMainSave(target)
+    render(<CodePreview />)
+    clickExport()
+    await waitFor(() => expect(successToasts()).toHaveLength(1))
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
+  })
 })
 
 describe('code preview export', () => {

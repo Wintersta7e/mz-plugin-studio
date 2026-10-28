@@ -4,6 +4,7 @@
 // stand-in's own behaviour is tested first, on plugins written here.
 import { describe, expect, it } from 'vitest'
 import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { fileNameMismatch } from '../../src/renderer/src/lib/plugin-output'
 import { ALL_PARAM_TYPES } from '../../src/shared/types/plugin'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import {
@@ -214,6 +215,21 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
       expect(r.commandsLost, `${r.caseId} ${r.rename} commands`).toBe(r.hasCommands)
       expect(r.parametersLost, `${r.caseId} ${r.rename} parameters`).toBe(
         r.rename === 'other-name' && r.hasParameters
+      )
+    }
+  })
+
+  it('the save warning names exactly what a plugin loses under another file name', () => {
+    const { renames } = corpusReport()
+    expect(renames.length).toBeGreaterThan(0)
+    for (const r of renames) {
+      const c = cases.find((x) => x.id === r.caseId)
+      const lost =
+        r.commandsLost || r.parametersLost
+          ? { commands: r.commandsLost, parameters: r.parametersLost }
+          : null
+      expect(c && fileNameMismatch(c.definition, r.fileName), `${r.caseId} ${r.rename}`).toEqual(
+        lost
       )
     }
   })

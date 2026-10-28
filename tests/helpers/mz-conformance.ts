@@ -68,6 +68,8 @@ export interface ConformanceFinding {
 export interface RenameResult {
   caseId: string
   rename: 'case-swap' | 'other-name'
+  /** The file name it was loaded under. */
+  fileName: string
   hasCommands: boolean
   hasParameters: boolean
   commandsLost: boolean
@@ -707,6 +709,7 @@ function renames(
     const result: RenameResult = {
       caseId: c.id,
       rename,
+      fileName: `${as}.js`,
       hasCommands,
       hasParameters,
       commandsLost: ranProperly.some((name) => !ran.includes(name)),

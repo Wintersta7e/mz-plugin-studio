@@ -10,6 +10,7 @@
 - A line break in a parameter, argument or command name, text, description or default no longer splits the plugin's annotation comment: it is written as a space, and the generated code now reads each parameter, argument, command and default exactly as RPG Maker MZ reads it from the header.
 - Importing a plugin reads an annotation tag only where it starts a line, so an "@" word inside a description or help text no longer adds a parameter, command or argument or changes another tag's value.
 - A line of plugin help text that starts with "@" is no longer read by RPG Maker MZ as a parameter or other annotation; it is written with an invisible zero-width space before the "@".
+- Exporting or saving a plugin to a file not named after it now asks first, because RPG Maker MZ finds a plugin's commands by its exact file name; under another name they silently do nothing.
 
 ## [1.7.0] - 2026-10-23
 

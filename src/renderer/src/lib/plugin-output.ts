@@ -36,6 +36,22 @@ export const saveFileName = (plugin: Pick<PluginDefinition, 'importedFrom' | 'me
   plugin.importedFrom ?? `${plugin.meta.name}.js`
 
 /**
+ * What a plugin would lose in a game when saved to `filePath`: MZ finds its commands by the
+ * exact file name and its parameters by the file name in any letter case. Null when nothing.
+ */
+export function fileNameMismatch(
+  plugin: Pick<PluginDefinition, 'meta' | 'parameters' | 'commands'>,
+  filePath: string
+): { commands: boolean; parameters: boolean } | null {
+  const name = plugin.meta.name
+  if (!name) return null
+  const stem = (filePath.split(/[\\/]/).pop() ?? filePath).replace(/\.js$/i, '')
+  const commands = plugin.commands.length > 0 && stem !== name
+  const parameters = plugin.parameters.length > 0 && stem.toLowerCase() !== name.toLowerCase()
+  return commands || parameters ? { commands, parameters } : null
+}
+
+/**
  * The file text raw mode builds on and the values it was read with; null when either is not
  * loaded, which is when raw mode refuses with `source-missing`.
  */

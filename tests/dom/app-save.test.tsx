@@ -17,7 +17,12 @@ import {
   useProjectStore,
   useToastStore
 } from '../../src/renderer/src/stores'
-import { createEmptyPlugin, toBaseline } from '../../src/renderer/src/types/plugin'
+import {
+  createEmptyCommand,
+  createEmptyParameter,
+  createEmptyPlugin,
+  toBaseline
+} from '../../src/renderer/src/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { MessageDialogOptions, SaveConflict } from '../../src/shared/ipc-types'
@@ -246,6 +251,62 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
     })
     expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+  })
+
+  describe('Ctrl+S without a project to a file not named after the plugin', () => {
+    const RENAMED = {
+      type: 'warning',
+      title: 'File name differs from plugin name',
+      message:
+        '"Chosen.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands and parameters would not work in a game. Save anyway?',
+      buttons: ['Cancel', 'Save anyway']
+    }
+
+    function openWithBoth(): string {
+      const id = openTab('Alpha')
+      act(() => {
+        usePluginStore.getState().addCommand(createEmptyCommand())
+        usePluginStore.getState().addParameter(createEmptyParameter())
+      })
+      return id
+    }
+
+    it('asks first; Cancel writes nothing and leaves the tab unsaved', async () => {
+      const target = join(root, 'Chosen.js')
+      window.api = createMainApi({ chosen: () => target })
+      const id = openWithBoth()
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(messages()).toEqual([RENAMED]))
+      await settle()
+      expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
+      await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
+      expect(isDirty(id)).toBe(true)
+      expect(toasts()).toEqual([])
+    })
+
+    it('asks first; Save anyway writes the file once', async () => {
+      const target = join(root, 'Chosen.js')
+      window.api = createMainApi({ chosen: () => target, answers: [1] })
+      const id = openWithBoth()
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      expect(messages()).toEqual([RENAMED])
+      expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
+      expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+      expect(isDirty(id)).toBe(false)
+    })
+
+    it('does not ask for a file named after the plugin', async () => {
+      const target = join(root, 'Alpha.js')
+      window.api = createMainApi({ chosen: () => target })
+      openWithBoth()
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      expect(messages()).toEqual([])
+    })
   })
 
   it('one Ctrl+S writes the open plugins to storage once', async () => {

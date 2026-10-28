@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-types'
-import { isImported, saveFileName } from './plugin-output'
+import { fileNameMismatch, isImported, saveFileName } from './plugin-output'
 import { prepareSave, reloadFromProject } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
 import { userMessage } from './utils'
@@ -85,6 +85,28 @@ function conflictMessage(plugin: PluginDefinition, guard: SaveGuard, result: Ref
     : `"${path}" has changed on disk since this tab last read or saved it. Overwrite it?`
 }
 
+const LOST = {
+  both: 'its commands and parameters',
+  commands: 'its commands',
+  parameters: 'its parameters'
+}
+
+/** Whether to write `plugin` to `filePath`, asking first when the file is not named after it. */
+async function confirmFileName(plugin: PluginDefinition, filePath: string): Promise<boolean> {
+  const mismatch = fileNameMismatch(plugin, filePath)
+  if (mismatch === null) return true
+  const what = LOST[mismatch.commands ? (mismatch.parameters ? 'both' : 'commands') : 'parameters']
+  const answer = await window.api.dialog.message({
+    type: 'warning',
+    title: 'File name differs from plugin name',
+    message: `"${fileNameOf(filePath)}" is not named after the plugin "${plugin.meta.name}". RPG Maker MZ finds a plugin's commands by its exact file name and its parameters by its file name in any letter case, so ${what} would not work in a game. Save anyway?`,
+    buttons: ['Cancel', 'Save anyway']
+  })
+  if (answer === 1) return true
+  log.warn('[save] refused', nameOf(plugin), 'file name differs')
+  return false
+}
+
 /**
  * Writes through `write`, asking before replacing a file the check refuses. Overwrite retries
  * against the bytes the prompt was about, so a file changed again meanwhile is asked about
@@ -157,6 +179,7 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void
               filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
             })
       if (!filePath) return
+      if (!(await confirmFileName(plugin, filePath))) return
       chosenPaths.add(filePath)
       write = (guard) => window.api.plugin.saveToPath(filePath, code, guard)
     }
