@@ -3,6 +3,10 @@
 //   - a commit that changes no src/ file deletes no golden line;
 //   - a changed user-visible golden (generated output) comes with a CHANGELOG.md change,
 //     unless a commit that changes no src/ file only adds whole cases (or index lines) to it.
+// And the commit-message rules over the same range (older history predates them):
+//   - a subject is at most 72 characters;
+//   - the only trailer is `Co-Authored-By:` (exact case), naming an allowed co-author;
+//   - commits by the dependency-update bot are counted as skipped, not checked.
 // Usage: node scripts/check-golden-commits.mjs <base>..<head>
 //        node scripts/check-golden-commits.mjs --github-event   (range from the CI event)
 import { execFileSync } from 'node:child_process'
@@ -14,6 +18,11 @@ const GOLDEN = 'tests/golden/__golden__/'
 const USER_VISIBLE = ['templates/', 'generator/', 'raw-mode/', 'mzparams/'].map((d) => GOLDEN + d)
 const CASE_HEADER = '+// ==== case:'
 const NO_COMMIT = /^0+$/
+const MAX_SUBJECT = 72
+const CO_AUTHOR_KEY = 'Co-Authored-By'
+const CO_AUTHORS = ['Rooty', 'Leafy']
+// The bot always signs off and writes long subjects; its pull requests would otherwise be red.
+const BOT_AUTHORS = ['49699333+dependabot[bot]@users.noreply.github.com']
 
 /**
  * The commit range a CI event pushed, or why there is none.
@@ -32,6 +41,26 @@ export function resolveRange({ name, payload, sha }) {
     return { range: `${payload.pull_request.base.sha}..${payload.pull_request.head.sha}` }
   }
   return { skip: `${name} (no pushed range)` }
+}
+
+/**
+ * What breaks the commit-message rules in one commit's subject and trailer lines.
+ * @param {{ subject: string; trailers: string[] }} message
+ * @returns {string[]}
+ */
+export function messageProblems({ subject, trailers }) {
+  const problems = []
+  const length = [...subject].length
+  if (length > MAX_SUBJECT) problems.push(`subject over ${MAX_SUBJECT} characters (${length})`)
+  for (const trailer of trailers) {
+    const split = trailer.indexOf(': ')
+    const key = split === -1 ? trailer : trailer.slice(0, split)
+    if (key !== CO_AUTHOR_KEY) problems.push(`trailer not allowed: ${key}`)
+    else if (!CO_AUTHORS.includes(trailer.slice(split + 2))) {
+      problems.push(`co-author not allowed: ${trailer.slice(split + 2)}`)
+    }
+  }
+  return problems
 }
 
 const print = (line) => process.stdout.write(`${line}\n`)
@@ -91,6 +120,13 @@ function onlyAddsCases(sha, path) {
   return next === oldUnits.length
 }
 
+/** A commit's subject (first paragraph joined, as git shows it), author email and trailer lines. */
+function commitMessage(sha) {
+  const format = '%s%x00%ae%x00%(trailers:only,unfold)'
+  const [subject, email, trailers] = git(['show', '-s', `--format=${format}`, sha]).split('\0')
+  return { subject, email, trailers: trailers.split('\n').filter((line) => line !== '') }
+}
+
 /** Counts every rule over the range; returns the exit code. */
 function checkRange(range) {
   const commits = git(['rev-list', '--no-merges', '--reverse', range])
@@ -100,10 +136,21 @@ function checkRange(range) {
     print(`G5: range ${range} has 0 commits`)
     return 1
   }
-  const counts = { src: 0, x: 0, y: 0, z: 0, w: 0 }
+  const counts = { src: 0, x: 0, y: 0, z: 0, w: 0, subjects: 0, trailers: 0, coAuthors: 0, bots: 0 }
   const failures = []
   const fail = (sha, rule, path) => failures.push(`FAIL ${sha.slice(0, 7)} ${rule}: ${path}`)
   for (const sha of commits) {
+    const message = commitMessage(sha)
+    if (BOT_AUTHORS.includes(message.email)) {
+      counts.bots++
+    } else {
+      for (const problem of messageProblems(message)) {
+        if (problem.startsWith('subject')) counts.subjects++
+        else if (problem.startsWith('trailer')) counts.trailers++
+        else counts.coAuthors++
+        fail(sha, 'commit message', problem)
+      }
+    }
     const paths = changedPaths(sha)
     const touchesSrc = paths.some(({ path }) => path.startsWith('src/'))
     const touchesChangelog = paths.some(({ path }) => path === 'CHANGELOG.md')
@@ -140,10 +187,13 @@ function checkRange(range) {
     `commits ${commits.length}; src commits ${counts.src}; ` +
       `golden files added in src commits ${counts.x}; case headers added in src commits ${counts.y}; ` +
       `user-visible golden changes without CHANGELOG ${counts.z}; ` +
-      `golden lines deleted in test-only commits ${counts.w}`
+      `golden lines deleted in test-only commits ${counts.w}; ` +
+      `subjects over ${MAX_SUBJECT} ${counts.subjects}; trailers not allowed ${counts.trailers}; ` +
+      `co-authors not allowed ${counts.coAuthors}; bot commits skipped ${counts.bots}`
   )
   for (const line of failures) print(line)
-  return counts.x + counts.y + counts.z + counts.w > 0 ? 1 : 0
+  const golden = counts.x + counts.y + counts.z + counts.w
+  return golden + counts.subjects + counts.trailers + counts.coAuthors > 0 ? 1 : 0
 }
 
 function main(arg) {

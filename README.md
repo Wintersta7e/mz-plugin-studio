@@ -155,7 +155,7 @@ templates from the code editor, and save into your project's `js/plugins/` folde
 
 ```bash
 npm run check          # the tree: lint, format, types, licences, tests
-npm run check:commits  # the commits since origin/main: golden-output rules, as CI runs them
+npm run check:commits  # the commits since origin/main: golden-output and commit-message rules, as CI runs them
 npm run typecheck      # tsc for main, renderer, tests and scripts
 npm run lint           # ESLint
 npm run format         # Prettier

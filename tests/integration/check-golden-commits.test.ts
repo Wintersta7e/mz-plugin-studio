@@ -52,10 +52,20 @@ function check(dir: string, args: string[], env: Record<string, string> = {}): R
   return { status: result.status, lines: result.stdout.split('\n').filter((l) => l !== '') }
 }
 
-const counts = (n: number, s: number, x: number, y: number, z: number, w: number): string =>
+const counts = (
+  n: number,
+  s: number,
+  x: number,
+  y: number,
+  z: number,
+  w: number,
+  { subjects = 0, trailers = 0, coAuthors = 0, bots = 0 } = {}
+): string =>
   `commits ${n}; src commits ${s}; golden files added in src commits ${x}; ` +
   `case headers added in src commits ${y}; user-visible golden changes without CHANGELOG ${z}; ` +
-  `golden lines deleted in test-only commits ${w}`
+  `golden lines deleted in test-only commits ${w}; subjects over 72 ${subjects}; ` +
+  `trailers not allowed ${trailers}; co-authors not allowed ${coAuthors}; ` +
+  `bot commits skipped ${bots}`
 
 const short = (sha: string): string => sha.slice(0, 7)
 
@@ -224,6 +234,51 @@ describe('golden commit check', () => {
     git(dir, ...IDENTITY, 'merge', '-q', '--no-ff', '-m', 'merge side', 'side')
     expect(git(dir, 'rev-list', '--count', `${base}..HEAD`)).toBe('3')
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
+  })
+
+  it('fails a commit whose subject is over 72 characters', () => {
+    const { dir, base } = makeRepo()
+    write(dir, 'notes.txt', 'a\n')
+    const sha = commit(dir, `docs: ${'x'.repeat(67)}`)
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(1, 0, 0, 0, 0, 0, { subjects: 1 }),
+        `FAIL ${short(sha)} commit message: subject over 72 characters (73)`
+      ]
+    })
+  })
+
+  it('fails a commit that ends in a trailer other than an allowed co-author', () => {
+    const { dir, base } = makeRepo()
+    write(dir, 'notes.txt', 'a\n')
+    const sha = commit(dir, 'docs: add notes\n\nSigned-off-by: Someone <someone@example.invalid>')
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 1,
+      lines: [
+        counts(1, 0, 0, 0, 0, 0, { trailers: 1 }),
+        `FAIL ${short(sha)} commit message: trailer not allowed: Signed-off-by`
+      ]
+    })
+  })
+
+  it('skips the message rules for a dependency-update bot commit', () => {
+    const { dir, base } = makeRepo()
+    write(dir, 'notes.txt', 'a\n')
+    git(dir, 'add', '-A')
+    git(
+      dir,
+      ...IDENTITY,
+      'commit',
+      '-q',
+      '--author=dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>',
+      '-m',
+      `chore(deps): ${'x'.repeat(70)}\n\nSigned-off-by: dependabot[bot] <support@example.invalid>`
+    )
+    expect(check(dir, [`${base}..HEAD`])).toEqual({
+      status: 0,
+      lines: [counts(1, 0, 0, 0, 0, 0, { bots: 1 })]
+    })
   })
 
   it('fails an empty range', () => {
