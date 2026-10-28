@@ -18,6 +18,7 @@ import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { annotationText, escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
+import { COMPACT_PARAM_TAG } from '../../../../shared/compact-param'
 
 /** Receives each field's text as it is written into an annotation comment, with its label. */
 type BlockSink = (field: string, value: string) => void
@@ -1366,6 +1367,12 @@ export function validatePlugin(plugin: PluginDefinition): {
       report(
         `tag ${field}`,
         `${field}: a line starting with "@" is written with an invisible zero-width space before the "@", so RPG Maker MZ shows it as help text instead of reading it as an annotation tag.`
+      )
+    }
+    if (field.endsWith(' @param') && COMPACT_PARAM_TAG.test(value)) {
+      report(
+        `setting tag ${field}`,
+        `${field}: the name holds an "@" setting tag, so when the plugin is opened again the name ends before that tag and the rest is read as the parameter's settings.`
       )
     }
   }

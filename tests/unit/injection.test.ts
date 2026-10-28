@@ -535,6 +535,36 @@ describe('validatePlugin warnings', () => {
 
   it.each<[string, (def: PluginDefinition) => void, string]>([
     [
+      'a parameter',
+      (def) => {
+        def.parameters[0].name = 'Speed @type number'
+      },
+      'Parameter "Speed @type number" @param'
+    ],
+    [
+      'a struct field',
+      (def) => {
+        def.structs[0].parameters[0].name = 'Size @default 3'
+      },
+      'Struct "FixtureStruct" field "Size @default 3" @param'
+    ]
+  ])('names %s whose name holds a setting tag', (_, change, field) => {
+    expect(addedWarnings(change)).toContain(
+      `${field}: the name holds an "@" setting tag, so when the plugin is opened again the name ends before that tag and the rest is read as the parameter's settings.`
+    )
+  })
+
+  it('an "@" in a parameter name that is not a setting tag adds no warning about it', () => {
+    const added = addedWarnings((def) => {
+      def.parameters[0].name = 'Speed@home'
+      def.commands[0].name = 'Run @type number'
+      def.commands[0].args[0].name = 'Arg @type number'
+    })
+    expect(added.filter((w) => w.includes('setting tag'))).toEqual([])
+  })
+
+  it.each<[string, (def: PluginDefinition) => void, string]>([
+    [
       'plugin help, indented',
       (def) => {
         def.meta.help = 'Usage\n  @param injected\nEnd'

@@ -9,6 +9,7 @@ import type {
 } from '../../shared/types/plugin'
 import { findAnnotationBlocks } from '../../shared/annotation-blocks'
 import type { AnnotationBlock } from '../../shared/annotation-blocks'
+import { COMPACT_PARAM_TAG } from '../../shared/compact-param'
 
 interface ParsedMeta {
   name: string
@@ -773,7 +774,7 @@ export class PluginParser {
    */
   private static isCompactFormat(rawName: string): boolean {
     // If the "name" contains @text, @type, @desc, etc., it's compact format
-    return /@(?:text|type|desc|default|min|max|dir|parent|on|off|option|decimals)\s/i.test(rawName)
+    return COMPACT_PARAM_TAG.test(rawName)
   }
 
   /**
