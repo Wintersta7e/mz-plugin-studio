@@ -56,7 +56,7 @@ describe('meta editor help text', () => {
 
 describe('meta editor plugin name', () => {
   const NAME_NOTICE =
-    'Loaded from Loaded.js: the name is the file name. To save a copy under another name, use Export in the preview.'
+    "Loaded from Loaded.js: the name is the file name. Export in the preview can write a copy under another file name, but if the plugin's code names itself, the copy's commands and parameters may not work in a game; Export asks first when they would not."
 
   beforeEach(() => {
     resetStores()

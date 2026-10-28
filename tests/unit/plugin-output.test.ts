@@ -144,39 +144,68 @@ describe('fileNameMismatch', () => {
     }
   }
   const both = named('Foo', { commands: true, parameters: true })
+  // Generated code names the plugin in a string, as it always does
+  const mismatch = (plugin: PluginDefinition, path: string): ReturnType<typeof fileNameMismatch> =>
+    fileNameMismatch(plugin, path, generatePlugin(plugin))
 
   it('is null for a file named after the plugin', () => {
-    expect(fileNameMismatch(both, 'Foo.js')).toBeNull()
+    expect(mismatch(both, 'Foo.js')).toBeNull()
   })
 
   it('loses only the commands when the names differ in letter case', () => {
-    expect(fileNameMismatch(both, 'foo.js')).toEqual({ commands: true, parameters: false })
-    expect(fileNameMismatch(named('Foo', { parameters: true }), 'FOO.js')).toBeNull()
+    expect(mismatch(both, 'foo.js')).toEqual({ commands: true, parameters: false })
+    expect(mismatch(named('Foo', { parameters: true }), 'FOO.js')).toBeNull()
   })
 
   it('loses commands and parameters under another name', () => {
-    expect(fileNameMismatch(both, 'Bar.js')).toEqual({ commands: true, parameters: true })
-    expect(fileNameMismatch(named('Foo', { commands: true }), 'Bar.js')).toEqual({
+    expect(mismatch(both, 'Bar.js')).toEqual({ commands: true, parameters: true })
+    expect(mismatch(named('Foo', { commands: true }), 'Bar.js')).toEqual({
       commands: true,
       parameters: false
     })
-    expect(fileNameMismatch(named('Foo', { parameters: true }), 'Bar.js')).toEqual({
+    expect(mismatch(named('Foo', { parameters: true }), 'Bar.js')).toEqual({
       commands: false,
       parameters: true
     })
   })
 
   it('is null for another name when the plugin has neither', () => {
-    expect(fileNameMismatch(named('Foo', {}), 'Bar.js')).toBeNull()
+    expect(mismatch(named('Foo', {}), 'Bar.js')).toBeNull()
   })
 
   it('reads the name from the last path segment of either separator, any case of .js', () => {
-    expect(fileNameMismatch(both, 'C:\\x\\Foo.JS')).toBeNull()
-    expect(fileNameMismatch(both, '/tmp/sub/Foo.js')).toBeNull()
-    expect(fileNameMismatch(both, '/tmp/Foo/Bar.js')).toEqual({ commands: true, parameters: true })
+    expect(mismatch(both, 'C:\\x\\Foo.JS')).toBeNull()
+    expect(mismatch(both, '/tmp/sub/Foo.js')).toBeNull()
+    expect(mismatch(both, '/tmp/Foo/Bar.js')).toEqual({ commands: true, parameters: true })
   })
 
   it('is null for a plugin with no name', () => {
-    expect(fileNameMismatch(named('', { commands: true, parameters: true }), 'Bar.js')).toBeNull()
+    expect(mismatch(named('', { commands: true, parameters: true }), 'Bar.js')).toBeNull()
+  })
+
+  it('is null for code that reads its own name from its file instead of naming the plugin', () => {
+    const code = [
+      '(() => {',
+      '  const name = document.currentScript.src.match(/([^/]+)\\.js$/)[1];',
+      '  const params = PluginManager.parameters(name);',
+      "  PluginManager.registerCommand(name, 'Show', () => {});",
+      '})();'
+    ].join('\n')
+    expect(fileNameMismatch(both, 'Bar.js', code)).toBeNull()
+  })
+
+  it.each([`'Foo'`, `"Foo"`, '`Foo`'])(
+    'loses commands and parameters under another name for code naming the plugin as %s',
+    (literal) => {
+      const code = `(() => { const params = PluginManager.parameters(${literal}); })();`
+      expect(fileNameMismatch(both, 'Bar.js', code)).toEqual({ commands: true, parameters: true })
+    }
+  )
+
+  it.each(["It's", 'A\\B', 'Say "Hi"'])('finds the name %s escaped in generated code', (name) => {
+    expect(mismatch(named(name, { commands: true }), 'Bar.js')).toEqual({
+      commands: true,
+      parameters: false
+    })
   })
 })
