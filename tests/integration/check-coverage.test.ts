@@ -73,13 +73,15 @@ function check(dir: string, entries: Record<string, Entry> = {}, dirs: string[] 
   return { status: result.status, lines: result.stdout.split('\n').filter((l) => l !== '') }
 }
 
-/** The branch floor the check prints for `dir`. */
-function branchFloor(run: Run, dir: string): number {
+/** The line or branch floor the check prints for `dir`. */
+function printedFloor(run: Run, dir: string, kind: 'lines' | 'branches'): number {
   const line = run.lines.find((l) => l.startsWith(`coverage floor ${dir}:`))
-  const match = /branches [\d.]+% \(floor (\d+)%\)/.exec(line ?? '')
-  if (match === null) throw new Error(`no branch floor for ${dir}`)
+  const match = new RegExp(`${kind} [\\d.]+% \\(floor (\\d+)%\\)`).exec(line ?? '')
+  if (match === null) throw new Error(`no ${kind} floor for ${dir}`)
   return Number(match[1])
 }
+
+const branchFloor = (run: Run, dir: string): number => printedFloor(run, dir, 'branches')
 
 afterEach(() => {
   for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true })
@@ -124,6 +126,23 @@ describe('check-coverage suite', () => {
         )
       )
     )
+  })
+
+  it('fails when any directory has line coverage below its floor', () => {
+    const dir = makeRepo()
+    const floors = check(dir)
+    for (const source of DIRS) {
+      const floor = printedFloor(floors, source, 'lines')
+      // Only the preload bridge has no line that tests cover.
+      if (source === 'src/preload') {
+        expect(floor).toBe(0)
+        continue
+      }
+      expect(floor, source).toBeGreaterThan(0)
+      const below: Entry = { ...full, lines: { covered: floor - 1, total: 100 } }
+      expect(check(dir, { [source]: below }).status, source).toBe(1)
+    }
+    console.log(`line floors checked ${DIRS.length - 1}`)
   })
 
   it('fails when a summary entry has no branch figures', () => {
