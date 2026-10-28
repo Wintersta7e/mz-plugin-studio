@@ -30,6 +30,18 @@ function blockValue(sink: BlockSink | undefined, field: string, value: string): 
   return annotationText(value)
 }
 
+/** Whether a help line would be read as a tag: its first non-space character is `@`. */
+const HELP_TAG_LINE = /^(\s*)@/
+
+/**
+ * A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
+ * as help instead of reading it as a tag. A guarded line starts with that space, which is not
+ * whitespace, so writing it again adds no second one.
+ */
+function helpText(line: string): string {
+  return line.replace(HELP_TAG_LINE, '$1\u200B@')
+}
+
 /**
  * Find names of `PluginManager.registerCommand(...)` calls already present in
  * comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
@@ -156,7 +168,7 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
   if (plugin.meta.help) {
     lines.push(' * @help')
     for (const helpLine of plugin.meta.help.split(/\r\n|\r|\n/)) {
-      lines.push(` * ${blockValue(sink, 'Plugin @help', helpLine)}`)
+      lines.push(` * ${helpText(blockValue(sink, 'Plugin @help', helpLine))}`)
     }
   }
 
@@ -394,7 +406,7 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
     if (content.help) {
       lines.push(' * @help')
       for (const helpLine of content.help.split(/\r\n|\r|\n/)) {
-        lines.push(` * ${blockValue(sink, `Localization "${lang}" @help`, helpLine)}`)
+        lines.push(` * ${helpText(blockValue(sink, `Localization "${lang}" @help`, helpLine))}`)
       }
     }
 
@@ -1347,9 +1359,11 @@ export function validatePlugin(plugin: PluginDefinition): {
         `${field}: a line break is written as a space, because each annotation is one line.`
       )
     }
-    const tag = /@(\w+)/.exec(value)
-    if (tag) {
-      report(`tag ${field}`, `${field}: "@${tag[1]}" is read by MZ as a new annotation tag.`)
+    if (field.endsWith('@help') && HELP_TAG_LINE.test(value)) {
+      report(
+        `tag ${field}`,
+        `${field}: a line starting with "@" is written with an invisible zero-width space before the "@", so RPG Maker MZ shows it as help text instead of reading it as an annotation tag.`
+      )
     }
   }
   generateHeader(plugin, collect)

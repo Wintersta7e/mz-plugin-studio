@@ -9,6 +9,7 @@
 - A text, file, select or combo parameter or command argument set to an empty value in RPG Maker MZ now reads as empty in the generated plugin instead of falling back to its default, and an array parameter or argument with no stored value reads its default instead of an empty list.
 - A line break in a parameter, argument or command name, text, description or default no longer splits the plugin's annotation comment: it is written as a space, and the generated code now reads each parameter, argument, command and default exactly as RPG Maker MZ reads it from the header.
 - Importing a plugin reads an annotation tag only where it starts a line, so an "@" word inside a description or help text no longer adds a parameter, command or argument or changes another tag's value.
+- A line of plugin help text that starts with "@" is no longer read by RPG Maker MZ as a parameter or other annotation; it is written with an invisible zero-width space before the "@".
 
 ## [1.7.0] - 2026-10-23
 

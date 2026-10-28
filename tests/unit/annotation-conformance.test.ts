@@ -4,6 +4,7 @@
 // parses back to the definition's names and help. Each rule is first shown to catch a plugin
 // broken on purpose.
 import { describe, expect, it } from 'vitest'
+import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import {
@@ -16,10 +17,7 @@ import type { AnnotationRule } from '../helpers/annotation-rules'
 import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance'
 
 /** Case and rule pairs that fail today; each must fail, and every other pair must hold. */
-const KNOWN_NONCONFORMING: Record<string, AnnotationRule[]> = {
-  // A help line starting with `@` reads as a tag and ends the help
-  'generator:help-tag-line': ['help-round-trip']
-}
+const KNOWN_NONCONFORMING: Record<string, AnnotationRule[]> = {}
 
 const fixtureGenerated = GENERATOR_ENTRIES.find((e) => e.name === 'fixture-generated')!.def
 const fixtureCode = generatePlugin(fixtureGenerated)
@@ -115,5 +113,18 @@ describe('every generated and raw-mode plugin header', () => {
     expect(blocks.length).toBeGreaterThan(0)
     const ids = new Set(cases.map((c) => c.id))
     expect(Object.keys(KNOWN_NONCONFORMING).filter((id) => !ids.has(id))).toEqual([])
+  })
+})
+
+describe('a help line starting with "@"', () => {
+  it('read back and written again keeps exactly one zero-width space', () => {
+    const def = GENERATOR_ENTRIES.find((e) => e.name === 'help-tag-line')!.def
+    const code = generatePlugin(def)
+    const help = PluginParser.parsePlugin(code, `${def.meta.name}.js`).meta.help
+    const again = generatePlugin({ ...def, meta: { ...def.meta, help } })
+    const zwsp = String.fromCodePoint(0x200b)
+    expect(code).toContain(` * ${zwsp}@param injected\n`)
+    expect(code).not.toContain(zwsp + zwsp)
+    expect(again).toBe(code)
   })
 })

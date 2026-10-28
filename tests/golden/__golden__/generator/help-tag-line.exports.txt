@@ -154,8 +154,8 @@ https://example.invalid/rows
  *
  * @help
  * Usage:
- * @param injected
- * @type number
+ * ​@param injected
+ * ​@type number
  * End
  */
 
@@ -176,6 +176,6 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
   "valid": true,
   "errors": [],
   "warnings": [
-    "Plugin @help: \"@param\" is read by MZ as a new annotation tag."
+    "Plugin @help: a line starting with \"@\" is written with an invisible zero-width space before the \"@\", so RPG Maker MZ shows it as help text instead of reading it as an annotation tag."
   ]
 }

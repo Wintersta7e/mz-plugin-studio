@@ -524,12 +524,33 @@ describe('validatePlugin warnings', () => {
     expect(added).toEqual([escapedWarning('Parameter "FixtureParam" @desc')])
   })
 
-  it('names the field and the tag MZ reads in "@word"', () => {
+  it('an "@" word inside a description or help line adds no warning', () => {
     const added = addedWarnings((def) => {
-      def.parameters[0].desc = 'see @note here'
+      def.parameters[0].desc = 'see @param here'
+      def.commands[0].desc = 'see @note here'
+      def.meta.help = 'Read @help and @type first'
     })
-    expect(added).toEqual([
-      'Parameter "FixtureParam" @desc: "@note" is read by MZ as a new annotation tag.'
+    expect(added).toEqual([])
+  })
+
+  it.each<[string, (def: PluginDefinition) => void, string]>([
+    [
+      'plugin help, indented',
+      (def) => {
+        def.meta.help = 'Usage\n  @param injected\nEnd'
+      },
+      'Plugin @help'
+    ],
+    [
+      'translated help, once for two lines',
+      (def) => {
+        def.meta.localizations!.ja.help = 'one\n@param injected\n@type number'
+      },
+      'Localization "ja" @help'
+    ]
+  ])('names %s with a line starting with "@"', (_, change, field) => {
+    expect(addedWarnings(change)).toEqual([
+      `${field}: a line starting with "@" is written with an invisible zero-width space before the "@", so RPG Maker MZ shows it as help text instead of reading it as an annotation tag.`
     ])
   })
 
