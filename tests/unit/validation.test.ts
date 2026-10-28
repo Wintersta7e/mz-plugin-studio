@@ -438,3 +438,29 @@ describe('validation - identifier sanitization', () => {
     expect(result.errors.filter((e) => e.includes('generate identifier'))).toHaveLength(0)
   })
 })
+
+describe('validation - line breaks in annotation text', () => {
+  it('warns that a line break in a description is written as a space', () => {
+    const plugin = createTestPlugin({
+      parameters: [
+        {
+          id: 'p1',
+          name: 'Speed',
+          text: '',
+          desc: 'line one\nline two',
+          type: 'string',
+          default: ''
+        }
+      ]
+    })
+    expect(validatePlugin(plugin).warnings).toContain(
+      'Parameter "Speed" @desc: a line break is written as a space, because each annotation is one line.'
+    )
+  })
+
+  it('does not warn for help text, which is written one line per line', () => {
+    const plugin = createTestPlugin()
+    plugin.meta.help = 'line one\r\nline two'
+    expect(validatePlugin(plugin).warnings.filter((w) => w.includes('line break'))).toEqual([])
+  })
+})

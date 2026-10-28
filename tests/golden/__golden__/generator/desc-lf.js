@@ -5,8 +5,7 @@
  * @url https://example.invalid/rows
  *
  * @param Label
- * @desc d1
-d2
+ * @desc d1 d2
  * @type string
  * @default Hello
  *
@@ -16,8 +15,7 @@ d2
  * @default {"a":"b"}
  *
  * @command Show
- * @text t1
-t2
+ * @text t1 t2
  * @desc Shows the label.
  *
  */

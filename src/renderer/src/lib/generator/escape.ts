@@ -31,6 +31,15 @@ export function escapeBlockComment(str: string): string {
 }
 
 /**
+ * The text MZ reads from an annotation line holding `str`: each line break becomes one space,
+ * as each annotation is one line, and `*` `/` is escaped. Code that reads a header value back
+ * (a parameter key, a command name, a default) uses the same text, so both agree.
+ */
+export function annotationText(str: string): string {
+  return escapeBlockComment(str.replace(/\r\n|\r|\n/g, ' '))
+}
+
+/**
  * Escape a string for interpolation inside a line comment: each line break or line separator
  * becomes one space, so the text cannot end the comment.
  */

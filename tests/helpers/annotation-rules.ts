@@ -4,6 +4,7 @@
 // parent that names nothing, a default that does not read as its type, and a header that parses
 // back to other names or a shorter help than the definition it was written from.
 import { PluginParser } from '../../src/main/services/pluginParser'
+import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { ALL_PARAM_TYPES, ID_BASED_PARAM_TYPES } from '../../src/shared/types/plugin'
 import type { ParamType, PluginDefinition } from '../../src/shared/types/plugin'
 import { refusedCommandNames } from './mz-conformance'
@@ -192,7 +193,10 @@ function helpRoundTrip(code: string, def: PluginDefinition): string[] {
   const parsed = PluginParser.parsePlugin(code)
   const problems: string[] = []
   const names = (list: { name: string }[]): string => JSON.stringify(list.map((p) => p.name))
-  if (names(parsed.parameters) !== names(def.parameters)) {
+  // A defined name reads back as the generator writes it on its one header line
+  const written = (list: { name: string }[]): string =>
+    JSON.stringify(list.map((p) => annotationText(p.name)))
+  if (names(parsed.parameters) !== written(def.parameters)) {
     problems.push(`parameters ${names(def.parameters)} read back as ${names(parsed.parameters)}`)
   }
   // A command name the app refuses as not an identifier is read back in a way MZ's own reading
@@ -203,7 +207,7 @@ function helpRoundTrip(code: string, def: PluginDefinition): string[] {
   const readBack = parsed.commands.filter(
     (cmd) => refused.size === 0 || acceptedNames.includes(cmd.name)
   )
-  if (names(readBack) !== names(accepted)) {
+  if (names(readBack) !== written(accepted)) {
     problems.push(`commands ${names(accepted)} read back as ${names(readBack)}`)
   }
   const want = helpLines(def.meta.help)

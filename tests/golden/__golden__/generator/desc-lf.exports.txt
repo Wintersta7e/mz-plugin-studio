@@ -138,8 +138,7 @@ t2
  * @url https://example.invalid/rows
  *
  * @param Label
- * @desc d1
-d2
+ * @desc d1 d2
  * @type string
  * @default Hello
  *
@@ -149,8 +148,7 @@ d2
  * @default {"a":"b"}
  *
  * @command Show
- * @text t1
-t2
+ * @text t1 t2
  * @desc Shows the label.
  *
  */
@@ -171,5 +169,8 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
 {
   "valid": true,
   "errors": [],
-  "warnings": []
+  "warnings": [
+    "Parameter \"Label\" @desc: a line break is written as a space, because each annotation is one line.",
+    "Command \"Show\" @text: a line break is written as a space, because each annotation is one line."
+  ]
 }

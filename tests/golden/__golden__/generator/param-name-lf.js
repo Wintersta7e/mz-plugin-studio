@@ -4,8 +4,7 @@
  * @author Example Author
  * @url https://example.invalid/rows
  *
- * @param a
-b
+ * @param a b
  * @text Label
  * @desc Text to show.
  * @type string
@@ -36,7 +35,7 @@ b
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const aB = params['a\nb'] ?? 'Hello';
+    const aB = params['a b'] ?? 'Hello';
     const pair = JSON.parse(params['Pair'] || '{"a":"b"}');
 
     // Register plugin commands

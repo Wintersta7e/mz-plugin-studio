@@ -10,6 +10,7 @@ import {
   generateRawMode,
   validatePlugin
 } from '../../src/renderer/src/lib/generator/index'
+import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
@@ -105,15 +106,7 @@ export interface ConformanceReport {
  * Pairs that fail today, by case: each is removed by the change that fixes it, and a listed
  * pair that holds fails the check as surely as an unlisted pair that fails.
  */
-export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {
-  // A line break or `*/` in a name or default reads differently in the header and the code
-  'generator:param-name-lf': ['header-code-differ'],
-  'generator:default-lf': ['header-code-differ'],
-  'generator:hostile-comment-space': ['header-code-differ'],
-  'generator:hostile-comment-u2028': ['header-code-differ'],
-  'generator:hostile-comment-u2029': ['header-code-differ'],
-  'generator:hostile-comment-lf': ['header-code-differ']
-}
+export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {}
 
 // --- Cases ---------------------------------------------------------------------------------
 
@@ -607,9 +600,12 @@ function runGenerated(createRuntime: () => MzRuntime, run_: CaseRun): void {
   const declaredCommands = header.commands.map((cmd) => cmd.name)
   // A command name the app refuses (validatePlugin's identifier rule) is read from the header in
   // a way MZ's own reading is not known to share, so neither it nor its header reading is
-  // compared: the header names that belong to no accepted command
-  const refused = refusedCommandNames(c.definition)
-  const accepted = c.definition.commands.map((cmd) => cmd.name).filter((n) => !refused.has(n))
+  // compared: the header names that belong to no accepted command. Names are compared as the
+  // header line holds them, which is also what the code registers.
+  const refused = new Set([...refusedCommandNames(c.definition)].map(annotationText))
+  const accepted = c.definition.commands
+    .map((cmd) => annotationText(cmd.name))
+    .filter((n) => !refused.has(n))
   const readOfRefused = (name: string): boolean => refused.size > 0 && !accepted.includes(name)
   for (const name of observation.commandNames) {
     if (refused.has(name)) {
@@ -657,7 +653,7 @@ function runGenerated(createRuntime: () => MzRuntime, run_: CaseRun): void {
     const undeclared = run(loaded, stem, UNDECLARED_COMMAND, {})
     if (undeclared.ran) run_.find('command-keys', `${show(UNDECLARED_COMMAND)} ran`)
   }
-  renames(createRuntime, run_, observation)
+  renames(createRuntime, run_, observation, header)
 }
 
 /** A value of `param` that differs from what an absent key reads. */
@@ -670,16 +666,21 @@ function distinctValue(param: PluginParameter, structs: readonly PluginStruct[])
 
 /**
  * Loads the plugin under its case-swapped file name and under another name, and records
- * whether the commands it registers still run and whether it still reads its parameters.
+ * whether the commands it registers still run and whether it still reads its parameters,
+ * stored under the names its header declares, as MZ stores them.
  */
-function renames(createRuntime: () => MzRuntime, run_: CaseRun, observation: Observation): void {
+function renames(
+  createRuntime: () => MzRuntime,
+  run_: CaseRun,
+  observation: Observation,
+  header: PluginDefinition
+): void {
   const { c, report } = run_
-  const def = c.definition
   const stem = stemOf(c.fileName)
   const stored = Object.fromEntries(
-    def.parameters
+    header.parameters
       .filter((p) => observation.parameterKeys.includes(p.name))
-      .map((p) => [p.name, distinctValue(p, def.structs)])
+      .map((p) => [p.name, distinctValue(p, header.structs)])
   )
   const reads = (loaded: LoadedCase): string => show(loaded.parameters)
   const runs = (loaded: LoadedCase, as: string): string[] =>

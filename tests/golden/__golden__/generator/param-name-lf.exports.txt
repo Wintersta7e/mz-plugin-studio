@@ -133,8 +133,7 @@ https://example.invalid/rows
  * @author Example Author
  * @url https://example.invalid/rows
  *
- * @param a
-b
+ * @param a b
  * @text Label
  * @desc Text to show.
  * @type string
@@ -167,6 +166,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
   "valid": true,
   "errors": [],
   "warnings": [
-    "Parameter \"a\nb\" is not a valid JS identifier (will still work in MZ)"
+    "Parameter \"a\nb\" is not a valid JS identifier (will still work in MZ)",
+    "Parameter \"a\nb\" @param: a line break is written as a space, because each annotation is one line."
   ]
 }

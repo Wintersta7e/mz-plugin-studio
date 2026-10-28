@@ -45,8 +45,7 @@
  * @default []
  *
  * @param Tint
- * @desc Ends a comment *\/ here
-and goes on.
+ * @desc Ends a comment *\/ here and goes on.
  * @type color
  * @default 0
  *

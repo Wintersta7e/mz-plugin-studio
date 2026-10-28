@@ -15,7 +15,7 @@ import type {
   Program
 } from 'acorn'
 import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
-import { escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
+import { annotationText, escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
 
@@ -27,7 +27,7 @@ const LOCALIZATION_KEY = /^[A-Za-z_]+$/
 
 function blockValue(sink: BlockSink | undefined, field: string, value: string): string {
   sink?.(field, value)
-  return escapeBlockComment(value)
+  return annotationText(value)
 }
 
 /**
@@ -155,7 +155,7 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
   // Help text
   if (plugin.meta.help) {
     lines.push(' * @help')
-    for (const helpLine of plugin.meta.help.split('\n')) {
+    for (const helpLine of plugin.meta.help.split(/\r\n|\r|\n/)) {
       lines.push(` * ${blockValue(sink, 'Plugin @help', helpLine)}`)
     }
   }
@@ -393,7 +393,7 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
 
     if (content.help) {
       lines.push(' * @help')
-      for (const helpLine of content.help.split('\n')) {
+      for (const helpLine of content.help.split(/\r\n|\r|\n/)) {
         lines.push(` * ${blockValue(sink, `Localization "${lang}" @help`, helpLine)}`)
       }
     }
@@ -476,7 +476,7 @@ function generateBody(plugin: PluginDefinition): string {
     for (const cmd of commandsToGenerate) {
       lines.push('')
       lines.push(
-        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
+        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
       )
 
       // Parse command arguments
@@ -821,7 +821,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     }
     lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
     for (const param of newParams) {
-      const accessor = `${variable}['${escapeJSString(param.name)}']`
+      const accessor = `${variable}['${escapeJSString(annotationText(param.name))}']`
       const constant = freeName(place, camelCase(param.name))
       lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
     }
@@ -851,7 +851,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
     for (const cmd of newCommands) {
       lines.push(
-        `    PluginManager.registerCommand(${name}, '${escapeJSString(cmd.name)}', function(args) {`
+        `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
       )
       const argNames = new Set<string>()
       const constants = cmd.args.map((arg) => {
@@ -979,16 +979,16 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
 /** The JSON text a struct or array reads when its key is absent: its `@default`, else `empty`. */
 function jsonFallback(param: PluginParameter, empty: string): string {
   return typeof param.default === 'string' && param.default !== ''
-    ? escapeJSString(escapeBlockComment(param.default))
+    ? escapeJSString(annotationText(param.default))
     : empty
 }
 
 function generateParamParser(param: PluginParameter): string {
-  return generateAccessorParser(`params['${escapeJSString(param.name)}']`, param)
+  return generateAccessorParser(`params['${escapeJSString(annotationText(param.name))}']`, param)
 }
 
 function generateArgParser(arg: PluginParameter): string {
-  return generateAccessorParser(`args['${escapeJSString(arg.name)}']`, arg)
+  return generateAccessorParser(`args['${escapeJSString(annotationText(arg.name))}']`, arg)
 }
 
 /**
@@ -1004,7 +1004,7 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) {
     return '0'
   }
-  return `'${escapeJSString(escapeBlockComment(String(value ?? '')))}'`
+  return `'${escapeJSString(annotationText(String(value ?? '')))}'`
 }
 
 // Reserved words that would cause a SyntaxError if used as `const <name>`.
@@ -1341,6 +1341,12 @@ export function validatePlugin(plugin: PluginDefinition): {
         `${field}: "*/" is written as "*\\/" so it cannot end the comment.`
       )
     }
+    if (/[\r\n]/.test(value)) {
+      report(
+        `line break ${field}`,
+        `${field}: a line break is written as a space, because each annotation is one line.`
+      )
+    }
     const tag = /@(\w+)/.exec(value)
     if (tag) {
       report(`tag ${field}`, `${field}: "@${tag[1]}" is read by MZ as a new annotation tag.`)
@@ -1362,7 +1368,7 @@ export function generateCommandSkeleton(cmd: PluginCommand): string {
   const lines: string[] = []
   lines.push(`// --- ${escapeLineComment(cmd.name)} ---`)
   lines.push(
-    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(cmd.name)}', function(args) {`
+    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
   )
   lines.push(`    // TODO: Implement ${escapeJSString(cmd.name)} logic`)
   lines.push('});')

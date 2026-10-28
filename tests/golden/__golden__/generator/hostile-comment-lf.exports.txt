@@ -184,84 +184,47 @@ globalThis.__pwn = 1; /* Y - Initial release
 
 // ==== case: generateHeaderOnly
 /*:
- * @target X *\/
-globalThis.__pwn = 1; /* Y
- * @plugindesc X *\/
-globalThis.__pwn = 1; /* Y
- * @author X *\/
-globalThis.__pwn = 1; /* Y
- * @url X *\/
-globalThis.__pwn = 1; /* Y
- * @base X *\/
-globalThis.__pwn = 1; /* Y
- * @orderAfter X *\/
-globalThis.__pwn = 1; /* Y
- * @orderBefore X *\/
-globalThis.__pwn = 1; /* Y
- * @noteParam X *\/
-globalThis.__pwn = 1; /* Y
- * @noteType X *\/
-globalThis.__pwn = 1; /* Y
- * @noteDir X *\/
-globalThis.__pwn = 1; /* Y
- * @noteData X *\/
-globalThis.__pwn = 1; /* Y
- * @requiredAssets X *\/
-globalThis.__pwn = 1; /* Y
+ * @target X *\/ globalThis.__pwn = 1; /* Y
+ * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
+ * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @url X *\/ globalThis.__pwn = 1; /* Y
+ * @base X *\/ globalThis.__pwn = 1; /* Y
+ * @orderAfter X *\/ globalThis.__pwn = 1; /* Y
+ * @orderBefore X *\/ globalThis.__pwn = 1; /* Y
+ * @noteParam X *\/ globalThis.__pwn = 1; /* Y
+ * @noteType X *\/ globalThis.__pwn = 1; /* Y
+ * @noteDir X *\/ globalThis.__pwn = 1; /* Y
+ * @noteData X *\/ globalThis.__pwn = 1; /* Y
+ * @requiredAssets X *\/ globalThis.__pwn = 1; /* Y
  *
- * @param X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
- * @option Option X *\/
-globalThis.__pwn = 1; /* Y
- * @value Value X *\/
-globalThis.__pwn = 1; /* Y
- * @default X *\/
-globalThis.__pwn = 1; /* Y
- * @parent X *\/
-globalThis.__pwn = 1; /* Y
+ * @param X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
+ * @option Option X *\/ globalThis.__pwn = 1; /* Y
+ * @value Value X *\/ globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
+ * @parent X *\/ globalThis.__pwn = 1; /* Y
  *
- * @command X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
+ * @command X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
  *
- * @arg X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
- * @on X *\/
-globalThis.__pwn = 1; /* Y
- * @off X *\/
-globalThis.__pwn = 1; /* Y
- * @default X *\/
-globalThis.__pwn = 1; /* Y
+ * @arg X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
+ * @on X *\/ globalThis.__pwn = 1; /* Y
+ * @off X *\/ globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
  *
- * @arg ComboX *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
- * @option Option X *\/
-globalThis.__pwn = 1; /* Y
- * @value Value X *\/
-globalThis.__pwn = 1; /* Y
- * @default X *\/
-globalThis.__pwn = 1; /* Y
+ * @arg ComboX *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
+ * @option Option X *\/ globalThis.__pwn = 1; /* Y
+ * @value Value X *\/ globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
  *
  * @help
  * X *\/
@@ -270,7 +233,7 @@ globalThis.__pwn = 1; /* Y
 
 // ==== case: generateCommandSkeleton X */\nglobalThis.__pwn = 1; /* Y
 // --- X */ globalThis.__pwn = 1; /* Y ---
-PluginManager.registerCommand(PLUGIN_NAME, 'X */\nglobalThis.__pwn = 1; /* Y', function(args) {
+PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/ globalThis.__pwn = 1; /* Y', function(args) {
     // TODO: Implement X */\nglobalThis.__pwn = 1; /* Y logic
 });
 
@@ -287,140 +250,149 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X */\nglobalThis.__pwn = 1; /* Y', f
   "warnings": [
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" is not a valid JS identifier (will still work in MZ)",
     "Plugin @target: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @target: a line break is written as a space, because each annotation is one line.",
     "Plugin @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @plugindesc: a line break is written as a space, because each annotation is one line.",
     "Plugin @author: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @author: a line break is written as a space, because each annotation is one line.",
     "Plugin @url: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @url: a line break is written as a space, because each annotation is one line.",
     "Plugin @base: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @base: a line break is written as a space, because each annotation is one line.",
     "Plugin @orderAfter: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @orderAfter: a line break is written as a space, because each annotation is one line.",
     "Plugin @orderBefore: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @orderBefore: a line break is written as a space, because each annotation is one line.",
     "Plugin @noteParam: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteParam: a line break is written as a space, because each annotation is one line.",
     "Plugin @noteType: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteType: a line break is written as a space, because each annotation is one line.",
     "Plugin @noteDir: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteDir: a line break is written as a space, because each annotation is one line.",
     "Plugin @noteData: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @noteData: a line break is written as a space, because each annotation is one line.",
     "Plugin @requiredAssets: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @requiredAssets: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @param: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @param: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @text: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @type: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @option: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @option: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @value: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @value: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @default: a line break is written as a space, because each annotation is one line.",
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @parent: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" @parent: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @command: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @command: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @text: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @arg: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @arg: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @text: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @type: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @on: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @on: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @off: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @off: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"X */\nglobalThis.__pwn = 1; /* Y\" @default: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @arg: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @arg: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @text: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @desc: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @type: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @option: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @option: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @value: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @value: a line break is written as a space, because each annotation is one line.",
     "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Command \"X */\nglobalThis.__pwn = 1; /* Y\" argument \"ComboX */\nglobalThis.__pwn = 1; /* Y\" @default: a line break is written as a space, because each annotation is one line.",
     "Plugin @help: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Localization \"ja\" @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Localization \"ja\" @plugindesc: a line break is written as a space, because each annotation is one line.",
     "Localization \"ja\" @help: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\": \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\": a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @param: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @param: a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @text: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @text: a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @desc: a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @type: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @type: a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @dir: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @dir: a line break is written as a space, because each annotation is one line.",
     "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @default: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
-    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @parent: \"*/\" is written as \"*\\/\" so it cannot end the comment."
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @default: a line break is written as a space, because each annotation is one line.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @parent: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" field \"X */\nglobalThis.__pwn = 1; /* Y\" @parent: a line break is written as a space, because each annotation is one line."
   ]
 }
 
 // ==== case: generateRawMode
 /*:
- * @target X *\/
-globalThis.__pwn = 1; /* Y
- * @plugindesc X *\/
-globalThis.__pwn = 1; /* Y
- * @author X *\/
-globalThis.__pwn = 1; /* Y
- * @url X *\/
-globalThis.__pwn = 1; /* Y
- * @base X *\/
-globalThis.__pwn = 1; /* Y
- * @orderAfter X *\/
-globalThis.__pwn = 1; /* Y
- * @orderBefore X *\/
-globalThis.__pwn = 1; /* Y
- * @noteParam X *\/
-globalThis.__pwn = 1; /* Y
- * @noteType X *\/
-globalThis.__pwn = 1; /* Y
- * @noteDir X *\/
-globalThis.__pwn = 1; /* Y
- * @noteData X *\/
-globalThis.__pwn = 1; /* Y
+ * @target X *\/ globalThis.__pwn = 1; /* Y
+ * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
+ * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @url X *\/ globalThis.__pwn = 1; /* Y
+ * @base X *\/ globalThis.__pwn = 1; /* Y
+ * @orderAfter X *\/ globalThis.__pwn = 1; /* Y
+ * @orderBefore X *\/ globalThis.__pwn = 1; /* Y
+ * @noteParam X *\/ globalThis.__pwn = 1; /* Y
+ * @noteType X *\/ globalThis.__pwn = 1; /* Y
+ * @noteDir X *\/ globalThis.__pwn = 1; /* Y
+ * @noteData X *\/ globalThis.__pwn = 1; /* Y
  * @noteRequire 1
- * @requiredAssets X *\/
-globalThis.__pwn = 1; /* Y
+ * @requiredAssets X *\/ globalThis.__pwn = 1; /* Y
  *
- * @param X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
+ * @param X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
  * @require 1
- * @option Option X *\/
-globalThis.__pwn = 1; /* Y
- * @value Value X *\/
-globalThis.__pwn = 1; /* Y
- * @default X *\/
-globalThis.__pwn = 1; /* Y
- * @parent X *\/
-globalThis.__pwn = 1; /* Y
+ * @option Option X *\/ globalThis.__pwn = 1; /* Y
+ * @value Value X *\/ globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
+ * @parent X *\/ globalThis.__pwn = 1; /* Y
  *
- * @command X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
+ * @command X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
  *
- * @arg X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
- * @on X *\/
-globalThis.__pwn = 1; /* Y
- * @off X *\/
-globalThis.__pwn = 1; /* Y
+ * @arg X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
+ * @on X *\/ globalThis.__pwn = 1; /* Y
+ * @off X *\/ globalThis.__pwn = 1; /* Y
  * @require 1
- * @default X *\/
-globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
  *
- * @arg ComboX *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
+ * @arg ComboX *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
  * @require 1
- * @option Option X *\/
-globalThis.__pwn = 1; /* Y
- * @value Value X *\/
-globalThis.__pwn = 1; /* Y
- * @default X *\/
-globalThis.__pwn = 1; /* Y
+ * @option Option X *\/ globalThis.__pwn = 1; /* Y
+ * @value Value X *\/ globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
  *
  * @help
  * X *\/
@@ -428,22 +400,14 @@ globalThis.__pwn = 1; /* Y
  */
 
 
-/*~struct~X *\/
-globalThis.__pwn = 1; /* Y:
- * @param X *\/
-globalThis.__pwn = 1; /* Y
- * @text Text X *\/
-globalThis.__pwn = 1; /* Y
- * @desc X *\/
-globalThis.__pwn = 1; /* Y
- * @type X *\/
-globalThis.__pwn = 1; /* Y
- * @dir X *\/
-globalThis.__pwn = 1; /* Y
+/*~struct~X *\/ globalThis.__pwn = 1; /* Y:
+ * @param X *\/ globalThis.__pwn = 1; /* Y
+ * @text Text X *\/ globalThis.__pwn = 1; /* Y
+ * @desc X *\/ globalThis.__pwn = 1; /* Y
+ * @type X *\/ globalThis.__pwn = 1; /* Y
+ * @dir X *\/ globalThis.__pwn = 1; /* Y
  * @require 1
- * @default X *\/
-globalThis.__pwn = 1; /* Y
- * @parent X *\/
-globalThis.__pwn = 1; /* Y
+ * @default X *\/ globalThis.__pwn = 1; /* Y
+ * @parent X *\/ globalThis.__pwn = 1; /* Y
  *
  */

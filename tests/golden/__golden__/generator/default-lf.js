@@ -7,8 +7,7 @@
  * @param Label
  * @desc Text to show.
  * @type string
- * @default l1
-l2
+ * @default l1 l2
  *
  * @param Pair
  * @desc Two values.
@@ -35,7 +34,7 @@ l2
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const label = params['Label'] ?? 'l1\nl2';
+    const label = params['Label'] ?? 'l1 l2';
     const pair = JSON.parse(params['Pair'] || '{"a":"b"}');
 
     // Register plugin commands

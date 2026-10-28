@@ -137,8 +137,7 @@ l2
  * @param Label
  * @desc Text to show.
  * @type string
- * @default l1
-l2
+ * @default l1 l2
  *
  * @param Pair
  * @desc Two values.
@@ -166,5 +165,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'Show', function(args) {
 {
   "valid": true,
   "errors": [],
-  "warnings": []
+  "warnings": [
+    "Parameter \"Label\" @default: a line break is written as a space, because each annotation is one line."
+  ]
 }

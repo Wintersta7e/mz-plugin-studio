@@ -17,12 +17,6 @@ import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance
 
 /** Case and rule pairs that fail today; each must fail, and every other pair must hold. */
 const KNOWN_NONCONFORMING: Record<string, AnnotationRule[]> = {
-  // A line break in a name, default, description or command text starts a line without `*`,
-  // and the header reads the name back cut at the break
-  'generator:param-name-lf': ['block-line', 'help-round-trip'],
-  'generator:default-lf': ['block-line'],
-  'generator:desc-lf': ['block-line'],
-  'generator:hostile-comment-lf': ['block-line'],
   // A help line starting with `@` reads as a tag and ends the help
   'generator:help-tag-line': ['help-round-trip']
 }

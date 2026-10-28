@@ -2,6 +2,7 @@
 // check for text it writes as an expression.
 import { describe, it, expect } from 'vitest'
 import {
+  annotationText,
   escapeBlockComment,
   escapeJSDoubleQuote,
   escapeJSString,
@@ -36,6 +37,20 @@ describe('escapeLineComment', () => {
       expect(escapeLineComment(once), JSON.stringify(input)).toBe(once)
     }
     expect(escapeLineComment('a\r\nb')).toBe('a b')
+  })
+})
+
+describe('annotationText', () => {
+  it('writes each line break as one space and keeps the comment open', () => {
+    expect(annotationText('a\nb')).toBe('a b')
+    expect(annotationText('a\r\nb')).toBe('a b')
+    expect(annotationText('a\rb')).toBe('a b')
+    expect(annotationText('x */ y')).toBe('x *\\/ y')
+  })
+
+  it('keeps the line separators, which end no annotation line', () => {
+    expect(annotationText('a b')).toBe('a b')
+    expect(annotationText('a b')).toBe('a b')
   })
 })
 
