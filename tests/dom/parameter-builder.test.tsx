@@ -10,7 +10,7 @@ import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { readFileByPath, savePluginToPath } from '../../src/main/ipc/plugin'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
-import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { generateParameterComment, generatePlugin } from '../../src/renderer/src/lib/generator'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
@@ -211,6 +211,20 @@ describe('parameter export to a file', () => {
       message: `Access denied: ${target} was not chosen in a save dialog`
     })
     await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+})
+
+describe('parameter usage comment', () => {
+  it('renaming a parameter rewrites the comment that names it in the plugin code', () => {
+    const store = usePluginStore.getState()
+    const existing = store.plugin.parameters[0]
+    store.setCustomCode(generateParameterComment(existing) + '\n')
+    render(<ParameterBuilder />)
+    fireEvent.click(screen.getByText(existing.text))
+    fireEvent.change(screen.getByDisplayValue('Existing'), { target: { value: 'Renamed' } })
+    const code = usePluginStore.getState().plugin.customCode
+    expect(code).toContain(generateParameterComment({ ...existing, name: 'Renamed' }))
+    expect(code).not.toContain(generateParameterComment(existing))
   })
 })
 

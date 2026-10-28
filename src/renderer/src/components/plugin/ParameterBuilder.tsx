@@ -778,24 +778,24 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
 }) {
   const onUpdate = useCallback(
     (updates: Partial<PluginParameter>) => {
+      // The stored parameter before this edit names the comment to replace
+      const before = usePluginStore.getState().plugin.parameters.find((p) => p.id === param.id)
       updateParameter(param.id, updates)
       if (
-        (updates.name !== undefined && updates.name !== param.name) ||
-        (updates.type !== undefined && updates.type !== param.type)
+        before &&
+        ((updates.name !== undefined && updates.name !== before.name) ||
+          (updates.type !== undefined && updates.type !== before.type))
       ) {
-        // Read full param + customCode from store at call time (R3-04 — narrow deps)
-        const store = usePluginStore.getState()
-        const current = store.plugin.customCode || ''
-        const fullParam = store.plugin.parameters.find((p) => p.id === param.id) ?? param
-        const oldComment = generateParameterComment(fullParam)
-        const newComment = generateParameterComment({ ...fullParam, ...updates } as PluginParameter)
+        const current = usePluginStore.getState().plugin.customCode || ''
+        const oldComment = generateParameterComment(before)
+        const newComment = generateParameterComment({ ...before, ...updates } as PluginParameter)
         const updated = current.replace(oldComment, newComment)
         if (updated !== current) {
           setCustomCode(updated)
         }
       }
     },
-    [param.id, param.name, param.type, updateParameter, setCustomCode]
+    [param.id, updateParameter, setCustomCode]
   )
 
   const onDelete = useCallback(() => {

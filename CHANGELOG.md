@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Renaming a parameter or changing its type again updates the comment that names it in the plugin code.
+
 ## [1.7.0] - 2026-10-23
 
 ### Upgrading from 1.6.x
