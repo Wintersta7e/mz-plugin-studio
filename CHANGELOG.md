@@ -5,6 +5,7 @@
 ### Fixed
 
 - Renaming a parameter or changing its type again updates the comment that names it in the plugin code.
+- The close button on an open plugin in the plugin browser and the favorite star on a template card are separate controls instead of buttons nested inside the row's button, and the favorite star names the template it adds or removes.
 
 ## [1.7.0] - 2026-10-23
 

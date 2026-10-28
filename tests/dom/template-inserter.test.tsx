@@ -44,6 +44,29 @@ describe('template dialog', () => {
     expect(onInsert).not.toHaveBeenCalled()
   })
 
+  it('a template card keeps its favourite button outside the select button', () => {
+    const { baseElement } = render(<TemplateInserter open onClose={vi.fn()} onInsert={vi.fn()} />)
+    fireEvent.change(screen.getByPlaceholderText(/search/i), {
+      target: { value: 'Custom Actor Property' }
+    })
+    expect(screen.getByText('Custom Actor Property')).toBeInTheDocument()
+    const nested = baseElement.querySelectorAll('button button')
+    console.log(`nested buttons ${nested.length}`)
+    expect(nested).toHaveLength(0)
+  })
+
+  it('the favourite button names its template and does not select the card', () => {
+    render(<TemplateInserter open onClose={vi.fn()} onInsert={vi.fn()} />)
+    fireEvent.change(screen.getByPlaceholderText(/search/i), {
+      target: { value: 'Custom Actor Property' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Custom Actor Property to favorites' }))
+    expect(
+      screen.getByRole('button', { name: 'Remove Custom Actor Property from favorites' })
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Property Name/)).not.toBeInTheDocument()
+  })
+
   it('inserts and copies a property name that passes the checks', async () => {
     const onInsert = vi.fn()
     openPropertyTemplate(onInsert, 'loyalty')

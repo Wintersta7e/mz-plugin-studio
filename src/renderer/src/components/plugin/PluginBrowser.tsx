@@ -334,16 +334,19 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
         ) : (
           <ul className="py-1">
             {filteredAndSorted.map((row) => (
-              <li key={row.filename}>
+              <li
+                key={row.filename}
+                className={cn(
+                  'group flex items-center text-sm transition-colors',
+                  'hover:bg-muted/70 has-[:focus-visible]:bg-muted/70',
+                  row.isActive && 'bg-primary/15 text-foreground',
+                  !row.isActive && row.openId && 'text-foreground',
+                  !row.openId && 'text-muted-foreground'
+                )}
+              >
                 <button
                   onClick={() => handleRowClick(row)}
-                  className={cn(
-                    'group relative flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors',
-                    'hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:outline-none',
-                    row.isActive && 'bg-primary/15 text-foreground',
-                    !row.isActive && row.openId && 'text-foreground',
-                    !row.openId && 'text-muted-foreground'
-                  )}
+                  className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left focus-visible:outline-none"
                   aria-current={row.isActive ? 'page' : undefined}
                   title={row.issueTitle ?? row.filename}
                 >
@@ -374,18 +377,18 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                       <CircleDot className="h-3 w-3 text-orange-500" aria-label="unsaved changes" />
                     )}
                   </span>
-
-                  {/* Close-if-open button — only visible on hover for open plugins */}
-                  {row.openId && (
-                    <button
-                      onClick={(e) => row.openId && handleClose(e, row.openId, row.name)}
-                      className="ml-1 hidden h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive hover:text-destructive-foreground group-hover:flex"
-                      aria-label={`Close ${row.name}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  )}
                 </button>
+
+                {/* Close-if-open button — only visible on hover for open plugins */}
+                {row.openId && (
+                  <button
+                    onClick={(e) => row.openId && handleClose(e, row.openId, row.name)}
+                    className="mr-3 hidden h-4 w-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-destructive hover:text-destructive-foreground group-hover:flex"
+                    aria-label={`Close ${row.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>

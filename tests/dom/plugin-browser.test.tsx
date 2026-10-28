@@ -67,6 +67,15 @@ describe('plugin browser', () => {
     expect(usePluginStore.getState().openPlugins).toEqual(tabs)
   })
 
+  it('an open plugin row keeps its close button outside the open button', async () => {
+    const { container } = render(<PluginBrowser onClose={() => {}} />)
+    fireEvent.click(await screen.findByTitle(FILE))
+    await screen.findByRole('button', { name: `Close ${FILE.replace(/\.js$/, '')}` })
+    const nested = container.querySelectorAll('button button')
+    console.log(`nested buttons ${nested.length}`)
+    expect(nested).toHaveLength(0)
+  })
+
   it('closing an unsaved tab asks with Cancel as the default', async () => {
     render(<PluginBrowser onClose={() => {}} />)
     fireEvent.click(await screen.findByTitle(FILE))

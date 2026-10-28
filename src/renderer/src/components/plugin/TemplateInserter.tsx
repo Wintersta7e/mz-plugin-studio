@@ -969,54 +969,57 @@ export function TemplateInserter({
                 {filteredTemplates.length > 0 ? (
                   <div className="space-y-2">
                     {filteredTemplates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => setSelectedTemplateId(template.id)}
-                        className={cn(
-                          'group relative w-full rounded-lg border p-3 text-left transition-all',
-                          selectedTemplateId === template.id
-                            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                            : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                        )}
-                      >
-                        <div className="flex items-start gap-2">
-                          <Code2
-                            className={cn(
-                              'mt-0.5 h-4 w-4 shrink-0',
-                              selectedTemplateId === template.id
-                                ? 'text-primary'
-                                : 'text-muted-foreground'
-                            )}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium text-sm truncate">{template.name}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                              {template.description}
-                            </div>
-                            {viewMode === 'all' && (
-                              <span className="mt-1 inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                {categoryNameMap[template.category] || template.category}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <div key={template.id} className="group relative">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleFavorite(template.id)
-                          }}
+                          onClick={() => setSelectedTemplateId(template.id)}
+                          className={cn(
+                            'w-full rounded-lg border p-3 text-left transition-all',
+                            selectedTemplateId === template.id
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                              : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                          )}
+                        >
+                          <div className="flex items-start gap-2">
+                            <Code2
+                              className={cn(
+                                'mt-0.5 h-4 w-4 shrink-0',
+                                selectedTemplateId === template.id
+                                  ? 'text-primary'
+                                  : 'text-muted-foreground'
+                              )}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-sm truncate">{template.name}</div>
+                              <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                {template.description}
+                              </div>
+                              {viewMode === 'all' && (
+                                <span className="mt-1 inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                  {categoryNameMap[template.category] || template.category}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => toggleFavorite(template.id)}
                           className={cn(
                             'absolute top-2 right-2 p-1 rounded-md transition-colors',
                             isFavorite(template.id)
                               ? 'text-amber-400 hover:text-amber-500'
                               : 'text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100'
                           )}
+                          aria-label={
+                            isFavorite(template.id)
+                              ? `Remove ${template.name} from favorites`
+                              : `Add ${template.name} to favorites`
+                          }
                         >
                           <Star
                             className={cn('h-3.5 w-3.5', isFavorite(template.id) && 'fill-current')}
                           />
                         </button>
-                      </button>
+                      </div>
                     ))}
                   </div>
                 ) : (
