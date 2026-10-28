@@ -2,10 +2,11 @@ import tsConfigPkg from '@electron-toolkit/eslint-config-ts'
 import prettierConfig from '@electron-toolkit/eslint-config-prettier'
 import reactPlugin from 'eslint-plugin-react'
 import reactHooksPlugin from 'eslint-plugin-react-hooks'
+import { defineConfig } from 'eslint/config'
 
-const { configs, config } = tsConfigPkg
+const { configs } = tsConfigPkg
 
-export default config(
+export default defineConfig(
   {
     ignores: [
       'node_modules',
