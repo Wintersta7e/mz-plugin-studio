@@ -1,8 +1,8 @@
 // Checks a coverage report from the repository root.
-//   suite:  every tracked source file is reported, and each directory's line coverage is at or
-//           above its floor (coverage/coverage-summary.json).
+//   suite:  every tracked source file is reported, and each directory's line and branch coverage
+//           is at or above its floors (coverage/coverage-summary.json).
 //   golden: each tracked generator file, covered by the golden tests alone, is at or above its
-//           floor (coverage/golden/coverage-summary.json).
+//           line floor (coverage/golden/coverage-summary.json).
 // Floors only rise: each is the measured value rounded down when it was set.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -14,14 +14,14 @@ const FLOORS = {
   // A file counts toward the deepest directory holding it, so `src/renderer/src/lib` excludes
   // `generator/`; `global` is the whole report.
   suite: {
-    'src/main': 60,
-    'src/preload': 0,
-    'src/shared': 86,
-    'src/renderer/src/stores': 83,
-    'src/renderer/src/lib': 93,
-    [GENERATOR]: 91,
-    'src/renderer/src/components': 0,
-    global: 69
+    'src/main': { lines: 60, branches: 77 },
+    'src/preload': { lines: 0, branches: 0 },
+    'src/shared': { lines: 86, branches: 98 },
+    'src/renderer/src/stores': { lines: 83, branches: 87 },
+    'src/renderer/src/lib': { lines: 93, branches: 87 },
+    [GENERATOR]: { lines: 91, branches: 85 },
+    'src/renderer/src/components': { lines: 0, branches: 50 },
+    global: { lines: 69, branches: 75 }
   },
   golden: {
     // Each category module under templates/, that is every file there but index.ts and types.ts.
@@ -48,15 +48,20 @@ const SUMMARY = {
 const print = (line) => process.stdout.write(`${line}\n`)
 const percent = ({ covered, total }) => (total === 0 ? 100 : (covered / total) * 100)
 const atFloor = (lines, floor) => `${percent(lines).toFixed(2)}% (floor ${floor}%)`
+const below = (sum, floors) =>
+  percent(sum.lines) < floors.lines || percent(sum.branches) < floors.branches
+const bothAtFloor = (sum, floors) =>
+  `lines ${atFloor(sum.lines, floors.lines)}, branches ${atFloor(sum.branches, floors.branches)}`
 
-/** Report entries by repository-relative path, with `/` separators. */
+/** Report entries ({ lines, branches }) by repository-relative path, with `/` separators. */
 function readReport(path) {
   const summary = JSON.parse(readFileSync(path, 'utf8'))
   const files = new Map()
-  for (const [key, value] of Object.entries(summary)) {
-    if (key !== 'total') files.set(relative(process.cwd(), key).split(sep).join('/'), value.lines)
+  for (const [key, { lines, branches }] of Object.entries(summary)) {
+    if (key !== 'total')
+      files.set(relative(process.cwd(), key).split(sep).join('/'), { lines, branches })
   }
-  return { files, total: summary.total.lines }
+  return { files, total: { lines: summary.total.lines, branches: summary.total.branches } }
 }
 
 /** Tracked TypeScript sources under `dir`, declaration files excluded. */
@@ -76,25 +81,35 @@ function checkSuite({ files, total }) {
   print(`coverage scope: ${reported} reported / ${tracked.length} tracked`)
   if (tracked.length === 0 || reported !== tracked.length) failed = true
 
+  for (const [path, entry] of [...files, ['total', total]]) {
+    if (entry.branches === undefined) {
+      print(`coverage summary entry without branches: ${path}`)
+      return true
+    }
+  }
+
   const dirs = Object.keys(FLOORS.suite).filter((dir) => dir !== 'global')
-  const sums = new Map(dirs.map((dir) => [dir, { covered: 0, total: 0, files: 0 }]))
-  for (const [path, lines] of files) {
+  const zero = () => ({ covered: 0, total: 0 })
+  const sums = new Map(dirs.map((dir) => [dir, { lines: zero(), branches: zero(), files: 0 }]))
+  for (const [path, entry] of files) {
     const owner = dirs
       .filter((dir) => path.startsWith(`${dir}/`))
       .sort((a, b) => b.length - a.length)[0]
     if (owner === undefined) continue
     const sum = sums.get(owner)
-    sum.covered += lines.covered
-    sum.total += lines.total
+    for (const kind of ['lines', 'branches']) {
+      sum[kind].covered += entry[kind].covered
+      sum[kind].total += entry[kind].total
+    }
     sum.files++
   }
   for (const [dir, sum] of sums) {
-    const floor = FLOORS.suite[dir]
-    print(`coverage floor ${dir}: ${atFloor(sum, floor)}, files ${sum.files}`)
-    if (sum.files === 0 || percent(sum) < floor) failed = true
+    const floors = FLOORS.suite[dir]
+    print(`coverage floor ${dir}: ${bothAtFloor(sum, floors)}, files ${sum.files}`)
+    if (sum.files === 0 || below(sum, floors)) failed = true
   }
-  print(`coverage floor global: ${atFloor(total, FLOORS.suite.global)}, files ${files.size}`)
-  if (files.size === 0 || percent(total) < FLOORS.suite.global) failed = true
+  print(`coverage floor global: ${bothAtFloor(total, FLOORS.suite.global)}, files ${files.size}`)
+  if (files.size === 0 || below(total, FLOORS.suite.global)) failed = true
   return failed
 }
 
@@ -110,7 +125,7 @@ function checkGolden({ files }) {
   let atBar = 0
   for (const path of paths) {
     const floor = goldenFloor(path)
-    const lines = files.get(path)
+    const lines = files.get(path)?.lines
     if (floor === undefined) {
       print(`golden coverage ${path}: no floor`)
     } else if (lines === undefined) {
