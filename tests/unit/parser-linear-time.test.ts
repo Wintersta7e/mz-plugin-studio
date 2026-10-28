@@ -107,16 +107,21 @@ function checkEquivalence<T>(
   expect(mismatches.length).toBe(0)
 }
 
-// The old expression with the tag read only at a line start, except that help with no end after
-// it (written last in a block) runs to the end of the header instead of reading as missing.
+// Help and the description end before a line that starts a tag (same line start as the tag
+// itself) or ends the comment. Help with no end after it (written last in a block) runs to the
+// end of the header instead of reading as missing.
+const LINE = String.raw`(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?`
 const oldHelp = (header: string): string | undefined =>
   header.match(
-    /(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i
-  )?.[1] ?? header.match(/(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@help\s*([\s\S]*)$/i)?.[1]
+    new RegExp(String.raw`${LINE}@help\s*([\s\S]*?)(?=\n(?:${LINE}@[a-z]|[^\S\r\n]*\*\/))`, 'i')
+  )?.[1] ?? header.match(new RegExp(String.raw`${LINE}@help\s*([\s\S]*)$`, 'i'))?.[1]
 const oldStrip = (value: string): string => value.replace(/\s*\*?\s*$/, '')
 const oldPlugindesc = (header: string): string | undefined =>
   header.match(
-    /(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s
+    new RegExp(
+      String.raw`${LINE}@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n(?:${LINE}@|[^\S\r\n]*\*\/)|$)`,
+      's'
+    )
   )?.[1]
 const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
 const oldScriptName = (content: string): string | undefined =>

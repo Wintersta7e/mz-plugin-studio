@@ -1,7 +1,7 @@
 // Edge case tests for PluginParser and raw mode round-trip
 import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
-import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
+import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/generator/index'
 import { toBaseline } from '../../src/shared/types/plugin'
 
 describe('PluginParser edge cases', () => {
@@ -542,5 +542,27 @@ describe('tags count only at the start of a line', () => {
     expect(plugin.commands.map((c) => [c.name, c.desc, c.args.length])).toEqual([
       ['go', 'Runs @command stop and @arg x', 0]
     ])
+  })
+
+  it('a tag on a line without a leading "*" ends the help and the description', () => {
+    const header =
+      '/*:\n@target MZ\n@plugindesc Demo\n@help\nSome help\n@param Speed\n@type number\n@default 3\n*/\n'
+    const plugin = PluginParser.parsePlugin(header)
+    expect(plugin.meta.description).toBe('Demo')
+    expect(plugin.meta.help).toBe('Some help')
+    expect(plugin.parameters.map((p) => [p.name, p.type, p.default])).toEqual([
+      ['Speed', 'number', 3]
+    ])
+    // Saved and read back, the help holds no copy of the parameter
+    const again = PluginParser.parsePlugin(generatePlugin(plugin))
+    expect(again.meta.help).toBe('Some help')
+    expect(again.parameters.map((p) => p.name)).toEqual(['Speed'])
+  })
+
+  it('a localized header without a leading "*" reads the same way', () => {
+    const plugin = PluginParser.parsePlugin(
+      '/*:\n * @plugindesc x\n */\n/*:ja\n@plugindesc Demo\n@help\nSome help\n@param Speed\n*/\n'
+    )
+    expect(plugin.meta.localizations?.ja).toEqual({ description: 'Demo', help: 'Some help' })
   })
 })

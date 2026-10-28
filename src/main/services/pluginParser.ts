@@ -47,59 +47,54 @@ function nextNonWsTable(text: string): Int32Array {
 }
 
 /**
- * Whether a tag body can end at `p`: a newline followed by `*` and then `/` or `@` (an `@` and a
- * letter when `letter` is set), with only whitespace in between.
+ * A help body ends at a line break before a line that starts a tag (`@` and a letter, the same
+ * line start as every tag) or the end of the comment; a description at any `@` there.
  */
-function bodyEndsAt(text: string, nextNonWs: Int32Array, p: number, letter: boolean): boolean {
-  if (text[p] !== '\n') return false
-  const star = nextNonWs[p + 1]
-  if (text[star] !== '*') return false
-  if (text[star + 1] === '/') return true
-  const at = nextNonWs[star + 1]
-  if (text[at] !== '@') return false
-  return !letter || (at + 1 < text.length && /[a-z]/i.test(text[at + 1]))
+const HELP_END = new RegExp(String.raw`\n(?:${LINE_START}@[a-z]|[^\S\r\n]*\*\/)`, 'iy')
+const DESC_END = new RegExp(String.raw`\n(?:${LINE_START}@|[^\S\r\n]*\*\/)`, 'y')
+
+/**
+ * First line break at or after `from` where `end` matches (-1 if none). Each test reads only the
+ * start of the line after the break, so the whole search is linear.
+ */
+function firstEnd(text: string, end: RegExp, from: number): number {
+  for (let p = text.indexOf('\n', from); p !== -1; p = text.indexOf('\n', p + 1)) {
+    end.lastIndex = p
+    if (end.test(text)) return p
+  }
+  return -1
 }
 
 /**
- * Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=\n\s*\*\s*@[a-z]|\n\s*\*\/)/i)?.[1],
- * in linear time, except that a body with no end after it runs to the end of the header (help
- * written last in a block).
+ * Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=<HELP_END>)/i)?.[1], in linear
+ * time, except that a body with no end after it runs to the end of the header (help written last
+ * in a block).
  */
 export function matchHelp(header: string): string | undefined {
-  const n = header.length
-  const nextNonWs = nextNonWsTable(header)
-  // nextEnd[p]: first index >= p where the body can end (-1 if none)
-  const nextEnd = new Int32Array(n + 1)
-  nextEnd[n] = -1
-  for (let p = n - 1; p >= 0; p--) {
-    nextEnd[p] = bodyEndsAt(header, nextNonWs, p, true) ? p : nextEnd[p + 1]
-  }
   const m = tagRegex('help', 'i').exec(header)
   if (m === null) return undefined
   const s0 = m.index + m[0].length
-  const e = nextNonWs[s0]
-  if (nextEnd[e] !== -1) return header.slice(e, nextEnd[e])
+  let e = s0
+  while (e < header.length && /\s/.test(header[e])) e++
+  const end = firstEnd(header, HELP_END, e)
+  if (end !== -1) return header.slice(e, end)
   // The regex gives back leading whitespace to reach an end inside it, capturing nothing
-  if (nextEnd[s0] !== -1) return ''
+  if (firstEnd(header, HELP_END, s0) !== -1) return ''
   // No end after the tag: the body runs to the end of the header
   return header.slice(e)
 }
 
 /**
- * Same result as
- * header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n\s*\*\s*@|\n\s*\*\/|$)/s)?.[1],
+ * Same result as header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=<DESC_END>|$)/s)?.[1],
  * in linear time.
  */
 export function matchPlugindesc(header: string): string | undefined {
   const m = tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*`).exec(header)
   if (m === null) return undefined
   const start = m.index + m[0].length
-  const nextNonWs = nextNonWsTable(header)
-  for (let p = start; p < header.length; p++) {
-    if (bodyEndsAt(header, nextNonWs, p, false)) return header.slice(start, p)
-  }
+  const end = firstEnd(header, DESC_END, start)
   // Written last in the block, it runs to the end of the header
-  return header.slice(start)
+  return end === -1 ? header.slice(start) : header.slice(start, end)
 }
 
 /**
