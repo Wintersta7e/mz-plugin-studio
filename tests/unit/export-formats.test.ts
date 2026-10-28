@@ -8,6 +8,7 @@ import {
   generateReadme
 } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
+import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance'
 import type {
   PluginDefinition,
@@ -676,5 +677,44 @@ describe('exports against the generated header', () => {
     expect(text).toContain('    "Move Speed": string\n')
     expect(text).toContain('    speed: string\n')
     expect(declaredParameters(text)).toEqual({ diagnostics: [], members: ['Move Speed', 'speed'] })
+  })
+})
+
+describe('type declaration namespace', () => {
+  const namespaceOf = (text: string): string | undefined => {
+    const first = ts
+      .createSourceFile(DTS, text, ts.ScriptTarget.Latest, true)
+      .statements.find(ts.isModuleDeclaration)
+    return first?.name.text
+  }
+
+  it('is the plugin name, or the name made an identifier when the validator refuses it', () => {
+    const table: [string, string][] = [
+      ['Good_Name1', 'Good_Name1'],
+      ['My-Plugin v2', 'My_Plugin_v2'],
+      ['1Plugin', '_1Plugin'],
+      ['Plügin', 'Pl_gin'],
+      ['', 'NewPlugin']
+    ]
+    for (const [name, expected] of table) {
+      const text = generateTypeDeclaration(createMinimalPlugin({ metaOverrides: { name } }))
+      expect(declarations(text).diagnostics, name).toEqual([])
+      expect(namespaceOf(text), name).toBe(expected)
+    }
+  })
+
+  it('keeps the original name in the header comment', () => {
+    const text = generateTypeDeclaration(
+      createMinimalPlugin({ metaOverrides: { name: 'My-Plugin\nv2' } })
+    )
+    expect(text.split('\n')[0]).toBe('// Type declarations for My-Plugin v2 v1.0.0')
+  })
+
+  it('parses for every corpus entry under its own plugin name', () => {
+    for (const { name, def } of GENERATOR_ENTRIES) {
+      expect.soft(declarations(generateTypeDeclaration(def)).diagnostics, name).toEqual([])
+    }
+    console.log(`type declaration namespace: ${GENERATOR_ENTRIES.length} entries`)
+    expect(GENERATOR_ENTRIES.length).toBeGreaterThan(0)
   })
 })

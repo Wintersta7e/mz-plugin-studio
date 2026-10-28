@@ -33,8 +33,8 @@ function blockValue(sink: BlockSink | undefined, field: string, value: string): 
 /** Whether a help line would be read as a tag: its first non-space character is `@`. */
 const HELP_TAG_LINE = /^(\s*)@/
 
-/** A command name the validator accepts: an identifier, as code that names the command uses it. */
-export const isCommandName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+/** A plugin or command name the validator accepts: an identifier, as code that names it uses it. */
+export const isIdentifierName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
 
 /**
  * A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
@@ -1180,7 +1180,7 @@ export function validatePlugin(plugin: PluginDefinition): {
   const warnings: string[] = []
 
   // Plugin name must be a valid identifier (used in PluginManager.parameters())
-  if (!plugin.meta.name || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(plugin.meta.name)) {
+  if (!isIdentifierName(plugin.meta.name)) {
     errors.push(
       'Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)'
     )
@@ -1257,7 +1257,7 @@ export function validatePlugin(plugin: PluginDefinition): {
     }
     cmdNames.add(cmd.name)
 
-    if (!isCommandName(cmd.name)) {
+    if (!isIdentifierName(cmd.name)) {
       errors.push(`Invalid command name: ${cmd.name} (must be valid identifier)`)
     }
 
