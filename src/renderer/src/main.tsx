@@ -8,17 +8,17 @@ class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { error: Error | null }
 > {
-  state: { error: Error | null } = { error: null }
+  override state: { error: Error | null } = { error: null }
 
   static getDerivedStateFromError(error: Error) {
     return { error }
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  override componentDidCatch(error: Error, info: React.ErrorInfo) {
     log.error('React Error Boundary caught:', error, info.componentStack)
   }
 
-  render() {
+  override render() {
     if (this.state.error) {
       return (
         <div

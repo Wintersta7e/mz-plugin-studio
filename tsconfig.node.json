@@ -4,6 +4,14 @@
   "compilerOptions": {
     "composite": true,
     "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noImplicitOverride": true,
+    "erasableSyntaxOnly": true,
+    "noPropertyAccessFromIndexSignature": true,
     "types": ["electron-vite/node"]
   }
 }

@@ -1,4 +1,4 @@
-import { type IpcMain, type IpcMainInvokeEvent } from 'electron'
+import type { IpcMain, IpcMainInvokeEvent } from 'electron'
 import { createHash, randomBytes } from 'crypto'
 import { constants } from 'fs'
 import { access, mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'fs/promises'

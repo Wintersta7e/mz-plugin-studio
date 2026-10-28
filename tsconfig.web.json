@@ -9,6 +9,12 @@
   "compilerOptions": {
     "composite": true,
     "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noImplicitOverride": true,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],
       "@/*": ["./src/renderer/src/*"]
