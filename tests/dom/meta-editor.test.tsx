@@ -164,4 +164,29 @@ describe('meta editor fields in the plugin code', () => {
     await user.paste('Alpha\nBeta')
     await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
   })
+
+  it.each([
+    ['Dependencies (one per line)', '@base'],
+    ['Order After (one per line)', '@orderAfter'],
+    ['Order Before (one per line)', '@orderBefore'],
+    ['Required Assets (one per line)', '@requiredAssets']
+  ])('keeps an Enter typed at the end of %s', async (label, tag) => {
+    const user = renderWithPreview()
+    await user.type(screen.getByLabelText(label), 'Alpha{Enter}Beta')
+    expect(screen.getByLabelText(label)).toHaveValue('Alpha\nBeta')
+    await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
+  })
+
+  it('shows the dependencies of the plugin opened after an Enter was typed', async () => {
+    const user = renderWithPreview()
+    await user.type(screen.getByLabelText('Dependencies (one per line)'), 'Alpha{Enter}')
+    expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Alpha\n')
+    const beta = createEmptyPlugin()
+    act(() =>
+      usePluginStore
+        .getState()
+        .openPlugin({ ...beta, meta: { ...beta.meta, dependencies: ['Beta'] } })
+    )
+    expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Beta')
+  })
 })

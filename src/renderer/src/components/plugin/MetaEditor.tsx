@@ -15,12 +15,29 @@ import {
   useActiveRawMode,
   useHeaderReadOnly
 } from '../../lib/raw-mode'
+import { nonBlankLines, normalizeLines, useTypedText } from '../../lib/typed-text'
 
 export function MetaEditor() {
   const meta = usePluginStore((s) => s.plugin.meta)
   const updateMeta = usePluginStore((s) => s.updateMeta)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
   const [showPluginNames, setShowPluginNames] = useState(false)
+  const [dependenciesText, setDependenciesText] = useTypedText(
+    meta.dependencies.join('\n'),
+    normalizeLines
+  )
+  const [orderAfterText, setOrderAfterText] = useTypedText(
+    (meta.orderAfter || []).join('\n'),
+    normalizeLines
+  )
+  const [orderBeforeText, setOrderBeforeText] = useTypedText(
+    (meta.orderBefore || []).join('\n'),
+    normalizeLines
+  )
+  const [requiredAssetsText, setRequiredAssetsText] = useTypedText(
+    (meta.requiredAssets || []).join('\n'),
+    normalizeLines
+  )
   // Raw mode keeps the file's language blocks, so their fields are read-only
   const rawMode = useActiveRawMode()
   const localizedReadOnly = rawMode
@@ -249,12 +266,11 @@ export function MetaEditor() {
             <Label htmlFor="dependencies">Dependencies (one per line)</Label>
             <Textarea
               id="dependencies"
-              value={meta.dependencies.join('\n')}
-              onChange={(e) =>
-                updateMeta({
-                  dependencies: e.target.value.split('\n').filter((s) => s.trim())
-                })
-              }
+              value={dependenciesText}
+              onChange={(e) => {
+                setDependenciesText(e.target.value)
+                updateMeta({ dependencies: nonBlankLines(e.target.value) })
+              }}
               placeholder="PluginName1&#10;PluginName2"
               rows={3}
               className="font-mono text-sm"
@@ -283,12 +299,11 @@ export function MetaEditor() {
             <Label htmlFor="orderAfter">Order After (one per line)</Label>
             <Textarea
               id="orderAfter"
-              value={(meta.orderAfter || []).join('\n')}
-              onChange={(e) =>
-                updateMeta({
-                  orderAfter: e.target.value.split('\n').filter((s) => s.trim())
-                })
-              }
+              value={orderAfterText}
+              onChange={(e) => {
+                setOrderAfterText(e.target.value)
+                updateMeta({ orderAfter: nonBlankLines(e.target.value) })
+              }}
               placeholder="PluginName (plugins that must load before this one)"
               rows={2}
               className="font-mono text-sm"
@@ -300,12 +315,11 @@ export function MetaEditor() {
             <Label htmlFor="orderBefore">Order Before (one per line)</Label>
             <Textarea
               id="orderBefore"
-              value={(meta.orderBefore || []).join('\n')}
-              onChange={(e) =>
-                updateMeta({
-                  orderBefore: e.target.value.split('\n').filter((s) => s.trim())
-                })
-              }
+              value={orderBeforeText}
+              onChange={(e) => {
+                setOrderBeforeText(e.target.value)
+                updateMeta({ orderBefore: nonBlankLines(e.target.value) })
+              }}
               placeholder="PluginName (plugins that must load after this one)"
               rows={2}
               className="font-mono text-sm"
@@ -317,12 +331,11 @@ export function MetaEditor() {
             <Label htmlFor="requiredAssets">Required Assets (one per line)</Label>
             <Textarea
               id="requiredAssets"
-              value={(meta.requiredAssets || []).join('\n')}
-              onChange={(e) =>
-                updateMeta({
-                  requiredAssets: e.target.value.split('\n').filter((s) => s.trim())
-                })
-              }
+              value={requiredAssetsText}
+              onChange={(e) => {
+                setRequiredAssetsText(e.target.value)
+                updateMeta({ requiredAssets: nonBlankLines(e.target.value) })
+              }}
               placeholder="img/pictures/title&#10;audio/bgm/theme"
               rows={3}
               className="font-mono text-sm"

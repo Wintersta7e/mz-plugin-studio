@@ -17,6 +17,7 @@ import {
   type ParamType
 } from '../../types/plugin'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { useTypedText } from '../../lib/typed-text'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -228,8 +229,24 @@ interface StructParamRowProps {
   allStructs: PluginStruct[]
 }
 
+/** Select options one per line, as value|label or just label when the two are the same. */
+const optionsText = (options: PluginParameter['options']): string =>
+  options?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
+
+const parseOptions = (text: string): NonNullable<PluginParameter['options']> =>
+  text
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [value, text] = line.includes('|') ? line.split('|') : [line, line]
+      return { value: value.trim(), text: (text || value).trim() }
+    })
+
+const normalizeOptions = (text: string): string => optionsText(parseOptions(text))
+
 function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRowProps) {
   const [expanded, setExpanded] = useState(false)
+  const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
 
   return (
     <div className="rounded border border-border bg-background p-2">
@@ -364,20 +381,10 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
                 Options (one per line, format: value|label or just label)
               </Label>
               <Textarea
-                value={
-                  param.options
-                    ?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text))
-                    .join('\n') || ''
-                }
+                value={optionsTyped}
                 onChange={(e) => {
-                  const options = e.target.value
-                    .split('\n')
-                    .filter(Boolean)
-                    .map((line) => {
-                      const [value, text] = line.includes('|') ? line.split('|') : [line, line]
-                      return { value: value.trim(), text: (text || value).trim() }
-                    })
-                  onUpdate({ options })
+                  setOptionsTyped(e.target.value)
+                  onUpdate({ options: parseOptions(e.target.value) })
                 }}
                 placeholder={'option1|Option 1\noption2|Option 2'}
                 rows={3}

@@ -87,6 +87,24 @@ describe('struct blocks', () => {
     })
   })
 
+  it('keeps a "|" and an Enter typed at the end of the options of a select field', async () => {
+    const user = renderTab([
+      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
+    ])
+    await user.click(screen.getByText('Point'))
+    await pick(user, 'String', 'Select')
+    // The first button of a field row shows its details
+    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    const options = screen.getByPlaceholderText(/^option1\|Option 1/)
+    await user.type(options, 'a|Alpha{Enter}b')
+    expect(options).toHaveValue('a|Alpha\nb')
+    await waitFor(() => {
+      const block = structBlock('Point')
+      expect(block).toContain(' * @option Alpha\n * @value a\n')
+      expect(block).toContain(' * @option b\n')
+    })
+  })
+
   it('writes a field holding another struct as that struct type', async () => {
     const user = renderTab([
       { ...createEmptyStruct(), name: 'Point' },
