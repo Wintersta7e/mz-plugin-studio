@@ -20,7 +20,7 @@ const FLOORS = {
     'src/renderer/src/stores': { lines: 95, branches: 87 },
     'src/renderer/src/lib': { lines: 95, branches: 87 },
     [GENERATOR]: { lines: 94, branches: 85 },
-    'src/renderer/src/components': { lines: 60, branches: 50 },
+    'src/renderer/src/components': { lines: 87, branches: 75 },
     global: { lines: 86, branches: 75 }
   },
   golden: {
