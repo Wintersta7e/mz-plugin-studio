@@ -181,6 +181,45 @@ describe('settings', () => {
     expect(screen.getByRole('button', { name: 'Reset!' })).toBeDisabled()
   })
 
+  it('a font size can be typed anew, and leaving the field keeps it from 10 to 24', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <SettingsDialog open onOpenChange={() => {}} />
+        <CodePreview />
+      </>
+    )
+    const [preview] = monacoStub.editors
+    const fontSize = (): unknown => preview.updateOptions.mock.lastCall?.[0].fontSize
+    const input = screen.getByLabelText('Font Size')
+
+    await user.type(input, '18', { initialSelectionStart: 0, initialSelectionEnd: 2 })
+    expect(input).toHaveValue(18)
+    expect(fontSize()).toBe(18)
+
+    await user.clear(input)
+    await user.type(input, '20')
+    await user.tab()
+    expect(input).toHaveValue(20)
+    expect(fontSize()).toBe(20)
+
+    await user.clear(input)
+    await user.type(input, '30')
+    await user.tab()
+    expect(input).toHaveValue(24)
+    expect(fontSize()).toBe(24)
+
+    await user.clear(input)
+    await user.type(input, '9{Enter}')
+    expect(input).toHaveValue(10)
+    expect(fontSize()).toBe(10)
+
+    // Leaving the field empty keeps the size it had
+    await user.clear(input)
+    await user.tab()
+    expect(input).toHaveValue(10)
+  })
+
   it('a default author fills the Author field of the next new plugin', async () => {
     const user = userEvent.setup()
     function Harness(): React.ReactElement {

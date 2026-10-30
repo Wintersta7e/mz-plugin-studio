@@ -138,6 +138,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [clearedRecentTemplates, setClearedRecentTemplates] = useState(false)
   const [clearedPresets, setClearedPresets] = useState(false)
   const [clearedSettings, setClearedSettings] = useState(false)
+  // The font size as typed: a size is kept within range only when the field is left
+  const [fontSizeDraft, setFontSizeDraft] = useState<string | null>(null)
+  const commitFontSize = (): void => {
+    if (fontSizeDraft) setEditorFontSize(Number(fontSizeDraft))
+    setFontSizeDraft(null)
+  }
 
   // Individual timer refs per button to avoid memory leak (LEAK-03)
   const recentTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -233,8 +239,17 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 type="number"
                 min={10}
                 max={24}
-                value={editorFontSize}
-                onChange={(e) => setEditorFontSize(Number(e.target.value))}
+                value={fontSizeDraft ?? editorFontSize}
+                onChange={(e) => {
+                  setFontSizeDraft(e.target.value)
+                  const size = Number(e.target.value)
+                  // A size already in range applies as it is typed
+                  if (e.target.value && size >= 10 && size <= 24) setEditorFontSize(size)
+                }}
+                onBlur={commitFontSize}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitFontSize()
+                }}
                 className="w-20"
               />
             </div>

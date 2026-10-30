@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- The Font Size setting can be typed anew: typing 18 no longer turns into 24 after the first digit. A size outside 10 to 24 is brought into that range when you leave the field or press Enter, and leaving it empty keeps the size it had.
 - The hint saying why Reload from project, Insert Template or Insert Code is unavailable now shows when you hover the disabled button, and a screen reader reads it as the button's description; in raw mode the template dialog gives the read-only notice there instead of the field errors.
 - A screen reader now reads out the field errors in the template dialog as they appear, and gives them as the reason the Insert Code button is disabled.
 - The report after importing a parameter file names each field it dropped and the parameter it belonged to, instead of only counting them.
