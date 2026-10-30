@@ -5,10 +5,12 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { readFileByPath, savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
+import { ToastContainer } from '../../src/renderer/src/components/ui/toast'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { savePlugin } from '../../src/renderer/src/lib/save-plugin'
@@ -18,7 +20,11 @@ import {
   useToastStore,
   useUIStore
 } from '../../src/renderer/src/stores'
-import { createEmptyCommand, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import {
+  createEmptyCommand,
+  createEmptyParameter,
+  createEmptyPlugin
+} from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
@@ -309,6 +315,7 @@ describe('code preview export', () => {
       vi.mocked(plugin.saveToPath).mock.invocationCallOrder[0]
     )
     expect(plugin.save).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Diff' })).toBeDisabled()
   })
 })
 
@@ -408,5 +415,157 @@ describe('code preview banner', () => {
     expect(banner).toHaveClass('bg-destructive/10', 'text-destructive-text')
     expect(banner).not.toHaveClass('text-warning-text')
     expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
+  })
+})
+
+describe('code preview panel', () => {
+  const EXPORTED = '/exports/Alpha.js'
+
+  const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
+  const diffButton = (): HTMLElement => screen.getByRole('button', { name: 'Diff' })
+
+  /** The save dialog answers `/exports/<name>` in turn; every write succeeds. */
+  function fakeExport(names: string[] = ['Alpha.js']): void {
+    const saveFile = vi.fn()
+    for (const name of names) saveFile.mockResolvedValueOnce(`/exports/${name}`)
+    window.api = createFakeApi({
+      dialog: { saveFile },
+      plugin: {
+        saveToPath: vi.fn(async (path: string) => ({ success: true as const, path, sha256: 'a1' })),
+        readByPath: vi.fn(async () => '// on disk')
+      }
+    })
+  }
+
+  it('shows the description in the code; Raw is unavailable for a plugin made in the app', async () => {
+    window.api = createFakeApi()
+    act(() => usePluginStore.getState().updateMeta({ description: 'Moves things' }))
+    render(<CodePreview />)
+    await waitFor(() => expect(preview()).toContain('@plugindesc Moves things'))
+    const raw = screen.getByRole('button', { name: 'Raw' })
+    expect(raw).toBeDisabled()
+    expect(raw).toHaveAttribute(
+      'title',
+      'Raw mode unavailable: plugin was not imported from a file'
+    )
+  })
+
+  it('Raw switches an imported plugin between its file text and the generated code', async () => {
+    const user = userEvent.setup()
+    window.api = createFakeApi()
+    const empty = createEmptyPlugin()
+    const imported = {
+      ...empty,
+      meta: { ...empty.meta, name: 'Alpha' },
+      importedFrom: 'Alpha.js'
+    }
+    const rawSource = `${generatePlugin(imported)}\n// body-kept\n`
+    act(() => usePluginStore.getState().openPlugin({ ...imported, rawSource }))
+    render(<CodePreview />)
+    await waitFor(() => expect(preview()).toContain('// body-kept'))
+
+    await user.click(screen.getByRole('button', { name: 'Raw ON' }))
+    expect(screen.getByRole('button', { name: 'Raw' })).toBeInTheDocument()
+    await waitFor(() => expect(preview()).toBe(generatePlugin({ ...imported, rawSource })))
+    expect(preview()).not.toContain('// body-kept')
+
+    await user.click(screen.getByRole('button', { name: 'Raw' }))
+    expect(screen.getByRole('button', { name: 'Raw ON' })).toBeInTheDocument()
+    await waitFor(() => expect(preview()).toContain('// body-kept'))
+  })
+
+  it('the error badge opens the list naming a duplicated parameter', async () => {
+    const user = userEvent.setup()
+    window.api = createFakeApi()
+    act(() => {
+      usePluginStore.getState().addParameter({ ...createEmptyParameter(), name: 'speed' })
+      usePluginStore.getState().addParameter({ ...createEmptyParameter(), name: 'speed' })
+    })
+    render(<CodePreview />)
+    expect(screen.queryByText('Duplicate parameter name: speed')).not.toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: /^1 error\b/ }))
+    expect(screen.getByText('Duplicate parameter name: speed')).toBeInTheDocument()
+  })
+
+  it('Copy puts the shown code on the clipboard and says so', async () => {
+    const user = userEvent.setup()
+    window.api = createFakeApi()
+    render(
+      <>
+        <CodePreview />
+        <ToastContainer />
+      </>
+    )
+    await user.click(screen.getByRole('button', { name: 'Copy' }))
+    expect(await screen.findByText('Code copied to clipboard')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copied!' })).toBeInTheDocument()
+    expect(await navigator.clipboard.readText()).toBe(preview())
+  })
+
+  it('Export with no project asks for a .js path, writes the shown code there and enables Diff', async () => {
+    const user = userEvent.setup()
+    fakeExport()
+    render(<CodePreview />)
+    expect(diffButton()).toBeDisabled()
+    const code = preview()
+
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() => expect(diffButton()).toBeEnabled())
+    expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
+      defaultPath: 'Alpha.js',
+      filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+    })
+    expect(window.api.plugin.saveToPath).toHaveBeenCalledWith(EXPORTED, code, { base: null })
+  })
+
+  it('each other format is written under its own name with no file check and leaves Diff off', async () => {
+    const user = userEvent.setup()
+    const formats = [
+      ['Export README.md', 'Alpha_README.md'],
+      ['Export .d.ts', 'Alpha.d.ts'],
+      ['Export plugins.json entry', 'Alpha_plugins-entry.json']
+    ]
+    fakeExport(formats.map(([, name]) => name))
+    const { saveFile } = window.api.dialog
+    const { saveToPath } = window.api.plugin
+    render(<CodePreview />)
+
+    for (const [item, name] of formats) {
+      const calls = vi.mocked(saveToPath).mock.calls.length
+      await user.click(screen.getByTitle('Export in other formats'))
+      await user.click(screen.getByText(item))
+      await waitFor(() => expect(saveToPath).toHaveBeenCalledTimes(calls + 1))
+      expect(vi.mocked(saveFile).mock.lastCall?.[0]).toMatchObject({ defaultPath: name })
+      expect(vi.mocked(saveToPath).mock.lastCall).toEqual([`/exports/${name}`, expect.any(String)])
+    }
+    expect(diffButton()).toBeDisabled()
+  })
+
+  it('a mousedown outside the formats menu closes it', async () => {
+    const user = userEvent.setup()
+    window.api = createFakeApi()
+    render(<CodePreview />)
+    await user.click(screen.getByTitle('Export in other formats'))
+    expect(screen.getByText('Export README.md')).toBeInTheDocument()
+    await user.click(screen.getByText('Generated Code'))
+    expect(screen.queryByText('Export README.md')).not.toBeInTheDocument()
+  })
+
+  it('Diff after an export compares the exported file with the shown code; Diff again goes back', async () => {
+    const user = userEvent.setup()
+    fakeExport()
+    render(<CodePreview />)
+    const code = preview()
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() => expect(diffButton()).toBeEnabled())
+
+    await user.click(diffButton())
+    expect(await screen.findByTestId('monaco-diff-original')).toHaveValue('// on disk')
+    expect(screen.getByTestId('monaco-diff-modified')).toHaveValue(code)
+    expect(window.api.plugin.readByPath).toHaveBeenCalledWith(EXPORTED)
+
+    await user.click(diffButton())
+    expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
+    expect(preview()).toBe(code)
   })
 })
