@@ -99,9 +99,27 @@ describe('parameter import from a file', () => {
       title: 'Import Report',
       message:
         'Imported 1 parameter. Skipped 2: "Shape" (unknown type), item 3 (not a parameter). ' +
-        'Dropped 1 field with the wrong type or an unknown name.'
+        'Dropped 1 field with the wrong type or an unknown name: "Label" (extra).'
     })
     expect(namesWhenShown).toEqual([['Existing', 'Label']])
+  })
+
+  it('names every field it dropped, by parameter and field', async () => {
+    const file = JSON.parse(fixtureText('invalid-unknown-type.mzparams'))
+    file.parameters[0].desc = 5
+    file.parameters[0].extra = 'not a parameter field'
+    file.parameters[1].type = 'select'
+    file.parameters[1].options = [{ value: 'a', text: 'A', note: 'not an option field' }]
+    const message = importFile(JSON.stringify(file))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message).toHaveBeenCalledWith({
+      type: 'warning',
+      title: 'Import Report',
+      message:
+        'Imported 2 parameters. Dropped 3 fields with the wrong type or an unknown name: ' +
+        '"Label" (desc), "Label" (extra), "Shape" (options[0].note).'
+    })
+    expect(namesWhenShown).toEqual([['Existing', 'Label', 'Shape']])
   })
 
   it('keeps an imported description inside the plugin comment when the plugin runs', async () => {

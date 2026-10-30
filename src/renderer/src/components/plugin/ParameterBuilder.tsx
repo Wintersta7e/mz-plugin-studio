@@ -161,7 +161,11 @@ function importReport(result: Extract<ParamImportResult, { success: true }>): st
     parts.push(`Skipped ${skipped.length}: ${items.join(', ')}.`)
   }
   if (dropped.length > 0) {
-    parts.push(`Dropped ${plural(dropped.length, 'field')} with the wrong type or an unknown name.`)
+    const items = dropped.map((d) => `"${d.param}" (${d.field})`)
+    parts.push(
+      `Dropped ${plural(dropped.length, 'field')} with the wrong type or an unknown name: ` +
+        `${items.join(', ')}.`
+    )
   }
   return parts.join(' ')
 }
