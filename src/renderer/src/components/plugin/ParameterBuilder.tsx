@@ -445,7 +445,8 @@ export function ParameterBuilder() {
     setDropTargetId(null)
   }, [])
 
-  // The selection toolbar stays outside the lock: selecting, exporting and saving a preset only read
+  // The selection toolbar and the row checkboxes stay outside the lock: selecting, exporting and
+  // saving a preset only read
   const lock = {
     disabled: headerReadOnly,
     title: headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
@@ -564,7 +565,7 @@ export function ParameterBuilder() {
         )}
       </div>
 
-      <fieldset {...lock} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <ScrollArea className="flex-1">
           <div className="space-y-2 p-4">
             {parameters.length === 0 ? (
@@ -579,6 +580,7 @@ export function ParameterBuilder() {
                   param={param}
                   isExpanded={expandedId === param.id}
                   isSelected={selectedIds.has(param.id)}
+                  readOnly={headerReadOnly}
                   isDragging={draggedId === param.id}
                   isDropTarget={dropTargetId === param.id}
                   anyDragging={draggedId !== null}
@@ -605,7 +607,7 @@ export function ParameterBuilder() {
             )}
           </div>
         </ScrollArea>
-      </fieldset>
+      </div>
 
       {/* Preset Name dialog */}
       <Dialog
@@ -733,6 +735,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   param,
   isExpanded,
   isSelected,
+  readOnly,
   isDragging,
   isDropTarget,
   anyDragging,
@@ -758,6 +761,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   param: PluginParameter
   isExpanded: boolean
   isSelected: boolean
+  readOnly: boolean
   isDragging: boolean
   isDropTarget: boolean
   anyDragging: boolean
@@ -842,6 +846,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         param={param}
         expanded={isExpanded}
         isSelected={isSelected}
+        readOnly={readOnly}
         onToggleSelect={onToggleSelect}
         onToggle={onToggle}
         onUpdate={onUpdate}
@@ -869,6 +874,8 @@ interface ParameterCardProps {
   param: PluginParameter
   expanded: boolean
   isSelected: boolean
+  /** Locks the row's fields; its checkbox stays outside the lock so the row can still be selected */
+  readOnly: boolean
   onToggleSelect: () => void
   onToggle: () => void
   onUpdate: (updates: Partial<PluginParameter>) => void
@@ -947,6 +954,7 @@ const ParameterCard = memo(function ParameterCard({
   param,
   expanded,
   isSelected,
+  readOnly,
   onToggleSelect,
   onToggle,
   onUpdate,
@@ -996,6 +1004,10 @@ const ParameterCard = memo(function ParameterCard({
   const isNumericIdType = ['icon', 'map'].includes(param.type)
   const gameDataOptions = getGameDataOptions()
   const hasProjectData = gameDataOptions.length > 0
+  const lock = {
+    disabled: readOnly,
+    title: readOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+  }
   return (
     <div
       className={cn(
@@ -1037,17 +1049,19 @@ const ParameterCard = memo(function ParameterCard({
             </span>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-destructive hover:text-destructive"
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <fieldset {...lock}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </fieldset>
       </div>
 
       {/* Expanded content */}
@@ -1060,7 +1074,7 @@ const ParameterCard = memo(function ParameterCard({
             transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             className="overflow-hidden"
           >
-            <div className="border-t border-border p-4 space-y-4">
+            <fieldset {...lock} className="min-w-0 border-t border-border p-4 space-y-4">
               {/* Essential: Internal Name + Display Label */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1384,7 +1398,7 @@ const ParameterCard = memo(function ParameterCard({
                   )}
                 </>
               )}
-            </div>
+            </fieldset>
           </motion.div>
         )}
       </AnimatePresence>

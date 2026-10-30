@@ -2,7 +2,7 @@
 // saved (the plugin file or one of the export formats), or its control is read-only and says
 // why, or no control edits it. A field added to a type fails the typecheck here until listed.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
 import { CommandBuilder } from '../../src/renderer/src/components/plugin/CommandBuilder'
@@ -397,6 +397,26 @@ describe('header editors of an imported file with no main annotation block', () 
     const item = (name: RegExp): HTMLElement => screen.getByRole('menuitem', { name })
     expect(item(/Save Selection as Preset/)).not.toHaveAttribute('aria-disabled')
     expect(item(/Mine/)).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('a single parameter can be ticked and exported in raw mode while its row stays locked', async () => {
+    const api = createFakeApi({
+      dialog: { saveFile: vi.fn(async () => '/exports/Alpha-params.mzparams') }
+    })
+    window.api = api
+    const user = userEvent.setup()
+    render(<ParameterBuilder />)
+    const message = screen.getByText('メッセージ').closest<HTMLElement>('[draggable]')!
+    // The delete button has no name; it is the only button in the row header
+    expect(within(message).getByRole('button')).toBeDisabled()
+    await user.click(within(message).getByRole('checkbox'))
+    expect(within(message).getByRole('checkbox')).toBeChecked()
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() => expect(api.plugin.saveToPath).toHaveBeenCalledTimes(1))
+    const written: { parameters: PluginParameter[] } = JSON.parse(
+      vi.mocked(api.plugin.saveToPath).mock.calls[0][1]
+    )
+    expect(written.parameters.map((p) => p.name)).toEqual(['Message'])
   })
 
   it('a parameter cannot be dragged to a new place in raw mode', () => {
