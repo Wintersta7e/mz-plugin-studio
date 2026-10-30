@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Changing a parameter's type to Switch, Variable, Actor or Item with no project open no longer logs an error about its default value field in the developer console.
 - In raw mode, a single parameter of a plugin file with no main annotation block can now be selected with its row's checkbox, so Export and Save Selection as Preset can copy out just the parameters you tick instead of all of them; the row's fields stay read-only.
 - The Font Size setting can be typed anew: typing 18 no longer turns into 24 after the first digit. A size outside 10 to 24 is brought into that range when you leave the field or press Enter, and leaving it empty keeps the size it had.
 - The hint saying why Reload from project, Insert Template or Insert Code is unavailable now shows when you hover the disabled button, and a screen reader reads it as the button's description; in raw mode the template dialog gives the read-only notice there instead of the field errors.

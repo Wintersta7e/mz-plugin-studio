@@ -25,7 +25,6 @@ import {
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { MZProject } from '../../src/shared/types/mz'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import { expectConsole } from '../helpers/console-guard'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { ALL_PAYLOADS } from '../helpers/hostile'
 import { viaIpc } from './support/main-api'
@@ -437,8 +436,6 @@ describe('parameter rows', () => {
   })
 
   it('asks for a project before a switch default, then offers the project switches', async () => {
-    // The default field turns from a valued input into the empty placeholder input in place
-    expectConsole('error', /changing a controlled input to be uncontrolled/)
     const user = renderTab()
     await addParameter(user)
     await pickType(user, 'String', 'Switch')

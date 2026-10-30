@@ -1159,6 +1159,9 @@ const ParameterCard = memo(function ParameterCard({
                         </Select>
                       ) : (
                         <Input
+                          // Controlled like the default input it replaces in place
+                          value=""
+                          readOnly
                           disabled
                           placeholder="Load project first"
                           className="text-muted-foreground"
