@@ -45,6 +45,16 @@ const ARG_TYPES: { value: ParamType; label: string }[] = [
   { value: 'array', label: 'Array' }
 ]
 
+/** The parts of a command's skeleton that name it, escaped exactly as the skeleton writes them. */
+function skeletonMarkers(cmd: PluginCommand): string[] {
+  const [header, register, todo] = generateCommandSkeleton(cmd).split('\n')
+  const call = register.slice(
+    register.indexOf('registerCommand('),
+    register.lastIndexOf("', function(args) {") + 1
+  )
+  return [header, call, todo.trim()]
+}
+
 export function CommandBuilder() {
   const commands = usePluginStore((s) => s.plugin.commands)
   const addCommand = usePluginStore((s) => s.addCommand)
@@ -109,16 +119,13 @@ export function CommandBuilder() {
                   // Sync skeleton in customCode when command name changes
                   if (updates.name !== undefined && updates.name !== cmd.name) {
                     const current = customCode || ''
-                    const updated = current
-                      .replace(`// --- ${cmd.name} ---`, `// --- ${updates.name} ---`)
-                      .replace(
-                        `registerCommand(PLUGIN_NAME, '${cmd.name}'`,
-                        `registerCommand(PLUGIN_NAME, '${updates.name}'`
-                      )
-                      .replace(
-                        `// TODO: Implement ${cmd.name} logic`,
-                        `// TODO: Implement ${updates.name} logic`
-                      )
+                    const before = skeletonMarkers(cmd)
+                    const after = skeletonMarkers({ ...cmd, name: updates.name })
+                    // A function inserts the name literally: a string would expand $' $` $& in it
+                    const updated = before.reduce(
+                      (code, marker, i) => code.replace(marker, () => after[i]),
+                      current
+                    )
                     if (updated !== current) {
                       setCustomCode(updated)
                     }

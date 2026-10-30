@@ -113,6 +113,20 @@ describe('code preview export with no project', () => {
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
   })
 
+  it('says what the type declarations declare otherwise than the plugin names it', async () => {
+    const target = join(tmp, 'My-Plugin.d.ts')
+    wireMainSave(target)
+    act(() => usePluginStore.getState().updateMeta({ name: 'My-Plugin' }))
+    render(<CodePreview />)
+    clickExportDts()
+    await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+    expect(useToastStore.getState().toasts[0]).toMatchObject({
+      type: 'warning',
+      message:
+        'Exported, with 1 change to fit TypeScript: plugin name "My-Plugin" is declared as My_Plugin'
+    })
+  })
+
   it('writes the plugin again on a second export to the same path', async () => {
     const target = join(tmp, 'Alpha.js')
     wireMainSave(target)
@@ -200,7 +214,7 @@ describe('code preview export under another file name', () => {
     title: 'File name differs from plugin name',
     message:
       '"Renamed.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands would not work in a game. Save anyway?',
-    buttons: ['Cancel', 'Save anyway']
+    buttons: ['Cancel', 'Choose another file', 'Save anyway']
   }
 
   beforeEach(() => {
@@ -222,7 +236,7 @@ describe('code preview export under another file name', () => {
   it('asks first; Save anyway writes the file once', async () => {
     const target = join(tmp, 'Renamed.js')
     wireMainSave(target)
-    vi.mocked(window.api.dialog.message).mockResolvedValueOnce(1)
+    vi.mocked(window.api.dialog.message).mockResolvedValueOnce(2)
     render(<CodePreview />)
     clickExport()
     await waitFor(() => expect(successToasts()).toHaveLength(1))

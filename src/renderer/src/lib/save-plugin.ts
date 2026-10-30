@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-types'
-import { fileNameMismatch, isImported, saveFileName } from './plugin-output'
+import { fileNameMismatch, fileNameOf, isImported, saveFileName } from './plugin-output'
 import { prepareSave, reloadFromProject } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
 import { userMessage } from './utils'
@@ -35,9 +35,10 @@ const NOT_SAVED: Record<NotSavedKind, string> = {
 // Paths the save dialog returned this session: main lets the app write them again until it quits
 const chosenPaths = new Set<string>()
 
-const nameOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? plugin.meta.name
+// Paths the user chose to save to under another name than the plugin's, this session
+const confirmedPaths = new Set<string>()
 
-const fileNameOf = (path: string): string => path.split(/[\\/]/).pop() ?? path
+const nameOf = (plugin: PluginDefinition): string => plugin.importedFrom ?? plugin.meta.name
 
 function findOpenPlugin(pluginId: string): PluginDefinition {
   const { plugin: active, openPlugins } = usePluginStore.getState()
@@ -91,20 +92,32 @@ const LOST = {
   parameters: 'its parameters'
 }
 
-/** Whether to write `plugin` to `filePath`, asking first when the file is not named after it. */
-async function confirmFileName(plugin: PluginDefinition, filePath: string): Promise<boolean> {
-  const mismatch = fileNameMismatch(plugin, filePath)
-  if (mismatch === null) return true
+/**
+ * Whether to write `code`, the code of `plugin`, to `filePath`, asking first when the file is not
+ * named after it; `choose` when the user wants to pick another file.
+ */
+async function confirmFileName(
+  plugin: PluginDefinition,
+  filePath: string,
+  code: string
+): Promise<'save' | 'cancel' | 'choose'> {
+  if (confirmedPaths.has(filePath)) return 'save'
+  const mismatch = fileNameMismatch(plugin, filePath, code)
+  if (mismatch === null) return 'save'
   const what = LOST[mismatch.commands ? (mismatch.parameters ? 'both' : 'commands') : 'parameters']
   const answer = await window.api.dialog.message({
     type: 'warning',
     title: 'File name differs from plugin name',
     message: `"${fileNameOf(filePath)}" is not named after the plugin "${plugin.meta.name}". RPG Maker MZ finds a plugin's commands by its exact file name and its parameters by its file name in any letter case, so ${what} would not work in a game. Save anyway?`,
-    buttons: ['Cancel', 'Save anyway']
+    buttons: ['Cancel', 'Choose another file', 'Save anyway']
   })
-  if (answer === 1) return true
+  if (answer === 1) return 'choose'
+  if (answer === 2) {
+    confirmedPaths.add(filePath)
+    return 'save'
+  }
   log.warn('[save] refused', nameOf(plugin), 'file name differs')
-  return false
+  return 'cancel'
 }
 
 /**
@@ -171,17 +184,27 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void
         mode === 'save'
           ? (baseByPluginId[plugin.id]?.path ?? savedPathsByPluginId[plugin.id])
           : undefined
-      const filePath =
+      const askPath = (defaultPath: string): Promise<string | null> =>
+        window.api.dialog.saveFile({
+          defaultPath,
+          filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+        })
+      let filePath =
         known !== undefined && chosenPaths.has(known)
           ? known
-          : await window.api.dialog.saveFile({
-              defaultPath: known ?? (plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js'),
-              filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
-            })
-      if (!filePath) return
-      if (!(await confirmFileName(plugin, filePath))) return
-      chosenPaths.add(filePath)
-      write = (guard) => window.api.plugin.saveToPath(filePath, code, guard)
+          : await askPath(known ?? (plugin.meta.name ? saveFileName(plugin) : 'NewPlugin.js'))
+      for (;;) {
+        if (!filePath) return
+        const answer = await confirmFileName(plugin, filePath, code)
+        if (answer === 'cancel') return
+        if (answer === 'save') break
+        // The folder of the file just chosen, at a file named after the plugin
+        const folder = filePath.slice(0, filePath.length - fileNameOf(filePath).length)
+        filePath = await askPath(`${folder}${plugin.meta.name}.js`)
+      }
+      const chosen = filePath
+      chosenPaths.add(chosen)
+      write = (guard) => window.api.plugin.saveToPath(chosen, code, guard)
     }
     const result = await writeAsking(plugin, write)
     if (result === null) return

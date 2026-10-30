@@ -20,11 +20,7 @@ import {
   useUIStore
 } from '../../stores'
 import { validatePlugin } from '../../lib/generator'
-import {
-  generatePluginsJsonEntry,
-  generateTypeDeclaration,
-  generateReadme
-} from '../../lib/exportFormats'
+import { generatePluginsJsonEntry, generateReadme, typeDeclaration } from '../../lib/exportFormats'
 import { generatePluginOutput, isImported, isRawMode } from '../../lib/plugin-output'
 import type { PluginOutput } from '../../lib/plugin-output'
 import { reloadFromProject } from '../../lib/raw-mode'
@@ -234,6 +230,8 @@ export function CodePreview() {
       let content: string
       let defaultName: string
       let filters: { name: string; extensions: string[] }[]
+      // What the file declares otherwise than the plugin names it
+      let notes: string[] = []
 
       switch (format) {
         case 'readme':
@@ -241,11 +239,14 @@ export function CodePreview() {
           defaultName = `${plugin.meta.name || 'NewPlugin'}_README.md`
           filters = [{ name: 'Markdown Files', extensions: ['md'] }]
           break
-        case 'dts':
-          content = generateTypeDeclaration(plugin)
+        case 'dts': {
+          const declaration = typeDeclaration(plugin)
+          content = declaration.content
+          notes = declaration.notes
           defaultName = `${plugin.meta.name || 'NewPlugin'}.d.ts`
           filters = [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }]
           break
+        }
         case 'plugins-json':
           content = generatePluginsJsonEntry(plugin)
           defaultName = `${plugin.meta.name || 'NewPlugin'}_plugins-entry.json`
@@ -257,7 +258,15 @@ export function CodePreview() {
       if (filePath) {
         try {
           await window.api.plugin.saveToPath(filePath, content)
-          addToast({ type: 'success', message: 'Plugin exported successfully' })
+          if (notes.length === 0) {
+            addToast({ type: 'success', message: 'Plugin exported successfully' })
+          } else {
+            addToast({
+              type: 'warning',
+              message: `Exported, with ${notes.length} change${notes.length > 1 ? 's' : ''} to fit TypeScript: ${notes.join('; ')}`,
+              duration: NOTICE_MS
+            })
+          }
           log.info('[export] Plugin exported')
         } catch (error) {
           log.error('Failed to export:', error)

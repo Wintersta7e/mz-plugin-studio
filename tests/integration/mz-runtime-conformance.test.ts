@@ -228,9 +228,10 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
         r.commandsLost || r.parametersLost
           ? { commands: r.commandsLost, parameters: r.parametersLost }
           : null
-      expect(c && fileNameMismatch(c.definition, r.fileName), `${r.caseId} ${r.rename}`).toEqual(
-        lost
-      )
+      expect(
+        c && fileNameMismatch(c.definition, r.fileName, c.code),
+        `${r.caseId} ${r.rename}`
+      ).toEqual(lost)
     }
   })
 

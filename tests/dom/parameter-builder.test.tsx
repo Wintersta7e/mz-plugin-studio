@@ -226,6 +226,22 @@ describe('parameter usage comment', () => {
     expect(code).toContain(generateParameterComment({ ...existing, name: 'Renamed' }))
     expect(code).not.toContain(generateParameterComment(existing))
   })
+
+  it.each(["speed$'", 'speed$`', 'speed$&'])(
+    'renaming a parameter to %s changes only the comment in the plugin code',
+    (name) => {
+      const store = usePluginStore.getState()
+      const existing = store.plugin.parameters[0]
+      const rest = '\nfunction tick() { return speed * 2; }\n'
+      store.setCustomCode(generateParameterComment(existing) + rest)
+      render(<ParameterBuilder />)
+      fireEvent.click(screen.getByText(existing.text))
+      fireEvent.change(screen.getByDisplayValue('Existing'), { target: { value: name } })
+      expect(usePluginStore.getState().plugin.customCode).toBe(
+        generateParameterComment({ ...existing, name }) + rest
+      )
+    }
+  )
 })
 
 describe('parameter prompts that discard work', () => {

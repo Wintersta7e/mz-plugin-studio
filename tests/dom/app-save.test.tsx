@@ -259,7 +259,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       title: 'File name differs from plugin name',
       message:
         '"Chosen.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands and parameters would not work in a game. Save anyway?',
-      buttons: ['Cancel', 'Save anyway']
+      buttons: ['Cancel', 'Choose another file', 'Save anyway']
     }
 
     function openWithBoth(): string {
@@ -287,7 +287,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
 
     it('asks first; Save anyway writes the file once', async () => {
       const target = join(root, 'Chosen.js')
-      window.api = createMainApi({ chosen: () => target, answers: [1] })
+      window.api = createMainApi({ chosen: () => target, answers: [2] })
       const id = openWithBoth()
       render(<App />)
       pressSave()
@@ -296,6 +296,67 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
       expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
       expect(isDirty(id)).toBe(false)
+    })
+
+    it('after Save anyway, does not ask again for that file', async () => {
+      const target = join(root, 'Chosen.js')
+      window.api = createMainApi({ chosen: () => target, answers: [2] })
+      openWithBoth()
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
+      pressSave()
+      await waitFor(() => expect(toasts()).toHaveLength(2))
+      expect(toasts()[1]).toBe('success: Plugin saved')
+      expect(messages()).toEqual([RENAMED])
+      expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+    })
+
+    it('Choose another file opens the save dialog at a file named after the plugin', async () => {
+      const target = join(root, 'Chosen.js')
+      const named = join(root, 'Alpha.js')
+      const chosen = [target, named]
+      window.api = createMainApi({ chosen: () => chosen.shift() ?? null, answers: [1] })
+      const id = openWithBoth()
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      expect(messages()).toEqual([RENAMED])
+      expect(vi.mocked(window.api.dialog.saveFile).mock.calls[1]).toEqual([
+        { defaultPath: named, filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }
+      ])
+      expect(await readFile(named, 'utf8')).toBe(generatePlugin(plugin()))
+      await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
+      expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(named)
+    })
+
+    it('does not ask for a loaded plugin whose code reads its own name from its file', async () => {
+      const source = [
+        '/*:',
+        ' * @target MZ',
+        ' * @plugindesc Reads its name from its file',
+        ' * @param Speed',
+        ' * @default 1',
+        ' * @command Show',
+        ' */',
+        '(() => {',
+        '  const name = document.currentScript.src.match(/([^/]+)\\.js$/)[1];',
+        '  const params = PluginManager.parameters(name);',
+        "  PluginManager.registerCommand(name, 'Show', () => {});",
+        '})();',
+        ''
+      ].join('\n')
+      await mkdir(dirname(fileIn('SelfNamed.js')), { recursive: true })
+      await writeFile(fileIn('SelfNamed.js'), source)
+      const target = join(root, 'Other.js')
+      window.api = createMainApi({ chosen: () => target })
+      await openFromProject(root, 'SelfNamed.js')
+      render(<App />)
+      pressSave()
+      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      expect(messages()).toEqual([])
+      expect(await readFile(target, 'utf8')).toBe(source)
     })
 
     it('does not ask for a file named after the plugin', async () => {

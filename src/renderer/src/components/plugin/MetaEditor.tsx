@@ -96,8 +96,10 @@ export function MetaEditor() {
               />
               {importedFrom !== undefined && (
                 <p className="text-xs text-muted-foreground">
-                  Loaded from {importedFrom}: the name is the file name. To save a copy under
-                  another name, use Export in the preview.
+                  Loaded from {importedFrom}: the name is the file name. Export in the preview can
+                  write a copy under another file name, but if the plugin&apos;s code names itself,
+                  the copy&apos;s commands and parameters may not work in a game; Export asks first
+                  when they would not.
                 </p>
               )}
             </div>

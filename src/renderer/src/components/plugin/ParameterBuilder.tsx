@@ -789,7 +789,8 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         const current = usePluginStore.getState().plugin.customCode || ''
         const oldComment = generateParameterComment(before)
         const newComment = generateParameterComment({ ...before, ...updates } as PluginParameter)
-        const updated = current.replace(oldComment, newComment)
+        // A function inserts the name literally: a string would expand $' $` $& in it
+        const updated = current.replace(oldComment, () => newComment)
         if (updated !== current) {
           setCustomCode(updated)
         }

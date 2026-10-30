@@ -7,6 +7,7 @@ import {
   hasMainBlock,
   scriptParseError
 } from './generator'
+import { escapeJSDoubleQuote, escapeJSString } from './generator/escape'
 
 export type OutputRefusal =
   | 'source-missing'
@@ -35,17 +36,25 @@ export function isRawMode(
 export const saveFileName = (plugin: Pick<PluginDefinition, 'importedFrom' | 'meta'>): string =>
   plugin.importedFrom ?? `${plugin.meta.name}.js`
 
+/** The last segment of `path`, with either separator. */
+export const fileNameOf = (path: string): string => path.split(/[\\/]/).pop() ?? path
+
 /**
- * What a plugin would lose in a game when saved to `filePath`: MZ finds its commands by the
- * exact file name and its parameters by the file name in any letter case. Null when nothing.
+ * What a plugin would lose in a game when `code`, the code a save writes, is saved to `filePath`:
+ * MZ finds its commands by the exact file name and its parameters by the file name in any letter
+ * case. Null when nothing, and when `code` never quotes the plugin's name: such code, as a loaded
+ * plugin's own may, reads its name from its file.
  */
 export function fileNameMismatch(
   plugin: Pick<PluginDefinition, 'meta' | 'parameters' | 'commands'>,
-  filePath: string
+  filePath: string,
+  code: string
 ): { commands: boolean; parameters: boolean } | null {
   const name = plugin.meta.name
   if (!name) return null
-  const stem = (filePath.split(/[\\/]/).pop() ?? filePath).replace(/\.js$/i, '')
+  const quoted = [`'${escapeJSString(name)}'`, `"${escapeJSDoubleQuote(name)}"`, `\`${name}\``]
+  if (!quoted.some((literal) => code.includes(literal))) return null
+  const stem = fileNameOf(filePath).replace(/\.js$/i, '')
   const commands = plugin.commands.length > 0 && stem !== name
   const parameters = plugin.parameters.length > 0 && stem.toLowerCase() !== name.toLowerCase()
   return commands || parameters ? { commands, parameters } : null
