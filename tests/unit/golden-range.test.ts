@@ -33,12 +33,17 @@ describe('golden commit range', () => {
     expect(resolveRange({ name: 'push', payload, sha: SHA })).toEqual({ skip: 'push (tag ref)' })
   })
 
-  it('pull request checks base..head', () => {
-    const payload = {
-      pull_request: { base: { sha: 'a'.repeat(40) }, head: { sha: 'd'.repeat(40) } }
-    }
-    expect(resolveRange({ name: 'pull_request', payload, sha: SHA })).toEqual({
-      range: `${'a'.repeat(40)}..${'d'.repeat(40)}`
+  it('pull request checks base..head and names who opened it', () => {
+    const pull_request = { base: { sha: 'a'.repeat(40) }, head: { sha: 'd'.repeat(40) } }
+    const range = `${'a'.repeat(40)}..${'d'.repeat(40)}`
+    const opened = { pull_request: { ...pull_request, user: { login: 'someone' } } }
+    expect(resolveRange({ name: 'pull_request', payload: opened, sha: SHA })).toEqual({
+      range,
+      openedBy: 'someone'
+    })
+    expect(resolveRange({ name: 'pull_request', payload: { pull_request }, sha: SHA })).toEqual({
+      range,
+      openedBy: ''
     })
   })
 

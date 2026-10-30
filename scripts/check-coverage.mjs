@@ -14,28 +14,28 @@ const FLOORS = {
   // A file counts toward the deepest directory holding it, so `src/renderer/src/lib` excludes
   // `generator/`; `global` is the whole report.
   suite: {
-    'src/main': { lines: 60, branches: 77 },
+    'src/main': { lines: 75, branches: 77 },
     'src/preload': { lines: 0, branches: 0 },
-    'src/shared': { lines: 86, branches: 98 },
-    'src/renderer/src/stores': { lines: 83, branches: 87 },
-    'src/renderer/src/lib': { lines: 93, branches: 87 },
-    [GENERATOR]: { lines: 91, branches: 85 },
-    'src/renderer/src/components': { lines: 0, branches: 50 },
-    global: { lines: 69, branches: 75 }
+    'src/shared': { lines: 100, branches: 98 },
+    'src/renderer/src/stores': { lines: 95, branches: 87 },
+    'src/renderer/src/lib': { lines: 95, branches: 87 },
+    [GENERATOR]: { lines: 94, branches: 85 },
+    'src/renderer/src/components': { lines: 60, branches: 50 },
+    global: { lines: 86, branches: 75 }
   },
   golden: {
     // Each category module under templates/, that is every file there but index.ts and types.ts.
     templateModules: 80,
     files: {
-      [`${GENERATOR}/index.ts`]: 90,
-      [`${GENERATOR}/escape.ts`]: 60,
+      [`${GENERATOR}/index.ts`]: 91,
+      [`${GENERATOR}/escape.ts`]: 91,
       // Below the 60% bar: lines 109-176 are exports no production code calls
       // (getClassOptions, getMethodOptions, searchClassesAndMethods).
       [`${GENERATOR}/class-registry.ts`]: 31,
       // Below the 60% bar: lines 31, 66, 74, 84-109 and 167 are exports only unit tests call
       // (unregisterTemplate, hasTemplate, getTemplateCount, generateFromTemplate, clearTemplates).
-      [`${GENERATOR}/templates/index.ts`]: 51,
-      [`${GENERATOR}/templates/types.ts`]: 60
+      [`${GENERATOR}/templates/index.ts`]: 52,
+      [`${GENERATOR}/templates/types.ts`]: 100
     }
   }
 }

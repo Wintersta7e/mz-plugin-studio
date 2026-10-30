@@ -6,6 +6,8 @@ const mocks = 'tests/setup/mocks.ts'
 const dom = 'tests/setup/dom.ts'
 // Fails a test on console.error/console.warn output it does not expect.
 const consoleGuard = 'tests/setup/console.ts'
+// Fails the run on a skipped, todo or expected-to-fail test, however it was written.
+const noSkips = './tests/setup/no-skips-reporter.ts'
 
 export default defineConfig({
   plugins: [react()],
@@ -21,6 +23,7 @@ export default defineConfig({
     allowOnly: false,
     // Gate logs are read by the count lines tests print.
     silent: false,
+    reporters: ['default', noSkips],
     // Floors live in scripts/check-coverage.mjs, so a golden-only run never meets suite floors.
     coverage: {
       provider: 'v8',

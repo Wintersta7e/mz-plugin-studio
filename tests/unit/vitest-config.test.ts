@@ -11,6 +11,10 @@ describe('vitest config', () => {
     expect(config.test?.allowOnly).toBe(false)
   })
 
+  it('fails every run on a skipped test through the skip counter', () => {
+    expect(config.test?.reporters).toEqual(['default', './tests/setup/no-skips-reporter.ts'])
+  })
+
   it('every project fails a test on unexpected console output', () => {
     const projects = config.test?.projects ?? []
     console.log(`projects ${projects.length}`)

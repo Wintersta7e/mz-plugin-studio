@@ -164,6 +164,12 @@ npm run test:golden    # generated-plugin output against the golden corpus
 npm run build:win      # portable Windows build into dist/
 ```
 
+A test run fails when any test is skipped, left as a todo or marked to pass by failing. The one allowed skip is the check that the suite's plugin loader stand-in behaves like RPG Maker MZ's own core scripts: it needs a local RPG Maker MZ install, so it runs only when `MZ_CORESCRIPT_DIR` names the install's folder that holds `rmmz_managers.js` and the other core scripts. Run it after changing `tests/helpers/mz-runtime.ts`, `tests/helpers/mz-conformance.ts` or generated output:
+
+```bash
+MZ_CORESCRIPT_DIR=<core-scripts-folder> npm test -- --project node tests/integration/mz-parity.test.ts
+```
+
 ## Layout
 
 ```
@@ -206,7 +212,7 @@ use the latest release.
 
 ## Contributing
 
-Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run check` and `npm run check:commits`.
+Issues are welcome. For anything larger than a small fix, open an issue before a pull request. Before submitting, run `npm run check` and `npm run check:commits`. Each commit's subject is at most 72 characters, and its message carries no trailer (`Signed-off-by:`, `Co-authored-by:` and the like) but `Co-Authored-By: Rooty` or `Co-Authored-By: Leafy`.
 
 ## License
 
