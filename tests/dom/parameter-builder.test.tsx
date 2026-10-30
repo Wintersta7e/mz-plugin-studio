@@ -271,6 +271,9 @@ describe('parameter prompts that discard work', () => {
     const options = message.mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Delete'])
     expect(parameterNames()).toEqual(['Existing'])
+    // The main process makes Cancel the default from its button word
+    expect(options).not.toHaveProperty('defaultId')
+    expect(options).not.toHaveProperty('cancelId')
   })
 
   it('overwriting a preset asks with Cancel as the default', async () => {
@@ -285,6 +288,8 @@ describe('parameter prompts that discard work', () => {
     const options = message.mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
     expect(useSettingsStore.getState().parameterPresets).toEqual({ Mine: [kept] })
+    expect(options).not.toHaveProperty('defaultId')
+    expect(options).not.toHaveProperty('cancelId')
   })
 })
 
@@ -301,8 +306,15 @@ const param = (name: string, text: string): PluginParameter => ({
   text
 })
 
-/** Opens a plugin named Alpha holding `parameters` and `structs`; renders the tab beside the code preview. */
-function renderTab(parameters: PluginParameter[] = [], structs: PluginStruct[] = []): UserEvent {
+/**
+ * Opens a plugin named Alpha holding `parameters` and `structs`; renders the tab, beside the
+ * code preview unless `withPreview` is false (the preview has an Export button of its own).
+ */
+function renderTab(
+  parameters: PluginParameter[] = [],
+  structs: PluginStruct[] = [],
+  { withPreview = true } = {}
+): UserEvent {
   const plugin = createEmptyPlugin()
   usePluginStore
     .getState()
@@ -311,7 +323,7 @@ function renderTab(parameters: PluginParameter[] = [], structs: PluginStruct[] =
   render(
     <>
       <ParameterBuilder />
-      <CodePreview />
+      {withPreview && <CodePreview />}
     </>
   )
   return user
@@ -465,5 +477,244 @@ describe('parameter rows', () => {
     await user.click(within(row('New Parameter')).getAllByRole('button')[0])
     expect(screen.queryByText('New Parameter')).not.toBeInTheDocument()
     await waitFor(() => expect(preview()).not.toContain('@param NewParameter'))
+  })
+})
+
+/** A message dialog that answers each prompt with the button named by the next of `words`. */
+const answering = (...words: string[]) =>
+  vi.fn(async (options: { buttons?: string[] }) => options.buttons?.indexOf(words.shift()!) ?? -1)
+
+/** Lets a handler that awaited a recorded call run to its end. */
+const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
+
+const tick = (user: UserEvent, label: string): Promise<void> =>
+  user.click(within(row(label)).getByRole('checkbox'))
+
+async function chooseMenuItem(user: UserEvent, menu: string, item: string): Promise<void> {
+  await user.click(screen.getByRole('button', { name: menu }))
+  await user.click(await screen.findByRole('menuitem', { name: item }))
+}
+
+describe('parameter toolbar', () => {
+  beforeEach(() => {
+    window.api = createFakeApi()
+  })
+
+  const renderToolbar = (parameters: PluginParameter[]): UserEvent =>
+    renderTab(parameters, [], { withPreview: false })
+
+  it('enables the selection buttons only with a selection, and Select All toggles every row', async () => {
+    const user = renderToolbar([param('speed', 'Speed'), param('power', 'Power')])
+    const selectionButtons = ['Duplicate', 'Delete', 'Export']
+    for (const name of selectionButtons) {
+      expect(screen.getByRole('button', { name })).toBeDisabled()
+    }
+    await user.click(screen.getByRole('button', { name: 'Select All' }))
+    for (const box of screen.getAllByRole('checkbox')) expect(box).toBeChecked()
+    for (const name of selectionButtons) expect(screen.getByRole('button', { name })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Deselect' }))
+    for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
+    expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument()
+  })
+
+  it('duplicates a selected row under a _copy name and clears the selection', async () => {
+    const user = renderToolbar([param('speed', ''), param('power', '')])
+    await tick(user, 'speed')
+    await user.click(screen.getByRole('button', { name: 'Duplicate' }))
+    expect(row('speed_copy')).toBeInTheDocument()
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+    for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
+  })
+
+  it('deletes the selected rows only when the prompt is answered Delete', async () => {
+    const message = answering('Cancel', 'Delete')
+    window.api = createFakeApi({ dialog: { message } })
+    const user = renderToolbar([
+      param('speed', 'Speed'),
+      param('power', 'Power'),
+      param('range', 'Range')
+    ])
+    await tick(user, 'Speed')
+    await tick(user, 'Power')
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message.mock.calls[0][0].buttons).toContain('Cancel')
+    await settle()
+    expect(row('Speed')).toBeInTheDocument()
+    expect(row('Power')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(screen.queryByText('Speed')).not.toBeInTheDocument())
+    expect(screen.queryByText('Power')).not.toBeInTheDocument()
+    expect(row('Range')).toBeInTheDocument()
+  })
+
+  it('exports the selected rows to the path the save dialog returns', async () => {
+    const api = createFakeApi({
+      dialog: { saveFile: vi.fn(async () => '/exports/Alpha-params.mzparams') }
+    })
+    window.api = api
+    const user = renderToolbar([param('speed', 'Speed'), param('power', 'Power')])
+    await tick(user, 'Power')
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() => expect(api.plugin.saveToPath).toHaveBeenCalledTimes(1))
+    expect(api.dialog.saveFile).toHaveBeenCalledWith({
+      defaultPath: 'Alpha-params.mzparams',
+      filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+    })
+    const [path, content] = vi.mocked(api.plugin.saveToPath).mock.calls[0]
+    expect(path).toBe('/exports/Alpha-params.mzparams')
+    const written: { parameters: PluginParameter[] } = JSON.parse(content)
+    expect(written.parameters.map((p) => p.name)).toEqual(['power'])
+  })
+
+  it('writes nothing when the save dialog is cancelled', async () => {
+    const api = createFakeApi({ dialog: { saveFile: vi.fn(async () => null) } })
+    window.api = api
+    const user = renderToolbar([param('speed', 'Speed')])
+    await tick(user, 'Speed')
+    await user.click(screen.getByRole('button', { name: 'Export' }))
+    await waitFor(() => expect(api.dialog.saveFile).toHaveBeenCalledTimes(1))
+    await settle()
+    expect(api.plugin.saveToPath).not.toHaveBeenCalled()
+  })
+
+  it('adds the rows of the parameter file the open dialog returns', async () => {
+    const text = JSON.stringify({
+      version: 1,
+      source: 'Beta',
+      exportedAt: '2026-01-01T00:00:00.000Z',
+      parameters: [
+        { id: 'a', name: 'alpha', text: 'Alpha', desc: '', type: 'string', default: '' },
+        { id: 'b', name: 'beta', text: 'Beta', desc: '', type: 'number', default: 0 }
+      ]
+    })
+    const api = createFakeApi({
+      dialog: { openFile: vi.fn(async () => '/exports/Beta-params.mzparams') },
+      plugin: { readByPath: vi.fn(async () => text) }
+    })
+    window.api = api
+    const user = renderToolbar([param('speed', 'Speed')])
+    await chooseMenuItem(user, 'Import', 'From File (.mzparams)')
+    expect(await screen.findByText('Alpha')).toBeInTheDocument()
+    expect(row('Beta')).toBeInTheDocument()
+    expect(api.dialog.openFile).toHaveBeenCalledWith({
+      filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+    })
+    expect(api.plugin.readByPath).toHaveBeenCalledWith('/exports/Beta-params.mzparams')
+  })
+
+  it('adds nothing when the open dialog is cancelled', async () => {
+    const api = createFakeApi({ dialog: { openFile: vi.fn(async () => null) } })
+    window.api = api
+    const user = renderToolbar([param('speed', 'Speed')])
+    await chooseMenuItem(user, 'Import', 'From File (.mzparams)')
+    await waitFor(() => expect(api.dialog.openFile).toHaveBeenCalledTimes(1))
+    await settle()
+    expect(api.plugin.readByPath).not.toHaveBeenCalled()
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  })
+
+  it('adds only the parameters left ticked in the plugin import picker', async () => {
+    const api = createFakeApi({
+      dialog: { openFile: vi.fn(async () => '/project/js/plugins/Beta.js') },
+      plugin: {
+        readByPath: vi.fn(async () => '/* Beta */'),
+        parse: vi.fn(async () => ({
+          ...createEmptyPlugin(),
+          parameters: [param('alpha', 'Alpha'), param('beta', 'Beta')]
+        }))
+      }
+    })
+    window.api = api
+    const user = renderToolbar([param('speed', 'Speed')])
+    await chooseMenuItem(user, 'Import', 'From Plugin (.js)')
+    const picker = await screen.findByRole('dialog', { name: 'Import Parameters from Plugin' })
+    expect(within(picker).getByText(/\(2 found\)/)).toBeInTheDocument()
+    expect(api.dialog.openFile).toHaveBeenCalledWith({
+      filters: [{ name: 'JavaScript Plugin', extensions: ['js'] }]
+    })
+    expect(api.plugin.parse).toHaveBeenCalledWith('/* Beta */')
+    await user.click(within(picker).getByRole('checkbox', { name: /^Beta/ }))
+    await user.click(within(picker).getByRole('button', { name: 'Import 1 Parameter' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(row('Alpha')).toBeInTheDocument()
+    expect(screen.queryByText('Beta')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['has no parameters', async () => createEmptyPlugin(), 'No Parameters'],
+    [
+      'cannot be parsed',
+      async () => {
+        throw new Error('Unexpected token')
+      },
+      'Import Failed'
+    ]
+  ])('says so when the chosen plugin %s', async (_label, parse, title) => {
+    const message = vi.fn(async () => 0)
+    window.api = createFakeApi({
+      dialog: { openFile: vi.fn(async () => '/project/js/plugins/Beta.js'), message },
+      plugin: { readByPath: vi.fn(async () => '/* Beta */'), parse: vi.fn(parse) }
+    })
+    const user = renderToolbar([param('speed', 'Speed')])
+    await chooseMenuItem(user, 'Import', 'From Plugin (.js)')
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message).toHaveBeenCalledWith(expect.objectContaining({ title }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1)
+  })
+
+  it('saves the selection as a preset that adds its rows back', async () => {
+    const user = renderToolbar([param('speed', 'Speed'), param('power', 'Power')])
+    await user.click(screen.getByRole('button', { name: 'Select All' }))
+    await chooseMenuItem(user, 'Presets', 'Save Selection as Preset...')
+    await user.type(await screen.findByLabelText('Preset Name'), 'Set A{Enter}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await chooseMenuItem(user, 'Presets', 'Set A (2 params)')
+    expect(screen.getAllByText('Speed')).toHaveLength(2)
+    expect(screen.getAllByText('Power')).toHaveLength(2)
+  })
+
+  it('overwrites a preset only when the prompt is answered Overwrite', async () => {
+    const message = answering('Cancel', 'Overwrite')
+    window.api = createFakeApi({ dialog: { message } })
+    const user = renderToolbar([param('speed', 'Speed'), param('power', 'Power')])
+
+    /** Opens the preset name dialog for the current selection; returns its Save button. */
+    const openSave = async (): Promise<HTMLElement> => {
+      await chooseMenuItem(user, 'Presets', 'Save Selection as Preset...')
+      const dialog = await screen.findByRole('dialog', { name: 'Save Preset' })
+      const save = within(dialog).getByRole('button', { name: 'Save' })
+      expect(save).toBeDisabled()
+      await user.type(within(dialog).getByLabelText('Preset Name'), 'Set A')
+      return save
+    }
+    /** Whether the Presets menu lists Set A with `count` parameters; closes the menu again. */
+    const presetListed = async (count: number): Promise<void> => {
+      await user.click(screen.getByRole('button', { name: 'Presets' }))
+      expect(
+        await screen.findByRole('menuitem', { name: `Set A (${count} params)` })
+      ).toBeInTheDocument()
+      await user.keyboard('{Escape}')
+      await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument())
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Select All' }))
+    await user.click(await openSave())
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await user.click(screen.getByRole('button', { name: 'Deselect' }))
+    await tick(user, 'Speed')
+
+    await user.click(await openSave())
+    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    expect(message.mock.calls[0][0].buttons).toContain('Cancel')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await presetListed(2)
+
+    await user.click(await openSave())
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(message).toHaveBeenCalledTimes(2)
+    await presetListed(1)
   })
 })
