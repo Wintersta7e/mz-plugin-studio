@@ -1,8 +1,10 @@
-// The meta tab: generating help text over text already there asks first, and the plugin name of
-// a plugin loaded from a file cannot be changed.
+// The meta tab: generating help text over text already there asks first, the plugin name of a
+// plugin loaded from a file cannot be changed, and each field is written into the plugin code.
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
+import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
@@ -97,5 +99,69 @@ describe('meta editor plugin name', () => {
     expect(name).not.toHaveAttribute('readonly')
     fireEvent.change(name, { target: { value: 'Renamed' } })
     expect(usePluginStore.getState().plugin.meta.name).toBe('Renamed')
+  })
+})
+
+describe('meta editor fields in the plugin code', () => {
+  beforeEach(() => {
+    resetStores()
+    window.api = createFakeApi()
+    act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  /** The generated plugin code the preview shows. */
+  const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
+
+  function renderWithPreview(): UserEvent {
+    const user = userEvent.setup()
+    render(
+      <>
+        <MetaEditor />
+        <CodePreview />
+      </>
+    )
+    return user
+  }
+
+  async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
+    await user.clear(field)
+    await user.type(field, text)
+  }
+
+  it('writes the typed name, author and URL into the plugin code', async () => {
+    const user = renderWithPreview()
+    await retype(user, screen.getByLabelText('Plugin Name'), 'Alpha')
+    await retype(user, screen.getByLabelText('Version'), '2.1.0')
+    await retype(user, screen.getByLabelText('Author'), 'Sample Author')
+    await retype(user, screen.getByLabelText('URL'), 'https://example.com/alpha')
+    expect(screen.getByLabelText('Version')).toHaveValue('2.1.0')
+    await waitFor(() => {
+      expect(preview()).toContain(' * @author Sample Author\n')
+      expect(preview()).toContain(' * @url https://example.com/alpha\n')
+      expect(preview()).toContain("const PLUGIN_NAME = 'Alpha';")
+    })
+  })
+
+  it('writes the Japanese description into a block of its own', async () => {
+    const user = renderWithPreview()
+    await user.click(screen.getByRole('tab', { name: 'Japanese' }))
+    await user.type(await screen.findByLabelText('Description (Japanese)'), 'Sample text')
+    await waitFor(() => expect(preview()).toContain('/*:ja\n * @plugindesc Sample text\n'))
+  })
+
+  it.each([
+    ['Dependencies (one per line)', '@base'],
+    ['Order After (one per line)', '@orderAfter'],
+    ['Order Before (one per line)', '@orderBefore'],
+    ['Required Assets (one per line)', '@requiredAssets']
+  ])('writes one %s line per entered line', async (label, tag) => {
+    const user = renderWithPreview()
+    await user.click(screen.getByLabelText(label))
+    await user.paste('Alpha\nBeta')
+    await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
   })
 })
