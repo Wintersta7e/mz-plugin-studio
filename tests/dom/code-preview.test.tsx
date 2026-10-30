@@ -465,6 +465,22 @@ describe('code preview panel', () => {
     )
   })
 
+  it.each([
+    ['Raw', 'Raw mode unavailable: plugin was not imported from a file'],
+    ['Diff', 'Diff unavailable: no saved version to compare']
+  ])('the hint of a disabled %s button shows on hover and describes it', (name, hint) => {
+    window.api = createFakeApi()
+    render(<CodePreview />)
+    const button = screen.getByRole('button', { name })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleDescription(hint)
+    // A disabled button ignores the pointer, so the hover hint sits on an ancestor that does not
+    const hinted = button.parentElement?.closest('[title]')
+    expect(hinted).not.toBeNull()
+    expect(hinted).not.toBeDisabled()
+    expect(hinted).toHaveAttribute('title', hint)
+  })
+
   it('Raw switches an imported plugin between its file text and the generated code', async () => {
     const user = userEvent.setup()
     window.api = createFakeApi()

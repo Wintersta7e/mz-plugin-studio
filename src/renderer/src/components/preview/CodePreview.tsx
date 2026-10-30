@@ -30,6 +30,9 @@ import { DiffView } from './DiffView'
 import { cn, userMessage } from '../../lib/utils'
 import log from 'electron-log/renderer'
 
+const RAW_UNAVAILABLE = 'Raw mode unavailable: plugin was not imported from a file'
+const DIFF_UNAVAILABLE = 'Diff unavailable: no saved version to compare'
+
 export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)
   const project = useProjectStore((s) => s.project)
@@ -317,37 +320,40 @@ export function CodePreview() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant={previewRawMode ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setRawModeForPlugin(plugin.id, !previewRawMode)}
-            disabled={!imported}
-            title={
-              imported
-                ? previewRawMode
-                  ? "Raw mode ON: the file's own code and unchanged blocks are kept"
-                  : 'Raw mode OFF: the whole plugin is regenerated from the editor'
-                : 'Raw mode unavailable: plugin was not imported from a file'
-            }
-          >
-            <FileCode2 className="mr-1 h-4 w-4" />
-            {previewRawMode ? 'Raw ON' : 'Raw'}
-          </Button>
+          {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
+          <span title={imported ? undefined : RAW_UNAVAILABLE} className="inline-flex">
+            <Button
+              variant={previewRawMode ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRawModeForPlugin(plugin.id, !previewRawMode)}
+              disabled={!imported}
+              title={
+                imported
+                  ? previewRawMode
+                    ? "Raw mode ON: the file's own code and unchanged blocks are kept"
+                    : 'Raw mode OFF: the whole plugin is regenerated from the editor'
+                  : RAW_UNAVAILABLE
+              }
+            >
+              <FileCode2 className="mr-1 h-4 w-4" />
+              {previewRawMode ? 'Raw ON' : 'Raw'}
+            </Button>
+          </span>
 
-          <Button
-            variant={showDiff ? 'default' : 'outline'}
-            size="sm"
-            onClick={handleDiffToggle}
-            disabled={!hasSavedVersion}
-            title={
-              hasSavedVersion
-                ? 'Compare generated output with saved file'
-                : 'Diff unavailable: no saved version to compare'
-            }
-          >
-            <GitCompare className="mr-1 h-4 w-4" />
-            Diff
-          </Button>
+          <span title={hasSavedVersion ? undefined : DIFF_UNAVAILABLE} className="inline-flex">
+            <Button
+              variant={showDiff ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleDiffToggle}
+              disabled={!hasSavedVersion}
+              title={
+                hasSavedVersion ? 'Compare generated output with saved file' : DIFF_UNAVAILABLE
+              }
+            >
+              <GitCompare className="mr-1 h-4 w-4" />
+              Diff
+            </Button>
+          </span>
 
           <Button variant="outline" size="sm" onClick={handleCopy}>
             {copied ? (
