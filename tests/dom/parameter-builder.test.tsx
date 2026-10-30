@@ -435,6 +435,32 @@ describe('parameter rows', () => {
     })
   })
 
+  it('keeps a "|" and an Enter typed at the end of a select row\'s options', async () => {
+    const user = renderTab()
+    await addParameter(user)
+    await pickType(user, 'String', 'Select')
+    const options = screen.getByPlaceholderText(/^option1\|Option 1/)
+    await user.type(options, 'x|Y{Backspace}Z{Enter}b')
+    expect(options).toHaveValue('x|Z\nb')
+    await waitFor(() => {
+      expect(preview()).toContain(' * @option Z\n * @value x\n * @option b\n *\n')
+    })
+  })
+
+  it('shows the options of the select row opened after a "|" was typed in another', async () => {
+    const select = (name: string, text: string, value: string): PluginParameter => ({
+      ...param(name, text),
+      type: 'select',
+      options: [{ value, text: value }]
+    })
+    const user = renderTab([select('first', 'First', 'a'), select('second', 'Second', 'b')])
+    await user.click(screen.getByText('First'))
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), '|')
+    expect(screen.getByPlaceholderText(/^option1\|Option 1/)).toHaveValue('a|')
+    await user.click(screen.getByText('Second'))
+    expect(within(row('Second')).getByPlaceholderText(/^option1\|Option 1/)).toHaveValue('b')
+  })
+
   it('asks for a project before a switch default, then offers the project switches', async () => {
     const user = renderTab()
     await addParameter(user)

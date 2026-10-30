@@ -5,6 +5,7 @@
 ### Fixed
 
 - Pressing Enter at the end of Dependencies, Order After, Order Before or Required Assets, or Enter or "|" at the end of a struct field's select options, starts the next entry instead of being undone as you type, so typed entries no longer run together.
+- In a parameter's select options, deleting the label after a "|" no longer deletes the "|" with it, so the next label you type stays apart from the value.
 - Changing a parameter's type to Switch, Variable, Actor or Item with no project open no longer logs an error about its default value field in the developer console.
 - In raw mode, a single parameter of a plugin file with no main annotation block can now be selected with its row's checkbox, so Export and Save Selection as Preset can copy out just the parameters you tick instead of all of them; the row's fields stay read-only.
 - The Font Size setting can be typed anew: typing 18 no longer turns into 24 after the first digit. A size outside 10 to 24 is brought into that range when you leave the field or press Enter, and leaving it empty keeps the size it had.

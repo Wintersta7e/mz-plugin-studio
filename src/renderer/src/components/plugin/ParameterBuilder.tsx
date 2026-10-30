@@ -42,6 +42,7 @@ import {
   type ParamImportResult
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { useTypedText } from '../../lib/typed-text'
 import { cn, userMessage } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
@@ -896,7 +897,28 @@ interface ParameterCardProps {
   items: { id: number; name: string }[]
 }
 
-/** Options editor that uses local state to avoid value|label being eaten on keystroke */
+/** Select options one per line, as value|label or just label when the two are the same. */
+const optionsText = (opts: PluginParameter['options']): string =>
+  opts?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
+
+const parseOptions = (text: string): NonNullable<PluginParameter['options']> =>
+  text
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      if (line.includes('|')) {
+        const pipeIdx = line.indexOf('|')
+        return {
+          value: line.slice(0, pipeIdx).trim(),
+          text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim()
+        }
+      }
+      return { value: line.trim(), text: line.trim() }
+    })
+
+const normalizeOptions = (text: string): string => optionsText(parseOptions(text))
+
+/** Options editor that keeps the text as typed so a value|label is not eaten on keystroke */
 function OptionsEditor({
   param,
   onUpdate
@@ -904,43 +926,16 @@ function OptionsEditor({
   param: PluginParameter
   onUpdate: (updates: Partial<PluginParameter>) => void
 }) {
-  const serialize = (opts: PluginParameter['options']) =>
-    opts?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
-
-  const [localText, setLocalText] = useState(() => serialize(param.options))
-
-  // Sync from store when param or options change externally (e.g. undo, import, preset apply)
-  const serializedOptions = JSON.stringify(param.options)
-  useEffect(() => {
-    setLocalText(serialize(param.options))
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- serializedOptions tracks param.options
-  }, [param.id, serializedOptions])
-
-  const commitOptions = (text: string) => {
-    const options = text
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        if (line.includes('|')) {
-          const pipeIdx = line.indexOf('|')
-          return {
-            value: line.slice(0, pipeIdx).trim(),
-            text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim()
-          }
-        }
-        return { value: line.trim(), text: line.trim() }
-      })
-    onUpdate({ options })
-  }
+  const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
 
   return (
     <div className="space-y-2">
       <Label>Options (one per line, format: value|label or just label)</Label>
       <Textarea
-        value={localText}
+        value={optionsTyped}
         onChange={(e) => {
-          setLocalText(e.target.value)
-          commitOptions(e.target.value)
+          setOptionsTyped(e.target.value)
+          onUpdate({ options: parseOptions(e.target.value) })
         }}
         placeholder={'option1|Option 1\noption2|Option 2'}
         rows={4}

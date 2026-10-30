@@ -814,6 +814,27 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(names).toEqual(['Alpha', 'NewPlugin', 'NewPlugin', 'Alpha', 'Beta', 'Beta'])
   })
 
+  it('undo shows the select options a parameter had before the last typed option', async () => {
+    window.api = createMainApi()
+    openTab()
+    render(<App />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('tab', { name: 'Parameters' }))
+    await user.click(screen.getByRole('button', { name: 'Add Parameter' }))
+    await user.click(
+      screen.getAllByRole('combobox').find((c) => c.textContent?.startsWith('String'))!
+    )
+    await user.click(await screen.findByRole('option', { name: /^Select/ }))
+    const options = (): HTMLElement => screen.getByPlaceholderText(/^option1\|Option 1/)
+    await user.type(options(), 'a|')
+    // Outlasts the app's delay before it records an edit, so undo returns to this state
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    await user.type(options(), 'b')
+    expect(options()).toHaveValue('a|b')
+    pressUndo()
+    expect(options()).toHaveValue('a')
+  })
+
   it('undo right after an edit, before it is recorded, restores the state before the edit', async () => {
     window.api = createMainApi()
     openTab()
