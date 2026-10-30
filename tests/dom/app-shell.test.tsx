@@ -3,14 +3,16 @@
 // opens offers to reload the imported tabs whose file text is not loaded in one action.
 import { readFileSync } from 'fs'
 import { basename } from 'path'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import * as generator from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
+import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
-import { createFakeApi } from '../helpers/fake-api'
+import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import type { FakeApiOverrides } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { createMainApi } from './support/main-api'
@@ -249,3 +251,122 @@ describe(
     })
   }
 )
+
+describe('app shell', { timeout: 30_000 }, () => {
+  beforeEach(() => {
+    resetStores()
+    window.api = createFakeApi()
+    vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
+
+  /** Renders the app and opens a new plugin from the welcome screen. */
+  async function newPlugin(): Promise<ReturnType<typeof userEvent.setup>> {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /Start with a blank plugin/ }))
+    await screen.findByRole('tab', { name: 'Metadata' })
+    return user
+  }
+
+  it('the welcome screen offers Open Project, New Plugin and the five latest projects', () => {
+    act(() => {
+      for (let i = 1; i <= 6; i++) useProjectStore.getState().addRecentProject(`/projects/Game${i}`)
+    })
+    render(<App />)
+    expect(screen.getByRole('button', { name: /Load an existing MZ project/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Start with a blank plugin/ })).toBeInTheDocument()
+    const recent = screen.getAllByText(/^\/projects\/Game\d$/).map((el) => el.textContent)
+    expect(recent).toEqual([6, 5, 4, 3, 2].map((i) => `/projects/Game${i}`))
+  })
+
+  it('New Plugin opens the editor on its five tabs', async () => {
+    await newPlugin()
+    const tabList = screen.getByRole('tab', { name: 'Metadata' }).closest('[role="tablist"]')
+    const tabs = within(tabList as HTMLElement)
+      .getAllByRole('tab')
+      .map((tab) => tab.textContent)
+    expect(tabs).toEqual(['Metadata', 'Parameters', 'Commands', 'Structs', 'Code'])
+    expect(screen.getByRole('tab', { name: 'Metadata' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('Ctrl+1 to Ctrl+5 select each editor tab', async () => {
+    const user = await newPlugin()
+    const order: [string, string][] = [
+      ['2', 'Parameters'],
+      ['3', 'Commands'],
+      ['4', 'Structs'],
+      ['5', 'Code'],
+      ['1', 'Metadata']
+    ]
+    for (const [key, name] of order) {
+      await user.keyboard(`{Control>}${key}{/Control}`)
+      expect(screen.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
+    }
+  })
+
+  it('Ctrl+N opens another plugin', async () => {
+    const user = await newPlugin()
+    expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(1)
+    await user.keyboard('{Control>}n{/Control}')
+    expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(2)
+  })
+
+  it('Ctrl+B hides the code preview and shows it again', async () => {
+    const user = await newPlugin()
+    expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
+    await user.keyboard('{Control>}b{/Control}')
+    expect(screen.queryByRole('heading', { name: 'Generated Code' })).not.toBeInTheDocument()
+    await user.keyboard('{Control>}b{/Control}')
+    expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
+  })
+
+  it('F1 opens the keyboard shortcuts and Ctrl+, opens the settings', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    // The default key map has no F1 or comma; App matches the key's code
+    await user.keyboard('[F1]')
+    expect(await screen.findByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await user.keyboard('{Control>}[Comma]{/Control}')
+    expect(await screen.findByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+  })
+
+  it('opening a project names its game in the title bar and asks for a plugin', async () => {
+    const user = userEvent.setup()
+    window.api = createFakeApi({
+      dialog: { openFolder: vi.fn(async () => '/project') },
+      project: {
+        validate: vi.fn(async () => ({ valid: true })),
+        load: vi.fn(async () => sampleProject())
+      }
+    })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /Load an existing MZ project/ }))
+    expect(await screen.findByText('- Sample Game')).toBeInTheDocument()
+    expect(screen.getByText('No plugin open')).toBeInTheDocument()
+    expect(window.api.project.validate).toHaveBeenCalledWith('/project')
+    expect(window.api.project.load).toHaveBeenCalledWith('/project')
+  })
+
+  it('with a project open, Analysis shows the plugin analysis and Editor goes back', async () => {
+    const user = userEvent.setup()
+    act(() => {
+      useProjectStore.getState().setProject(sampleProject())
+      usePluginStore.getState().openPlugin(createEmptyPlugin())
+    })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Analysis' }))
+    expect(await screen.findByRole('heading', { name: 'Plugin Analysis' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Editor' }))
+    expect(await screen.findByRole('tab', { name: 'Metadata' })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Plugin Analysis' })).not.toBeInTheDocument()
+    )
+  })
+})
