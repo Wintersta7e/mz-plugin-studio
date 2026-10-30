@@ -28,6 +28,8 @@ const RESETTERS = [
 ]
 
 export function resetStores(): void {
+  // A toast's countdown outlives setState; left running, it re-renders a later test's toasts.
+  useToastStore.getState().dismissAll()
   for (const reset of RESETTERS) reset()
   localStorage.clear()
 }

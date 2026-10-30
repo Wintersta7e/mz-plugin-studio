@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useToastStore } from '../../src/renderer/src/stores/toastStore'
+import { resetStores } from './support/reset-stores'
 
 describe('toastStore', () => {
   beforeEach(() => {
@@ -211,5 +212,27 @@ describe('toastStore', () => {
       'Refused 3',
       'Refused 4'
     ])
+  })
+})
+
+describe('resetStores and toast countdowns', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('a countdown started before the reset never writes the store after it', () => {
+    useToastStore
+      .getState()
+      .addToast({ type: 'info', message: 'From an earlier test', duration: 50 })
+    resetStores()
+    const writes = vi.fn()
+    const unsubscribe = useToastStore.subscribe(writes)
+    vi.advanceTimersByTime(100)
+    unsubscribe()
+    expect(writes).not.toHaveBeenCalled()
   })
 })
