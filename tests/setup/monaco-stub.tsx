@@ -4,23 +4,104 @@
 import { useEffect, useRef, useState } from 'react'
 import { vi } from 'vitest'
 
+/** Every completion provider registered since the last reset, and whether it was disposed. */
+export const monacoStub: { providers: { language: string; disposed: boolean }[] } = {
+  providers: []
+}
+
+export function resetMonacoStub(): void {
+  monacoStub.providers = []
+}
+
 export function createFakeMonaco() {
   return {
     languages: {
-      registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() }))
+      registerCompletionItemProvider: vi.fn((language: string) => {
+        const provider = { language, disposed: false }
+        monacoStub.providers.push(provider)
+        return {
+          dispose: vi.fn(() => {
+            provider.disposed = true
+          })
+        }
+      })
     }
   }
 }
 
 export type FakeMonaco = ReturnType<typeof createFakeMonaco>
 
-export function createFakeEditor(read: () => string, write: (value: string) => void) {
+interface Range {
+  startLineNumber: number
+  startColumn: number
+  endLineNumber: number
+  endColumn: number
+}
+
+/** The 1-based line and column of `offset` in `text`, as Monaco counts them. */
+function position(text: string, offset: number): { line: number; column: number } {
+  const before = text.slice(0, offset).split('\n')
+  return { line: before.length, column: before[before.length - 1].length + 1 }
+}
+
+/** The offset in `text` of a 1-based line and column. */
+function offsetOf(text: string, line: number, column: number): number {
+  const lines = text.split('\n')
+  let offset = 0
+  for (let i = 0; i < line - 1; i++) offset += lines[i].length + 1
+  return offset + column - 1
+}
+
+export function createFakeEditor(
+  read: () => string,
+  write: (value: string) => void,
+  selection: () => { start: number; end: number }
+) {
+  const lines = (): string[] => read().split('\n')
+  const lineMaxColumn = (line: number): number => lines()[line - 1].length + 1
+  const model = {
+    getValue: read,
+    getLineCount: () => lines().length,
+    getLineMaxColumn: lineMaxColumn,
+    getFullModelRange: (): Range => {
+      const count = lines().length
+      return {
+        startLineNumber: 1,
+        startColumn: 1,
+        endLineNumber: count,
+        endColumn: lineMaxColumn(count)
+      }
+    }
+  }
   return {
     getValue: vi.fn(read),
     setValue: vi.fn(write),
-    executeEdits: vi.fn(() => true),
-    getModel: vi.fn(() => ({ getValue: read })),
-    getSelection: vi.fn(() => null),
+    // Applies each edit's line/column range to the text, as Monaco does
+    executeEdits: vi.fn((_source: string, edits: { range: Range; text: string }[]) => {
+      let text = read()
+      for (const { range, text: insert } of edits) {
+        const start = offsetOf(text, range.startLineNumber, range.startColumn)
+        const end = offsetOf(text, range.endLineNumber, range.endColumn)
+        text = text.slice(0, start) + insert + text.slice(end)
+      }
+      write(text)
+      return true
+    }),
+    getModel: vi.fn(() => model),
+    // The textarea's selection, as a Monaco range
+    getSelection: vi.fn(() => {
+      const text = read()
+      const { start, end } = selection()
+      const from = position(text, start)
+      const to = position(text, end)
+      return {
+        startLineNumber: from.line,
+        startColumn: from.column,
+        endLineNumber: to.line,
+        endColumn: to.column,
+        isEmpty: () => start === end
+      }
+    }),
     focus: vi.fn(),
     updateOptions: vi.fn(),
     onDidChangeModelContent: vi.fn(() => ({ dispose: vi.fn() }))
@@ -61,7 +142,11 @@ export function Editor({
       (next) => {
         setText(next)
         onChange?.(next)
-      }
+      },
+      () => ({
+        start: textareaRef.current!.selectionStart,
+        end: textareaRef.current!.selectionEnd
+      })
     )
     onMount?.(editor, monaco)
   }, [])

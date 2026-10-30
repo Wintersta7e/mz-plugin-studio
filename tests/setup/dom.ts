@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom/vitest'
-import { vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
+import { resetMonacoStub } from './monaco-stub'
 
 vi.mock('@monaco-editor/react', () => import('./monaco-stub'))
+
+afterEach(resetMonacoStub)
 
 // jsdom lays nothing out, so these never fire; Radix ScrollArea observes its viewport on mount.
 globalThis.ResizeObserver ??= class {
