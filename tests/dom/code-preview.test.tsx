@@ -380,6 +380,21 @@ describe('code preview banner', () => {
     expect(button).toHaveAttribute('title', 'Open the project first.')
   })
 
+  it('without a project the reload hint shows on hover over the disabled button and describes it', async () => {
+    window.api = createFakeApi()
+    openImported(FILE, { withSource: false })
+    render(<CodePreview />)
+    await bannerOf(missingText)
+    const button = screen.getByRole('button', { name: RELOAD })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleDescription('Open the project first.')
+    // A disabled button ignores the pointer, so the hover hint sits on an ancestor that does not
+    const hinted = button.parentElement?.closest('[title]')
+    expect(hinted).not.toBeNull()
+    expect(hinted).not.toBeDisabled()
+    expect(hinted).toHaveAttribute('title', 'Open the project first.')
+  })
+
   it('offers the reload when the file text is loaded but the file as last read is not', async () => {
     window.api = createFakeApi()
     useProjectStore.setState({ project: await window.api.project.load('/fixture/mz-project') })

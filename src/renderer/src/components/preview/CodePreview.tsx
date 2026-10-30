@@ -456,15 +456,18 @@ export function CodePreview() {
         >
           <span className="flex-1">{banner}</span>
           {sourceMissing && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void reloadFromProject(deferredPlugin.id)}
-              disabled={!project}
-              title={project ? undefined : 'Open the project first.'}
-            >
-              Reload from project
-            </Button>
+            // A disabled button ignores the pointer, so its hint also sits on this wrapper
+            <span title={project ? undefined : 'Open the project first.'} className="inline-flex">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void reloadFromProject(deferredPlugin.id)}
+                disabled={!project}
+                title={project ? undefined : 'Open the project first.'}
+              >
+                Reload from project
+              </Button>
+            </span>
           )}
         </div>
       )}

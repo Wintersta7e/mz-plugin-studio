@@ -1143,17 +1143,21 @@ export function TemplateInserter({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              ref={insertButtonRef}
-              onClick={handleInsert}
-              disabled={readOnly || !canInsert}
-              title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
-              aria-describedby={validationErrors.length > 0 ? errorsId : undefined}
-              className="gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              Insert Code
-            </Button>
+            {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
+            <span title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined} className="inline-flex">
+              <Button
+                ref={insertButtonRef}
+                onClick={handleInsert}
+                disabled={readOnly || !canInsert}
+                title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+                // Read-only, the notice is why it stays disabled, not the field errors
+                aria-describedby={!readOnly && validationErrors.length > 0 ? errorsId : undefined}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Insert Code
+              </Button>
+            </span>
           </div>
         </div>
       </div>

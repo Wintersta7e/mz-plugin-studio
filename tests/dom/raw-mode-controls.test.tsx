@@ -3,6 +3,7 @@
 // why, or no control edits it. A field added to a type fails the typecheck here until listed.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
 import { CommandBuilder } from '../../src/renderer/src/components/plugin/CommandBuilder'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
@@ -249,6 +250,32 @@ describe('raw mode controls of an imported plugin', () => {
     fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true })
     expect(onInsert).not.toHaveBeenCalled()
     checked++
+  })
+
+  it('the read-only notice of a disabled Insert button shows on hover and describes it', async () => {
+    const user = userEvent.setup()
+    /** The nearest ancestor with a hover hint; a disabled button ignores the pointer. */
+    const hintedAncestor = (button: HTMLElement): Element | null | undefined =>
+      button.parentElement?.closest('[title]')
+
+    const { unmount } = render(<CodeEditor />)
+    const template = screen.getByRole('button', { name: /Insert Template/ })
+    expect(template).toBeDisabled()
+    expect(template).toHaveAccessibleDescription(NOTICE)
+    expect(hintedAncestor(template)).not.toBeDisabled()
+    expect(hintedAncestor(template)).toHaveAttribute('title', NOTICE)
+    unmount()
+
+    render(<TemplateInserter open readOnly onClose={vi.fn()} onInsert={vi.fn()} />)
+    await user.type(screen.getByPlaceholderText(/search/i), 'Custom Actor Property')
+    await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
+    // A field error is listed too, but turning raw mode off is what enables the button
+    expect(screen.getByRole('status')).toHaveTextContent('Field "Property Name" is required')
+    const insert = screen.getByRole('button', { name: /Insert Code/ })
+    expect(insert).toBeDisabled()
+    expect(insert).toHaveAccessibleDescription(NOTICE)
+    expect(hintedAncestor(insert)).not.toBeDisabled()
+    expect(hintedAncestor(insert)).toHaveAttribute('title', NOTICE)
   })
 
   for (const [lang, trigger] of [

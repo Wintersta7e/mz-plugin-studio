@@ -112,17 +112,23 @@ export function CodeEditor() {
             plugin&apos;s IIFE after the auto-generated parameter parsing and command registration.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsTemplateOpen(true)}
-          disabled={rawMode}
+        {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
+        <span
           title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
-          className="shrink-0 gap-2"
+          className="inline-flex shrink-0"
         >
-          <Wand2 className="h-4 w-4" />
-          Insert Template
-        </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsTemplateOpen(true)}
+            disabled={rawMode}
+            title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+            className="shrink-0 gap-2"
+          >
+            <Wand2 className="h-4 w-4" />
+            Insert Template
+          </Button>
+        </span>
       </div>
 
       {rawMode && (
