@@ -5,18 +5,28 @@ import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, resolve } from 'path'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import userEvent, { type UserEvent } from '@testing-library/user-event'
 import type { SaveDialogOptions } from 'electron'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { readFileByPath, savePluginToPath } from '../../src/main/ipc/plugin'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
+import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateParameterComment, generatePlugin } from '../../src/renderer/src/lib/generator'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
-import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
-import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { usePluginStore, useProjectStore, useSettingsStore } from '../../src/renderer/src/stores'
+import {
+  createEmptyParameter,
+  createEmptyPlugin,
+  createEmptyStruct,
+  type PluginParameter,
+  type PluginStruct
+} from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
+import type { MZProject } from '../../src/shared/types/mz'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import { createFakeApi } from '../helpers/fake-api'
+import { expectConsole } from '../helpers/console-guard'
+import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { ALL_PAYLOADS } from '../helpers/hostile'
 import { viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -275,5 +285,185 @@ describe('parameter prompts that discard work', () => {
     const options = message.mock.calls[0][0]
     expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
     expect(useSettingsStore.getState().parameterPresets).toEqual({ Mine: [kept] })
+  })
+})
+
+/** The generated plugin code the preview shows. */
+const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
+
+/** The parameter row whose header reads `label`. */
+const row = (label: string): HTMLElement =>
+  screen.getByText(label).closest<HTMLElement>('[draggable="true"]')!
+
+const param = (name: string, text: string): PluginParameter => ({
+  ...createEmptyParameter(),
+  name,
+  text
+})
+
+/** Opens a plugin named Alpha holding `parameters` and `structs`; renders the tab beside the code preview. */
+function renderTab(parameters: PluginParameter[] = [], structs: PluginStruct[] = []): UserEvent {
+  const plugin = createEmptyPlugin()
+  usePluginStore
+    .getState()
+    .openPlugin({ ...plugin, meta: { ...plugin.meta, name: 'Alpha' }, parameters, structs })
+  const user = userEvent.setup()
+  render(
+    <>
+      <ParameterBuilder />
+      <CodePreview />
+    </>
+  )
+  return user
+}
+
+/** The select showing `text`; a select's label names no target, so it has no accessible name. */
+const combobox = (text: string): HTMLElement =>
+  screen.getAllByRole('combobox').find((c) => c.textContent?.startsWith(text))!
+
+/** Picks `type` in the expanded row's Type select, which shows `current`. */
+async function pickType(user: UserEvent, current: string, type: string): Promise<void> {
+  await user.click(combobox(current))
+  await user.click(await screen.findByRole('option', { name: new RegExp(`^${type}`) }))
+}
+
+/** Opens `project` the way the app does after loading it. */
+function openProject(project: MZProject): void {
+  const { path: _path, gameTitle: _title, maps: _maps, plugins: _plugins, ...gameData } = project
+  const store = useProjectStore.getState()
+  store.setProject(project)
+  store.setAllGameData(gameData)
+}
+
+describe('parameter rows', () => {
+  beforeEach(() => {
+    window.api = createFakeApi()
+  })
+
+  const addParameter = (user: UserEvent): Promise<void> =>
+    user.click(screen.getByRole('button', { name: 'Add Parameter' }))
+
+  it('shows an empty list, then a new row with its name field and the selection toolbar', async () => {
+    const user = renderTab()
+    expect(screen.getByText('No parameters defined')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Select All' })).not.toBeInTheDocument()
+    await addParameter(user)
+    expect(screen.queryByText('No parameters defined')).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('paramName')).toHaveValue('NewParameter')
+    expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument()
+  })
+
+  it('writes the typed name and label into the row header and the plugin code', async () => {
+    const user = renderTab()
+    await addParameter(user)
+    await user.clear(screen.getByPlaceholderText('paramName'))
+    await user.type(screen.getByPlaceholderText('paramName'), 'speed')
+    await user.clear(screen.getByPlaceholderText('Parameter Label'))
+    await user.type(screen.getByPlaceholderText('Parameter Label'), 'Speed')
+    expect(row('Speed')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(preview()).toContain('@param speed')
+      expect(preview()).toContain('@text Speed')
+    })
+  })
+
+  it('says why a name is not an identifier, is empty or is taken', async () => {
+    const user = renderTab([param('speed', 'Speed')])
+    await addParameter(user)
+    const name = screen.getByPlaceholderText('paramName')
+    await user.clear(name)
+    await user.type(name, '1abc')
+    expect(screen.getByText(/^Must be a valid identifier/)).toBeInTheDocument()
+    await user.clear(name)
+    expect(screen.getByText('Name is required')).toBeInTheDocument()
+    await user.type(name, 'speed')
+    expect(screen.getByText('Duplicate parameter name')).toBeInTheDocument()
+    expect(screen.queryByText(/^Must be a valid identifier/)).not.toBeInTheDocument()
+  })
+
+  it('turns a row into a number with a minimum', async () => {
+    const user = renderTab()
+    await addParameter(user)
+    await pickType(user, 'String', 'Number')
+    expect(screen.getByText('(number)')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Show details' }))
+    await user.type(screen.getByPlaceholderText('No min'), '5')
+    await waitFor(() => {
+      expect(preview()).toContain('@type number')
+      expect(preview()).toContain('@min 5')
+    })
+  })
+
+  it('writes each typed option of a select row with its value', async () => {
+    const user = renderTab()
+    await addParameter(user)
+    await pickType(user, 'String', 'Select')
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|Alpha{Enter}b')
+    await waitFor(() => {
+      expect(preview()).toContain('@option Alpha')
+      expect(preview()).toContain('@value a')
+      expect(preview()).toContain('@option b')
+    })
+  })
+
+  it('asks for a project before a switch default, then offers the project switches', async () => {
+    // The default field turns from a valued input into the empty placeholder input in place
+    expectConsole('error', /changing a controlled input to be uncontrolled/)
+    const user = renderTab()
+    await addParameter(user)
+    await pickType(user, 'String', 'Switch')
+    expect(screen.getByPlaceholderText('Load project first')).toBeDisabled()
+    act(() => openProject({ ...sampleProject(), switches: [{ id: 1, name: 'Door Open' }] }))
+    await user.click(combobox('Select switch...'))
+    expect(await screen.findByRole('option', { name: '1: Door Open' })).toBeInTheDocument()
+  })
+
+  it('shows the default editor of the struct a struct row picks', async () => {
+    const point: PluginStruct = {
+      ...createEmptyStruct(),
+      name: 'Point',
+      parameters: [{ ...param('x', 'Horizontal'), type: 'number' }]
+    }
+    const user = renderTab([], [point])
+    await addParameter(user)
+    await pickType(user, 'String', 'Struct')
+    await user.click(combobox('Select struct...'))
+    await user.click(await screen.findByRole('option', { name: 'Point' }))
+    expect(screen.getByText('Horizontal')).toBeInTheDocument()
+    await waitFor(() => expect(preview()).toContain('struct<Point>'))
+  })
+
+  it('moves a row dropped onto another, in the list and in the plugin code', async () => {
+    renderTab([param('speed', 'Speed'), param('power', 'Power')])
+    const dataTransfer = {
+      setData: vi.fn(),
+      setDragImage: vi.fn(),
+      effectAllowed: '',
+      dropEffect: ''
+    }
+    fireEvent.dragStart(row('Speed'), { dataTransfer })
+    fireEvent.dragOver(row('Power'), { dataTransfer })
+    fireEvent.drop(row('Power'), { dataTransfer })
+    expect(screen.getAllByText(/^(Speed|Power)$/).map((e) => e.textContent)).toEqual([
+      'Power',
+      'Speed'
+    ])
+    await waitFor(() => {
+      const power = preview().indexOf('@param power')
+      expect(power).toBeGreaterThan(-1)
+      expect(power).toBeLessThan(preview().indexOf('@param speed'))
+    })
+  })
+
+  it('marks a hidden row, and a deleted row leaves the plugin code', async () => {
+    const user = renderTab()
+    await addParameter(user)
+    await pickType(user, 'String', 'Hidden')
+    expect(within(row('New Parameter')).getByText('hidden in MZ')).toBeInTheDocument()
+    await waitFor(() => expect(preview()).toContain('@param NewParameter'))
+    // The delete button has no name; it is the first button in the row, inside its header
+    await user.click(within(row('New Parameter')).getAllByRole('button')[0])
+    expect(screen.queryByText('New Parameter')).not.toBeInTheDocument()
+    await waitFor(() => expect(preview()).not.toContain('@param NewParameter'))
   })
 })

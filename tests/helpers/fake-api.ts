@@ -3,6 +3,31 @@
 import { vi } from 'vitest'
 import { createEmptyPlugin } from '../../src/shared/types/plugin'
 import type { SaveResult } from '../../src/shared/ipc-types'
+import type { MZProject } from '../../src/shared/types/mz'
+
+/** A loaded project with no game data, for tests that only need one to be open */
+export function sampleProject(path = '/project'): MZProject {
+  return {
+    path,
+    gameTitle: 'Sample Game',
+    switches: [],
+    variables: [],
+    actors: [],
+    items: [],
+    maps: [],
+    plugins: [],
+    skills: [],
+    weapons: [],
+    armors: [],
+    enemies: [],
+    states: [],
+    animations: [],
+    tilesets: [],
+    commonEvents: [],
+    classes: [],
+    troops: []
+  }
+}
 
 /** A save that wrote nothing */
 const notWritten: SaveResult = {
