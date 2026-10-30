@@ -6,6 +6,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { savePluginFile } from '../../src/main/ipc/plugin'
@@ -140,6 +141,10 @@ let dialogsChecked = 0
 function conflictDialog(index: number, kind: SaveConflict): MessageDialogOptions {
   const options = messages()[index]
   expect(options.title).toBe('Overwrite file?')
+  // Main makes Cancel the default and the Escape answer; the routine passes neither
+  expect(options.buttons).toContain('Cancel')
+  expect(options).not.toHaveProperty('defaultId')
+  expect(options).not.toHaveProperty('cancelId')
   checkedKinds.add(kind)
   dialogsChecked++
   return options
@@ -187,6 +192,52 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(isDirty(second)).toBe(true)
     expect(usePluginStore.getState().baseByPluginId[second]).toBeUndefined()
     expect(toasts()).toEqual(['success: Plugin saved'])
+    // Cancel tries no second write: one save for each tab
+    expect(window.api.plugin.save).toHaveBeenCalledTimes(2)
+    expect(screen.getByText('(modified)')).toBeInTheDocument()
+  })
+
+  it('Ctrl+S writes the tab into the project, and the next one is checked against what it wrote', async () => {
+    const user = userEvent.setup()
+    window.api = createMainApi()
+    await openProject()
+    openTab('Alpha')
+    render(<App />)
+    expect(screen.getByText('(modified)')).toBeInTheDocument()
+    const code = generatePlugin(plugin())
+    await user.keyboard('{Control>}s{/Control}')
+    await screen.findByText('Plugin saved')
+    expect(window.api.plugin.save).toHaveBeenCalledWith(root, 'Alpha.js', code, { base: null })
+    expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
+    const first = await readFile(fileIn('Alpha.js'))
+
+    await user.type(screen.getByLabelText('Author'), 'Someone')
+    expect(screen.getByText('(modified)')).toBeInTheDocument()
+    await user.keyboard('{Control>}s{/Control}')
+    await waitFor(() => expect(window.api.plugin.save).toHaveBeenCalledTimes(2))
+    expect(guards()[1]).toEqual({ base: { path: fileIn('Alpha.js'), sha256: sha(first) } })
+    await waitFor(() => expect(screen.queryByText('(modified)')).not.toBeInTheDocument())
+  })
+
+  it('Ctrl+S without a project writes nothing when the save dialog is closed, and the file chosen next time', async () => {
+    const user = userEvent.setup()
+    const target = join(root, 'Alpha.js')
+    const chosen = [null, target]
+    window.api = createMainApi({ chosen: () => chosen.shift() ?? null })
+    openTab('Alpha')
+    render(<App />)
+    await user.keyboard('{Control>}s{/Control}')
+    await waitFor(() => expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1))
+    await settle()
+    expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
+    expect(window.api.plugin.save).not.toHaveBeenCalled()
+    expect(screen.getByText('(modified)')).toBeInTheDocument()
+
+    const code = generatePlugin(plugin())
+    await user.keyboard('{Control>}s{/Control}')
+    await screen.findByText('Plugin saved')
+    expect(window.api.plugin.saveToPath).toHaveBeenCalledWith(target, code, { base: null })
+    expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
   })
 
   it('Ctrl+S without a project asks where to save and writes there', async () => {
@@ -643,6 +694,8 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(guards()[1]).not.toHaveProperty('overwriteBroken')
     expect(await readFile(path, 'utf8')).toBe(changedAgain)
     expect(isDirty(id)).toBe(true)
+    expect(window.api.plugin.save).toHaveBeenCalledTimes(2)
+    expect(screen.getByText('(modified)')).toBeInTheDocument()
   })
 
   it('Overwrite on a file this tab did not write retries against the bytes it was shown', async () => {
@@ -689,8 +742,15 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(guards().slice(1)).toEqual([{ base }, { base, overwriteBroken: true }])
     expect(toasts()[1]).toBe('success: Plugin saved')
     expect(toasts()[2]).toMatch(/^warning: Saved, but the file does not compile \(line \d+\): .+/)
-    expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('let broken = ;')
+    const written = await readFile(fileIn('Alpha.js'), 'utf8')
+    expect(written).toContain('let broken = ;')
     expect(isDirty(id)).toBe(false)
+    // The prompt and the warning both name the line of the file that does not compile
+    const brokenLine = written.split('\n').findIndex((line) => line.includes('let broken = ;')) + 1
+    expect(options.message).toContain(`(line ${brokenLine}: `)
+    expect(
+      screen.getByText(new RegExp(`does not compile \\(line ${brokenLine}\\)`))
+    ).toBeInTheDocument()
   })
 
   it('undo after a save marks the tab unsaved', async () => {
