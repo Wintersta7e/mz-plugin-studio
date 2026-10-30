@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useId } from 'react'
 import {
   X,
   GitBranch,
@@ -229,6 +229,7 @@ export function TemplateInserter({
   const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({})
   const [previewCode, setPreviewCode] = useState<string>('')
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const errorsId = useId()
   const highlightedPreview = useMemo(
     () => (previewCode ? highlightCode(previewCode) : null),
     [previewCode]
@@ -1102,16 +1103,20 @@ export function TemplateInserter({
                 </Button>
               </div>
               <div className="h-44 overflow-auto bg-[#1e1e2e] p-4">
-                {validationErrors.length > 0 ? (
-                  <div className="space-y-1.5 text-sm">
-                    <p className="text-gray-300">Fix these fields to see the code:</p>
-                    <ul className="list-disc space-y-0.5 pl-5 text-red-300">
-                      {validationErrors.map((error, index) => (
-                        <li key={index}>{error}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : previewCode ? (
+                {/* Always rendered, so a screen reader announces errors as they appear */}
+                <div id={errorsId} role="status" className="space-y-1.5 text-sm">
+                  {validationErrors.length > 0 && (
+                    <>
+                      <p className="text-gray-300">Fix these fields to see the code:</p>
+                      <ul className="list-disc space-y-0.5 pl-5 text-red-300">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+                {validationErrors.length > 0 ? null : previewCode ? (
                   <code className="font-mono text-[13px] leading-relaxed text-gray-300">
                     {highlightedPreview}
                   </code>
@@ -1143,6 +1148,7 @@ export function TemplateInserter({
               onClick={handleInsert}
               disabled={readOnly || !canInsert}
               title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+              aria-describedby={validationErrors.length > 0 ? errorsId : undefined}
               className="gap-2"
             >
               <Sparkles className="h-4 w-4" />

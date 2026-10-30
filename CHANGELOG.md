@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- A screen reader now reads out the field errors in the template dialog as they appear, and gives them as the reason the Insert Code button is disabled.
 - The report after importing a parameter file names each field it dropped and the parameter it belonged to, instead of only counting them.
 - Renaming a parameter or changing its type again updates the comment that names it in the plugin code.
 - Renaming a parameter or command to a name holding `$'`, `` $` `` or `$&` no longer copies part of the plugin code into the code, and renaming a command to a name holding a quote or backslash updates its skeleton in the code.

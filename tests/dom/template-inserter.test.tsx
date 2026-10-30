@@ -273,4 +273,33 @@ describe('template dialog actions', () => {
     expect(onInsert.mock.calls[0][0]).not.toContain('__pwn')
     expect((globalThis as Record<string, unknown>).__pwn).toBeUndefined()
   })
+
+  it('announces the field errors and gives them as the disabled Insert button’s description', async () => {
+    const user = userEvent.setup()
+    renderInserter()
+    // The region is on the page before an error appears, so a screen reader announces the change.
+    const errors = screen.getByRole('status')
+    expect(errors).toBeEmptyDOMElement()
+    await user.type(await searchBox(), 'Custom Actor Property')
+    await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
+    expect(errors).toHaveTextContent('Fix these fields to see the code:')
+    expect(errors).toHaveTextContent('Field "Property Name" is required')
+    expect(insertButton()).toHaveAccessibleDescription(
+      /^Fix these fields to see the code:\s*Field "Property Name" is required$/
+    )
+
+    const field = screen.getByLabelText(/Property Name/)
+    await user.type(field, '1st')
+    const message = 'Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
+    expect(errors).toHaveTextContent(message)
+    expect(errors).not.toHaveTextContent('is required')
+    expect(insertButton()).toBeDisabled()
+    expect(insertButton()).toHaveAccessibleDescription(expect.stringContaining(message))
+
+    await user.clear(field)
+    await user.type(field, 'loyalty')
+    expect(errors).toBeEmptyDOMElement()
+    expect(insertButton()).toBeEnabled()
+    expect(insertButton()).not.toHaveAccessibleDescription()
+  })
 })
