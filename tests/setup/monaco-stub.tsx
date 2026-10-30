@@ -4,13 +4,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { vi } from 'vitest'
 
-/** Every completion provider registered since the last reset, and whether it was disposed. */
-export const monacoStub: { providers: { language: string; disposed: boolean }[] } = {
-  providers: []
+/**
+ * Every completion provider registered since the last reset, and whether it was disposed; every
+ * editor mounted since the last reset, in mount order.
+ */
+export const monacoStub: {
+  providers: { language: string; disposed: boolean }[]
+  editors: FakeEditor[]
+} = {
+  providers: [],
+  editors: []
 }
 
 export function resetMonacoStub(): void {
   monacoStub.providers = []
+  monacoStub.editors = []
 }
 
 export function createFakeMonaco() {
@@ -113,7 +121,7 @@ export type FakeEditor = ReturnType<typeof createFakeEditor>
 interface EditorProps {
   value?: string
   defaultValue?: string
-  options?: { readOnly?: boolean }
+  options?: { readOnly?: boolean; fontSize?: number }
   beforeMount?: (monaco: FakeMonaco) => void
   onMount?: (editor: FakeEditor, monaco: FakeMonaco) => void
   onChange?: (value: string | undefined) => void
@@ -132,6 +140,7 @@ export function Editor({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   // Monaco calls the mount callbacks once, with the props of the first render.
   const mountRef = useRef({ beforeMount, onMount, onChange })
+  const editorRef = useRef<FakeEditor | null>(null)
 
   useEffect(() => {
     const { beforeMount, onMount, onChange } = mountRef.current
@@ -148,8 +157,18 @@ export function Editor({
         end: textareaRef.current!.selectionEnd
       })
     )
+    editorRef.current = editor
+    monacoStub.editors.push(editor)
     onMount?.(editor, monaco)
   }, [])
+
+  // Monaco applies changed options to the mounted editor
+  const optionsRef = useRef(options)
+  useEffect(() => {
+    if (optionsRef.current === options) return
+    optionsRef.current = options
+    if (options) editorRef.current?.updateOptions(options)
+  }, [options])
 
   return (
     <textarea
