@@ -10,6 +10,7 @@ import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/
 import { createSenderCheck, emit, handleAll, onAll } from './ipc/registration'
 import { setProjectRootsDir } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
+import { createWindowOpenHandler } from './window-open'
 import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
 import { DEFAULT_WINDOW_SIZE } from './window-size'
 import { IPC_CHANNELS } from '../shared/ipc-types'
@@ -59,17 +60,9 @@ function createWindow(): void {
     handleWillPreventUnload(event, (options) => dialog.showMessageBoxSync(win, options))
   )
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    try {
-      const parsed = new URL(details.url)
-      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-        shell.openExternal(parsed.href)
-      }
-    } catch {
-      // Ignore malformed URLs
-    }
-    return { action: 'deny' }
-  })
+  mainWindow.webContents.setWindowOpenHandler(
+    createWindowOpenHandler((url) => shell.openExternal(url))
+  )
 
   if (devServerUrl) {
     mainWindow.loadURL(devServerUrl)
