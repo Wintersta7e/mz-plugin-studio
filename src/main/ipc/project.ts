@@ -3,13 +3,33 @@ import log from 'electron-log/main'
 import { ProjectParser } from '../services/projectParser'
 import type { ProjectValidation } from '../../shared/ipc-types'
 import type { MZProject } from '../../shared/types/mz'
-import { assertSafeProjectPath } from '../../shared/path-safety'
+import { assertSafeProjectPath, isUncText } from '../../shared/path-safety'
 import { isProjectRootGranted, recordProjectRoot, setCurrentProjectRoot } from '../file-access'
 import { strings } from './arguments'
 import type { InvokeHandlers } from './registration'
 
+/** Refuses a project request, logged once without the project's content */
+function refuse(channel: string, projectPath: string, reason: string): never {
+  log.warn(`[${channel}] Refused ${projectPath}: ${reason}`)
+  throw new Error(`Access denied: ${reason}`)
+}
+
+/**
+ * Whether the folder was chosen in the folder dialog or confirmed opening. A network folder that
+ * was not is refused here, before anything looks it up: on Windows looking up a network path
+ * sends the user's credentials to its host, so only the folder dialog may lead there.
+ */
+async function checkGrant(channel: string, projectPath: string): Promise<boolean> {
+  const granted = await isProjectRootGranted(projectPath)
+  if (!granted && isUncText(projectPath)) {
+    refuse(channel, projectPath, 'a network folder opens only when chosen with Open Project')
+  }
+  return granted
+}
+
 export async function runProjectValidate(path: string): Promise<ProjectValidation> {
   assertSafeProjectPath(path)
+  await checkGrant('project:validate', path)
   log.debug(`[project:validate] ${path}`)
   return ProjectParser.validateProject(path)
 }
@@ -52,12 +72,6 @@ export async function confirmProjectOpen(
   return result.response !== cancel
 }
 
-/** Refuses a project load, logged once without the project's content */
-function refuseLoad(projectPath: string, reason: string): never {
-  log.warn(`[project:load] Refused ${projectPath}: ${reason}`)
-  throw new Error(`Access denied: ${reason}`)
-}
-
 /**
  * Loads an RPG Maker MZ project folder the user chose in the folder dialog or confirms now, and
  * makes it the project the project channels act on. A refused or failed load keeps the open one.
@@ -66,13 +80,11 @@ export async function loadGrantedProject(
   dialog: Pick<Dialog, 'showMessageBox'>,
   projectPath: string
 ): Promise<MZProject> {
+  const granted = await checkGrant('project:load', projectPath)
   const validation = await ProjectParser.validateProject(projectPath)
-  if (!validation.valid) refuseLoad(projectPath, 'not an RPG Maker MZ project folder')
-  if (
-    !(await isProjectRootGranted(projectPath)) &&
-    !(await confirmProjectOpen(dialog, projectPath))
-  ) {
-    refuseLoad(projectPath, 'opening the project was cancelled')
+  if (!validation.valid) refuse('project:load', projectPath, 'not an RPG Maker MZ project folder')
+  if (!granted && !(await confirmProjectOpen(dialog, projectPath))) {
+    refuse('project:load', projectPath, 'opening the project was cancelled')
   }
   await recordProjectRoot(projectPath)
   const project = await runProjectLoad(projectPath)

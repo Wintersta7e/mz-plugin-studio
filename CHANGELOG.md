@@ -6,6 +6,7 @@
 
 - Requests from the app window to the main process are accepted only from the app's own page.
 - Saving, loading and listing plugins in a project works only on the project that is open, and a project opens only from a folder you chose with Open Project on this computer or confirmed opening when the app asked.
+- A project folder on a network share opens only when you chose it with Open Project, and until then the app does not look it up or ask to open it: looking up a network folder can send your Windows sign-in to the computer that shares it.
 - Reading a file by its path is limited to the open project's `js/plugins` folder and to files chosen in a file dialog during the session.
 - Paths and file names the app reads or writes are refused when Windows would open something other than a plain file: a `:` after the drive letter (a hidden stream of the file), or a folder or file named as a device, such as `CON`, `NUL`, `COM1` or `LPT1`, with or without an extension.
 

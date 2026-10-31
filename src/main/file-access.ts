@@ -5,6 +5,7 @@ import {
   assertSafeFilePath,
   assertSafeProjectPath,
   isAllowedExtension,
+  isUncText,
   type PlatformPath
 } from '../shared/path-safety'
 
@@ -52,9 +53,6 @@ export function recordReadGrant(filePath: string, pathImpl: PlatformPath = path)
   }
 }
 
-/** A UNC path, checked on the text alone: looking one up sends the user's network credentials */
-const UNC = /^[\\/]{2}/
-
 /**
  * Throws unless the path was chosen in a file dialog this session, or is a file under the open
  * project's `js/plugins` folder. A UNC path needs the dialog, also under a UNC project.
@@ -62,7 +60,7 @@ const UNC = /^[\\/]{2}/
 function assertReadAllowed(filePath: string, pathImpl: PlatformPath): void {
   if (readGrants.has(grantKey(filePath, pathImpl))) return
   const root = getCurrentProjectRoot()
-  if (root !== null && !UNC.test(filePath)) {
+  if (root !== null && !isUncText(filePath)) {
     const plugins = grantKey(pathImpl.join(root, 'js', 'plugins'), pathImpl)
     const relative = pathImpl.relative(plugins, grantKey(filePath, pathImpl))
     const outside =

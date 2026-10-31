@@ -14,6 +14,32 @@ import { copyFixtureProject } from '../helpers/fixture-project'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
 
+/**
+ * Every filesystem call under a synthetic network host: on Windows looking one up sends the
+ * user's credentials. Matched by the host name, as a posix join folds the leading `//`.
+ */
+const { NETWORK_HOST, networkCalls } = vi.hoisted(() => ({
+  NETWORK_HOST: 'synthetic-host',
+  networkCalls: [] as string[]
+}))
+vi.mock('fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>()
+  const recorded = Object.entries(actual).map(([name, member]) => {
+    if (typeof member !== 'function') return [name, member]
+    const fn = member as (...args: unknown[]) => unknown
+    return [
+      name,
+      (...args: unknown[]) => {
+        if (typeof args[0] === 'string' && args[0].includes(NETWORK_HOST)) {
+          networkCalls.push(`${name} ${args[0]}`)
+        }
+        return fn(...args)
+      }
+    ]
+  })
+  return Object.fromEntries(recorded)
+})
+
 const PROJECT_CHANNELS = [
   'plugin:save',
   'plugin:load',
@@ -235,6 +261,29 @@ describe('project scope', () => {
     expect(kept.roots[0]).toBe(roots[5])
     expect(kept.roots[1]).toBe(roots[roots.length - 1])
     expect(new Set(kept.roots).size).toBe(kept.roots.length)
+  })
+
+  it('refuses a network folder not chosen in the folder dialog without looking it up', async () => {
+    const { ipc, dialog } = await session()
+    const network = `//${NETWORK_HOST}/share/Proj`
+    networkCalls.length = 0
+    await expect(ipc.invoke('project:validate', network)).rejects.toThrow(/^Access denied: /)
+    await expect(ipc.invoke('project:load', network)).rejects.toThrow(/^Access denied: /)
+    expect(networkCalls).toEqual([])
+    expect(dialog.showMessageBox).not.toHaveBeenCalled()
+  })
+
+  it('looks up a network folder once it was chosen in the folder dialog', async () => {
+    const { ipc, dialog, access } = await session()
+    const network = `//${NETWORK_HOST}/share/Proj`
+    await access.recordProjectRoot(network)
+    networkCalls.length = 0
+    await expect(ipc.invoke('project:validate', network)).resolves.toMatchObject({ valid: false })
+    await expect(ipc.invoke('project:load', network)).rejects.toThrow(
+      'Access denied: not an RPG Maker MZ project folder'
+    )
+    expect(networkCalls.length).toBeGreaterThan(0)
+    expect(dialog.showMessageBox).not.toHaveBeenCalled()
   })
 
   it('compares the open project case-insensitively on win32', async () => {

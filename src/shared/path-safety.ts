@@ -19,6 +19,15 @@ const WIN32_DRIVE = /^[A-Za-z]:/
 const WIN32_DEVICE_NAME =
   /^(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9\u00b9\u00b2\u00b3]) *(?:\..*)?$/i
 
+/**
+ * Whether the text starts with two separators: a network path (`\\host\share`, `//host/share`)
+ * or a Windows device path (`\\?\`, `\\.\`). Decided from the text alone, as looking a network
+ * path up sends the user's Windows credentials to its host.
+ */
+export function isUncText(p: string): boolean {
+  return /^[\\/]{2}/.test(p)
+}
+
 function isWin32(pathImpl: PlatformPath): boolean {
   return pathImpl.sep === '\\'
 }

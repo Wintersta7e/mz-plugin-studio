@@ -5,6 +5,7 @@ import {
   assertSafeFilePath,
   assertSafeFilename,
   assertSafeProjectPath,
+  isUncText,
   type PlatformPath
 } from '../../src/shared/path-safety'
 
@@ -423,6 +424,26 @@ describe('path guard', () => {
         expect(call).toThrow(row.error)
         expect(call).not.toThrow(TypeError)
       }
+    })
+  }
+})
+
+// Looking up a network path sends the user's Windows credentials, so main checks the text first
+describe('network path text', () => {
+  const rows: [string, boolean][] = [
+    ['\\\\host\\share', true],
+    ['//host/share/Proj', true],
+    ['\\/host/share', true],
+    ['\\\\?\\C:\\Games', true],
+    ['\\\\.\\pipe\\x', true],
+    ['C:\\Games\\Proj', false],
+    ['/work/Proj', false],
+    ['\\Games\\Proj', false],
+    ['Synthetic.js', false]
+  ]
+  for (const [input, network] of rows) {
+    it(`reads ${JSON.stringify(input)} as ${network ? 'a network or device path' : 'local'}`, () => {
+      expect(isUncText(input)).toBe(network)
     })
   }
 })

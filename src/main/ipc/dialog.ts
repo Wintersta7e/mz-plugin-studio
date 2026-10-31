@@ -5,6 +5,7 @@ import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../
 import {
   assertSafeProjectPath,
   isAllowedExtension,
+  isUncText,
   type PlatformPath
 } from '../../shared/path-safety'
 import { recordProjectRoot, recordReadGrant, recordWriteGrant } from '../file-access'
@@ -150,8 +151,6 @@ function checkMessageOptions(value: unknown): MessageDialogOptions {
 /** What a dialog may open at: a bare file name, or a folder it opens in */
 export type DialogDefaultClass = 'filename' | 'directory-seed'
 
-/** Two leading separators: a network path (\\host\share) or a Windows device path (\\?\, \\.\) */
-const UNC_PREFIX = /^[\\/]{2}/
 const MAX_FILENAME_LENGTH = 255
 
 /**
@@ -164,7 +163,7 @@ export function classifyDialogDefault(
   pathImpl: PlatformPath = path
 ): DialogDefaultClass | null {
   if (typeof value !== 'string' || value === '' || value.includes('\0')) return null
-  if (UNC_PREFIX.test(value)) return null
+  if (isUncText(value)) return null
   // ':' is not part of a file name: `C:x.js` is relative to the current folder of drive C
   if (!/[\\/:]/.test(value)) {
     const named =
