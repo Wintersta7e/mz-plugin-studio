@@ -101,7 +101,8 @@ export default defineConfig(
   },
   {
     // Raw IPC skips the sender, argument and file-access checks; only the two wrappers use it.
-    // Not caught: send on a webContents held under another name (const wc = win.webContents).
+    // Not caught: send or postMessage on a webContents or frame held under another name
+    // (const wc = win.webContents), and a member reached by a computed name (electron['ipcMain']).
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/main/ipc/registration.ts', 'src/preload/ipc.ts'],
     rules: {
@@ -125,12 +126,12 @@ export default defineConfig(
         },
         {
           selector:
-            "CallExpression[callee.property.name='send'][callee.object.property.name=/^(webContents|sender)$/]",
+            'CallExpression[callee.property.name=/^(send|sendToFrame|postMessage)$/][callee.object.property.name=/^(webContents|sender|mainFrame|senderFrame)$/]',
           message: 'Use emit() from the main IPC wrapper.'
         },
         {
           selector:
-            "CallExpression[callee.property.name='send'][callee.object.name=/^(webContents|sender)$/]",
+            'CallExpression[callee.property.name=/^(send|sendToFrame|postMessage)$/][callee.object.name=/^(webContents|sender|mainFrame|senderFrame)$/]',
           message: 'Use emit() from the main IPC wrapper.'
         },
         {
@@ -138,13 +139,17 @@ export default defineConfig(
           message: 'Use the IPC wrappers.'
         },
         {
-          selector:
-            "MemberExpression[object.callee.name='require'][object.arguments.0.value='electron'][property.name=/^ipc(Main|Renderer)$/]",
+          // A window's or frame's own IpcMain (webContents.ipc, WebFrameMain.ipc)
+          selector: "MemberExpression[property.name='ipc']",
           message: 'Use the IPC wrappers.'
         },
         {
-          selector:
-            "VariableDeclarator[init.callee.name='require'][init.arguments.0.value='electron'] > ObjectPattern > Property[key.name=/^ipc(Main|Renderer)$/]",
+          // ipcMain reached through any electron module value: default, namespace, require, import()
+          selector: 'MemberExpression[property.name=/^ipc(Main|Renderer)$/]',
+          message: 'Use the IPC wrappers.'
+        },
+        {
+          selector: 'ObjectPattern > Property[key.name=/^ipc(Main|Renderer)$/]',
           message: 'Use the IPC wrappers.'
         }
       ]

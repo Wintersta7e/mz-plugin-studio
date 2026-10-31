@@ -97,6 +97,94 @@ const CASES: { name: string; source: string; filePath: string; rules: string[] }
     source: "declare const socket: { send(c: string): void }\nsocket.send('x')\n",
     filePath: 'src/main/probe.ts',
     rules: []
+  },
+  {
+    name: "a window's own ipc",
+    source:
+      "declare const win: { webContents: { ipc: { handle(c: string, f: () => number): void } } }\nwin.webContents.ipc.handle('x', () => 1)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: "a frame's own ipc",
+    source:
+      "declare const win: { webContents: { mainFrame: { ipc: { on(c: string, f: () => void): void } } } }\nwin.webContents.mainFrame.ipc.on('x', () => undefined)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'send on the main frame',
+    source:
+      "declare const win: { webContents: { mainFrame: { send(c: string): void } } }\nwin.webContents.mainFrame.send('x')\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: "send on a request's frame",
+    source:
+      "declare const event: { senderFrame: { send(c: string): void } }\nevent.senderFrame.send('x')\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'webContents.sendToFrame',
+    source:
+      "declare const win: { webContents: { sendToFrame(f: number, c: string): void } }\nwin.webContents.sendToFrame(1, 'x')\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'webContents.postMessage',
+    source:
+      "declare const win: { webContents: { postMessage(c: string, m: unknown): void } }\nwin.webContents.postMessage('x', 1)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'postMessage on the main frame',
+    source:
+      "declare const mainFrame: { postMessage(c: string, m: unknown): void }\nmainFrame.postMessage('x', 1)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'ipcMain on a default import',
+    source: "import electron from 'electron'\nelectron.ipcMain.handle('x', () => 1)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'ipcMain on a namespace import',
+    source: "import * as electron from 'electron'\nelectron.ipcMain.handle('x', () => 1)\n",
+    filePath: 'src/main/probe.ts',
+    rules: [IMPORTS, SYNTAX]
+  },
+  {
+    name: 'ipcRenderer destructured from a default import',
+    source: "import electron from 'electron'\nexport const { ipcRenderer } = electron\n",
+    filePath: 'src/preload/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'ipcMain destructured from a dynamic import',
+    source:
+      "export async function probe(): Promise<void> {\n  const { ipcMain: bus } = await import('electron')\n  bus.handle('x', () => 1)\n}\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: 'ipcMain on a dynamic import',
+    source:
+      "export async function probe(): Promise<void> {\n  ;(await import('electron')).ipcMain.handle('x', () => 1)\n}\n",
+    filePath: 'src/main/probe.ts',
+    rules: [SYNTAX]
+  },
+  {
+    name: "the page's own postMessage",
+    source:
+      "window.postMessage('x', '*')\nwindow.parent.postMessage('x', '*')\ndeclare const worker: Worker\nworker.postMessage('x')\n",
+    filePath: 'src/renderer/src/probe.ts',
+    rules: []
   }
 ]
 
