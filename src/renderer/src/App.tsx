@@ -374,7 +374,6 @@ function App() {
                             : 'text-muted-foreground hover:text-foreground'
                         )}
                         onClick={() => setMainView('editor')}
-                        data-testid="main-view-editor"
                       >
                         Editor
                       </button>
@@ -431,9 +430,7 @@ function App() {
                               <TabsTrigger value="commands" data-testid="editor-tab-commands">
                                 Commands
                               </TabsTrigger>
-                              <TabsTrigger value="structs" data-testid="editor-tab-structs">
-                                Structs
-                              </TabsTrigger>
+                              <TabsTrigger value="structs">Structs</TabsTrigger>
                               <TabsTrigger value="code" data-testid="editor-tab-code">
                                 Code
                               </TabsTrigger>
