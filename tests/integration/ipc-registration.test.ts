@@ -9,8 +9,12 @@ import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
 import {
   createSenderCheck,
   handleAll,
+  LOG_CHANNEL,
   onAll,
-  type RendererEntry
+  routeLogChannel,
+  type LogChannelHost,
+  type RendererEntry,
+  type SenderEvent
 } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS } from '../../src/shared/ipc-types'
 import { createFakeRegistrar, createFakeWindow, type FakeFrame } from '../helpers/fake-ipc'
@@ -246,5 +250,192 @@ describe('ipc registration', () => {
   it('counts its sender cases', () => {
     console.log(`sender cases ${cases}`)
     expect(cases).toBeGreaterThan(0)
+  })
+})
+
+type HostListener = (event: SenderEvent, ...args: unknown[]) => unknown
+
+/** A stand-in for `ipcMain` that, like it, refuses a second handler on one channel */
+function createLogHost(): {
+  host: LogChannelHost
+  listeners: Map<string, HostListener[]>
+  handlers: Map<string, HostListener>
+  sendFrom(frame: FakeFrame | null, ...args: unknown[]): void
+  invokeFrom(frame: FakeFrame | null, ...args: unknown[]): Promise<unknown>
+} {
+  const listeners = new Map<string, HostListener[]>()
+  const handlers = new Map<string, HostListener>()
+  const host: LogChannelHost = {
+    on(channel, listener) {
+      listeners.set(channel, [...(listeners.get(channel) ?? []), listener])
+    },
+    handle(channel, handler) {
+      if (handlers.has(channel)) throw new Error(`a second handler for ${channel}`)
+      handlers.set(channel, handler)
+    },
+    listeners: (channel) => [...(listeners.get(channel) ?? [])],
+    removeAllListeners(channel) {
+      listeners.delete(channel)
+    },
+    removeHandler(channel) {
+      handlers.delete(channel)
+    }
+  }
+  return {
+    host,
+    listeners,
+    handlers,
+    sendFrom(frame, ...args) {
+      for (const listener of listeners.get(LOG_CHANNEL) ?? [])
+        listener({ senderFrame: frame }, ...args)
+    },
+    async invokeFrom(frame, ...args) {
+      const handler = handlers.get(LOG_CHANNEL)
+      if (handler === undefined) throw new Error(`no handler for ${LOG_CHANNEL}`)
+      return handler({ senderFrame: frame }, ...args)
+    }
+  }
+}
+
+describe("electron-log's channel", () => {
+  const frame = appWindow.webContents.mainFrame
+  // What electron-log registers on import: a listener writing log lines, a handler for options
+  const writeLine = vi.fn()
+  const answerOptions = vi.fn(() => ({}))
+  const routed = (): ReturnType<typeof createLogHost> => {
+    const fake = createLogHost()
+    fake.host.on(LOG_CHANNEL, writeLine)
+    fake.host.handle(LOG_CHANNEL, answerOptions)
+    routeLogChannel(isTrustedSender, fake.host)
+    return fake
+  }
+  const line = (fields: Record<string, unknown> = {}): Record<string, unknown> => ({
+    data: ['a synthetic line'],
+    date: '2026-01-01T00:00:00.000Z',
+    level: 'info',
+    logId: 'default',
+    variables: { processType: 'renderer' },
+    ...fields
+  })
+  const cyclic: Record<string, unknown> = {}
+  cyclic.self = cyclic
+
+  beforeEach(() => {
+    writeLine.mockClear()
+    answerOptions.mockClear()
+    vi.mocked(log.error).mockClear()
+  })
+
+  it('registers it beside the app channels in place of the unchecked one', () => {
+    const fake = routed()
+    handleAll(handlers, isTrustedSender, fake.host)
+    onAll(listeners, isTrustedSender, fake.host)
+    expect([...fake.handlers.keys()].sort()).toEqual([...INVOKE_CHANNELS, LOG_CHANNEL].sort())
+    expect([...fake.listeners.keys()].sort()).toEqual([...SEND_CHANNELS, LOG_CHANNEL].sort())
+    expect(fake.listeners.get(LOG_CHANNEL)).toHaveLength(1)
+    expect(fake.listeners.get(LOG_CHANNEL)).not.toContain(writeLine)
+    expect(fake.handlers.get(LOG_CHANNEL)).not.toBe(answerOptions)
+    expect(vi.mocked(log.error)).not.toHaveBeenCalled()
+  })
+
+  it('refuses log lines and option requests from any sender but the app page', async () => {
+    const fake = routed()
+    for (const sender of untrusted) {
+      window = appWindow
+      vi.mocked(log.warn).mockClear()
+      const from = sender.frame()
+      fake.sendFrom(from, line())
+      const result = await fake.invokeFrom(from, { cmd: 'getOptions' }).then(
+        () => 'answered',
+        (error: Error) => error.message
+      )
+      expect({ sender: sender.name, result, warned: refusals() }).toEqual({
+        sender: sender.name,
+        result: 'Access denied: sender',
+        warned: [
+          [`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`],
+          [`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`]
+        ]
+      })
+    }
+    expect(writeLine).not.toHaveBeenCalled()
+    expect(answerOptions).not.toHaveBeenCalled()
+  })
+
+  const refusedLines: { name: string; args: unknown[] }[] = [
+    { name: 'a __proto__ logger with a scope', args: [line({ logId: '__proto__', scope: 'x' })] },
+    { name: 'a constructor logger', args: [line({ logId: 'constructor', scope: 'x' })] },
+    { name: 'a prototype logger', args: [line({ logId: 'prototype' })] },
+    { name: 'a toString logger', args: [line({ logId: 'toString', scope: 'x' })] },
+    { name: 'a __proto__ scope', args: [line({ scope: '__proto__' })] },
+    { name: 'a numeric logger', args: [line({ logId: 1 })] },
+    { name: 'an overlong scope', args: [line({ scope: 's'.repeat(65) })] },
+    { name: 'an overlong logger name', args: [line({ logId: 'l'.repeat(65) })] },
+    { name: 'data that is not a list', args: [line({ data: 'x' })] },
+    { name: 'too many values', args: [line({ data: Array.from({ length: 101 }, () => 0) })] },
+    { name: 'an overlong line', args: [line({ data: ['x'.repeat(256 * 1024)] })] },
+    { name: 'a cyclic value', args: [line({ data: [cyclic] })] },
+    { name: 'an error report command', args: [line({ cmd: 'errorHandler', showDialog: true })] },
+    { name: 'a list', args: [['x']] },
+    {
+      name: 'a class instance',
+      args: [
+        new (class Line {
+          data = ['x']
+        })()
+      ]
+    },
+    { name: 'a text', args: ['x'] },
+    { name: 'nothing', args: [] },
+    { name: 'two lines', args: [line(), line()] }
+  ]
+
+  it.each(refusedLines)('drops $name without throwing', ({ args }) => {
+    const fake = routed()
+    vi.mocked(log.warn).mockClear()
+    expect(() => fake.sendFrom(frame, ...args)).not.toThrow()
+    expect(writeLine).not.toHaveBeenCalled()
+    expect(refusals()).toEqual([
+      [`[ipc] refused ${LOG_CHANNEL}: Invalid arguments: ${LOG_CHANNEL}`]
+    ])
+  })
+
+  it.each([
+    { name: 'a __proto__ logger', args: [{ cmd: 'getOptions', logId: '__proto__' }] },
+    { name: 'another command', args: [{ cmd: 'errorHandler' }] },
+    { name: 'nothing', args: [] }
+  ])('refuses an option request with $name', async ({ args }) => {
+    const fake = routed()
+    await expect(fake.invokeFrom(frame, ...args)).rejects.toThrow(
+      `Invalid arguments: ${LOG_CHANNEL}`
+    )
+    expect(answerOptions).not.toHaveBeenCalled()
+  })
+
+  it("passes the app page's log line on to electron-log unchanged", async () => {
+    const fake = routed()
+    vi.mocked(log.warn).mockClear()
+    const scoped = line({ scope: 'store', data: ['a synthetic line', { nested: [1, 2] }] })
+    const bare = Object.assign(Object.create(null) as Record<string, unknown>, line())
+    fake.sendFrom(frame, scoped)
+    fake.sendFrom(frame, bare)
+    expect(writeLine.mock.calls).toEqual([
+      [{ senderFrame: frame }, scoped],
+      [{ senderFrame: frame }, bare]
+    ])
+    expect(writeLine.mock.calls[0][1]).toBe(scoped)
+    await expect(fake.invokeFrom(frame, { cmd: 'getOptions' })).resolves.toEqual({
+      levels: log.levels,
+      logId: undefined
+    })
+    expect(vi.mocked(log.warn)).not.toHaveBeenCalled()
+  })
+
+  it('says so when electron-log registered no listener to write the lines', () => {
+    const fake = createLogHost()
+    routeLogChannel(isTrustedSender, fake.host)
+    expect(vi.mocked(log.error).mock.calls).toEqual([
+      [`[ipc] electron-log has no listener on ${LOG_CHANNEL}: page log lines are lost`]
+    ])
   })
 })

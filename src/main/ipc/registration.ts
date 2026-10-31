@@ -18,7 +18,18 @@ import {
   type SendChannel
 } from '../../shared/ipc-types'
 
+import { invalidArguments } from './arguments'
+
 export { invalidArguments } from './arguments'
+
+/** electron-log's channel: the page's log lines, and the page's check that main's logger runs */
+export const LOG_CHANNEL = '__ELECTRON_LOG__'
+/** Longest logger name or scope a log line may carry; a scope pads every later line to its length */
+const MAX_LOG_NAME = 64
+/** Most values one log line may carry */
+const MAX_LOG_VALUES = 100
+/** Longest log line, measured as JSON */
+const MAX_LOG_LENGTH = 256 * 1024
 
 export interface Handler<C extends InvokeChannel> {
   access: AccessClass
@@ -166,6 +177,122 @@ export function onAll(
   }
   SEND_CHANNELS.forEach(register)
   return count
+}
+
+/** The part of `ipcMain` that holds electron-log's own registration on its channel */
+export interface LogChannelHost extends Registrar {
+  listeners(channel: string): unknown[]
+  removeAllListeners(channel: string): unknown
+  removeHandler(channel: string): void
+}
+
+type LogListener = (event: SenderEvent, message: unknown) => void
+
+/** The fields of a log line or options request the checks read */
+interface LogFields {
+  cmd?: unknown
+  logId?: unknown
+  scope?: unknown
+  data?: unknown
+}
+
+function isPlainObject(value: unknown): value is LogFields {
+  if (typeof value !== 'object' || value === null) return false
+  const proto: unknown = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+/**
+ * A logger name or scope: absent, or a short string naming no property every object has.
+ * electron-log looks loggers up by name in a plain object, so `__proto__` or `toString` would
+ * reach an object's own machinery and throw in main.
+ */
+function isLogName(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === 'string' &&
+      value.length <= MAX_LOG_NAME &&
+      !(value in Object.prototype) &&
+      value !== 'prototype')
+  )
+}
+
+/** The length of `value` as JSON, or Infinity when it has none (a cycle, a BigInt) */
+function jsonLength(value: unknown): number {
+  try {
+    return JSON.stringify(value).length
+  } catch {
+    return Infinity
+  }
+}
+
+/** Throws `invalidArguments` unless `raw` is one log line as electron-log's page logger sends it */
+function checkLogLine(raw: readonly unknown[]): void {
+  const [line] = raw
+  if (
+    raw.length !== 1 ||
+    !isPlainObject(line) ||
+    // A command asks main to report an error, possibly in a dialog; only log lines are taken
+    'cmd' in line ||
+    !isLogName(line.logId) ||
+    !isLogName(line.scope) ||
+    !Array.isArray(line.data) ||
+    line.data.length > MAX_LOG_VALUES ||
+    jsonLength(line) > MAX_LOG_LENGTH
+  ) {
+    throw invalidArguments(LOG_CHANNEL)
+  }
+}
+
+/** The logger name the page asks options for; throws `invalidArguments` on any other request */
+function checkLogOptionsRequest(raw: readonly unknown[]): string | undefined {
+  const [request] = raw
+  if (
+    raw.length !== 1 ||
+    !isPlainObject(request) ||
+    request.cmd !== 'getOptions' ||
+    !isLogName(request.logId)
+  ) {
+    throw invalidArguments(LOG_CHANNEL)
+  }
+  return request.logId as string | undefined
+}
+
+/**
+ * Puts electron-log's channel behind the sender check: takes off the listener and handler
+ * electron-log registers when it loads and registers checked ones in their place. An admitted log
+ * line goes on to electron-log's own listener, which writes it as before.
+ */
+export function routeLogChannel(
+  isTrustedSender: SenderCheck,
+  host: LogChannelHost = ipcMain
+): void {
+  const forward = host.listeners(LOG_CHANNEL) as LogListener[]
+  if (forward.length === 0) {
+    log.error(`[ipc] electron-log has no listener on ${LOG_CHANNEL}: page log lines are lost`)
+  }
+  host.removeAllListeners(LOG_CHANNEL)
+  host.removeHandler(LOG_CHANNEL)
+  host.on(LOG_CHANNEL, (event, ...raw) => {
+    try {
+      admit(LOG_CHANNEL, () => {
+        if (!isTrustedSender(event)) throw new Error('Access denied: sender')
+        checkLogLine(raw)
+      })
+    } catch {
+      // Already logged; a throw from a listener would be an uncaught exception in main
+      return
+    }
+    for (const listener of forward) listener(event, raw[0])
+  })
+  // The page logger asks once at startup and reads only whether main answered
+  host.handle(LOG_CHANNEL, (event, ...raw) => {
+    const logId = admit(LOG_CHANNEL, () => {
+      if (!isTrustedSender(event)) throw new Error('Access denied: sender')
+      return checkLogOptionsRequest(raw)
+    })
+    return { levels: log.levels, logId }
+  })
 }
 
 /** Sends an event to a window */

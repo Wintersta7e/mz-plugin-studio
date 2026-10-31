@@ -7,7 +7,7 @@ import { app, shell, BrowserWindow, dialog, session } from 'electron'
 import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/handlers'
-import { createSenderCheck, emit, handleAll, onAll } from './ipc/registration'
+import { createSenderCheck, emit, handleAll, onAll, routeLogChannel } from './ipc/registration'
 import { setProjectRootsDir } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
 import { createWindowOpenHandler } from './window-open'
@@ -123,6 +123,8 @@ app.whenReady().then(() => {
   setProjectRootsDir(app.getPath('userData'))
   handleAll(createInvokeHandlers(deps), isTrustedSender)
   onAll(createSendListeners(deps), isTrustedSender)
+  // electron-log's own channel, which it registered unchecked on import, takes the same check
+  routeLogChannel(isTrustedSender)
 
   createWindow()
   log.info('Main window created')
