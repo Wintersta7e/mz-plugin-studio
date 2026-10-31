@@ -1,6 +1,7 @@
-// The one place main registers IPC: every request must come from the app's own page and pass its
-// channel's argument check and access class before its handler runs, and every refusal is logged
-// once without the request's content.
+// The one place main registers IPC, electron-log's `__ELECTRON_LOG__` channel included: every
+// request must come from the app's own page and pass its channel's argument check (for a contract
+// channel, also its access class) before its handler runs, and every refusal is logged once
+// without the request's content.
 import { fileURLToPath } from 'url'
 import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
