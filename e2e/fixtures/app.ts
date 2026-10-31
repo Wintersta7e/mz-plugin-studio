@@ -373,6 +373,19 @@ export async function saveAndWaitForWrite(page: Page, path: string): Promise<voi
   await expect.poll(() => mtimeNs(path) > before).toBe(true)
 }
 
+/**
+ * Opens a new plugin and waits until the previous tab's editor has left the page. That editor
+ * fades out before the new one mounts, the only one on the page meanwhile: text filled into it
+ * is lost when it goes.
+ */
+export async function newPlugin(page: Page): Promise<void> {
+  // The main area holds one view at a time: the active tab's editor or the screen without one
+  const leaving = await page.getByRole('main').locator(':scope > *').elementHandles()
+  await page.getByTestId('new-plugin').click()
+  // Detached counts as hidden; a fading element at any opacity still counts as visible
+  for (const element of leaving) await element.waitForElementState('hidden')
+}
+
 /** Opens a project plugin from the Plugin Browser and waits until its tab is the active one */
 export async function openFromBrowser(page: Page, file: string): Promise<void> {
   const panel = page.getByTestId('plugin-browser-panel')

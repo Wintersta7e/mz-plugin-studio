@@ -7,6 +7,7 @@ import {
   expect,
   type LaunchedApp,
   loadFixtureProject,
+  newPlugin,
   runRoot,
   settle,
   test
@@ -59,24 +60,24 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
   const shown = [dirname(project)]
   switch (state) {
     case 'metadata':
-      await page.getByTestId('new-plugin').click()
+      await newPlugin(page)
       await page.getByTestId('editor-tab-meta').click()
       await expect(page.getByTestId('code-preview')).toBeVisible()
       break
     case 'parameters':
-      await page.getByTestId('new-plugin').click()
+      await newPlugin(page)
       await page.getByTestId('editor-tab-parameters').click()
       // A new parameter's card opens expanded
       await page.getByTestId('param-add').click()
       break
     case 'commands':
-      await page.getByTestId('new-plugin').click()
+      await newPlugin(page)
       await page.getByTestId('editor-tab-commands').click()
       await page.getByTestId('command-add').click()
       await page.getByTestId('command-arg-add').click()
       break
     case 'code':
-      await page.getByTestId('new-plugin').click()
+      await newPlugin(page)
       await page.getByTestId('editor-tab-code').click()
       await expect(
         page.getByRole('tabpanel').locator('.monaco-editor .view-line').first()
@@ -92,7 +93,7 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
       break
     case 'analysis':
       // The view switch shows only while a plugin is open
-      await page.getByTestId('new-plugin').click()
+      await newPlugin(page)
       await page.getByTestId('main-view-analysis').click()
       await expect(page.getByTestId('analysis-view')).toBeVisible()
       break

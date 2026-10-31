@@ -12,6 +12,7 @@ import {
   type AppWindow,
   expect,
   loadFixtureProject,
+  newPlugin,
   openProject,
   pluginsDir,
   queueDialog,
@@ -42,7 +43,7 @@ async function paramCount(page: Page): Promise<number> {
 const pluginName = (payload: Payload): string => `Hostile_${payload.name.replace(/-/g, '_')}`
 
 async function newPluginNamed(page: Page, name: string): Promise<void> {
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-meta').click()
   await page.getByTestId('meta-name').fill(name)
 }

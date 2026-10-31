@@ -7,6 +7,7 @@ import {
   dialogCalls,
   expect,
   loadFixtureProject,
+  newPlugin,
   openFromBrowser,
   queueDialog,
   tabNames,
@@ -28,7 +29,7 @@ async function persistedTabs(page: Page): Promise<PersistedTabs['state']> {
 
 /** Opens a new plugin and leaves it with an unsaved description */
 async function newUnsavedPlugin(page: Page): Promise<void> {
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-meta').click()
   await page.getByTestId('meta-description').fill('Not saved yet')
 }

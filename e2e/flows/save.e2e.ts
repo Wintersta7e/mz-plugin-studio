@@ -13,6 +13,7 @@ import {
   expect,
   launchTwin,
   loadFixtureProject,
+  newPlugin,
   mtimeNs,
   openFromBrowser,
   openProject,
@@ -65,7 +66,7 @@ test('saves a new plugin with one parameter into the project', async ({ twin }) 
   const project = await loadFixtureProject(app, page)
   const before = readdirSync(pluginsDir(project))
 
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-parameters').click()
   await page.getByTestId('param-add').click()
   await save(page)
@@ -131,7 +132,7 @@ test('asks before overwriting a different file and re-checks after the prompt', 
   const target = join(pluginsDir(project), 'Fixture_Bom.js')
   const original = readFileSync(target)
 
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-meta').click()
   await page.getByTestId('meta-name').fill('Fixture_Bom')
 

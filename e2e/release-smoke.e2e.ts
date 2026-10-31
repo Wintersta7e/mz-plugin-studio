@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import type { Page } from '@playwright/test'
 import { PRODUCTION_CSP } from '../src/main/csp'
 import { readV160Payloads } from '../tests/helpers/persist-v160'
-import { expect, projectTitle, readArtifacts, test, type Cdp } from './fixtures/app'
+import { expect, newPlugin, projectTitle, readArtifacts, test, type Cdp } from './fixtures/app'
 
 interface TargetTree {
   page: string
@@ -169,7 +169,7 @@ async function runScriptedSession(page: Page, projectPath: string): Promise<void
 
   await page.getByTestId('recent-project').click()
   await expect(page.getByTestId('status-project')).toContainText(projectTitle(projectPath))
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-code').click()
   await page.getByRole('tabpanel').locator('.monaco-editor').click()
   await page.keyboard.type('const answer = 42\n')
@@ -244,7 +244,7 @@ test('release build runs a scripted session without policy violations', async ({
 
 test('release build marks a syntax error in the code editor', async ({ release }) => {
   const { page } = release
-  await page.getByTestId('new-plugin').click()
+  await newPlugin(page)
   await page.getByTestId('editor-tab-code').click()
   const editor = page.getByRole('tabpanel').locator('.monaco-editor')
   await editor.click()
