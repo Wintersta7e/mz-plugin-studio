@@ -12,10 +12,12 @@ const WIN32_UNC = /^[\\/]{2}[^\\/?.]/
 const WIN32_DRIVE = /^[A-Za-z]:/
 
 /**
- * A name Windows opens as a device in any folder: CON, PRN, AUX, NUL, COM1-9, LPT1-9, in any
- * case, also with spaces after it or an extension (`NUL.js`, `aux .js`)
+ * A name Windows opens as a device in any folder: CON, PRN, AUX, NUL, CONIN$, CONOUT$, COM1-9,
+ * LPT1-9 and COM or LPT with a superscript 1-3, in any case, also with spaces after it or an
+ * extension (`NUL.js`, `aux .js`). COM0 and LPT0 are not on Node's own list for `path.win32`.
  */
-const WIN32_DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9]) *(?:\..*)?$/i
+const WIN32_DEVICE_NAME =
+  /^(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9\u00b9\u00b2\u00b3]) *(?:\..*)?$/i
 
 function isWin32(pathImpl: PlatformPath): boolean {
   return pathImpl.sep === '\\'

@@ -324,7 +324,12 @@ const ROWS: Row[] = [
     'C:\\Games\\COM9.backup\\Synthetic.js',
     'C:\\Games\\LPT1\\Synthetic.js',
     'C:/Games/lpt9/Synthetic.js',
-    '\\\\host\\share\\NUL\\Synthetic.js'
+    '\\\\host\\share\\NUL\\Synthetic.js',
+    // Windows also reserves COM and LPT with a superscript 1-3, and the console names
+    'C:\\Games\\Proj\\js\\plugins\\COM\u00b9.js',
+    'C:\\Games\\LPT\u00b2\\Synthetic.js',
+    'C:\\Games\\Proj\\js\\plugins\\CONOUT$.js',
+    'C:\\Games\\conin$\\Synthetic.js'
   ].map(
     (input): Row => ({
       fn: assertSafeFilePath,
@@ -343,6 +348,9 @@ const ROWS: Row[] = [
     'C:\\Games\\Proj\\js\\plugins\\Icon.js',
     'C:\\Games\\COM10\\Synthetic.js',
     'C:\\Games\\LPT0\\Synthetic.js',
+    'C:\\Games\\COM0\\Synthetic.js',
+    'C:\\Games\\Proj\\js\\plugins\\COM\u2074.js',
+    'C:\\Games\\Proj\\js\\plugins\\CONIN.js',
     'C:\\Games\\NULL\\Synthetic.js',
     'C:\\Games\\Proj\\js\\plugins\\Synthetic_AUX.js',
     'c:\\Games\\Proj\\js\\plugins\\Synthetic.js',
@@ -355,7 +363,19 @@ const ROWS: Row[] = [
   ),
   // A file name is checked for both platforms, as its separators are
   ...(['posix', 'win32'] as const).flatMap((platform) => [
-    ...['CON.js', 'nul.js', 'Com1.js', 'LPT9.js', 'prn .js', 'AUX.backup.js'].map(
+    ...[
+      'CON.js',
+      'nul.js',
+      'Com1.js',
+      'LPT9.js',
+      'prn .js',
+      'AUX.backup.js',
+      'COM\u00b9.js',
+      'lpt\u00b2.js',
+      'COM\u00b3 .js',
+      'CONIN$.js',
+      'conout$.backup.js'
+    ].map(
       (input): Row => ({
         fn: assertSafeFilename,
         input,
@@ -364,9 +384,15 @@ const ROWS: Row[] = [
         error: `Invalid filename: ${JSON.stringify(input)} is a device name on Windows`
       })
     ),
-    ...['Console.js', 'CONFIG.js', 'COM10.js', 'Synthetic_NUL.js'].map(
-      (input): Row => ({ fn: assertSafeFilename, input, platform, today: 'accept' })
-    )
+    ...[
+      'Console.js',
+      'CONFIG.js',
+      'COM10.js',
+      'COM0.js',
+      'LPT0.js',
+      'CONOUT.js',
+      'Synthetic_NUL.js'
+    ].map((input): Row => ({ fn: assertSafeFilename, input, platform, today: 'accept' }))
   ]),
 
   // Input that is not a usable path: the guard's own error, never a TypeError from path
