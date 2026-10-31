@@ -60,6 +60,9 @@ jobs:
       - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
       - name: Fuse wire
         run: node scripts/ci-policy.mjs fuses dist/win-unpacked/mz-plugin-studio.exe
+      - run: npm run e2e:prepare
+      - name: Release build smoke
+        run: node node_modules/@playwright/test/cli.js test -c e2e/playwright.config.ts --project=release-smoke
       - name: Upload portable exe
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -25,9 +25,14 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url))
 export const IMAGE =
   'mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea'
 
+// The image's run options, shared with the CI container job; each caller adds its user
+export const CONTAINER_OPTIONS = ['--init', '--ipc=host', '--security-opt', 'seccomp=unconfined']
+// A screen larger than the app's window, so its content size is never clamped
+export const XVFB = 'xvfb-run -a -s "-screen 0 1920x1080x24"'
+
 export const BASELINES = 'e2e/__screenshots__/linux'
 // Where Playwright writes the HTML report: below the directory of package.json
-const REPORT = 'playwright-report'
+export const REPORT = 'playwright-report'
 
 const print = (line) => process.stdout.write(`${line}\n`)
 
@@ -39,7 +44,7 @@ export function isCopyBack(relPath) {
 /** @param {boolean} check @returns {string} the command the image runs in the copy */
 export function imageCommand(check) {
   const visual = [
-    'xvfb-run -a -s "-screen 0 1920x1080x24"',
+    XVFB,
     'node node_modules/@playwright/test/cli.js test -c e2e/playwright.config.ts --project=visual',
     ...(check ? [] : ['--update-snapshots=changed'])
   ].join(' ')
@@ -92,10 +97,7 @@ export function main(argv) {
       [
         'run',
         '--rm',
-        '--init',
-        '--ipc=host',
-        '--security-opt',
-        'seccomp=unconfined',
+        ...CONTAINER_OPTIONS,
         '--user',
         `${uid}:${gid}`,
         '-e',

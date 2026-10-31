@@ -141,10 +141,48 @@ jobs:
       - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
       - name: Fuse wire
         run: node scripts/ci-policy.mjs fuses dist/win-unpacked/mz-plugin-studio.exe
+      - run: npm run e2e:prepare
+      - run: npm run e2e
+      - name: Upload the end-to-end report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-windows-report
+          path: |
+            playwright-report/
+            test-results/
+
+  e2e-linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
+      options: --init --ipc=host --security-opt seccomp=unconfined --user 1001
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: ${{ github.event_name != 'schedule' && 'npm' || '' }}
+      - run: npm ci --ignore-scripts
+      - run: node node_modules/electron/install.js
+      - run: npm run e2e:prepare
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" npm run e2e
+      - run: xvfb-run -a -s "-screen 0 1920x1080x24" npm run e2e:visual
+      - name: Upload the end-to-end report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-linux-report
+          path: |
+            playwright-report/
+            test-results/
 
   test:
     if: always()
-    needs: [static, unit, package-win]
+    needs: [static, unit, package-win, e2e-linux]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
