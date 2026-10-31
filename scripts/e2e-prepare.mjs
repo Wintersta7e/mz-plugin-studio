@@ -1,0 +1,184 @@
+// Prepares the packaged builds the end-to-end tests drive, from the repository root:
+//   1. reuses dist/<platform>-unpacked/ if present, else builds it with the release configuration;
+//   2. copies it to dist/e2e-twin/ and enables EnableNodeCliInspectArguments there, the fuse
+//      Playwright's Electron launch needs and the release keeps off;
+//   3. fails unless the two fuse wires differ in that fuse only and every other file is identical;
+//   4. writes dist/e2e-artifacts.json: { release, twin, releaseWire, twinWire }.
+import { flipFuses, FuseV1Options, FuseVersion, getCurrentFuseWire } from '@electron/fuses'
+import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join, relative, resolve, sep } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
+const INSPECT = FuseV1Options.EnableNodeCliInspectArguments
+// Fuse state bytes as getCurrentFuseWire returns them
+const STATES = new Map([
+  [48, '0'],
+  [49, '1'],
+  [114, 'r']
+])
+
+const print = (line) => process.stdout.write(`${line}\n`)
+
+/**
+ * @typedef {Record<string, unknown>} Wire fuse index -> state char code, plus `version`
+ * @typedef {{ release: string; twin: string; releaseWire: Wire; twinWire: Wire }} Artifacts
+ */
+
+/** @param {Wire} wire @returns {[number, number][]} fuse index and state byte, in wire order */
+function fuses(wire) {
+  return Object.entries(wire)
+    .filter(([key]) => /^\d+$/.test(key))
+    .map(([key, state]) => [Number(key), Number(state)])
+}
+
+/** @param {number} index */
+const fuseName = (index) => FuseV1Options[index] ?? `Fuse${index}`
+
+/** @param {number} index @param {number} state */
+function stateChar(index, state) {
+  const char = STATES.get(state)
+  if (char === undefined) throw new Error(`fuse ${fuseName(index)}: unknown state byte ${state}`)
+  return char
+}
+
+/** @param {Wire} wire @returns {string} `<name>=<0|1|r>` for each fuse */
+export function formatWire(wire) {
+  return fuses(wire)
+    .map(([index, state]) => `${fuseName(index)}=${stateChar(index, state)}`)
+    .join(' ')
+}
+
+/**
+ * Fails unless the twin differs from the release in the inspect fuse only, off in the release
+ * and on in the twin.
+ * @param {Wire} releaseWire
+ * @param {Wire} twinWire
+ * @returns {{ diff: string[] }}
+ */
+export function compareWires(releaseWire, twinWire) {
+  const release = new Map(fuses(releaseWire))
+  const twin = new Map(fuses(twinWire))
+  const inspect = fuseName(INSPECT)
+  /** @param {number} index @param {number | undefined} state */
+  const show = (index, state) => (state === undefined ? 'absent' : stateChar(index, state))
+  if (release.get(INSPECT) !== 48) {
+    throw new Error(`release has ${inspect} ${show(INSPECT, release.get(INSPECT))}, not 0`)
+  }
+  const diff = []
+  for (const index of new Set([...release.keys(), ...twin.keys()])) {
+    const from = release.get(index)
+    const to = twin.get(index)
+    if (from === to) continue
+    const states = `${show(index, from)}→${show(index, to)}`
+    if (index !== INSPECT) throw new Error(`fuse ${fuseName(index)} differs (${states})`)
+    if (to !== 49) throw new Error(`twin has ${inspect} ${states}, not 0→1`)
+    diff.push(`${inspect} ${states}`)
+  }
+  if (diff.length === 0) throw new Error(`no fuse differs: the twin needs ${inspect} 0→1`)
+  return { diff }
+}
+
+/** @param {string} dir @returns {string[]} every entry below `dir`, relative with `/` */
+function entries(dir) {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => !entry.isDirectory())
+    .map((entry) => {
+      const path = relative(dir, join(entry.parentPath, entry.name)).split(sep).join('/')
+      if (!entry.isFile()) throw new Error(`not a regular file: ${join(dir, path)}`)
+      return path
+    })
+}
+
+/** @param {string} file */
+const sha256 = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
+
+/**
+ * Compares every file of the two trees but the executable by sha256.
+ * @param {string} releaseDir
+ * @param {string} twinDir
+ * @param {string} exeRelPath the executable, relative to each directory
+ * @returns {Promise<{ compared: number; differing: string[] }>}
+ */
+export async function diffTrees(releaseDir, twinDir, exeRelPath) {
+  const release = new Set(entries(releaseDir))
+  const twin = new Set(entries(twinDir))
+  const differing = []
+  let compared = 0
+  for (const path of [...new Set([...release, ...twin])].sort()) {
+    if (path === exeRelPath) continue
+    if (!twin.has(path)) differing.push(`${path} (release only)`)
+    else if (!release.has(path)) differing.push(`${path} (twin only)`)
+    else {
+      compared++
+      if (sha256(join(releaseDir, path)) !== sha256(join(twinDir, path))) differing.push(path)
+    }
+  }
+  if (compared === 0) throw new Error(`no file compared between ${releaseDir} and ${twinDir}`)
+  return { compared, differing }
+}
+
+/** @param {string} bin @param {string[]} args */
+function run(bin, args) {
+  const result = spawnSync(process.execPath, [bin, ...args], { cwd: ROOT, stdio: 'inherit' })
+  if (result.status !== 0) throw new Error(`${bin} ${args.join(' ')} exited ${result.status}`)
+}
+
+/** @returns {Promise<Artifacts>} */
+export async function prepare() {
+  const platform = process.platform === 'win32' ? 'win' : 'linux'
+  const releaseDir = join(ROOT, 'dist', `${platform}-unpacked`)
+  const twinDir = join(ROOT, 'dist', 'e2e-twin')
+  const { name } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+  const exeName = platform === 'win' ? `${name}.exe` : name
+
+  if (existsSync(releaseDir)) print('release: reused')
+  else {
+    run('node_modules/electron-vite/bin/electron-vite.js', ['build'])
+    run('node_modules/electron-builder/cli.js', [
+      '--dir',
+      `--${platform}`,
+      '--publish',
+      'never',
+      '-c.electronDist=node_modules/electron/dist'
+    ])
+    print('release: built')
+  }
+  const release = join(releaseDir, exeName)
+  if (!existsSync(release)) {
+    const listing = existsSync(releaseDir) ? readdirSync(releaseDir).join('\n  ') : '(absent)'
+    throw new Error(`no ${exeName} in ${releaseDir}:\n  ${listing}`)
+  }
+
+  rmSync(twinDir, { recursive: true, force: true })
+  cpSync(releaseDir, twinDir, { recursive: true, verbatimSymlinks: true })
+  const twin = join(twinDir, exeName)
+  await flipFuses(twin, { version: FuseVersion.V1, [INSPECT]: true })
+
+  const releaseWire = await getCurrentFuseWire(release)
+  const twinWire = await getCurrentFuseWire(twin)
+  print(`fuses release: ${formatWire(releaseWire)}`)
+  print(`fuses twin: ${formatWire(twinWire)}`)
+  const { diff } = compareWires(releaseWire, twinWire)
+  print(`fuse diff: ${diff.join(', ')} (${diff.length} fuse)`)
+
+  const { compared, differing } = await diffTrees(releaseDir, twinDir, exeName)
+  print(`twin files compared ${compared}, differing ${differing.length}`)
+  if (differing.length > 0) throw new Error(`twin files differ:\n  ${differing.join('\n  ')}`)
+
+  /** @type {Artifacts} */
+  const artifacts = { release, twin, releaseWire, twinWire }
+  const manifest = join(ROOT, 'dist', 'e2e-artifacts.json')
+  writeFileSync(manifest, `${JSON.stringify(artifacts, null, 2)}\n`)
+  print(`artifacts: ${manifest}`)
+  return artifacts
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  prepare().catch((error) => {
+    process.stderr.write(`e2e-prepare: FAILED: ${error.message}\n`)
+    process.exitCode = 1
+  })
+}
