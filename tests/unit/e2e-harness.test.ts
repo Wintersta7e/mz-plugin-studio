@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { FullConfig, FullResult, Suite, TestCase } from '@playwright/test/reporter'
 import E2eReporter from '../../e2e/reporter'
+import { isCopyBack } from '../../scripts/e2e-visual-update.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const read = (file: string): string => readFileSync(join(ROOT, file), 'utf8')
@@ -142,5 +143,17 @@ describe('e2e harness', () => {
     expect(await verdict([testCase('expected'), testCase('skipped')])).toBe('failed')
     expect(await verdict([testCase('expected'), testCase('flaky', 2)])).toBe('failed')
     expect(await verdict([testCase('expected'), testCase('unexpected')])).toBe('failed')
+  })
+
+  it('copies back only Linux baselines from the image run', () => {
+    expect(isCopyBack('e2e/__screenshots__/linux/a.png')).toBe(true)
+    for (const path of [
+      'e2e/__screenshots__/win32/a.png',
+      'e2e/__screenshots__/linux/a.txt',
+      'e2e/__screenshots__/linux/nested/a.png',
+      'package-lock.json',
+      'e2e/flows/x.e2e.ts'
+    ])
+      expect(isCopyBack(path), path).toBe(false)
   })
 })

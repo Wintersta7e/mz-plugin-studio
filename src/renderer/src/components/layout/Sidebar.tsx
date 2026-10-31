@@ -184,6 +184,7 @@ export function Sidebar({
                   variant={projectBrowserOpen ? 'secondary' : 'ghost'}
                   size="icon"
                   aria-label="Project Data Browser"
+                  data-testid="project-data-toggle"
                   className={cn(
                     'h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]',
                     !projectBrowserOpen && 'text-muted-foreground'

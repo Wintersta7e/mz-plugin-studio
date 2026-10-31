@@ -14,7 +14,8 @@ export default defineConfig(
       'out',
       'tools',
       'tests/fixtures/**',
-      'tests/golden/__golden__/**'
+      'tests/golden/__golden__/**',
+      'e2e/__screenshots__/**'
     ]
   },
   ...configs.recommended,

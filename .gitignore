@@ -27,9 +27,10 @@ Desktop.ini
 CLAUDE.md
 .serena/
 
-# PNGs (except resources/)
+# PNGs (except resources/ and the visual baselines)
 *.png
 !resources/*.png
+!e2e/__screenshots__/**/*.png
 
 # Example plugins (third-party, not redistributable)
 examples/

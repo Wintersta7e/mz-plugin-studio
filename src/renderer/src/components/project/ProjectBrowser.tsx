@@ -212,7 +212,10 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
   }
 
   return (
-    <div className="flex h-full w-72 flex-col bg-background border-l border-border">
+    <div
+      data-testid="project-data-panel"
+      className="flex h-full w-72 flex-col bg-background border-l border-border"
+    >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
           <h2 className="font-semibold">Project Data</h2>

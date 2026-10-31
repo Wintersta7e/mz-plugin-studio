@@ -67,7 +67,7 @@ export function CommandBuilder() {
     >
       <div className="flex items-center justify-between border-b border-border p-4">
         <h2 className="text-lg font-semibold">Plugin Commands</h2>
-        <Button size="sm" onClick={handleAddCommand}>
+        <Button size="sm" data-testid="command-add" onClick={handleAddCommand}>
           <Plus className="mr-1 h-4 w-4" />
           Add Command
         </Button>
@@ -218,7 +218,12 @@ function CommandCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Arguments</Label>
-                  <Button variant="outline" size="sm" onClick={onAddArg}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="command-arg-add"
+                    onClick={onAddArg}
+                  >
                     <Plus className="mr-1 h-3 w-3" />
                     Add Argument
                   </Button>

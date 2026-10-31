@@ -107,7 +107,7 @@ export function StatusBar() {
       <div className="flex items-center gap-4">
         {showSaved && <span className="text-green-400 animate-save-flash">Saved</span>}
         {savedPath && <span className="truncate max-w-[300px]">{savedPath}</span>}
-        <span>MZ Plugin Studio v{__APP_VERSION__}</span>
+        <span data-testid="app-version">MZ Plugin Studio v{__APP_VERSION__}</span>
       </div>
     </div>
   )
