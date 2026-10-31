@@ -1,0 +1,16 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["e2e/**/*"],
+  "compilerOptions": {
+    "noImplicitAny": true,
+    "types": ["node"],
+    "allowJs": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedSideEffectImports": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noImplicitOverride": true,
+    "erasableSyntaxOnly": true
+  }
+}

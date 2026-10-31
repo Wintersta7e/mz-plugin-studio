@@ -106,6 +106,7 @@ export function MetaEditor() {
               <Label htmlFor="name">Plugin Name</Label>
               <Input
                 id="name"
+                data-testid="meta-name"
                 value={meta.name}
                 onChange={(e) => updateMeta({ name: e.target.value })}
                 placeholder="MyPlugin"

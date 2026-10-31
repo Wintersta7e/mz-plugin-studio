@@ -31,6 +31,12 @@ const PROGRAMS: Record<string, Record<string, boolean>> = {
     isolatedModules: true,
     noImplicitOverride: true,
     erasableSyntaxOnly: true
+  },
+  'tsconfig.e2e.json': {
+    ...COMMON,
+    noImplicitOverride: true,
+    erasableSyntaxOnly: true,
+    noImplicitAny: true
   }
 }
 

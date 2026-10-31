@@ -42,6 +42,12 @@ tools/reference-repos/
 docs/plans/
 docs/claude-mz-reference.md
 
+# End-to-end output (Playwright writes it under e2e/)
+test-results/
+playwright-report/
+blob-report/
+dist/e2e-twin/
+
 # Test coverage and local tools
 coverage/
 .dev/

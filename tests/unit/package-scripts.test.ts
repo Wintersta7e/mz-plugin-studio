@@ -19,7 +19,8 @@ const PINNED_BINS = [
   'prettier',
   'electron-builder',
   'electron-vite',
-  'vitest'
+  'vitest',
+  '@playwright/test'
 ]
 
 const NPM_RUN = /^npm run ([\w:-]+)(?: -- .+)?$/
@@ -86,7 +87,9 @@ describe('package.json scripts', () => {
   })
 
   it('the source lint fails on any warning', () => {
-    expect(scripts.lint).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 src/ tests/')
+    expect(scripts.lint).toBe(
+      'node node_modules/eslint/bin/eslint.js --max-warnings 0 src/ tests/ e2e/'
+    )
   })
 
   it('the scripts lint fails on any warning in scripts/', () => {
@@ -122,6 +125,10 @@ describe('package.json scripts', () => {
 
   it('typecheck includes the scripts project', () => {
     expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
+  })
+
+  it('typecheck includes the e2e project', () => {
+    expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:e2e')
   })
 
   it('the Windows package script never publishes', () => {
