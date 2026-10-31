@@ -7,7 +7,12 @@ import { CommandBuilder } from '../../src/renderer/src/components/plugin/Command
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { generateCommandSkeleton } from '../../src/renderer/src/lib/generator'
 import { usePluginStore } from '../../src/renderer/src/stores'
-import { createEmptyCommand, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import {
+  createEmptyCommand,
+  createEmptyPlugin,
+  createEmptyStruct,
+  type PluginStruct
+} from '../../src/renderer/src/types/plugin'
 import { resetStores } from './support/reset-stores'
 
 beforeEach(resetStores)
@@ -41,8 +46,12 @@ describe('command annotations', () => {
   const argRow = (name: string): HTMLElement =>
     screen.getByDisplayValue(name).closest<HTMLElement>('.rounded')!
 
-  function renderTab(): UserEvent {
-    usePluginStore.getState().openPlugin(createEmptyPlugin())
+  /** The select showing `text`; a select's label names no target, so it has no accessible name. */
+  const combobox = (text: string): HTMLElement =>
+    screen.getAllByRole('combobox').find((c) => c.textContent === text)!
+
+  function renderTab(structs: PluginStruct[] = []): UserEvent {
+    usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), structs })
     const user = userEvent.setup()
     render(
       <>
@@ -56,6 +65,21 @@ describe('command annotations', () => {
   async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
     await user.clear(field)
     await user.type(field, text)
+  }
+
+  async function pick(user: UserEvent, current: string, option: string): Promise<void> {
+    await user.click(combobox(current))
+    await user.click(await screen.findByRole('option', { name: option }))
+  }
+
+  /** Adds a command with an argument named `mode` of the type `type`, and shows its details. */
+  async function addArgument(user: UserEvent, type: string): Promise<void> {
+    await user.click(screen.getByRole('button', { name: 'Add Command' }))
+    await user.click(screen.getByRole('button', { name: 'Add Argument' }))
+    await retype(user, screen.getByPlaceholderText('argName'), 'mode')
+    await pick(user, 'String', type)
+    // The first button of an argument row shows its details
+    await user.click(argRow('mode').querySelector('button')!)
   }
 
   it('writes a new command and its number argument, and drops them when deleted', async () => {
@@ -91,5 +115,37 @@ describe('command annotations', () => {
     await user.click(header.querySelector('button')!)
     await waitFor(() => expect(preview()).not.toContain('@command showBanner'))
     expect(screen.getByText('No commands defined')).toBeInTheDocument()
+  })
+
+  it('writes the typed options of a select argument with their values', async () => {
+    const user = renderTab()
+    await addArgument(user, 'Select/Combo')
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|A')
+    await waitFor(() => {
+      expect(preview()).toContain(' * @type select\n')
+      expect(preview()).toContain(' * @option A\n * @value a\n')
+    })
+  })
+
+  it('writes a struct argument as the struct type it picks', async () => {
+    const user = renderTab([{ ...createEmptyStruct(), name: 'Point' }])
+    await addArgument(user, 'Struct')
+    await pick(user, 'Select struct...', 'Point')
+    await waitFor(() => expect(preview()).toContain(' * @type struct<Point>\n'))
+  })
+
+  it('writes an array argument as an array of the element type it picks', async () => {
+    const user = renderTab()
+    await addArgument(user, 'Array')
+    await pick(user, 'String', 'Number')
+    await waitFor(() => expect(preview()).toContain(' * @type number[]\n'))
+  })
+
+  it('writes an array argument of structs as an array of the struct type it picks', async () => {
+    const user = renderTab([{ ...createEmptyStruct(), name: 'Point' }])
+    await addArgument(user, 'Array')
+    await pick(user, 'String', 'Struct')
+    await pick(user, 'Select struct...', 'Point')
+    await waitFor(() => expect(preview()).toContain(' * @type struct<Point>[]\n'))
   })
 })

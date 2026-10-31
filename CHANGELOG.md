@@ -6,6 +6,8 @@
 
 - Pressing Enter at the end of Dependencies, Order After, Order Before or Required Assets, or Enter or "|" at the end of a struct field's select options, starts the next entry instead of being undone as you type, so typed entries no longer run together.
 - In a parameter's select options, deleting the label after a "|" no longer deletes the "|" with it, so the next label you type stays apart from the value.
+- A command argument of type Select, Struct or Array now has the fields its type needs, as a parameter's always did: the options of a select, the struct it holds, and the element type of an array (with its struct for an array of structs). Before, the plugin wrote a select with no options, a `struct` type naming no struct, and every array as an array of strings.
+- A struct field of type Combo now has an Options field like a Select field, and a struct field of type Array has an element type, so the plugin no longer writes an empty combo or every array field as an array of strings.
 - A struct field's select options keep a label holding a "|", such as `a|b|c` (value `a`, label `b|c`), as a parameter's always did; before, the field showed the whole line while the plugin kept only `b`.
 - A select option whose value holds a "|", such as one loaded from a plugin file, is shown with that "|" written as `\|` and is no longer split into another value and label as soon as you type in the options; type `\|` to put a "|" in a value yourself.
 - Changing a parameter's type to Switch, Variable, Actor or Item with no project open no longer logs an error about its default value field in the developer console.

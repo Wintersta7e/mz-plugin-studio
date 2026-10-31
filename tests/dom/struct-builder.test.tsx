@@ -160,4 +160,31 @@ describe('struct blocks', () => {
     await pick(user, 'Select struct...', 'Point')
     await waitFor(() => expect(structBlock('Area')).toContain(' * @type struct<Point>\n'))
   })
+
+  it('writes the options of a combo field', async () => {
+    const user = renderTab([
+      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
+    ])
+    await user.click(screen.getByText('Point'))
+    await pick(user, 'String', 'Combo')
+    // The first button of a field row shows its details
+    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|Alpha')
+    await waitFor(() => {
+      const block = structBlock('Point')
+      expect(block).toContain(' * @type combo\n')
+      expect(block).toContain(' * @option Alpha\n * @value a\n')
+    })
+  })
+
+  it('writes an array field as an array of the element type it picks', async () => {
+    const user = renderTab([
+      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
+    ])
+    await user.click(screen.getByText('Point'))
+    await pick(user, 'String', 'Array')
+    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    await pick(user, 'String', 'Number')
+    await waitFor(() => expect(structBlock('Point')).toContain(' * @type number[]\n'))
+  })
 })

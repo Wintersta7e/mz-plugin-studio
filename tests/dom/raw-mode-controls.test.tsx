@@ -2,7 +2,7 @@
 // saved (the plugin file or one of the export formats), or its control is read-only and says
 // why, or no control edits it. A field added to a type fails the typecheck here until listed.
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
 import { CommandBuilder } from '../../src/renderer/src/components/plugin/CommandBuilder'
@@ -17,7 +17,12 @@ import {
 } from '../../src/renderer/src/lib/exportFormats'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { usePluginStore, useSettingsStore, useUIStore } from '../../src/renderer/src/stores'
-import { createEmptyParameter, createEmptyStruct, toBaseline } from '../../src/shared/types/plugin'
+import {
+  createEmptyCommand,
+  createEmptyParameter,
+  createEmptyStruct,
+  toBaseline
+} from '../../src/shared/types/plugin'
 import type {
   PluginCommand,
   PluginDefinition,
@@ -378,6 +383,49 @@ describe('header editors of an imported file with no main annotation block', () 
       expect(control.closest('fieldset')).toHaveAttribute('title', HEADER_NOTICE)
     }
     console.log(`header controls checked ${controls.length}`)
+  })
+
+  it('the type fields of an argument and a struct field are read-only in raw mode and say why', async () => {
+    const pluginId = usePluginStore.getState().plugin.id
+    const typed = (type: PluginParameter['type'], name: string): PluginParameter => ({
+      ...createEmptyParameter(),
+      name,
+      type,
+      arrayType: type === 'array' ? 'struct' : undefined
+    })
+    const fields = [typed('combo', 'pick'), typed('struct', 'shape'), typed('array', 'list')]
+    usePluginStore.getState().addCommand({ ...createEmptyCommand(), name: 'Typed', args: fields })
+    usePluginStore
+      .getState()
+      .addStruct({ ...createEmptyStruct(), name: 'Shape', parameters: fields })
+    useUIStore.getState().setRawModeForPlugin(pluginId, false)
+    const user = userEvent.setup()
+    for (const [Editor, opener] of [
+      [CommandBuilder, 'New Command'],
+      [StructBuilder, 'Shape']
+    ] as const) {
+      const { unmount } = render(<Editor />)
+      await user.click(screen.getByText(opener))
+      for (const field of fields) {
+        // The first button of a row shows its details
+        await user.click(
+          screen.getByDisplayValue(field.name).closest('.rounded')!.querySelector('button')!
+        )
+      }
+      act(() => useUIStore.getState().setRawModeForPlugin(pluginId, true))
+      const controls = [
+        screen.getByPlaceholderText(/^option1\|Option 1/),
+        within(screen.getByText('Array Element Type').parentElement!).getByRole('combobox'),
+        ...screen.getAllByRole('combobox').filter((c) => c.textContent === 'Select struct...')
+      ]
+      expect(controls, Editor.name).toHaveLength(4)
+      for (const control of controls) {
+        expect(control).toBeDisabled()
+        expect(control.closest('fieldset')).toHaveAttribute('title', HEADER_NOTICE)
+      }
+      act(() => useUIStore.getState().setRawModeForPlugin(pluginId, false))
+      unmount()
+    }
   })
 
   it('parameters can still be selected, exported and saved as a preset in raw mode', () => {

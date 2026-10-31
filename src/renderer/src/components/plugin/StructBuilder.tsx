@@ -4,7 +4,6 @@ import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-re
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
-import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
 import { ScrollArea } from '../ui/scroll-area'
@@ -17,8 +16,7 @@ import {
   type ParamType
 } from '../../types/plugin'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
-import { normalizeOptions, optionsText, parseOptions } from '../../lib/select-options'
-import { useTypedText } from '../../lib/typed-text'
+import { TypeFields } from './TypeFields'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -232,7 +230,6 @@ interface StructParamRowProps {
 
 function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRowProps) {
   const [expanded, setExpanded] = useState(false)
-  const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
 
   return (
     <div className="rounded border border-border bg-background p-2">
@@ -360,47 +357,12 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
             </div>
           )}
 
-          {/* Select options */}
-          {param.type === 'select' && (
-            <div className="space-y-1">
-              <Label className="text-xs">
-                Options (one per line, format: value|label or just label; write a | in a value as
-                \|)
-              </Label>
-              <Textarea
-                value={optionsTyped}
-                onChange={(e) => {
-                  setOptionsTyped(e.target.value)
-                  onUpdate({ options: parseOptions(e.target.value) })
-                }}
-                placeholder={'option1|Option 1\noption2|Option 2'}
-                rows={3}
-                className="font-mono text-sm"
-              />
-            </div>
-          )}
-
-          {/* Struct reference */}
-          {param.type === 'struct' && (
-            <div className="space-y-1">
-              <Label className="text-xs">Struct Type</Label>
-              <Select
-                value={param.structType || ''}
-                onValueChange={(value) => onUpdate({ structType: value })}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select struct..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {allStructs.map((s) => (
-                    <SelectItem key={s.id} value={s.name}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <TypeFields
+            param={param}
+            onUpdate={onUpdate}
+            structNames={allStructs.map((s) => s.name)}
+            compact
+          />
 
           {/* File directory */}
           {param.type === 'file' && (

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -17,6 +17,7 @@ import {
 } from '../../types/plugin'
 import { generateCommandSkeleton } from '../../lib/generator'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { TypeFields } from './TypeFields'
 
 const ARG_TYPES: { value: ParamType; label: string }[] = [
   { value: 'string', label: 'String' },
@@ -63,6 +64,9 @@ export function CommandBuilder() {
   const addCommandArg = usePluginStore((s) => s.addCommandArg)
   const updateCommandArg = usePluginStore((s) => s.updateCommandArg)
   const removeCommandArg = usePluginStore((s) => s.removeCommandArg)
+
+  const structs = usePluginStore((s) => s.plugin.structs)
+  const structNames = useMemo(() => structs.map((s) => s.name), [structs])
 
   const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
@@ -113,6 +117,7 @@ export function CommandBuilder() {
                 key={cmd.id}
                 command={cmd}
                 expanded={expandedId === cmd.id}
+                structNames={structNames}
                 onToggle={() => setExpandedId(expandedId === cmd.id ? null : cmd.id)}
                 onUpdate={(updates) => {
                   updateCommand(cmd.id, updates)
@@ -147,6 +152,7 @@ export function CommandBuilder() {
 interface CommandCardProps {
   command: PluginCommand
   expanded: boolean
+  structNames: string[]
   onToggle: () => void
   onUpdate: (updates: Partial<PluginCommand>) => void
   onDelete: () => void
@@ -158,6 +164,7 @@ interface CommandCardProps {
 function CommandCard({
   command,
   expanded,
+  structNames,
   onToggle,
   onUpdate,
   onDelete,
@@ -251,6 +258,7 @@ function CommandCard({
                       <ArgumentRow
                         key={arg.id}
                         arg={arg}
+                        structNames={structNames}
                         onUpdate={(updates) => onUpdateArg(arg.id, updates)}
                         onRemove={() => onRemoveArg(arg.id)}
                       />
@@ -268,11 +276,12 @@ function CommandCard({
 
 interface ArgumentRowProps {
   arg: PluginParameter
+  structNames: string[]
   onUpdate: (updates: Partial<PluginParameter>) => void
   onRemove: () => void
 }
 
-function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
+function ArgumentRow({ arg, structNames, onUpdate, onRemove }: ArgumentRowProps) {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -354,6 +363,14 @@ function ArgumentRow({ arg, onUpdate, onRemove }: ArgumentRowProps) {
               className="h-8"
             />
           </div>
+
+          <TypeFields
+            param={arg}
+            onUpdate={onUpdate}
+            structNames={structNames}
+            compact
+            className="col-span-2"
+          />
 
           {/* Boolean-specific: @on/@off labels */}
           {arg.type === 'boolean' && (
