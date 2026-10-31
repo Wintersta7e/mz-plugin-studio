@@ -105,6 +105,50 @@ describe('struct blocks', () => {
     })
   })
 
+  it('keeps every "|" after the first in the label of a select option', async () => {
+    const user = renderTab([
+      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
+    ])
+    await user.click(screen.getByText('Point'))
+    await pick(user, 'String', 'Select')
+    // The first button of a field row shows its details
+    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    const options = screen.getByPlaceholderText(/^option1\|Option 1/)
+    await user.type(options, 'a|b|c')
+    expect(options).toHaveValue('a|b|c')
+    expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
+      { value: 'a', text: 'b|c' }
+    ])
+    await waitFor(() => expect(structBlock('Point')).toContain(' * @option b|c\n * @value a\n'))
+  })
+
+  it('keeps a loaded select option whose value holds a "|" when the options are typed in', async () => {
+    const user = renderTab([
+      {
+        ...createEmptyStruct(),
+        name: 'Point',
+        parameters: [
+          {
+            ...createEmptyParameter(),
+            type: 'select',
+            options: [
+              { value: 'a|b', text: 'Label' },
+              { value: 'c', text: 'c' }
+            ]
+          }
+        ]
+      }
+    ])
+    await user.click(screen.getByText('Point'))
+    // The first button of a field row shows its details
+    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'x')
+    expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
+      { value: 'a|b', text: 'Label' },
+      { value: 'cx', text: 'cx' }
+    ])
+  })
+
   it('writes a field holding another struct as that struct type', async () => {
     const user = renderTab([
       { ...createEmptyStruct(), name: 'Point' },

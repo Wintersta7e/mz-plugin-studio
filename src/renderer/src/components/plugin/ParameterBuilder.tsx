@@ -42,6 +42,7 @@ import {
   type ParamImportResult
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { normalizeOptions, optionsText, parseOptions } from '../../lib/select-options'
 import { useTypedText } from '../../lib/typed-text'
 import { cn, userMessage } from '../../lib/utils'
 import { StructDefaultEditor } from './StructDefaultEditor'
@@ -897,27 +898,6 @@ interface ParameterCardProps {
   items: { id: number; name: string }[]
 }
 
-/** Select options one per line, as value|label or just label when the two are the same. */
-const optionsText = (opts: PluginParameter['options']): string =>
-  opts?.map((o) => (o.value !== o.text ? `${o.value}|${o.text}` : o.text)).join('\n') || ''
-
-const parseOptions = (text: string): NonNullable<PluginParameter['options']> =>
-  text
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => {
-      if (line.includes('|')) {
-        const pipeIdx = line.indexOf('|')
-        return {
-          value: line.slice(0, pipeIdx).trim(),
-          text: line.slice(pipeIdx + 1).trim() || line.slice(0, pipeIdx).trim()
-        }
-      }
-      return { value: line.trim(), text: line.trim() }
-    })
-
-const normalizeOptions = (text: string): string => optionsText(parseOptions(text))
-
 /** Options editor that keeps the text as typed so a value|label is not eaten on keystroke */
 function OptionsEditor({
   param,
@@ -930,7 +910,9 @@ function OptionsEditor({
 
   return (
     <div className="space-y-2">
-      <Label>Options (one per line, format: value|label or just label)</Label>
+      <Label>
+        Options (one per line, format: value|label or just label; write a | in a value as \|)
+      </Label>
       <Textarea
         value={optionsTyped}
         onChange={(e) => {

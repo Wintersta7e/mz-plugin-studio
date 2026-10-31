@@ -447,6 +447,29 @@ describe('parameter rows', () => {
     })
   })
 
+  it('keeps loaded select options holding a "|" when the options are typed in', async () => {
+    const user = renderTab([
+      {
+        ...param('mode', 'Mode'),
+        type: 'select',
+        options: [
+          { value: 'a|b', text: 'Label' },
+          { value: 'A|B', text: 'A|B' },
+          { value: 'c', text: 'c' }
+        ]
+      }
+    ])
+    await user.click(screen.getByText('Mode'))
+    const options = screen.getByPlaceholderText(/^option1\|Option 1/)
+    expect(options).toHaveValue('a\\|b|Label\nA\\|B\nc')
+    await user.type(options, 'x')
+    expect(usePluginStore.getState().plugin.parameters[0].options).toEqual([
+      { value: 'a|b', text: 'Label' },
+      { value: 'A|B', text: 'A|B' },
+      { value: 'cx', text: 'cx' }
+    ])
+  })
+
   it('shows the options of the select row opened after a "|" was typed in another', async () => {
     const select = (name: string, text: string, value: string): PluginParameter => ({
       ...param(name, text),
