@@ -76,6 +76,13 @@ describe('package.json scripts', () => {
     expect(commandsOf(scripts.check)).not.toContain('npm run ci:toolchain')
   })
 
+  it('check runs the golden project once besides the full suite, with coverage', () => {
+    const golden = commandsOf(scripts.check).filter((c) =>
+      (scripts[NPM_RUN.exec(c)?.[1] ?? ''] ?? '').includes('--project golden')
+    )
+    expect(golden).toEqual(['npm run test:golden:coverage'])
+  })
+
   it('check runs the scripts lint and the format check right after the source lint', () => {
     const commands = commandsOf(scripts.check)
     const lint = commands.indexOf('npm run lint')

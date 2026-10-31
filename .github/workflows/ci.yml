@@ -108,7 +108,6 @@ jobs:
           fi
           echo "node_modules/electron/dist: absent"
       - run: npm run test:coverage
-      - run: npm run test:golden
       - run: npm run test:golden:coverage
       - name: Clean tree after tests
         shell: bash

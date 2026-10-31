@@ -97,6 +97,13 @@ describe('CI workflow', () => {
     expect(runs(jobOf('static'))).toContain('npm run ci:toolchain')
   })
 
+  it('the unit job runs the golden project once besides the full suite, with coverage', () => {
+    const golden = runs(jobOf('unit')).filter((line) =>
+      (scripts[/^npm run ([\w:-]+)$/.exec(line)?.[1] ?? ''] ?? '').includes('--project golden')
+    )
+    expect(golden).toEqual(['npm run test:golden:coverage'])
+  })
+
   it('the golden-commit rules run on every static run', () => {
     const golden = jobOf('static').steps.filter((step) =>
       step.run.some((line) => line.startsWith('node scripts/check-golden-commits.mjs'))
