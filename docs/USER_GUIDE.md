@@ -767,7 +767,7 @@ Loading your RPG Maker MZ project enables powerful features.
 
 If the folder cannot be opened as a project, a message names the folder and the reason.
 
-A project in the recent projects list opens straight away when you chose its folder with **Open Project** before on this computer; otherwise the app first asks whether to open that folder, and **Cancel** is the default. Saving, loading and listing plugins in a project works only on the project that is open.
+A project in the recent projects list opens straight away only when the app trusts its folder: you chose it with **Open Project**, or confirmed opening it, in this version or later on this computer (the app keeps the 20 folders used most recently). Otherwise the app first asks whether to open that folder, saying "The app has no record of this folder being chosen with Open Project or confirmed here.", and **Cancel** is the default; choosing **Open** trusts the folder from then on. A project folder on a network share is never asked about: until you choose it with **Open Project**, the app refuses to open it from the list. Saving, loading and listing plugins in a project works only on the project that is open.
 
 ### Plugin Browser
 
@@ -1020,6 +1020,14 @@ Manage persisted data stored in your browser:
 | **Saved-state backups**       | Export or delete the copies kept of saved data the app could not load |
 
 Each button shows the current count and confirms when cleared.
+
+**Clear Recent Projects** empties the list only. The project folders the app trusts to open without asking (see [Loading a Project](#loading-a-project)) are kept in `project-roots.json` in the app's data folder, and they stay trusted after you clear the list:
+
+- Windows: `%APPDATA%\mz-plugin-studio\project-roots.json`
+- Linux: `~/.config/mz-plugin-studio/project-roots.json`
+- macOS: `~/Library/Application Support/mz-plugin-studio/project-roots.json`
+
+To make the app forget them, close it and delete that file; each folder then has to be chosen with **Open Project** or confirmed again.
 
 When saved settings, layout, recent projects, template favorites or open plugins cannot be read at startup, the app loads what it can, keeps a copy of the saved data as a backup and says so in a startup message. **Saved-state backups** lists each copy with the kind of data it holds and its size. **Export** saves a copy to a file you choose; **Delete** removes it after asking (Cancel is the default). Only one copy of each kind is kept, so a later problem with the same kind of data is not backed up until you delete the earlier copy; export it first if you want to keep it. Backups count against the same storage as everything else the app saves, so deleting them also frees space when storage is full.
 
