@@ -4,11 +4,13 @@
 import { readFile, rm, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import log from 'electron-log/main'
-import type { IpcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { loadPluginFile, readRawPlugin, setupPluginHandlers } from '../../src/main/ipc/plugin'
+import { loadPluginFile, readRawPlugin } from '../../src/main/ipc/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
+import { registerMainHandlers } from '../helpers/fake-ipc'
 import { copyFixtureProject } from '../helpers/fixture-project'
+
+vi.mock('electron', () => ({ ipcMain: {} }))
 
 let project: string | null = null
 
@@ -24,11 +26,8 @@ afterEach(async () => {
 
 /** The handler main registers for `channel`, called as an invoke from the renderer reaches it. */
 function handlerFor(channel: string): (...args: unknown[]) => Promise<unknown> {
-  type Handler = (event: unknown, ...args: unknown[]) => Promise<unknown>
-  const handlers = new Map<string, Handler>()
-  const ipcMain = { handle: (name: string, fn: Handler) => handlers.set(name, fn) }
-  setupPluginHandlers(ipcMain as unknown as IpcMain)
-  return (...args) => handlers.get(channel)!({}, ...args)
+  const ipc = registerMainHandlers()
+  return (...args) => ipc.invoke(channel, ...args)
 }
 
 describe('loading a plugin file', () => {

@@ -3,12 +3,11 @@ import log from 'electron-log/main'
 // Initialize electron-log — sets up file transport and IPC for renderer
 log.initialize()
 
-import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
+import { app, shell, BrowserWindow, dialog, session } from 'electron'
 import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { setupProjectHandlers } from './ipc/project'
-import { setupPluginHandlers } from './ipc/plugin'
-import { setupDialogHandlers } from './ipc/dialog'
+import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/handlers'
+import { emit, handleAll, onAll } from './ipc/registration'
 import { handleWillPreventUnload } from './close-prompt'
 import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
 import { DEFAULT_WINDOW_SIZE } from './window-size'
@@ -75,27 +74,6 @@ function createWindow(): void {
   }
 }
 
-// Window control handlers
-ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, () => {
-  mainWindow?.minimize()
-})
-
-ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, () => {
-  if (mainWindow?.isMaximized()) {
-    mainWindow.unmaximize()
-  } else {
-    mainWindow?.maximize()
-  }
-})
-
-ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {
-  mainWindow?.close()
-})
-
-ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, () => {
-  return mainWindow?.isMaximized()
-})
-
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.mzpluginstudio')
 
@@ -125,33 +103,30 @@ app.whenReady().then(() => {
     })
   })
 
-  // Setup IPC handlers
-  setupProjectHandlers(ipcMain)
-  setupPluginHandlers(ipcMain)
-  setupDialogHandlers(ipcMain, dialog)
-
-  // Log management handlers
-  ipcMain.handle(IPC_CHANNELS.LOG_OPEN_FOLDER, async () => {
-    const logPath = log.transports.file.getFile().path
-    shell.openPath(dirname(logPath))
-  })
-
-  ipcMain.on(IPC_CHANNELS.LOG_SET_LEVEL, (_event, debugEnabled: boolean) => {
-    const level = debugEnabled ? 'debug' : 'info'
-    log.transports.file.level = level
-    log.transports.console.level = level
-    log.info(`Log level changed to: ${level}`)
-  })
+  const deps: MainDeps = {
+    dialog,
+    getWindow: () => mainWindow,
+    openLogFolder: async () => {
+      const logPath = log.transports.file.getFile().path
+      shell.openPath(dirname(logPath))
+    },
+    setLogLevel: (level) => {
+      log.transports.file.level = level
+      log.transports.console.level = level
+    }
+  }
+  handleAll(createInvokeHandlers(deps))
+  onAll(createSendListeners(deps))
 
   createWindow()
   log.info('Main window created')
 
   // Send maximize state changes to renderer
   mainWindow?.on('maximize', () => {
-    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, true)
+    if (mainWindow) emit(mainWindow.webContents, IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, true)
   })
   mainWindow?.on('unmaximize', () => {
-    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, false)
+    if (mainWindow) emit(mainWindow.webContents, IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, false)
   })
 
   app.on('activate', function () {

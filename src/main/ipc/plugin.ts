@@ -1,4 +1,3 @@
-import type { IpcMain, IpcMainInvokeEvent } from 'electron'
 import { createHash, randomBytes } from 'crypto'
 import { constants } from 'fs'
 import { access, mkdir, open, readFile, readdir, realpath, rename, rm, stat } from 'fs/promises'
@@ -6,7 +5,7 @@ import path, { join, dirname } from 'path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
 import { compileCheck } from '../services/syntax-check'
-import { IPC_CHANNELS } from '../../shared/ipc-types'
+import type { PluginDefinition } from '../../shared/types/plugin'
 import type {
   LoadedPlugin,
   RawPluginFile,
@@ -23,6 +22,8 @@ import {
   assertSafeProjectPath
 } from '../../shared/path-safety'
 import { assertWriteGranted, grantKey } from '../file-access'
+import { checkSaveGuard, strings } from './arguments'
+import type { InvokeHandlers } from './registration'
 
 /** Lowercase hex sha256 of `bytes` */
 export function sha256Hex(bytes: Uint8Array): string {
@@ -245,104 +246,145 @@ export async function readFileByPath(filePath: string): Promise<string> {
   return (await readWithSha(filePath)).content
 }
 
-export function setupPluginHandlers(ipcMain: IpcMain): void {
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_SAVE,
-    (
-      _event: IpcMainInvokeEvent,
-      projectPath: string,
-      filename: string,
-      content: string,
-      guard: SaveGuard
-    ) => savePluginFile(projectPath, filename, content, guard)
-  )
+/** Parses plugin text the window holds; nothing is read from disk */
+export async function parsePluginText(content: string): Promise<PluginDefinition> {
+  log.debug('[plugin:parse] Parsing plugin content')
+  try {
+    return PluginParser.parsePlugin(content)
+  } catch (error) {
+    log.error('[plugin:parse] Failed to parse plugin:', error)
+    throw new Error(
+      `Failed to parse plugin: ${error instanceof Error ? error.message : String(error)}`
+    )
+  }
+}
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_LOAD,
-    (_event: IpcMainInvokeEvent, projectPath: string, filename: string) =>
-      loadPluginFile(projectPath, filename)
-  )
+/** The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none when it is missing */
+export async function listPluginFiles(projectPath: string): Promise<string[]> {
+  assertSafeProjectPath(projectPath)
+  const pluginsDir = join(projectPath, 'js', 'plugins')
+  try {
+    const files = await readdir(pluginsDir)
+    const jsPlugins = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+    log.debug(`[plugin:list] Found ${jsPlugins.length} plugins in ${projectPath}`)
+    return jsPlugins
+  } catch {
+    log.debug(`[plugin:list] No plugins directory at ${projectPath}`)
+    return []
+  }
+}
 
-  ipcMain.handle(IPC_CHANNELS.PLUGIN_PARSE, async (_event: IpcMainInvokeEvent, content: string) => {
-    log.debug('[plugin:parse] Parsing plugin content')
-    try {
-      return PluginParser.parsePlugin(content)
-    } catch (error) {
-      log.error('[plugin:parse] Failed to parse plugin:', error)
-      throw new Error(
-        `Failed to parse plugin: ${error instanceof Error ? error.message : String(error)}`
-      )
-    }
-  })
+/** The load-order tags and prototype overrides of every plugin file in a project */
+export async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
+  assertSafeProjectPath(projectPath)
+  const pluginsDir = join(projectPath, 'js', 'plugins')
+  try {
+    const files = await readdir(pluginsDir)
+    const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_READ_RAW,
-    (_event: IpcMainInvokeEvent, projectPath: string, filename: string) =>
-      readRawPlugin(projectPath, filename)
-  )
+    // Read all plugin files in parallel for faster scanning (PERF-02)
+    const results: ScannedPluginHeader[] = await Promise.all(
+      jsFiles.map(async (file) => {
+        const filePath = join(pluginsDir, file)
+        const content = await readFile(filePath, 'utf-8')
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_LIST,
-    async (_event: IpcMainInvokeEvent, projectPath: string) => {
-      assertSafeProjectPath(projectPath)
-      const pluginsDir = join(projectPath, 'js', 'plugins')
-      try {
-        const files = await readdir(pluginsDir)
-        const jsPlugins = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
-        log.debug(`[plugin:list] Found ${jsPlugins.length} plugins in ${projectPath}`)
-        return jsPlugins
-      } catch {
-        log.debug(`[plugin:list] No plugins directory at ${projectPath}`)
-        return []
-      }
-    }
-  )
+        // Read the load-order tags as the importer does, so the analyzer and editor agree
+        const { meta } = PluginParser.parsePlugin(content, file)
 
-  ipcMain.handle(IPC_CHANNELS.PLUGIN_READ_BY_PATH, (_event: IpcMainInvokeEvent, filePath: string) =>
-    readFileByPath(filePath)
-  )
+        return {
+          filename: file,
+          name: file.replace(/\.js$/, ''),
+          base: meta.dependencies,
+          orderAfter: meta.orderAfter ?? [],
+          orderBefore: meta.orderBefore ?? [],
+          overrides: extractOverrides(content)
+        }
+      })
+    )
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_SAVE_TO_PATH,
-    (_event: IpcMainInvokeEvent, filePath: string, content: string, guard?: SaveGuard) =>
-      savePluginToPath(filePath, content, guard)
-  )
+    log.info(`[plugin:scan-headers] Scanned ${results.length} plugins in ${projectPath}`)
+    return results
+  } catch (error) {
+    log.error(`[plugin:scan-headers] Failed to scan ${projectPath}:`, error)
+    return []
+  }
+}
 
-  ipcMain.handle(
-    IPC_CHANNELS.PLUGIN_SCAN_HEADERS,
-    async (_event: IpcMainInvokeEvent, projectPath: string): Promise<ScannedPluginHeader[]> => {
-      assertSafeProjectPath(projectPath)
-      const pluginsDir = join(projectPath, 'js', 'plugins')
-      try {
-        const files = await readdir(pluginsDir)
-        const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+type PluginChannel =
+  | 'plugin:save'
+  | 'plugin:save-to-path'
+  | 'plugin:load'
+  | 'plugin:parse'
+  | 'plugin:read-raw'
+  | 'plugin:list'
+  | 'plugin:read-by-path'
+  | 'plugin:scan-headers'
 
-        // Read all plugin files in parallel for faster scanning (PERF-02)
-        const results: ScannedPluginHeader[] = await Promise.all(
-          jsFiles.map(async (file) => {
-            const filePath = join(pluginsDir, file)
-            const content = await readFile(filePath, 'utf-8')
-
-            // Read the load-order tags as the importer does, so the analyzer and editor agree
-            const { meta } = PluginParser.parsePlugin(content, file)
-
-            return {
-              filename: file,
-              name: file.replace(/\.js$/, ''),
-              base: meta.dependencies,
-              orderAfter: meta.orderAfter ?? [],
-              orderBefore: meta.orderBefore ?? [],
-              overrides: extractOverrides(content)
-            }
-          })
-        )
-
-        log.info(`[plugin:scan-headers] Scanned ${results.length} plugins in ${projectPath}`)
-        return results
-      } catch (error) {
-        log.error(`[plugin:scan-headers] Failed to scan ${projectPath}:`, error)
-        return []
-      }
-    }
-  )
+export const pluginHandlers: Pick<InvokeHandlers, PluginChannel> = {
+  'plugin:save': {
+    access: 'current-project',
+    check: (raw) => {
+      const [projectPath, filename, content] = strings('plugin:save', raw, 3)
+      return [projectPath, filename, content, checkSaveGuard('plugin:save', raw[3])]
+    },
+    run: savePluginFile
+  },
+  'plugin:save-to-path': {
+    access: 'granted-write',
+    check: (raw) => {
+      const [filePath, content] = strings('plugin:save-to-path', raw, 2)
+      return raw[2] === undefined
+        ? [filePath, content]
+        : [filePath, content, checkSaveGuard('plugin:save-to-path', raw[2])]
+    },
+    run: savePluginToPath
+  },
+  'plugin:load': {
+    access: 'current-project',
+    check: (raw) => {
+      const [projectPath, filename] = strings('plugin:load', raw, 2)
+      return [projectPath, filename]
+    },
+    run: loadPluginFile
+  },
+  'plugin:parse': {
+    access: 'none',
+    check: (raw) => {
+      const [content] = strings('plugin:parse', raw, 1)
+      return [content]
+    },
+    run: parsePluginText
+  },
+  'plugin:read-raw': {
+    access: 'current-project',
+    check: (raw) => {
+      const [projectPath, filename] = strings('plugin:read-raw', raw, 2)
+      return [projectPath, filename]
+    },
+    run: readRawPlugin
+  },
+  'plugin:list': {
+    access: 'current-project',
+    check: (raw) => {
+      const [projectPath] = strings('plugin:list', raw, 1)
+      return [projectPath]
+    },
+    run: listPluginFiles
+  },
+  'plugin:read-by-path': {
+    access: 'granted-read',
+    check: (raw) => {
+      const [filePath] = strings('plugin:read-by-path', raw, 1)
+      return [filePath]
+    },
+    run: readFileByPath
+  },
+  'plugin:scan-headers': {
+    access: 'current-project',
+    check: (raw) => {
+      const [projectPath] = strings('plugin:scan-headers', raw, 1)
+      return [projectPath]
+    },
+    run: scanPluginHeaders
+  }
 }

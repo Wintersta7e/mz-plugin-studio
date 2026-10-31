@@ -4,6 +4,14 @@ import { describe, it, expect, vi } from 'vitest'
 import { readdirSync, readFileSync } from 'fs'
 import { join, relative } from 'path'
 import ts from 'typescript'
+import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
+import type { MainDeps } from '../../src/main/ipc/handlers'
+import {
+  EVENT_CHANNELS,
+  INVOKE_CHANNELS,
+  IPC_CHANNELS,
+  SEND_CHANNELS
+} from '../../src/shared/ipc-types'
 
 // Recorded by the mock itself: call history is cleared before each test, the import runs once
 const exposed = vi.hoisted(() => ({ api: undefined as unknown }))
@@ -23,6 +31,7 @@ await import('../../src/preload/index')
 const ALLOW_UNCALLED: readonly string[] = []
 
 const RENDERER = join(process.cwd(), 'src/renderer/src')
+const MAIN = join(process.cwd(), 'src/main')
 
 function exposedMembers(): string[] {
   const api = (exposed.api ?? {}) as Record<string, Record<string, unknown>>
@@ -38,6 +47,50 @@ function rendererFiles(): string[] {
     .filter((p) => /\.tsx?$/.test(p))
     .map((p) => join(RENDERER, p))
 }
+
+function mainFiles(): string[] {
+  return (readdirSync(MAIN, { recursive: true }) as string[])
+    .filter((p) => p.endsWith('.ts'))
+    .map((p) => join(MAIN, p))
+}
+
+/** Channels named by `emit(target, IPC_CHANNELS.<X> | '<literal>', ...)` calls in `files` */
+function emittedChannels(files: string[]): Set<string> {
+  const constants: Record<string, string> = IPC_CHANNELS
+  const emitted = new Set<string>()
+  for (const file of files) {
+    const sf = ts.createSourceFile(file, readFileSync(file, 'utf-8'), ts.ScriptTarget.Latest, true)
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === 'emit' &&
+        node.arguments.length >= 2
+      ) {
+        const channel = node.arguments[1]
+        if (ts.isStringLiteral(channel)) emitted.add(channel.text)
+        if (
+          ts.isPropertyAccessExpression(channel) &&
+          ts.isIdentifier(channel.expression) &&
+          channel.expression.text === 'IPC_CHANNELS' &&
+          constants[channel.name.text] !== undefined
+        ) {
+          emitted.add(constants[channel.name.text])
+        }
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(sf)
+  }
+  return emitted
+}
+
+const fakeDeps = {
+  dialog: {},
+  getWindow: () => null,
+  openLogFolder: async () => {},
+  setLogLevel: () => {}
+} as unknown as MainDeps
 
 /** `window.api.<namespace>.<key>` uses, keyed by member, with each site as file:line */
 function rendererCallers(files: string[]): Map<string, string[]> {
@@ -90,5 +143,23 @@ describe('ipc callers', () => {
     expect(files.length).toBeGreaterThan(0)
     expect(uncalled).toEqual([])
     expect(staleAllowed).toEqual([])
+  })
+
+  it('gives every channel a main handler, listener or emitter', () => {
+    const handlers = Object.keys(createInvokeHandlers(fakeDeps))
+    const listeners = Object.keys(createSendListeners(fakeDeps))
+    const files = mainFiles()
+    const emitted = emittedChannels(files)
+    const emitters = EVENT_CHANNELS.filter((c) => emitted.has(c))
+
+    console.log(
+      `handlers ${handlers.length}/${INVOKE_CHANNELS.length}, ` +
+        `listeners ${listeners.length}/${SEND_CHANNELS.length}, ` +
+        `emitters ${emitters.length}/${EVENT_CHANNELS.length}, main files scanned ${files.length}`
+    )
+    expect(files.length).toBeGreaterThan(0)
+    expect(handlers.sort()).toEqual([...INVOKE_CHANNELS].sort())
+    expect(listeners.sort()).toEqual([...SEND_CHANNELS].sort())
+    expect(emitters).toEqual([...EVENT_CHANNELS])
   })
 })

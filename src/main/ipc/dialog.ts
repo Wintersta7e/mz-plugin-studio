@@ -1,12 +1,9 @@
-import type { IpcMain, IpcMainInvokeEvent, Dialog } from 'electron'
+import type { Dialog } from 'electron'
 import log from 'electron-log/main'
-import { IPC_CHANNELS, type MessageDialogOptions } from '../../shared/ipc-types'
+import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../../shared/ipc-types'
 import { recordWriteGrant } from '../file-access'
-
-export interface SaveFileDialogOptions {
-  defaultPath?: string
-  filters?: { name: string; extensions: string[] }[]
-}
+import { checkFilters, invalidArguments, isRecord } from './arguments'
+import type { InvokeHandlers } from './registration'
 
 /**
  * Shows the save dialog; returns the chosen path, or null when cancelled.
@@ -14,7 +11,7 @@ export interface SaveFileDialogOptions {
  */
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
-  options: SaveFileDialogOptions
+  options: SaveFileOptions
 ): Promise<string | null> {
   const result = await dialog.showSaveDialog({
     defaultPath: options.defaultPath,
@@ -58,52 +55,132 @@ export async function showMessageDialog(
   return result.response
 }
 
-export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
-  ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async (_event: IpcMainInvokeEvent) => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openDirectory'],
-      title: 'Select RPG Maker MZ Project Folder'
-    })
-
-    if (result.canceled || result.filePaths.length === 0) {
-      log.debug('[dialog:open-folder] Cancelled')
-      return null
-    }
-
-    log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
-    return result.filePaths[0]
+/** Shows the folder picker; returns the chosen folder, or null when cancelled */
+export async function openFolderDialog(
+  dialog: Pick<Dialog, 'showOpenDialog'>
+): Promise<string | null> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: 'Select RPG Maker MZ Project Folder'
   })
 
-  ipcMain.handle(
-    IPC_CHANNELS.DIALOG_SAVE_FILE,
-    (_event: IpcMainInvokeEvent, options: SaveFileDialogOptions) =>
-      showSaveFileDialog(dialog, options)
-  )
+  if (result.canceled || result.filePaths.length === 0) {
+    log.debug('[dialog:open-folder] Cancelled')
+    return null
+  }
 
-  ipcMain.handle(
-    IPC_CHANNELS.DIALOG_OPEN_FILE,
-    async (
-      _event: IpcMainInvokeEvent,
-      options: { filters?: { name: string; extensions: string[] }[] }
-    ) => {
-      const result = await dialog.showOpenDialog({
-        properties: ['openFile'],
-        filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
-      })
+  log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
+  return result.filePaths[0]
+}
 
-      if (result.canceled || result.filePaths.length === 0) {
-        log.debug('[dialog:open-file] Cancelled')
-        return null
-      }
+/** Shows the file picker; returns the chosen file, or null when cancelled */
+export async function openFileDialog(
+  dialog: Pick<Dialog, 'showOpenDialog'>,
+  options: OpenFileOptions
+): Promise<string | null> {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
+  })
 
-      log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
-      return result.filePaths[0]
+  if (result.canceled || result.filePaths.length === 0) {
+    log.debug('[dialog:open-file] Cancelled')
+    return null
+  }
+
+  log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
+  return result.filePaths[0]
+}
+
+const MESSAGE_TYPES = ['none', 'info', 'error', 'question', 'warning'] as const
+
+type MessageType = (typeof MESSAGE_TYPES)[number]
+
+const isMessageType = (value: unknown): value is MessageType =>
+  MESSAGE_TYPES.some((type) => type === value)
+
+/** Message box options of the documented shape: 1-4 buttons, button ids within them */
+function checkMessageOptions(value: unknown): MessageDialogOptions {
+  function fail(): never {
+    throw invalidArguments('dialog:message')
+  }
+  if (!isRecord(value)) fail()
+  const { type, title, message, buttons, defaultId, cancelId } = value
+  if (typeof message !== 'string') fail()
+  if (type !== undefined && !isMessageType(type)) fail()
+  if (title !== undefined && typeof title !== 'string') fail()
+  if (buttons !== undefined) {
+    if (!Array.isArray(buttons) || buttons.length < 1 || buttons.length > 4) fail()
+    if (!buttons.every((b): b is string => typeof b === 'string')) fail()
+  }
+  const count = buttons === undefined ? 1 : buttons.length
+  const buttonId = (id: unknown): number | undefined => {
+    if (id === undefined) return undefined
+    if (typeof id !== 'number' || !Number.isInteger(id) || id < 0 || id >= count) fail()
+    return id
+  }
+  const defaultButton = buttonId(defaultId)
+  const cancelButton = buttonId(cancelId)
+  return {
+    message,
+    ...(type !== undefined && { type }),
+    ...(title !== undefined && { title }),
+    ...(buttons !== undefined && { buttons: [...buttons] }),
+    ...(defaultButton !== undefined && { defaultId: defaultButton }),
+    ...(cancelButton !== undefined && { cancelId: cancelButton })
+  }
+}
+
+/** Save dialog options: a string default path and well-formed filters; anything else dropped */
+function checkSaveFileOptions(value: unknown): SaveFileOptions {
+  if (!isRecord(value)) return {}
+  const { defaultPath, filters: rawFilters } = value
+  const filters = checkFilters(rawFilters)
+  return {
+    ...(typeof defaultPath === 'string' && { defaultPath }),
+    ...(filters !== undefined && { filters })
+  }
+}
+
+/** Open dialog options: well-formed filters only; anything else dropped */
+function checkOpenFileOptions(value: unknown): OpenFileOptions {
+  if (!isRecord(value)) return {}
+  const { filters: rawFilters } = value
+  const filters = checkFilters(rawFilters)
+  return filters !== undefined ? { filters } : {}
+}
+
+/** The methods of Electron's `dialog` the handlers call */
+export type DialogPort = Pick<Dialog, 'showOpenDialog' | 'showSaveDialog' | 'showMessageBox'>
+
+type DialogChannel =
+  | 'dialog:open-folder'
+  | 'dialog:save-file'
+  | 'dialog:open-file'
+  | 'dialog:message'
+
+/** Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used */
+export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, DialogChannel> {
+  return {
+    'dialog:open-folder': {
+      access: 'none',
+      check: () => [],
+      run: () => openFolderDialog(dialog)
+    },
+    'dialog:save-file': {
+      access: 'none',
+      check: (raw) => [checkSaveFileOptions(raw[0])],
+      run: (options = {}) => showSaveFileDialog(dialog, options)
+    },
+    'dialog:open-file': {
+      access: 'none',
+      check: (raw) => [checkOpenFileOptions(raw[0])],
+      run: (options = {}) => openFileDialog(dialog, options)
+    },
+    'dialog:message': {
+      access: 'none',
+      check: (raw) => [checkMessageOptions(raw[0])],
+      run: (options) => showMessageDialog(dialog, options)
     }
-  )
-
-  ipcMain.handle(
-    IPC_CHANNELS.DIALOG_MESSAGE,
-    (_event: IpcMainInvokeEvent, options: MessageDialogOptions) =>
-      showMessageDialog(dialog, options)
-  )
+  }
 }

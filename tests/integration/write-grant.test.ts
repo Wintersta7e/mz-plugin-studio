@@ -4,11 +4,14 @@ import { access, mkdtemp, readFile, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import path, { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Dialog, IpcMain, SaveDialogOptions } from 'electron'
+import type { Dialog, SaveDialogOptions } from 'electron'
 import { assertWriteGranted, recordWriteGrant } from '../../src/main/file-access'
-import { setupDialogHandlers, showSaveFileDialog } from '../../src/main/ipc/dialog'
-import { savePluginToPath, setupPluginHandlers, sha256Hex } from '../../src/main/ipc/plugin'
+import { showSaveFileDialog } from '../../src/main/ipc/dialog'
+import { savePluginToPath, sha256Hex } from '../../src/main/ipc/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
+import { registerMainHandlers } from '../helpers/fake-ipc'
+
+vi.mock('electron', () => ({ ipcMain: {} }))
 
 let tmp: string
 
@@ -31,12 +34,8 @@ function fakeDialog(filePath: string | null) {
 
 /** Registers the dialog and plugin handlers on a stand-in for `ipcMain`; returns an invoker. */
 function registerHandlers(dialog: ReturnType<typeof fakeDialog>) {
-  type Handler = (event: unknown, ...args: unknown[]) => unknown
-  const handlers = new Map<string, Handler>()
-  const ipcMain = { handle: (channel: string, fn: Handler) => handlers.set(channel, fn) }
-  setupDialogHandlers(ipcMain as unknown as IpcMain, dialog as unknown as Dialog)
-  setupPluginHandlers(ipcMain as unknown as IpcMain)
-  return (channel: string, ...args: unknown[]) => handlers.get(channel)!({}, ...args)
+  const ipc = registerMainHandlers(dialog as unknown as Dialog)
+  return (channel: string, ...args: unknown[]) => ipc.invoke(channel, ...args)
 }
 
 describe('save to path', () => {

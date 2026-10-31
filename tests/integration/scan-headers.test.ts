@@ -3,11 +3,12 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
-import { afterEach, beforeEach, expect, it } from 'vitest'
-import type { IpcMain } from 'electron'
-import { setupPluginHandlers } from '../../src/main/ipc/plugin'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { ScannedPluginHeader } from '../../src/shared/ipc-types'
+import { registerMainHandlers } from '../helpers/fake-ipc'
+
+vi.mock('electron', () => ({ ipcMain: {} }))
 
 let tmp: string
 
@@ -25,14 +26,8 @@ async function scan(files: Record<string, string>): Promise<ScannedPluginHeader[
   for (const [name, content] of Object.entries(files)) {
     await writeFile(join(tmp, 'js', 'plugins', name), content)
   }
-  type Handler = (event: unknown, ...args: unknown[]) => unknown
-  const handlers = new Map<string, Handler>()
-  const ipcMain = { handle: (channel: string, fn: Handler) => handlers.set(channel, fn) }
-  setupPluginHandlers(ipcMain as unknown as IpcMain)
-  const results = (await handlers.get(IPC_CHANNELS.PLUGIN_SCAN_HEADERS)!(
-    {},
-    tmp
-  )) as ScannedPluginHeader[]
+  const ipc = registerMainHandlers()
+  const results = (await ipc.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, tmp)) as ScannedPluginHeader[]
   return results.sort((a, b) => a.filename.localeCompare(b.filename))
 }
 
