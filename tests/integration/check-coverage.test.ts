@@ -1,5 +1,6 @@
 // The suite coverage check run against throwaway repositories with a synthetic summary: each
-// directory's line and branch coverage is held to its floor.
+// directory's line and branch coverage is held to its floor, and a file with lines needs a
+// floor directory.
 import { describe, it, expect, afterEach } from 'vitest'
 import { execFileSync, spawnSync } from 'child_process'
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs'
@@ -16,8 +17,10 @@ const DIRS = [
   'src/renderer/src/stores',
   'src/renderer/src/lib',
   'src/renderer/src/lib/generator',
-  'src/renderer/src/components'
+  'src/renderer/src/components',
+  'src/renderer/src'
 ]
+const APP = 'src/renderer/src/App.tsx'
 
 interface Counts {
   covered: number
@@ -37,26 +40,37 @@ interface Run {
 const full: Entry = { lines: { covered: 10, total: 10 }, branches: { covered: 10, total: 10 } }
 const repos: string[] = []
 
-/** A repository tracking one source file per directory in `dirs`. */
-function makeRepo(dirs: string[] = DIRS): string {
+/** A repository tracking one source file per directory in `dirs`, plus each path in `extra`. */
+function makeRepo(dirs: string[] = DIRS, extra: string[] = []): string {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'check-coverage-')))
   repos.push(dir)
   execFileSync('git', ['init', '-q'], { cwd: dir, env: ENV })
-  for (const source of dirs) {
-    mkdirSync(join(dir, source), { recursive: true })
-    writeFileSync(join(dir, source, 'file.ts'), 'export {}\n')
+  for (const path of [...dirs.map((source) => `${source}/file.ts`), ...extra]) {
+    mkdirSync(dirname(join(dir, path)), { recursive: true })
+    writeFileSync(join(dir, path), 'export {}\n')
   }
   execFileSync('git', ['add', '.'], { cwd: dir, env: ENV })
   return dir
 }
 
-/** Writes a summary with one entry per directory (`full` unless overridden) and runs the check. */
-function check(dir: string, entries: Record<string, Entry> = {}, dirs: string[] = DIRS): Run {
+/**
+ * Writes a summary with one entry per directory (`full` unless overridden) plus one per path in
+ * `extra`, and runs the check.
+ */
+function check(
+  dir: string,
+  entries: Record<string, Entry> = {},
+  dirs: string[] = DIRS,
+  extra: Record<string, Entry> = {}
+): Run {
   const summary: Record<string, Entry> = {}
   const total = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
-  for (const source of dirs) {
-    const entry = entries[source] ?? full
-    summary[join(dir, source, 'file.ts')] = entry
+  const paths = dirs.map((source): [string, Entry] => [
+    `${source}/file.ts`,
+    entries[source] ?? full
+  ])
+  for (const [path, entry] of [...paths, ...Object.entries(extra)]) {
+    summary[join(dir, path)] = entry
     total.lines.covered += entry.lines.covered
     total.lines.total += entry.lines.total
     total.branches.covered += entry.branches?.covered ?? 0
@@ -158,5 +172,54 @@ describe('check-coverage suite', () => {
     expect(run.lines).toContainEqual(
       expect.stringMatching(/^coverage floor src\/renderer\/src\/components: .*, files 0$/)
     )
+  })
+
+  it('fails when App.tsx has no covered line while every other directory sits at its floor', () => {
+    // Line and branch totals shaped like the app's own report, where the generator outweighs the
+    // rest: at these weights the directory floors alone hold the whole report above a global
+    // floor set well below the measured total, so only a floor that owns App.tsx catches this.
+    const weights: Record<string, [number, number]> = {
+      'src/main': [750, 517],
+      'src/preload': [45, 2],
+      'src/shared': [64, 51],
+      'src/renderer/src/stores': [558, 400],
+      'src/renderer/src/lib': [707, 575],
+      'src/renderer/src/lib/generator': [4742, 2029],
+      'src/renderer/src/components': [1433, 1299]
+    }
+    const dirs = Object.keys(weights)
+    const dir = makeRepo(dirs, [APP])
+    const floors = check(dir, {}, dirs, { [APP]: full })
+    const atFloor = (floor: number, total: number): Counts => ({
+      covered: Math.ceil((floor * total) / 100),
+      total
+    })
+    const entries: Record<string, Entry> = {}
+    for (const [source, [lines, branches]] of Object.entries(weights)) {
+      entries[source] = {
+        lines: atFloor(printedFloor(floors, source, 'lines'), lines),
+        branches: atFloor(branchFloor(floors, source), branches)
+      }
+    }
+    const uncovered: Entry = {
+      lines: { covered: 0, total: 179 },
+      branches: { covered: 0, total: 90 }
+    }
+    const run = check(dir, entries, dirs, { [APP]: uncovered })
+    expect(run.status).toBe(1)
+    expect(run.lines).toContainEqual(
+      expect.stringMatching(/^coverage floor src\/renderer\/src: lines 0\.00% .*, files 1$/)
+    )
+  })
+
+  it('fails when a tracked file with lines has no owning directory', () => {
+    const stray = 'src/tools/file.ts'
+    const dir = makeRepo(DIRS, [stray])
+    const run = check(dir, {}, DIRS, { [stray]: full })
+    expect(run.status).toBe(1)
+    expect(run.lines).toContain(`coverage file without a floor directory: ${stray}`)
+    // A file with no lines (a type-only module) needs no owner.
+    const empty: Entry = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
+    expect(check(dir, {}, DIRS, { [stray]: empty }).status).toBe(0)
   })
 })
