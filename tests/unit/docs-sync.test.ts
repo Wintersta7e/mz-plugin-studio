@@ -6,6 +6,7 @@ import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { ALL_PARAM_TYPES } from '../../src/shared/types/plugin'
 import { CATEGORIES } from '../../src/renderer/src/lib/generator/templates/types'
+import { TEST_DIRS } from '../helpers/test-dirs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const read = (file: string): string => readFileSync(join(ROOT, file), 'utf8')
@@ -105,6 +106,15 @@ describe('published docs match the code', () => {
     console.log(`strict badge: tsconfigs ${configs.length}, non-strict ${nonStrict.length}`)
     expect(configs.length).toBeGreaterThan(0)
     if (/img\.shields\.io\/badge\/tsc-strict\b/.test(readme)) expect(nonStrict).toEqual([])
+  })
+
+  it('README stack table names every test folder and the end-to-end suite', () => {
+    const tests = tableAfter(readme, '## Stack').filter((row) => row[0] === 'Tests')
+    expect(tests).toHaveLength(1)
+    const named = [...TEST_DIRS.map((dir) => `tests/${dir}/`), 'e2e/']
+    const missing = named.filter((path) => !tests[0].join(' ').includes(`\`${path}\``))
+    console.log(`README test folders: named ${named.length - missing.length}/${named.length}`)
+    expect(missing).toEqual([])
   })
 
   it('README screenshots and tracked screenshots are the same files', () => {

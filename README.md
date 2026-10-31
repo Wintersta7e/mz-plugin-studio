@@ -182,6 +182,7 @@ mz-plugin-studio/
 │   ├── renderer/   # React app: editors, preview, analysis, plugin generator
 │   └── shared/     # types and checks used on both sides
 ├── tests/          # Vitest suites and their fixtures
+├── e2e/            # Playwright flows, release smoke and visual tests on the packaged app
 ├── scripts/        # repository checks, run by CI and through npm scripts
 ├── tools/          # scripts that enrich the MZ class dictionary used by autocomplete
 ├── docs/           # user guide and template contribution guide
@@ -190,14 +191,14 @@ mz-plugin-studio/
 
 ## Stack
 
-| Layer  | Choice                          | Notes                                                                  |
-| ------ | ------------------------------- | ---------------------------------------------------------------------- |
-| Shell  | Electron                        | Sandboxed, context-isolated renderer; IPC handlers validate file paths |
-| UI     | React, Tailwind CSS, Radix UI   | shadcn/ui-style components                                             |
-| State  | Zustand                         | Persisted stores                                                       |
-| Editor | Monaco                          | MZ class completions from a bundled dictionary                         |
-| Build  | electron-vite, electron-builder | Portable Windows target                                                |
-| Tests  | Vitest                          | Unit, integration and golden-output suites                             |
+| Layer  | Choice                          | Notes                                                                                                                                                                                |
+| ------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shell  | Electron                        | Sandboxed, context-isolated renderer; IPC handlers validate file paths                                                                                                               |
+| UI     | React, Tailwind CSS, Radix UI   | shadcn/ui-style components                                                                                                                                                           |
+| State  | Zustand                         | Persisted stores                                                                                                                                                                     |
+| Editor | Monaco                          | MZ class completions from a bundled dictionary                                                                                                                                       |
+| Build  | electron-vite, electron-builder | Portable Windows target                                                                                                                                                              |
+| Tests  | Vitest, Playwright              | Unit (`tests/unit/`), integration (`tests/integration/`), DOM and component (`tests/dom/`) and golden-output (`tests/golden/`) suites; end-to-end flows on the packaged app (`e2e/`) |
 
 ## Documentation
 

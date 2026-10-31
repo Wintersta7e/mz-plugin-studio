@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { ESLint } from 'eslint'
 import eslintConfig from '../../eslint.config.mjs'
+import { TEST_DIRS } from '../helpers/test-dirs'
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
 const ROUTED_GROUPS = [
@@ -22,7 +23,6 @@ const ROUTED_GROUPS = [
   '@testing-library/user-event'
 ]
 
-const TEST_DIRS = ['unit', 'integration', 'dom', 'golden'] as const
 const DOM_BOUND_DIRS = ['dom', 'golden']
 
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
