@@ -2,6 +2,8 @@
 // session through the main views with nothing that policy refuses. Each leg is its own test on
 // its own launch, built from the helpers below so a later leg replaces one without the rest.
 import { spawnSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { Page } from '@playwright/test'
 import { PRODUCTION_CSP } from '../src/main/csp'
 import { readV160Payloads } from '../tests/helpers/persist-v160'
@@ -231,6 +233,11 @@ test('release build serves the production policy and blocks inline code', async 
 test('release build runs a scripted session without policy violations', async ({ release }) => {
   const { page, cdp, pageErrors } = release
   const project = await release.fixtureProject()
+  // Opened in an earlier session, so reopening it from the recent projects does not ask first
+  writeFileSync(
+    join(release.userDataDir, 'project-roots.json'),
+    JSON.stringify({ roots: [project] })
+  )
   const targets = await attachPage(cdp)
   const network = await attachNetworkRecorder(cdp, targets)
   const policy = await recordViolations(cdp, targets)

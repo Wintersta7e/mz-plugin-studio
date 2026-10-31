@@ -1,7 +1,7 @@
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
 import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../../shared/ipc-types'
-import { recordWriteGrant } from '../file-access'
+import { recordProjectRoot, recordWriteGrant } from '../file-access'
 import { checkFilters, invalidArguments, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
 
@@ -55,7 +55,10 @@ export async function showMessageDialog(
   return result.response
 }
 
-/** Shows the folder picker; returns the chosen folder, or null when cancelled */
+/**
+ * Shows the folder picker; returns the chosen folder, or null when cancelled.
+ * The chosen folder becomes a project folder `project:load` opens without asking.
+ */
 export async function openFolderDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>
 ): Promise<string | null> {
@@ -70,6 +73,7 @@ export async function openFolderDialog(
   }
 
   log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
+  await recordProjectRoot(result.filePaths[0])
   return result.filePaths[0]
 }
 

@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { setCurrentProjectRoot } from '../../src/main/file-access'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { ScannedPluginHeader } from '../../src/shared/ipc-types'
 import { registerMainHandlers } from '../helpers/fake-ipc'
@@ -27,6 +28,8 @@ async function scan(files: Record<string, string>): Promise<ScannedPluginHeader[
     await writeFile(join(tmp, 'js', 'plugins', name), content)
   }
   const ipc = registerMainHandlers()
+  // The scan acts only on the open project; this folder holds plugins only, so it is set directly
+  setCurrentProjectRoot(tmp)
   const results = (await ipc.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, tmp)) as ScannedPluginHeader[]
   return results.sort((a, b) => a.filename.localeCompare(b.filename))
 }

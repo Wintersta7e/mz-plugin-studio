@@ -4,7 +4,7 @@ import type { BrowserWindow } from 'electron'
 import log from 'electron-log/main'
 import { createDialogHandlers, type DialogPort } from './dialog'
 import { pluginHandlers } from './plugin'
-import { projectHandlers } from './project'
+import { createProjectHandlers } from './project'
 import type { InvokeHandlers, SendListeners } from './registration'
 
 export type { DialogPort }
@@ -23,7 +23,7 @@ export interface MainDeps {
 
 export function createInvokeHandlers(deps: MainDeps): InvokeHandlers {
   return {
-    ...projectHandlers,
+    ...createProjectHandlers(deps.dialog),
     ...pluginHandlers,
     ...createDialogHandlers(deps.dialog),
     'window-is-maximized': {

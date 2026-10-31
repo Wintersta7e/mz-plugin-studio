@@ -8,6 +8,7 @@ import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/handlers'
 import { createSenderCheck, emit, handleAll, onAll } from './ipc/registration'
+import { setProjectRootsDir } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
 import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
 import { DEFAULT_WINDOW_SIZE } from './window-size'
@@ -125,6 +126,8 @@ app.whenReady().then(() => {
       ? { kind: 'dev-server', origin: new URL(devServerUrl).origin }
       : { kind: 'file', path: RENDERER_HTML }
   )
+  // Project folders the user opened stay granted across restarts
+  setProjectRootsDir(app.getPath('userData'))
   handleAll(createInvokeHandlers(deps), isTrustedSender)
   onAll(createSendListeners(deps), isTrustedSender)
 

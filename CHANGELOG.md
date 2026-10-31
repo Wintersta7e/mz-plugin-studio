@@ -5,6 +5,7 @@
 ### Security
 
 - Requests from the app window to the main process are accepted only from the app's own page.
+- Saving, loading and listing plugins in a project works only on the project that is open, and a project opens only from a folder you chose with Open Project on this computer or confirmed opening when the app asked.
 
 ### Fixed
 

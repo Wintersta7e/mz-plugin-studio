@@ -110,6 +110,9 @@ describe('ipc channels', () => {
     }
     const plugin = 'Fixture_HandWritten.js'
 
+    // The project channels act only on the open project, opened from the folder dialog
+    dialogs.queue({ canceled: false, filePaths: [project] })
+    await expect(invoke('dialog:open-folder')).resolves.toBe(project)
     await expect(invoke('project:validate', project)).resolves.toEqual({ valid: true })
     const loaded = (await invoke('project:load', project)) as { gameTitle: unknown }
     expect(typeof loaded.gameTitle).toBe('string')
@@ -137,8 +140,6 @@ describe('ipc channels', () => {
       path: chosen
     })
     await expect(invoke('plugin:read-by-path', chosen)).resolves.toBe('// out\n')
-    dialogs.queue({ canceled: false, filePaths: [project] })
-    await expect(invoke('dialog:open-folder')).resolves.toBe(project)
     dialogs.queue({ canceled: false, filePaths: [chosen] })
     await expect(invoke('dialog:open-file', {})).resolves.toBe(chosen)
     dialogs.queue({ response: 1 })

@@ -767,6 +767,8 @@ Loading your RPG Maker MZ project enables powerful features.
 
 If the folder cannot be opened as a project, a message names the folder and the reason.
 
+A project in the recent projects list opens straight away when you chose its folder with **Open Project** before on this computer; otherwise the app first asks whether to open that folder, and **Cancel** is the default. Saving, loading and listing plugins in a project works only on the project that is open.
+
 ### Plugin Browser
 
 With a project loaded, press **Ctrl+Shift+E** or click **Plugin Browser** in the sidebar to list every `.js` file in the project's `js/plugins/` folder. Search by name, filter or sort the list, and click a plugin to open it.
