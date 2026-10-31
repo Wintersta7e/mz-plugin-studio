@@ -13,7 +13,7 @@ import type { DialogPort, MainDeps, WindowPort } from '../../src/main/ipc/handle
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS, type InvokeChannel } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../helpers/fixture-project'
-import { createFakeRegistrar } from '../helpers/fake-ipc'
+import { createAppPage, createFakeRegistrar } from '../helpers/fake-ipc'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
 
@@ -76,10 +76,11 @@ const deps: MainDeps = {
   setLogLevel: vi.fn()
 }
 const handlers = createInvokeHandlers(deps)
-const ipc = createFakeRegistrar()
+const page = createAppPage()
+const ipc = createFakeRegistrar(page.frame)
 const runs = new Map(INVOKE_CHANNELS.map((c) => [c, vi.spyOn(handlers[c], 'run')] as const))
-handleAll(handlers, ipc.registrar)
-onAll(createSendListeners(deps), ipc.registrar)
+handleAll(handlers, page.isTrustedSender, ipc.registrar)
+onAll(createSendListeners(deps), page.isTrustedSender, ipc.registrar)
 
 beforeAll(async () => {
   project = await copyFixtureProject()

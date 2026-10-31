@@ -6,7 +6,7 @@ import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/ha
 import type { DialogPort, MainDeps, WindowPort } from '../../src/main/ipc/handlers'
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, type InvokeChannel, type SendChannel } from '../../src/shared/ipc-types'
-import { createFakeRegistrar } from '../helpers/fake-ipc'
+import { createAppPage, createFakeRegistrar } from '../helpers/fake-ipc'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
 
@@ -25,9 +25,10 @@ const deps: MainDeps = {
 const handlers = createInvokeHandlers(deps)
 const listeners = createSendListeners(deps)
 const runs = new Map(INVOKE_CHANNELS.map((c) => [c, vi.spyOn(handlers[c], 'run')] as const))
-const ipc = createFakeRegistrar()
-handleAll(handlers, ipc.registrar)
-onAll(listeners, ipc.registrar)
+const page = createAppPage()
+const ipc = createFakeRegistrar(page.frame)
+handleAll(handlers, page.isTrustedSender, ipc.registrar)
+onAll(listeners, page.isTrustedSender, ipc.registrar)
 
 let cases = 0
 

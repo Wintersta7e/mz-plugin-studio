@@ -7,13 +7,16 @@ import { app, shell, BrowserWindow, dialog, session } from 'electron'
 import { join, dirname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/handlers'
-import { emit, handleAll, onAll } from './ipc/registration'
+import { createSenderCheck, emit, handleAll, onAll } from './ipc/registration'
 import { handleWillPreventUnload } from './close-prompt'
 import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
 import { DEFAULT_WINDOW_SIZE } from './window-size'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
+
+const RENDERER_HTML = join(__dirname, '../renderer/index.html')
+const devServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -67,10 +70,10 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (devServerUrl) {
+    mainWindow.loadURL(devServerUrl)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(RENDERER_HTML)
   }
 }
 
@@ -115,8 +118,15 @@ app.whenReady().then(() => {
       log.transports.console.level = level
     }
   }
-  handleAll(createInvokeHandlers(deps))
-  onAll(createSendListeners(deps))
+  // Only the app's own page, in the main window, may call main
+  const isTrustedSender = createSenderCheck(
+    () => mainWindow,
+    devServerUrl
+      ? { kind: 'dev-server', origin: new URL(devServerUrl).origin }
+      : { kind: 'file', path: RENDERER_HTML }
+  )
+  handleAll(createInvokeHandlers(deps), isTrustedSender)
+  onAll(createSendListeners(deps), isTrustedSender)
 
   createWindow()
   log.info('Main window created')

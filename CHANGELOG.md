@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security
+
+- Requests from the app window to the main process are accepted only from the app's own page.
+
 ### Fixed
 
 - Pressing Enter at the end of Dependencies, Order After, Order Before or Required Assets, or Enter or "|" at the end of a struct field's select options, starts the next entry instead of being undone as you type, so typed entries no longer run together.
