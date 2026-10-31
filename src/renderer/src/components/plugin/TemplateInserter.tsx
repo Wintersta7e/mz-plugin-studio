@@ -748,7 +748,7 @@ export function TemplateInserter({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-200"
       onClick={handleOverlayClick}
     >
       <div className="flex h-[85vh] w-full max-w-5xl flex-col rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
@@ -795,7 +795,7 @@ export function TemplateInserter({
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                   viewMode === 'favorites'
-                    ? 'bg-amber-500 text-white shadow-sm'
+                    ? 'bg-amber-500 text-white shadow-xs'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -821,7 +821,7 @@ export function TemplateInserter({
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
                   viewMode === 'recent'
-                    ? 'bg-blue-500 text-white shadow-sm'
+                    ? 'bg-blue-500 text-white shadow-xs'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -847,7 +847,7 @@ export function TemplateInserter({
                 className={cn(
                   'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
                   viewMode === 'all'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-primary text-primary-foreground shadow-xs'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
               >
@@ -880,7 +880,7 @@ export function TemplateInserter({
                     className={cn(
                       'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                       selectedCategory === category.id && viewMode === 'category'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground shadow-xs'
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     )}
                   >

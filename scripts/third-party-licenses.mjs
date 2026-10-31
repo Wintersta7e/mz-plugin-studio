@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const OUTPUT = join(ROOT, 'THIRD_PARTY_LICENSES.md')
-// Build-time packages whose output ships: the app's CSS is generated from them (globals.css, tailwind.config.js)
-const GENERATED_INTO_APP = ['tailwindcss', 'tailwindcss-animate']
+// Build-time packages whose output ships: the app's CSS is generated from them (globals.css)
+const GENERATED_INTO_APP = ['tailwindcss', 'tw-animate-css']
 // Path aliases from electron.vite.config.ts
 const ALIASES = ['@/', '@renderer/']
 const BUILTINS = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]))

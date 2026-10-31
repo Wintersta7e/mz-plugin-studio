@@ -341,7 +341,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                 key={row.filename}
                 className={cn(
                   'group flex items-center text-sm transition-colors',
-                  'hover:bg-muted/70 has-[:focus-visible]:bg-muted/70',
+                  'hover:bg-muted/70 has-focus-visible:bg-muted/70',
                   row.isActive && 'bg-primary/15 text-foreground',
                   !row.isActive && row.openId && 'text-foreground',
                   !row.openId && 'text-muted-foreground'
@@ -350,7 +350,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                 <button
                   data-testid="plugin-browser-row"
                   onClick={() => handleRowClick(row)}
-                  className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left focus-visible:outline-none"
+                  className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left focus-visible:outline-hidden"
                   aria-current={row.isActive ? 'page' : undefined}
                   title={row.issueTitle ?? row.filename}
                 >

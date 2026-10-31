@@ -127,7 +127,7 @@ export function ToastContainer(): React.ReactElement {
       aria-live="polite"
       aria-label="Notifications"
       data-testid="toast-viewport"
-      className="pointer-events-none fixed bottom-10 right-4 z-[100] flex flex-col gap-2"
+      className="pointer-events-none fixed bottom-10 right-4 z-100 flex flex-col gap-2"
     >
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
