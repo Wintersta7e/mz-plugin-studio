@@ -130,6 +130,19 @@ describe('package.json scripts', () => {
       expect(section(heading), heading).toContain('npm run check:commits')
   })
 
+  it('a script runs the core-script parity check, and the README names it', () => {
+    expect(scripts['test:parity']).toBe(
+      'node node_modules/vitest/vitest.mjs run --project node tests/integration/mz-parity.test.ts'
+    )
+    expect(commandsOf(scripts.check)).not.toContain('npm run test:parity')
+    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
+    const development = readme.slice(
+      readme.indexOf('\n## Development\n'),
+      readme.indexOf('\n## Layout\n')
+    )
+    expect(development).toContain('MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity')
+  })
+
   it('typecheck includes the scripts project', () => {
     expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
   })
