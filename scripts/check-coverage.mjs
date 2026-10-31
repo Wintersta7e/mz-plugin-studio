@@ -3,7 +3,8 @@
 //           is at or above its floors (coverage/coverage-summary.json).
 //   golden: each tracked generator file, covered by the golden tests alone, is at or above its
 //           line floor (coverage/golden/coverage-summary.json).
-// Floors only rise: each is the measured value rounded down when it was set.
+// Floors only rise: each is the measured value rounded down when it was set, measured on the
+// local Node (`node --version`), while CI runs the Node that `engines` in package.json names.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { relative, sep } from 'node:path'
@@ -12,7 +13,9 @@ const GENERATOR = 'src/renderer/src/lib/generator'
 
 const FLOORS = {
   // A file counts toward the deepest directory holding it, so `src/renderer/src/lib` excludes
-  // `generator/`; `global` is the whole report.
+  // `generator/` and `src/renderer/src` holds only the files no deeper directory owns (App.tsx,
+  // main.tsx); a file with lines that no directory owns fails the check. `global` is the whole
+  // report.
   suite: {
     'src/main': { lines: 75, branches: 77 },
     'src/preload': { lines: 0, branches: 0 },
@@ -21,7 +24,8 @@ const FLOORS = {
     'src/renderer/src/lib': { lines: 95, branches: 87 },
     [GENERATOR]: { lines: 94, branches: 85 },
     'src/renderer/src/components': { lines: 87, branches: 75 },
-    global: { lines: 86, branches: 75 }
+    'src/renderer/src': { lines: 81, branches: 77 },
+    global: { lines: 91, branches: 83 }
   },
   golden: {
     // Each category module under templates/, that is every file there but index.ts and types.ts.
@@ -95,7 +99,13 @@ function checkSuite({ files, total }) {
     const owner = dirs
       .filter((dir) => path.startsWith(`${dir}/`))
       .sort((a, b) => b.length - a.length)[0]
-    if (owner === undefined) continue
+    if (owner === undefined) {
+      if (entry.lines.total > 0) {
+        print(`coverage file without a floor directory: ${path}`)
+        failed = true
+      }
+      continue
+    }
     const sum = sums.get(owner)
     for (const kind of ['lines', 'branches']) {
       sum[kind].covered += entry[kind].covered
