@@ -22,7 +22,7 @@ import {
   type PluginParameter,
   type PluginStruct
 } from '../../src/renderer/src/types/plugin'
-import { IPC_CHANNELS } from '../../src/shared/ipc-types'
+import { ACCESS_DENIED, IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { MZProject } from '../../src/shared/types/mz'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
@@ -235,7 +235,7 @@ describe('parameter export to a file', () => {
     expect(message).toHaveBeenCalledWith({
       type: 'error',
       title: 'Export Failed',
-      message: `Access denied: ${target} was not chosen in a save dialog`
+      message: `${ACCESS_DENIED}${target} was not chosen in a save dialog`
     })
     await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
   })

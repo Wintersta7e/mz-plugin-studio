@@ -9,7 +9,12 @@ import path, { dirname, join } from 'path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
 import type { DialogPort } from '../../src/main/ipc/handlers'
-import { INVOKE_CHANNELS, type InvokeChannel } from '../../src/shared/ipc-types'
+import {
+  ACCESS_DENIED,
+  INVOKE_CHANNELS,
+  PROJECT_OPEN_CANCELLED,
+  type InvokeChannel
+} from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../helpers/fixture-project'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
@@ -189,7 +194,7 @@ describe('project scope', () => {
     await ipc.invoke('project:load', b)
     answer(CANCEL)
     await expect(ipc.invoke('project:load', a)).rejects.toThrow(
-      'Access denied: opening the project was cancelled'
+      `${ACCESS_DENIED}${PROJECT_OPEN_CANCELLED}`
     )
     expect(dialog.showMessageBox).toHaveBeenCalledOnce()
     const options = dialog.showMessageBox.mock.calls[0][0]

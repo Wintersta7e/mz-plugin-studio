@@ -36,6 +36,17 @@ export const IPC_CHANNELS = {
   LOG_SET_LEVEL: 'log:set-level'
 } as const
 
+/** How the message of every request main refuses begins; the rest says why in plain words */
+export const ACCESS_DENIED = 'Access denied: '
+
+/** Why main refuses a project when the user chose Cancel in the confirm before it opens */
+export const PROJECT_OPEN_CANCELLED = 'opening the project was cancelled'
+
+/** The error main throws to refuse a request, for `reason` */
+export function accessDenied(reason: string): Error {
+  return new Error(`${ACCESS_DENIED}${reason}`)
+}
+
 /** Scanned plugin header from MZ annotation block — shared across main/renderer */
 export interface ScannedPluginHeader {
   filename: string

@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import log from 'electron-log/main'
 import { replaceFile } from './atomic-write'
+import { accessDenied } from '../shared/ipc-types'
 import {
   assertSafeFilePath,
   assertSafeProjectPath,
@@ -40,7 +41,7 @@ export function recordWriteGrant(filePath: string, pathImpl: PlatformPath = path
 /** Throws unless a save dialog returned this path during the session */
 export function assertWriteGranted(filePath: string, pathImpl: PlatformPath = path): void {
   if (!writeGrants.has(grantKey(filePath, pathImpl))) {
-    throw new Error(`Access denied: ${filePath} was not chosen in a save dialog`)
+    throw accessDenied(`${filePath} was not chosen in a save dialog`)
   }
 }
 
@@ -71,7 +72,7 @@ function assertReadAllowed(filePath: string, pathImpl: PlatformPath): void {
       pathImpl.isAbsolute(relative)
     if (!outside) return
   }
-  throw new Error("Access denied: not in the open project's plugins folder or chosen in a dialog")
+  throw accessDenied("not in the open project's plugins folder or chosen in a dialog")
 }
 
 /** The file in the app's user data folder that keeps the granted project folders */
@@ -187,9 +188,9 @@ export function authorize(
     case 'current-project': {
       assertSafeProjectPath(target as string, pathImpl)
       const root = getCurrentProjectRoot()
-      if (root === null) throw new Error('Access denied: no project is open')
+      if (root === null) throw accessDenied('no project is open')
       if (grantKey(target as string, pathImpl) !== grantKey(root, pathImpl)) {
-        throw new Error('Access denied: not the open project')
+        throw accessDenied('not the open project')
       }
       return
     }

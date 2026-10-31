@@ -31,7 +31,8 @@ import { NOTICE_MS } from './stores/toastStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import { cn, userMessage } from './lib/utils'
+import { cn, refusalReason, userMessage } from './lib/utils'
+import { PROJECT_OPEN_CANCELLED } from '../../shared/ipc-types'
 
 const pluginFade = { duration: 0.12 }
 const viewFade = { duration: 0.1 }
@@ -209,10 +210,13 @@ function App() {
         await scanDependencies()
         await offerReloadFromProject(projectData.path)
       } catch (error) {
+        const refused = refusalReason(error)
+        // The user chose Cancel in main's confirm: nothing went wrong
+        if (refused === PROJECT_OPEN_CANCELLED) return
         setError(String(error))
         useToastStore.getState().addToast({
           type: 'error',
-          message: `Could not open "${path}": ${userMessage(error)}`,
+          message: `Could not open "${path}": ${refused === null ? userMessage(error) : `${refused}.`}`,
           duration: NOTICE_MS
         })
       } finally {

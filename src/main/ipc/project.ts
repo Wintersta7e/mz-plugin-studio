@@ -1,7 +1,11 @@
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
 import { ProjectParser } from '../services/projectParser'
-import type { ProjectValidation } from '../../shared/ipc-types'
+import {
+  PROJECT_OPEN_CANCELLED,
+  accessDenied,
+  type ProjectValidation
+} from '../../shared/ipc-types'
 import type { MZProject } from '../../shared/types/mz'
 import { assertSafeProjectPath, isUncText } from '../../shared/path-safety'
 import { isProjectRootGranted, recordProjectRoot, setCurrentProjectRoot } from '../file-access'
@@ -11,7 +15,7 @@ import type { InvokeHandlers } from './registration'
 /** Refuses a project request, logged once without the project's content */
 function refuse(channel: string, projectPath: string, reason: string): never {
   log.warn(`[${channel}] Refused ${projectPath}: ${reason}`)
-  throw new Error(`Access denied: ${reason}`)
+  throw accessDenied(reason)
 }
 
 /**
@@ -85,7 +89,7 @@ export async function loadGrantedProject(
   const validation = await ProjectParser.validateProject(projectPath)
   if (!validation.valid) refuse('project:load', projectPath, 'not an RPG Maker MZ project folder')
   if (!granted && !(await confirmProjectOpen(dialog, projectPath))) {
-    refuse('project:load', projectPath, 'opening the project was cancelled')
+    refuse('project:load', projectPath, PROJECT_OPEN_CANCELLED)
   }
   await recordProjectRoot(projectPath)
   const project = await runProjectLoad(projectPath)

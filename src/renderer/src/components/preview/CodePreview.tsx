@@ -27,7 +27,7 @@ import { reloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
 import { NOTICE_MS } from '../../stores/toastStore'
 import { DiffView } from './DiffView'
-import { cn, userMessage } from '../../lib/utils'
+import { cn, refusalReason, userMessage } from '../../lib/utils'
 import log from 'electron-log/renderer'
 
 const RAW_UNAVAILABLE = 'Raw mode unavailable: plugin was not imported from a file'
@@ -37,7 +37,7 @@ const DIFF_CHOOSE_FILE = "The saved file can't be opened automatically. Choose i
 const JS_FILTERS = [{ name: 'JavaScript', extensions: ['js'] }]
 
 /** Whether main refused a read because the file is outside what the app may read on its own */
-const isAccessDenied = (error: unknown): boolean => userMessage(error).startsWith('Access denied:')
+const isAccessDenied = (error: unknown): boolean => refusalReason(error) !== null
 
 export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)

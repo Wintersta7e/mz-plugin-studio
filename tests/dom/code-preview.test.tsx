@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { SaveDialogOptions } from 'electron'
+import { authorize } from '../../src/main/file-access'
 import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { readFileByPath, savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
@@ -25,7 +26,7 @@ import {
   createEmptyParameter,
   createEmptyPlugin
 } from '../../src/renderer/src/types/plugin'
-import { IPC_CHANNELS } from '../../src/shared/ipc-types'
+import { ACCESS_DENIED, IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
 import { viaIpc } from './support/main-api'
@@ -206,7 +207,7 @@ describe('code preview export with no project', () => {
       click()
       await waitFor(() =>
         expect(errorToasts()).toEqual([
-          `Export failed: Access denied: ${target} was not chosen in a save dialog`
+          `Export failed: ${ACCESS_DENIED}${target} was not chosen in a save dialog`
         ])
       )
       await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
@@ -341,8 +342,10 @@ describe('code preview diff', () => {
   const CHOSEN = '/chosen/Alpha.js'
   const NOTICE = "The saved file can't be opened automatically. Choose it to compare."
   const LAST_COPY = 'Left: the copy this app last read or wrote'
+  // Main's own refusal of a file it may not read without a dialog
   const denied = async (file: string): Promise<string> => {
-    throw new Error(`Access denied: ${file} is not in the open project's plugins folder`)
+    authorize('granted-read', file)
+    throw new Error(`${file} should have been refused`)
   }
 
   /** The saved file is out of read-by-path's reach; `chosen` answers the Choose file dialog */

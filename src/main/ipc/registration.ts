@@ -9,6 +9,7 @@ import { samePath } from './plugin'
 import {
   INVOKE_CHANNELS,
   SEND_CHANNELS,
+  accessDenied,
   type EventArgs,
   type EventChannel,
   type InvokeArgs,
@@ -124,7 +125,7 @@ export function handle<C extends InvokeChannel>(
 ): void {
   registrar.handle(channel, async (event, ...raw) => {
     const args = admit(channel, () => {
-      if (!isTrustedSender(event)) throw new Error('Access denied: sender')
+      if (!isTrustedSender(event)) throw accessDenied('sender')
       const checked = handler.check(raw)
       const list: readonly unknown[] = checked
       authorize(handler.access, list[0])
@@ -276,7 +277,7 @@ export function routeLogChannel(
   host.on(LOG_CHANNEL, (event, ...raw) => {
     try {
       admit(LOG_CHANNEL, () => {
-        if (!isTrustedSender(event)) throw new Error('Access denied: sender')
+        if (!isTrustedSender(event)) throw accessDenied('sender')
         checkLogLine(raw)
       })
     } catch {
@@ -288,7 +289,7 @@ export function routeLogChannel(
   // The page logger asks once at startup and reads only whether main answered
   host.handle(LOG_CHANNEL, (event, ...raw) => {
     const logId = admit(LOG_CHANNEL, () => {
-      if (!isTrustedSender(event)) throw new Error('Access denied: sender')
+      if (!isTrustedSender(event)) throw accessDenied('sender')
       return checkLogOptionsRequest(raw)
     })
     return { levels: log.levels, logId }

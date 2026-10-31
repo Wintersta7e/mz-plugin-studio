@@ -1,6 +1,6 @@
 // Opening a project from the keyboard (Ctrl+O): a folder that cannot be opened shows a message
-// naming the folder and the reason, and leaves the project store's error set. A project that
-// opens offers to reload the imported tabs whose file text is not loaded in one action.
+// naming the folder and the reason, and leaves the project store's error set; Cancel in the
+// confirm before a project opens shows nothing. A project that opens offers to reload the imported tabs whose file text is not loaded in one action.
 import { readFileSync } from 'fs'
 import { basename } from 'path'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -12,10 +12,11 @@ import * as generator from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
+import { IPC_CHANNELS, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import type { FakeApiOverrides } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
-import { createMainApi } from './support/main-api'
+import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
 const FOLDER = '/fixture/not-a-project'
@@ -27,8 +28,9 @@ async function openFolder(project: FakeApiOverrides['project']): Promise<void> {
   act(() => {
     fireEvent.keyDown(window, { key: 'o', code: 'KeyO', ctrlKey: true })
   })
+  // Validation starts after the loading flag is set, so the flag falls only when the open ends
+  await waitFor(() => expect(window.api.project.validate).toHaveBeenCalled())
   await waitFor(() => expect(useProjectStore.getState().isLoading).toBe(false))
-  await waitFor(() => expect(useProjectStore.getState().error).not.toBeNull())
 }
 
 // Each case renders the whole app, which takes seconds on a cold start
@@ -96,6 +98,39 @@ describe('opening a project', { timeout: 30_000 }, () => {
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
     ])
+  })
+
+  it('Cancel in the confirm before the project opens shows nothing and sets no error', async () => {
+    await openFolder({
+      validate: vi.fn(async () => ({ valid: true })),
+      load: vi.fn(
+        viaIpc(IPC_CHANNELS.PROJECT_LOAD, async () => {
+          throw accessDenied(PROJECT_OPEN_CANCELLED)
+        })
+      )
+    })
+    expect(window.api.project.load).toHaveBeenCalledWith(FOLDER)
+    expect(useToastStore.getState().toasts).toEqual([])
+    expect(useProjectStore.getState().error).toBeNull()
+    expect(useProjectStore.getState().project).toBeNull()
+  })
+
+  it('a network folder main refuses is shown once in plain words', async () => {
+    const reason = 'a network folder opens only when chosen with Open Project'
+    await openFolder({
+      validate: vi.fn(
+        viaIpc(IPC_CHANNELS.PROJECT_VALIDATE, async () => {
+          throw accessDenied(reason)
+        })
+      )
+    })
+    const message = `Could not open "/fixture/not-a-project": ${reason}.`
+    expect(await screen.findByText(message)).toBeTruthy()
+    expect(useToastStore.getState().toasts).toMatchObject([
+      { type: 'error', message, duration: 10_000 }
+    ])
+    expect(useProjectStore.getState().error).not.toBeNull()
+    expect(window.api.project.load).not.toHaveBeenCalled()
   })
 
   it('a load that rejects with a value that is not an Error shows that value', async () => {
