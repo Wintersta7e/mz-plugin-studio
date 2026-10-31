@@ -10,6 +10,7 @@ import { setupProjectHandlers } from './ipc/project'
 import { setupPluginHandlers } from './ipc/plugin'
 import { setupDialogHandlers } from './ipc/dialog'
 import { handleWillPreventUnload } from './close-prompt'
+import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
@@ -113,13 +114,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Content Security Policy — blocks injected scripts and unsafe content
-  // Dev mode needs 'unsafe-inline' and 'unsafe-eval' for Vite HMR
-  // Monaco editor loads from cdn.jsdelivr.net — must be allowed in script-src
-  const monacoCdn = 'https://cdn.jsdelivr.net'
-  const csp = is.dev
-    ? `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:*; worker-src 'self' blob: ${monacoCdn}`
-    : `default-src 'self'; script-src 'self' ${monacoCdn}; style-src 'self' 'unsafe-inline' ${monacoCdn}; font-src 'self' data: ${monacoCdn}; img-src 'self' data:; worker-src 'self' blob: ${monacoCdn}`
+  const csp = is.dev ? DEV_SERVER_CSP : PRODUCTION_CSP
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
