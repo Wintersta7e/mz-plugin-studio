@@ -38,6 +38,7 @@
 - The project dependency analysis reads a plugin's @base, @orderAfter and @orderBefore exactly as the plugin editor does: a mention in help text or an empty tag no longer shows as a missing dependency or a load-order error, and a value is the whole rest of its line.
 - A parameter or struct field whose name holds a setting tag such as "@type" or "@default" gets a warning again: opening the plugin again ends the name before that tag and reads the rest as the parameter's settings.
 - Opening or importing a plugin whose description is followed by a long run of blank lines, or whose code holds a long unbroken word such as a hex data string, no longer freezes the app for seconds.
+- With Diff open, switching to another plugin's tab no longer shows the first plugin's saved file, kept copy or Choose file notice against the other plugin's code, and a tab with no saved version is no longer stuck in that diff.
 
 ### Changed
 

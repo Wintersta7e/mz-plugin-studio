@@ -59,12 +59,20 @@ export function CodePreview() {
   const diffRequested = useUIStore((s) => s.diffRequestPluginId === plugin.id)
 
   const [copied, setCopied] = useState(false)
-  const [showDiff, setShowDiff] = useState(false)
-  const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
-  // The left panel's label when it shows the kept copy instead of the saved file
-  const [diffLabel, setDiffLabel] = useState<string | null>(null)
-  // The saved file is out of reach and no copy was kept: the diff area offers Choose file
-  const [diffNeedsFile, setDiffNeedsFile] = useState(false)
+  // The open diff belongs to the plugin it was opened for; another plugin's tab shows none
+  const [openedDiff, setOpenedDiff] = useState<{
+    pluginId: string
+    original: string | null
+    // The left panel's label when it shows the kept copy instead of the saved file
+    label: string | null
+    // The saved file is out of reach and no copy was kept: the diff area offers Choose file
+    needsFile: boolean
+  } | null>(null)
+  const diff = openedDiff?.pluginId === plugin.id ? openedDiff : null
+  const showDiff = diff !== null
+  const onDiskCode = diff?.original ?? null
+  const diffLabel = diff?.label ?? null
+  const diffNeedsFile = diff?.needsFile ?? false
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
   const [badgeBounce, setBadgeBounce] = useState(false)
@@ -201,18 +209,18 @@ export function CodePreview() {
     await savePlugin(usePluginStore.getState().plugin.id, 'export')
   }, [])
 
-  const showDiffWith = useCallback((original: string | null, label: string | null) => {
-    setOnDiskCode(original)
-    setDiffLabel(label)
-    setDiffNeedsFile(original === null)
-    setShowDiff(true)
-  }, [])
+  const showDiffWith = useCallback(
+    (pluginId: string, original: string | null, label: string | null) =>
+      setOpenedDiff({ pluginId, original, label, needsFile: original === null }),
+    []
+  )
 
   const openDiff = useCallback(async () => {
+    const pluginId = plugin.id
     // Compare with the saved file; when main may not read it on its own, with the kept copy
     if (savedPath) {
       try {
-        showDiffWith(await window.api.plugin.readByPath(savedPath), null)
+        showDiffWith(pluginId, await window.api.plugin.readByPath(savedPath), null)
         return
       } catch (error) {
         if (!isAccessDenied(error)) {
@@ -228,20 +236,20 @@ export function CodePreview() {
       }
     }
     if (plugin.rawSource) {
-      showDiffWith(plugin.rawSource, DIFF_LAST_COPY)
+      showDiffWith(pluginId, plugin.rawSource, DIFF_LAST_COPY)
     } else if (savedPath) {
-      showDiffWith(null, null)
+      showDiffWith(pluginId, null, null)
     } else {
-      setDiffNeedsFile(false)
-      setShowDiff(true)
+      setOpenedDiff({ pluginId, original: null, label: null, needsFile: false })
     }
-  }, [savedPath, plugin.rawSource, addToast, showDiffWith])
+  }, [savedPath, plugin.id, plugin.rawSource, addToast, showDiffWith])
 
   const chooseDiffFile = useCallback(async () => {
+    const pluginId = plugin.id
     try {
       const chosen = await window.api.dialog.openFile({ filters: JS_FILTERS })
       if (!chosen) return
-      showDiffWith(await window.api.plugin.readByPath(chosen), null)
+      showDiffWith(pluginId, await window.api.plugin.readByPath(chosen), null)
     } catch (error) {
       log.warn(`Diff: couldn't open the chosen file: ${userMessage(error)}`)
       addToast({
@@ -250,11 +258,11 @@ export function CodePreview() {
         duration: NOTICE_MS
       })
     }
-  }, [addToast, showDiffWith])
+  }, [plugin.id, addToast, showDiffWith])
 
   const handleDiffToggle = useCallback(async () => {
     if (showDiff) {
-      setShowDiff(false)
+      setOpenedDiff(null)
       return
     }
     await openDiff()

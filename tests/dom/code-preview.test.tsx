@@ -417,6 +417,48 @@ describe('code preview diff', () => {
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
     expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
   })
+
+  /** Makes another plugin, Beta, the active tab */
+  function switchToBeta(): void {
+    const beta = createEmptyPlugin()
+    act(() =>
+      usePluginStore.getState().openPlugin({ ...beta, meta: { ...beta.meta, name: 'Beta' } })
+    )
+  }
+
+  it("does not show one plugin's kept copy against another plugin's tab", async () => {
+    wireDeniedSave(null)
+    usePluginStore.setState((s) => ({ plugin: { ...s.plugin, rawSource: '// Alpha copy' } }))
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    expect(await screen.findByText(LAST_COPY)).toBeInTheDocument()
+    switchToBeta()
+    expect(screen.queryByText(LAST_COPY)).toBeNull()
+    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+  })
+
+  it("does not show one plugin's Choose file panel on another plugin's tab", async () => {
+    wireDeniedSave(CHOSEN)
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    expect(await screen.findByText(NOTICE)).toBeInTheDocument()
+    switchToBeta()
+    expect(screen.queryByText(NOTICE)).toBeNull()
+  })
+
+  it('does not show a saved file read for one plugin after another plugin became active', async () => {
+    let finish: (text: string) => void = () => {}
+    window.api = createFakeApi({
+      plugin: { readByPath: vi.fn(() => new Promise<string>((done) => (finish = done))) }
+    })
+    usePluginStore.setState({ savedPath: SAVED })
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    await waitFor(() => expect(window.api.plugin.readByPath).toHaveBeenCalledWith(SAVED))
+    switchToBeta()
+    await act(async () => finish('// Alpha on disk'))
+    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+  })
 })
 
 describe('code preview banner', () => {
