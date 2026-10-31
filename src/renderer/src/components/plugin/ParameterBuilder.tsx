@@ -15,7 +15,6 @@ import {
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
-import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
 import { ScrollArea } from '../ui/scroll-area'
@@ -42,10 +41,8 @@ import {
   type ParamImportResult
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
-import { normalizeOptions, optionsText, parseOptions } from '../../lib/select-options'
-import { useTypedText } from '../../lib/typed-text'
 import { cn, userMessage } from '../../lib/utils'
-import { StructDefaultEditor } from './StructDefaultEditor'
+import { TypeFields } from './TypeFields'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
 
@@ -898,35 +895,6 @@ interface ParameterCardProps {
   items: { id: number; name: string }[]
 }
 
-/** Options editor that keeps the text as typed so a value|label is not eaten on keystroke */
-function OptionsEditor({
-  param,
-  onUpdate
-}: {
-  param: PluginParameter
-  onUpdate: (updates: Partial<PluginParameter>) => void
-}) {
-  const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
-
-  return (
-    <div className="space-y-2">
-      <Label>
-        Options (one per line, format: value|label or just label; write a | in a value as \|)
-      </Label>
-      <Textarea
-        value={optionsTyped}
-        onChange={(e) => {
-          setOptionsTyped(e.target.value)
-          onUpdate({ options: parseOptions(e.target.value) })
-        }}
-        placeholder={'option1|Option 1\noption2|Option 2'}
-        rows={4}
-        className="font-mono text-sm"
-      />
-    </div>
-  )
-}
-
 const ParameterCard = memo(function ParameterCard({
   param,
   expanded,
@@ -1167,109 +1135,13 @@ const ParameterCard = memo(function ParameterCard({
                 )}
               </div>
 
-              {/* Essential: Select/Combo options */}
-              {(param.type === 'select' || param.type === 'combo') && (
-                <OptionsEditor param={param} onUpdate={onUpdate} />
-              )}
-
-              {/* Essential: Struct reference + default editor */}
-              {param.type === 'struct' && (
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <Label>Struct Type</Label>
-                    <Select
-                      value={param.structType || ''}
-                      onValueChange={(value) => onUpdate({ structType: value, default: '' })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select struct..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {structs.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {param.structType &&
-                    (() => {
-                      const structDef = allStructs.find((s) => s.name === param.structType)
-                      if (!structDef) return null
-                      return (
-                        <StructDefaultEditor
-                          struct={structDef}
-                          value={typeof param.default === 'string' ? param.default : ''}
-                          onChange={(jsonStr) => onUpdate({ default: jsonStr })}
-                        />
-                      )
-                    })()}
-                </div>
-              )}
-
-              {/* Essential: Array element type */}
-              {param.type === 'array' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Array Element Type</Label>
-                    <Select
-                      value={param.arrayType || 'string'}
-                      onValueChange={(value) => onUpdate({ arrayType: value as ParamType })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="string">String</SelectItem>
-                        <SelectItem value="number">Number</SelectItem>
-                        <SelectItem value="boolean">Boolean</SelectItem>
-                        <SelectItem value="note">Note (Multiline)</SelectItem>
-                        <SelectItem value="select">Select/Combo</SelectItem>
-                        <SelectItem value="variable">Variable</SelectItem>
-                        <SelectItem value="switch">Switch</SelectItem>
-                        <SelectItem value="actor">Actor</SelectItem>
-                        <SelectItem value="class">Class</SelectItem>
-                        <SelectItem value="skill">Skill</SelectItem>
-                        <SelectItem value="item">Item</SelectItem>
-                        <SelectItem value="weapon">Weapon</SelectItem>
-                        <SelectItem value="armor">Armor</SelectItem>
-                        <SelectItem value="enemy">Enemy</SelectItem>
-                        <SelectItem value="troop">Troop</SelectItem>
-                        <SelectItem value="state">State</SelectItem>
-                        <SelectItem value="animation">Animation</SelectItem>
-                        <SelectItem value="tileset">Tileset</SelectItem>
-                        <SelectItem value="common_event">Common Event</SelectItem>
-                        <SelectItem value="file">File</SelectItem>
-                        <SelectItem value="struct">Struct</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* If array of structs, show struct type selector */}
-                  {param.arrayType === 'struct' && (
-                    <div className="space-y-2">
-                      <Label>Struct Type</Label>
-                      <Select
-                        value={param.structType || ''}
-                        onValueChange={(value) => onUpdate({ structType: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select struct..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {structs.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Essential: options, struct or array element type */}
+              <TypeFields
+                param={param}
+                onUpdate={onUpdate}
+                structNames={structs}
+                structDefaults={allStructs}
+              />
 
               {/* Advanced fields toggle */}
               <button
