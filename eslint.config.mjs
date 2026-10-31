@@ -98,5 +98,56 @@ export default defineConfig(
         }
       ]
     }
+  },
+  {
+    // Raw IPC skips the sender, argument and file-access checks; only the two wrappers use it.
+    // Not caught: send on a webContents held under another name (const wc = win.webContents).
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/main/ipc/registration.ts', 'src/preload/ipc.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'electron',
+              importNames: ['ipcMain', 'ipcRenderer', 'IpcMain'],
+              message: 'Use the IPC wrappers: src/main/ipc/registration.ts or src/preload/ipc.ts.'
+            }
+          ]
+        }
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.object.name=/^ipc(Main|Renderer)$/]',
+          message: 'Use the IPC wrappers.'
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='send'][callee.object.property.name=/^(webContents|sender)$/]",
+          message: 'Use emit() from the main IPC wrapper.'
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='send'][callee.object.name=/^(webContents|sender)$/]",
+          message: 'Use emit() from the main IPC wrapper.'
+        },
+        {
+          selector: "CallExpression[callee.property.name='reply']",
+          message: 'Use the IPC wrappers.'
+        },
+        {
+          selector:
+            "MemberExpression[object.callee.name='require'][object.arguments.0.value='electron'][property.name=/^ipc(Main|Renderer)$/]",
+          message: 'Use the IPC wrappers.'
+        },
+        {
+          selector:
+            "VariableDeclarator[init.callee.name='require'][init.arguments.0.value='electron'] > ObjectPattern > Property[key.name=/^ipc(Main|Renderer)$/]",
+          message: 'Use the IPC wrappers.'
+        }
+      ]
+    }
   }
 )
