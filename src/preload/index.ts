@@ -1,128 +1,42 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import { IPC_CHANNELS } from '../shared/ipc-types'
+import { contextBridge } from 'electron'
+import { IPC_CHANNELS, type API } from '../shared/ipc-types'
+import { invoke, send, subscribe } from './ipc'
 
-export interface ProjectAPI {
-  validate: (path: string) => Promise<{ valid: boolean; error?: string }>
-  load: (path: string) => Promise<import('../shared/types/mz').MZProject>
-}
-
-export interface PluginAPI {
-  save: (
-    projectPath: string,
-    filename: string,
-    content: string,
-    guard: import('../shared/ipc-types').SaveGuard
-  ) => Promise<import('../shared/ipc-types').SaveResult>
-  saveToPath: (
-    filePath: string,
-    content: string,
-    guard?: import('../shared/ipc-types').SaveGuard
-  ) => Promise<import('../shared/ipc-types').SaveResult>
-  load: (
-    projectPath: string,
-    filename: string
-  ) => Promise<import('../shared/ipc-types').LoadedPlugin>
-  parse: (content: string) => Promise<import('../shared/types/plugin').PluginDefinition>
-  readRaw: (
-    projectPath: string,
-    filename: string
-  ) => Promise<import('../shared/ipc-types').RawPluginFile>
-  list: (projectPath: string) => Promise<string[]>
-  readByPath: (filePath: string) => Promise<string>
-  scanHeaders: (projectPath: string) => Promise<
-    {
-      filename: string
-      name: string
-      base: string[]
-      orderAfter: string[]
-      orderBefore: string[]
-      overrides: string[]
-    }[]
-  >
-}
-
-export interface DialogAPI {
-  openFolder: () => Promise<string | null>
-  saveFile: (options?: {
-    defaultPath?: string
-    filters?: { name: string; extensions: string[] }[]
-  }) => Promise<string | null>
-  openFile: (options?: {
-    filters?: { name: string; extensions: string[] }[]
-  }) => Promise<string | null>
-  message: (options: import('../shared/ipc-types').MessageDialogOptions) => Promise<number>
-}
-
-export interface WindowAPI {
-  minimize: () => void
-  maximize: () => void
-  close: () => void
-  isMaximized: () => Promise<boolean>
-  onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void
-}
-
-export interface LogAPI {
-  openFolder: () => Promise<void>
-  setLevel: (debug: boolean) => void
-}
-
-const projectApi: ProjectAPI = {
-  validate: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
-  load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path)
-}
-
-const pluginApi: PluginAPI = {
-  save: (projectPath, filename, content, guard) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE, projectPath, filename, content, guard),
-  saveToPath: (filePath, content, guard) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, filePath, content, guard),
-  load: (projectPath, filename) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LOAD, projectPath, filename),
-  parse: (content) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_PARSE, content),
-  readRaw: (projectPath, filename) =>
-    ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
-  list: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath),
-  readByPath: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath),
-  scanHeaders: (projectPath) => ipcRenderer.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
-}
-
-const dialogApi: DialogAPI = {
-  openFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
-  saveFile: (options = {}) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
-  openFile: (options = {}) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
-  message: (options) => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_MESSAGE, options)
-}
-
-const windowApi: WindowAPI = {
-  minimize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE),
-  maximize: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE),
-  close: () => ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE),
-  isMaximized: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED),
-  onMaximizeChange: (callback) => {
-    const handler = (_event: unknown, isMaximized: boolean) => callback(isMaximized)
-    ipcRenderer.on(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, handler)
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, handler)
+const api: API = {
+  project: {
+    validate: (path) => invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
+    load: (path) => invoke(IPC_CHANNELS.PROJECT_LOAD, path)
+  },
+  plugin: {
+    save: (projectPath, filename, content, guard) =>
+      invoke(IPC_CHANNELS.PLUGIN_SAVE, projectPath, filename, content, guard),
+    saveToPath: (filePath, content, guard) =>
+      invoke(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, filePath, content, guard),
+    load: (projectPath, filename) => invoke(IPC_CHANNELS.PLUGIN_LOAD, projectPath, filename),
+    parse: (content) => invoke(IPC_CHANNELS.PLUGIN_PARSE, content),
+    readRaw: (projectPath, filename) => invoke(IPC_CHANNELS.PLUGIN_READ_RAW, projectPath, filename),
+    list: (projectPath) => invoke(IPC_CHANNELS.PLUGIN_LIST, projectPath),
+    readByPath: (filePath) => invoke(IPC_CHANNELS.PLUGIN_READ_BY_PATH, filePath),
+    scanHeaders: (projectPath) => invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
+  },
+  dialog: {
+    openFolder: () => invoke(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
+    // The main handlers read fields of `options`, so it is never sent missing
+    saveFile: (options = {}) => invoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
+    openFile: (options = {}) => invoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
+    message: (options) => invoke(IPC_CHANNELS.DIALOG_MESSAGE, options)
+  },
+  window: {
+    minimize: () => send(IPC_CHANNELS.WINDOW_MINIMIZE),
+    maximize: () => send(IPC_CHANNELS.WINDOW_MAXIMIZE),
+    close: () => send(IPC_CHANNELS.WINDOW_CLOSE),
+    isMaximized: () => invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED),
+    onMaximizeChange: (callback) => subscribe(IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED, callback)
+  },
+  log: {
+    openFolder: () => invoke(IPC_CHANNELS.LOG_OPEN_FOLDER),
+    setLevel: (debug) => send(IPC_CHANNELS.LOG_SET_LEVEL, debug)
   }
 }
 
-const logApi: LogAPI = {
-  openFolder: () => ipcRenderer.invoke(IPC_CHANNELS.LOG_OPEN_FOLDER),
-  setLevel: (debug) => ipcRenderer.send(IPC_CHANNELS.LOG_SET_LEVEL, debug)
-}
-
-contextBridge.exposeInMainWorld('api', {
-  project: projectApi,
-  plugin: pluginApi,
-  dialog: dialogApi,
-  window: windowApi,
-  log: logApi
-})
-
-// Export types for renderer
-export type API = {
-  project: ProjectAPI
-  plugin: PluginAPI
-  dialog: DialogAPI
-  window: WindowAPI
-  log: LogAPI
-}
+contextBridge.exposeInMainWorld('api', api)

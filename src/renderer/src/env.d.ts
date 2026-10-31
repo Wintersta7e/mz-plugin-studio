@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { API } from '../../preload/index'
+import type { API } from '../../shared/ipc-types'
 
 declare global {
   const __APP_VERSION__: string

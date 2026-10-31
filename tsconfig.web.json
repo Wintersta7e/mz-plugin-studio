@@ -6,6 +6,7 @@
     "src/renderer/src/**/*.tsx",
     "src/shared/**/*"
   ],
+  "exclude": ["src/shared/path-safety.ts"],
   "compilerOptions": {
     "composite": true,
     "noImplicitAny": true,

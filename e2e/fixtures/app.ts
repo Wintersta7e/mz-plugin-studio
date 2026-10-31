@@ -14,7 +14,7 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
-import type { API } from '../../src/preload/index'
+import type { API } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../../tests/helpers/fixture-project'
 
 export { expect }
