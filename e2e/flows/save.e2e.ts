@@ -14,9 +14,11 @@ import {
   expect,
   launchTwin,
   loadFixtureProject,
+  openFromBrowser,
   openProject,
   queueDialog,
   stubDialogs,
+  tabNames,
   teardown,
   TEARDOWN_BOUND_MS,
   test
@@ -41,23 +43,6 @@ async function settle(page: Page): Promise<void> {
 async function save(page: Page): Promise<void> {
   await settle(page)
   await page.keyboard.press('Control+s')
-}
-
-/** Opens a project plugin from the Plugin Browser and waits until its tab is the active one */
-async function openFromBrowser(page: Page, file: string): Promise<void> {
-  const panel = page.getByTestId('plugin-browser-panel')
-  if (!(await panel.isVisible())) await page.getByTestId('plugin-browser-toggle').click()
-  // A row reads the file name without `.js` first; fixture names are plain word characters
-  const row = panel
-    .getByTestId('plugin-browser-row')
-    .filter({ hasText: new RegExp(`^${file.replace(/\.js$/, '')}(?!\\w)`) })
-  await row.click()
-  await expect(row).toHaveAttribute('aria-current', 'page')
-}
-
-/** The accessible name of every open tab, in order: the plugin's name, marked when unsaved */
-async function tabNames(page: Page): Promise<(string | null)[]> {
-  return page.getByTestId('plugin-tab').evaluateAll((tabs) => tabs.map((tab) => tab.ariaLabel))
 }
 
 /** Saves and waits until the file's modification time moves past `before` */

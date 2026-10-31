@@ -51,6 +51,7 @@ export function TitleBar() {
           className="h-8 w-10 rounded-none hover:bg-destructive hover:text-destructive-foreground"
           onClick={handleClose}
           aria-label="Close window"
+          data-testid="title-bar-close"
         >
           <X className="h-4 w-4" />
         </Button>

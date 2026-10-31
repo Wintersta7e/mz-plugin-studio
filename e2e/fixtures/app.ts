@@ -304,6 +304,23 @@ export async function loadFixtureProject(
   return project
 }
 
+/** Opens a project plugin from the Plugin Browser and waits until its tab is the active one */
+export async function openFromBrowser(page: Page, file: string): Promise<void> {
+  const panel = page.getByTestId('plugin-browser-panel')
+  if (!(await panel.isVisible())) await page.getByTestId('plugin-browser-toggle').click()
+  // A row reads the file name without `.js` first; fixture names are plain word characters
+  const row = panel
+    .getByTestId('plugin-browser-row')
+    .filter({ hasText: new RegExp(`^${file.replace(/\.js$/, '')}(?!\\w)`) })
+  await row.click()
+  await expect(row).toHaveAttribute('aria-current', 'page')
+}
+
+/** The accessible name of every open tab, in order: the plugin's name, marked when unsaved */
+export async function tabNames(page: Page): Promise<(string | null)[]> {
+  return page.getByTestId('plugin-tab').evaluateAll((tabs) => tabs.map((tab) => tab.ariaLabel))
+}
+
 const isRunning = (child: ChildProcess): boolean =>
   child.exitCode === null && child.signalCode === null
 

@@ -170,6 +170,7 @@ export function MetaEditor() {
                   <Label htmlFor="description-en">Description</Label>
                   <Textarea
                     id="description-en"
+                    data-testid="meta-description"
                     value={meta.description}
                     onChange={(e) => updateMeta({ description: e.target.value })}
                     placeholder="A brief description of your plugin"
