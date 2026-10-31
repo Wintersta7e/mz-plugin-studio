@@ -1,6 +1,12 @@
+import path from 'path'
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
 import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../../shared/ipc-types'
+import {
+  assertSafeProjectPath,
+  isAllowedExtension,
+  type PlatformPath
+} from '../../shared/path-safety'
 import { recordProjectRoot, recordReadGrant, recordWriteGrant } from '../file-access'
 import { checkFilters, invalidArguments, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
@@ -141,13 +147,69 @@ function checkMessageOptions(value: unknown): MessageDialogOptions {
   }
 }
 
-/** Save dialog options: a string default path and well-formed filters; anything else dropped */
+/** What a dialog may open at: a bare file name, or a folder it opens in */
+export type DialogDefaultClass = 'filename' | 'directory-seed'
+
+/** Two leading separators: a network path (\\host\share) or a Windows device path (\\?\, \\.\) */
+const UNC_PREFIX = /^[\\/]{2}/
+const MAX_FILENAME_LENGTH = 255
+
+/**
+ * The class of a dialog's default path, or null when the dialog opens without it. Decided from
+ * the text alone, before anything looks the path up: the dialog looks its default path up before
+ * the user acts, and looking up a network path sends the user's Windows credentials to its host.
+ */
+export function classifyDialogDefault(
+  value: unknown,
+  pathImpl: PlatformPath = path
+): DialogDefaultClass | null {
+  if (typeof value !== 'string' || value === '' || value.includes('\0')) return null
+  if (UNC_PREFIX.test(value)) return null
+  // ':' is not part of a file name: `C:x.js` is relative to the current folder of drive C
+  if (!/[\\/:]/.test(value)) {
+    const named =
+      value !== '.' &&
+      value !== '..' &&
+      value.length <= MAX_FILENAME_LENGTH &&
+      isAllowedExtension(value, pathImpl)
+    return named ? 'filename' : null
+  }
+  if (!pathImpl.isAbsolute(value)) return null
+  try {
+    assertSafeProjectPath(value, pathImpl)
+    return 'directory-seed'
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The save dialog's default path: a bare file name, or a full path to a file the app may write
+ * (Save asks again at the file it last chose); anything else is dropped.
+ */
+export function checkSaveDefaultPath(
+  value: unknown,
+  pathImpl: PlatformPath = path
+): string | undefined {
+  if (typeof value !== 'string') return undefined
+  switch (classifyDialogDefault(value, pathImpl)) {
+    case 'filename':
+      return value
+    case 'directory-seed':
+      return isAllowedExtension(value, pathImpl) ? value : undefined
+    default:
+      return undefined
+  }
+}
+
+/** Save dialog options: a safe default path and well-formed filters; anything else dropped */
 function checkSaveFileOptions(value: unknown): SaveFileOptions {
   if (!isRecord(value)) return {}
-  const { defaultPath, filters: rawFilters } = value
+  const { defaultPath: rawDefaultPath, filters: rawFilters } = value
+  const defaultPath = checkSaveDefaultPath(rawDefaultPath)
   const filters = checkFilters(rawFilters)
   return {
-    ...(typeof defaultPath === 'string' && { defaultPath }),
+    ...(defaultPath !== undefined && { defaultPath }),
     ...(filters !== undefined && { filters })
   }
 }

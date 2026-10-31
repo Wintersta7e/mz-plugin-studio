@@ -1,6 +1,7 @@
 // Shape checks for what a window sends over IPC. Each returns a fresh value holding only the
 // fields the channel reads, so nothing unexpected reaches a handler.
 import type { FileFilter, SaveGuard } from '../../shared/ipc-types'
+import { isAllowedExtension } from '../../shared/path-safety'
 
 /** The error a request with arguments of the wrong shape rejects with */
 export function invalidArguments(channel: string): Error {
@@ -37,17 +38,31 @@ export function checkSaveGuard(channel: string, value: unknown): SaveGuard {
   return { base: { path, sha256 }, ...flag }
 }
 
-/** The filters, when every entry is `{ name, extensions }` of strings; otherwise undefined */
+const MAX_FILTERS = 4
+const MAX_FILTER_NAME_LENGTH = 64
+const MAX_FILTER_EXTENSIONS = 4
+const FILTER_EXTENSION = /^[A-Za-z0-9.]{1,16}$/
+
+/**
+ * The filters, when there are at most 4, each a name of at most 64 characters and 1-4 extensions
+ * the app may read or write; otherwise undefined, and the dialog shows its own filter.
+ */
 export function checkFilters(value: unknown): FileFilter[] | undefined {
-  if (!Array.isArray(value)) return undefined
+  if (!Array.isArray(value) || value.length > MAX_FILTERS) return undefined
   const filters: FileFilter[] = []
   for (const entry of value) {
     if (!isRecord(entry)) return undefined
     const { name, extensions } = entry
     if (
       typeof name !== 'string' ||
+      name.length > MAX_FILTER_NAME_LENGTH ||
       !Array.isArray(extensions) ||
-      !extensions.every((e): e is string => typeof e === 'string')
+      extensions.length < 1 ||
+      extensions.length > MAX_FILTER_EXTENSIONS ||
+      !extensions.every(
+        (e): e is string =>
+          typeof e === 'string' && FILTER_EXTENSION.test(e) && isAllowedExtension(`file.${e}`)
+      )
     ) {
       return undefined
     }

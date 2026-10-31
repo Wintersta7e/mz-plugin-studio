@@ -1,5 +1,6 @@
 // The argument check of every channel: a value of the wrong shape is refused before the handler
 // runs, or dropped where the channel has a safe default; a valid value passes as a fresh copy.
+import path from 'path'
 import log from 'electron-log/main'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
@@ -156,6 +157,45 @@ describe('ipc arguments', () => {
     passes('dialog:save-file', [{ filters: 'js' }], [{}])
     passes('dialog:open-file', [null], [{}])
     passes('dialog:open-file', [{ defaultPath: '/p/a.js', filters }], [{ filters }])
+
+    for (const defaultPath of ['../x.js', '\\\\server\\share\\x.js', '//server/share/x.js']) {
+      passes('dialog:save-file', [{ defaultPath, filters }], [{ filters }])
+    }
+    passes('dialog:save-file', [{ defaultPath: 'Plugin.js' }], [{ defaultPath: 'Plugin.js' }])
+    // Save asks again at a full path: the folder of the file it last chose
+    const remembered = path.resolve('/work/Games/Proj/js/plugins/Synthetic_Plugin.js')
+    passes('dialog:save-file', [{ defaultPath: remembered }], [{ defaultPath: remembered }])
+    passes('dialog:save-file', [{ defaultPath: path.resolve('/work/Games/Proj') }], [{}])
+
+    const ext = (extensions: string[]): unknown => [{ name: 'n', extensions }]
+    for (const rejected of [
+      Array.from({ length: 5 }, () => filters[0]),
+      [{ name: 'n'.repeat(65), extensions: ['js'] }],
+      ext(['exe']),
+      ext(['js', 'ts', 'md', 'json', 'mzparams']),
+      ext(['j*s']),
+      ext([]),
+      ext(['x'.repeat(14) + '.js'])
+    ]) {
+      passes('dialog:save-file', [{ filters: rejected }], [{}])
+      passes('dialog:open-file', [{ filters: rejected }], [{}])
+    }
+    const declarations = [{ name: 'Type declarations', extensions: ['d.ts'] }]
+    passes('dialog:save-file', [{ filters: declarations }], [{ filters: declarations }])
+    const four = [
+      { name: 'n'.repeat(64), extensions: ['js', 'ts', 'md', 'json'] },
+      { name: 'MZ Parameters', extensions: ['mzparams'] },
+      { name: 'JSON', extensions: ['JSON'] },
+      { name: 'Markdown', extensions: ['md'] }
+    ]
+    passes('dialog:open-file', [{ filters: four }], [{ filters: four }])
+
+    cases++
+    showSaveDialog.mockClear()
+    await ipc.invoke('dialog:save-file', { defaultPath: '\\\\server\\share\\x.js' })
+    expect(showSaveDialog.mock.calls[0][0]).toEqual(
+      expect.not.objectContaining({ defaultPath: expect.anything() })
+    )
 
     cases++
     showSaveDialog.mockClear()

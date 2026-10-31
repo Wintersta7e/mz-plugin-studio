@@ -9,6 +9,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
+import { createDialogHandlers, type DialogPort } from '../../src/main/ipc/dialog'
 import { savePluginFile } from '../../src/main/ipc/plugin'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { reloadFromProject } from '../../src/renderer/src/lib/raw-mode'
@@ -374,9 +375,13 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       pressSave()
       await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
       expect(messages()).toEqual([RENAMED])
-      expect(vi.mocked(window.api.dialog.saveFile).mock.calls[1]).toEqual([
+      const asked = vi.mocked(window.api.dialog.saveFile).mock.calls[1]
+      expect(asked).toEqual([
         { defaultPath: named, filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }
       ])
+      // Main's check passes the remembered folder and name to the dialog unchanged
+      const saveDialog = createDialogHandlers({} as DialogPort)['dialog:save-file']
+      expect(saveDialog.check(asked)).toEqual(asked)
       expect(await readFile(named, 'utf8')).toBe(generatePlugin(plugin()))
       await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
       expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(named)
