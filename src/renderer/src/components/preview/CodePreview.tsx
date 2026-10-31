@@ -469,6 +469,7 @@ export function CodePreview() {
                 size="sm"
                 onClick={() => void reloadFromProject(deferredPlugin.id)}
                 disabled={!project}
+                data-testid="source-missing-reload"
                 title={project ? undefined : 'Open the project first.'}
               >
                 Reload from project
