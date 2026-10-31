@@ -195,6 +195,9 @@ describe('project scope', () => {
       cancelId: CANCEL
     })
     expect(String(options.detail)).toContain(a)
+    // Folders opened before grants were kept, or dropped from the kept list, were chosen once
+    expect(String(options.detail)).toContain('The app has no record of this folder being chosen')
+    expect(String(options.detail)).not.toMatch(/was not chosen|never chosen/)
     expect(access.getCurrentProjectRoot()).toBe(path.resolve(b))
     checked++
     await expect(ipc.invoke('plugin:save', ...callsOn(a)['plugin:save'])).rejects.toThrow(

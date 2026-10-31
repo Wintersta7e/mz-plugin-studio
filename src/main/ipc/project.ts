@@ -51,8 +51,9 @@ export async function runProjectLoad(path: string): Promise<MZProject> {
 }
 
 /**
- * Asks in a native message box whether to open a folder that was never chosen in the folder
- * dialog; Cancel is both the Enter and the Esc button. Returns whether the user chose Open.
+ * Asks in a native message box whether to open a folder with no record of being chosen in the
+ * folder dialog or confirmed; Cancel is both the Enter and the Esc button. Returns whether the
+ * user chose Open.
  */
 export async function confirmProjectOpen(
   dialog: Pick<Dialog, 'showMessageBox'>,
@@ -64,7 +65,7 @@ export async function confirmProjectOpen(
     type: 'question',
     title: 'MZ Plugin Studio',
     message: 'Open this project folder?',
-    detail: `${projectPath}\n\nThis folder was not chosen in the Open Project dialog on this computer. Open it only if you expected to. The app reads and saves plugin files in it.`,
+    detail: `${projectPath}\n\nThe app has no record of this folder being chosen with Open Project or confirmed here. Open it only if you expected to. The app reads and saves plugin files in it.`,
     buttons,
     defaultId: cancel,
     cancelId: cancel
