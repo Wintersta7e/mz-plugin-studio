@@ -154,15 +154,27 @@ templates from the code editor, and save into your project's `js/plugins/` folde
 ## Development
 
 ```bash
-npm run check          # the tree: lint, format, types, licences, tests
+npm run check          # the tree: lint, format, types, licences, tests; not the e2e suite
 npm run check:commits  # the commits since origin/main: golden-output and commit-message rules, as CI runs them
-npm run typecheck      # tsc for main, renderer, tests and scripts
+npm run typecheck      # tsc for main, renderer, tests, scripts and e2e
 npm run lint           # ESLint
 npm run format         # Prettier
 npm test               # Vitest
 npm run test:golden    # generated-plugin output against the golden corpus
 npm run build:win      # portable Windows build into dist/
 ```
+
+The end-to-end suite drives the packaged app, and CI requires it:
+
+```bash
+npm run e2e:prepare        # rebuild the unpacked release in dist/ that the suite drives
+npm run e2e                # Playwright flows and release smoke on that build
+npm run e2e:visual:update  # remake the visual baselines in the pinned image (Docker, Linux host)
+```
+
+- `npm run e2e:prepare` always rebuilds. `npm run e2e:prepare -- --reuse` keeps an unpacked release built earlier in the same job, as the Windows CI jobs do, and builds one if none is there.
+- On Linux, `npm run e2e` needs a display: `xvfb-run -a -s "-screen 0 1920x1080x24" npm run e2e`.
+- The baselines are pixel-exact only in the pinned image, so the visual project exists only where `E2E_VISUAL_IMAGE=1`, which the update script and CI set inside it. On any other host `npm run e2e:visual` stops and names the command to use instead: `npm run e2e:visual:update -- --check` compares the screenshots with the baselines and writes nothing. That script is the only place baselines are made.
 
 A test run fails when any test is skipped, left as a todo or marked to pass by failing. The one allowed skip is the check that the suite's plugin loader stand-in behaves like RPG Maker MZ's own core scripts: it needs a local RPG Maker MZ install, so it runs only when `MZ_CORESCRIPT_DIR` names the install's folder that holds `rmmz_managers.js` and the other core scripts. Run it after changing `tests/helpers/mz-runtime.ts`, `tests/helpers/mz-conformance.ts` or generated output:
 

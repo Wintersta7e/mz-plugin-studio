@@ -143,6 +143,22 @@ describe('package.json scripts', () => {
     expect(development).toContain('MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity')
   })
 
+  it('the README names the e2e commands, and that check and typecheck differ on e2e', () => {
+    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
+    const lines = readme
+      .slice(readme.indexOf('\n## Development\n'), readme.indexOf('\n## Layout\n'))
+      .split('\n')
+    const commented = (command: string): string | undefined =>
+      lines.find((line) => line.startsWith(`${command} `) && line.includes(' # '))
+    const e2e = ['npm run e2e:prepare', 'npm run e2e', 'npm run e2e:visual:update']
+    const named = e2e.filter((command) => commented(command) !== undefined)
+    console.log(`README e2e commands: named ${named.length}/${e2e.length}`)
+    expect(named).toEqual(e2e)
+    expect(commandsOf(scripts.check).filter((c) => c.startsWith('npm run e2e'))).toEqual([])
+    expect(commented('npm run check')).toMatch(/not the e2e suite/)
+    expect(commented('npm run typecheck')).toMatch(/\be2e\b/)
+  })
+
   it('typecheck includes the scripts project', () => {
     expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
   })
