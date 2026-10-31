@@ -1,6 +1,7 @@
-import { readFile, rename, writeFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import path from 'path'
 import log from 'electron-log/main'
+import { replaceFile } from './atomic-write'
 import {
   assertSafeFilePath,
   assertSafeProjectPath,
@@ -142,8 +143,8 @@ export async function recordProjectRoot(
     )
     const file = path.join(dir, PROJECT_ROOTS_FILE)
     try {
-      await writeFile(`${file}.tmp`, `${JSON.stringify({ roots }, null, 2)}\n`)
-      await rename(`${file}.tmp`, file)
+      // Another app instance may save at the same moment: each writes its own temporary file
+      await replaceFile(file, Buffer.from(`${JSON.stringify({ roots }, null, 2)}\n`), false)
     } catch (error) {
       log.warn(`[file-access] Could not save ${file}: ${reasonOf(error)}`)
     }

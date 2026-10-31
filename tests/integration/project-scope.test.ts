@@ -3,7 +3,7 @@
 // Each case starts from fresh main modules, as a new app session does; a user data folder kept
 // between two sessions stands for a restart.
 import { existsSync } from 'fs'
-import { mkdtemp, readFile, rm, writeFile } from 'fs/promises'
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import path, { dirname, join } from 'path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,9 +18,11 @@ vi.mock('electron', () => ({ ipcMain: {} }))
  * Every filesystem call under a synthetic network host: on Windows looking one up sends the
  * user's credentials. Matched by the host name, as a posix join folds the leading `//`.
  */
-const { NETWORK_HOST, networkCalls } = vi.hoisted(() => ({
+const { NETWORK_HOST, networkCalls, renameFailures } = vi.hoisted(() => ({
   NETWORK_HOST: 'synthetic-host',
-  networkCalls: [] as string[]
+  networkCalls: [] as string[],
+  /** Errors the next renames fail with, one each */
+  renameFailures: [] as Error[]
 }))
 vi.mock('fs/promises', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>()
@@ -33,6 +35,8 @@ vi.mock('fs/promises', async (importOriginal) => {
         if (typeof args[0] === 'string' && args[0].includes(NETWORK_HOST)) {
           networkCalls.push(`${name} ${args[0]}`)
         }
+        const failure = name === 'rename' ? renameFailures.shift() : undefined
+        if (failure !== undefined) return Promise.reject(failure)
         return fn(...args)
       }
     ]
@@ -287,6 +291,39 @@ describe('project scope', () => {
     )
     expect(networkCalls.length).toBeGreaterThan(0)
     expect(dialog.showMessageBox).not.toHaveBeenCalled()
+  })
+
+  it('keeps a granted folder when the system refuses saving the kept list for a moment', async () => {
+    const userData = await tempDir('project-scope-user-data-')
+    const { access, log } = await session(userData)
+    const locked = Object.assign(new Error('EPERM: operation not permitted, rename'), {
+      code: 'EPERM'
+    })
+    renameFailures.push(locked)
+    await access.recordProjectRoot(a)
+    expect(renameFailures).toEqual([])
+    const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8'))
+    expect(kept).toEqual({ roots: [path.resolve(a)] })
+    expect(log.warn).not.toHaveBeenCalled()
+  })
+
+  it('leaves a readable kept list and no temporary file when two app instances save at once', async () => {
+    const userData = await tempDir('project-scope-user-data-')
+    const first = await session(userData)
+    const second = await session(userData)
+    await Promise.all(
+      Array.from({ length: 10 }, (_, i) => [
+        first.access.recordProjectRoot(path.resolve(`/Synthetic_First_${i}`)),
+        second.access.recordProjectRoot(path.resolve(`/Synthetic_Second_${i}`))
+      ]).flat()
+    )
+    const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8')) as {
+      roots: string[]
+    }
+    expect(kept.roots.length).toBeGreaterThan(0)
+    expect((await readdir(userData)).filter((name) => name.endsWith('.tmp'))).toEqual([])
+    expect(first.log.warn).not.toHaveBeenCalled()
+    expect(second.log.warn).not.toHaveBeenCalled()
   })
 
   it('compares the open project case-insensitively on win32', async () => {
