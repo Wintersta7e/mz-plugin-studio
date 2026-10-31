@@ -126,6 +126,7 @@ export function ToastContainer(): React.ReactElement {
       role="status"
       aria-live="polite"
       aria-label="Notifications"
+      data-testid="toast-viewport"
       className="pointer-events-none fixed bottom-10 right-4 z-[100] flex flex-col gap-2"
     >
       <AnimatePresence mode="popLayout">

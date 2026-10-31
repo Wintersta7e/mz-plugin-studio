@@ -2,9 +2,9 @@
 // are given as the test asked, and an app holding unsaved work still shuts down in time.
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { API } from '../../src/preload/index'
 import {
   assertDialogsDrained,
+  type AppWindow,
   dialogCalls,
   expect,
   queueDialog,
@@ -13,9 +13,6 @@ import {
   TEARDOWN_BOUND_MS,
   test
 } from '../fixtures/app'
-
-// The renderer's window as the preload script exposes it
-type AppWindow = { api: API }
 
 const isRunning = (pid: number): boolean => {
   try {

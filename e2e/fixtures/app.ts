@@ -2,7 +2,7 @@
 // wrapped below as the `twin` fixture: a fresh profile per launch, native dialogs answered from
 // per-method queues, and a bounded teardown that kills the process tree before deleting files.
 import { execFile, type ChildProcess } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import {
   _electron,
@@ -11,9 +11,13 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
+import type { API } from '../../src/preload/index'
 import { copyFixtureProject } from '../../tests/helpers/fixture-project'
 
 export { expect }
+
+// The renderer's window as the preload script exposes it
+export type AppWindow = { api: API }
 
 export interface Artifacts {
   release: string
@@ -290,18 +294,49 @@ export async function openProject(
   }
 }
 
+/** A fresh copy of the fixture project, deleted at the app's teardown */
+export async function fixtureProjectFor(app: ElectronApplication, leaf?: string): Promise<string> {
+  const launch = launches.get(app)
+  if (launch === undefined) throw new Error('fixtureProjectFor: the app was not launched here')
+  const project = await copyFixtureProject(leaf)
+  launch.dirs.push(dirname(project))
+  return project
+}
+
 /** Opens a fresh copy of the fixture project; the copy is deleted at the app's teardown */
 export async function loadFixtureProject(
   app: ElectronApplication,
   page: Page,
   leaf?: string
 ): Promise<string> {
-  const launch = launches.get(app)
-  if (launch === undefined) throw new Error('loadFixtureProject: the app was not launched here')
-  const project = await copyFixtureProject(leaf)
-  launch.dirs.push(dirname(project))
+  const project = await fixtureProjectFor(app, leaf)
   await openProject(app, page, project)
   return project
+}
+
+export const pluginsDir = (project: string): string => join(project, 'js', 'plugins')
+
+export const mtimeNs = (path: string): bigint => statSync(path, { bigint: true }).mtimeNs
+
+/**
+ * Waits until the renderer has handled every reply main sent before now: replies travel in
+ * order, so the answer to a later round trip arrives after them. The app drops a save shortcut
+ * pressed while an earlier save is still running.
+ */
+export async function settle(page: Page): Promise<void> {
+  await page.evaluate(() => (window as unknown as AppWindow).api.window.isMaximized())
+}
+
+export async function save(page: Page): Promise<void> {
+  await settle(page)
+  await page.keyboard.press('Control+s')
+}
+
+/** Saves and waits until the file's modification time moves past `before` */
+export async function saveAndWaitForWrite(page: Page, path: string): Promise<void> {
+  const before = mtimeNs(path)
+  await save(page)
+  await expect.poll(() => mtimeNs(path) > before).toBe(true)
 }
 
 /** Opens a project plugin from the Plugin Browser and waits until its tab is the active one */

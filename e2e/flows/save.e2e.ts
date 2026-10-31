@@ -1,11 +1,10 @@
 // Saving through the packaged app into a copy of the fixture project: a new plugin lands as one
 // compiling file, imported files come back byte for byte (also after a restart), and a save over
 // a file the tab does not know asks first and asks again when the file changed meanwhile.
-import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { ElectronApplication, Page } from '@playwright/test'
+import type { ElectronApplication } from '@playwright/test'
 import { compileCheck } from '../../src/main/services/syntax-check'
-import type { API } from '../../src/preload/index'
 import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
 import { fixturePath } from '../../tests/helpers/fixture-project'
 import {
@@ -14,43 +13,20 @@ import {
   expect,
   launchTwin,
   loadFixtureProject,
+  mtimeNs,
   openFromBrowser,
   openProject,
+  pluginsDir,
   queueDialog,
+  save,
+  saveAndWaitForWrite,
+  settle,
   stubDialogs,
   tabNames,
   teardown,
   TEARDOWN_BOUND_MS,
   test
 } from '../fixtures/app'
-
-// The renderer's window as the preload script exposes it
-type AppWindow = { api: API }
-
-const pluginsDir = (project: string): string => join(project, 'js', 'plugins')
-
-const mtimeNs = (path: string): bigint => statSync(path, { bigint: true }).mtimeNs
-
-/**
- * Waits until the renderer has handled every reply main sent before now: replies travel in
- * order, so the answer to a later round trip arrives after them. The app drops a save shortcut
- * pressed while an earlier save is still running.
- */
-async function settle(page: Page): Promise<void> {
-  await page.evaluate(() => (window as unknown as AppWindow).api.window.isMaximized())
-}
-
-async function save(page: Page): Promise<void> {
-  await settle(page)
-  await page.keyboard.press('Control+s')
-}
-
-/** Saves and waits until the file's modification time moves past `before` */
-async function saveAndWaitForWrite(page: Page, path: string): Promise<void> {
-  const before = mtimeNs(path)
-  await save(page)
-  await expect.poll(() => mtimeNs(path) > before).toBe(true)
-}
 
 /**
  * Closes the window the way a user does, so the app quits, failing when it is not gone within the

@@ -444,13 +444,19 @@ export function ParameterBuilder() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs" disabled={headerReadOnly}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  disabled={headerReadOnly}
+                  data-testid="param-menu"
+                >
                   <Upload className="mr-1 h-3.5 w-3.5" /> Import
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={handleImportFromFile}>
+                <DropdownMenuItem onClick={handleImportFromFile} data-testid="param-import-file">
                   From File (.mzparams)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleImportFromPlugin}>
