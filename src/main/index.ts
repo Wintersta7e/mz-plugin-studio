@@ -11,14 +11,15 @@ import { setupPluginHandlers } from './ipc/plugin'
 import { setupDialogHandlers } from './ipc/dialog'
 import { handleWillPreventUnload } from './close-prompt'
 import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
+import { DEFAULT_WINDOW_SIZE } from './window-size'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: DEFAULT_WINDOW_SIZE.width,
+    height: DEFAULT_WINDOW_SIZE.height,
     minWidth: 1000,
     minHeight: 700,
     show: false,

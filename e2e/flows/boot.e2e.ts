@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import type { WebContents, WebPreferences } from 'electron'
 import { PRODUCTION_CSP } from '../../src/main/csp'
+import { DEFAULT_WINDOW_SIZE } from '../../src/main/window-size'
 import { expect, isWithin, runRoot, test } from '../fixtures/app'
 
 const { version } = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
@@ -20,11 +21,20 @@ function mainLogs(userDataDir: string): string {
 
 test('boots the packaged app hardened with the production policy', async ({ twin }) => {
   const { app, page } = twin
-  const state = await app.evaluate(({ app, BrowserWindow }) => ({
+  const { workArea, ...state } = await app.evaluate(({ app, BrowserWindow, screen }) => ({
     packaged: app.isPackaged,
-    windows: BrowserWindow.getAllWindows().map((window) => window.getContentSize())
+    windows: BrowserWindow.getAllWindows().map((window) => window.getContentSize()),
+    workArea: screen.getPrimaryDisplay().workAreaSize
   }))
-  expect(state).toEqual({ packaged: true, windows: [[1400, 900]] })
+  // The frameless window opens at the default size, shrunk to fit a smaller work area
+  const expected = [
+    Math.min(DEFAULT_WINDOW_SIZE.width, workArea.width),
+    Math.min(DEFAULT_WINDOW_SIZE.height, workArea.height)
+  ]
+  process.stdout.write(
+    `e2e window: work area ${workArea.width}x${workArea.height}, content ${state.windows.map((size) => size.join('x')).join(', ')}\n`
+  )
+  expect(state).toEqual({ packaged: true, windows: [expected] })
   await expect
     .poll(() => mainLogs(twin.userDataDir))
     .toContain(`MZ Plugin Studio v${version} starting (production)`)
