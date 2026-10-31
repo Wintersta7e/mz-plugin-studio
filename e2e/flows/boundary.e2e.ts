@@ -1,6 +1,7 @@
 // What a user or a file can put into the packaged app must stay data: odd project paths load or
 // fail with a notice, text entered in Metadata or imported from a parameter file never runs as
-// plugin code, and `plugin:save-to-path` writes only where a save dialog granted it.
+// plugin code, `plugin:save-to-path` writes only where a save dialog granted it, and
+// `plugin:read-by-path` reads only the open project's plugins or a file chosen in a dialog.
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import type { Page } from '@playwright/test'
@@ -169,5 +170,63 @@ test('writes by path only where the save dialog granted', async ({ twin }) => {
   expect(await attempt(granted)).toBe('written')
   expect(readFileSync(granted, 'utf8')).toBe(content)
   process.stdout.write(`e2e by-path shapes: ${ungranted} | ${outside} | ${granted}\n`)
+  await assertDialogsDrained(app)
+})
+
+test("reads by path only inside the project's plugins folder or from a chosen file", async ({
+  twin
+}) => {
+  const { app, page } = twin
+  const project = await loadFixtureProject(app, page)
+
+  // The open project's own channels answer the window: the scan reads every plugin header
+  const headers = await page.evaluate(
+    (project) => (window as unknown as AppWindow).api.plugin.scanHeaders(project),
+    project
+  )
+  expect(headers.find((header) => header.filename === 'Fixture_Dependent.js')).toMatchObject({
+    name: 'Fixture_Dependent',
+    base: ['Fixture_HandWritten'],
+    orderAfter: ['Fixture_HandWritten']
+  })
+
+  const inside = join(pluginsDir(project), 'Synthetic_Read.js')
+  writeFileSync(inside, '// inside the plugins folder\n')
+  const outsideDir = mkdtempSync(join(runRoot(), 'outside-'))
+  const outside = join(outsideDir, 'Synthetic_Outside.js')
+  writeFileSync(outside, '// outside the project\n')
+  // Kept unresolved: the guard sees the segments as the renderer sent them
+  const climbing = [project, 'js', 'plugins', '..', '..', '..', 'outside.json'].join(sep)
+  writeFileSync(resolve(climbing), '{}\n')
+  // Refused on the text alone, so no network lookup happens
+  const unc =
+    process.platform === 'win32'
+      ? '\\\\fixture-host\\share\\js\\plugins\\Synthetic_Unc.js'
+      : '//fixture-host/share/js/plugins/Synthetic_Unc.js'
+
+  const read = (path: string): Promise<string> =>
+    page.evaluate(
+      (path) =>
+        (window as unknown as AppWindow).api.plugin.readByPath(path).then(
+          (text) => `read: ${text}`,
+          (error: unknown) => `rejected: ${String(error)}`
+        ),
+      path
+    )
+
+  expect(await read(inside)).toBe('read: // inside the plugins folder\n')
+  expect(await read(outside)).toMatch(/^rejected: .*Access denied/)
+  expect(await read(climbing)).toMatch(/^rejected: /)
+  expect(await read(unc)).toMatch(/^rejected: .*Access denied/)
+
+  await queueDialog(app, 'showOpenDialog', { canceled: false, filePaths: [outside] })
+  const chosen = await page.evaluate(() =>
+    (window as unknown as AppWindow).api.dialog.openFile({
+      filters: [{ name: 'JavaScript', extensions: ['js'] }]
+    })
+  )
+  expect(chosen).toBe(outside)
+  expect(await read(outside)).toBe('read: // outside the project\n')
+  process.stdout.write(`e2e by-path read shapes: ${inside} | ${outside} | ${climbing} | ${unc}\n`)
   await assertDialogsDrained(app)
 })
