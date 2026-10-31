@@ -5,6 +5,7 @@ import { readFile, rm, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { setCurrentProjectRoot } from '../../src/main/file-access'
 import { loadPluginFile, readRawPlugin } from '../../src/main/ipc/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { registerMainHandlers } from '../helpers/fake-ipc'
@@ -24,9 +25,13 @@ afterEach(async () => {
   project = null
 })
 
-/** The handler main registers for `channel`, called as an invoke from the renderer reaches it. */
+/**
+ * The handler main registers for `channel`, called as an invoke from the renderer reaches it,
+ * with the test's project copy as the open project.
+ */
 function handlerFor(channel: string): (...args: unknown[]) => Promise<unknown> {
   const ipc = registerMainHandlers()
+  if (project !== null) setCurrentProjectRoot(project)
   return (...args) => ipc.invoke(channel, ...args)
 }
 

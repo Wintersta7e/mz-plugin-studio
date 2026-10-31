@@ -336,6 +336,84 @@ describe('code preview diff', () => {
       ])
     )
   })
+
+  const SAVED = '/saved/Alpha.js'
+  const CHOSEN = '/chosen/Alpha.js'
+  const NOTICE = "The saved file can't be opened automatically. Choose it to compare."
+  const LAST_COPY = 'Left: the copy this app last read or wrote'
+  const denied = async (file: string): Promise<string> => {
+    throw new Error(`Access denied: ${file} is not in the open project's plugins folder`)
+  }
+
+  /** The saved file is out of read-by-path's reach; `chosen` answers the Choose file dialog */
+  function wireDeniedSave(
+    chosen: string | null,
+    readChosen: (file: string) => Promise<string> = async () => '// chosen'
+  ): void {
+    window.api = createFakeApi({
+      plugin: {
+        readByPath: vi.fn(
+          viaIpc(IPC_CHANNELS.PLUGIN_READ_BY_PATH, (file: string) =>
+            file === SAVED ? denied(file) : readChosen(file)
+          )
+        )
+      },
+      dialog: { openFile: vi.fn(async () => chosen) }
+    })
+    usePluginStore.setState({ savedPath: SAVED })
+  }
+
+  it('compares with the copy last read or written when the saved file is out of reach', async () => {
+    wireDeniedSave(null)
+    usePluginStore.setState((s) => ({ plugin: { ...s.plugin, rawSource: '// raw' } }))
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    expect(await screen.findByText(LAST_COPY)).toBeInTheDocument()
+    expect(screen.getByTestId('monaco-diff-original')).toHaveValue('// raw')
+    expect(errorToasts()).toEqual([])
+  })
+
+  it('asks for the saved file when it is out of reach and no copy was kept', async () => {
+    wireDeniedSave(CHOSEN)
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    expect(await screen.findByText(NOTICE)).toBeInTheDocument()
+    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Choose file' }))
+    await waitFor(() => expect(screen.getByTestId('monaco-diff-original')).toHaveValue('// chosen'))
+    expect(window.api.dialog.openFile).toHaveBeenCalledWith({
+      filters: [{ name: 'JavaScript', extensions: ['js'] }]
+    })
+    expect(window.api.plugin.readByPath).toHaveBeenLastCalledWith(CHOSEN)
+    expect(screen.queryByText(NOTICE)).toBeNull()
+    expect(screen.queryByText(LAST_COPY)).toBeNull()
+    expect(errorToasts()).toEqual([])
+  })
+
+  it('keeps the notice when Choose file is cancelled', async () => {
+    wireDeniedSave(null)
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose file' }))
+    await waitFor(() => expect(window.api.dialog.openFile).toHaveBeenCalledOnce())
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    expect(window.api.plugin.readByPath).toHaveBeenCalledOnce()
+    expect(errorToasts()).toEqual([])
+  })
+
+  it('keeps the notice and says why when the chosen file cannot be read', async () => {
+    wireDeniedSave(CHOSEN, async () => {
+      throw new Error('Alpha.js is not UTF-8')
+    })
+    render(<CodePreview />)
+    fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose file' }))
+    await waitFor(() =>
+      expect(errorToasts()).toEqual(["Couldn't open the chosen file: Alpha.js is not UTF-8"])
+    )
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+  })
 })
 
 describe('code preview banner', () => {

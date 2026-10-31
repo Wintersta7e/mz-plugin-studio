@@ -32,6 +32,12 @@ import log from 'electron-log/renderer'
 
 const RAW_UNAVAILABLE = 'Raw mode unavailable: plugin was not imported from a file'
 const DIFF_UNAVAILABLE = 'Diff unavailable: no saved version to compare'
+const DIFF_LAST_COPY = 'Left: the copy this app last read or wrote'
+const DIFF_CHOOSE_FILE = "The saved file can't be opened automatically. Choose it to compare."
+const JS_FILTERS = [{ name: 'JavaScript', extensions: ['js'] }]
+
+/** Whether main refused a read because the file is outside what the app may read on its own */
+const isAccessDenied = (error: unknown): boolean => userMessage(error).startsWith('Access denied:')
 
 export function CodePreview() {
   const plugin = usePluginStore((s) => s.plugin)
@@ -55,6 +61,10 @@ export function CodePreview() {
   const [copied, setCopied] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
   const [onDiskCode, setOnDiskCode] = useState<string | null>(null)
+  // The left panel's label when it shows the kept copy instead of the saved file
+  const [diffLabel, setDiffLabel] = useState<string | null>(null)
+  // The saved file is out of reach and no copy was kept: the diff area offers Choose file
+  const [diffNeedsFile, setDiffNeedsFile] = useState(false)
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
   const [badgeBounce, setBadgeBounce] = useState(false)
@@ -191,25 +201,56 @@ export function CodePreview() {
     await savePlugin(usePluginStore.getState().plugin.id, 'export')
   }, [])
 
+  const showDiffWith = useCallback((original: string | null, label: string | null) => {
+    setOnDiskCode(original)
+    setDiffLabel(label)
+    setDiffNeedsFile(original === null)
+    setShowDiff(true)
+  }, [])
+
   const openDiff = useCallback(async () => {
-    // Try to load on-disk version
-    try {
-      if (savedPath) {
-        const diskCode = await window.api.plugin.readByPath(savedPath)
-        setOnDiskCode(diskCode)
-      } else if (plugin.rawSource) {
-        setOnDiskCode(plugin.rawSource)
+    // Compare with the saved file; when main may not read it on its own, with the kept copy
+    if (savedPath) {
+      try {
+        showDiffWith(await window.api.plugin.readByPath(savedPath), null)
+        return
+      } catch (error) {
+        if (!isAccessDenied(error)) {
+          log.error('Failed to load on-disk version:', error)
+          addToast({
+            type: 'error',
+            message: `Could not compare with the saved file: ${userMessage(error)}`,
+            duration: NOTICE_MS
+          })
+          return
+        }
+        log.warn(`Diff: the saved file can't be opened automatically: ${userMessage(error)}`)
       }
+    }
+    if (plugin.rawSource) {
+      showDiffWith(plugin.rawSource, DIFF_LAST_COPY)
+    } else if (savedPath) {
+      showDiffWith(null, null)
+    } else {
+      setDiffNeedsFile(false)
       setShowDiff(true)
+    }
+  }, [savedPath, plugin.rawSource, addToast, showDiffWith])
+
+  const chooseDiffFile = useCallback(async () => {
+    try {
+      const chosen = await window.api.dialog.openFile({ filters: JS_FILTERS })
+      if (!chosen) return
+      showDiffWith(await window.api.plugin.readByPath(chosen), null)
     } catch (error) {
-      log.error('Failed to load on-disk version:', error)
+      log.warn(`Diff: couldn't open the chosen file: ${userMessage(error)}`)
       addToast({
         type: 'error',
-        message: `Could not compare with the saved file: ${userMessage(error)}`,
+        message: `Couldn't open the chosen file: ${userMessage(error)}`,
         duration: NOTICE_MS
       })
     }
-  }, [savedPath, plugin.rawSource, addToast])
+  }, [addToast, showDiffWith])
 
   const handleDiffToggle = useCallback(async () => {
     if (showDiff) {
@@ -480,8 +521,24 @@ export function CodePreview() {
       )}
 
       <div className="flex-1">
-        {showDiff && onDiskCode !== null ? (
+        {showDiff && onDiskCode !== null && diffLabel !== null ? (
+          <div className="flex h-full flex-col">
+            <p className="border-b border-border px-4 py-1 text-xs text-muted-foreground">
+              {diffLabel}
+            </p>
+            <div className="min-h-0 flex-1">
+              <DiffView original={onDiskCode} modified={code} />
+            </div>
+          </div>
+        ) : showDiff && onDiskCode !== null ? (
           <DiffView original={onDiskCode} modified={code} />
+        ) : showDiff && diffNeedsFile ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
+            <p>{DIFF_CHOOSE_FILE}</p>
+            <Button size="sm" variant="outline" onClick={() => void chooseDiffFile()}>
+              Choose file
+            </Button>
+          </div>
         ) : (
           <Editor
             height="100%"

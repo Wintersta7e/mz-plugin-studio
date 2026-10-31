@@ -6,6 +6,7 @@
 
 - Requests from the app window to the main process are accepted only from the app's own page.
 - Saving, loading and listing plugins in a project works only on the project that is open, and a project opens only from a folder you chose with Open Project on this computer or confirmed opening when the app asked.
+- Reading a file by its path is limited to the open project's `js/plugins` folder and to files chosen in a file dialog during the session.
 
 ### Fixed
 
@@ -35,6 +36,10 @@
 - The project dependency analysis reads a plugin's @base, @orderAfter and @orderBefore exactly as the plugin editor does: a mention in help text or an empty tag no longer shows as a missing dependency or a load-order error, and a value is the whole rest of its line.
 - A parameter or struct field whose name holds a setting tag such as "@type" or "@default" gets a warning again: opening the plugin again ends the name before that tag and reads the rest as the parameter's settings.
 - Opening or importing a plugin whose description is followed by a long run of blank lines, or whose code holds a long unbroken word such as a hex data string, no longer freezes the app for seconds.
+
+### Changed
+
+- Diff: when the saved file can't be opened automatically, the left panel shows the copy the app last read or wrote, or asks you to choose the file.
 
 ## [1.7.0] - 2026-10-23
 

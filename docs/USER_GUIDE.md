@@ -963,7 +963,7 @@ The diff view shows a side-by-side comparison of the on-disk file vs your curren
 ### Using Diff View
 
 1. Click the **Diff** button in the Generated Code preview toolbar
-2. Left panel shows the saved version (on-disk file or original import)
+2. Left panel shows the saved file. If the app can't open it automatically (for example, a file saved outside the open project in an earlier session), it shows the copy the app last read or wrote, or asks you to choose the file
 3. Right panel shows the current generated output
 4. Click **Diff** again to return to normal view
 

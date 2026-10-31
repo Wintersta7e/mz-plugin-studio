@@ -42,6 +42,39 @@ export function assertWriteGranted(filePath: string, pathImpl: PlatformPath = pa
   }
 }
 
+/** Paths returned by an open or save dialog this session; kept until the app quits */
+const readGrants = new Set<string>()
+
+/** Allow later reads of a path the user chose in a file dialog (allowed extensions only) */
+export function recordReadGrant(filePath: string, pathImpl: PlatformPath = path): void {
+  if (isAllowedExtension(filePath, pathImpl)) {
+    readGrants.add(grantKey(filePath, pathImpl))
+  }
+}
+
+/** A UNC path, checked on the text alone: looking one up sends the user's network credentials */
+const UNC = /^[\\/]{2}/
+
+/**
+ * Throws unless the path was chosen in a file dialog this session, or is a file under the open
+ * project's `js/plugins` folder. A UNC path needs the dialog, also under a UNC project.
+ */
+function assertReadAllowed(filePath: string, pathImpl: PlatformPath): void {
+  if (readGrants.has(grantKey(filePath, pathImpl))) return
+  const root = getCurrentProjectRoot()
+  if (root !== null && !UNC.test(filePath)) {
+    const plugins = grantKey(pathImpl.join(root, 'js', 'plugins'), pathImpl)
+    const relative = pathImpl.relative(plugins, grantKey(filePath, pathImpl))
+    const outside =
+      relative === '' ||
+      relative === '..' ||
+      relative.startsWith(`..${pathImpl.sep}`) ||
+      pathImpl.isAbsolute(relative)
+    if (!outside) return
+  }
+  throw new Error("Access denied: not in the open project's plugins folder or chosen in a dialog")
+}
+
 /** The file in the app's user data folder that keeps the granted project folders */
 export const PROJECT_ROOTS_FILE = 'project-roots.json'
 
@@ -167,6 +200,7 @@ export function authorize(
       return
     case 'granted-read':
       assertSafeFilePath(target as string, pathImpl)
+      assertReadAllowed(target as string, pathImpl)
       return
     case 'none':
       return

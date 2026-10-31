@@ -1,13 +1,14 @@
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
 import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../../shared/ipc-types'
-import { recordProjectRoot, recordWriteGrant } from '../file-access'
+import { recordProjectRoot, recordReadGrant, recordWriteGrant } from '../file-access'
 import { checkFilters, invalidArguments, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
 
 /**
  * Shows the save dialog; returns the chosen path, or null when cancelled.
- * The chosen path becomes writable by save-to-path for the rest of the session.
+ * The chosen path becomes writable by save-to-path and readable by read-by-path for the rest of
+ * the session.
  */
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
@@ -27,6 +28,7 @@ export async function showSaveFileDialog(
 
   log.info(`[dialog:save-file] Selected: ${result.filePath}`)
   recordWriteGrant(result.filePath)
+  recordReadGrant(result.filePath)
   return result.filePath
 }
 
@@ -77,7 +79,10 @@ export async function openFolderDialog(
   return result.filePaths[0]
 }
 
-/** Shows the file picker; returns the chosen file, or null when cancelled */
+/**
+ * Shows the file picker; returns the chosen file, or null when cancelled.
+ * The chosen file becomes readable by read-by-path for the rest of the session.
+ */
 export async function openFileDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
   options: OpenFileOptions
@@ -93,6 +98,7 @@ export async function openFileDialog(
   }
 
   log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
+  recordReadGrant(result.filePaths[0])
   return result.filePaths[0]
 }
 
