@@ -119,12 +119,35 @@ describe('command annotations', () => {
 
   it('writes the typed options of a select argument with their values', async () => {
     const user = renderTab()
-    await addArgument(user, 'Select/Combo')
+    await addArgument(user, 'Select')
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|A')
     await waitFor(() => {
       expect(preview()).toContain(' * @type select\n')
       expect(preview()).toContain(' * @option A\n * @value a\n')
     })
+  })
+
+  it('writes the typed options of a combo argument with their values', async () => {
+    const user = renderTab()
+    await addArgument(user, 'Combo')
+    await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|A')
+    await waitFor(() => {
+      expect(preview()).toContain(' * @type combo\n')
+      expect(preview()).toContain(' * @option A\n * @value a\n')
+    })
+  })
+
+  it.each([
+    ['Hidden', 'hidden'],
+    ['Map', 'map'],
+    ['Location', 'location'],
+    ['Icon', 'icon']
+  ])('writes an argument of type %s as @type %s', async (label, type) => {
+    const user = renderTab()
+    await addArgument(user, label)
+    await waitFor(() =>
+      expect(preview()).toContain(` * @arg mode\n * @text New Parameter\n * @type ${type}\n`)
+    )
   })
 
   it('writes a struct argument as the struct type it picks', async () => {

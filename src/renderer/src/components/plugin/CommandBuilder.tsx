@@ -17,34 +17,8 @@ import {
 } from '../../types/plugin'
 import { generateCommandSkeleton } from '../../lib/generator'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { ARG_TYPES } from './param-types'
 import { TypeFields } from './TypeFields'
-
-const ARG_TYPES: { value: ParamType; label: string }[] = [
-  { value: 'string', label: 'String' },
-  { value: 'number', label: 'Number' },
-  { value: 'boolean', label: 'Boolean' },
-  { value: 'select', label: 'Select/Combo' },
-  { value: 'note', label: 'Note (Multiline)' },
-  { value: 'variable', label: 'Variable' },
-  { value: 'switch', label: 'Switch' },
-  { value: 'actor', label: 'Actor' },
-  { value: 'class', label: 'Class' },
-  { value: 'skill', label: 'Skill' },
-  { value: 'item', label: 'Item' },
-  { value: 'weapon', label: 'Weapon' },
-  { value: 'armor', label: 'Armor' },
-  { value: 'enemy', label: 'Enemy' },
-  { value: 'troop', label: 'Troop' },
-  { value: 'state', label: 'State' },
-  { value: 'animation', label: 'Animation' },
-  { value: 'tileset', label: 'Tileset' },
-  { value: 'common_event', label: 'Common Event' },
-  { value: 'file', label: 'File' },
-  { value: 'color', label: 'Color' },
-  { value: 'text', label: 'Text (Multiline)' },
-  { value: 'struct', label: 'Struct' },
-  { value: 'array', label: 'Array' }
-]
 
 /** The parts of a command's skeleton that name it, escaped exactly as the skeleton writes them. */
 function skeletonMarkers(cmd: PluginCommand): string[] {
