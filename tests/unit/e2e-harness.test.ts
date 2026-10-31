@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { FullConfig, FullResult, Suite, TestCase } from '@playwright/test/reporter'
 import E2eReporter from '../../e2e/reporter'
+import { REUSE_FLAG } from '../../scripts/e2e-prepare.mjs'
 import {
   CONTAINER_OPTIONS,
   IMAGE,
@@ -80,6 +81,8 @@ function jobIn(file: string, id: string): Job {
   return job
 }
 
+// The Windows jobs package the release just before, so they reuse it
+const PREPARE_REUSE = `npm run e2e:prepare -- ${REUSE_FLAG}`
 const RELEASE_SMOKE =
   'node node_modules/@playwright/test/cli.js test -c e2e/playwright.config.ts --project=release-smoke'
 // The report and the traces of a failed run, where Playwright writes them
@@ -230,7 +233,7 @@ describe('e2e harness', () => {
     const packageWin = jobIn('ci.yml', 'package-win')
     const fuses = packageWin.steps.findIndex((step) => step.keys.get('name') === 'Fuse wire')
     expect(fuses).toBeGreaterThanOrEqual(0)
-    const at = stepsInOrder(packageWin, ['npm run e2e:prepare', 'npm run e2e'])
+    const at = stepsInOrder(packageWin, [PREPARE_REUSE, 'npm run e2e'])
     expect(at[0]).toBeGreaterThan(fuses)
     expectReportUpload(packageWin, at[1])
 
@@ -239,7 +242,7 @@ describe('e2e harness', () => {
     const portable = build.steps.findIndex(
       (step) => step.keys.get('name') === 'Upload portable exe'
     )
-    const smoke = stepsInOrder(build, ['npm run e2e:prepare', RELEASE_SMOKE])
+    const smoke = stepsInOrder(build, [PREPARE_REUSE, RELEASE_SMOKE])
     expect(wire).toBeGreaterThanOrEqual(0)
     expect(smoke[0]).toBeGreaterThan(wire)
     expect(portable).toBeGreaterThan(smoke[1])

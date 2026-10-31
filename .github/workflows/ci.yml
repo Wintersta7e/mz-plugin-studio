@@ -140,7 +140,7 @@ jobs:
       - run: node scripts/ci-policy.mjs package dist/win-unpacked/resources/app.asar
       - name: Fuse wire
         run: node scripts/ci-policy.mjs fuses dist/win-unpacked/mz-plugin-studio.exe
-      - run: npm run e2e:prepare
+      - run: npm run e2e:prepare -- --reuse
       - run: npm run e2e
       - name: Upload the end-to-end report
         if: failure()

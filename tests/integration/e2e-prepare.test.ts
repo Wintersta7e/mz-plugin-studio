@@ -4,7 +4,13 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
-import { compareWires, diffTrees, formatWire } from '../../scripts/e2e-prepare.mjs'
+import {
+  compareWires,
+  diffTrees,
+  formatWire,
+  REUSE_FLAG,
+  shouldReuse
+} from '../../scripts/e2e-prepare.mjs'
 
 const EXE = 'mz-plugin-studio'
 
@@ -20,14 +26,16 @@ function wire(states: string): Record<string, number | string> {
 }
 
 const tempDirs: string[] = []
-const counts = { wire: 0, tree: 0 }
+const counts = { wire: 0, tree: 0, reuse: 0 }
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
 
 afterAll(() => {
-  console.log(`e2e-prepare: wire cases ${counts.wire}, tree cases ${counts.tree}`)
+  console.log(
+    `e2e-prepare: wire cases ${counts.wire}, tree cases ${counts.tree}, reuse cases ${counts.reuse}`
+  )
 })
 
 // A directory holding the given files, relative path -> content
@@ -102,5 +110,24 @@ describe('diffTrees', () => {
     const release = tree({ [EXE]: 'release' })
     const twin = tree({ [EXE]: 'twin' })
     await expect(diffTrees(release, twin, EXE)).rejects.toThrow(/no file compared/)
+  })
+})
+
+describe('shouldReuse', () => {
+  const unpacked = (): string => tree({ [EXE]: 'release', 'resources/app.asar': 'a' })
+
+  it('rebuilds an existing unpacked release unless asked to reuse it', () => {
+    counts.reuse++
+    expect(shouldReuse([], unpacked())).toBe(false)
+  })
+
+  it('reuses an existing unpacked release when asked', () => {
+    counts.reuse++
+    expect(shouldReuse([REUSE_FLAG], unpacked())).toBe(true)
+  })
+
+  it('builds when asked to reuse a release that is absent', () => {
+    counts.reuse++
+    expect(shouldReuse([REUSE_FLAG], join(unpacked(), 'absent'))).toBe(false)
   })
 })

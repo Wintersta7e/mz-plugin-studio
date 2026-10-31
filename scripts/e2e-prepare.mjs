@@ -1,5 +1,6 @@
 // Prepares the packaged builds the end-to-end tests drive, from the repository root:
-//   1. reuses dist/<platform>-unpacked/ if present, else builds it with the release configuration;
+//   1. builds dist/<platform>-unpacked/ with the release configuration; with --reuse, reuses it
+//      if present (for a build made earlier in the same job);
 //   2. copies it to dist/e2e-twin/ and enables EnableNodeCliInspectArguments there, the fuse
 //      Playwright's Electron launch needs and the release keeps off;
 //   3. fails unless the two fuse wires differ in that fuse only and every other file is identical;
@@ -7,7 +8,15 @@
 import { flipFuses, FuseV1Options, FuseVersion, getCurrentFuseWire } from '@electron/fuses'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  cpSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from 'node:fs'
 import { join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -19,6 +28,9 @@ const STATES = new Map([
   [49, '1'],
   [114, 'r']
 ])
+
+// Reuses the unpacked release only when passed: for a build made earlier in the same job
+export const REUSE_FLAG = '--reuse'
 
 const print = (line) => process.stdout.write(`${line}\n`)
 
@@ -126,16 +138,25 @@ function run(bin, args) {
   if (result.status !== 0) throw new Error(`${bin} ${args.join(' ')} exited ${result.status}`)
 }
 
-/** @returns {Promise<Artifacts>} */
-export async function prepare() {
+/** @param {string[]} argv @param {string} releaseDir @returns {boolean} */
+export function shouldReuse(argv, releaseDir) {
+  return argv.includes(REUSE_FLAG) && existsSync(releaseDir)
+}
+
+/** @param {string[]} argv the script's arguments @returns {Promise<Artifacts>} */
+export async function prepare(argv) {
   const platform = process.platform === 'win32' ? 'win' : 'linux'
   const releaseDir = join(ROOT, 'dist', `${platform}-unpacked`)
   const twinDir = join(ROOT, 'dist', 'e2e-twin')
   const { name } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
   const exeName = platform === 'win' ? `${name}.exe` : name
 
-  if (existsSync(releaseDir)) print('release: reused')
-  else {
+  if (shouldReuse(argv, releaseDir)) {
+    const built = statSync(join(releaseDir, 'resources', 'app.asar')).mtime.toISOString()
+    print(`release: reused ${relative(ROOT, releaseDir)} (built ${built})`)
+  } else {
+    // Built as from a clean checkout: no file of an older build survives
+    rmSync(releaseDir, { recursive: true, force: true })
     run('node_modules/electron-vite/bin/electron-vite.js', ['build'])
     run('node_modules/electron-builder/cli.js', [
       '--dir',
@@ -177,7 +198,7 @@ export async function prepare() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  prepare().catch((error) => {
+  prepare(process.argv.slice(2)).catch((error) => {
     process.stderr.write(`e2e-prepare: FAILED: ${error.message}\n`)
     process.exitCode = 1
   })
