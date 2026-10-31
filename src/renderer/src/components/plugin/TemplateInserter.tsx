@@ -973,6 +973,7 @@ export function TemplateInserter({
                       <div key={template.id} className="group relative">
                         <button
                           onClick={() => setSelectedTemplateId(template.id)}
+                          data-testid="template-card"
                           className={cn(
                             'w-full rounded-lg border p-3 text-left transition-all',
                             selectedTemplateId === template.id
@@ -1148,6 +1149,7 @@ export function TemplateInserter({
               <Button
                 ref={insertButtonRef}
                 onClick={handleInsert}
+                data-testid="template-insert"
                 disabled={readOnly || !canInsert}
                 title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
                 // Read-only, the notice is why it stays disabled, not the field errors

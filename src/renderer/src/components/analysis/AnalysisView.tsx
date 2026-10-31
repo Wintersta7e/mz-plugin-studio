@@ -40,7 +40,7 @@ export function AnalysisView() {
   const totalOverrides = conflictReport?.totalOverrides ?? 0
 
   return (
-    <div className="flex-1 overflow-auto p-6">
+    <div className="flex-1 overflow-auto p-6" data-testid="analysis-view">
       {/* Header row */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Plugin Analysis</h2>

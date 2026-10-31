@@ -121,6 +121,7 @@ export function CodeEditor() {
             variant="outline"
             size="sm"
             onClick={() => setIsTemplateOpen(true)}
+            data-testid="template-inserter-open"
             disabled={rawMode}
             title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
             className="shrink-0 gap-2"

@@ -1,13 +1,16 @@
 // The only module that launches the app. Plain functions, callable outside a Playwright test,
-// wrapped below as the `twin` fixture: a fresh profile per launch, native dialogs answered from
-// per-method queues, and a bounded teardown that kills the process tree before deleting files.
-import { execFile, type ChildProcess } from 'node:child_process'
+// wrapped below as the `twin` and `release` fixtures: a fresh profile per launch, native dialogs
+// answered from per-method queues (twin), and a bounded teardown that kills the process tree
+// before deleting files.
+import { execFile, spawn, type ChildProcess } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import {
   _electron,
+  chromium,
   test as base,
   expect,
+  type Browser,
   type ElectronApplication,
   type Page
 } from '@playwright/test'
@@ -32,6 +35,32 @@ export interface LaunchedApp {
   userDataDir: string
   pageErrors: string[]
   failedRequests: string[]
+}
+
+/** One event of a raw DevTools protocol connection; `sessionId` names the attached target */
+export interface CdpEvent {
+  method: string
+  params: Record<string, unknown>
+  sessionId?: string
+}
+
+/** A DevTools protocol connection of its own, which also sees the targets attached below a page */
+export interface Cdp {
+  send<T = Record<string, unknown>>(method: string, params?: object, sessionId?: string): Promise<T>
+  on(listener: (event: CdpEvent) => void): void
+  close(): void
+}
+
+export interface LaunchedRelease {
+  browser: Browser
+  page: Page
+  cdp: Cdp
+  userDataDir: string
+  pageErrors: string[]
+  /** A fresh copy of the fixture project, deleted at teardown */
+  fixtureProject(leaf?: string): Promise<string>
+  /** Kills the process tree, waits for it and only then deletes the launch's directories */
+  close(): Promise<void>
 }
 
 export type DialogMethod =
@@ -287,11 +316,16 @@ export async function openProject(
   await queueDialog(app, 'showOpenDialog', { canceled: false, filePaths: [projectPath] })
   await page.getByTestId('open-project').click()
   if (expectLoaded) {
-    const system = JSON.parse(readFileSync(join(projectPath, 'data', 'System.json'), 'utf8')) as {
-      gameTitle: string
-    }
-    await expect(page.getByTestId('status-project')).toContainText(system.gameTitle)
+    await expect(page.getByTestId('status-project')).toContainText(projectTitle(projectPath))
   }
+}
+
+/** The game title the status bar shows once the project is open */
+export function projectTitle(projectPath: string): string {
+  const system = JSON.parse(readFileSync(join(projectPath, 'data', 'System.json'), 'utf8')) as {
+    gameTitle: string
+  }
+  return system.gameTitle
 }
 
 /** A fresh copy of the fixture project, deleted at the app's teardown */
@@ -441,7 +475,147 @@ export async function teardown(
   if (failure !== undefined) throw failure
 }
 
-export const test = base.extend<{ twin: LaunchedApp }>({
+// The release build prints its DevTools endpoint on stderr once it listens
+const DEVTOOLS_LINE = /DevTools listening on (ws:\/\/\S+)/
+export const RELEASE_START_MS = 30_000
+
+/** Opens a DevTools protocol connection to `endpoint` */
+export async function connectCdp(endpoint: string): Promise<Cdp> {
+  const socket = new WebSocket(endpoint)
+  await new Promise<void>((resolve, reject) => {
+    socket.addEventListener('open', () => resolve(), { once: true })
+    socket.addEventListener('error', () => reject(new Error(`cannot connect to ${endpoint}`)), {
+      once: true
+    })
+  })
+  let next = 0
+  const pending = new Map<
+    number,
+    { method: string; resolve: (value: never) => void; reject: (error: Error) => void }
+  >()
+  const listeners: ((event: CdpEvent) => void)[] = []
+  socket.addEventListener('message', ({ data }) => {
+    const message = JSON.parse(String(data)) as {
+      id?: number
+      result?: never
+      error?: { message: string }
+    } & Partial<CdpEvent>
+    if (message.id === undefined) {
+      const event = { method: message.method ?? '', params: message.params ?? {} }
+      for (const listener of listeners) listener({ ...event, sessionId: message.sessionId })
+      return
+    }
+    const call = pending.get(message.id)
+    pending.delete(message.id)
+    if (message.error) call?.reject(new Error(`${call.method}: ${message.error.message}`))
+    else call?.resolve(message.result as never)
+  })
+  socket.addEventListener('close', () => {
+    for (const { method, reject } of pending.values()) reject(new Error(`${method}: closed`))
+    pending.clear()
+  })
+  return {
+    send<T>(method: string, params: object = {}, sessionId?: string): Promise<T> {
+      const id = ++next
+      socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
+      return new Promise<T>((resolve, reject) => pending.set(id, { method, resolve, reject }))
+    },
+    on: (listener) => void listeners.push(listener),
+    close: () => socket.close()
+  }
+}
+
+/** Resolves with the DevTools endpoint the release build prints, or fails with its stderr */
+function devToolsEndpoint(child: ChildProcess): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let stderr = ''
+    const fail = (why: string): void => {
+      clearTimeout(timer)
+      reject(new Error(`release build ${why}; stderr:\n${stderr}`))
+    }
+    const timer = setTimeout(
+      () => fail(`printed no endpoint in ${RELEASE_START_MS} ms`),
+      RELEASE_START_MS
+    )
+    child.once('exit', (code, signal) => fail(`exited (${code ?? signal}) before listening`))
+    child.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8')
+      const match = DEVTOOLS_LINE.exec(stderr)
+      if (match?.[1] === undefined) return
+      clearTimeout(timer)
+      child.removeAllListeners('exit')
+      // Keeps reading, so a full pipe never blocks the app
+      child.stderr?.removeAllListeners('data')
+      child.stderr?.resume()
+      resolve(match[1])
+    })
+  })
+}
+
+/**
+ * Spawns the release executable itself, with the DevTools port production keeps allowed, and
+ * attaches over it: no inspector fuse, no launch helper, the bytes that ship.
+ */
+export async function launchRelease(
+  options: { userDataDir?: string } = {}
+): Promise<LaunchedRelease> {
+  const { release } = readArtifacts()
+  const dirs: string[] = []
+  let userDataDir = options.userDataDir
+  if (userDataDir === undefined) {
+    userDataDir = mkdtempSync(join(runRoot(), 'release-profile-'))
+    dirs.push(userDataDir)
+  }
+  const child = spawn(release, ['--remote-debugging-port=0', `--user-data-dir=${userDataDir}`], {
+    // Leads its own process group on Linux, so the teardown reaches every process it starts
+    detached: process.platform !== 'win32',
+    stdio: ['ignore', 'ignore', 'pipe']
+  })
+  let browser: Browser | undefined
+  let cdp: Cdp | undefined
+  let closed = false
+  const close = async (): Promise<void> => {
+    if (closed) return
+    closed = true
+    try {
+      cdp?.close()
+      await browser?.close().catch(() => undefined)
+    } finally {
+      if (child.pid !== undefined) await killTree(child.pid)
+      for (const dir of dirs) rmSync(dir, { recursive: true, force: true, maxRetries: 3 })
+    }
+  }
+  try {
+    const endpoint = await devToolsEndpoint(child)
+    browser = await chromium.connectOverCDP(endpoint)
+    cdp = await connectCdp(endpoint)
+    // An attached browser exposes its default context first
+    const context = browser.contexts()[0]
+    if (context === undefined) throw new Error('the release build exposes no browser context')
+    const page = context.pages()[0] ?? (await context.waitForEvent('page'))
+    const pageErrors: string[] = []
+    page.on('pageerror', (error) => pageErrors.push(error.message))
+    await page.waitForLoadState('domcontentloaded')
+    return {
+      browser,
+      page,
+      cdp,
+      userDataDir,
+      pageErrors,
+      async fixtureProject(leaf) {
+        const project = await copyFixtureProject(leaf)
+        dirs.push(dirname(project))
+        return project
+      },
+      close
+    }
+  } catch (error) {
+    await close()
+    throw error
+  }
+}
+
+export const test = base.extend<{ twin: LaunchedApp; release: LaunchedRelease }>({
   // Depends on the trace option so the config decides which traces are kept
   twin: async ({ trace }, provide, testInfo) => {
     const twin = await launchTwin()
@@ -465,5 +639,14 @@ export const test = base.extend<{ twin: LaunchedApp }>({
       }
     }
     if (errors.length > 0) throw errors[0]
+  },
+  // Depends on the trace option only because a fixture must name one
+  release: async ({ trace: _trace }, provide) => {
+    const release = await launchRelease()
+    try {
+      await provide(release)
+    } finally {
+      await release.close()
+    }
   }
 })

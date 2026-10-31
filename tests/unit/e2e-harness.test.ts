@@ -123,6 +123,8 @@ describe('e2e harness', () => {
     expect(files.length).toBeGreaterThan(0)
     expect(files).toContain(FIXTURE_MODULE)
     expect(launchSites).toBe(1)
+    // The release build is spawned, not launched through the test library
+    expect(spawnSites).toBe(1)
     expect(violations).toEqual([])
   })
 

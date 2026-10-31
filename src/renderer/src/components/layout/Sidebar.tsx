@@ -203,6 +203,7 @@ export function Sidebar({
                 variant="ghost"
                 size="icon"
                 aria-label="Settings"
+                data-testid="settings-open"
                 className="h-9 w-9 text-muted-foreground transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenSettings}
               >

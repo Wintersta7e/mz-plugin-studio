@@ -285,7 +285,7 @@ export function CodePreview() {
   )
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" data-testid="code-preview">
       <div className="flex items-center justify-between border-b border-border p-4">
         <div>
           <h2 className="text-lg font-semibold">Generated Code</h2>
