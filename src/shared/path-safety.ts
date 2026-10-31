@@ -9,10 +9,22 @@ const ALLOWED_EXTENSIONS = new Set(['.js', '.mzparams', '.json', '.md', '.ts'])
 /** Win32 absolute paths the guard accepts: drive-absolute `C:\` and UNC `\\host\share` */
 const WIN32_DRIVE_ABSOLUTE = /^[A-Za-z]:[\\/]/
 const WIN32_UNC = /^[\\/]{2}[^\\/?.]/
+const WIN32_DRIVE = /^[A-Za-z]:/
+
+/**
+ * A name Windows opens as a device in any folder: CON, PRN, AUX, NUL, COM1-9, LPT1-9, in any
+ * case, also with spaces after it or an extension (`NUL.js`, `aux .js`)
+ */
+const WIN32_DEVICE_NAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9]) *(?:\..*)?$/i
+
+function isWin32(pathImpl: PlatformPath): boolean {
+  return pathImpl.sep === '\\'
+}
 
 /**
  * Check the raw input before anything resolves it: a non-empty string without NUL,
- * absolute under `pathImpl`, and with no '..' segment. Returns the resolved path.
+ * absolute under `pathImpl`, and with no '..' segment. On win32 the resolved path also has no
+ * ':' after the drive and no device name segment. Returns the resolved path.
  */
 function resolveCheckedPath(p: string, pathImpl: PlatformPath): string {
   if (typeof p !== 'string' || p === '' || p.includes('\0')) {
@@ -21,14 +33,25 @@ function resolveCheckedPath(p: string, pathImpl: PlatformPath): string {
   // On win32 this also rejects device paths (\\?\, \\.\), drive-relative C:x and rooted \x
   const absolute =
     pathImpl.isAbsolute(p) &&
-    (pathImpl.sep !== '\\' || WIN32_DRIVE_ABSOLUTE.test(p) || WIN32_UNC.test(p))
+    (!isWin32(pathImpl) || WIN32_DRIVE_ABSOLUTE.test(p) || WIN32_UNC.test(p))
   if (!absolute) {
     throw new Error('Invalid path: must be an absolute path')
   }
   if (p.split(/[\\/]/).includes('..')) {
     throw new Error("Invalid path: '..' segments are not allowed")
   }
-  return pathImpl.resolve(p)
+  const resolved = pathImpl.resolve(p)
+  if (isWin32(pathImpl)) {
+    // Elsewhere a ':' opens an alternate data stream on NTFS (x.js:hidden.js)
+    if (resolved.replace(WIN32_DRIVE, '').includes(':')) {
+      throw new Error("Invalid path: ':' is allowed only after the drive letter")
+    }
+    const device = resolved.split(/[\\/]/).find((segment) => WIN32_DEVICE_NAME.test(segment))
+    if (device !== undefined) {
+      throw new Error(`Invalid path: ${JSON.stringify(device)} is a device name on Windows`)
+    }
+  }
+  return resolved
 }
 
 /** Whether the file's extension is one that read/write-by-path operations accept */
@@ -52,8 +75,8 @@ export function assertSafeFilePath(filePath: string, pathImpl: PlatformPath = pa
 }
 
 /**
- * Validate that a filename is a simple name (no path separators, NUL, ':' or traversal).
- * Separators of both platforms are rejected, so `_pathImpl` does not change the result.
+ * Validate that a filename is a simple name (no path separators, NUL, ':', traversal or Windows
+ * device name). It is checked for both platforms, so `_pathImpl` does not change the result.
  */
 export function assertSafeFilename(filename: string, _pathImpl: PlatformPath = path): void {
   // ':' would open an alternate data stream on NTFS (x.js:ads.js)
@@ -62,6 +85,9 @@ export function assertSafeFilename(filename: string, _pathImpl: PlatformPath = p
   }
   if (/[\\/]/.test(filename) || filename === '.' || filename === '..') {
     throw new Error('Invalid filename: must not contain path separators or traversal')
+  }
+  if (WIN32_DEVICE_NAME.test(filename)) {
+    throw new Error(`Invalid filename: ${JSON.stringify(filename)} is a device name on Windows`)
   }
   if (!filename.endsWith('.js')) {
     throw new Error('Invalid filename: must have .js extension')

@@ -101,6 +101,8 @@ const SAVE_ROWS: SaveRow[] = [
   { input: 'C:\\Games\\..\\Synthetic.js', platforms: ['win32'], kept: false },
   { input: '../Synthetic.js', platforms: BOTH, kept: false },
   { input: 'C:Synthetic.js', platforms: BOTH, kept: false },
+  { input: 'C:\\Games\\Proj\\js\\plugins\\CON.js', platforms: ['win32'], kept: false },
+  { input: 'C:\\Games\\Proj\\Synthetic.js:hidden.js', platforms: ['win32'], kept: false },
   { input: 7, platforms: BOTH, kept: false }
 ]
 

@@ -298,6 +298,77 @@ const ROWS: Row[] = [
     error: NOT_ABSOLUTE
   },
 
+  // Windows opens an alternate data stream for a ':' after the drive, and a device for a
+  // reserved name (CON, NUL, COM1, ...) in any segment, with or without an extension
+  ...[
+    'C:\\Games\\Proj\\js\\plugins\\Synthetic.js:hidden.js',
+    'C:\\Games\\Proj:hidden\\js\\plugins\\Synthetic.js',
+    'C:/Games/Proj/js/plugins/Synthetic.js::$DATA.js',
+    '\\\\host\\share\\Proj\\Synthetic.js:hidden.js'
+  ].map(
+    (input): Row => ({
+      fn: assertSafeFilePath,
+      input,
+      platform: 'win32',
+      today: 'reject',
+      error: "Invalid path: ':' is allowed only after the drive letter"
+    })
+  ),
+  ...[
+    'C:\\Games\\Proj\\js\\plugins\\CON.js',
+    'C:\\Games\\Proj\\js\\plugins\\con.js',
+    'C:\\Games\\Proj\\js\\plugins\\Nul.d.ts',
+    'C:\\Games\\Proj\\js\\plugins\\aux .js',
+    'C:\\Games\\PRN\\Synthetic.js',
+    'C:\\Games\\com1\\Synthetic.js',
+    'C:\\Games\\COM9.backup\\Synthetic.js',
+    'C:\\Games\\LPT1\\Synthetic.js',
+    'C:/Games/lpt9/Synthetic.js',
+    '\\\\host\\share\\NUL\\Synthetic.js'
+  ].map(
+    (input): Row => ({
+      fn: assertSafeFilePath,
+      input,
+      platform: 'win32',
+      today: 'reject',
+      error: /^Invalid path: ".+" is a device name on Windows$/
+    })
+  ),
+  ...['C:\\Games\\AUX', 'C:\\Games\\nul.proj', 'C:\\Games\\Proj:hidden'].map(
+    (input): Row => ({ fn: assertSafeProjectPath, input, platform: 'win32', today: 'reject' })
+  ),
+  ...[
+    'C:\\Games\\Proj\\js\\plugins\\Console.js',
+    'C:\\Games\\CONFIG\\Synthetic.js',
+    'C:\\Games\\Proj\\js\\plugins\\Icon.js',
+    'C:\\Games\\COM10\\Synthetic.js',
+    'C:\\Games\\LPT0\\Synthetic.js',
+    'C:\\Games\\NULL\\Synthetic.js',
+    'C:\\Games\\Proj\\js\\plugins\\Synthetic_AUX.js',
+    'c:\\Games\\Proj\\js\\plugins\\Synthetic.js',
+    '\\\\host\\share\\Proj\\Synthetic.js'
+  ].map((input): Row => ({ fn: assertSafeFilePath, input, platform: 'win32', today: 'accept' })),
+  { fn: assertSafeProjectPath, input: 'C:\\Games\\Console', platform: 'win32', today: 'accept' },
+  // Path checks follow the platform: ':' and these names are ordinary on posix
+  ...['/work/Proj/js/plugins/CON.js', '/work/Proj:old/js/plugins/Synthetic.js'].map(
+    (input): Row => ({ fn: assertSafeFilePath, input, platform: 'posix', today: 'accept' })
+  ),
+  // A file name is checked for both platforms, as its separators are
+  ...(['posix', 'win32'] as const).flatMap((platform) => [
+    ...['CON.js', 'nul.js', 'Com1.js', 'LPT9.js', 'prn .js', 'AUX.backup.js'].map(
+      (input): Row => ({
+        fn: assertSafeFilename,
+        input,
+        platform,
+        today: 'reject',
+        error: `Invalid filename: ${JSON.stringify(input)} is a device name on Windows`
+      })
+    ),
+    ...['Console.js', 'CONFIG.js', 'COM10.js', 'Synthetic_NUL.js'].map(
+      (input): Row => ({ fn: assertSafeFilename, input, platform, today: 'accept' })
+    )
+  ]),
+
   // Input that is not a usable path: the guard's own error, never a TypeError from path
   ...(['posix', 'win32'] as const).flatMap((platform) =>
     [assertSafeFilePath, assertSafeFilename, assertSafeProjectPath].flatMap((fn) =>
