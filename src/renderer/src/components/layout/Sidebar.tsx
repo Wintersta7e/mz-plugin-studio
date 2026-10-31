@@ -74,6 +74,7 @@ export function Sidebar({
                 variant="ghost"
                 size="icon"
                 aria-label="Open Project"
+                data-testid="open-project"
                 className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={onOpenProject}
               >
@@ -89,6 +90,7 @@ export function Sidebar({
                 variant="ghost"
                 size="icon"
                 aria-label="New Plugin"
+                data-testid="new-plugin"
                 className="h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]"
                 onClick={handleNewPlugin}
               >
@@ -113,6 +115,7 @@ export function Sidebar({
                         variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
                         size="icon"
                         aria-label={`${plugin.meta.name || 'Untitled'}${pluginIsDirty ? ' (unsaved changes)' : ''}`}
+                        data-testid="plugin-tab"
                         onClick={() => setActivePlugin(plugin.id)}
                         className={cn(
                           'relative h-9 w-9 transition-all duration-200 hover:scale-110',
@@ -160,6 +163,7 @@ export function Sidebar({
                   variant={pluginBrowserOpen ? 'secondary' : 'ghost'}
                   size="icon"
                   aria-label="Plugin Browser"
+                  data-testid="plugin-browser-toggle"
                   className={cn(
                     'h-9 w-9 transition-all duration-200 hover:scale-110 hover:shadow-[0_0_8px_hsl(var(--primary)/0.3)]',
                     !pluginBrowserOpen && 'text-muted-foreground'

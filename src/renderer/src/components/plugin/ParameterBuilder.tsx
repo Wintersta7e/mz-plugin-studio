@@ -383,7 +383,7 @@ export function ParameterBuilder() {
         <fieldset {...lock} className="min-w-0">
           <div className="flex items-center justify-between p-4">
             <h2 className="text-lg font-semibold">Parameters</h2>
-            <Button size="sm" onClick={handleAddParameter}>
+            <Button size="sm" data-testid="param-add" onClick={handleAddParameter}>
               <Plus className="mr-1 h-4 w-4" />
               Add Parameter
             </Button>

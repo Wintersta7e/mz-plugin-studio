@@ -31,7 +31,11 @@ export function StatusBar() {
   return (
     <div className="flex h-6 items-center justify-between border-t border-border bg-card px-3 text-[13px] text-muted-foreground">
       <div className="flex items-center gap-4">
-        {project ? <span>Project: {project.gameTitle}</span> : <span>No project loaded</span>}
+        {project ? (
+          <span data-testid="status-project">Project: {project.gameTitle}</span>
+        ) : (
+          <span>No project loaded</span>
+        )}
         {pluginName && (
           <span>
             Plugin: {pluginName}

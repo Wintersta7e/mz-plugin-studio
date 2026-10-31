@@ -420,11 +420,21 @@ function App() {
                             className="flex h-full flex-col"
                           >
                             <TabsList className="mx-4 mt-4 w-fit">
-                              <TabsTrigger value="meta">Metadata</TabsTrigger>
-                              <TabsTrigger value="parameters">Parameters</TabsTrigger>
-                              <TabsTrigger value="commands">Commands</TabsTrigger>
-                              <TabsTrigger value="structs">Structs</TabsTrigger>
-                              <TabsTrigger value="code">Code</TabsTrigger>
+                              <TabsTrigger value="meta" data-testid="editor-tab-meta">
+                                Metadata
+                              </TabsTrigger>
+                              <TabsTrigger value="parameters" data-testid="editor-tab-parameters">
+                                Parameters
+                              </TabsTrigger>
+                              <TabsTrigger value="commands" data-testid="editor-tab-commands">
+                                Commands
+                              </TabsTrigger>
+                              <TabsTrigger value="structs" data-testid="editor-tab-structs">
+                                Structs
+                              </TabsTrigger>
+                              <TabsTrigger value="code" data-testid="editor-tab-code">
+                                Code
+                              </TabsTrigger>
                             </TabsList>
 
                             <AnimatePresence mode="popLayout">

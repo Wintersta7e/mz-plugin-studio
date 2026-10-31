@@ -243,7 +243,10 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
   }
 
   return (
-    <div className="flex h-full w-72 flex-col border-l border-border bg-background">
+    <div
+      data-testid="plugin-browser-panel"
+      className="flex h-full w-72 flex-col border-l border-border bg-background"
+    >
       <header className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold">Plugins</h2>
@@ -345,6 +348,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
                 )}
               >
                 <button
+                  data-testid="plugin-browser-row"
                   onClick={() => handleRowClick(row)}
                   className="flex min-w-0 flex-1 items-center gap-2 px-3 py-1.5 text-left focus-visible:outline-none"
                   aria-current={row.isActive ? 'page' : undefined}
