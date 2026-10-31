@@ -82,9 +82,12 @@ test('saves a new plugin with one parameter into the project', async ({ twin }) 
   const params = [...body.matchAll(/@param[ \t]+\S/g)]
   expect(params).toHaveLength(1)
   expect(body.slice(params[0]?.index)).toMatch(/@type[ \t]+\S/)
-  // The page's own log line about the save reaches main's log through the checked channel
+  // The page's own log line about the save reaches main's log through the checked channel, as a
+  // dated info line like main's own
   const log = join(twin.userDataDir, 'logs', 'main.log')
-  await expect.poll(() => readFileSync(log, 'utf8')).toMatch(/\[save\] Saved .*NewPlugin\.js/)
+  await expect
+    .poll(() => readFileSync(log, 'utf8'))
+    .toMatch(/^\[\d{4}-\d\d-\d\d [\d:.]+\] \[info\] +\[save\] Saved .*NewPlugin\.js$/m)
   expect(readFileSync(log, 'utf8')).not.toContain('[ipc] refused')
   await assertDialogsDrained(app)
 })

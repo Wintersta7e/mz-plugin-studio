@@ -1,7 +1,9 @@
 import log from 'electron-log/main'
 
-// Initialize electron-log — sets up file transport and IPC for renderer
-log.initialize()
+// Initialize electron-log without the script it would load into every page: that script asks main
+// for options as the page loads, before main can tell which page asks. The app's preload carries
+// the page's log lines instead.
+log.initialize({ preload: false })
 
 import { app, shell, BrowserWindow, dialog, session } from 'electron'
 import { join, dirname } from 'path'

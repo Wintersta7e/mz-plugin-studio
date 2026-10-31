@@ -9,6 +9,7 @@
 ### Security
 
 - Requests from the app window to the main process, including the lines it writes to the app's log file, are accepted only from the app's own page, and a log line that is malformed or too large is refused.
+- The logging library no longer adds a script of its own to every window the app opens; the app's page sends its log lines through the app's own preload script, which asks the main process nothing while the page loads.
 - Saving, loading and listing plugins in a project works only on the project that is open, and a project opens only from a folder you chose with Open Project on this computer or confirmed opening when the app asked.
 - A project folder on a network share opens only when you chose it with Open Project, and until then the app does not look it up or ask to open it: looking up a network folder can send your Windows sign-in to the computer that shares it.
 - Reading a file by its path is limited to the open project's `js/plugins` folder and to files chosen in a file dialog during the session.

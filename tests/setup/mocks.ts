@@ -10,7 +10,6 @@ const { makeLogger } = vi.hoisted(() => ({
     debug: vi.fn(),
     initialize: vi.fn(),
     setLevel: vi.fn(),
-    levels: ['error', 'warn', 'info', 'verbose', 'debug', 'silly'],
     transports: {
       file: { level: 'info', getFile: () => ({ path: '<log-path>' }) },
       console: { level: 'info' }

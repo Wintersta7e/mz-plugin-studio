@@ -1,6 +1,6 @@
 import { contextBridge } from 'electron'
 import { IPC_CHANNELS, type API } from '../shared/ipc-types'
-import { invoke, send, subscribe } from './ipc'
+import { invoke, onMainLogLine, send, sendLogLine, subscribe } from './ipc'
 
 const api: API = {
   project: {
@@ -40,3 +40,11 @@ const api: API = {
 }
 
 contextBridge.exposeInMainWorld('api', api)
+
+// The page logger (electron-log's renderer entry) writes through this bridge. It asks main
+// nothing while the page loads: a request then would come before main can tell which page sent it.
+contextBridge.exposeInMainWorld('__electronLog', {
+  sendToMain: (line: Record<string, unknown>) => sendLogLine(line)
+})
+// The page logger prints main's own lines, which main sends only in development
+onMainLogLine((line) => window.postMessage({ cmd: 'message', ...line }))

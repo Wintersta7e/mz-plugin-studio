@@ -9,6 +9,7 @@ import { authorize, type AccessClass } from '../file-access'
 import { samePath } from './plugin'
 import {
   INVOKE_CHANNELS,
+  LOG_CHANNEL,
   SEND_CHANNELS,
   accessDenied,
   type EventArgs,
@@ -23,9 +24,8 @@ import {
 import { invalidArguments } from './arguments'
 
 export { invalidArguments } from './arguments'
+export { LOG_CHANNEL } from '../../shared/ipc-types'
 
-/** electron-log's channel: the page's log lines, and the page's check that main's logger runs */
-export const LOG_CHANNEL = '__ELECTRON_LOG__'
 /** Longest logger name or scope a log line may carry; a scope pads every later line to its length */
 const MAX_LOG_NAME = 64
 /** Most values one log line may carry */
@@ -190,9 +190,8 @@ export interface LogChannelHost extends Registrar {
 
 type LogListener = (event: SenderEvent, message: unknown) => void
 
-/** The fields of a log line or options request the checks read */
+/** The fields of a log line the checks read */
 interface LogFields {
-  cmd?: unknown
   logId?: unknown
   scope?: unknown
   data?: unknown
@@ -246,24 +245,12 @@ function checkLogLine(raw: readonly unknown[]): void {
   }
 }
 
-/** The logger name the page asks options for; throws `invalidArguments` on any other request */
-function checkLogOptionsRequest(raw: readonly unknown[]): string | undefined {
-  const [request] = raw
-  if (
-    raw.length !== 1 ||
-    !isPlainObject(request) ||
-    request.cmd !== 'getOptions' ||
-    !isLogName(request.logId)
-  ) {
-    throw invalidArguments(LOG_CHANNEL)
-  }
-  return request.logId as string | undefined
-}
-
 /**
  * Puts electron-log's channel behind the sender check: takes off the listener and handler
- * electron-log registers when it loads and registers checked ones in their place. An admitted log
- * line goes on to electron-log's own listener, which writes it as before.
+ * electron-log registers when it loads and registers a checked listener in their place. An
+ * admitted log line goes on to electron-log's own listener, which writes it as before. No handler
+ * takes the old one's place: only the script electron-log loads into pages asked it anything, and
+ * main does not load that script.
  */
 export function routeLogChannel(
   isTrustedSender: SenderCheck,
@@ -286,14 +273,6 @@ export function routeLogChannel(
       return
     }
     for (const listener of forward) listener(event, raw[0])
-  })
-  // The page logger asks once at startup and reads only whether main answered
-  host.handle(LOG_CHANNEL, (event, ...raw) => {
-    const logId = admit(LOG_CHANNEL, () => {
-      if (!isTrustedSender(event)) throw accessDenied('sender')
-      return checkLogOptionsRequest(raw)
-    })
-    return { levels: log.levels, logId }
   })
 }
 

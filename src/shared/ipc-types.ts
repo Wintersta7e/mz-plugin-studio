@@ -1,9 +1,15 @@
 // The IPC contract: every channel's name, arguments and result, stated once and used by main,
-// preload and renderer. `API` (what the window sees as `window.api`) is derived from it. The one
-// channel outside it, electron-log's `__ELECTRON_LOG__`, belongs to that library's preload; main
-// registers it in `src/main/ipc/registration.ts` behind the same sender check, with a shape check.
+// preload and renderer. `API` (what the window sees as `window.api`) is derived from it. The
+// channels outside it are electron-log's, used by the page logger through the preload's log
+// bridge; main registers `LOG_CHANNEL` in `src/main/ipc/registration.ts` behind the same sender
+// check, with a shape check.
 import type { PluginDefinition } from './types/plugin'
 import type { MZProject } from './types/mz'
+
+/** electron-log's channel for the page's log lines to main */
+export const LOG_CHANNEL = '__ELECTRON_LOG__'
+/** electron-log's channel for main's log lines to the page, sent only in development */
+export const MAIN_LOG_CHANNEL = '__ELECTRON_LOG_IPC__'
 
 export const IPC_CHANNELS = {
   // Project

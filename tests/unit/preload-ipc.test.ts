@@ -1,11 +1,12 @@
-// The preload's three IPC helpers forward to Electron's renderer IPC unchanged, and the preload
-// entry exposes the window API once.
+// The preload's IPC helpers forward to Electron's renderer IPC unchanged, and the preload entry
+// exposes the window API once and the page logger's bridge to main, asking main nothing as it loads.
 import { describe, it, expect, vi } from 'vitest'
 
 const electron = vi.hoisted(() => ({
   ipcRenderer: {
     invoke: vi.fn(),
     send: vi.fn(),
+    sendSync: vi.fn(),
     on: vi.fn(),
     removeListener: vi.fn()
   },
@@ -15,6 +16,18 @@ const electron = vi.hoisted(() => ({
 vi.mock('electron', () => electron)
 
 import { invoke, send, subscribe } from '../../src/preload/ipc'
+
+/** Loads the preload entry afresh and returns what it exposed, by name */
+async function loadPreload(): Promise<Map<string, unknown>> {
+  vi.resetModules()
+  vi.clearAllMocks()
+  await import('../../src/preload/index')
+  return new Map(
+    electron.contextBridge.exposeInMainWorld.mock.calls.map(
+      ([key, value]) => [key, value] as [string, unknown]
+    )
+  )
+}
 
 describe('preload ipc', () => {
   it('invoke forwards the channel and arguments and returns the reply', () => {
@@ -47,12 +60,44 @@ describe('preload ipc', () => {
     )
   })
 
-  it('exposes the window API once as api', async () => {
-    vi.resetModules()
-    electron.contextBridge.exposeInMainWorld.mockClear()
-    await import('../../src/preload/index')
+  it('exposes the window API and the log bridge once each', async () => {
+    const exposed = await loadPreload()
 
-    expect(electron.contextBridge.exposeInMainWorld).toHaveBeenCalledTimes(1)
-    expect(electron.contextBridge.exposeInMainWorld.mock.calls[0][0]).toBe('api')
+    expect(electron.contextBridge.exposeInMainWorld).toHaveBeenCalledTimes(2)
+    expect([...exposed.keys()]).toEqual(['api', '__electronLog'])
+  })
+
+  it('asks main nothing while it loads', async () => {
+    await loadPreload()
+
+    expect(electron.ipcRenderer.invoke).not.toHaveBeenCalled()
+    expect(electron.ipcRenderer.send).not.toHaveBeenCalled()
+    expect(electron.ipcRenderer.sendSync).not.toHaveBeenCalled()
+  })
+
+  it("sends each of the page logger's lines to main once, unchanged", async () => {
+    const bridge = (await loadPreload()).get('__electronLog') as {
+      sendToMain(message: unknown): void
+    }
+    const line = { data: ['a synthetic line'], level: 'info', logId: 'default' }
+
+    bridge.sendToMain(line)
+    expect(electron.ipcRenderer.send.mock.calls).toEqual([['__ELECTRON_LOG__', line]])
+  })
+
+  it("passes main's log lines to the page logger as electron-log's page script did", async () => {
+    await loadPreload()
+    const postMessage = vi.fn()
+    vi.stubGlobal('window', { postMessage })
+    try {
+      const [[channel, listener]] = electron.ipcRenderer.on.mock.calls
+      expect(channel).toBe('__ELECTRON_LOG_IPC__')
+      listener({ sender: 'event' }, { data: ['a synthetic line'], level: 'warn' })
+      expect(postMessage.mock.calls).toEqual([
+        [{ cmd: 'message', data: ['a synthetic line'], level: 'warn' }]
+      ])
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

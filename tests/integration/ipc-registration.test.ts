@@ -261,7 +261,6 @@ function createLogHost(): {
   listeners: Map<string, HostListener[]>
   handlers: Map<string, HostListener>
   sendFrom(frame: FakeFrame | null, ...args: unknown[]): void
-  invokeFrom(frame: FakeFrame | null, ...args: unknown[]): Promise<unknown>
 } {
   const listeners = new Map<string, HostListener[]>()
   const handlers = new Map<string, HostListener>()
@@ -288,18 +287,14 @@ function createLogHost(): {
     sendFrom(frame, ...args) {
       for (const listener of listeners.get(LOG_CHANNEL) ?? [])
         listener({ senderFrame: frame }, ...args)
-    },
-    async invokeFrom(frame, ...args) {
-      const handler = handlers.get(LOG_CHANNEL)
-      if (handler === undefined) throw new Error(`no handler for ${LOG_CHANNEL}`)
-      return handler({ senderFrame: frame }, ...args)
     }
   }
 }
 
 describe("electron-log's channel", () => {
   const frame = appWindow.webContents.mainFrame
-  // What electron-log registers on import: a listener writing log lines, a handler for options
+  // What electron-log registers on import: a listener writing log lines, and a handler for the
+  // options request of the script it loads into pages, which main does not load
   const writeLine = vi.fn()
   const answerOptions = vi.fn(() => ({}))
   const routed = (): ReturnType<typeof createLogHost> => {
@@ -326,40 +321,30 @@ describe("electron-log's channel", () => {
     vi.mocked(log.error).mockClear()
   })
 
-  it('registers it beside the app channels in place of the unchecked one', () => {
+  it('registers a checked listener in place of the unchecked one, and no handler', () => {
     const fake = routed()
     handleAll(handlers, isTrustedSender, fake.host)
     onAll(listeners, isTrustedSender, fake.host)
-    expect([...fake.handlers.keys()].sort()).toEqual([...INVOKE_CHANNELS, LOG_CHANNEL].sort())
+    // The page asks main nothing on this channel, so electron-log's handler is only taken off
+    expect([...fake.handlers.keys()].sort()).toEqual([...INVOKE_CHANNELS].sort())
     expect([...fake.listeners.keys()].sort()).toEqual([...SEND_CHANNELS, LOG_CHANNEL].sort())
     expect(fake.listeners.get(LOG_CHANNEL)).toHaveLength(1)
     expect(fake.listeners.get(LOG_CHANNEL)).not.toContain(writeLine)
-    expect(fake.handlers.get(LOG_CHANNEL)).not.toBe(answerOptions)
     expect(vi.mocked(log.error)).not.toHaveBeenCalled()
   })
 
-  it('refuses log lines and option requests from any sender but the app page', async () => {
+  it('refuses log lines from any sender but the app page', () => {
     const fake = routed()
     for (const sender of untrusted) {
       window = appWindow
       vi.mocked(log.warn).mockClear()
-      const from = sender.frame()
-      fake.sendFrom(from, line())
-      const result = await fake.invokeFrom(from, { cmd: 'getOptions' }).then(
-        () => 'answered',
-        (error: Error) => error.message
-      )
-      expect({ sender: sender.name, result, warned: refusals() }).toEqual({
+      fake.sendFrom(sender.frame(), line())
+      expect({ sender: sender.name, warned: refusals() }).toEqual({
         sender: sender.name,
-        result: 'Access denied: sender',
-        warned: [
-          [`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`],
-          [`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`]
-        ]
+        warned: [[`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`]]
       })
     }
     expect(writeLine).not.toHaveBeenCalled()
-    expect(answerOptions).not.toHaveBeenCalled()
   })
 
   const refusedLines: { name: string; args: unknown[] }[] = [
@@ -400,19 +385,7 @@ describe("electron-log's channel", () => {
     ])
   })
 
-  it.each([
-    { name: 'a __proto__ logger', args: [{ cmd: 'getOptions', logId: '__proto__' }] },
-    { name: 'another command', args: [{ cmd: 'errorHandler' }] },
-    { name: 'nothing', args: [] }
-  ])('refuses an option request with $name', async ({ args }) => {
-    const fake = routed()
-    await expect(fake.invokeFrom(frame, ...args)).rejects.toThrow(
-      `Invalid arguments: ${LOG_CHANNEL}`
-    )
-    expect(answerOptions).not.toHaveBeenCalled()
-  })
-
-  it("passes the app page's log line on to electron-log unchanged", async () => {
+  it("passes the app page's log line on to electron-log unchanged", () => {
     const fake = routed()
     vi.mocked(log.warn).mockClear()
     const scoped = line({ scope: 'store', data: ['a synthetic line', { nested: [1, 2] }] })
@@ -424,10 +397,6 @@ describe("electron-log's channel", () => {
       [{ senderFrame: frame }, bare]
     ])
     expect(writeLine.mock.calls[0][1]).toBe(scoped)
-    await expect(fake.invokeFrom(frame, { cmd: 'getOptions' })).resolves.toEqual({
-      levels: log.levels,
-      logId: undefined
-    })
     expect(vi.mocked(log.warn)).not.toHaveBeenCalled()
   })
 

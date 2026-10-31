@@ -1,15 +1,31 @@
 // The preload's only use of Electron's renderer IPC: each helper is typed by the channel's
-// entry in the contract, so a call with the wrong arguments does not compile.
+// entry in the contract, so a call with the wrong arguments does not compile. The log helpers
+// carry electron-log's lines, which main checks on arrival.
 import { ipcRenderer, type IpcRendererEvent } from 'electron'
-import type {
-  EventArgs,
-  EventChannel,
-  InvokeArgs,
-  InvokeChannel,
-  InvokeResult,
-  SendArgs,
-  SendChannel
+import {
+  LOG_CHANNEL,
+  MAIN_LOG_CHANNEL,
+  type EventArgs,
+  type EventChannel,
+  type InvokeArgs,
+  type InvokeChannel,
+  type InvokeResult,
+  type SendArgs,
+  type SendChannel
 } from '../shared/ipc-types'
+
+/** A log line as electron-log passes it between the page and main */
+export type LogLine = Record<string, unknown>
+
+/** Sends one of the page logger's lines to main */
+export function sendLogLine(line: LogLine): void {
+  ipcRenderer.send(LOG_CHANNEL, line)
+}
+
+/** Calls `callback` with each of its own log lines main sends the page */
+export function onMainLogLine(callback: (line: LogLine) => void): void {
+  ipcRenderer.on(MAIN_LOG_CHANNEL, (_event: IpcRendererEvent, line: LogLine) => callback(line))
+}
 
 export function invoke<C extends InvokeChannel>(
   channel: C,
