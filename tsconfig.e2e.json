@@ -1,7 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "include": ["e2e/**/*"],
-  "exclude": ["e2e/__screenshots__/**"],
   "compilerOptions": {
     "noImplicitAny": true,
     "types": ["node"],
