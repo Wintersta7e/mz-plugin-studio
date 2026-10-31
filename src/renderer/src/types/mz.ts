@@ -6,7 +6,6 @@ export type {
   MZActor,
   MZItem,
   MZMapInfo,
-  MZPluginEntry,
   MZClass,
   MZSkill,
   MZWeapon,

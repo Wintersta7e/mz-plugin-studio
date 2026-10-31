@@ -358,7 +358,7 @@ async function pickType(user: UserEvent, current: string, type: string): Promise
 
 /** Opens `project` the way the app does after loading it. */
 function openProject(project: MZProject): void {
-  const { path: _path, gameTitle: _title, maps: _maps, plugins: _plugins, ...gameData } = project
+  const { path: _path, gameTitle: _title, maps: _maps, ...gameData } = project
   const store = useProjectStore.getState()
   store.setProject(project)
   store.setAllGameData(gameData)

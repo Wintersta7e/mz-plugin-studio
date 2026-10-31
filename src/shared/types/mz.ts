@@ -8,7 +8,6 @@ export interface MZProject {
   actors: MZActor[]
   items: MZItem[]
   maps: MZMapInfo[]
-  plugins: MZPluginEntry[]
   skills: MZSkill[]
   weapons: MZWeapon[]
   armors: MZArmor[]
@@ -49,13 +48,6 @@ export interface MZMapInfo {
   id: number
   name: string
   parentId: number
-}
-
-export interface MZPluginEntry {
-  name: string
-  status: boolean
-  description: string
-  parameters: Record<string, string>
 }
 
 // Common MZ data types for parameter dropdowns

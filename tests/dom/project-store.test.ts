@@ -30,7 +30,6 @@ function makeProject(path = '/tmp/project'): MZProject {
     actors: [],
     items: [],
     maps: [],
-    plugins: [],
     skills: [],
     weapons: [],
     armors: [],

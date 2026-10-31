@@ -4,22 +4,6 @@ import { IPC_CHANNELS } from '../shared/ipc-types'
 export interface ProjectAPI {
   validate: (path: string) => Promise<{ valid: boolean; error?: string }>
   load: (path: string) => Promise<import('../shared/types/mz').MZProject>
-  getSwitches: (path: string) => Promise<import('../shared/types/mz').MZSwitch[]>
-  getVariables: (path: string) => Promise<import('../shared/types/mz').MZVariable[]>
-  getActors: (path: string) => Promise<import('../shared/types/mz').MZActor[]>
-  getItems: (path: string) => Promise<import('../shared/types/mz').MZItem[]>
-  getMaps: (path: string) => Promise<import('../shared/types/mz').MZMapInfo[]>
-  getPlugins: (path: string) => Promise<import('../shared/types/mz').MZPluginEntry[]>
-  getSkills: (path: string) => Promise<{ id: number; name: string }[]>
-  getWeapons: (path: string) => Promise<{ id: number; name: string }[]>
-  getArmors: (path: string) => Promise<{ id: number; name: string }[]>
-  getEnemies: (path: string) => Promise<{ id: number; name: string }[]>
-  getStates: (path: string) => Promise<{ id: number; name: string }[]>
-  getAnimations: (path: string) => Promise<{ id: number; name: string }[]>
-  getTilesets: (path: string) => Promise<{ id: number; name: string }[]>
-  getCommonEvents: (path: string) => Promise<{ id: number; name: string }[]>
-  getClasses: (path: string) => Promise<{ id: number; name: string }[]>
-  getTroops: (path: string) => Promise<{ id: number; name: string }[]>
 }
 
 export interface PluginAPI {
@@ -84,23 +68,7 @@ export interface LogAPI {
 
 const projectApi: ProjectAPI = {
   validate: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_VALIDATE, path),
-  load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path),
-  getSwitches: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_SWITCHES, path),
-  getVariables: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_VARIABLES, path),
-  getActors: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ACTORS, path),
-  getItems: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ITEMS, path),
-  getMaps: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_MAPS, path),
-  getPlugins: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_PLUGINS, path),
-  getSkills: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_SKILLS, path),
-  getWeapons: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_WEAPONS, path),
-  getArmors: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ARMORS, path),
-  getEnemies: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ENEMIES, path),
-  getStates: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_STATES, path),
-  getAnimations: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_ANIMATIONS, path),
-  getTilesets: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_TILESETS, path),
-  getCommonEvents: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_COMMON_EVENTS, path),
-  getClasses: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_CLASSES, path),
-  getTroops: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_GET_TROOPS, path)
+  load: (path) => ipcRenderer.invoke(IPC_CHANNELS.PROJECT_LOAD, path)
 }
 
 const pluginApi: PluginAPI = {

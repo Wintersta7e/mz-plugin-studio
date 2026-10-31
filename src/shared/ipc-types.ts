@@ -6,22 +6,6 @@ export const IPC_CHANNELS = {
   // Project
   PROJECT_VALIDATE: 'project:validate',
   PROJECT_LOAD: 'project:load',
-  PROJECT_GET_SWITCHES: 'project:get-switches',
-  PROJECT_GET_VARIABLES: 'project:get-variables',
-  PROJECT_GET_ACTORS: 'project:get-actors',
-  PROJECT_GET_ITEMS: 'project:get-items',
-  PROJECT_GET_MAPS: 'project:get-maps',
-  PROJECT_GET_PLUGINS: 'project:get-plugins',
-  PROJECT_GET_SKILLS: 'project:get-skills',
-  PROJECT_GET_WEAPONS: 'project:get-weapons',
-  PROJECT_GET_ARMORS: 'project:get-armors',
-  PROJECT_GET_ENEMIES: 'project:get-enemies',
-  PROJECT_GET_STATES: 'project:get-states',
-  PROJECT_GET_ANIMATIONS: 'project:get-animations',
-  PROJECT_GET_TILESETS: 'project:get-tilesets',
-  PROJECT_GET_COMMON_EVENTS: 'project:get-common-events',
-  PROJECT_GET_CLASSES: 'project:get-classes',
-  PROJECT_GET_TROOPS: 'project:get-troops',
 
   // Plugin
   PLUGIN_SAVE: 'plugin:save',

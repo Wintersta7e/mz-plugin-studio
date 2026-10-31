@@ -6,7 +6,6 @@ import type {
   MZActor,
   MZItem,
   MZMapInfo,
-  MZPluginEntry,
   MZSwitch,
   MZVariable,
   MZSkill,
@@ -67,7 +66,6 @@ export class ProjectParser {
       actors,
       items,
       maps,
-      plugins,
       skills,
       weapons,
       armors,
@@ -82,7 +80,6 @@ export class ProjectParser {
       this.getActors(path),
       this.getItems(path),
       this.getMaps(path),
-      this.getPlugins(path),
       this.getSkills(path),
       this.getWeapons(path),
       this.getArmors(path),
@@ -103,7 +100,6 @@ export class ProjectParser {
       actors,
       items,
       maps,
-      plugins,
       skills,
       weapons,
       armors,
@@ -136,30 +132,6 @@ export class ProjectParser {
       }
       return []
     }
-  }
-
-  static async getSwitches(path: string): Promise<MZSwitch[]> {
-    const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
-    const system = JSON.parse(systemContent)
-
-    return (system.switches || [])
-      .map((name: string | null, index: number) => ({
-        id: index,
-        name: name || ''
-      }))
-      .filter((s: MZSwitch) => s.id > 0 && s.name)
-  }
-
-  static async getVariables(path: string): Promise<MZVariable[]> {
-    const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
-    const system = JSON.parse(systemContent)
-
-    return (system.variables || [])
-      .map((name: string | null, index: number) => ({
-        id: index,
-        name: name || ''
-      }))
-      .filter((v: MZVariable) => v.id > 0 && v.name)
   }
 
   static async getActors(path: string): Promise<MZActor[]> {
@@ -210,25 +182,6 @@ export class ProjectParser {
           name: m.name,
           parentId: m.parentId || 0
         }))
-    } catch {
-      return []
-    }
-  }
-
-  static async getPlugins(path: string): Promise<MZPluginEntry[]> {
-    try {
-      const content = await readFile(join(path, 'js/plugins.js'), 'utf-8')
-      // plugins.js format: var $plugins = [...];
-      const match = content.match(/\$plugins\s*=\s*(\[[\s\S]*?\]);/)
-      if (!match) return []
-
-      const plugins = JSON.parse(match[1])
-      return plugins.map((p: MZPluginEntry) => ({
-        name: p.name,
-        status: p.status,
-        description: p.description || '',
-        parameters: p.parameters || {}
-      }))
     } catch {
       return []
     }

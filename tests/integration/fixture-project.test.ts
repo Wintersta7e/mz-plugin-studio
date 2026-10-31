@@ -25,10 +25,7 @@ async function expectLoads(path: string): Promise<void> {
   console.log(`fixture project: ${counts.map(([field, n]) => `${field} ${n}`).join(', ')}`)
   expect(project.gameTitle).toBe('Fixture Game')
   expect(counts.length).toBeGreaterThan(0)
-  expect(counts.filter(([field, n]) => field !== 'plugins' && n < 1)).toEqual([])
-  // plugins.js holds a description containing "];", which ends the plugin-list match early:
-  // the list reads as empty today.
-  expect(project.plugins).toHaveLength(0)
+  expect(counts.filter(([, n]) => n < 1)).toEqual([])
   expect(vi.mocked(log.error)).toHaveBeenCalledTimes(0)
 }
 

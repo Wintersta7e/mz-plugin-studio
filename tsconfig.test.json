@@ -1,6 +1,12 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["tests/**/*", "src/main/**/*", "src/renderer/src/**/*", "src/shared/**/*"],
+  "include": [
+    "tests/**/*",
+    "src/main/**/*",
+    "src/renderer/src/**/*",
+    "src/shared/**/*",
+    "src/preload/**/*"
+  ],
   "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**"],
   "compilerOptions": {
     "composite": true,
