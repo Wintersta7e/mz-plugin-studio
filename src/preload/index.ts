@@ -20,8 +20,8 @@ const api: API = {
     scanHeaders: (projectPath) => invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, projectPath)
   },
   dialog: {
-    openFolder: () => invoke(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
     // The main handlers read fields of `options`, so it is never sent missing
+    openFolder: (options = {}) => invoke(IPC_CHANNELS.DIALOG_OPEN_FOLDER, options),
     saveFile: (options = {}) => invoke(IPC_CHANNELS.DIALOG_SAVE_FILE, options),
     openFile: (options = {}) => invoke(IPC_CHANNELS.DIALOG_OPEN_FILE, options),
     message: (options) => invoke(IPC_CHANNELS.DIALOG_MESSAGE, options)

@@ -1,6 +1,8 @@
 // The argument check of every channel: a value of the wrong shape is refused before the handler
 // runs, or dropped where the channel has a safe default; a valid value passes as a fresh copy.
-import path from 'path'
+import { mkdtempSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
+import path, { join } from 'path'
 import log from 'electron-log/main'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
@@ -156,7 +158,6 @@ describe('ipc arguments', () => {
     passes('dialog:save-file', [{ filters: [{ name: 'n', extensions: [1] }] }], [{}])
     passes('dialog:save-file', [{ filters: 'js' }], [{}])
     passes('dialog:open-file', [null], [{}])
-    passes('dialog:open-file', [{ defaultPath: '/p/a.js', filters }], [{ filters }])
 
     for (const defaultPath of ['../x.js', '\\\\server\\share\\x.js', '//server/share/x.js']) {
       passes('dialog:save-file', [{ defaultPath, filters }], [{ filters }])
@@ -205,8 +206,38 @@ describe('ipc arguments', () => {
     )
   })
 
+  it('keeps a safe start folder on the open dialogs and drops any other', () => {
+    const folder = mkdtempSync(join(tmpdir(), 'dialog-seed-'))
+    try {
+      const filters = [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+      for (const rejected of [
+        '\\\\server\\share\\Proj',
+        '//server/share/Proj',
+        'Games/Proj',
+        'Proj',
+        `${folder}/../Proj`,
+        path.parse(folder).root,
+        7
+      ]) {
+        passes('dialog:open-folder', [{ defaultPath: rejected }], [{}])
+        passes('dialog:open-file', [{ defaultPath: rejected, filters }], [{ filters }])
+      }
+      passes('dialog:open-folder', [{ defaultPath: folder }], [{ defaultPath: folder }])
+      passes('dialog:open-folder', [{ defaultPath: folder, title: 'x' }], [{ defaultPath: folder }])
+      passes('dialog:open-folder', ['/p'], [{}])
+      passes('dialog:open-folder', [], [{}])
+      passes('dialog:open-file', [{ defaultPath: folder }], [{ defaultPath: folder }])
+      passes(
+        'dialog:open-file',
+        [{ defaultPath: folder, filters }],
+        [{ defaultPath: folder, filters }]
+      )
+    } finally {
+      rmSync(folder, { recursive: true, force: true })
+    }
+  })
+
   it('ignores extra arguments on the channels that take none', () => {
-    passes('dialog:open-folder', ['/p'], [])
     passes('window-is-maximized', [1], [])
     passes('log:open-folder', [1], [])
     listens('window-minimize', ['x'], [])

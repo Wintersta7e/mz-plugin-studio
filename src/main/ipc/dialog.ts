@@ -1,14 +1,25 @@
+import { statSync } from 'fs'
 import path from 'path'
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
-import type { MessageDialogOptions, OpenFileOptions, SaveFileOptions } from '../../shared/ipc-types'
+import type {
+  MessageDialogOptions,
+  OpenFileOptions,
+  OpenFolderOptions,
+  SaveFileOptions
+} from '../../shared/ipc-types'
 import {
   assertSafeProjectPath,
   isAllowedExtension,
   isUncText,
   type PlatformPath
 } from '../../shared/path-safety'
-import { recordProjectRoot, recordReadGrant, recordWriteGrant } from '../file-access'
+import {
+  getCurrentProjectRoot,
+  recordProjectRoot,
+  recordReadGrant,
+  recordWriteGrant
+} from '../file-access'
 import { checkFilters, invalidArguments, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
 
@@ -22,7 +33,7 @@ export async function showSaveFileDialog(
   options: SaveFileOptions
 ): Promise<string | null> {
   const result = await dialog.showSaveDialog({
-    defaultPath: options.defaultPath,
+    ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
     filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }],
     // Windows and macOS always ask before replacing a file; Linux only with this
     properties: ['showOverwriteConfirmation']
@@ -69,9 +80,11 @@ export async function showMessageDialog(
  * The chosen folder becomes a project folder `project:load` opens without asking.
  */
 export async function openFolderDialog(
-  dialog: Pick<Dialog, 'showOpenDialog'>
+  dialog: Pick<Dialog, 'showOpenDialog'>,
+  options: OpenFolderOptions = {}
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
+    ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
     properties: ['openDirectory'],
     title: 'Select RPG Maker MZ Project Folder'
   })
@@ -95,6 +108,7 @@ export async function openFileDialog(
   options: OpenFileOptions
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
+    ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
     properties: ['openFile'],
     filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
   })
@@ -201,6 +215,13 @@ export function checkSaveDefaultPath(
   }
 }
 
+/** An open dialog's default path: a folder it opens in; anything else is dropped */
+function checkOpenDefaultPath(value: unknown): string | undefined {
+  return typeof value === 'string' && classifyDialogDefault(value) === 'directory-seed'
+    ? value
+    : undefined
+}
+
 /** Save dialog options: a safe default path and well-formed filters; anything else dropped */
 function checkSaveFileOptions(value: unknown): SaveFileOptions {
   if (!isRecord(value)) return {}
@@ -213,12 +234,90 @@ function checkSaveFileOptions(value: unknown): SaveFileOptions {
   }
 }
 
-/** Open dialog options: well-formed filters only; anything else dropped */
+/** Open dialog options: a folder to open in and well-formed filters; anything else dropped */
 function checkOpenFileOptions(value: unknown): OpenFileOptions {
   if (!isRecord(value)) return {}
-  const { filters: rawFilters } = value
+  const { defaultPath: rawDefaultPath, filters: rawFilters } = value
+  const defaultPath = checkOpenDefaultPath(rawDefaultPath)
   const filters = checkFilters(rawFilters)
-  return filters !== undefined ? { filters } : {}
+  return {
+    ...(defaultPath !== undefined && { defaultPath }),
+    ...(filters !== undefined && { filters })
+  }
+}
+
+/** Folder dialog options: a folder to suggest; anything else dropped */
+function checkOpenFolderOptions(value: unknown): OpenFolderOptions {
+  if (!isRecord(value)) return {}
+  const defaultPath = checkOpenDefaultPath(value['defaultPath'])
+  return defaultPath !== undefined ? { defaultPath } : {}
+}
+
+type DefaultingDialog = 'open-folder' | 'open-file' | 'save-file'
+
+/**
+ * Which dialogs share a remembered folder: the folder dialog, or the channel with the first
+ * extension of its first filter (the handler's own filter, `.js`, when there is none).
+ */
+export function dialogKind(
+  channel: DefaultingDialog,
+  filters?: readonly { name: string; extensions: readonly string[] }[]
+): string {
+  if (channel === 'open-folder') return channel
+  return `${channel}:.${filters?.[0]?.extensions[0] ?? 'js'}`
+}
+
+export interface DialogDefaultRequest {
+  channel: DefaultingDialog
+  kind: string
+  /** The renderer's default path, after the argument check */
+  rendererValue: string | undefined
+  /** The folder the same kind of dialog last chose this session */
+  lastDirectory: string | undefined
+  projectRoot: string | null
+  directoryExists: (dir: string) => boolean
+}
+
+/**
+ * The default path a dialog opens with, or undefined for none: from Electron 43 a dialog without
+ * one opens in Downloads, and the system no longer restores the folder it last showed.
+ */
+export function resolveDialogDefaultPath(
+  req: DialogDefaultRequest,
+  pathImpl: PlatformPath = path
+): string | undefined {
+  const { rendererValue, lastDirectory } = req
+  switch (req.channel) {
+    case 'open-folder': {
+      // Beside the suggested project, so its siblings show
+      if (rendererValue !== undefined) {
+        const parent = pathImpl.dirname(rendererValue)
+        if (req.directoryExists(parent)) return parent
+      }
+      return lastDirectory
+    }
+    case 'open-file':
+      return rendererValue ?? lastDirectory
+    case 'save-file': {
+      // A full path is the file Save asks again at
+      if (rendererValue !== undefined && pathImpl.isAbsolute(rendererValue)) return rendererValue
+      const folder =
+        req.kind === dialogKind('save-file') && req.projectRoot !== null
+          ? pathImpl.join(req.projectRoot, 'js', 'plugins')
+          : lastDirectory
+      if (folder === undefined) return rendererValue
+      return rendererValue === undefined ? folder : pathImpl.join(folder, rendererValue)
+    }
+  }
+}
+
+/** A folder a dialog may open in: absent and unreadable both mean none, as a default opens nothing */
+function directoryExists(dir: string): boolean {
+  try {
+    return statSync(dir).isDirectory()
+  } catch {
+    return false
+  }
 }
 
 /** The methods of Electron's `dialog` the handlers call */
@@ -230,23 +329,58 @@ type DialogChannel =
   | 'dialog:open-file'
   | 'dialog:message'
 
-/** Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used */
+/**
+ * Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used.
+ * The open and save dialogs open where their kind last chose, for the rest of the session.
+ */
 export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, DialogChannel> {
+  const lastDirectories = new Map<string, string>()
+  const defaultPath = (
+    channel: DefaultingDialog,
+    kind: string,
+    rendererValue: string | undefined
+  ): string | undefined =>
+    resolveDialogDefaultPath({
+      channel,
+      kind,
+      rendererValue,
+      lastDirectory: lastDirectories.get(kind),
+      projectRoot: getCurrentProjectRoot(),
+      directoryExists
+    })
+  /** Keeps the folder of a chosen path for the next dialog of its kind */
+  const remember = (kind: string, chosen: string | null): string | null => {
+    if (chosen !== null) lastDirectories.set(kind, path.dirname(chosen))
+    return chosen
+  }
+
   return {
     'dialog:open-folder': {
       access: 'none',
-      check: () => [],
-      run: () => openFolderDialog(dialog)
+      check: (raw) => [checkOpenFolderOptions(raw[0])],
+      run: async (options = {}) => {
+        const kind = dialogKind('open-folder')
+        const seed = defaultPath('open-folder', kind, options.defaultPath)
+        return remember(kind, await openFolderDialog(dialog, { defaultPath: seed }))
+      }
     },
     'dialog:save-file': {
       access: 'none',
       check: (raw) => [checkSaveFileOptions(raw[0])],
-      run: (options = {}) => showSaveFileDialog(dialog, options)
+      run: async (options = {}) => {
+        const kind = dialogKind('save-file', options.filters)
+        const seed = defaultPath('save-file', kind, options.defaultPath)
+        return remember(kind, await showSaveFileDialog(dialog, { ...options, defaultPath: seed }))
+      }
     },
     'dialog:open-file': {
       access: 'none',
       check: (raw) => [checkOpenFileOptions(raw[0])],
-      run: (options = {}) => openFileDialog(dialog, options)
+      run: async (options = {}) => {
+        const kind = dialogKind('open-file', options.filters)
+        const seed = defaultPath('open-file', kind, options.defaultPath)
+        return remember(kind, await openFileDialog(dialog, { ...options, defaultPath: seed }))
+      }
     },
     'dialog:message': {
       access: 'none',

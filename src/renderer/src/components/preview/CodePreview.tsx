@@ -418,7 +418,7 @@ export function CodePreview() {
             )}
           </Button>
 
-          <Button size="sm" onClick={handleExport}>
+          <Button size="sm" onClick={handleExport} data-testid="export-plugin">
             <Download className="mr-1 h-4 w-4" />
             Export
           </Button>

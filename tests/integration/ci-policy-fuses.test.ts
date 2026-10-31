@@ -5,12 +5,13 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { fileURLToPath } from 'url'
+import { FuseV1Options } from '@electron/fuses'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
 const BUILDER_CONFIG = fileURLToPath(new URL('../../electron-builder.yml', import.meta.url))
 const SENTINEL = 'dL7pKGdnNz796PbbjQWNKmHXBZaB9tsX'
 
-// The wire of an unfused Electron 41 binary, and the one the packaged app must carry
+// The wire of an unfused Electron binary (41 and 45 alike), and the one the packaged app must carry
 const STOCK = '101100011'
 const PRODUCTION = '010011011'
 
@@ -151,6 +152,14 @@ describe('ci-policy fuses', () => {
     const { status, out } = fuses(join(tmpdir(), 'ci-policy-fuses-absent.exe'))
     expect(out).toContain('not found: ')
     expect(status).toBe(1)
+  })
+
+  it('names each fuse as the installed fuses package does, in wire order', () => {
+    const names = Object.values(FuseV1Options).filter((v): v is string => typeof v === 'string')
+    const { out } = fuses(binary(wire(STOCK.padEnd(names.length, '0'))))
+    const printed = [...out.matchAll(/^fuse (\w+): /gm)].map((match) => match[1])
+    console.log(`fuse names: ${printed.length} printed, ${names.length} in the fuses package`)
+    expect(printed).toEqual(names)
   })
 
   it('agrees with the fuses electron-builder.yml asks the packager for', () => {

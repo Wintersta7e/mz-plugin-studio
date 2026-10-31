@@ -136,7 +136,14 @@ export interface SaveFileOptions {
 }
 
 export interface OpenFileOptions {
+  /** A folder to open in */
+  defaultPath?: string
   filters?: FileFilter[]
+}
+
+export interface OpenFolderOptions {
+  /** A project folder: the dialog opens in the folder that holds it */
+  defaultPath?: string
 }
 
 /** Request/reply channels: the window calls, main answers */
@@ -166,7 +173,7 @@ export type InvokeContract = {
     args: [projectPath: string]
     result: ScannedPluginHeader[]
   }
-  [IPC_CHANNELS.DIALOG_OPEN_FOLDER]: { args: []; result: string | null }
+  [IPC_CHANNELS.DIALOG_OPEN_FOLDER]: { args: [options?: OpenFolderOptions]; result: string | null }
   [IPC_CHANNELS.DIALOG_SAVE_FILE]: { args: [options?: SaveFileOptions]; result: string | null }
   [IPC_CHANNELS.DIALOG_OPEN_FILE]: { args: [options?: OpenFileOptions]; result: string | null }
   [IPC_CHANNELS.DIALOG_MESSAGE]: { args: [options: MessageDialogOptions]; result: number }

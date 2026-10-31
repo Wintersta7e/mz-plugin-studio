@@ -228,10 +228,11 @@ function App() {
   )
 
   const handleOpenProject = useCallback(async () => {
-    const path = await window.api.dialog.openFolder()
+    // Opens beside the most recent project, so its siblings show
+    const path = await window.api.dialog.openFolder({ defaultPath: recentProjects[0] })
     if (!path) return
     await loadProject(path)
-  }, [loadProject])
+  }, [loadProject, recentProjects])
 
   const handleOpenRecentProject = useCallback(
     async (path: string) => {

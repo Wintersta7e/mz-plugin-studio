@@ -39,7 +39,8 @@
     "test:golden": "node node_modules/vitest/vitest.mjs run --project golden",
     "test:parity": "node node_modules/vitest/vitest.mjs run --project node tests/integration/mz-parity.test.ts",
     "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden",
-    "licenses": "node scripts/third-party-licenses.mjs"
+    "licenses": "node scripts/third-party-licenses.mjs",
+    "postinstall": "node node_modules/electron/install.js"
   },
   "dependencies": {
     "@electron-toolkit/utils": "^4.0.0",
@@ -74,7 +75,7 @@
     "autoprefixer": "^10.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "electron": "^41.10.7",
+    "electron": "^45.2.1",
     "electron-builder": "^26.0.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.4",
