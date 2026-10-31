@@ -1,6 +1,6 @@
 // What a user or a file can put into the packaged app must stay data: odd project paths load or
 // fail with a notice, text entered in Metadata or imported from a parameter file never runs as
-// plugin code, and the renderer writes by path only where a save dialog granted it.
+// plugin code, and `plugin:save-to-path` writes only where a save dialog granted it.
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import type { Page } from '@playwright/test'
