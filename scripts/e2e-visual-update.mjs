@@ -30,6 +30,9 @@ export const CONTAINER_OPTIONS = ['--init', '--ipc=host', '--security-opt', 'sec
 // A screen larger than the app's window, so its content size is never clamped
 export const XVFB = 'xvfb-run -a -s "-screen 0 1920x1080x24"'
 
+// Set where the image runs the suite: the end-to-end config defines its visual project only then
+export const VISUAL_IMAGE_ENV = 'E2E_VISUAL_IMAGE'
+
 export const BASELINES = 'e2e/__screenshots__/linux'
 // Where Playwright writes the HTML report: below the directory of package.json
 export const REPORT = 'playwright-report'
@@ -44,6 +47,7 @@ export function isCopyBack(relPath) {
 /** @param {boolean} check @returns {string} the command the image runs in the copy */
 export function imageCommand(check) {
   const visual = [
+    `${VISUAL_IMAGE_ENV}=1`,
     XVFB,
     'node node_modules/@playwright/test/cli.js test -c e2e/playwright.config.ts --project=visual',
     ...(check ? [] : ['--update-snapshots=changed'])

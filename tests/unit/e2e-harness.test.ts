@@ -4,15 +4,17 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FullConfig, FullResult, Suite, TestCase } from '@playwright/test/reporter'
 import E2eReporter from '../../e2e/reporter'
 import { REUSE_FLAG } from '../../scripts/e2e-prepare.mjs'
 import {
   CONTAINER_OPTIONS,
   IMAGE,
+  imageCommand,
   isCopyBack,
   REPORT,
+  VISUAL_IMAGE_ENV,
   XVFB
 } from '../../scripts/e2e-visual-update.mjs'
 import { readJobs } from '../helpers/workflow-reader'
@@ -111,6 +113,21 @@ function expectReportUpload(job: Job, after: number): Step {
   expect(upload.keys.get('if'), job.id).toBe('failure()')
   expect(upload.nested.slice(-REPORT_PATHS.length), job.id).toEqual(REPORT_PATHS)
   return upload
+}
+
+/** The project names of the real config, loaded on `platform` with `argv` as the command line */
+async function configProjects(platform: NodeJS.Platform, argv: string[] = []): Promise<string[]> {
+  const saved = { platform: process.platform, argv: process.argv }
+  Object.defineProperty(process, 'platform', { value: platform })
+  process.argv = [...saved.argv.slice(0, 2), ...argv]
+  try {
+    vi.resetModules()
+    const { default: config } = await import('../../e2e/playwright.config')
+    return (config.projects ?? []).map((project) => project.name ?? '')
+  } finally {
+    Object.defineProperty(process, 'platform', { value: saved.platform })
+    process.argv = saved.argv
+  }
 }
 
 async function verdict(tests: TestCase[]): Promise<FullResult['status'] | undefined> {
@@ -227,6 +244,35 @@ describe('e2e harness', () => {
     console.log(`e2e xvfb runs in workflows: ${xvfbRuns.length}`)
     expect(xvfbRuns.length).toBeGreaterThan(0)
     for (const line of xvfbRuns) expect(line.startsWith(`${XVFB} `), line).toBe(true)
+  })
+
+  describe('visual project', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs()
+    })
+
+    it('exists only inside the pinned image on Linux', async () => {
+      vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+      expect(await configProjects('linux')).toEqual(['flows', 'release-smoke'])
+      vi.stubEnv(VISUAL_IMAGE_ENV, '1')
+      expect(await configProjects('linux')).toEqual(['flows', 'release-smoke', 'visual'])
+      expect(await configProjects('win32')).toEqual(['flows', 'release-smoke'])
+    })
+
+    it('names the image run when selected outside the image', async () => {
+      vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+      for (const argv of [['--project=visual'], ['--project', 'visual']])
+        await expect(configProjects('linux', argv), argv.join(' ')).rejects.toThrow(
+          'npm run e2e:visual:update -- --check'
+        )
+      expect(await configProjects('linux', ['--project=flows'])).toEqual(['flows', 'release-smoke'])
+    })
+
+    it('is enabled by the CI image job and the local image run', () => {
+      expect(jobIn('ci.yml', 'e2e-linux').nested.get('env')).toEqual([`${VISUAL_IMAGE_ENV}: '1'`])
+      for (const check of [true, false])
+        expect(imageCommand(check), String(check)).toContain(`${VISUAL_IMAGE_ENV}=1 ${XVFB} `)
+    })
   })
 
   it('runs flows and release smoke on Windows and compares no pixels there', () => {
