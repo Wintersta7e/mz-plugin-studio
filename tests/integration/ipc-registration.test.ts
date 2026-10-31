@@ -102,6 +102,13 @@ beforeEach(() => {
   for (const spy of bodies) spy.mockClear()
 })
 
+/** The warnings about this request, without the one logged the first time a sender is refused */
+function refusals(): unknown[][] {
+  return vi
+    .mocked(log.warn)
+    .mock.calls.filter((call) => !String(call[0]).startsWith('[ipc] Refused requests from '))
+}
+
 function reached(): number {
   return bodies.reduce((sum, spy) => sum + spy.mock.calls.length, 0)
 }
@@ -142,9 +149,7 @@ describe('ipc registration', () => {
           sender: sender.name,
           result: 'Access denied: sender'
         })
-        expect(vi.mocked(log.warn).mock.calls).toEqual([
-          [`[ipc] refused ${channel}: Access denied: sender`]
-        ])
+        expect(refusals()).toEqual([[`[ipc] refused ${channel}: Access denied: sender`]])
         expect({ channel, sender: sender.name, reached: reached() }).toEqual({
           channel,
           sender: sender.name,
@@ -161,7 +166,7 @@ describe('ipc registration', () => {
         window = appWindow
         vi.mocked(log.warn).mockClear()
         ipc.sendFrom(sender.frame(), channel, true)
-        expect({ channel, sender: sender.name, warned: vi.mocked(log.warn).mock.calls }).toEqual({
+        expect({ channel, sender: sender.name, warned: refusals() }).toEqual({
           channel,
           sender: sender.name,
           warned: [[`[ipc] Dropped ${channel}: sender is not the app page`]]
@@ -215,6 +220,27 @@ describe('ipc registration', () => {
     expect(admits(dev, 'http://localhost:5174/')).toBe(false)
     expect(admits(dev, 'https://localhost:5173/')).toBe(false)
     expect(admits(dev, entryUrl)).toBe(false)
+  })
+
+  it('logs each refused sender address once, without its query, with the page it expected', () => {
+    let win = createFakeWindow('https://example.invalid/page?token=synthetic#top')
+    const check = createSenderCheck(() => win, { kind: 'file', path: entry })
+    const send = (): boolean => check({ senderFrame: win.webContents.mainFrame })
+    vi.mocked(log.warn).mockClear()
+    expect(send()).toBe(false)
+    expect(send()).toBe(false)
+    win = createFakeWindow('https://example.invalid/page?token=other')
+    expect(send()).toBe(false)
+    win = createFakeWindow(pathToFileURL(join(rendererDir, 'other.html')).href)
+    expect(send()).toBe(false)
+    expect(vi.mocked(log.warn).mock.calls).toEqual([
+      [`[ipc] Refused requests from https://example.invalid/page: the app page is ${entry}`],
+      [
+        `[ipc] Refused requests from ${pathToFileURL(join(rendererDir, 'other.html')).href}: ` +
+          `the app page is ${entry}`
+      ]
+    ])
+    cases += 4
   })
 
   it('counts its sender cases', () => {

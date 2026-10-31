@@ -46,26 +46,45 @@ export type RendererEntry = { kind: 'file'; path: string } | { kind: 'dev-server
 /** Whether a request comes from the app's own page */
 export type SenderCheck = (event: SenderEvent) => boolean
 
+/** How many distinct refused senders a check logs; a page cycling addresses cannot flood the log */
+const MAX_LOGGED_SENDERS = 20
+
 /**
  * Trusts only the main frame of the window `getWindow` returns, showing `entry`. A file entry is
- * compared by its decoded path, so any percent-encoding of the same file matches.
+ * compared by its decoded path, so any percent-encoding of the same file matches. Each refused
+ * sender is logged once with the page expected, so the log shows why the app answers nothing.
  */
 export function createSenderCheck(
   getWindow: () => { webContents: { mainFrame: unknown } } | null,
   entry: RendererEntry,
   platform: NodeJS.Platform = process.platform
 ): SenderCheck {
+  const expected = entry.kind === 'file' ? entry.path : entry.origin
+  const logged = new Set<string>()
+  const refuse = (sender: string): false => {
+    if (!logged.has(sender) && logged.size < MAX_LOGGED_SENDERS) {
+      logged.add(sender)
+      log.warn(`[ipc] Refused requests from ${sender}: the app page is ${expected}`)
+    }
+    return false
+  }
   return (event) => {
+    let sender = 'a frame whose address cannot be read'
     try {
       const frame = event.senderFrame
-      if (frame === null || frame !== getWindow()?.webContents.mainFrame) return false
+      if (frame === null) return refuse('no frame')
       const url = new URL((frame as { url: string }).url)
-      if (entry.kind === 'dev-server') return url.origin === entry.origin
-      if (url.protocol !== 'file:') return false
+      // The address without its query or fragment, which may hold anything the page put there
+      sender = `${url.protocol}//${url.host}${url.pathname}`
+      if (frame !== getWindow()?.webContents.mainFrame) {
+        return refuse(`a frame other than the main frame at ${sender}`)
+      }
+      if (entry.kind === 'dev-server') return url.origin === entry.origin || refuse(sender)
+      if (url.protocol !== 'file:') return refuse(sender)
       const file = fileURLToPath(url, { windows: platform === 'win32' })
-      return samePath(file, entry.path, platform)
+      return samePath(file, entry.path, platform) || refuse(sender)
     } catch {
-      return false
+      return refuse(sender)
     }
   }
 }
