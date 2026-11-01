@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-02
+
 ### Upgrading from 1.7.x
 
 - The app now keeps its own record of the project folders you chose with **Open Project** or confirmed opening; earlier versions kept none. So after upgrading, the first time you open each project from the recent projects list, the app asks whether to open that folder and says "The app has no record of this folder being chosen with Open Project or confirmed here." Choose **Open** if it is your project, or open it with **Open Project**; after that it opens straight away. A project on a network share is not asked about: open it once with **Open Project**.
