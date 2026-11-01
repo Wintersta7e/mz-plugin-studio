@@ -90,15 +90,26 @@ export async function prepareSave(
     : { status: 'refused', refusal: out.refusal, reason: out.message }
 }
 
-/** Whether `file` lies directly in `dir`; Windows paths compare case-insensitively, as main does */
-function isFileIn(dir: string, file: string): boolean {
-  const windows = /^[a-z]:|\\/i.test(dir)
-  const normal = (p: string): string => {
+/** A form of the paths `like` belongs with that compares as main does: Windows paths ignore case */
+function comparable(like: string): (p: string) => string {
+  const windows = /^[a-z]:|\\/i.test(like)
+  return (p) => {
     const slashed = p.replace(/[\\/]+/g, '/').replace(/\/$/, '')
     return windows ? slashed.toLowerCase() : slashed
   }
+}
+
+/** Whether `file` lies directly in `dir` */
+function isFileIn(dir: string, file: string): boolean {
+  const normal = comparable(dir)
   const target = normal(file)
   return target.slice(0, target.lastIndexOf('/')) === normal(dir)
+}
+
+/** Whether two paths name one file */
+export function sameFile(a: string, b: string): boolean {
+  const normal = comparable(a)
+  return normal(a) === normal(b)
 }
 
 /**

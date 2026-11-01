@@ -6,7 +6,7 @@ import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import type { PluginDefinition } from '../types/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-types'
 import { fileNameMismatch, fileNameOf, isImported, saveFileName } from './plugin-output'
-import { prepareSave, reloadFromProject } from './raw-mode'
+import { prepareSave, reloadFromProject, sameFile } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
 import { userMessage } from './utils'
 
@@ -208,13 +208,19 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void
     }
     const result = await writeAsking(plugin, write)
     if (result === null) return
-    // With a project open, Export writes a copy: the tab's file is still the project's
-    if (mode === 'save' || project === null) {
+    // An export to the file Ctrl+S writes is a save; else, with a project open, Export writes a
+    // copy and the tab's file is still the project's
+    const saved =
+      mode === 'save' ||
+      (project !== null &&
+        plugin.meta.name !== '' &&
+        sameFile(result.path, `${project.path}/js/plugins/${saveFileName(plugin)}`))
+    if (saved || project === null) {
       usePluginStore.getState().recordSaves([recordOf(plugin, result, code)])
     }
     addToast({
       type: 'success',
-      message: mode === 'save' ? 'Plugin saved' : `Exported to ${result.path}`
+      message: saved ? 'Plugin saved' : `Exported to ${result.path}`
     })
     if (result.syntaxWarning !== undefined) {
       const { line, message } = result.syntaxWarning

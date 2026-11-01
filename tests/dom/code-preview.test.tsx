@@ -298,6 +298,32 @@ describe('code preview export', () => {
     expect(usePluginStore.getState().dirtyByPluginId[id]).toBeUndefined()
   })
 
+  it("Export to the tab's own project file saves the tab, so the next save asks nothing", async () => {
+    const project = join(tmp, 'project')
+    const projectFile = join(project, 'js', 'plugins', 'Alpha.js')
+    wireMainSave(projectFile)
+    await openProject(project)
+    const id = usePluginStore.getState().plugin.id
+    await act(() => savePlugin(id, 'save'))
+    act(() => usePluginStore.getState().updateMeta({ description: 'edited' }))
+    const exported = generatePlugin(usePluginStore.getState().plugin)
+    render(<CodePreview />)
+
+    clickExport()
+    await waitFor(() => expect(successToasts()).toEqual(['Plugin saved', 'Plugin saved']))
+    expect(await readFile(projectFile, 'utf8')).toBe(exported)
+    const state = usePluginStore.getState()
+    expect(state.dirtyByPluginId[id]).toBeUndefined()
+    expect(state.baseByPluginId[id]?.path).toBe(projectFile)
+
+    act(() => usePluginStore.getState().updateMeta({ description: 'edited again' }))
+    const expected = generatePlugin(usePluginStore.getState().plugin)
+    await act(() => savePlugin(id, 'save'))
+    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(await readFile(projectFile, 'utf8')).toBe(expected)
+    expect(usePluginStore.getState().dirtyByPluginId[id]).toBeUndefined()
+  })
+
   it('Export asks for a path also with a project open, and writes there', async () => {
     const chosen = join(tmp, 'Chosen.js')
     wireMainSave(chosen)
