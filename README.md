@@ -8,6 +8,7 @@ MZ project, so game-data parameters pick from your actual actors, items and swit
 
 [![CI](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Wintersta7e/mz-plugin-studio/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Wintersta7e/mz-plugin-studio?sort=semver&label=release)](https://github.com/Wintersta7e/mz-plugin-studio/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Wintersta7e/mz-plugin-studio/latest/total?label=downloads%40latest)](https://github.com/Wintersta7e/mz-plugin-studio/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white)
 ![Electron](https://img.shields.io/github/package-json/dependency-version/Wintersta7e/mz-plugin-studio/dev/electron?label=Electron&logo=electron&logoColor=white&color=47848F)
 ![React](https://img.shields.io/github/package-json/dependency-version/Wintersta7e/mz-plugin-studio/dev/react?label=React&logo=react&logoColor=black&color=61DAFB)
@@ -15,6 +16,8 @@ MZ project, so game-data parameters pick from your actual actors, items and swit
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 ![Status](https://img.shields.io/badge/status-personal%20tool%20%C2%B7%20maintained-brightgreen)
+
+<img src="screenshots/overview.png" alt="The editor with a project open: the plugin browser, a plugin's parameters and its generated code" width="900">
 
 ---
 
@@ -29,6 +32,17 @@ turns those strings back into values.
 
 MZ Plugin Studio does both from one definition. The annotation block and the parsing code are
 generated together, so a parameter's declared type and the code that reads it stay in step.
+
+```mermaid
+flowchart LR
+  project[("MZ project<br/>data/*.json")] -->|actors, items, switches| forms
+  existing["Existing plugin .js"] -->|import| forms
+  forms["Forms<br/>metadata · parameters · commands · structs"] --> generator["Generator"]
+  code["Code editor<br/>and templates"] --> generator
+  generator --> plugin["Plugin .js<br/>annotation block · parameter parsing · your code"]
+  plugin -->|save| folder["js/plugins/"]
+  folder --> analysis["Conflict and<br/>dependency analysis"]
+```
 
 ## Status
 
@@ -48,6 +62,10 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
     raw mode is missing from them and the editor in that language does not show it.
   - **Save All** skips an imported plugin with raw mode off until a **Ctrl+S** save of it is
     confirmed.
+- **Upgrading from 1.7.x** ([details](./docs/USER_GUIDE.md#loading-a-project)): the app now keeps
+  its own record of the project folders you chose with **Open Project**, so the first time you open
+  each project from the recent projects list it asks whether to open that folder. Choose **Open** if
+  it is your project; after that it opens straight away.
 - **Upgrading from 1.6.x** ([details](./docs/USER_GUIDE.md#upgrading-from-16x)):
   - Imported plugin tabs opened in 1.6.x have no file text, and raw mode refuses to save them
     until you open the project and click **Reload** in the notice that names them, or
@@ -67,6 +85,8 @@ upkeep — tests, CI, dependency updates and security fixes — rather than new 
 - **Command builder** — plugin commands with typed arguments
 - **Struct definitions** — nested data structures, with a visual editor for struct defaults
 - **Multi-language** — Japanese (ja) and Chinese (zh) localization tabs
+
+<img src="screenshots/command-builder.png" alt="The command builder with a command's arguments open beside the generated code" width="800">
 
 ### Parameter Types
 
@@ -100,6 +120,8 @@ Templates insert working code for common plugin patterns, grouped by category:
 | **Messages**        | Text codes, window mods, choices     |
 | **Actor & Party**   | Custom properties, party management  |
 
+<img src="screenshots/template-inserter.png" alt="The template dialog filling in a plugin command template, with its code preview" width="800">
+
 ### Code editor
 
 - **Monaco editor** with JavaScript highlighting and MZ class completions
@@ -122,6 +144,8 @@ Templates insert working code for common plugin patterns, grouped by category:
   class is used
 - **Dependency analysis** — reads `@base`, `@orderAfter` and `@orderBefore` across the project and
   reports missing and circular dependencies and load-order violations
+
+<img src="screenshots/analysis.png" alt="The analysis view listing a method three plugins override and a plugin that loads before the one it depends on" width="800">
 
 ### Also
 
@@ -185,7 +209,35 @@ MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity
 
 Without the variable, `npm run test:parity` reports both tests skipped. It was last compared against core scripts v1.10.0 (the `rmmz_managers.js` header line), with no plugin behaving differently.
 
-## Layout
+## Architecture
+
+The renderer is sandboxed and reaches files only through the preload bridge; every main-process
+handler checks the paths it is given.
+
+```mermaid
+flowchart LR
+  subgraph renderer["Renderer · sandboxed"]
+    ui["React UI<br/>Zustand stores"]
+    gen["Plugin generator"]
+    monaco["Monaco editor"]
+  end
+  subgraph preload["Preload"]
+    api["window.api<br/>typed IPC channels"]
+  end
+  subgraph main["Main process"]
+    handlers["IPC handlers<br/>path checks"]
+    parsers["Plugin and<br/>project parsers"]
+  end
+  disk[("Project folder<br/>and dialogs")]
+  ui --> gen
+  ui --> monaco
+  ui <--> api
+  api <--> handlers
+  handlers --> parsers
+  handlers <--> disk
+```
+
+`src/shared/` holds the types, IPC channel names and path checks both sides use.
 
 ```
 mz-plugin-studio/
