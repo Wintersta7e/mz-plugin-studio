@@ -94,6 +94,6 @@
     "typescript": "^6.0.3",
     "vite": "^7.3.7",
     "vitest": "5.0.3",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.16"
   }
 }
