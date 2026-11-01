@@ -71,7 +71,7 @@ jobs:
           "$RUNNER_TEMP/gitleaks" git --redact --no-banner --no-color --exit-code 1 2>&1 | tee "$RUNNER_TEMP/gitleaks.log"
           # A scan of zero commits is a failed scan.
           grep -Eq '[1-9][0-9]* commits scanned' "$RUNNER_TEMP/gitleaks.log"
-      - name: Dependency advisories (osv-scanner, report-only)
+      - name: Dependency advisories (osv-scanner)
         shell: bash
         env:
           OSV_SCANNER_VERSION: 2.6.0
@@ -80,11 +80,8 @@ jobs:
           curl -sSfL -o "$RUNNER_TEMP/osv-scanner" "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
           echo "${OSV_SCANNER_SHA256}  $RUNNER_TEMP/osv-scanner" | sha256sum --check --strict
           chmod +x "$RUNNER_TEMP/osv-scanner"
-          status=0
-          "$RUNNER_TEMP/osv-scanner" scan source --lockfile=package-lock.json --config=osv-scanner.toml || status=$?
-          echo "osv-scanner exit ${status} (report-only: advisories are printed, not failed)"
-          # 1 means advisories were found; any other non-zero status is a failed scan.
-          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
+          # Any advisory not ignored in osv-scanner.toml, or a failed scan, fails the job.
+          "$RUNNER_TEMP/osv-scanner" scan source --lockfile=package-lock.json --config=osv-scanner.toml
       - run: node scripts/ci-policy.mjs osv-ignores
 
   unit:
