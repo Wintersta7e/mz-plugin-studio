@@ -117,8 +117,13 @@ describe('dialog default path', () => {
       '/work/Game/js/plugins'
     ],
     [
-      'a plugin opens in the folder last chosen before the project one',
+      "a plugin opens in the project's plugins folder before the folder last chosen",
       { kind: 'open-file:.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
+      '/work/Game/js/plugins'
+    ],
+    [
+      'no plugins folder in the project: the folder last chosen',
+      { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/out' },
       '/work/out'
     ],
     [

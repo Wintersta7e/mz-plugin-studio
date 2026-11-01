@@ -293,11 +293,7 @@ export function resolveDialogDefaultPath(
     }
     case 'open-file': {
       // A plugin, with a project open: its plugins folder, as save starts there
-      if (
-        lastDirectory === undefined &&
-        req.kind === dialogKind('open-file') &&
-        req.projectRoot !== null
-      ) {
+      if (req.kind === dialogKind('open-file') && req.projectRoot !== null) {
         const folder = pathImpl.join(req.projectRoot, 'js', 'plugins')
         if (req.directoryExists(folder)) return folder
       }
