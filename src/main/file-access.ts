@@ -98,6 +98,11 @@ export function setProjectRootsDir(dir: string): void {
   rootsDir = dir
 }
 
+/** The folder `setProjectRootsDir` set, where main keeps what lasts across restarts; null before */
+export function getProjectRootsDir(): string | null {
+  return rootsDir
+}
+
 const reasonOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 

@@ -1,5 +1,6 @@
 // Where each file dialog opens: the folder the renderer suggests when it is safe and still there,
-// else the folder the same kind of dialog last chose this session, else the app's own default.
+// else the folder the same kind of dialog last chose, else the app's own default. The folder check
+// is awaited, so a slow drive never holds up the main process.
 import path from 'path'
 import { afterAll, describe, expect, it } from 'vitest'
 import {
@@ -30,7 +31,7 @@ function request(
     rendererValue: undefined,
     lastDirectory: undefined,
     projectRoot: null,
-    directoryExists: (dir) => existing.includes(dir),
+    directoryExists: async (dir) => existing.includes(dir),
     ...partial
   }
 }
@@ -84,24 +85,50 @@ describe('dialog default path', () => {
     ]
   ]
 
-  it.each(save)('save: %s', (_label, partial, expected) => {
+  it.each(save)('save: %s', async (_label, partial, expected) => {
     rows++
-    expect(resolveDialogDefaultPath(request(partial), path.posix)).toBe(expected)
+    expect(await resolveDialogDefaultPath(request(partial), path.posix)).toBe(expected)
   })
 
-  it('opens the folder dialog beside the most recent project when its parent exists', () => {
+  it('opens the folder dialog beside the most recent project when its parent exists', async () => {
     rows++
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
-    expect(resolveDialogDefaultPath(request(seed, ['/work/Games']), path.posix)).toBe('/work/Games')
+    expect(await resolveDialogDefaultPath(request(seed, ['/work/Games']), path.posix)).toBe(
+      '/work/Games'
+    )
   })
 
-  it('falls back to the folder last chosen, then to none, when that parent is gone', () => {
+  it('falls back to the folder last chosen, then to none, when that parent is gone', async () => {
     rows += 2
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
     expect(
-      resolveDialogDefaultPath(request({ ...seed, lastDirectory: '/work/Other' }), path.posix)
+      await resolveDialogDefaultPath(request({ ...seed, lastDirectory: '/work/Other' }), path.posix)
     ).toBe('/work/Other')
-    expect(resolveDialogDefaultPath(request(seed), path.posix)).toBeUndefined()
+    expect(await resolveDialogDefaultPath(request(seed), path.posix)).toBeUndefined()
+  })
+
+  it('waits for a slow folder check and keeps it from blocking other work', async () => {
+    rows++
+    const checks: ((exists: boolean) => void)[] = []
+    const slow = request({
+      channel: 'open-folder',
+      rendererValue: '/work/Games/Proj',
+      lastDirectory: '/work/Other',
+      directoryExists: () => new Promise<boolean>((resolve) => checks.push(resolve))
+    })
+    const resolved = resolveDialogDefaultPath(slow, path.posix)
+    // Other work runs while the check is still out
+    let ran = false
+    await new Promise<void>((resolve) =>
+      setTimeout(() => {
+        ran = true
+        resolve()
+      }, 0)
+    )
+    expect(ran).toBe(true)
+    expect(checks).toHaveLength(1)
+    checks[0](false)
+    expect(await resolved).toBe('/work/Other')
   })
 
   const open: Row[] = [
@@ -138,11 +165,14 @@ describe('dialog default path', () => {
     ]
   ]
 
-  it.each(open)('open: %s', (_label, partial, expected) => {
+  it.each(open)('open: %s', async (_label, partial, expected) => {
     rows++
     const existing = ['/work/Game/js/plugins', '/work/Bare']
     expect(
-      resolveDialogDefaultPath(request({ channel: 'open-file', ...partial }, existing), path.posix)
+      await resolveDialogDefaultPath(
+        request({ channel: 'open-file', ...partial }, existing),
+        path.posix
+      )
     ).toBe(expected)
   })
 

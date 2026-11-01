@@ -1,4 +1,4 @@
-import { statSync } from 'fs'
+import { readFile, stat } from 'fs/promises'
 import path from 'path'
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
@@ -14,13 +14,15 @@ import {
   isUncText,
   type PlatformPath
 } from '../../shared/path-safety'
+import { replaceFile } from '../atomic-write'
 import {
   getCurrentProjectRoot,
+  getProjectRootsDir,
   recordProjectRoot,
   recordReadGrant,
   recordWriteGrant
 } from '../file-access'
-import { checkFilters, invalidArguments, isRecord } from './arguments'
+import { checkFilters, invalidArguments, isFilterExtension, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
 
 /**
@@ -267,27 +269,28 @@ export interface DialogDefaultRequest {
   kind: string
   /** The renderer's default path, after the argument check */
   rendererValue: string | undefined
-  /** The folder the same kind of dialog last chose this session */
+  /** The folder the same kind of dialog last chose, this session or an earlier one */
   lastDirectory: string | undefined
   projectRoot: string | null
-  directoryExists: (dir: string) => boolean
+  /** Awaited, so a slow or offline drive never holds up the main process */
+  directoryExists: (dir: string) => Promise<boolean>
 }
 
 /**
  * The default path a dialog opens with, or undefined for none: from Electron 43 a dialog without
  * one opens in Downloads, and the system no longer restores the folder it last showed.
  */
-export function resolveDialogDefaultPath(
+export async function resolveDialogDefaultPath(
   req: DialogDefaultRequest,
   pathImpl: PlatformPath = path
-): string | undefined {
+): Promise<string | undefined> {
   const { rendererValue, lastDirectory } = req
   switch (req.channel) {
     case 'open-folder': {
       // Beside the suggested project, so its siblings show
       if (rendererValue !== undefined) {
         const parent = pathImpl.dirname(rendererValue)
-        if (req.directoryExists(parent)) return parent
+        if (await req.directoryExists(parent)) return parent
       }
       return lastDirectory
     }
@@ -295,7 +298,7 @@ export function resolveDialogDefaultPath(
       // A plugin, with a project open: its plugins folder, as save starts there
       if (req.kind === dialogKind('open-file') && req.projectRoot !== null) {
         const folder = pathImpl.join(req.projectRoot, 'js', 'plugins')
-        if (req.directoryExists(folder)) return folder
+        if (await req.directoryExists(folder)) return folder
       }
       return lastDirectory
     }
@@ -313,11 +316,55 @@ export function resolveDialogDefaultPath(
 }
 
 /** A folder a dialog may open in: absent and unreadable both mean none, as a default opens nothing */
-function directoryExists(dir: string): boolean {
+async function directoryExists(dir: string): Promise<boolean> {
   try {
-    return statSync(dir).isDirectory()
+    return (await stat(dir)).isDirectory()
   } catch {
     return false
+  }
+}
+
+/** The file beside the granted project folders that keeps the folder each kind of dialog last chose */
+export const DIALOG_FOLDERS_FILE = 'dialog-folders.json'
+
+/** How many kinds of dialog the file keeps a folder for, the most recently chosen ones */
+export const MAX_DIALOG_FOLDERS = 32
+
+/** A kind `dialogKind` gives for the filters the argument check lets through */
+function isDialogKind(kind: string): boolean {
+  if (kind === dialogKind('open-folder')) return true
+  const extension = /^(?:open-file|save-file):\.(.+)$/.exec(kind)?.[1]
+  return extension !== undefined && isFilterExtension(extension)
+}
+
+const reasonOf = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+/**
+ * The folders kept in `file`, by kind, oldest choice first. Only known kinds and local absolute
+ * folders are kept, as a dialog looks its folder up; a missing or unreadable file keeps none.
+ */
+async function readDialogFolders(file: string): Promise<Map<string, string>> {
+  let text: string
+  try {
+    text = await readFile(file, 'utf8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      log.warn(`[dialog] Could not read ${file}: ${reasonOf(error)}`)
+    }
+    return new Map()
+  }
+  try {
+    const folders: unknown = (JSON.parse(text) as { folders?: unknown } | null)?.folders
+    if (!isRecord(folders)) throw new Error('no folders by dialog kind')
+    const kept = Object.entries(folders).filter(
+      (entry): entry is [string, string] =>
+        isDialogKind(entry[0]) && checkOpenDefaultPath(entry[1]) !== undefined
+    )
+    return new Map(kept.slice(-MAX_DIALOG_FOLDERS))
+  } catch (error) {
+    log.warn(`[dialog] Ignoring ${file}: ${reasonOf(error)}`)
+    return new Map()
   }
 }
 
@@ -332,26 +379,61 @@ type DialogChannel =
 
 /**
  * Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used.
- * The open and save dialogs open where their kind last chose, for the rest of the session.
+ * The open and save dialogs open where their kind last chose, also after a restart once main
+ * keeps its files in the user data folder (`setProjectRootsDir`).
  */
 export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, DialogChannel> {
-  const lastDirectories = new Map<string, string>()
-  const defaultPath = (
+  /** Folders chosen this session; they win over the file, which another app instance may write */
+  const chosenFolders = new Map<string, string>()
+  /** Writes of the folders file, one after another */
+  let saving: Promise<void> = Promise.resolve()
+  const foldersFile = (): string | null => {
+    const dir = getProjectRootsDir()
+    return dir === null ? null : path.join(dir, DIALOG_FOLDERS_FILE)
+  }
+  const lastDirectory = async (kind: string): Promise<string | undefined> => {
+    const chosen = chosenFolders.get(kind)
+    const file = foldersFile()
+    if (chosen !== undefined || file === null) return chosen
+    return (await readDialogFolders(file)).get(kind)
+  }
+  const defaultPath = async (
     channel: DefaultingDialog,
     kind: string,
     rendererValue: string | undefined
-  ): string | undefined =>
+  ): Promise<string | undefined> =>
     resolveDialogDefaultPath({
       channel,
       kind,
       rendererValue,
-      lastDirectory: lastDirectories.get(kind),
+      lastDirectory: await lastDirectory(kind),
       projectRoot: getCurrentProjectRoot(),
       directoryExists
     })
-  /** Keeps the folder of a chosen path for the next dialog of its kind */
-  const remember = (kind: string, chosen: string | null): string | null => {
-    if (chosen !== null) lastDirectories.set(kind, path.dirname(chosen))
+  /**
+   * Keeps the folder of a chosen path for the next dialog of its kind, in the file too unless it
+   * is a folder the file does not keep. A failed write is logged and the folder still holds.
+   */
+  const remember = async (kind: string, chosen: string | null): Promise<string | null> => {
+    if (chosen === null) return chosen
+    const folder = path.dirname(chosen)
+    chosenFolders.set(kind, folder)
+    const file = foldersFile()
+    if (file === null) return chosen
+    saving = saving.then(async () => {
+      const kept = await readDialogFolders(file)
+      // Re-added last, as the most recent choice
+      kept.delete(kind)
+      if (checkOpenDefaultPath(folder) !== undefined) kept.set(kind, folder)
+      const folders = Object.fromEntries([...kept].slice(-MAX_DIALOG_FOLDERS))
+      try {
+        // Another app instance may save at the same moment: each writes its own temporary file
+        await replaceFile(file, Buffer.from(`${JSON.stringify({ folders }, null, 2)}\n`), false)
+      } catch (error) {
+        log.warn(`[dialog] Could not save ${file}: ${reasonOf(error)}`)
+      }
+    })
+    await saving
     return chosen
   }
 
@@ -361,7 +443,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       check: (raw) => [checkOpenFolderOptions(raw[0])],
       run: async (options = {}) => {
         const kind = dialogKind('open-folder')
-        const seed = defaultPath('open-folder', kind, options.defaultPath)
+        const seed = await defaultPath('open-folder', kind, options.defaultPath)
         return remember(kind, await openFolderDialog(dialog, { defaultPath: seed }))
       }
     },
@@ -370,7 +452,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       check: (raw) => [checkSaveFileOptions(raw[0])],
       run: async (options = {}) => {
         const kind = dialogKind('save-file', options.filters)
-        const seed = defaultPath('save-file', kind, options.defaultPath)
+        const seed = await defaultPath('save-file', kind, options.defaultPath)
         return remember(kind, await showSaveFileDialog(dialog, { ...options, defaultPath: seed }))
       }
     },
@@ -379,7 +461,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       check: (raw) => [checkOpenFileOptions(raw[0])],
       run: async (options = {}) => {
         const kind = dialogKind('open-file', options.filters)
-        const seed = defaultPath('open-file', kind, undefined)
+        const seed = await defaultPath('open-file', kind, undefined)
         return remember(kind, await openFileDialog(dialog, { ...options, defaultPath: seed }))
       }
     },

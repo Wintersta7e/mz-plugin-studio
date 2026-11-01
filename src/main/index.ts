@@ -127,7 +127,8 @@ app.whenReady().then(() => {
       ? { kind: 'dev-server', origin: new URL(devServerUrl).origin }
       : { kind: 'file', path: RENDERER_HTML }
   )
-  // Project folders the user opened stay granted across restarts
+  // Project folders the user opened stay granted, and dialogs open where they last chose, across
+  // restarts
   setProjectRootsDir(app.getPath('userData'))
   handleAll(createInvokeHandlers(deps), isTrustedSender)
   onAll(createSendListeners(deps), isTrustedSender)

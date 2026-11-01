@@ -43,6 +43,11 @@ const MAX_FILTER_NAME_LENGTH = 64
 const MAX_FILTER_EXTENSIONS = 4
 const FILTER_EXTENSION = /^[A-Za-z0-9.]{1,16}$/
 
+/** Whether a filter may name the extension (without its dot): one the app may read or write */
+export function isFilterExtension(extension: string): boolean {
+  return FILTER_EXTENSION.test(extension) && isAllowedExtension(`file.${extension}`)
+}
+
 /**
  * The filters, when there are at most 4, each a name of at most 64 characters and 1-4 extensions
  * the app may read or write; otherwise undefined, and the dialog shows its own filter.
@@ -59,10 +64,7 @@ export function checkFilters(value: unknown): FileFilter[] | undefined {
       !Array.isArray(extensions) ||
       extensions.length < 1 ||
       extensions.length > MAX_FILTER_EXTENSIONS ||
-      !extensions.every(
-        (e): e is string =>
-          typeof e === 'string' && FILTER_EXTENSION.test(e) && isAllowedExtension(`file.${e}`)
-      )
+      !extensions.every((e): e is string => typeof e === 'string' && isFilterExtension(e))
     ) {
       return undefined
     }

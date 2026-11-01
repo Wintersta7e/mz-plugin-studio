@@ -1,5 +1,7 @@
 // Where the packaged app's dialogs open: the folder dialog beside the most recent project after a
-// restart, and the export of a plugin in the open project's plugins folder.
+// restart, with the folder it chose kept in the profile, and the export of a plugin in the open
+// project's plugins folder.
+import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { ElectronApplication } from '@playwright/test'
 import {
@@ -40,6 +42,8 @@ test('opens the folder dialog beside the most recent project after a restart', a
   expect(first).not.toHaveProperty('defaultPath')
   await assertDialogsDrained(twin.app)
   await closeApp(twin.app)
+  const kept = JSON.parse(readFileSync(join(twin.userDataDir, 'dialog-folders.json'), 'utf8'))
+  expect(kept).toEqual({ folders: { 'open-folder': dirname(project) } })
 
   const { app, page } = await launchTwin({ userDataDir: twin.userDataDir })
   try {
