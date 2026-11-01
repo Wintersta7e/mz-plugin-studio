@@ -15,6 +15,7 @@ import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
 import { seed } from './support/load-persisted'
+import { previewShown } from './support/preview'
 
 const payloads = readV160Payloads()
 const TAB = '00000000-0000-4000-8000-000000000013'
@@ -46,6 +47,7 @@ async function startApp(api: Window['api'], withProject: boolean): Promise<Store
     stores.useUIStore.getState().setPreviewCollapsed(false)
     stores.usePluginStore.getState().updateMeta({ description: 'Edited before reload' })
   })
+  await previewShown()
   return stores
 }
 

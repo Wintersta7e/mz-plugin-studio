@@ -17,6 +17,7 @@ import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
 import { seed } from './support/load-persisted'
 import { createMainApi } from './support/main-api'
+import { previewShown } from './support/preview'
 
 const payloads = readV160Payloads()
 const TAB = '00000000-0000-4000-8000-000000000013'
@@ -43,6 +44,7 @@ async function startApp(api: Window['api'], path = PROJECT): Promise<Stores> {
     stores.usePluginStore.getState().setActivePlugin(TAB)
     stores.useUIStore.getState().setPreviewCollapsed(false)
   })
+  await previewShown()
   return stores
 }
 
@@ -191,6 +193,7 @@ describe('saving an imported plugin', () => {
     const stores = await startApp(api)
     const text = readFileSync(fixturePath('js', 'plugins', FILE), 'utf-8')
     const opened = { ...PluginParser.parsePlugin(text, FILE), importedFrom: FILE }
+    const leaving = screen.getByTestId('code-preview')
     act(() => stores.usePluginStore.getState().openPlugin(opened))
     const state = () => stores.usePluginStore.getState()
     const writes = (): string[] => [
@@ -215,9 +218,11 @@ describe('saving an imported plugin', () => {
     }
     const before = state().plugin.rawSource
     act(() => state().updateMeta({ description: 'Saved by Export' }))
-    // Opening the plugin keyed a new view: the old one fades out first and the Export button
-    // belongs to the new one, so wait for it
-    fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
+    // Opening the plugin keyed a new view: the old one fades out first, and its Export button
+    // does nothing, so wait until it has left and the new view shows its preview
+    await waitFor(() => expect(leaving.isConnected).toBe(false), { timeout: 10_000 })
+    await previewShown()
+    fireEvent.click(screen.getByRole('button', { name: 'Export' }))
     await waitFor(() =>
       expect(writes().some((code) => code.includes('Saved by Export'))).toBe(true)
     )
