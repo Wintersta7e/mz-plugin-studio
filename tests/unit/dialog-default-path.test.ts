@@ -104,19 +104,41 @@ describe('dialog default path', () => {
     expect(resolveDialogDefaultPath(request(seed), path.posix)).toBeUndefined()
   })
 
-  it('opens the file dialog in the suggested folder, else the one last chosen', () => {
-    rows += 3
-    const open = { channel: 'open-file' } as const
+  const open: Row[] = [
+    [
+      'the folder last chosen for its kind',
+      { lastDirectory: '/work/last', projectRoot: '/work/Game' },
+      '/work/last'
+    ],
+    ['nothing known: no default', {}, undefined],
+    [
+      "a plugin opens in the open project's plugins folder",
+      { kind: 'open-file:.js', projectRoot: '/work/Game' },
+      '/work/Game/js/plugins'
+    ],
+    [
+      'a plugin opens in the folder last chosen before the project one',
+      { kind: 'open-file:.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
+      '/work/out'
+    ],
+    [
+      'no plugins folder in the project: no default',
+      { kind: 'open-file:.js', projectRoot: '/work/Bare' },
+      undefined
+    ],
+    [
+      "another kind never opens in the project's plugins folder",
+      { projectRoot: '/work/Game' },
+      undefined
+    ]
+  ]
+
+  it.each(open)('open: %s', (_label, partial, expected) => {
+    rows++
+    const existing = ['/work/Game/js/plugins', '/work/Bare']
     expect(
-      resolveDialogDefaultPath(
-        request({ ...open, rendererValue: '/work/params', lastDirectory: '/work/last' }),
-        path.posix
-      )
-    ).toBe('/work/params')
-    expect(
-      resolveDialogDefaultPath(request({ ...open, lastDirectory: '/work/last' }), path.posix)
-    ).toBe('/work/last')
-    expect(resolveDialogDefaultPath(request(open), path.posix)).toBeUndefined()
+      resolveDialogDefaultPath(request({ channel: 'open-file', ...partial }, existing), path.posix)
+    ).toBe(expected)
   })
 
   it.each([

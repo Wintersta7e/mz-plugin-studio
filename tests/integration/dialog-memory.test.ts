@@ -1,6 +1,6 @@
 // Where the dialogs open, through the registered handlers: the folder dialog beside the project
-// the renderer suggests, every dialog in the folder its kind last chose this session, and a save
-// of a plugin in the open project's plugins folder. Each case starts from fresh main modules.
+// the renderer suggests, every dialog in the folder its kind last chose this session, and a plugin's
+// save and open dialogs in the open project's plugins folder. Each case starts from fresh main modules.
 import { mkdir, mkdtemp, rm } from 'fs/promises'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
@@ -90,8 +90,6 @@ describe('dialog memory', () => {
     for (const defaultPath of ['\\\\server\\share\\Proj', '//server/share/Proj']) {
       const options = await shown(() => ipc.invoke('dialog:open-folder', { defaultPath }))
       expect(options).not.toHaveProperty('defaultPath')
-      const file = await shown(() => ipc.invoke('dialog:open-file', { defaultPath }))
-      expect(file).not.toHaveProperty('defaultPath')
     }
   })
 
@@ -108,15 +106,14 @@ describe('dialog memory', () => {
     expect(again.defaultPath).toBe(join(root, 'params'))
     const script = await shown(() => ipc.invoke('dialog:open-file', {}))
     expect(script).not.toHaveProperty('defaultPath')
-    // A suggested folder comes before the remembered one
-    const suggested = join(root, 'B')
-    const seeded = await shown(() =>
-      ipc.invoke('dialog:open-file', { defaultPath: suggested, filters: params })
+    // The window cannot pick the folder
+    const asked = await shown(() =>
+      ipc.invoke('dialog:open-file', { defaultPath: join(root, 'B'), filters: params })
     )
-    expect(seeded.defaultPath).toBe(suggested)
+    expect(asked.defaultPath).toBe(join(root, 'params'))
   })
 
-  it("saves a plugin into the open project's plugins folder", async () => {
+  it("saves and opens a plugin in the open project's plugins folder", async () => {
     const project = await copyFixtureProject()
     try {
       const { ipc, opens, saves, shown } = await session()
@@ -126,6 +123,8 @@ describe('dialog memory', () => {
 
       const plugin = await shown(() => ipc.invoke('dialog:save-file', { defaultPath: 'Name.js' }))
       expect(plugin.defaultPath).toBe(join(project, 'js', 'plugins', 'Name.js'))
+      const script = await shown(() => ipc.invoke('dialog:open-file', {}))
+      expect(script.defaultPath).toBe(join(project, 'js', 'plugins'))
 
       // Other kinds open where their kind last saved, beside nothing before that
       const md = [{ name: 'Markdown Files', extensions: ['md'] }]

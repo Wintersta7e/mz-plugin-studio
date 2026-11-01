@@ -135,9 +135,8 @@ export interface SaveFileOptions {
   filters?: FileFilter[]
 }
 
+/** Main picks the folder an open dialog starts in */
 export interface OpenFileOptions {
-  /** A folder to open in */
-  defaultPath?: string
   filters?: FileFilter[]
 }
 

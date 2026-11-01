@@ -100,12 +100,12 @@ export async function openFolderDialog(
 }
 
 /**
- * Shows the file picker; returns the chosen file, or null when cancelled.
- * The chosen file becomes readable by read-by-path for the rest of the session.
+ * Shows the file picker, in `defaultPath` when main chose a folder; returns the chosen file, or
+ * null when cancelled. The chosen file becomes readable by read-by-path for the rest of the session.
  */
 export async function openFileDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
-  options: OpenFileOptions
+  options: OpenFileOptions & { defaultPath?: string }
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
@@ -215,7 +215,7 @@ export function checkSaveDefaultPath(
   }
 }
 
-/** An open dialog's default path: a folder it opens in; anything else is dropped */
+/** The folder dialog's default path: a folder it opens beside; anything else is dropped */
 function checkOpenDefaultPath(value: unknown): string | undefined {
   return typeof value === 'string' && classifyDialogDefault(value) === 'directory-seed'
     ? value
@@ -234,16 +234,11 @@ function checkSaveFileOptions(value: unknown): SaveFileOptions {
   }
 }
 
-/** Open dialog options: a folder to open in and well-formed filters; anything else dropped */
+/** Open dialog options: well-formed filters; anything else dropped, as main picks the folder */
 function checkOpenFileOptions(value: unknown): OpenFileOptions {
   if (!isRecord(value)) return {}
-  const { defaultPath: rawDefaultPath, filters: rawFilters } = value
-  const defaultPath = checkOpenDefaultPath(rawDefaultPath)
-  const filters = checkFilters(rawFilters)
-  return {
-    ...(defaultPath !== undefined && { defaultPath }),
-    ...(filters !== undefined && { filters })
-  }
+  const filters = checkFilters(value['filters'])
+  return filters !== undefined ? { filters } : {}
 }
 
 /** Folder dialog options: a folder to suggest; anything else dropped */
@@ -296,8 +291,18 @@ export function resolveDialogDefaultPath(
       }
       return lastDirectory
     }
-    case 'open-file':
-      return rendererValue ?? lastDirectory
+    case 'open-file': {
+      // A plugin, with a project open: its plugins folder, as save starts there
+      if (
+        lastDirectory === undefined &&
+        req.kind === dialogKind('open-file') &&
+        req.projectRoot !== null
+      ) {
+        const folder = pathImpl.join(req.projectRoot, 'js', 'plugins')
+        if (req.directoryExists(folder)) return folder
+      }
+      return lastDirectory
+    }
     case 'save-file': {
       // A full path is the file Save asks again at
       if (rendererValue !== undefined && pathImpl.isAbsolute(rendererValue)) return rendererValue
@@ -378,7 +383,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       check: (raw) => [checkOpenFileOptions(raw[0])],
       run: async (options = {}) => {
         const kind = dialogKind('open-file', options.filters)
-        const seed = defaultPath('open-file', kind, options.defaultPath)
+        const seed = defaultPath('open-file', kind, undefined)
         return remember(kind, await openFileDialog(dialog, { ...options, defaultPath: seed }))
       }
     },

@@ -206,7 +206,7 @@ describe('ipc arguments', () => {
     )
   })
 
-  it('keeps a safe start folder on the open dialogs and drops any other', () => {
+  it('keeps a safe start folder on the folder dialog only and drops any other', () => {
     const folder = mkdtempSync(join(tmpdir(), 'dialog-seed-'))
     try {
       const filters = [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
@@ -226,12 +226,9 @@ describe('ipc arguments', () => {
       passes('dialog:open-folder', [{ defaultPath: folder, title: 'x' }], [{ defaultPath: folder }])
       passes('dialog:open-folder', ['/p'], [{}])
       passes('dialog:open-folder', [], [{}])
-      passes('dialog:open-file', [{ defaultPath: folder }], [{ defaultPath: folder }])
-      passes(
-        'dialog:open-file',
-        [{ defaultPath: folder, filters }],
-        [{ defaultPath: folder, filters }]
-      )
+      // Main picks where the file dialog opens
+      passes('dialog:open-file', [{ defaultPath: folder }], [{}])
+      passes('dialog:open-file', [{ defaultPath: folder, filters }], [{ filters }])
     } finally {
       rmSync(folder, { recursive: true, force: true })
     }
