@@ -1,9 +1,10 @@
 // Where each file dialog opens: the folder the renderer suggests when it is safe and still there,
-// else the folder the same kind of dialog last chose, else the app's own default. The folder check
-// is awaited, so a slow drive never holds up the main process.
+// else the folder the same kind of dialog last chose while it is still there, else the app's own
+// default. The folder check is awaited, so a slow drive never holds up the main process.
 import path from 'path'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
+  checkDialogFolder,
   dialogKind,
   resolveDialogDefaultPath,
   type DialogDefaultRequest
@@ -67,7 +68,17 @@ describe('dialog default path', () => {
       { rendererValue: 'MyPlugin.js', lastDirectory: '/work/out' },
       '/work/out/MyPlugin.js'
     ],
+    [
+      'a file name alone when the folder last chosen is gone',
+      { rendererValue: 'MyPlugin.js', lastDirectory: '/work/gone' },
+      'MyPlugin.js'
+    ],
     ['no file name: the folder alone', { lastDirectory: '/work/out' }, '/work/out'],
+    [
+      'no file name and the folder last chosen is gone: no default',
+      { lastDirectory: '/work/gone' },
+      undefined
+    ],
     ['nothing known: no default', {}, undefined],
     [
       'a full path the renderer asks again at stays as it is',
@@ -87,7 +98,8 @@ describe('dialog default path', () => {
 
   it.each(save)('save: %s', async (_label, partial, expected) => {
     rows++
-    expect(await resolveDialogDefaultPath(request(partial), path.posix)).toBe(expected)
+    const existing = ['/work/exports', '/work/out']
+    expect(await resolveDialogDefaultPath(request(partial, existing), path.posix)).toBe(expected)
   })
 
   it('opens the folder dialog beside the most recent project when its parent exists', async () => {
@@ -98,12 +110,14 @@ describe('dialog default path', () => {
     )
   })
 
-  it('falls back to the folder last chosen, then to none, when that parent is gone', async () => {
-    rows += 2
+  it('falls back to the folder last chosen while it exists, then to none, when that parent is gone', async () => {
+    rows += 3
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
-    expect(
-      await resolveDialogDefaultPath(request({ ...seed, lastDirectory: '/work/Other' }), path.posix)
-    ).toBe('/work/Other')
+    const last = { ...seed, lastDirectory: '/work/Other' }
+    expect(await resolveDialogDefaultPath(request(last, ['/work/Other']), path.posix)).toBe(
+      '/work/Other'
+    )
+    expect(await resolveDialogDefaultPath(request(last), path.posix)).toBeUndefined()
     expect(await resolveDialogDefaultPath(request(seed), path.posix)).toBeUndefined()
   })
 
@@ -128,6 +142,9 @@ describe('dialog default path', () => {
     expect(ran).toBe(true)
     expect(checks).toHaveLength(1)
     checks[0](false)
+    // Then the folder last chosen is checked the same way
+    await vi.waitFor(() => expect(checks).toHaveLength(2))
+    checks[1](true)
     expect(await resolved).toBe('/work/Other')
   })
 
@@ -137,6 +154,7 @@ describe('dialog default path', () => {
       { lastDirectory: '/work/last', projectRoot: '/work/Game' },
       '/work/last'
     ],
+    ['the folder last chosen is gone: no default', { lastDirectory: '/work/gone' }, undefined],
     ['nothing known: no default', {}, undefined],
     [
       "a plugin opens in the open project's plugins folder",
@@ -154,6 +172,11 @@ describe('dialog default path', () => {
       '/work/out'
     ],
     [
+      'no plugins folder in the project and the folder last chosen is gone: no default',
+      { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/gone' },
+      undefined
+    ],
+    [
       'no plugins folder in the project: no default',
       { kind: 'open-file:.js', projectRoot: '/work/Bare' },
       undefined
@@ -167,7 +190,7 @@ describe('dialog default path', () => {
 
   it.each(open)('open: %s', async (_label, partial, expected) => {
     rows++
-    const existing = ['/work/Game/js/plugins', '/work/Bare']
+    const existing = ['/work/Game/js/plugins', '/work/Bare', '/work/last', '/work/out']
     expect(
       await resolveDialogDefaultPath(
         request({ channel: 'open-file', ...partial }, existing),
@@ -194,5 +217,32 @@ describe('dialog default path', () => {
   ] as const)('kind of %s with filters %j is %s', (channel, filters, expected) => {
     rows++
     expect(dialogKind(channel, filters)).toBe(expected)
+  })
+})
+
+describe('dialog folders kept across restarts', () => {
+  // A drive or filesystem root is kept, though a project may not be one; network, device and
+  // relative paths never are
+  it.each([
+    ['win32', 'D:\\', true],
+    ['win32', 'd:/', true],
+    ['win32', 'D:\\Games', true],
+    ['win32', 'D:', false],
+    ['win32', '\\', false],
+    ['win32', '/', false],
+    ['win32', '\\\\server\\share\\', false],
+    ['win32', '\\\\server\\share\\Games', false],
+    ['win32', '\\\\?\\D:\\', false],
+    ['win32', '\\\\.\\D:\\', false],
+    ['win32', '\\??\\D:\\', false],
+    ['win32', 'Games', false],
+    ['posix', '/', true],
+    ['posix', '/work', true],
+    ['posix', '//server/share', false],
+    ['posix', 'work', false],
+    ['posix', '/\0', false]
+  ] as const)('%s %j is kept: %s', (platform, folder, kept) => {
+    rows++
+    expect(checkDialogFolder(folder, path[platform])).toBe(kept ? folder : undefined)
   })
 })

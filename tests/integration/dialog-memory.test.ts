@@ -1,11 +1,11 @@
 // Where the dialogs open, through the registered handlers: the folder dialog beside the project
-// the renderer suggests, every dialog in the folder its kind last chose, kept across restarts in
-// the user data folder, and a plugin's save and open dialogs in the open project's plugins folder.
-// Each case starts from fresh main modules, as a restart does.
+// the renderer suggests, every dialog in the folder its kind last chose while it is still there,
+// kept across restarts in the user data folder, and a plugin's save and open dialogs in the open
+// project's plugins folder. Each case starts from fresh main modules, as a restart does.
 import type * as Fs from 'fs'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
-import { dirname, join } from 'path'
+import { dirname, join, parse } from 'path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DialogPort } from '../../src/main/ipc/handlers'
 import { copyFixtureProject } from '../helpers/fixture-project'
@@ -62,6 +62,11 @@ async function session(userData?: string) {
     return recorded[recorded.length - 1].options
   }
   return { ipc, dialog, log, opens, saves, shown }
+}
+
+/** The folders the file in `userData` keeps by kind; a dialog answers before it is written */
+async function readFolders(userData: string): Promise<unknown> {
+  return JSON.parse(await readFile(join(userData, FOLDERS_FILE), 'utf8')).folders
 }
 
 const PARAMS = [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
@@ -192,6 +197,20 @@ describe('dialog memory', () => {
     await first.shown(() =>
       first.ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: MD })
     )
+    // A plugin opened from one folder and saved to another
+    first.opens.push({ canceled: false, filePaths: [join(root, 'Games', 'Proj', 'Opened.js')] })
+    await first.shown(() => first.ipc.invoke('dialog:open-file', {}))
+    first.saves.push({ canceled: false, filePath: join(root, 'params', 'Saved.js') })
+    await first.shown(() => first.ipc.invoke('dialog:save-file', { defaultPath: 'Saved.js' }))
+    await vi.waitFor(async () =>
+      expect(await readFolders(userData)).toEqual({
+        'open-file:.mzparams': join(root, 'params'),
+        'open-folder': join(root, 'B'),
+        'save-file:.md': join(root, 'B'),
+        'open-file:.js': join(root, 'Games', 'Proj'),
+        'save-file:.js': join(root, 'params')
+      })
+    )
 
     const second = await session(userData)
     const params = await second.shown(() =>
@@ -207,8 +226,97 @@ describe('dialog memory', () => {
     expect(readme.defaultPath).toBe(join(root, 'B', 'Other_README.md'))
     // Open and save of one type keep separate folders
     const script = await second.shown(() => second.ipc.invoke('dialog:open-file', {}))
-    expect(script).not.toHaveProperty('defaultPath')
+    expect(script.defaultPath).toBe(join(root, 'Games', 'Proj'))
+    const plugin = await second.shown(() =>
+      second.ipc.invoke('dialog:save-file', { defaultPath: 'Next.js' })
+    )
+    expect(plugin.defaultPath).toBe(join(root, 'params', 'Next.js'))
     expect(second.log.warn).not.toHaveBeenCalledWith(expect.stringMatching(/^\[dialog\]/))
+  })
+
+  it('opens without a default after a restart when the folder a kind last chose is gone', async () => {
+    const userData = await mkdtemp(join(root, 'user-data-'))
+    const gone = join(root, 'Gone')
+    const folders = { 'open-file:.mzparams': gone, 'open-folder': gone, 'save-file:.md': gone }
+    await writeFile(join(userData, FOLDERS_FILE), JSON.stringify({ folders }))
+    const s = await session(userData)
+    expect(
+      await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: PARAMS }))
+    ).not.toHaveProperty('defaultPath')
+    expect(await s.shown(() => s.ipc.invoke('dialog:open-folder'))).not.toHaveProperty(
+      'defaultPath'
+    )
+    const readme = await s.shown(() =>
+      s.ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: MD })
+    )
+    expect(readme.defaultPath).toBe('Name_README.md')
+  })
+
+  it('keeps a folder at the root of a drive across a restart', async () => {
+    const userData = await mkdtemp(join(root, 'user-data-'))
+    const driveRoot = parse(root).root
+    const first = await session(userData)
+    first.saves.push({ canceled: false, filePath: join(driveRoot, 'Plugin.js') })
+    await first.shown(() => first.ipc.invoke('dialog:save-file', { defaultPath: 'Plugin.js' }))
+    await vi.waitFor(async () =>
+      expect(await readFolders(userData)).toEqual({ 'save-file:.js': driveRoot })
+    )
+
+    const second = await session(userData)
+    const plugin = await second.shown(() =>
+      second.ipc.invoke('dialog:save-file', { defaultPath: 'Next.js' })
+    )
+    expect(plugin.defaultPath).toBe(join(driveRoot, 'Next.js'))
+  })
+
+  it('keeps the folder a kind chose before when it then chooses one on a network share', async () => {
+    const userData = await mkdtemp(join(root, 'user-data-'))
+    const s = await session(userData)
+    s.saves.push({ canceled: false, filePath: join(root, 'B', 'Name_README.md') })
+    await s.shown(() => s.ipc.invoke('dialog:save-file', { filters: MD }))
+    s.saves.push({ canceled: false, filePath: '//server/share/docs/Other_README.md' })
+    await s.shown(() => s.ipc.invoke('dialog:save-file', { filters: MD }))
+    // Written after the network choice, so it shows what that choice left in the file
+    s.opens.push({ canceled: false, filePaths: [join(root, 'Games', 'Proj')] })
+    await s.shown(() => s.ipc.invoke('dialog:open-folder'))
+    await vi.waitFor(async () =>
+      expect(await readFolders(userData)).toEqual({
+        'save-file:.md': join(root, 'B'),
+        'open-folder': join(root, 'Games')
+      })
+    )
+  })
+
+  it('answers a dialog while the file of dialog folders is still being written', async () => {
+    const userData = await mkdtemp(join(root, 'user-data-'))
+    let finishWrite = (): void => {}
+    const replaceFile = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve
+        })
+    )
+    vi.doMock('../../src/main/atomic-write', () => ({ replaceFile }))
+    try {
+      const s = await session(userData)
+      const chosen = join(root, 'B', 'Name.js')
+      s.saves.push({ canceled: false, filePath: chosen })
+      cases++
+      const result = s.ipc.invoke('dialog:save-file', { defaultPath: 'Name.js' })
+      const waiting = new Promise((resolve) => setTimeout(() => resolve('still waiting'), 2000))
+      expect(await Promise.race([result, waiting])).toBe(chosen)
+      // The write started and has not finished
+      await vi.waitFor(() =>
+        expect(replaceFile).toHaveBeenCalledWith(
+          join(userData, FOLDERS_FILE),
+          expect.anything(),
+          false
+        )
+      )
+    } finally {
+      finishWrite()
+      vi.doUnmock('../../src/main/atomic-write')
+    }
   })
 
   it('ignores a broken file of dialog folders, and never fails on it', async () => {
@@ -252,10 +360,12 @@ describe('dialog memory', () => {
 
     s.opens.push({ canceled: false, filePaths: [join(root, 'B', 'Proj2')] })
     await s.shown(() => s.ipc.invoke('dialog:open-folder'))
-    const kept = JSON.parse(await readFile(join(userData, FOLDERS_FILE), 'utf8'))
-    expect(kept).toEqual({
-      folders: { 'open-file:.mzparams': join(root, 'params'), 'open-folder': join(root, 'B') }
-    })
+    await vi.waitFor(async () =>
+      expect(await readFolders(userData)).toEqual({
+        'open-file:.mzparams': join(root, 'params'),
+        'open-folder': join(root, 'B')
+      })
+    )
   })
 
   it('uses the save dialog main holds when the call runs', async () => {

@@ -49,7 +49,7 @@
 
 - Diff: when the saved file can't be opened automatically, the left panel shows the copy the app last read or wrote, or asks you to choose the file.
 - Electron 41 → 45.
-- An open dialog starts where you last opened that type of file, and a save dialog where you last saved that type, also after you restart the app; the first dialog of a type after a fresh install can still start in Downloads, and a folder on a network share is remembered only until the app closes. Open Project starts in the folder that holds your most recent project. With a project open, saving, exporting or opening a plugin's `.js` file starts in the project's `js/plugins` folder, and exporting onto the plugin's own file there counts as saving it.
+- An open dialog starts where you last opened that type of file, and a save dialog where you last saved that type, also after you restart the app; the first dialog of a type after a fresh install or the update from 1.7.0, and a dialog whose remembered folder no longer exists, can still start in Downloads, and a folder on a network share is remembered only until the app closes. Open Project starts in the folder that holds your most recent project while that folder exists. With a project open, saving, exporting or opening a plugin's `.js` file starts in the project's `js/plugins` folder, and exporting onto the plugin's own file there counts as saving it.
 - The code editor is bundled with the app and no longer downloads anything at startup; the app works offline.
 
 ## [1.7.0] - 2026-10-23
