@@ -4,6 +4,7 @@
 import { spawnSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import type { Page } from '@playwright/test'
 import { PRODUCTION_CSP } from '../src/main/csp'
 import { readV160Payloads } from '../tests/helpers/persist-v160'
@@ -21,6 +22,7 @@ interface TargetTree {
 interface Violation {
   directive: string
   blocked: string
+  policy: string
 }
 
 const VIOLATIONS = 'e2eViolations'
@@ -28,8 +30,168 @@ const VIOLATIONS = 'e2eViolations'
 // Installed before any app script runs; records what the policy refused
 const VIOLATION_RECORDER = `document.addEventListener('securitypolicyviolation', (event) => {
   const list = globalThis[${JSON.stringify(VIOLATIONS)}] ?? (globalThis[${JSON.stringify(VIOLATIONS)}] = [])
-  list.push({ directive: event.effectiveDirective, blocked: event.blockedURI })
+  list.push({ directive: event.effectiveDirective, blocked: event.blockedURI, policy: event.originalPolicy })
 })`
+
+// Request schemes that leave the computer; blob: workers and data: fonts stay inside the app
+const REMOTE_SCHEMES = ['http:', 'https:', 'ws:', 'wss:']
+
+// What the editor logs when it cannot start its workers and runs their code on the page instead
+const WORKER_FALLBACK = 'Could not create web worker'
+
+const OUTSIDE_SENTINEL = 'e2eOutsideScript'
+
+interface ProbeTargets {
+  text: string
+  script: string
+  sentinel: string
+}
+
+interface PolicyProbe {
+  name: string
+  /** The directive whose violation the probe raises; none when the request filter refuses it */
+  directive?: string
+  /**
+   * Runs in the page: resolves 'blocked' when the page sees the content refused, 'sent' when only
+   * the policy's violation can tell
+   */
+  run: (targets: ProbeTargets) => Promise<string>
+}
+
+// Each refused by the production policy, or, for a file outside the app, by the request filter
+const POLICY_PROBES: PolicyProbe[] = [
+  {
+    name: 'eval in a task the page scheduled',
+    directive: 'script-src',
+    run: () =>
+      new Promise((done) =>
+        setTimeout(() => {
+          try {
+            done(`ran ${String(globalThis.eval('1'))}`)
+          } catch {
+            done('blocked')
+          }
+        })
+      )
+  },
+  {
+    name: 'inline script',
+    directive: 'script-src-elem',
+    run: async () => {
+      const script = document.createElement('script')
+      script.textContent = 'globalThis.e2eInlineProbe = 1'
+      document.body.append(script)
+      script.remove()
+      return Reflect.get(globalThis, 'e2eInlineProbe') === undefined ? 'blocked' : 'ran'
+    }
+  },
+  {
+    name: 'fetch of a remote address',
+    directive: 'connect-src',
+    run: () =>
+      fetch('https://example.invalid/').then(
+        () => 'read',
+        () => 'blocked'
+      )
+  },
+  {
+    name: 'fetch of a file outside the app',
+    directive: 'connect-src',
+    run: ({ text }) =>
+      fetch(text).then(
+        async (response) => `read ${await response.text()}`,
+        () => 'blocked'
+      )
+  },
+  {
+    name: 'base address',
+    directive: 'base-uri',
+    run: async () => {
+      const before = document.baseURI
+      const base = document.createElement('base')
+      base.href = 'https://example.invalid/'
+      document.head.append(base)
+      const after = document.baseURI
+      base.remove()
+      return after === before ? 'blocked' : `rebased to ${after}`
+    }
+  },
+  {
+    name: 'object',
+    directive: 'object-src',
+    run: async () => {
+      const object = document.createElement('object')
+      object.data = 'https://example.invalid/x'
+      document.body.append(object)
+      await new Promise((done) => setTimeout(done, 100))
+      object.remove()
+      return 'sent'
+    }
+  },
+  {
+    name: 'frame',
+    directive: 'frame-src',
+    run: async () => {
+      const frame = document.createElement('iframe')
+      frame.src = 'https://example.invalid/'
+      document.body.append(frame)
+      await new Promise((done) => setTimeout(done, 100))
+      frame.remove()
+      return 'sent'
+    }
+  },
+  {
+    name: 'form submission',
+    directive: 'form-action',
+    run: async () => {
+      const form = document.createElement('form')
+      form.action = 'https://example.invalid/'
+      form.method = 'post'
+      document.body.append(form)
+      form.requestSubmit()
+      await new Promise((done) => setTimeout(done, 100))
+      form.remove()
+      return 'sent'
+    }
+  },
+  {
+    name: 'remote image',
+    directive: 'img-src',
+    run: () =>
+      new Promise((done) => {
+        const image = new Image()
+        image.onload = () => done('loaded')
+        image.onerror = () => done('blocked')
+        image.src = 'https://example.invalid/x.png'
+      })
+  },
+  {
+    name: 'worker from a file',
+    directive: 'worker-src',
+    run: async () => {
+      const source = document.querySelector<HTMLScriptElement>('script[src]')?.src
+      if (source === undefined) return 'no app script to start'
+      try {
+        new Worker(source).terminate()
+      } catch {
+        return 'blocked'
+      }
+      return 'sent'
+    }
+  },
+  {
+    name: 'script from a file outside the app',
+    run: ({ script, sentinel }) =>
+      new Promise((done) => {
+        const element = document.createElement('script')
+        element.onload = () => done('loaded')
+        element.onerror = () =>
+          done(Reflect.get(globalThis, sentinel) === undefined ? 'blocked' : 'ran')
+        element.src = script
+        document.head.append(element)
+      })
+  }
+]
 
 /** Step 1: the release check's own reading of the fuse wire, run on the executable */
 function readReleaseFuses(executable: string): { status: number | null; output: string } {
@@ -92,6 +254,7 @@ async function attachNetworkRecorder(cdp: Cdp, targets: TargetTree) {
   await targets.each((session) => cdp.send('Network.enable', {}, session))
   return {
     documents,
+    count: (scheme: string): number => schemes.get(scheme) ?? 0,
     print(): void {
       const total = [...schemes.values()].reduce((sum, n) => sum + n, 0)
       const list = [...schemes].map(([scheme, n]) => `${scheme} ${n}`).join(', ')
@@ -110,17 +273,30 @@ async function attachNetworkRecorder(cdp: Cdp, targets: TargetTree) {
  */
 async function recordViolations(cdp: Cdp, targets: TargetTree) {
   const refused: string[] = []
+  // Every console line from every target, and the ones logged as errors
+  const messages: string[] = []
+  const errors: string[] = []
   const keep = (text: unknown, security = false): void => {
     if (typeof text === 'string' && (security || text.startsWith('Refused to'))) refused.push(text)
   }
   cdp.on(({ method, params, sessionId }) => {
     if (sessionId === undefined || !targets.has(sessionId)) return
     if (method === 'Log.entryAdded') {
-      const { text, source } = params['entry'] as { text: string; source: string }
+      const { text, source, level } = params['entry'] as {
+        text: string
+        source: string
+        level: string
+      }
       keep(text, source === 'security')
+      messages.push(text)
+      if (level === 'error') errors.push(text)
     }
     if (method === 'Runtime.consoleAPICalled') {
-      for (const arg of params['args'] as { value?: unknown }[]) keep(arg.value)
+      const args = params['args'] as { value?: unknown; description?: string }[]
+      for (const arg of args) keep(arg.value)
+      const text = args.map((arg) => String(arg.value ?? arg.description ?? '')).join(' ')
+      messages.push(text)
+      if (params['type'] === 'error') errors.push(text)
     }
   })
   await cdp.send('Page.enable', {}, targets.page)
@@ -135,6 +311,8 @@ async function recordViolations(cdp: Cdp, targets: TargetTree) {
   })
   return {
     refused,
+    messages,
+    errors,
     violations: (page: Page): Promise<Violation[]> =>
       page.evaluate(
         (key) => (Reflect.get(globalThis, key) as Violation[] | undefined) ?? [],
@@ -215,7 +393,9 @@ test('release build serves the production policy and blocks inline code', async 
     Reflect.apply(setTimeout, globalThis, ['globalThis.e2eTimer = 1', 0])
   })
   await expect
-    .poll(() => policy.violations(page))
+    .poll(async () =>
+      (await policy.violations(page)).map(({ directive, blocked }) => ({ directive, blocked }))
+    )
     .toEqual([
       { directive: 'script-src-elem', blocked: 'inline' },
       { directive: 'script-src', blocked: 'eval' }
@@ -249,12 +429,65 @@ test('release build runs a scripted session without policy violations', async ({
   expect(pageErrors).toEqual([])
 })
 
-test('release build marks a syntax error in the code editor', async ({ release }) => {
-  const { page } = release
+test('release build checks code offline in the bundled editor', async ({ release }) => {
+  const { page, cdp, pageErrors } = release
+  const targets = await attachPage(cdp)
+  const network = await attachNetworkRecorder(cdp, targets)
+  const policy = await recordViolations(cdp, targets)
+  await reloadWindow(page)
   await newPlugin(page)
   await page.getByTestId('editor-tab-code').click()
   const editor = page.getByRole('tabpanel').locator('.monaco-editor')
   await editor.click()
-  await page.keyboard.type('function (')
-  await expect(editor.locator('.squiggly-error').first()).toBeVisible({ timeout: 10_000 })
+  await page.keyboard.type('const x = {;')
+  // Every leg is read, so one failing run shows them all
+  await expect.soft(editor.locator('.squiggly-error').first()).toBeVisible({ timeout: 10_000 })
+  await expect.soft.poll(() => page.workers().length).toBe(2)
+  network.print()
+  policy.print()
+  for (const scheme of REMOTE_SCHEMES) expect.soft(network.count(scheme), scheme).toBe(0)
+  expect.soft(network.count('file:')).toBeGreaterThan(0)
+  expect.soft(policy.messages.filter((text) => text.includes(WORKER_FALLBACK))).toEqual([])
+  expect.soft(policy.errors).toEqual([])
+  expect.soft(pageErrors).toEqual([])
+  expect.soft(await policy.violations(page)).toEqual([])
+})
+
+test('release build blocks every probe of its content policy', async ({ release }) => {
+  const { page, cdp } = release
+  // Files outside the app: one the page reads, one it runs
+  const outsideText = join(release.userDataDir, 'outside.txt')
+  const outsideScript = join(release.userDataDir, 'outside.js')
+  writeFileSync(outsideText, 'outside the app')
+  writeFileSync(outsideScript, `globalThis.${OUTSIDE_SENTINEL} = 1`)
+  const targets = await attachPage(cdp)
+  const policy = await recordViolations(cdp, targets)
+  await reloadWindow(page)
+
+  let blocked = 0
+  for (const probe of POLICY_PROBES) {
+    const before = (await policy.violations(page)).length
+    const outcome = await page.evaluate(probe.run, {
+      text: pathToFileURL(outsideText).href,
+      script: pathToFileURL(outsideScript).href,
+      sentinel: OUTSIDE_SENTINEL
+    })
+    expect(probe.directive === undefined ? ['blocked'] : ['blocked', 'sent'], probe.name).toContain(
+      outcome
+    )
+    if (probe.directive !== undefined) {
+      await expect
+        .poll(async () => (await policy.violations(page)).slice(before).map((v) => v.directive))
+        .toContain(probe.directive)
+    }
+    blocked++
+  }
+  const violations = await policy.violations(page)
+  process.stdout.write(
+    `csp probes: run ${POLICY_PROBES.length}, blocked ${blocked}; violations ${violations.length}\n`
+  )
+  expect(POLICY_PROBES.length).toBeGreaterThan(0)
+  expect(blocked).toBe(POLICY_PROBES.length)
+  expect(violations.length).toBeGreaterThan(0)
+  for (const { policy: original } of violations) expect(original).toBe(PRODUCTION_CSP)
 })

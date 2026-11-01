@@ -16,6 +16,8 @@ const BUILTINS = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]
 const IMPORT_RE =
   /(?:^|[\s;])(?:import\s+(?!type\b)(?:[\w*{}\s,$]+\s+from\s+)?|export\s+(?!type\b)[\w*{}\s,$]*\s+from\s+|import\s*\(\s*)['"]([^'"]+)['"]|@import\s+(?:url\()?['"]([^'"]+)['"]/g
 const LICENSE_FILE_RE = /^(licen[cs]e|copying)/i
+// The notices a package publishes for the code it vendors, reproduced after its own license
+const NOTICES_FILE = 'ThirdPartyNotices.txt'
 
 const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8')).packages
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -120,6 +122,9 @@ for (const key of [
       .filter((f) => LICENSE_FILE_RE.test(f))
       .sort()) {
       row.texts.add(readFileSync(join(dir, file), 'utf8').replace(/\r\n?/g, '\n').trim())
+    }
+    if (existsSync(join(dir, NOTICES_FILE))) {
+      row.texts.add(readFileSync(join(dir, NOTICES_FILE), 'utf8').replace(/\r\n?/g, '\n').trim())
     }
   }
   packages.set(name, row)

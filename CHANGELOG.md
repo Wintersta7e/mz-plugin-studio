@@ -50,6 +50,7 @@
 - Diff: when the saved file can't be opened automatically, the left panel shows the copy the app last read or wrote, or asks you to choose the file.
 - Electron 41 → 45.
 - File and folder dialogs open where you last chose a file of the same kind during the session, instead of in Downloads. Open Project opens in the folder that holds your most recent project, and saving or exporting a plugin with a project open starts in the project's `js/plugins` folder.
+- The code editor is bundled with the app and no longer downloads anything at startup; the app works offline.
 
 ## [1.7.0] - 2026-10-23
 

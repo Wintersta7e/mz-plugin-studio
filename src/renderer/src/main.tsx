@@ -1,3 +1,4 @@
+import './lib/monaco-setup'
 import log from 'electron-log/renderer'
 import React from 'react'
 import ReactDOM from 'react-dom/client'

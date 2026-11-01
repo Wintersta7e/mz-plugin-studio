@@ -91,8 +91,15 @@ export interface WriteBefore {
   content: string
 }
 
+// No host name resolves, so the app runs as it would with no network
+export const OFFLINE_ARGS = ['--host-resolver-rules=MAP * ~NOTFOUND']
+
 // Fixed arguments of every twin launch
-export const TWIN_ARGS = ['--force-device-scale-factor=1', '--force-prefers-reduced-motion']
+export const TWIN_ARGS = [
+  '--force-device-scale-factor=1',
+  '--force-prefers-reduced-motion',
+  ...OFFLINE_ARGS
+]
 
 // How long teardown lets the app close itself before it kills the process tree
 export const TEARDOWN_BOUND_MS = 10_000
@@ -579,7 +586,8 @@ export async function launchRelease(
     userDataDir = mkdtempSync(join(runRoot(), 'release-profile-'))
     dirs.push(userDataDir)
   }
-  const child = spawn(release, ['--remote-debugging-port=0', `--user-data-dir=${userDataDir}`], {
+  const args = ['--remote-debugging-port=0', `--user-data-dir=${userDataDir}`, ...OFFLINE_ARGS]
+  const child = spawn(release, args, {
     // Leads its own process group on Linux, so the teardown reaches every process it starts
     detached: process.platform !== 'win32',
     stdio: ['ignore', 'ignore', 'pipe']

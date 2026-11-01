@@ -103,6 +103,7 @@ Templates insert working code for common plugin patterns, grouped by category:
 ### Code editor
 
 - **Monaco editor** with JavaScript highlighting and MZ class completions
+- **Works offline** — the editor ships inside the app; nothing is downloaded at startup
 - **Live preview** — the generated plugin updates as you edit
 - **Diff view** — generated output side by side with the saved file
 - **Validation** — unused structs, orphaned parent references, unimplemented commands, invalid struct

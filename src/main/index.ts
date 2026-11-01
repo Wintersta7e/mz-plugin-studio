@@ -13,14 +13,18 @@ import { createSenderCheck, emit, handleAll, onAll, routeLogChannel } from './ip
 import { setProjectRootsDir } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
 import { createWindowOpenHandler } from './window-open'
-import { DEV_SERVER_CSP, PRODUCTION_CSP } from './csp'
+import { DEV_SERVER_CSP, PRODUCTION_CSP, installFileRequestFilter } from './csp'
 import { DEFAULT_WINDOW_SIZE } from './window-size'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 
 let mainWindow: BrowserWindow | null = null
 
-const RENDERER_HTML = join(__dirname, '../renderer/index.html')
+const RENDERER_ROOT = join(__dirname, '../renderer')
+const RENDERER_HTML = join(RENDERER_ROOT, 'index.html')
 const devServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined
+// Served by the dev server: its policy, its navigations and its URL. Every other load is the
+// built page from disk, under the production policy and the file request filter.
+const devServer = Boolean(devServerUrl)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -49,9 +53,9 @@ function createWindow(): void {
   // Block all navigation away from the app origin — prevents renderer compromise escalation
   mainWindow.webContents.on('will-navigate', (event) => {
     // The app is a single-page app — it should never navigate away from its initial URL.
-    // In dev, Vite HMR may trigger same-origin navigations which are safe.
-    // In production, block ALL navigation unconditionally.
-    if (!is.dev) {
+    // Under the dev server, Vite HMR may trigger same-origin navigations which are safe.
+    // Otherwise, block ALL navigation unconditionally.
+    if (!devServer) {
       event.preventDefault()
     }
   })
@@ -92,7 +96,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  const csp = is.dev ? DEV_SERVER_CSP : PRODUCTION_CSP
+  const csp = devServer ? DEV_SERVER_CSP : PRODUCTION_CSP
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
@@ -101,6 +105,8 @@ app.whenReady().then(() => {
       }
     })
   })
+  // The built page and its workers may read only the files the app ships with
+  if (!devServer) installFileRequestFilter(session.defaultSession, RENDERER_ROOT)
 
   const deps: MainDeps = {
     dialog,
