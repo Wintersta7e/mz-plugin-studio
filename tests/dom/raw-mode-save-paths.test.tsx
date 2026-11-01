@@ -215,7 +215,8 @@ describe('saving an imported plugin', () => {
     }
     const before = state().plugin.rawSource
     act(() => state().updateMeta({ description: 'Saved by Export' }))
-    // The view drawn before the project was set fades out first; the preview comes with the next
+    // Opening the plugin keyed a new view: the old one fades out first and the Export button
+    // belongs to the new one, so wait for it
     fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
     await waitFor(() =>
       expect(writes().some((code) => code.includes('Saved by Export'))).toBe(true)
