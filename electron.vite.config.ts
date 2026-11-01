@@ -16,10 +16,13 @@ export default defineConfig({
       __APP_VERSION__: JSON.stringify(pkg.version)
     },
     resolve: {
-      alias: {
-        '@renderer': resolve('src/renderer/src'),
-        '@': resolve('src/renderer/src')
-      }
+      alias: [
+        { find: '@renderer', replacement: resolve('src/renderer/src') },
+        { find: '@', replacement: resolve('src/renderer/src') },
+        // The code editor imports its own copy of the HTML sanitizer, which lags the fixed
+        // release; this sends that one import to the dompurify package the lockfile pins
+        { find: /^\.\/dompurify\/dompurify\.js$/, replacement: 'dompurify' }
+      ]
     },
     plugins: [react(), tailwindcss()]
   }

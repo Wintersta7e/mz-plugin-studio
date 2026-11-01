@@ -2,31 +2,6 @@
 # Checked by: node scripts/ci-policy.mjs osv-ignores
 
 [[IgnoredVulns]]
-id = "GHSA-6688-9rhm-gjv2"
-ignoreUntil = 2027-01-30
-reason = "DOMPurify 3.4.15 is vendored inside the code editor (monaco-editor) and no editor release ships a fixed copy. Editor hover text from opened plugin files does reach it, but the editor drops raw HTML before sanitizing and never sets the IN_PLACE option this advisory needs, and the built app's content policy admits no inline script."
-
-[[IgnoredVulns]]
-id = "GHSA-c6gr-qvv4-5v3f"
-ignoreUntil = 2027-01-30
-reason = "DOMPurify 3.4.15 is vendored inside the code editor (monaco-editor) and no editor release ships a fixed copy. Editor hover text from opened plugin files does reach it, but the editor drops raw HTML before sanitizing and never sets PARSER_MEDIA_TYPE to application/xhtml+xml as this advisory needs, and the built app's content policy admits no inline script."
-
-[[IgnoredVulns]]
-id = "GHSA-cg2g-xh64-v4q7"
-ignoreUntil = 2027-01-30
-reason = "DOMPurify 3.4.15 is vendored inside the code editor (monaco-editor) and no editor release ships a fixed copy. Editor hover text from opened plugin files does reach it, but the editor drops raw HTML before sanitizing and never sets the SAFE_FOR_TEMPLATES option this advisory needs, and the built app's content policy admits no inline script."
-
-[[IgnoredVulns]]
-id = "GHSA-mrv2-3pqr-j5jr"
-ignoreUntil = 2027-01-30
-reason = "DOMPurify 3.4.15 is vendored inside the code editor (monaco-editor) and no editor release ships a fixed copy. Editor hover text from opened plugin files does reach it, but the editor drops raw HTML before sanitizing and never sets the IN_PLACE option this advisory needs, and the built app's content policy admits no inline script."
-
-[[IgnoredVulns]]
-id = "GHSA-p98j-92pf-mc4p"
-ignoreUntil = 2027-01-30
-reason = "DOMPurify 3.4.15 is vendored inside the code editor (monaco-editor) and no editor release ships a fixed copy. Editor hover text from opened plugin files does reach it, but the editor drops raw HTML before sanitizing and never sets the IN_PLACE option this advisory needs, and the built app's content policy admits no inline script."
-
-[[IgnoredVulns]]
 id = "GHSA-g3hv-75wg-m249"
 ignoreUntil = 2027-01-30
 reason = "Every minimatch copy (3.1.5, 5.1.9, 9.0.9, 10.2.4, 10.2.6) comes only from development tools (eslint with its configs and plugins, and electron-builder), none ships in the app, and the fix exists only in 11.0.1, outside each copy's allowed range."

@@ -75,6 +75,7 @@
     "acorn": "^8.19.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.17",
     "electron": "^45.2.1",
     "electron-builder": "^26.18.1",
     "electron-vite": "^6.0.0",
@@ -95,5 +96,10 @@
     "vite": "^8.3.5",
     "vitest": "5.0.3",
     "zustand": "^5.0.16"
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "$dompurify"
+    }
   }
 }
