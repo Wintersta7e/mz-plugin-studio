@@ -3,6 +3,8 @@ import { afterEach, vi } from 'vitest'
 import { resetMonacoStub } from './monaco-stub'
 
 vi.mock('@monaco-editor/react', () => import('./monaco-stub'))
+// The editor hosts import the bundled editor's setup; the stub above stands in for the editor
+vi.mock('../../src/renderer/src/lib/monaco-setup', () => ({}))
 
 afterEach(resetMonacoStub)
 

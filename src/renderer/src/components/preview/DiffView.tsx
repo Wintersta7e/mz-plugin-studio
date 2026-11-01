@@ -1,3 +1,5 @@
+// The editor setup runs before the wrapper below can mount an editor
+import '../../lib/monaco-setup'
 import { useMemo } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
 import { useSettingsStore } from '../../stores'

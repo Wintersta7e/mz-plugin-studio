@@ -1,6 +1,7 @@
 // Prepares the packaged builds the end-to-end tests drive, from the repository root:
 //   1. builds dist/<platform>-unpacked/ with the release configuration; with --reuse, reuses it
-//      if present (for a build made earlier in the same job);
+//      if present (for a build made earlier in the same job), and fails if a script the renderer
+//      page loads at start holds the code editor (out/renderer, printing each script's bytes);
 //   2. copies it to dist/e2e-twin/ and enables EnableNodeCliInspectArguments there, the fuse
 //      Playwright's Electron launch needs and the release keeps off;
 //   3. fails unless the two fuse wires differ in that fuse only and every other file is identical;
@@ -132,6 +133,42 @@ export async function diffTrees(releaseDir, twinDir, exeRelPath) {
   return { compared, differing }
 }
 
+// The comment the bundler writes above each module of an unminified chunk, naming its source
+const MODULE_MARKER = /^\/\/ (node_modules\/|src\/|\\0)/
+const EDITOR_MODULE = '// node_modules/monaco-editor/'
+
+/**
+ * Fails if a script the renderer page loads at start holds the code editor, which loads with the
+ * first editor shown, or if a script holds no module comment to attribute its bytes by.
+ * @param {string} rendererDir the built renderer, holding index.html
+ * @returns {{ file: string; bytes: number; editorBytes: number }[]} each script the page loads
+ */
+export function checkStartScripts(rendererDir) {
+  const html = readFileSync(join(rendererDir, 'index.html'), 'utf8')
+  const files = [...html.matchAll(/\b(?:src|href)="([^"]+\.js)"/g)].map((match) => match[1])
+  if (files.length === 0) throw new Error(`${rendererDir}/index.html loads no script`)
+  return files.map((file) => {
+    const text = readFileSync(join(rendererDir, file), 'utf8')
+    const bytes = Buffer.byteLength(text)
+    let editorBytes = 0
+    let modules = 0
+    let inEditor = false
+    for (const line of text.split('\n')) {
+      if (MODULE_MARKER.test(line)) {
+        modules++
+        inEditor = line.startsWith(EDITOR_MODULE)
+      }
+      // The line and its newline; the last line's missing newline overcounts by one at most
+      if (inEditor) editorBytes += Buffer.byteLength(line) + 1
+    }
+    if (modules === 0) throw new Error(`${file}: no module comment to attribute its bytes by`)
+    const share = ((100 * editorBytes) / bytes).toFixed(1)
+    print(`renderer start script ${file}: ${bytes} bytes, code editor ${editorBytes} (${share}%)`)
+    if (editorBytes > 0) throw new Error(`${file} loads the code editor at start`)
+    return { file, bytes, editorBytes }
+  })
+}
+
 /** @param {string} bin @param {string[]} args */
 function run(bin, args) {
   const result = spawnSync(process.execPath, [bin, ...args], { cwd: ROOT, stdio: 'inherit' })
@@ -167,6 +204,7 @@ export async function prepare(argv) {
     ])
     print('release: built')
   }
+  checkStartScripts(join(ROOT, 'out', 'renderer'))
   const release = join(releaseDir, exeName)
   if (!existsSync(release)) {
     const listing = existsSync(releaseDir) ? readdirSync(releaseDir).join('\n  ') : '(absent)'

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useState, useRef } from 'react'
 import { TitleBar } from './components/layout/TitleBar'
 import { Sidebar } from './components/layout/Sidebar'
 import { StatusBar } from './components/layout/StatusBar'
@@ -6,8 +6,6 @@ import { MetaEditor } from './components/plugin/MetaEditor'
 import { ParameterBuilder } from './components/plugin/ParameterBuilder'
 import { CommandBuilder } from './components/plugin/CommandBuilder'
 import { StructBuilder } from './components/plugin/StructBuilder'
-import { CodeEditor } from './components/plugin/CodeEditor'
-import { CodePreview } from './components/preview/CodePreview'
 import { AnalysisView } from './components/analysis/AnalysisView'
 import { ProjectBrowser } from './components/project/ProjectBrowser'
 import { PluginBrowser } from './components/plugin/PluginBrowser'
@@ -33,6 +31,14 @@ import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { cn, refusalReason, userMessage } from './lib/utils'
 import { PROJECT_OPEN_CANCELLED } from '../../shared/ipc-types'
+
+// The code editor loads with the first view that shows one, not at start
+const CodeEditor = lazy(() =>
+  import('./components/plugin/CodeEditor').then((m) => ({ default: m.CodeEditor }))
+)
+const CodePreview = lazy(() =>
+  import('./components/preview/CodePreview').then((m) => ({ default: m.CodePreview }))
+)
 
 const pluginFade = { duration: 0.12 }
 const viewFade = { duration: 0.1 }
@@ -455,7 +461,11 @@ function App() {
                                   {activeTab === 'parameters' && <ParameterBuilder />}
                                   {activeTab === 'commands' && <CommandBuilder />}
                                   {activeTab === 'structs' && <StructBuilder />}
-                                  {activeTab === 'code' && <CodeEditor />}
+                                  {activeTab === 'code' && (
+                                    <Suspense fallback={null}>
+                                      <CodeEditor />
+                                    </Suspense>
+                                  )}
                                 </TabsContent>
                               </motion.div>
                             </AnimatePresence>
@@ -476,7 +486,9 @@ function App() {
                             className="overflow-hidden transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]"
                             style={{ width: previewWidth }}
                           >
-                            <CodePreview />
+                            <Suspense fallback={null}>
+                              <CodePreview />
+                            </Suspense>
                           </div>
                         )}
                       </motion.div>

@@ -1,3 +1,5 @@
+// The editor setup runs before the wrapper below can mount an editor
+import '../../lib/monaco-setup'
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import Editor, { type Monaco } from '@monaco-editor/react'
 import type { editor, IDisposable } from 'monaco-editor'

@@ -1,10 +1,12 @@
 // Tests for the packaged test artifact checks: the twin's fuse wire differs from the release's
-// in the inspect fuse only, and every other file of the two trees is identical
+// in the inspect fuse only, every other file of the two trees is identical, and the renderer
+// page loads no code editor at start
 import { afterAll, afterEach, describe, expect, it } from 'vitest'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
 import {
+  checkStartScripts,
   compareWires,
   diffTrees,
   formatWire,
@@ -26,7 +28,7 @@ function wire(states: string): Record<string, number | string> {
 }
 
 const tempDirs: string[] = []
-const counts = { wire: 0, tree: 0, reuse: 0 }
+const counts = { wire: 0, tree: 0, reuse: 0, start: 0 }
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
@@ -34,7 +36,7 @@ afterEach(() => {
 
 afterAll(() => {
   console.log(
-    `e2e-prepare: wire cases ${counts.wire}, tree cases ${counts.tree}, reuse cases ${counts.reuse}`
+    `e2e-prepare: wire cases ${counts.wire}, tree cases ${counts.tree}, reuse cases ${counts.reuse}, start script cases ${counts.start}`
   )
 })
 
@@ -129,5 +131,62 @@ describe('shouldReuse', () => {
   it('builds when asked to reuse a release that is absent', () => {
     counts.reuse++
     expect(shouldReuse([REUSE_FLAG], join(unpacked(), 'absent'))).toBe(false)
+  })
+})
+
+describe('checkStartScripts', () => {
+  const page = (...scripts: string[]): string =>
+    [
+      '<head>',
+      ...scripts.map((src, i) =>
+        i === 0
+          ? `<script type="module" crossorigin src="${src}"></script>`
+          : `<link rel="modulepreload" crossorigin href="${src}">`
+      ),
+      '<link rel="stylesheet" crossorigin href="./assets/index-c3.css">',
+      '</head>'
+    ].join('\n')
+  const app = '// src/renderer/src/main.tsx\nrender();\n'
+  const editor = '// node_modules/monaco-editor/esm/vs/editor/editor.api.js\nvar editor = {};\n'
+
+  it('passes when the code editor sits only in a chunk loaded later, giving each size', () => {
+    counts.start++
+    const dir = tree({
+      'index.html': page('./assets/index-a1.js', './assets/vendor-b2.js'),
+      'assets/index-a1.js': `${app}import('./editor-d4.js');\n`,
+      'assets/vendor-b2.js': '// node_modules/react/index.js\nvar react = {};\n',
+      'assets/editor-d4.js': editor
+    })
+    expect(checkStartScripts(dir)).toEqual([
+      { file: './assets/index-a1.js', bytes: 65, editorBytes: 0 },
+      { file: './assets/vendor-b2.js', bytes: 47, editorBytes: 0 }
+    ])
+  })
+
+  it('fails naming a start script that holds the code editor', () => {
+    counts.start++
+    const dir = tree({
+      'index.html': page('./assets/index-a1.js', './assets/vendor-b2.js'),
+      'assets/index-a1.js': app,
+      'assets/vendor-b2.js': `${app}${editor}`
+    })
+    expect(() => checkStartScripts(dir)).toThrow(
+      './assets/vendor-b2.js loads the code editor at start'
+    )
+  })
+
+  it('fails when the page loads no script', () => {
+    counts.start++
+    const dir = tree({ 'index.html': page() })
+    expect(() => checkStartScripts(dir)).toThrow(/loads no script/)
+  })
+
+  it('fails when a script has no module comment to attribute its bytes by', () => {
+    counts.start++
+    const dir = tree({
+      'index.html': page('./assets/index-a1.js'),
+      'assets/index-a1.js': 'var a=1;render();\n'
+    })
+    expect(() => checkStartScripts(dir)).toThrow(/no module comment/)
   })
 })
