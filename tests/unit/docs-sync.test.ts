@@ -89,6 +89,22 @@ describe('published docs match the code', () => {
     expect({ missing, matches }).toEqual({ missing: [], matches: [] })
   })
 
+  it('CHANGELOG writes annotation tags in code spans, so release notes mention no one', () => {
+    // The release notes are copied from CHANGELOG.md, and GitHub turns a bare @word there into a
+    // mention of the account of that name, notifying it and listing it as a contributor
+    let fenced = false
+    const lines = read('CHANGELOG.md').split(/\r?\n/)
+    const mentions = lines.flatMap((line, i) => {
+      if (line.trimStart().startsWith('```')) fenced = !fenced
+      if (fenced) return []
+      const prose = line.replace(/`[^`]*`/g, '')
+      return /(^|[^\w`/.])@[A-Za-z]/.test(prose) ? [`CHANGELOG.md:${i + 1}: ${line.trim()}`] : []
+    })
+    console.log(`changelog mentions: lines scanned ${lines.length}, bare @words ${mentions.length}`)
+    expect(lines.length).toBeGreaterThan(0)
+    expect(mentions).toEqual([])
+  })
+
   it('README shows the tsc-strict badge only while every type-checked tsconfig is strict', () => {
     const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> })
       .scripts

@@ -42,8 +42,8 @@
 - Exporting a plugin, or saving it with no project loaded, to a file you choose now asks first when the plugin has commands and the file name is not exactly its name, or has parameters and the file name differs from its name in more than letter case, because RPG Maker MZ finds a plugin's commands by its exact file name and its parameters by its file name in any letter case; under another name they silently do nothing. It does not ask when the saved code never names the plugin in quotes. The question offers Cancel, Choose another file and Save anyway, and after Save anyway it does not ask again for that file until the app restarts. The Plugin Name hint of a plugin loaded from a file no longer suggests that Export makes a working copy under another name.
 - The plugins.json entry and TypeScript declaration exports now include parameters nested under another parameter and use the names and defaults the plugin's header holds, the plugins.json entry writes an empty value instead of "undefined" for a parameter without a default, and the declaration file stays valid when the plugin's name or version, a parameter name or a command argument name holds a line break or other text that is not a plain name; a plugin name that is not a valid identifier is declared with each such character replaced by "\_", and one that is a reserved word, such as "delete", with "\_" after it. A plugin name or command name in letters outside English is now declared as it is. The plugins.json entry now includes a parameter named "\_\_proto\_\_". When the declaration file declares the plugin's name otherwise or leaves out a command's arguments interface, the export says so and how many, instead of reporting plain success.
 - Importing a plugin whose header lines do not start with "\*" no longer reads the parameters and other tags after the help or description as part of that text too, so saving it no longer copies them into the help.
-- The project dependency analysis reads a plugin's @base, @orderAfter and @orderBefore exactly as the plugin editor does: a mention in help text or an empty tag no longer shows as a missing dependency or a load-order error, and a value is the whole rest of its line.
-- A parameter or struct field whose name holds a setting tag such as "@type" or "@default" gets a warning again: opening the plugin again ends the name before that tag and reads the rest as the parameter's settings.
+- The project dependency analysis reads a plugin's `@base`, `@orderAfter` and `@orderBefore` exactly as the plugin editor does: a mention in help text or an empty tag no longer shows as a missing dependency or a load-order error, and a value is the whole rest of its line.
+- A parameter or struct field whose name holds a setting tag such as `@type` or `@default` gets a warning again: opening the plugin again ends the name before that tag and reads the rest as the parameter's settings.
 - Opening or importing a plugin whose description is followed by a long run of blank lines, or whose code holds a long unbroken word such as a hex data string, no longer freezes the app for seconds.
 - With Diff open, switching to another plugin's tab no longer shows the first plugin's saved file, kept copy or Choose file notice against the other plugin's code, and a tab with no saved version is no longer stuck in that diff.
 
@@ -308,7 +308,7 @@
 - `@noteParam` / `@noteType` / `@noteDir` / `@noteData` / `@noteRequire` annotation group for deployment
 - Note Parameters section in MetaEditor for managing `@noteParam` groups
 - New parameter types available as array element types (combo, icon, map)
-- 31 new tests for MZ annotations, dependency analyzer @orderBefore, and generator (203 total across 9 test files)
+- 31 new tests for MZ annotations, dependency analyzer `@orderBefore`, and generator (203 total across 9 test files)
 
 ### Changed
 
