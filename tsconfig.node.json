@@ -1,17 +1,17 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "src/shared/**/*"],
+  "extends": ["@electron-toolkit/tsconfig/tsconfig.node.json", "./tsconfig.strict.json"],
+  "include": [
+    "electron.vite.config.*",
+    "vitest.config.ts",
+    "src/main/**/*",
+    "src/preload/**/*",
+    "src/shared/**/*"
+  ],
+  "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "compilerOptions": {
     "composite": true,
-    "noImplicitAny": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedSideEffectImports": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noImplicitOverride": true,
-    "erasableSyntaxOnly": true,
-    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
     "types": ["electron-vite/node"]
   }
 }

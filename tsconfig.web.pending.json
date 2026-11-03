@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.web.json",
+  "compilerOptions": {
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "erasableSyntaxOnly": true
+  }
+}

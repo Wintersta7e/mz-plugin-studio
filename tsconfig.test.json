@@ -1,25 +1,23 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "extends": ["@electron-toolkit/tsconfig/tsconfig.node.json", "./tsconfig.strict.json"],
   "include": [
     "tests/**/*",
     "src/main/**/*",
     "src/renderer/src/**/*",
     "src/shared/**/*",
-    "src/preload/**/*"
+    "src/preload/**/*",
+    "lint-scope.json"
   ],
-  "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**"],
+  "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "compilerOptions": {
     "composite": true,
     "types": ["node", "vitest/globals"],
     "jsx": "react-jsx",
-    "noImplicitAny": true,
     "allowJs": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedSideEffectImports": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+    "erasableSyntaxOnly": false,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],
       "@/*": ["./src/renderer/src/*"]

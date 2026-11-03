@@ -181,7 +181,7 @@ templates from the code editor, and save into your project's `js/plugins/` folde
 ```bash
 npm run check          # the tree: lint, format, types, licences, tests; not the e2e suite
 npm run check:commits  # the commits since origin/main: golden-output and commit-message rules, as CI runs them
-npm run typecheck      # tsc for main, renderer, tests, scripts and e2e
+npm run typecheck      # tsc for main, renderer, tests, tools, scripts and e2e
 npm run lint           # ESLint
 npm run format         # Prettier
 npm test               # Vitest

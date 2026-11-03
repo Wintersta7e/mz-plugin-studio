@@ -1,0 +1,4 @@
+{
+  "dataGlobs": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
+  "jsAllowlist": ["eslint.config.mjs"]
+}

@@ -1,16 +1,24 @@
 {
+  "extends": "../tsconfig.strict.json",
   "compilerOptions": {
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "strict": true,
     "skipLibCheck": true,
+    "composite": true,
+    "types": ["node"],
     "outDir": "./dist",
     "rootDir": ".",
-    "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "noUncheckedIndexedAccess": false
   },
-  "include": ["./**/*.ts"],
-  "exclude": ["dist", "output"]
+  "include": ["./*.ts"],
+  "exclude": [
+    "dist",
+    "output",
+    "../tests/fixtures/**",
+    "../tests/golden/__golden__/**",
+    "../e2e/__screenshots__/**"
+  ]
 }

@@ -1,16 +1,13 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "extends": ["@electron-toolkit/tsconfig/tsconfig.node.json", "./tsconfig.strict.json"],
   "include": ["e2e/**/*"],
+  "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "compilerOptions": {
-    "noImplicitAny": true,
+    "composite": true,
     "types": ["node"],
     "allowJs": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedSideEffectImports": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noImplicitOverride": true,
-    "erasableSyntaxOnly": true
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false
   }
 }

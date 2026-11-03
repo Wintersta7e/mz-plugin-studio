@@ -117,7 +117,9 @@ describe('published docs match the code', () => {
     // strict as tsc resolves it, through `extends`
     const nonStrict = configs.filter((file) => {
       const { config } = ts.readConfigFile(join(ROOT, file), ts.sys.readFile)
-      return ts.parseJsonConfigFileContent(config, ts.sys, ROOT).options.strict !== true
+      // `extends` resolves from the config's own folder (tools/tsconfig.json is not at the root)
+      const base = join(ROOT, file, '..')
+      return ts.parseJsonConfigFileContent(config, ts.sys, base).options.strict !== true
     })
     console.log(`strict badge: tsconfigs ${configs.length}, non-strict ${nonStrict.length}`)
     expect(configs.length).toBeGreaterThan(0)

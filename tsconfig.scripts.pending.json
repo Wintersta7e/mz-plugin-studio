@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.scripts.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true
+  }
+}

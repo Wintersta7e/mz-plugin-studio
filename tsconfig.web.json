@@ -1,21 +1,23 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "extends": ["@electron-toolkit/tsconfig/tsconfig.web.json", "./tsconfig.strict.json"],
   "include": [
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.tsx",
     "src/shared/**/*"
   ],
-  "exclude": ["src/shared/path-safety.ts"],
+  "exclude": [
+    "src/shared/path-safety.ts",
+    "tests/fixtures/**",
+    "tests/golden/__golden__/**",
+    "e2e/__screenshots__/**"
+  ],
   "compilerOptions": {
     "composite": true,
-    "noImplicitAny": true,
-    "noFallthroughCasesInSwitch": true,
-    "verbatimModuleSyntax": true,
-    "noUncheckedSideEffectImports": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+    "erasableSyntaxOnly": false,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],
       "@/*": ["./src/renderer/src/*"]
