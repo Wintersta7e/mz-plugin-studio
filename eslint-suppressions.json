@@ -1675,6 +1675,9 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
+    "import-x/no-named-as-default": {
+      "count": 1
+    },
     "unicorn/consistent-boolean-name": {
       "count": 4
     }
@@ -2156,6 +2159,9 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 13
+    },
+    "import-x/no-named-as-default": {
+      "count": 1
     },
     "no-duplicate-imports": {
       "count": 1
@@ -3593,6 +3599,9 @@
     },
     "@typescript-eslint/promise-function-async": {
       "count": 1
+    },
+    "import-x/no-named-as-default-member": {
+      "count": 2
     },
     "sonarjs/function-return-type": {
       "count": 1
@@ -6039,6 +6048,9 @@
     }
   },
   "tests/helpers/js-context.ts": {
+    "import-x/no-named-as-default-member": {
+      "count": 15
+    },
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
@@ -7557,6 +7569,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 4
     },
+    "import-x/no-named-as-default-member": {
+      "count": 7
+    },
     "no-console": {
       "count": 4
     },
@@ -7615,6 +7630,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 8
+    },
+    "import-x/no-named-as-default-member": {
+      "count": 2
     },
     "no-console": {
       "count": 1
@@ -7735,6 +7753,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 18
     },
+    "import-x/no-named-as-default-member": {
+      "count": 4
+    },
     "no-console": {
       "count": 7
     },
@@ -7796,6 +7817,9 @@
   "tests/unit/dts-export.test.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
+    },
+    "import-x/no-named-as-default-member": {
+      "count": 10
     },
     "unicorn/no-unnecessary-array-flat-map": {
       "count": 1
@@ -7962,6 +7986,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 5
+    },
+    "import-x/no-named-as-default-member": {
+      "count": 17
     },
     "no-console": {
       "count": 4
@@ -8177,6 +8204,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 12
     },
+    "import-x/no-named-as-default-member": {
+      "count": 17
+    },
     "no-console": {
       "count": 2
     },
@@ -8269,6 +8299,9 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
+    },
+    "import-x/no-named-as-default-member": {
+      "count": 4
     },
     "no-console": {
       "count": 2

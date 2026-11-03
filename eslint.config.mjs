@@ -2,11 +2,12 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { includeIgnoreFile } from '@eslint/compat'
-import eslintComments from '@eslint-community/eslint-plugin-eslint-comments/configs'
+import { recommended as eslintCommentsRecommended } from '@eslint-community/eslint-plugin-eslint-comments/configs'
 import eslintReact from '@eslint-react/eslint-plugin'
 import js from '@eslint/js'
 import vitest from '@vitest/eslint-plugin'
 import prettierConfig from 'eslint-config-prettier/flat'
+import { flatConfigs as importXConfigs } from 'eslint-plugin-import-x'
 import jestDom from 'eslint-plugin-jest-dom'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 import n from 'eslint-plugin-n'
@@ -14,13 +15,13 @@ import noUnsanitized from 'eslint-plugin-no-unsanitized'
 import playwright from 'eslint-plugin-playwright'
 import promise from 'eslint-plugin-promise'
 import reactHooks from 'eslint-plugin-react-hooks'
-import regexp from 'eslint-plugin-regexp'
-import sonarjs from 'eslint-plugin-sonarjs'
+import { configs as regexpConfigs } from 'eslint-plugin-regexp'
+import { configs as sonarjsConfigs } from 'eslint-plugin-sonarjs'
 import testingLibrary from 'eslint-plugin-testing-library'
 import unicorn from 'eslint-plugin-unicorn'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
-import tseslint from 'typescript-eslint'
+import { configs as tseslintConfigs } from 'typescript-eslint'
 
 const scope = JSON.parse(readFileSync(new URL('lint-scope.json', import.meta.url), 'utf8'))
 const gitignore = fileURLToPath(new URL('.gitignore', import.meta.url))
@@ -28,23 +29,25 @@ const gitignore = fileURLToPath(new URL('.gitignore', import.meta.url))
 // Preset ids of lint-scope.json, as each installed package exports them.
 const PRESETS = {
   '@eslint/js recommended': js.configs.recommended,
-  'typescript-eslint strictTypeChecked': tseslint.configs.strictTypeChecked,
-  'typescript-eslint stylisticTypeChecked': tseslint.configs.stylisticTypeChecked,
+  'typescript-eslint strictTypeChecked': tseslintConfigs.strictTypeChecked,
+  'typescript-eslint stylisticTypeChecked': tseslintConfigs.stylisticTypeChecked,
   '@eslint-react/eslint-plugin strict-type-checked': eslintReact.configs['strict-type-checked'],
   'eslint-plugin-react-hooks recommended-latest': reactHooks.configs.flat['recommended-latest'],
   'eslint-plugin-jsx-a11y strict': jsxA11y.flatConfigs.strict,
   'eslint-plugin-no-unsanitized recommended': noUnsanitized.configs.recommended,
   'eslint-plugin-unicorn recommended': unicorn.configs.recommended,
-  'eslint-plugin-sonarjs recommended': sonarjs.configs.recommended,
-  'eslint-plugin-regexp flat/recommended': regexp.configs['flat/recommended'],
+  'eslint-plugin-sonarjs recommended': sonarjsConfigs.recommended,
+  'eslint-plugin-regexp flat/recommended': regexpConfigs['flat/recommended'],
   'eslint-plugin-promise flat/recommended': promise.configs['flat/recommended'],
+  'eslint-plugin-import-x flatConfigs.recommended': importXConfigs.recommended,
+  'eslint-plugin-import-x flatConfigs.typescript': importXConfigs.typescript,
   'eslint-plugin-n flat/recommended-module': n.configs['flat/recommended-module'],
-  '@eslint-community/eslint-plugin-eslint-comments recommended': eslintComments.recommended,
+  '@eslint-community/eslint-plugin-eslint-comments recommended': eslintCommentsRecommended,
   '@vitest/eslint-plugin recommended': vitest.configs.recommended,
   'eslint-plugin-testing-library flat/react': testingLibrary.configs['flat/react'],
   'eslint-plugin-jest-dom flat/recommended': jestDom.configs['flat/recommended'],
   'eslint-plugin-playwright flat/recommended': playwright.configs['flat/recommended'],
-  'typescript-eslint disableTypeChecked': tseslint.configs.disableTypeChecked
+  'typescript-eslint disableTypeChecked': tseslintConfigs.disableTypeChecked
 }
 
 const raise = (entry) => {

@@ -9,7 +9,7 @@ import extractDepcruiseOptions from 'dependency-cruiser/config-utl/extract-depcr
 import extractTSConfig from 'dependency-cruiser/config-utl/extract-ts-config'
 import { ESLint, type Linter } from 'eslint'
 import { getFileInfo } from 'prettier'
-import ts from 'typescript'
+import * as ts from 'typescript'
 import { beforeAll, describe, expect, it } from 'vitest'
 import scope from '../../lint-scope.json'
 
@@ -721,8 +721,8 @@ describe('static scope: ESLint and Prettier', () => {
       report(
         `exclusions ${String(scope.exclusions.length)} (S ${String(safe)}, D ${String(duplicate)}, X/D ${String(falsePositive)})`
       )
-      expect(scope.exclusions).toHaveLength(18)
-      expect(byCode).toStrictEqual({ S: 9, D: 8, 'X/D': 1 })
+      expect(scope.exclusions).toHaveLength(22)
+      expect(byCode).toStrictEqual({ S: 9, D: 12, 'X/D': 1 })
 
       // Negative control: a preset rule switched off outside the tables is reported.
       const control = new ESLint({

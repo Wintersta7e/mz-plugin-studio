@@ -47,6 +47,14 @@
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
     },
     {
+      "id": "eslint-plugin-import-x flatConfigs.recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "eslint-plugin-import-x flatConfigs.typescript",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
       "id": "eslint-plugin-n flat/recommended-module",
       "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"]
     },
@@ -403,6 +411,30 @@
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
       "code": "D",
       "reason": "@typescript-eslint/require-array-sort-compare owns the same check"
+    },
+    {
+      "rule": "import-x/no-unresolved",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "The type-check of each program owns module resolution"
+    },
+    {
+      "rule": "import-x/named",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "The type-check of each program owns named-export checks"
+    },
+    {
+      "rule": "import-x/namespace",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "The type-check of each program owns namespace member checks"
+    },
+    {
+      "rule": "import-x/default",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "The type-check of each program owns default-export checks"
     },
     {
       "rule": "sonarjs/no-os-command-from-path",
