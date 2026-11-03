@@ -2,9 +2,18 @@
   "dataGlobs": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "jsAllowlist": ["eslint.config.mjs", ".dependency-cruiser.mjs"],
   "presets": [
-    { "id": "@eslint/js recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
-    { "id": "typescript-eslint strictTypeChecked", "files": ["**/*.{ts,tsx,mts,cts}"] },
-    { "id": "typescript-eslint stylisticTypeChecked", "files": ["**/*.{ts,tsx,mts,cts}"] },
+    {
+      "id": "@eslint/js recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "typescript-eslint strictTypeChecked",
+      "files": ["**/*.{ts,tsx,mts,cts}"]
+    },
+    {
+      "id": "typescript-eslint stylisticTypeChecked",
+      "files": ["**/*.{ts,tsx,mts,cts}"]
+    },
     {
       "id": "@eslint-react/eslint-plugin strict-type-checked",
       "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
@@ -13,10 +22,22 @@
       "id": "eslint-plugin-react-hooks recommended-latest",
       "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
     },
-    { "id": "eslint-plugin-jsx-a11y strict", "files": ["src/renderer/**/*.tsx", "tests/**/*.tsx"] },
-    { "id": "eslint-plugin-no-unsanitized recommended", "files": ["src/renderer/**"] },
-    { "id": "eslint-plugin-unicorn recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
-    { "id": "eslint-plugin-sonarjs recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
+    {
+      "id": "eslint-plugin-jsx-a11y strict",
+      "files": ["src/renderer/**/*.tsx", "tests/**/*.tsx"]
+    },
+    {
+      "id": "eslint-plugin-no-unsanitized recommended",
+      "files": ["src/renderer/**"]
+    },
+    {
+      "id": "eslint-plugin-unicorn recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "eslint-plugin-sonarjs recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
     {
       "id": "eslint-plugin-regexp flat/recommended",
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
@@ -33,11 +54,26 @@
       "id": "@eslint-community/eslint-plugin-eslint-comments recommended",
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
     },
-    { "id": "@vitest/eslint-plugin recommended", "files": ["tests/**"] },
-    { "id": "eslint-plugin-testing-library flat/react", "files": ["tests/**/*.tsx"] },
-    { "id": "eslint-plugin-jest-dom flat/recommended", "files": ["tests/**"] },
-    { "id": "eslint-plugin-playwright flat/recommended", "files": ["e2e/**"] },
-    { "id": "typescript-eslint disableTypeChecked", "files": ["**/*.{js,mjs,cjs}"] }
+    {
+      "id": "@vitest/eslint-plugin recommended",
+      "files": ["tests/**"]
+    },
+    {
+      "id": "eslint-plugin-testing-library flat/react",
+      "files": ["tests/**/*.tsx"]
+    },
+    {
+      "id": "eslint-plugin-jest-dom flat/recommended",
+      "files": ["tests/**"]
+    },
+    {
+      "id": "eslint-plugin-playwright flat/recommended",
+      "files": ["e2e/**"]
+    },
+    {
+      "id": "typescript-eslint disableTypeChecked",
+      "files": ["**/*.{js,mjs,cjs}"]
+    }
   ],
   "optIns": [
     {
@@ -45,12 +81,19 @@
       "rules": {
         "eqeqeq": "error",
         "no-duplicate-imports": "error",
-        "no-console": ["error", { "allow": ["warn", "error"] }],
+        "no-console": [
+          "error",
+          {
+            "allow": ["warn", "error"]
+          }
+        ],
         "no-alert": "error",
         "@eslint-community/eslint-comments/require-description": "error",
         "@eslint-community/eslint-comments/no-use": [
           "error",
-          { "allow": ["eslint-disable-next-line"] }
+          {
+            "allow": ["eslint-disable-next-line"]
+          }
         ]
       }
     },
@@ -59,7 +102,10 @@
       "rules": {
         "@typescript-eslint/switch-exhaustiveness-check": [
           "error",
-          { "considerDefaultExhaustiveForUnions": false, "requireDefaultForNonUnion": true }
+          {
+            "considerDefaultExhaustiveForUnions": false,
+            "requireDefaultForNonUnion": true
+          }
         ],
         "@typescript-eslint/strict-boolean-expressions": "error",
         "@typescript-eslint/no-unsafe-type-assertion": "error",
@@ -69,11 +115,18 @@
         "@typescript-eslint/no-import-type-side-effects": "error",
         "@typescript-eslint/consistent-type-imports": [
           "error",
-          { "prefer": "type-imports", "fixStyle": "inline-type-imports" }
+          {
+            "prefer": "type-imports",
+            "fixStyle": "inline-type-imports"
+          }
         ],
         "@typescript-eslint/ban-ts-comment": [
           "error",
-          { "ts-expect-error": true, "ts-ignore": true, "ts-nocheck": true }
+          {
+            "ts-expect-error": true,
+            "ts-ignore": true,
+            "ts-nocheck": true
+          }
         ]
       }
     },
@@ -83,7 +136,12 @@
         "vitest/prefer-strict-equal": "error",
         "vitest/require-mock-type-parameters": "error",
         "vitest/prefer-import-in-mock": "error",
-        "vitest/prefer-expect-assertions": ["error", { "onlyFunctionsWithAsyncKeyword": true }],
+        "vitest/prefer-expect-assertions": [
+          "error",
+          {
+            "onlyFunctionsWithAsyncKeyword": true
+          }
+        ],
         "vitest/no-conditional-in-test": "error",
         "vitest/prefer-to-have-length": "error",
         "vitest/prefer-to-contain": "error",
@@ -96,21 +154,51 @@
   "exclusions": [
     {
       "rule": "unicorn/prefer-single-call",
-      "files": ["src/renderer/src/lib/generator/**"],
+      "files": [
+        "src/renderer/src/lib/generator/index.ts",
+        "src/renderer/src/lib/generator/templates/**"
+      ],
+      "ignores": [
+        "src/renderer/src/lib/generator/templates/index.ts",
+        "src/renderer/src/lib/generator/templates/scene-hooks.ts",
+        "src/renderer/src/lib/generator/templates/types.ts"
+      ],
       "code": "S",
-      "reason": "One lines.push per emitted line is the template contract (docs/CONTRIBUTING_TEMPLATES.md)"
+      "reason": "One lines.push per emitted line is the contract of the generator and of the templates that build output line by line (docs/CONTRIBUTING_TEMPLATES.md)"
     },
     {
       "rule": "unicorn/name-replacements",
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
       "code": "S",
-      "reason": "React and MZ API names (e, props, params, args) are the names those APIs use"
+      "reason": "props and ref are React API names, param and arg (and their plurals) MZ annotation names; every other abbreviation is renamed",
+      "options": [
+        {
+          "replacements": {
+            "arg": false,
+            "args": false,
+            "param": false,
+            "params": false,
+            "props": false,
+            "ref": false
+          }
+        }
+      ]
     },
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
-      "files": ["**/*.{ts,tsx,mts,cts}"],
+      "files": [
+        "src/renderer/src/lib/generator/templates/actor-party.ts",
+        "src/renderer/src/lib/generator/templates/audio-system.ts",
+        "src/renderer/src/lib/generator/templates/custom-window.ts",
+        "src/renderer/src/lib/generator/templates/input-handler.ts",
+        "src/renderer/src/lib/generator/templates/map-events.ts",
+        "src/renderer/src/lib/generator/templates/menu-system.ts",
+        "src/renderer/src/lib/generator/templates/message-system.ts",
+        "src/renderer/src/lib/generator/templates/plugin-commands.ts",
+        "src/renderer/src/lib/generator/templates/sprite-system.ts"
+      ],
       "code": "S",
-      "reason": "Emitting numbers into plugin text is the generator's job; every other kind stays barred",
+      "reason": "These templates emit numbers into plugin text; everywhere else a number is converted explicitly",
       "options": [
         {
           "allowAny": false,
@@ -125,27 +213,102 @@
     },
     {
       "rule": "unicorn/no-null",
-      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "files": [
+        "src/main/ipc/arguments.ts",
+        "src/main/ipc/dialog.ts",
+        "src/main/ipc/plugin.ts",
+        "src/main/services/pluginParser.ts",
+        "src/main/services/syntax-check.ts",
+        "src/renderer/src/App.tsx",
+        "src/renderer/src/components/plugin/CodeEditor.tsx",
+        "src/renderer/src/components/plugin/CommandBuilder.tsx",
+        "src/renderer/src/components/plugin/ParameterBuilder.tsx",
+        "src/renderer/src/components/plugin/PluginBrowser.tsx",
+        "src/renderer/src/components/plugin/StructBuilder.tsx",
+        "src/renderer/src/components/plugin/TemplateInserter.tsx",
+        "src/renderer/src/components/plugin/TypeFields.tsx",
+        "src/renderer/src/components/preview/CodePreview.tsx",
+        "src/renderer/src/components/project/ProjectBrowser.tsx",
+        "src/renderer/src/components/settings/SettingsDialog.tsx",
+        "src/renderer/src/lib/exportFormats.ts",
+        "src/renderer/src/lib/mz-completions.ts",
+        "src/renderer/src/lib/param-io.ts",
+        "src/renderer/src/lib/plugin-output.ts",
+        "src/renderer/src/lib/raw-mode.ts",
+        "src/renderer/src/lib/save-plugin.ts",
+        "src/renderer/src/lib/shortcuts.ts",
+        "src/renderer/src/lib/utils.ts",
+        "src/renderer/src/main.tsx",
+        "src/renderer/src/stores/historyStore.ts",
+        "src/renderer/src/stores/persist.ts",
+        "src/renderer/src/stores/pluginStore.ts",
+        "src/renderer/src/stores/projectStore.ts",
+        "src/renderer/src/stores/toastStore.ts",
+        "src/renderer/src/stores/uiStore.ts",
+        "src/shared/annotation-blocks.ts",
+        "src/shared/types/plugin.ts",
+        "tests/dom/app-save.test.tsx",
+        "tests/dom/code-preview.test.tsx",
+        "tests/dom/history-store.test.ts",
+        "tests/dom/parameter-builder.test.tsx",
+        "tests/dom/persisted-damage.test.ts",
+        "tests/dom/persisted-downgrade.test.ts",
+        "tests/dom/persisted-load.test.ts",
+        "tests/dom/persisted-restore.test.ts",
+        "tests/dom/project-store.test.ts",
+        "tests/dom/raw-mode-reload.test.tsx",
+        "tests/dom/raw-mode-save-paths.test.tsx",
+        "tests/dom/struct-default-editor.test.tsx",
+        "tests/dom/support/main-api.ts",
+        "tests/golden/corpus/generator.ts",
+        "tests/golden/corpus/persisted.ts",
+        "tests/golden/corpus/templates.ts",
+        "tests/golden/corpus/type-violating.ts",
+        "tests/golden/parser.test.ts",
+        "tests/golden/raw-mode.test.ts",
+        "tests/helpers/annotation-rules.ts",
+        "tests/helpers/evaluate-plugin.ts",
+        "tests/helpers/fake-api.ts",
+        "tests/helpers/fake-ipc.ts",
+        "tests/helpers/fixture-project.ts",
+        "tests/helpers/js-context.ts",
+        "tests/helpers/mz-conformance.ts",
+        "tests/helpers/mz-corescript.ts",
+        "tests/helpers/persist-v160.ts",
+        "tests/integration/ipc-arguments.test.ts",
+        "tests/integration/ipc-channels.test.ts",
+        "tests/integration/ipc-registration.test.ts",
+        "tests/integration/mz-runtime-conformance.test.ts",
+        "tests/integration/plugin-load.test.ts",
+        "tests/integration/project-scope.test.ts",
+        "tests/integration/save-guard.test.ts",
+        "tests/integration/write-grant.test.ts",
+        "tests/unit/annotation-blocks.test.ts",
+        "tests/unit/dialog-default-class.test.ts",
+        "tests/unit/dialog-default-path.test.ts",
+        "tests/unit/evaluate-plugin.test.ts",
+        "tests/unit/fixture-set.test.ts",
+        "tests/unit/injection.test.ts",
+        "tests/unit/ipc-callers.test.ts",
+        "tests/unit/package-scripts.test.ts",
+        "tests/unit/param-io.test.ts",
+        "tests/unit/plugin-output.test.ts",
+        "tests/unit/round-trip.test.ts"
+      ],
       "code": "S",
-      "reason": "React, the DOM, JSON and IPC use null; converting persisted null would drop keys"
+      "reason": "These files build or read the null-bearing persisted, IPC and React-state shapes; converting persisted null would drop keys"
     },
     {
       "rule": "no-console",
-      "files": ["tools/**", "scripts/**"],
+      "files": ["tools/**"],
       "code": "S",
-      "reason": "Command-line tools print by design"
+      "reason": "The command-line tools print by design"
     },
     {
       "rule": "sonarjs/prefer-regexp-exec",
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
       "code": "D",
       "reason": "@typescript-eslint/prefer-regexp-exec owns the same check"
-    },
-    {
-      "rule": "unicorn/no-top-level-side-effects",
-      "files": ["src/renderer/src/lib/generator/templates/**"],
-      "code": "S",
-      "reason": "Templates register themselves on import (docs/CONTRIBUTING_TEMPLATES.md)"
     },
     {
       "rule": "sonarjs/super-linear-regex",
@@ -156,8 +319,30 @@
     {
       "rule": "n/no-unpublished-import",
       "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"],
+      "ignores": [
+        "electron.vite.config.ts",
+        "eslint.config.mjs",
+        "scripts/e2e-prepare.mjs",
+        "vitest.config.ts"
+      ],
       "code": "S",
-      "reason": "A desktop app, not an npm package: nothing is published"
+      "reason": "Electron is provided by the runtime; every other import must be a published dependency",
+      "options": [
+        {
+          "allowModules": ["electron"]
+        }
+      ]
+    },
+    {
+      "rule": "n/no-unpublished-import",
+      "files": [
+        "electron.vite.config.ts",
+        "eslint.config.mjs",
+        "scripts/e2e-prepare.mjs",
+        "vitest.config.ts"
+      ],
+      "code": "S",
+      "reason": "The build, lint and test configs and the e2e build script run from the development install"
     },
     {
       "rule": "sonarjs/deprecation",
@@ -173,17 +358,27 @@
     },
     {
       "rule": "unicorn/filename-case",
-      "files": ["src/renderer/src/**/*.tsx"],
-      "ignores": ["src/renderer/src/components/ui/**", "src/renderer/src/main.tsx"],
+      "files": ["src/renderer/src/App.tsx", "src/renderer/src/components/**/*.tsx"],
+      "ignores": ["src/renderer/src/components/ui/**"],
       "code": "S",
       "reason": "React component files are PascalCase; kebab-case stays on everywhere else",
-      "options": [{ "case": "pascalCase", "checkDirectories": false }]
+      "options": [
+        {
+          "case": "pascalCase",
+          "checkDirectories": false
+        }
+      ]
     },
     {
       "rule": "n/no-missing-import",
       "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"],
       "code": "X/D",
-      "reason": "Extensionless imports under bundler resolution are false positives; TypeScript owns resolution"
+      "reason": "Extensionless imports resolve to .ts files under bundler resolution; the resolver tries .ts as TypeScript does",
+      "options": [
+        {
+          "tryExtensions": [".js", ".json", ".node", ".ts"]
+        }
+      ]
     },
     {
       "rule": "unicorn/no-process-exit",
@@ -211,9 +406,26 @@
     },
     {
       "rule": "sonarjs/no-os-command-from-path",
-      "files": ["scripts/**", "tests/**", "e2e/**"],
+      "files": [
+        "e2e/fixtures/app.ts",
+        "e2e/global-setup.ts",
+        "e2e/global-teardown.ts",
+        "scripts/check-coverage.mjs",
+        "scripts/check-golden-commits.mjs",
+        "scripts/e2e-visual-update.mjs",
+        "scripts/strictness-status.mjs",
+        "tests/integration/check-coverage.test.ts",
+        "tests/integration/check-golden-commits.test.ts",
+        "tests/integration/ignore-rules.test.ts",
+        "tests/integration/release-ci-gate.test.ts",
+        "tests/integration/strictness-status.test.ts",
+        "tests/unit/docs-sync.test.ts",
+        "tests/unit/e2e-harness.test.ts",
+        "tests/unit/package-scripts.test.ts",
+        "tests/unit/static-scope.test.ts"
+      ],
       "code": "S",
-      "reason": "Development tooling resolves git and npm from PATH by design; no app source spawns a process"
+      "reason": "These development scripts and tests run git, bash, docker, powershell or taskkill from PATH by design"
     }
   ],
   "ownerSwaps": [
@@ -241,8 +453,14 @@
       "rule": "@eslint-react/unsupported-syntax",
       "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
     },
-    { "rule": "@eslint-react/use-memo", "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"] },
-    { "rule": "@eslint-react/purity", "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"] },
+    {
+      "rule": "@eslint-react/use-memo",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/purity",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
     {
       "rule": "@eslint-react/error-boundaries",
       "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]

@@ -138,7 +138,7 @@ const extendsList = (file: string): string[] => {
     entry.startsWith('.') ? path.resolve(ROOT, path.dirname(file), entry) : entry
   )
 }
-const repoPath = (file: string): string => path.relative(ROOT, file).replaceAll('\\', '/')
+const repositoryPath = (file: string): string => path.relative(ROOT, file).replaceAll('\\', '/')
 
 // Strict flags a program sets wrongly, given what its pending file holds.
 const flagProblems = (program: Program): { problems: string[]; roots: number; pending: number } => {
@@ -169,10 +169,10 @@ const programMembership = (): { holders: Map<string, string[]>; rootFiles: Set<s
   const rootFiles = new Set<string>()
   for (const program of PROGRAMS) {
     const config = parsed(program.config)
-    for (const file of config.fileNames) rootFiles.add(repoPath(file))
+    for (const file of config.fileNames) rootFiles.add(repositoryPath(file))
     const sources = ts.createProgram(config.fileNames, config.options).getSourceFiles()
     const held = sources
-      .map((source) => repoPath(source.fileName))
+      .map((source) => repositoryPath(source.fileName))
       .filter((file) => trackedSet.has(file))
     for (const file of held) holders.set(file, [...(holders.get(file) ?? []), program.name])
   }
@@ -200,7 +200,7 @@ const overlapProblems = (
 
 describe('static scope: TypeScript programs', () => {
   it('lists the tracked code files it scans', () => {
-    report(`tracked code files ${codeFiles.length}`)
+    report(`tracked code files ${String(codeFiles.length)}`)
     expect(codeFiles.length).toBeGreaterThan(0)
   })
 
@@ -210,7 +210,7 @@ describe('static scope: TypeScript programs', () => {
 
   it('references the six programs, each extending the strict file last', () => {
     const references = (rawConfig('tsconfig.json').references ?? []).map((ref) => ref.path)
-    report(`programs ${references.length}`)
+    report(`programs ${String(references.length)}`)
     expect(references).toStrictEqual(PROGRAMS.map((program) => `./${program.config}`))
     const lastBases = PROGRAMS.map((program) => extendsList(program.config).at(-1))
     expect(lastBases).toStrictEqual(PROGRAMS.map(() => path.join(ROOT, STRICT_FILE)))
@@ -220,7 +220,7 @@ describe('static scope: TypeScript programs', () => {
     const problems = PROGRAMS.flatMap((program) => {
       const result = flagProblems(program)
       report(
-        `program ${program.name}: root files ${result.roots}, strict flags ${Object.keys(STRICT_FLAGS).length}, pending ${result.pending}`
+        `program ${program.name}: root files ${String(result.roots)}, strict flags ${String(Object.keys(STRICT_FLAGS).length)}, pending ${String(result.pending)}`
       )
       return result.problems
     })
@@ -237,11 +237,11 @@ describe('static scope: TypeScript programs', () => {
       const outside = codeFiles.filter(
         (file) => !rootFiles.has(file) && !scope.jsAllowlist.includes(file)
       )
-      report(`root files in programs ${rootFiles.size}, outside ${outside.length}`)
+      report(`root files in programs ${String(rootFiles.size)}, outside ${String(outside.length)}`)
       expect(outside).toStrictEqual([])
 
       const { undeclared, perEntry } = overlapProblems(holders)
-      for (const [glob, count] of perEntry) report(`overlap ${glob}: files ${count}`)
+      for (const [glob, count] of perEntry) report(`overlap ${glob}: files ${String(count)}`)
       expect(undeclared).toStrictEqual([])
       expect([...perEntry].filter(([, count]) => count === 0).map(([glob]) => glob)).toStrictEqual(
         []
@@ -251,14 +251,15 @@ describe('static scope: TypeScript programs', () => {
         glob,
         files: tracked.filter((file) => path.matchesGlob(file, glob))
       }))
-      for (const { glob, files } of dataCounts) report(`data ${glob}: files ${files.length}`)
+      for (const { glob, files } of dataCounts)
+        report(`data ${glob}: files ${String(files.length)}`)
       expect(dataCounts.filter(({ files }) => files.length === 0)).toStrictEqual([])
       expect(dataFiles.filter((file) => holders.has(file) || rootFiles.has(file))).toStrictEqual([])
 
       const misplaced = scope.jsAllowlist.filter(
         (file) => !tracked.includes(file) || rootFiles.has(file)
       )
-      report(`js allowlist: files ${scope.jsAllowlist.length}`)
+      report(`js allowlist: files ${String(scope.jsAllowlist.length)}`)
       expect(misplaced).toStrictEqual([])
     }
   )
@@ -269,17 +270,17 @@ describe('static scope: TypeScript programs', () => {
       const { ignoreDeprecations } = rawConfig(file).compilerOptions ?? {}
       return ignoreDeprecations !== undefined
     })
-    report(`tsconfig files ${configs.length}`)
+    report(`tsconfig files ${String(configs.length)}`)
     expect(configs.length).toBeGreaterThan(0)
     expect(silencing).toStrictEqual([])
 
-    const pkg: unknown = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
-    const installedPkg: unknown = JSON.parse(
+    const manifest: unknown = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+    const installedManifest: unknown = JSON.parse(
       readFileSync(path.join(ROOT, 'node_modules/typescript/package.json'), 'utf8')
     )
-    const { devDependencies } = isRecord(pkg) ? pkg : {}
+    const { devDependencies } = isRecord(manifest) ? manifest : {}
     const { typescript: pinned } = isRecord(devDependencies) ? devDependencies : {}
-    const { version: installed } = isRecord(installedPkg) ? installedPkg : {}
+    const { version: installed } = isRecord(installedManifest) ? installedManifest : {}
     expect(pinned).toMatch(/^6\.0\.\d+$/)
     expect(pinned).toBe(installed)
   })
@@ -339,8 +340,14 @@ interface ConfigModule {
 const isConfigArray = (value: unknown): value is Linter.Config[] =>
   Array.isArray(value) && value.every((block) => isRecord(block))
 const loadConfigModule = async (): Promise<ConfigModule> => {
-  const mod: unknown = await import(pathToFileURL(path.join(ROOT, 'eslint.config.mjs')).href)
-  const { default: config, presetBlocks, prettierOffRules } = isRecord(mod) ? mod : {}
+  const configModule: unknown = await import(
+    pathToFileURL(path.join(ROOT, 'eslint.config.mjs')).href
+  )
+  const {
+    default: config,
+    presetBlocks,
+    prettierOffRules
+  } = isRecord(configModule) ? configModule : {}
   if (!Array.isArray(config) || !isConfigArray(presetBlocks) || !isStringArray(prettierOffRules)) {
     throw new Error('eslint.config.mjs: no default, presetBlocks or prettierOffRules export')
   }
@@ -425,6 +432,77 @@ const entriesNotInEffect = (actual: Map<string, Resolved>): string[] => {
       .map(([rule]) => `opt-in ${rule}`)
   })
   return [...exclusions, ...swaps, ...optIns]
+}
+
+// S and X/D rows that span a whole preset scope: their options, not their files, narrow them.
+const WHOLE_SCOPE_ROWS = [
+  'unicorn/name-replacements',
+  'n/no-unpublished-import',
+  'n/no-missing-import'
+]
+type ExclusionRow = (typeof scope.exclusions)[number]
+const isWholeScope = (row: ExclusionRow): boolean =>
+  scope.presets.some((preset) => JSON.stringify(preset.files) === JSON.stringify(row.files))
+const isRowBlock = (block: unknown, rule: string): boolean => {
+  const { files, rules } = isRecord(block) ? block : {}
+  return (
+    isRecord(rules) &&
+    Object.keys(rules).join(',') === rule &&
+    scope.exclusions.some(
+      (row) => row.rule === rule && JSON.stringify(row.files) === JSON.stringify(files)
+    )
+  )
+}
+// Findings of one rule per file under the real config, every other rule removed; `hasRows`
+// false also drops that rule's exclusion rows, so the preset setting applies.
+const findingsOf = async (
+  config: Linter.Config[],
+  rule: string,
+  hasRows: boolean,
+  files: string[]
+): Promise<Map<string, number>> => {
+  const blocks = config
+    .filter((block) => hasRows || !isRowBlock(block, rule))
+    .map((block) =>
+      block.rules === undefined
+        ? block
+        : {
+            ...block,
+            rules: Object.hasOwn(block.rules, rule) ? { [rule]: block.rules[rule] } : {}
+          }
+    )
+  const isTyped = rule.startsWith('@typescript-eslint/')
+  const linter = new ESLint({
+    cwd: ROOT,
+    overrideConfigFile: true,
+    overrideConfig: [
+      ...blocks,
+      ...(isTyped ? [] : [{ languageOptions: { parserOptions: { projectService: false } } }])
+    ]
+  })
+  const results = await linter.lintFiles(files.map((file) => path.join(ROOT, file)))
+  return new Map(
+    results.map((result) => [
+      repositoryPath(result.filePath),
+      result.messages.filter((message) => message.ruleId === rule).length
+    ])
+  )
+}
+// The files a row covers where the row excuses no finding: an off row must excuse one, a
+// re-optioned row must leave fewer findings than the preset setting.
+const idleFilesOf = async (
+  config: unknown[],
+  row: ExclusionRow
+): Promise<{ files: number; idle: string[] }> => {
+  if (!isConfigArray(config)) throw new Error('eslint.config.mjs: a block is not an object')
+  const files = codeFiles.filter((file) => isInScope(file, row))
+  const preset = await findingsOf(config, row.rule, false, files)
+  const kept =
+    'options' in row ? await findingsOf(config, row.rule, true, files) : new Map<string, number>()
+  const idle = files
+    .filter((file) => (preset.get(file) ?? 0) <= (kept.get(file) ?? 0))
+    .map((file) => `${row.rule}: ${file}`)
+  return { files: files.length, idle }
 }
 
 const DIRECTIVE =
@@ -580,7 +658,7 @@ describe('static scope: ESLint and Prettier', () => {
     const lintedData = await filterAsync(dataFiles, isLintRead)
     const formattedData = await filterAsync(dataFiles, isFormatRead)
     report(
-      `eslint/prettier: code files ${codeFiles.length} (lint-ignored ${lintIgnoredCode.length}, format-ignored ${formatIgnoredCode.length}); data files ${dataFiles.length} (linted ${lintedData.length}, formatted ${formattedData.length})`
+      `eslint/prettier: code files ${String(codeFiles.length)} (lint-ignored ${String(lintIgnoredCode.length)}, format-ignored ${String(formatIgnoredCode.length)}); data files ${String(dataFiles.length)} (linted ${String(lintedData.length)}, formatted ${String(formattedData.length)})`
     )
     expect(dataFiles.length).toBeGreaterThan(0)
     expect(lintIgnoredCode).toStrictEqual([])
@@ -613,7 +691,7 @@ describe('static scope: ESLint and Prettier', () => {
     expect(unsampled.map((entry) => entry.name)).toStrictEqual([])
     for (const entry of scoped) {
       const rules = configs.get(firstInScope(entry) ?? '')?.rules ?? {}
-      report(`scope ${entry.name}: rules ${Object.keys(rules).length}`)
+      report(`scope ${entry.name}: rules ${String(Object.keys(rules).length)}`)
     }
     const warned = [...configs].flatMap(([file, resolved]) =>
       Object.entries(resolved.rules)
@@ -641,7 +719,7 @@ describe('static scope: ESLint and Prettier', () => {
       for (const row of scope.exclusions) byCode[row.code] = (byCode[row.code] ?? 0) + 1
       const { S: safe = 0, D: duplicate = 0, 'X/D': falsePositive = 0 } = byCode
       report(
-        `exclusions ${scope.exclusions.length} (S ${safe}, D ${duplicate}, X/D ${falsePositive})`
+        `exclusions ${String(scope.exclusions.length)} (S ${String(safe)}, D ${String(duplicate)}, X/D ${String(falsePositive)})`
       )
       expect(scope.exclusions).toHaveLength(18)
       expect(byCode).toStrictEqual({ S: 9, D: 8, 'X/D': 1 })
@@ -660,12 +738,38 @@ describe('static scope: ESLint and Prettier', () => {
   )
 
   it(
+    'keeps each by-design exclusion to files where its rule reports',
+    { timeout: 300_000 },
+    async () => {
+      const { config } = await loadConfigModule()
+      const rows = scope.exclusions.filter((row) => row.code !== 'D')
+      const wholeScope = rows.filter((row) => isWholeScope(row))
+      expect(wholeScope.map((row) => row.rule)).toStrictEqual(WHOLE_SCOPE_ROWS)
+      expect(wholeScope.filter((row) => !('options' in row))).toStrictEqual([])
+
+      // A narrowed row excuses something in every file it covers, or it is wider than its reason.
+      const narrowed = rows.filter((entry) => !isWholeScope(entry))
+      const scans: { files: number; idle: string[] }[] = []
+      for (const row of narrowed) scans.push(await idleFilesOf(config, row))
+      const idle = scans.flatMap((scan) => scan.idle)
+      let covered = 0
+      for (const scan of scans) covered += scan.files
+      report(
+        `exclusion scopes: rows ${String(rows.length)} (whole-scope ${String(wholeScope.length)}), ` +
+          `files ${String(covered)}, idle ${String(idle.length)}`
+      )
+      expect(covered).toBeGreaterThan(0)
+      expect(idle).toStrictEqual([])
+    }
+  )
+
+  it(
     'reports raw IPC, a routed store import and a described ts-expect-error',
     { timeout: 300_000 },
     async () => {
       const missed = await missedSnippets()
       report(
-        `snippets ${SNIPPETS.length}, missed ${missed.length}; ipc exempt ${scope.ipcExempt.length}`
+        `snippets ${String(SNIPPETS.length)}, missed ${String(missed.length)}; ipc exempt ${String(scope.ipcExempt.length)}`
       )
       expect(missed).toStrictEqual([])
       expect(scope.ipcExempt).toHaveLength(2)
@@ -681,9 +785,9 @@ describe('static scope: ESLint and Prettier', () => {
     const perFile: Record<string, number> = {}
     for (const entry of codeEval) perFile[entry.file] = (perFile[entry.file] ?? 0) + 1
     report(
-      `inline directives ${found.length} (allow-list ${codeEval.length}, transitional ${transitional.length})`
+      `inline directives ${String(found.length)} (allow-list ${String(codeEval.length)}, transitional ${String(transitional.length)})`
     )
-    report(`@ts-* ${tsComments.length}`)
+    report(`@ts-* ${String(tsComments.length)}`)
     expect(perFile).toStrictEqual(CODE_EVAL_SITES)
     expect(transitional).toHaveLength(TRANSITIONAL_DIRECTIVES.length)
     expect(found).toHaveLength(codeEval.length + transitional.length)
@@ -694,7 +798,7 @@ describe('static scope: ESLint and Prettier', () => {
     const loose = [...configs]
       .filter(([, resolved]) => isLooseDirectiveConfig(resolved))
       .map(([file]) => file)
-    report(`directive options: files ${configs.size}, loose ${loose.length}`)
+    report(`directive options: files ${String(configs.size)}, loose ${String(loose.length)}`)
     expect(configs.size).toBeGreaterThan(0)
     expect(loose).toStrictEqual([])
   })
@@ -704,7 +808,7 @@ describe('static scope: ESLint and Prettier', () => {
     const relaxed = testFiles
       .filter(([, resolved]) => isRelaxedForTests(resolved))
       .map(([file]) => file)
-    report(`test files ${testFiles.length}, relaxed ${relaxed.length}`)
+    report(`test files ${String(testFiles.length)}, relaxed ${String(relaxed.length)}`)
     expect(testFiles.length).toBeGreaterThan(0)
     expect(relaxed).toStrictEqual([])
   })
@@ -713,7 +817,7 @@ describe('static scope: ESLint and Prettier', () => {
     const pinned = [...configs]
       .filter(([, resolved]) => hasNodeVersion(resolved))
       .map(([file]) => file)
-    report(`node version settings: files ${configs.size}, pinned ${pinned.length}`)
+    report(`node version settings: files ${String(configs.size)}, pinned ${String(pinned.length)}`)
     expect(configs.size).toBeGreaterThan(0)
     expect(pinned).toStrictEqual([])
   })
@@ -727,7 +831,9 @@ describe('static scope: ESLint and Prettier', () => {
     const rules = Object.values(entries).flatMap((value) =>
       isRecord(value) ? Object.keys(value) : []
     )
-    report(`eslint-suppressions: files ${files.length}, rule entries ${rules.length}`)
+    report(
+      `eslint-suppressions: files ${String(files.length)}, rule entries ${String(rules.length)}`
+    )
     expect(files.length).toBeGreaterThan(0)
     const barred = new Set([
       'sonarjs/code-eval',
@@ -761,8 +867,8 @@ const TRANSITIONAL_ARTEFACTS: string[] = [
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
 const packageScripts = (): Record<string, string> => {
-  const pkg = readJson('package.json')
-  const { scripts } = isRecord(pkg) ? pkg : {}
+  const manifest = readJson('package.json')
+  const { scripts } = isRecord(manifest) ? manifest : {}
   return isRecord(scripts)
     ? Object.fromEntries(
         Object.entries(scripts).flatMap(([name, command]) =>
@@ -831,7 +937,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
     const negated = knipNegatedGlobs()
     const kept = dataFiles.filter((file) => negated.every((glob) => !path.matchesGlob(file, glob)))
     report(
-      `knip.json: keys walked ${keys.length}; data files ${dataFiles.length}, not negated ${kept.length}`
+      `knip.json: keys walked ${String(keys.length)}; data files ${String(dataFiles.length)}, not negated ${String(kept.length)}`
     )
     expect(keys.length).toBeGreaterThan(0)
     expect(keys.filter((key) => key.startsWith('ignore'))).toStrictEqual([])
@@ -851,7 +957,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
         .filter((file) => isData(file))
       const kept = dataFiles.filter((file) => patterns.every((pattern) => !pattern.test(file)))
       report(
-        `depcruise: modules cruised ${result.summary.totalCruised}, data modules ${cruisedData.length}; data files not excluded ${kept.length}`
+        `depcruise: modules cruised ${String(result.summary.totalCruised)}, data modules ${String(cruisedData.length)}; data files not excluded ${String(kept.length)}`
       )
       expect(result.summary.totalCruised).toBeGreaterThan(0)
       expect(cruisedData).toStrictEqual([])
@@ -864,7 +970,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
       name: program.name,
       files: parsed(program.config).fileNames.length
     }))
-    for (const { name, files } of counts) report(`typecov program ${name}: files ${files}`)
+    for (const { name, files } of counts) report(`typecov program ${name}: files ${String(files)}`)
     expect(counts.filter(({ files }) => files === 0)).toStrictEqual([])
     const scripts = packageScripts()
     const configs = PROGRAMS.map((program) => typecovConfig(scripts[`typecov:${program.name}`]))
@@ -876,8 +982,8 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
     { timeout: 300_000 },
     async () => {
       expect.hasAssertions()
-      const pkg = readJson('package.json')
-      const { devDependencies } = isRecord(pkg) ? pkg : {}
+      const manifest = readJson('package.json')
+      const { devDependencies } = isRecord(manifest) ? manifest : {}
       const { prettier: pinned } = isRecord(devDependencies) ? devDependencies : {}
       expect(pinned).toBe('3.8.3')
       const lines = readFileSync(path.join(ROOT, '.prettierignore'), 'utf8')
@@ -887,7 +993,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
       // A data glob needs a line only where Prettier would parse one of its files (screenshots are PNG).
       const parsedGlobs = await filterAsync(scope.dataGlobs, isParsedWithoutIgnoreFile)
       report(
-        `.prettierignore: lines ${lines.length}; data globs Prettier parses ${parsedGlobs.length} of ${scope.dataGlobs.length}`
+        `.prettierignore: lines ${String(lines.length)}; data globs Prettier parses ${String(parsedGlobs.length)} of ${String(scope.dataGlobs.length)}`
       )
       expect(lines).toStrictEqual([
         'THIRD_PARTY_LICENSES.md',
@@ -899,7 +1005,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
 
   it('names only tracked transitional artefacts', () => {
     report(
-      `transitional artefacts ${TRANSITIONAL_ARTEFACTS.length}: ${TRANSITIONAL_ARTEFACTS.join(', ')}`
+      `transitional artefacts ${String(TRANSITIONAL_ARTEFACTS.length)}: ${TRANSITIONAL_ARTEFACTS.join(', ')}`
     )
     expect(TRANSITIONAL_ARTEFACTS.filter((file) => !tracked.includes(file))).toStrictEqual([])
     expect(packageScripts().deps.includes('--ignore-known')).toBe(
@@ -916,7 +1022,7 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
       .filter(([, command]) => command.includes('--ignore-known'))
       .map(([name]) => name)
     report(
-      `package scripts ${scripts.length}: loose ${loose.length}, ignoring known violations ${ignoringKnown.length}`
+      `package scripts ${String(scripts.length)}: loose ${String(loose.length)}, ignoring known violations ${String(ignoringKnown.length)}`
     )
     expect(scripts.length).toBeGreaterThan(0)
     expect(loose).toStrictEqual([])
