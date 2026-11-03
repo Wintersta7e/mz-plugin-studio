@@ -34,8 +34,11 @@ jobs:
       - run: npm run ci:runtime-deps
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run typecov:report
       - run: npm run deps
+      - run: npm run knip:report
       - run: npm run format:check
+      - run: npm run strictness:status
       - run: npm run licenses -- --check
       - name: Golden commit rules
         run: node scripts/check-golden-commits.mjs --github-event

@@ -744,6 +744,21 @@ describe('static scope: ESLint and Prettier', () => {
 
 const CRUISE_ROOTS = ['src', 'tests', 'tools', 'scripts', 'e2e']
 
+// Files that exist only until the strict configuration is met in full. A commit that deletes one
+// removes it here; deleting the known-violations file also drops `--ignore-known` from `deps`.
+const KNOWN_VIOLATIONS = '.dependency-cruiser-known-violations.json'
+const TRANSITIONAL_ARTEFACTS: string[] = [
+  'eslint-suppressions.json',
+  'tsconfig.node.pending.json',
+  'tsconfig.web.pending.json',
+  'tsconfig.test.pending.json',
+  'tsconfig.tools.pending.json',
+  'tsconfig.scripts.pending.json',
+  'tsconfig.e2e.pending.json',
+  KNOWN_VIOLATIONS,
+  'scripts/strictness-status.mjs'
+]
+
 const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
 const packageScripts = (): Record<string, string> => {
   const pkg = readJson('package.json')
@@ -881,4 +896,30 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
       ])
     }
   )
+
+  it('names only tracked transitional artefacts', () => {
+    report(
+      `transitional artefacts ${TRANSITIONAL_ARTEFACTS.length}: ${TRANSITIONAL_ARTEFACTS.join(', ')}`
+    )
+    expect(TRANSITIONAL_ARTEFACTS.filter((file) => !tracked.includes(file))).toStrictEqual([])
+    expect(packageScripts().deps.includes('--ignore-known')).toBe(
+      TRANSITIONAL_ARTEFACTS.includes(KNOWN_VIOLATIONS)
+    )
+  })
+
+  it('lets no gate script cache lint results, pass unpruned suppressions or skip known cycles', () => {
+    const scripts = Object.entries(packageScripts())
+    const loose = scripts
+      .filter(([, command]) => /--cache\b|--pass-on-unpruned-suppressions/v.test(command))
+      .map(([name]) => name)
+    const ignoringKnown = scripts
+      .filter(([, command]) => command.includes('--ignore-known'))
+      .map(([name]) => name)
+    report(
+      `package scripts ${scripts.length}: loose ${loose.length}, ignoring known violations ${ignoringKnown.length}`
+    )
+    expect(scripts.length).toBeGreaterThan(0)
+    expect(loose).toStrictEqual([])
+    expect(ignoringKnown).toStrictEqual(['deps'])
+  })
 })

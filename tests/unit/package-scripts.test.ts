@@ -106,9 +106,18 @@ describe('package.json scripts', () => {
   })
 
   it('check runs the static gates in their CI order', () => {
-    const gates = ['npm run lint', 'npm run typecheck', 'npm run deps', 'npm run format:check']
-    const commands = commandsOf(scripts.check).filter((c) => gates.includes(c))
-    expect(commands).toStrictEqual(gates)
+    const gates = [
+      'npm run ci:runtime-deps',
+      'npm run lint',
+      'npm run typecheck',
+      'npm run typecov:report',
+      'npm run deps',
+      'npm run knip:report',
+      'npm run format:check',
+      'npm run strictness:status',
+      'npm run licenses -- --check'
+    ]
+    expect(commandsOf(scripts.check).slice(0, gates.length)).toStrictEqual(gates)
   })
 
   it('the lint covers the whole tree and fails on any warning', () => {
