@@ -7703,7 +7703,7 @@
       "count": 1
     },
     "vitest/prefer-strict-equal": {
-      "count": 6
+      "count": 5
     },
     "vitest/valid-expect": {
       "count": 2

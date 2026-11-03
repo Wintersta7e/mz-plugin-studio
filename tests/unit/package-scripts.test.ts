@@ -2,7 +2,7 @@
 // without bin links that is a global install of another version.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
@@ -20,7 +20,10 @@ const PINNED_BINS = [
   'electron-builder',
   'electron-vite',
   'vitest',
-  '@playwright/test'
+  '@playwright/test',
+  'dependency-cruiser',
+  'knip',
+  'type-coverage'
 ]
 
 const NPM_RUN = /^npm run ([\w:-]+)(?: -- .+)?$/
@@ -38,6 +41,25 @@ function binPaths(pkg: string): string[] {
 
 const isTracked = (file: string): boolean =>
   execFileSync('git', ['ls-files', '--', file], { cwd: ROOT, encoding: 'utf8' }).trim() !== ''
+
+const CD = /^cd ([\w.-]+)$/
+// Each command of a script with the folder an earlier `cd` in that script moved it to
+function located(script: string): { c: string; folder: string }[] {
+  let folder = '.'
+  return commandsOf(script).map((c) => {
+    folder = CD.exec(c)?.[1] ?? folder
+    return { c, folder }
+  })
+}
+
+// Why a command run from a folder is rejected, or null when it is allowed
+function locatedProblem(raw: string, folder: string): string | null {
+  if (CD.test(raw)) return isTracked(folder) ? null : `moves to an untracked folder ${folder}`
+  // A tool path from a moved-to folder names the root's node_modules through that folder
+  return problem(
+    raw.replace(`node ${posix.relative(folder, '.')}/node_modules/`, 'node node_modules/')
+  )
+}
 
 // Why a command is rejected, or null when it is allowed
 function problem(command: string): string | null {
@@ -61,11 +83,11 @@ function problem(command: string): string | null {
 describe('package.json scripts', () => {
   it('every script calls its tool by its package bin path', () => {
     const names = Object.keys(scripts)
-    const commands = names.flatMap((name) => commandsOf(scripts[name]).map((c) => ({ name, c })))
+    const commands = names.flatMap((name) => located(scripts[name]).map((at) => ({ name, ...at })))
     console.log(`package scripts: scripts ${names.length}, commands ${commands.length}`)
     expect(commands.length).toBeGreaterThan(0)
-    const failures = commands.flatMap(({ name, c }) => {
-      const why = problem(c)
+    const failures = commands.flatMap(({ name, c, folder }) => {
+      const why = locatedProblem(c, folder)
       return why ? [`${name}: "${c}" ${why}`] : []
     })
     expect(failures).toEqual([])
@@ -83,11 +105,10 @@ describe('package.json scripts', () => {
     expect(golden).toEqual(['npm run test:golden:coverage'])
   })
 
-  it('check runs the format check right after the lint', () => {
-    const commands = commandsOf(scripts.check)
-    const lint = commands.indexOf('npm run lint')
-    expect(lint).toBeGreaterThanOrEqual(0)
-    expect(commands.slice(lint + 1, lint + 2)).toEqual(['npm run format:check'])
+  it('check runs the static gates in their CI order', () => {
+    const gates = ['npm run lint', 'npm run typecheck', 'npm run deps', 'npm run format:check']
+    const commands = commandsOf(scripts.check).filter((c) => gates.includes(c))
+    expect(commands).toStrictEqual(gates)
   })
 
   it('the lint covers the whole tree and fails on any warning', () => {

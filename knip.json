@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "tests/**/*.{ts,tsx}",
+    "tools/*.ts",
+    "scripts/**/*.mjs",
+    "e2e/**/*.ts",
+    "!tests/fixtures/**",
+    "!tests/golden/__golden__/**",
+    "!e2e/__screenshots__/**"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,css}",
+    "tests/**/*.{ts,tsx}",
+    "tools/**/*.ts",
+    "scripts/**/*.mjs",
+    "e2e/**/*.ts",
+    "*.{ts,mjs,cjs}",
+    "!tests/fixtures/**",
+    "!tests/golden/__golden__/**",
+    "!e2e/__screenshots__/**"
+  ],
+  "rules": {
+    "enumMembers": "error",
+    "duplicates": "error",
+    "nsExports": "error",
+    "nsTypes": "error"
+  }
+}

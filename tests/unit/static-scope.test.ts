@@ -4,6 +4,9 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { cruise, type ICruiseOptions, type ICruiseResult } from 'dependency-cruiser'
+import extractDepcruiseOptions from 'dependency-cruiser/config-utl/extract-depcruise-options'
+import extractTSConfig from 'dependency-cruiser/config-utl/extract-ts-config'
 import { ESLint, type Linter } from 'eslint'
 import { getFileInfo } from 'prettier'
 import ts from 'typescript'
@@ -294,9 +297,13 @@ interface Resolved {
   linterOptions: Record<string, unknown>
 }
 
+// ESLint's globs match dotfiles (`dot: true`); `path.matchesGlob` has no such option, so a
+// dotfile is also tried with each leading dot replaced.
+const isGlobMatch = (file: string, glob: string): boolean =>
+  path.matchesGlob(file, glob) || path.matchesGlob(file.replaceAll(/(?<=^|\/)\./gv, '_'), glob)
 const isInScope = (file: string, entry: Scoped): boolean =>
-  entry.files.some((glob) => path.matchesGlob(file, glob)) &&
-  (entry.ignores ?? []).every((glob) => !path.matchesGlob(file, glob))
+  entry.files.some((glob) => isGlobMatch(file, glob)) &&
+  (entry.ignores ?? []).every((glob) => !isGlobMatch(file, glob))
 const firstInScope = (entry: Scoped): string | undefined =>
   codeFiles.find((file) => isInScope(file, entry))
 
@@ -731,4 +738,147 @@ describe('static scope: ESLint and Prettier', () => {
     expect(rules.filter((rule) => barred.has(rule))).toStrictEqual([])
     expect(files.filter((file) => isData(file) || ownFiles.has(file))).toStrictEqual([])
   })
+})
+
+// dependency-cruiser, knip, type-coverage and Prettier: each gate scans files and reads no data file.
+
+const CRUISE_ROOTS = ['src', 'tests', 'tools', 'scripts', 'e2e']
+
+const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
+const packageScripts = (): Record<string, string> => {
+  const pkg = readJson('package.json')
+  const { scripts } = isRecord(pkg) ? pkg : {}
+  return isRecord(scripts)
+    ? Object.fromEntries(
+        Object.entries(scripts).flatMap(([name, command]) =>
+          typeof command === 'string' ? [[name, command]] : []
+        )
+      )
+    : {}
+}
+
+// Every key of a JSON value, at any depth.
+const keysOf = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.flatMap((item: unknown) => keysOf(item))
+  if (!isRecord(value)) return []
+  return Object.entries(value).flatMap(([key, child]) => [key, ...keysOf(child)])
+}
+const knipNegatedGlobs = (): string[] => {
+  const knip = readJson('knip.json')
+  const { project } = isRecord(knip) ? knip : {}
+  const globs = isStringArray(project) ? project : []
+  return globs.filter((glob) => glob.startsWith('!')).map((glob) => glob.slice(1))
+}
+
+// The cruise options' `exclude.path` patterns, as dependency-cruiser's own extractor resolves them.
+const excludePatterns = (options: ICruiseOptions): RegExp[] => {
+  const { exclude } = options
+  const value: unknown = isRecord(exclude) ? exclude.path : exclude
+  if (typeof value === 'string') return [new RegExp(value, 'v')]
+  return isStringArray(value) ? value.map((pattern) => new RegExp(pattern, 'v')) : []
+}
+const cruiseScan = async (
+  roots: string[]
+): Promise<{ options: ICruiseOptions; result: ICruiseResult }> => {
+  const options = await extractDepcruiseOptions(path.join(ROOT, '.dependency-cruiser.mjs'))
+  const tsConfig = extractTSConfig(path.join(ROOT, 'tsconfig.test.json'))
+  const { output } = await cruise(roots, { ...options, baseDir: ROOT }, {}, { tsConfig })
+  if (typeof output === 'string') throw new TypeError('dependency-cruiser: no cruise result')
+  return { options, result: output }
+}
+
+// type-coverage resolves a config's folder twice, so each script runs from its program's folder.
+const TYPECOV_SCRIPT =
+  /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion --at-least 100$/v
+const typecovConfig = (script = ''): string | undefined => {
+  // An optional group that did not take part in the match is undefined.
+  const groups: Partial<Record<string, string>> = TYPECOV_SCRIPT.exec(script)?.groups ?? {}
+  return groups.config === undefined
+    ? undefined
+    : path.posix.join(groups.folder ?? '.', groups.config)
+}
+
+// Whether Prettier would format a file under the glob if `.prettierignore` did not name it.
+const isParsedWithoutIgnoreFile = async (glob: string): Promise<boolean> => {
+  const files = tracked.filter((file) => path.matchesGlob(file, glob))
+  const parsedFiles = await filterAsync(files, async (file) => {
+    const info = await getFileInfo(path.join(ROOT, file), {
+      ignorePath: [path.join(ROOT, '.gitignore')]
+    })
+    return !info.ignored && info.inferredParser !== null
+  })
+  return parsedFiles.length > 0
+}
+
+describe('static scope: dependency, dead-code, type-coverage and format gates', () => {
+  it('lets knip ignore nothing and keeps every data file out of its project', () => {
+    const keys = keysOf(readJson('knip.json'))
+    const negated = knipNegatedGlobs()
+    const kept = dataFiles.filter((file) => negated.every((glob) => !path.matchesGlob(file, glob)))
+    report(
+      `knip.json: keys walked ${keys.length}; data files ${dataFiles.length}, not negated ${kept.length}`
+    )
+    expect(keys.length).toBeGreaterThan(0)
+    expect(keys.filter((key) => key.startsWith('ignore'))).toStrictEqual([])
+    expect(dataFiles.length).toBeGreaterThan(0)
+    expect(kept).toStrictEqual([])
+  })
+
+  it(
+    'cruises the source and tooling trees and reads no data file',
+    { timeout: 300_000 },
+    async () => {
+      expect.hasAssertions()
+      const { options, result } = await cruiseScan(CRUISE_ROOTS)
+      const patterns = excludePatterns(options)
+      const cruisedData = result.modules
+        .map((module) => module.source)
+        .filter((file) => isData(file))
+      const kept = dataFiles.filter((file) => patterns.every((pattern) => !pattern.test(file)))
+      report(
+        `depcruise: modules cruised ${result.summary.totalCruised}, data modules ${cruisedData.length}; data files not excluded ${kept.length}`
+      )
+      expect(result.summary.totalCruised).toBeGreaterThan(0)
+      expect(cruisedData).toStrictEqual([])
+      expect(kept).toStrictEqual([])
+    }
+  )
+
+  it('gives type-coverage the root files of each of the six programs', () => {
+    const counts = PROGRAMS.map((program) => ({
+      name: program.name,
+      files: parsed(program.config).fileNames.length
+    }))
+    for (const { name, files } of counts) report(`typecov program ${name}: files ${files}`)
+    expect(counts.filter(({ files }) => files === 0)).toStrictEqual([])
+    const scripts = packageScripts()
+    const configs = PROGRAMS.map((program) => typecovConfig(scripts[`typecov:${program.name}`]))
+    expect(configs).toStrictEqual(PROGRAMS.map((program) => program.config))
+  })
+
+  it(
+    'pins Prettier exactly and ignores only generated, data and frozen files',
+    { timeout: 300_000 },
+    async () => {
+      expect.hasAssertions()
+      const pkg = readJson('package.json')
+      const { devDependencies } = isRecord(pkg) ? pkg : {}
+      const { prettier: pinned } = isRecord(devDependencies) ? devDependencies : {}
+      expect(pinned).toBe('3.8.3')
+      const lines = readFileSync(path.join(ROOT, '.prettierignore'), 'utf8')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '' && !line.startsWith('#'))
+      // A data glob needs a line only where Prettier would parse one of its files (screenshots are PNG).
+      const parsedGlobs = await filterAsync(scope.dataGlobs, isParsedWithoutIgnoreFile)
+      report(
+        `.prettierignore: lines ${lines.length}; data globs Prettier parses ${parsedGlobs.length} of ${scope.dataGlobs.length}`
+      )
+      expect(lines).toStrictEqual([
+        'THIRD_PARTY_LICENSES.md',
+        ...parsedGlobs,
+        'eslint-suppressions.json'
+      ])
+    }
+  )
 })

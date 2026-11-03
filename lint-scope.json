@@ -1,6 +1,6 @@
 {
   "dataGlobs": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
-  "jsAllowlist": ["eslint.config.mjs"],
+  "jsAllowlist": ["eslint.config.mjs", ".dependency-cruiser.mjs"],
   "presets": [
     { "id": "@eslint/js recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
     { "id": "typescript-eslint strictTypeChecked", "files": ["**/*.{ts,tsx,mts,cts}"] },
