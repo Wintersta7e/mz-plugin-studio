@@ -159,4 +159,43 @@ describe('strictness status', () => {
     expect(run(dir, ESLINT, ['--prune-suppressions', 'a.js']).status).toBe(0)
     expect(run(dir, ESLINT, ['a.js']).status).toBe(0)
   })
+
+  it('(j) measures uncommitted changes against HEAD, not its parent', () => {
+    const config = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
+    const directory = makeRepo({
+      'eslint-suppressions.json': suppressions(3),
+      'eslint.config.mjs': config
+    })
+    write(directory, { 'eslint-suppressions.json': suppressions(4) })
+    const result = status(directory)
+    expect(result.out).toContain('(parent 3, delta +1)')
+    expect(result.status).toBe(1)
+  })
+
+  it('(k) passes an uncommitted rise that comes with an uncommitted lint config change', () => {
+    const directory = makeRepo({})
+    write(directory, {
+      'eslint-suppressions.json': suppressions(3),
+      'eslint.config.mjs': "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
+    })
+    const result = status(directory)
+    expect(result.out).toContain('(parent 2, delta +1)')
+    expect(result.status).toBe(0)
+  })
+
+  it('(l) names how a report run without a summary ended and what it printed', () => {
+    const directory = tempDir()
+    const summary = 'node -e "console.log(\'(1 / 1) 100.00%\')"'
+    const scripts = Object.fromEntries(
+      ['node', 'web', 'tools', 'scripts', 'e2e'].map((name) => [`typecov:${name}`, summary])
+    )
+    scripts['typecov:test'] =
+      "node -e \"console.log('first'); console.log('last'); process.exit(3)\""
+    write(directory, { 'package.json': JSON.stringify({ scripts }) })
+    const result = run(directory, SCRIPT, ['--report', 'typecov'])
+    expect(result.out).toContain('typecov web: (1 / 1) 100.00%')
+    expect(result.out).toContain('typecov test: no summary or nothing scanned (exit 3)')
+    expect(result.out).toContain('typecov test | first\ntypecov test | last\n')
+    expect(result.status).toBe(1)
+  })
 })

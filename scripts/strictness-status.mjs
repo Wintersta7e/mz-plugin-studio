@@ -1,11 +1,13 @@
 // Reports what the strict configuration still holds back, from the repository root.
 //   default:          the frozen lint findings in eslint-suppressions.json against the parent
-//                     commit's, and the type-check errors each pending flag still has. Fails a
-//                     rise unless the commit changes the lint config or a lint package version,
-//                     and fails a pending flag with no error left (it must move to its program).
+//                     commit's (HEAD's while tracked files are uncommitted), and the type-check
+//                     errors each pending flag still has. Fails a rise unless the change under
+//                     test changes the lint config or a lint package version, and fails a
+//                     pending flag with no error left (it must move to its program).
 //   --report knip:    the dead-code findings by type; exits 0 on findings.
 //   --report typecov: the type coverage of each program; exits 0 below 100%.
-// The reports fail only when a run printed no summary or scanned nothing.
+// The reports fail only when a run printed no summary or scanned nothing, and then print how
+// the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -20,9 +22,13 @@ const TSC_JOBS = 4
 
 const print = (line) => process.stdout.write(`${line}\n`)
 const git = (args) => execFileSync('git', args, { encoding: 'utf8' })
-// A file's text at the parent commit; null when the parent or the file is absent.
-const parentFile = (file) => {
-  const result = spawnSync('git', ['show', `HEAD^:${file}`], { encoding: 'utf8' })
+// The commit the working tree is measured against: HEAD while tracked files hold uncommitted
+// changes (a gate run before committing), else HEAD's parent (the commit under test, as in CI).
+const baseCommit = () =>
+  git(['status', '--porcelain', '--untracked-files=no']) === '' ? 'HEAD^' : 'HEAD'
+// A file's text at the base commit; null when the base or the file is absent.
+const baseFile = (base, file) => {
+  const result = spawnSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' })
   return result.status === 0 ? result.stdout : null
 }
 // Parsed JSON; null when the text is absent or not JSON.
@@ -62,11 +68,11 @@ function lintPackages() {
   return names
 }
 
-// Whether HEAD changes the lint config or the version of a lint package.
-function changesLintSetup() {
-  const changed = git(['diff', '--name-only', 'HEAD^', 'HEAD']).split('\n')
+// Whether the working tree changes the lint config or the version of a lint package since base.
+function changesLintSetup(base) {
+  const changed = git(['diff', '--name-only', base]).split('\n')
   if (changed.some((file) => LINT_CONFIGS.has(file))) return true
-  const before = parseJson(parentFile('package.json'))?.devDependencies ?? {}
+  const before = parseJson(baseFile(base, 'package.json'))?.devDependencies ?? {}
   const after = parseJson(readFileSync('package.json', 'utf8'))?.devDependencies ?? {}
   return [...lintPackages()].some((name) => before[name] !== after[name])
 }
@@ -79,9 +85,10 @@ function checkSuppressions(tracked) {
     print(`eslint-suppressions: ${SUPPRESSIONS} missing or unreadable`)
     return false
   }
-  const parent = countSuppressions(parentFile(SUPPRESSIONS))
+  const base = baseCommit()
+  const parent = countSuppressions(baseFile(base, SUPPRESSIONS))
   if (parent === null) {
-    print(`eslint-suppressions: the parent commit has no readable ${SUPPRESSIONS}`)
+    print(`eslint-suppressions: ${base} has no readable ${SUPPRESSIONS}`)
     return false
   }
   const delta = now.violations - parent.violations
@@ -91,7 +98,7 @@ function checkSuppressions(tracked) {
   const untracked = now.files.filter((name) => !tracked.has(name))
   for (const file of untracked) print(`eslint-suppressions: entry for an untracked file ${file}`)
   let isOk = untracked.length === 0
-  if (delta > 0 && !changesLintSetup()) {
+  if (delta > 0 && !changesLintSetup(base)) {
     print('eslint-suppressions: the count rose without a lint config or lint package change')
     isOk = false
   }
@@ -165,16 +172,35 @@ async function checkPending(tracked) {
   return isOk
 }
 
-// Runs an npm script and returns its output and exit status.
+// Runs an npm script and returns its output, its exit status and how it ended.
 function npmRun(script) {
   const npm = process.env.npm_execpath
   const [command, args] = npm === undefined ? ['npm', []] : [process.execPath, [npm]]
   const result = spawnSync(command, [...args, 'run', '-s', script], { encoding: 'utf8' })
-  return { status: result.status, out: `${result.stdout}${result.stderr}` }
+  const ending =
+    result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
+  return {
+    status: result.status,
+    out: `${result.stdout ?? ''}${result.stderr ?? ''}`,
+    ending
+  }
+}
+
+// A run with no usable summary prints how it ended and its last lines, so a failure that does
+// not recur still leaves its cause in the log.
+const OUTPUT_TAIL = 20
+function printFailedRun(label, reason, { out, ending }) {
+  print(`${label}: ${reason} (${ending})`)
+  const tail = out
+    .split('\n')
+    .filter((line) => line.trim() !== '')
+    .slice(-OUTPUT_TAIL)
+  for (const line of tail) print(`${label} | ${line}`)
 }
 
 function reportKnip() {
-  const { status, out } = npmRun('knip')
+  const run = npmRun('knip')
+  const { status, out } = run
   const types = Array.from(
     out.matchAll(/^(?<type>[A-Z][\w ]+) \((?<count>\d+)\)$/gmv),
     ({ groups }) => ({ type: groups.type, count: Number(groups.count) })
@@ -188,7 +214,7 @@ function reportKnip() {
   const isEmpty = issues.length === 0 && !isClean
   const isHintOnly = total === 0 && status !== 0
   if (isEmpty || isHintOnly || hints.length > 0) {
-    print('knip: config hints or no parsable summary')
+    printFailedRun('knip', 'config hints or no parsable summary', run)
     return false
   }
   return true
@@ -197,10 +223,10 @@ function reportKnip() {
 function reportTypecov() {
   let isOk = true
   for (const program of TYPECOV_PROGRAMS) {
-    const { out } = npmRun(`typecov:${program}`)
-    const groups = /\((?<covered>\d+) \/ (?<total>\d+)\) (?<pct>[\d.]+)%/v.exec(out)?.groups
+    const run = npmRun(`typecov:${program}`)
+    const groups = /\((?<covered>\d+) \/ (?<total>\d+)\) (?<pct>[\d.]+)%/v.exec(run.out)?.groups
     if (groups === undefined || Number(groups.total) === 0) {
-      print(`typecov ${program}: no summary or nothing scanned`)
+      printFailedRun(`typecov ${program}`, 'no summary or nothing scanned', run)
       isOk = false
       continue
     }
