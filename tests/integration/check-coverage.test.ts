@@ -222,4 +222,58 @@ describe('check-coverage suite', () => {
     const empty: Entry = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
     expect(check(dir, {}, DIRS, { [stray]: empty }).status).toBe(0)
   })
+
+  it('prints each floor with its measured value and slack', () => {
+    const dir = makeRepo()
+    const floors = check(dir)
+    const lineFloor = printedFloor(floors, 'src/main', 'lines')
+    const branches = branchFloor(floors, 'src/main')
+    const measured: Entry = {
+      lines: { covered: 80, total: 100 },
+      branches: { covered: 905, total: 1000 }
+    }
+    const run = check(dir, { 'src/main': measured })
+    expect(run.lines).toContain(
+      `floor src/main lines: measured 80.00%, floor ${lineFloor}%, ` +
+        `slack ${(80 - lineFloor).toFixed(2)}%`
+    )
+    expect(run.lines).toContain(
+      `floor src/main branches: measured 90.50%, floor ${branches}%, ` +
+        `slack ${(90.5 - branches).toFixed(2)}%`
+    )
+    const slackLines = run.lines.filter((l) => l.startsWith('floor '))
+    for (const line of slackLines) {
+      expect(line).toMatch(
+        /^floor \S+ (lines|branches): measured [\d.]+%, floor \d+%, slack -?[\d.]+%$/
+      )
+    }
+    // Two floors per directory and two for the whole report.
+    expect(slackLines).toHaveLength((DIRS.length + 1) * 2)
+  })
+})
+
+describe('check-coverage golden', () => {
+  it('prints each generator file floor with its measured value and slack', () => {
+    const index = 'src/renderer/src/lib/generator/index.ts'
+    const dir = makeRepo([], [index])
+    const path = join(dir, 'coverage/golden/coverage-summary.json')
+    mkdirSync(dirname(path), { recursive: true })
+    const entry: Entry = { lines: { covered: 95, total: 100 }, branches: full.branches }
+    writeFileSync(path, JSON.stringify({ total: entry, [join(dir, index)]: entry }))
+    const result = spawnSync(process.execPath, [SCRIPT, 'golden'], {
+      cwd: dir,
+      env: ENV,
+      encoding: 'utf8'
+    })
+    const lines = result.stdout.split('\n')
+    const match = new RegExp(`^golden coverage ${index}: 95\\.00% \\(floor (\\d+)%\\)$`).exec(
+      lines.find((l) => l.startsWith(`golden coverage ${index}:`)) ?? ''
+    )
+    expect(match).not.toBeNull()
+    const floor = Number(match?.[1])
+    expect(floor).toBeGreaterThan(0)
+    expect(lines).toContain(
+      `floor ${index} lines: measured 95.00%, floor ${floor}%, slack ${(95 - floor).toFixed(2)}%`
+    )
+  })
 })

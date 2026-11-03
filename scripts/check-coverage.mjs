@@ -56,6 +56,16 @@ const below = (sum, floors) =>
   percent(sum.lines) < floors.lines || percent(sum.branches) < floors.branches
 const bothAtFloor = (sum, floors) =>
   `lines ${atFloor(sum.lines, floors.lines)}, branches ${atFloor(sum.branches, floors.branches)}`
+// Report only: how far each floor sits below its measured value, so a floor left with no slack,
+// or one copied by hand without a measurement, shows in every run's log.
+const printSlack = (scope, metric, counts, floor) =>
+  print(
+    `floor ${scope} ${metric}: measured ${percent(counts).toFixed(2)}%, floor ${floor}%, ` +
+      `slack ${(percent(counts) - floor).toFixed(2)}%`
+  )
+const printSlacks = (scope, sum, floors) => {
+  for (const metric of ['lines', 'branches']) printSlack(scope, metric, sum[metric], floors[metric])
+}
 
 /** Report entries ({ lines, branches }) by repository-relative path, with `/` separators. */
 function readReport(path) {
@@ -116,9 +126,11 @@ function checkSuite({ files, total }) {
   for (const [dir, sum] of sums) {
     const floors = FLOORS.suite[dir]
     print(`coverage floor ${dir}: ${bothAtFloor(sum, floors)}, files ${sum.files}`)
+    printSlacks(dir, sum, floors)
     if (sum.files === 0 || below(sum, floors)) failed = true
   }
   print(`coverage floor global: ${bothAtFloor(total, FLOORS.suite.global)}, files ${files.size}`)
+  printSlacks('global', total, FLOORS.suite.global)
   if (files.size === 0 || below(total, FLOORS.suite.global)) failed = true
   return failed
 }
@@ -142,6 +154,7 @@ function checkGolden({ files }) {
       print(`golden coverage ${path}: missing (floor ${floor}%)`)
     } else {
       print(`golden coverage ${path}: ${atFloor(lines, floor)}`)
+      printSlack(path, 'lines', lines, floor)
       if (percent(lines) >= floor) atBar++
     }
   }
