@@ -646,10 +646,15 @@ const hasNodeVersion = (resolved: Resolved): boolean => {
   return isRecord(node) && Object.hasOwn(node, 'version')
 }
 
+// The resolved config of every code file, computed once for all ESLint describes.
+const resolvedConfigs: { pending?: Promise<Map<string, Resolved>> } = {}
+const loadConfigs = async (): Promise<Map<string, Resolved>> =>
+  (resolvedConfigs.pending ??= resolveAll(eslint, codeFiles))
+
 describe('static scope: ESLint and Prettier', () => {
   let configs = new Map<string, Resolved>()
   beforeAll(async () => {
-    configs = await resolveAll(eslint, codeFiles)
+    configs = await loadConfigs()
   }, 300_000)
 
   it('lints and formats every code file and reads no data file', { timeout: 300_000 }, async () => {
@@ -700,6 +705,13 @@ describe('static scope: ESLint and Prettier', () => {
     )
     expect(warned).toStrictEqual([])
   })
+})
+
+describe('static scope: ESLint departures from the presets', () => {
+  let configs = new Map<string, Resolved>()
+  beforeAll(async () => {
+    configs = await loadConfigs()
+  }, 300_000)
 
   it(
     'explains every rule that resolves differently from its preset',
@@ -776,6 +788,13 @@ describe('static scope: ESLint and Prettier', () => {
       expect(scope.ipcExempt.filter((file) => !tracked.includes(file))).toStrictEqual([])
     }
   )
+})
+
+describe('static scope: ESLint directives, test rules and suppressions', () => {
+  let configs = new Map<string, Resolved>()
+  beforeAll(async () => {
+    configs = await loadConfigs()
+  }, 300_000)
 
   it('keeps inline directives to the evaluation sites and the transitional list', () => {
     const found = directives()
@@ -976,7 +995,9 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
     const configs = PROGRAMS.map((program) => typecovConfig(scripts[`typecov:${program.name}`]))
     expect(configs).toStrictEqual(PROGRAMS.map((program) => program.config))
   })
+})
 
+describe('static scope: format gate, transitional files and gate scripts', () => {
   it(
     'pins Prettier exactly and ignores only generated, data and frozen files',
     { timeout: 300_000 },

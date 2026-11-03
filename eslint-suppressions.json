@@ -654,6 +654,9 @@
     }
   },
   "scripts/check-golden-commits.mjs": {
+    "complexity": {
+      "count": 1
+    },
     "n/no-process-exit": {
       "count": 1
     },
@@ -698,6 +701,9 @@
     }
   },
   "scripts/ci-policy.mjs": {
+    "complexity": {
+      "count": 3
+    },
     "regexp/no-super-linear-backtracking": {
       "count": 8
     },
@@ -1092,6 +1098,9 @@
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
+    "complexity": {
+      "count": 2
+    },
     "promise/always-return": {
       "count": 1
     },
@@ -1281,6 +1290,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 28
+    },
+    "complexity": {
+      "count": 5
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-duplicate-imports": {
       "count": 1
@@ -1509,8 +1524,14 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
     },
+    "complexity": {
+      "count": 2
+    },
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "react-hooks/refs": {
       "count": 1
@@ -1574,6 +1595,12 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
@@ -1602,6 +1629,9 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "sonarjs/prefer-read-only-props": {
       "count": 1
@@ -1634,6 +1664,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "sonarjs/no-nested-conditional": {
       "count": 2
@@ -1678,6 +1714,9 @@
     "import-x/no-named-as-default": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/consistent-boolean-name": {
       "count": 4
     }
@@ -1692,11 +1731,17 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
     },
+    "complexity": {
+      "count": 1
+    },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "sonarjs/prefer-read-only-props": {
       "count": 2
@@ -1744,6 +1789,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 7
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "sonarjs/prefer-read-only-props": {
       "count": 1
@@ -1795,6 +1846,9 @@
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
+    "complexity": {
+      "count": 1
+    },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
@@ -1803,6 +1857,9 @@
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -1887,6 +1944,12 @@
     "@typescript-eslint/use-unknown-in-catch-callback-variable": {
       "count": 1
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "promise/always-return": {
       "count": 1
     },
@@ -1958,6 +2021,9 @@
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "sonarjs/prefer-read-only-props": {
       "count": 2
     },
@@ -1977,6 +2043,12 @@
     },
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 3
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -2034,11 +2106,17 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 30
     },
+    "complexity": {
+      "count": 3
+    },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
     },
     "jsx-a11y/no-static-element-interactions": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 4
     },
     "react-hooks/set-state-in-effect": {
       "count": 4
@@ -2108,6 +2186,9 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "sonarjs/prefer-read-only-props": {
       "count": 3
     },
@@ -2160,7 +2241,13 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 13
     },
+    "complexity": {
+      "count": 1
+    },
     "import-x/no-named-as-default": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "no-duplicate-imports": {
@@ -2221,6 +2308,9 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "sonarjs/prefer-read-only-props": {
       "count": 3
     },
@@ -2252,6 +2342,9 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 12
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "sonarjs/prefer-read-only-props": {
       "count": 1
@@ -2373,6 +2466,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "sonarjs/prefer-read-only-props": {
       "count": 1
     },
@@ -2411,6 +2507,12 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
@@ -2448,6 +2550,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 5
+    },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "no-duplicate-imports": {
       "count": 1
@@ -2513,6 +2621,9 @@
     }
   },
   "src/renderer/src/lib/generator/escape.ts": {
+    "complexity": {
+      "count": 1
+    },
     "regexp/no-dupe-disjunctions": {
       "count": 1
     },
@@ -2569,8 +2680,14 @@
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
+    "complexity": {
+      "count": 7
+    },
     "eqeqeq": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "no-duplicate-imports": {
       "count": 2
@@ -2691,6 +2808,12 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     },
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "regexp/prefer-w": {
       "count": 1
     },
@@ -2743,6 +2866,12 @@
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 2
+    },
+    "complexity": {
+      "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "regexp/prefer-w": {
       "count": 3
@@ -2838,6 +2967,12 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    },
     "regexp/use-ignore-case": {
       "count": 5
     },
@@ -2887,6 +3022,9 @@
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "regexp/prefer-w": {
       "count": 2
@@ -2987,6 +3125,12 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 4
+    },
     "regexp/prefer-w": {
       "count": 3
     },
@@ -3027,6 +3171,12 @@
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 3
+    },
+    "complexity": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 4
     },
     "regexp/prefer-d": {
       "count": 1
@@ -3092,6 +3242,12 @@
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 2
+    },
+    "complexity": {
+      "count": 5
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "regexp/use-ignore-case": {
       "count": 1
@@ -3181,6 +3337,12 @@
     "@typescript-eslint/prefer-optional-chain": {
       "count": 4
     },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "regexp/prefer-w": {
       "count": 5
     },
@@ -3220,6 +3382,12 @@
       "count": 3
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "regexp/prefer-w": {
@@ -3276,6 +3444,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "regexp/prefer-w": {
       "count": 1
@@ -3349,6 +3523,9 @@
     "@typescript-eslint/prefer-nullish-coalescing": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
@@ -3361,6 +3538,9 @@
   },
   "src/renderer/src/lib/param-io.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
+      "count": 1
+    },
+    "complexity": {
       "count": 1
     },
     "no-duplicate-imports": {
@@ -3470,6 +3650,9 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
+    },
+    "complexity": {
+      "count": 2
     },
     "eqeqeq": {
       "count": 2
@@ -3735,6 +3918,9 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 6
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-duplicate-imports": {
       "count": 2
     },
@@ -3786,6 +3972,9 @@
   },
   "src/renderer/src/stores/projectStore.ts": {
     "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "no-duplicate-imports": {
@@ -4052,6 +4241,9 @@
     "@typescript-eslint/require-await": {
       "count": 3
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "testing-library/no-manual-cleanup": {
       "count": 1
     },
@@ -4115,6 +4307,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "no-console": {
       "count": 1
@@ -4213,6 +4408,9 @@
     },
     "jest-dom/prefer-to-have-text-content": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "no-duplicate-imports": {
       "count": 2
@@ -4323,6 +4521,9 @@
     "jest-dom/prefer-in-document": {
       "count": 11
     },
+    "max-lines-per-function": {
+      "count": 4
+    },
     "promise/param-names": {
       "count": 1
     },
@@ -4382,6 +4583,9 @@
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "testing-library/no-node-access": {
       "count": 9
     },
@@ -4421,6 +4625,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "sonarjs/prefer-specific-assertions": {
       "count": 1
@@ -4519,6 +4726,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "testing-library/no-node-access": {
       "count": 1
     },
@@ -4579,6 +4789,9 @@
       "count": 1
     },
     "@typescript-eslint/restrict-template-expressions": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "unicorn/consistent-function-scoping": {
@@ -4663,6 +4876,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -4733,6 +4949,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -4797,6 +5016,9 @@
     },
     "@typescript-eslint/non-nullable-type-assertion-style": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
     },
     "no-duplicate-imports": {
       "count": 1
@@ -4886,6 +5108,9 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "promise/param-names": {
       "count": 1
     },
@@ -4938,6 +5163,9 @@
     },
     "jest-dom/prefer-in-document": {
       "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "no-console": {
       "count": 2
@@ -5019,6 +5247,9 @@
     "jest-dom/prefer-in-document": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-duplicate-imports": {
       "count": 1
     },
@@ -5093,6 +5324,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 2
     },
@@ -5161,6 +5395,9 @@
     "@typescript-eslint/require-await": {
       "count": 5
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "testing-library/no-manual-cleanup": {
       "count": 1
     },
@@ -5198,6 +5435,9 @@
   "tests/dom/settings-store.test.ts": {
     "@typescript-eslint/dot-notation": {
       "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "unicorn/prefer-string-repeat": {
       "count": 1
@@ -5335,6 +5575,9 @@
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "testing-library/no-node-access": {
       "count": 8
     },
@@ -5425,6 +5668,9 @@
     "jest-dom/prefer-to-have-text-content": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -5491,6 +5737,9 @@
   "tests/dom/toast-store.test.ts": {
     "@typescript-eslint/restrict-template-expressions": {
       "count": 6
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "unicorn/name-replacements": {
       "count": 6
@@ -5713,6 +5962,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 24
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "no-console": {
       "count": 2
     },
@@ -5856,6 +6108,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
+    },
+    "complexity": {
+      "count": 2
     },
     "no-duplicate-imports": {
       "count": 2
@@ -6080,6 +6335,9 @@
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 2
     },
+    "complexity": {
+      "count": 1
+    },
     "eqeqeq": {
       "count": 1
     },
@@ -6209,6 +6467,9 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 6
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-duplicate-imports": {
       "count": 2
     },
@@ -6246,6 +6507,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "complexity": {
+      "count": 1
+    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
@@ -6271,6 +6535,9 @@
   "tests/integration/check-coverage.test.ts": {
     "@typescript-eslint/restrict-template-expressions": {
       "count": 7
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 1
@@ -6310,6 +6577,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 10
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -6344,6 +6614,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 1
@@ -6431,6 +6704,9 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -6467,6 +6743,9 @@
       "count": 3
     },
     "@typescript-eslint/restrict-template-expressions": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "no-console": {
@@ -6621,6 +6900,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -6686,6 +6968,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 4
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 2
     },
@@ -6750,6 +7035,9 @@
     },
     "@typescript-eslint/use-unknown-in-catch-callback-variable": {
       "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
     },
     "no-console": {
       "count": 2
@@ -6867,6 +7155,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 14
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 2
@@ -6998,6 +7289,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 1
@@ -7178,6 +7472,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -7273,6 +7570,9 @@
   },
   "tests/integration/strictness-status.test.ts": {
     "@typescript-eslint/restrict-template-expressions": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "unicorn/name-replacements": {
@@ -7479,6 +7779,9 @@
     }
   },
   "tests/unit/auto-documentation.test.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/name-replacements": {
       "count": 1
     }
@@ -7547,6 +7850,9 @@
     }
   },
   "tests/unit/conflict-detector.test.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 25
     }
@@ -7657,6 +7963,9 @@
     }
   },
   "tests/unit/dependency-analyzer.test.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-duplicate-imports": {
       "count": 1
     },
@@ -7712,6 +8021,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 1
     },
@@ -7755,6 +8067,9 @@
     },
     "import-x/no-named-as-default-member": {
       "count": 4
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 7
@@ -7840,6 +8155,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 11
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 4
@@ -7990,6 +8308,9 @@
     "import-x/no-named-as-default-member": {
       "count": 17
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "no-console": {
       "count": 4
     },
@@ -8129,6 +8450,9 @@
     "@typescript-eslint/prefer-nullish-coalescing": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 6
+    },
     "unicorn/consistent-function-scoping": {
       "count": 4
     },
@@ -8162,6 +8486,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 9
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 2
@@ -8385,6 +8712,9 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 3
     },
+    "max-lines-per-function": {
+      "count": 3
+    },
     "vitest/prefer-strict-equal": {
       "count": 7
     }
@@ -8400,6 +8730,9 @@
       "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "no-console": {
@@ -8448,6 +8781,9 @@
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "no-console": {
       "count": 1
@@ -8583,6 +8919,9 @@
     "@typescript-eslint/no-non-null-assertion": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 3
+    },
     "unicorn/filename-case": {
       "count": 1
     },
@@ -8599,6 +8938,9 @@
     },
     "@typescript-eslint/no-non-null-assertion": {
       "count": 8
+    },
+    "max-lines-per-function": {
+      "count": 4
     },
     "unicorn/filename-case": {
       "count": 1
@@ -8696,6 +9038,9 @@
       "count": 1
     },
     "@typescript-eslint/restrict-template-expressions": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     },
     "no-duplicate-imports": {
@@ -8867,6 +9212,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 23
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "no-console": {
       "count": 9
     },
@@ -8958,6 +9306,9 @@
     "@typescript-eslint/no-non-null-assertion": {
       "count": 1
     },
+    "max-lines-per-function": {
+      "count": 1
+    },
     "unicorn/name-replacements": {
       "count": 3
     },
@@ -9042,6 +9393,9 @@
     }
   },
   "tests/unit/validation.test.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    },
     "unicorn/name-replacements": {
       "count": 7
     },
@@ -9093,6 +9447,9 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
     },
+    "max-lines-per-function": {
+      "count": 2
+    },
     "no-console": {
       "count": 1
     },
@@ -9142,6 +9499,12 @@
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     },
     "n/no-process-exit": {
       "count": 1
