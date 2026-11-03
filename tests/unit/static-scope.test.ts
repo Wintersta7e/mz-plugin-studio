@@ -1,10 +1,13 @@
-// Every tracked code file is type-checked by a program on the one strict flag set, data files are in none.
+// Every tracked code file is type-checked by a program on the one strict flag set, linted and
+// formatted; data files are in no program and read by neither tool.
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { basename, dirname, join, matchesGlob, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { ESLint, type Linter } from 'eslint'
+import { getFileInfo } from 'prettier'
 import ts from 'typescript'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import scope from '../../lint-scope.json'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
@@ -30,8 +33,13 @@ const STRICT_FLAGS: Record<string, boolean> = {
   forceConsistentCasingInFileNames: true
 }
 
+interface Program {
+  name: string
+  config: string
+  pending: string
+}
 // Root `tsconfig.json` references these, in this order; a flag a program does not meet yet waits in its pending file.
-const PROGRAMS = [
+const PROGRAMS: Program[] = [
   { name: 'node', config: 'tsconfig.node.json', pending: 'tsconfig.node.pending.json' },
   { name: 'web', config: 'tsconfig.web.json', pending: 'tsconfig.web.pending.json' },
   { name: 'test', config: 'tsconfig.test.json', pending: 'tsconfig.test.pending.json' },
@@ -66,24 +74,57 @@ const CODE_FILE = /\.(?:ts|tsx|mts|cts|js|mjs|cjs)$/
 const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' })
   .split('\0')
   .filter(Boolean)
-const isData = (file: string): boolean => scope.dataGlobs.some((glob) => matchesGlob(file, glob))
+const isData = (file: string): boolean =>
+  scope.dataGlobs.some((glob) => path.matchesGlob(file, glob))
 const codeFiles = tracked.filter((file) => CODE_FILE.test(file) && !isData(file))
+const dataFiles = tracked.filter((file) => isData(file))
+
+// Count lines go to stdout: the console guard fails a test on warn and error output.
+const report = (line: string): void => {
+  process.stdout.write(`${line}\n`)
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string')
 
 interface RawConfig {
   extends?: string | string[]
   references?: { path: string }[]
   compilerOptions?: Record<string, unknown>
 }
+const isReference = (value: unknown): value is { path: string } => {
+  if (!isRecord(value)) return false
+  const { path: target } = value
+  return typeof target === 'string'
+}
+const isRawConfig = (value: unknown): value is RawConfig => {
+  if (!isRecord(value)) return false
+  const { extends: base, references, compilerOptions } = value
+  return (
+    (base === undefined || typeof base === 'string' || isStringArray(base)) &&
+    (references === undefined || (Array.isArray(references) && references.every(isReference))) &&
+    (compilerOptions === undefined || isRecord(compilerOptions))
+  )
+}
 const rawConfig = (file: string): RawConfig => {
-  const { config, error } = ts.readConfigFile(join(ROOT, file), ts.sys.readFile)
-  expect(error, file).toBeUndefined()
+  const result = ts.readConfigFile(path.join(ROOT, file), (name) => ts.sys.readFile(name))
+  const config: unknown = result.config
+  if (result.error !== undefined || !isRawConfig(config))
+    throw new Error(`${file}: unreadable config`)
   return config
 }
 const parsed = (file: string): ts.ParsedCommandLine => {
   const result = ts.getParsedCommandLineOfConfigFile(
-    join(ROOT, file),
+    path.join(ROOT, file),
     {},
-    { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} }
+    {
+      ...ts.sys,
+      onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+        throw new Error(`${file}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`)
+      }
+    }
   )
   if (!result) throw new Error(`${file}: no parsed config`)
   return result
@@ -91,129 +132,603 @@ const parsed = (file: string): ts.ParsedCommandLine => {
 const extendsList = (file: string): string[] => {
   const value = rawConfig(file).extends ?? []
   return (Array.isArray(value) ? value : [value]).map((entry) =>
-    entry.startsWith('.') ? resolve(ROOT, dirname(file), entry) : entry
+    entry.startsWith('.') ? path.resolve(ROOT, path.dirname(file), entry) : entry
   )
 }
-const repoPath = (file: string): string => relative(ROOT, file).split('\\').join('/')
+const repoPath = (file: string): string => path.relative(ROOT, file).replaceAll('\\', '/')
+
+// Strict flags a program sets wrongly, given what its pending file holds.
+const flagProblems = (program: Program): { problems: string[]; roots: number; pending: number } => {
+  const { options, fileNames } = parsed(program.config)
+  const hasPending = ts.sys.fileExists(path.join(ROOT, program.pending))
+  const pending = hasPending ? (rawConfig(program.pending).compilerOptions ?? {}) : {}
+  const problems: string[] = []
+  if (hasPending && extendsList(program.pending).join(',') !== path.join(ROOT, program.config)) {
+    problems.push(`${program.pending}: extends`)
+  }
+  for (const [key, value] of Object.entries(pending)) {
+    if (STRICT_FLAGS[key] !== value) problems.push(`${program.pending} ${key}`)
+  }
+  for (const [flag, value] of Object.entries(STRICT_FLAGS)) {
+    const isPending = Object.hasOwn(pending, flag)
+    if (options[flag] !== (isPending ? !value : value)) {
+      problems.push(`${program.name} ${flag}${isPending ? ' (pending)' : ''}`)
+    }
+  }
+  if (fileNames.length === 0) problems.push(`${program.name}: no root files`)
+  return { problems, roots: fileNames.length, pending: Object.keys(pending).length }
+}
+
+// Which programs hold each tracked file (imports included), and every program's root files.
+const programMembership = (): { holders: Map<string, string[]>; rootFiles: Set<string> } => {
+  const trackedSet = new Set(tracked)
+  const holders = new Map<string, string[]>()
+  const rootFiles = new Set<string>()
+  for (const program of PROGRAMS) {
+    const config = parsed(program.config)
+    for (const file of config.fileNames) rootFiles.add(repoPath(file))
+    const sources = ts.createProgram(config.fileNames, config.options).getSourceFiles()
+    const held = sources
+      .map((source) => repoPath(source.fileName))
+      .filter((file) => trackedSet.has(file))
+    for (const file of held) holders.set(file, [...(holders.get(file) ?? []), program.name])
+  }
+  return { holders, rootFiles }
+}
+
+// Files held by more than one program that no overlap entry declares, and the count per entry.
+const overlapProblems = (
+  holders: Map<string, string[]>
+): { undeclared: string[]; perEntry: Map<string, number> } => {
+  const perEntry = new Map(PROGRAM_OVERLAPS.map((entry) => [entry.glob, 0]))
+  const undeclared: string[] = []
+  const shared = [...holders].filter(([, programs]) => programs.length > 1)
+  for (const [file, programs] of shared) {
+    const entry = PROGRAM_OVERLAPS.find(
+      (candidate) =>
+        path.matchesGlob(file, candidate.glob) &&
+        programs.every((name) => candidate.programs.includes(name))
+    )
+    if (entry === undefined) undeclared.push(`${file}: ${programs.join(', ')}`)
+    else perEntry.set(entry.glob, (perEntry.get(entry.glob) ?? 0) + 1)
+  }
+  return { undeclared, perEntry }
+}
 
 describe('static scope: TypeScript programs', () => {
   it('lists the tracked code files it scans', () => {
-    console.log(`tracked code files ${codeFiles.length}`)
+    report(`tracked code files ${codeFiles.length}`)
     expect(codeFiles.length).toBeGreaterThan(0)
   })
 
   it('keeps the strict flag set in one file', () => {
-    expect(rawConfig(STRICT_FILE).compilerOptions).toEqual(STRICT_FLAGS)
+    expect(rawConfig(STRICT_FILE).compilerOptions).toStrictEqual(STRICT_FLAGS)
   })
 
   it('references the six programs, each extending the strict file last', () => {
     const references = (rawConfig('tsconfig.json').references ?? []).map((ref) => ref.path)
-    console.log(`programs ${references.length}`)
-    expect(references).toEqual(PROGRAMS.map((program) => `./${program.config}`))
-    for (const program of PROGRAMS) {
-      expect(extendsList(program.config).at(-1), program.config).toBe(join(ROOT, STRICT_FILE))
-    }
+    report(`programs ${references.length}`)
+    expect(references).toStrictEqual(PROGRAMS.map((program) => `./${program.config}`))
+    const lastBases = PROGRAMS.map((program) => extendsList(program.config).at(-1))
+    expect(lastBases).toStrictEqual(PROGRAMS.map(() => path.join(ROOT, STRICT_FILE)))
   })
 
   it('sets every strict flag in each program or in its pending file, never both', () => {
-    for (const program of PROGRAMS) {
-      const { options, fileNames } = parsed(program.config)
-      const pendingPath = join(ROOT, program.pending)
-      const pending = ts.sys.fileExists(pendingPath)
-        ? (rawConfig(program.pending).compilerOptions ?? {})
-        : {}
-      if (ts.sys.fileExists(pendingPath)) {
-        expect(extendsList(program.pending), program.pending).toEqual([join(ROOT, program.config)])
-      }
-      for (const key of Object.keys(pending)) {
-        expect(STRICT_FLAGS[key], `${program.pending} ${key}`).toBe(pending[key])
-      }
-      for (const [flag, value] of Object.entries(STRICT_FLAGS)) {
-        if (flag in pending) expect(options[flag], `${program.name} ${flag} (pending)`).toBe(!value)
-        else expect(options[flag], `${program.name} ${flag}`).toBe(value)
-      }
-      const pendingCount = Object.keys(pending).length
-      console.log(
-        `program ${program.name}: root files ${fileNames.length}, strict flags ${Object.keys(STRICT_FLAGS).length}, pending ${pendingCount}`
+    const problems = PROGRAMS.flatMap((program) => {
+      const result = flagProblems(program)
+      report(
+        `program ${program.name}: root files ${result.roots}, strict flags ${Object.keys(STRICT_FLAGS).length}, pending ${result.pending}`
       )
-      expect(fileNames.length, program.name).toBeGreaterThan(0)
-    }
+      return result.problems
+    })
+    expect(problems).toStrictEqual([])
   })
 
   it(
     'puts every code file in a program, overlapping only where declared, and no data file in any',
     { timeout: 300_000 },
     () => {
-      const trackedSet = new Set(tracked)
-      const holders = new Map<string, string[]>()
-      const rootFiles = new Set<string>()
-      for (const program of PROGRAMS) {
-        const config = parsed(program.config)
-        for (const file of config.fileNames) rootFiles.add(repoPath(file))
-        const sources = ts.createProgram(config.fileNames, config.options).getSourceFiles()
-        for (const source of sources) {
-          const file = repoPath(source.fileName)
-          if (!trackedSet.has(file)) continue
-          holders.set(file, [...(holders.get(file) ?? []), program.name])
-        }
-      }
+      const { holders, rootFiles } = programMembership()
 
       // Membership is by root files: a file only an import reaches leaves its program with that import.
       const outside = codeFiles.filter(
         (file) => !rootFiles.has(file) && !scope.jsAllowlist.includes(file)
       )
-      console.log(`root files in programs ${rootFiles.size}, outside ${outside.length}`)
-      expect(outside).toEqual([])
+      report(`root files in programs ${rootFiles.size}, outside ${outside.length}`)
+      expect(outside).toStrictEqual([])
 
-      const perEntry = new Map(PROGRAM_OVERLAPS.map((entry) => [entry.glob, 0]))
-      const undeclared: string[] = []
-      for (const [file, programs] of holders) {
-        if (programs.length < 2) continue
-        const entry = PROGRAM_OVERLAPS.find(
-          (candidate) =>
-            matchesGlob(file, candidate.glob) &&
-            programs.every((name) => candidate.programs.includes(name))
-        )
-        if (entry) perEntry.set(entry.glob, (perEntry.get(entry.glob) ?? 0) + 1)
-        else undeclared.push(`${file}: ${programs.join(', ')}`)
-      }
-      for (const [glob, count] of perEntry) console.log(`overlap ${glob}: files ${count}`)
-      expect(undeclared).toEqual([])
-      expect([...perEntry].filter(([, count]) => count === 0).map(([glob]) => glob)).toEqual([])
+      const { undeclared, perEntry } = overlapProblems(holders)
+      for (const [glob, count] of perEntry) report(`overlap ${glob}: files ${count}`)
+      expect(undeclared).toStrictEqual([])
+      expect([...perEntry].filter(([, count]) => count === 0).map(([glob]) => glob)).toStrictEqual(
+        []
+      )
 
-      for (const glob of scope.dataGlobs) {
-        const files = tracked.filter((file) => matchesGlob(file, glob))
-        console.log(`data ${glob}: files ${files.length}`)
-        expect(files.length, glob).toBeGreaterThan(0)
-        expect(files.filter((file) => holders.has(file) || rootFiles.has(file))).toEqual([])
-      }
+      const dataCounts = scope.dataGlobs.map((glob) => ({
+        glob,
+        files: tracked.filter((file) => path.matchesGlob(file, glob))
+      }))
+      for (const { glob, files } of dataCounts) report(`data ${glob}: files ${files.length}`)
+      expect(dataCounts.filter(({ files }) => files.length === 0)).toStrictEqual([])
+      expect(dataFiles.filter((file) => holders.has(file) || rootFiles.has(file))).toStrictEqual([])
 
-      for (const file of scope.jsAllowlist) {
-        expect(trackedSet.has(file), file).toBe(true)
-        expect(rootFiles.has(file), file).toBe(false)
-      }
-      console.log(`js allowlist: files ${scope.jsAllowlist.length}`)
+      const misplaced = scope.jsAllowlist.filter(
+        (file) => !tracked.includes(file) || rootFiles.has(file)
+      )
+      report(`js allowlist: files ${scope.jsAllowlist.length}`)
+      expect(misplaced).toStrictEqual([])
     }
   )
 
   it('pins TypeScript exactly and lets no tsconfig silence a deprecation', () => {
-    const configs = tracked.filter((file) => /^tsconfig.*\.json$/.test(basename(file)))
-    const silencing = configs.filter(
-      (file) => rawConfig(file).compilerOptions?.['ignoreDeprecations'] !== undefined
-    )
-    console.log(`tsconfig files ${configs.length}`)
+    const configs = tracked.filter((file) => /^tsconfig.*\.json$/.test(path.basename(file)))
+    const silencing = configs.filter((file) => {
+      const { ignoreDeprecations } = rawConfig(file).compilerOptions ?? {}
+      return ignoreDeprecations !== undefined
+    })
+    report(`tsconfig files ${configs.length}`)
     expect(configs.length).toBeGreaterThan(0)
-    expect(silencing).toEqual([])
+    expect(silencing).toStrictEqual([])
 
-    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
-      devDependencies: Record<string, string>
-    }
-    const installed = (
-      JSON.parse(readFileSync(join(ROOT, 'node_modules/typescript/package.json'), 'utf8')) as {
-        version: string
+    const pkg: unknown = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+    const installedPkg: unknown = JSON.parse(
+      readFileSync(path.join(ROOT, 'node_modules/typescript/package.json'), 'utf8')
+    )
+    const { devDependencies } = isRecord(pkg) ? pkg : {}
+    const { typescript: pinned } = isRecord(devDependencies) ? devDependencies : {}
+    const { version: installed } = isRecord(installedPkg) ? installedPkg : {}
+    expect(pinned).toMatch(/^6\.0\.\d+$/)
+    expect(pinned).toBe(installed)
+  })
+})
+
+// ESLint and Prettier: every rule the config resolves differently from its preset is a listed decision.
+
+interface Scoped {
+  files: string[]
+  ignores?: string[]
+}
+interface Resolved {
+  rules: Record<string, unknown>
+  settings: Record<string, unknown>
+  linterOptions: Record<string, unknown>
+}
+
+const isInScope = (file: string, entry: Scoped): boolean =>
+  entry.files.some((glob) => path.matchesGlob(file, glob)) &&
+  (entry.ignores ?? []).every((glob) => !path.matchesGlob(file, glob))
+const firstInScope = (entry: Scoped): string | undefined =>
+  codeFiles.find((file) => isInScope(file, entry))
+
+const SEVERITY: Record<string, number> = { '0': 0, off: 0, '1': 1, warn: 1, '2': 2, error: 2 }
+const severityOf = (entry: unknown): number => {
+  const level: unknown = Array.isArray(entry) ? entry[0] : entry
+  return SEVERITY[String(level)] ?? -1
+}
+const optionsOf = (entry: unknown): unknown[] => (Array.isArray(entry) ? entry.slice(1) : [])
+const isSameSetting = (left: unknown, right: unknown): boolean =>
+  severityOf(left) === severityOf(right) &&
+  JSON.stringify(optionsOf(left)) === JSON.stringify(optionsOf(right))
+// A resolved entry carries a rule's default options merged in: the listed options must be within it.
+const isWithin = (listed: unknown, resolved: unknown): boolean =>
+  isRecord(listed)
+    ? isRecord(resolved) &&
+      Object.entries(listed).every(([key, value]) => isWithin(value, resolved[key]))
+    : JSON.stringify(listed) === JSON.stringify(resolved)
+const isListedSetting = (resolved: unknown, listed: unknown): boolean => {
+  const options = optionsOf(resolved)
+  return (
+    severityOf(resolved) === severityOf(listed) &&
+    optionsOf(listed).every((option, index) => isWithin(option, options[index]))
+  )
+}
+
+interface ConfigModule {
+  config: unknown[]
+  presetBlocks: Linter.Config[]
+  prettierOffRules: string[]
+}
+// ESLint validates each block when it loads them; this only rules out a missing export.
+const isConfigArray = (value: unknown): value is Linter.Config[] =>
+  Array.isArray(value) && value.every((block) => isRecord(block))
+const loadConfigModule = async (): Promise<ConfigModule> => {
+  const mod: unknown = await import(pathToFileURL(path.join(ROOT, 'eslint.config.mjs')).href)
+  const { default: config, presetBlocks, prettierOffRules } = isRecord(mod) ? mod : {}
+  if (!Array.isArray(config) || !isConfigArray(presetBlocks) || !isStringArray(prettierOffRules)) {
+    throw new Error('eslint.config.mjs: no default, presetBlocks or prettierOffRules export')
+  }
+  return { config, presetBlocks, prettierOffRules }
+}
+
+const resolveConfig = async (eslint: ESLint, file: string): Promise<Resolved> => {
+  const config: unknown = await eslint.calculateConfigForFile(path.join(ROOT, file))
+  const { rules, settings, linterOptions } = isRecord(config) ? config : {}
+  if (!isRecord(rules)) throw new Error(`${file}: no resolved config`)
+  return {
+    rules,
+    settings: isRecord(settings) ? settings : {},
+    linterOptions: isRecord(linterOptions) ? linterOptions : {}
+  }
+}
+const resolveAll = async (eslint: ESLint, files: string[]): Promise<Map<string, Resolved>> => {
+  const resolved = new Map<string, Resolved>()
+  for (const file of files) resolved.set(file, await resolveConfig(eslint, file))
+  return resolved
+}
+
+const isExplained = (
+  prettierOffRules: string[],
+  file: string,
+  rule: string,
+  got: unknown
+): boolean =>
+  scope.exclusions.some((row) => row.rule === rule && isInScope(file, row)) ||
+  scope.ownerSwaps.some((row) => row.rule === rule && isInScope(file, row)) ||
+  scope.optIns.some((row) => Object.keys(row.rules).includes(rule) && isInScope(file, row)) ||
+  (prettierOffRules.includes(rule) && severityOf(got) === 0)
+
+// Preset rules the real config resolves differently and no table explains, as `rule (first file)`.
+const unexplainedDifferences = (
+  actual: Map<string, Resolved>,
+  expected: Map<string, Resolved>,
+  prettierOffRules: string[]
+): string[] => {
+  const unexplained = new Map<string, string>()
+  for (const [file, config] of actual) {
+    const wanted = Object.entries(expected.get(file)?.rules ?? {})
+    for (const [rule, entry] of wanted) {
+      const got = config.rules[rule]
+      const isDifferent = !isSameSetting(entry, got)
+      if (
+        isDifferent &&
+        !isExplained(prettierOffRules, file, rule, got) &&
+        !unexplained.has(rule)
+      ) {
+        unexplained.set(rule, file)
       }
-    ).version
-    expect(pkg.devDependencies['typescript']).toMatch(/^6\.0\.\d+$/)
-    expect(pkg.devDependencies['typescript']).toBe(installed)
+    }
+  }
+  return [...unexplained].map(([rule, file]) => `${rule} (${file})`)
+}
+
+// Table entries whose setting is not the one the real config resolves in their scope.
+const entriesNotInEffect = (actual: Map<string, Resolved>): string[] => {
+  const rulesIn = (entry: Scoped): Record<string, unknown> =>
+    actual.get(firstInScope(entry) ?? '')?.rules ?? {}
+  const exclusions = scope.exclusions
+    .filter((row) => {
+      // An `off` keeps the preset's options in the resolved entry: only its severity counts.
+      const got = rulesIn(row)[row.rule]
+      return row.options === undefined
+        ? severityOf(got) !== 0
+        : !isListedSetting(got, ['error', ...row.options])
+    })
+    .map((row) => `exclusion ${row.rule}`)
+  const swaps = scope.ownerSwaps
+    .filter((row) => {
+      const rules = rulesIn(row)
+      const isReplaced = row.replacement === undefined || severityOf(rules[row.replacement]) === 2
+      return severityOf(rules[row.rule]) !== 0 || !isReplaced
+    })
+    .map((row) => `owner swap ${row.rule}`)
+  const optIns = scope.optIns.flatMap((row) => {
+    const rules = rulesIn(row)
+    return Object.entries(row.rules)
+      .filter(([rule, entry]) => !isListedSetting(rules[rule], entry))
+      .map(([rule]) => `opt-in ${rule}`)
+  })
+  return [...exclusions, ...swaps, ...optIns]
+}
+
+const DIRECTIVE =
+  /^(?:eslint-disable(?:-next-line|-line)?\b|eslint-enable\b|eslint\s|@ts-ignore|@ts-expect-error|@ts-nocheck)/
+
+// Comment trivia of a code file as TypeScript's scanner reads it, so string and template text never counts.
+const commentsOf = (file: string): string[] => {
+  const text = readFileSync(path.join(ROOT, file), 'utf8')
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+  const seen = new Set<number>()
+  const comments: string[] = []
+  const visit = (node: ts.Node): void => {
+    if (node.kind >= ts.SyntaxKind.FirstJSDocNode && node.kind <= ts.SyntaxKind.LastJSDocNode)
+      return
+    const ranges = ts.getLeadingCommentRanges(text, node.pos) ?? []
+    for (const range of ranges) {
+      if (seen.has(range.pos)) continue
+      seen.add(range.pos)
+      comments.push(text.slice(range.pos, range.end))
+    }
+    for (const child of node.getChildren(source)) visit(child)
+  }
+  visit(source)
+  return comments
+}
+const directiveOf = (comment: string): string | undefined => {
+  const body = comment.startsWith('//') ? comment.slice(2) : comment.slice(2, -2)
+  const trimmed = body.replace(/^[\s*]+/, '')
+  return DIRECTIVE.test(trimmed) ? trimmed : undefined
+}
+
+// The evaluating calls: the one inline directive form the closing state keeps, each described.
+const CODE_EVAL_SITES: Record<string, number> = {
+  'src/main/services/syntax-check.ts': 1,
+  'tests/helpers/evaluate-plugin.ts': 3,
+  'tests/helpers/mz-runtime.ts': 3,
+  'tests/helpers/mz-corescript.ts': 5,
+  'tests/helpers/mz-conformance.ts': 1,
+  'tests/unit/raw-mode-insertion.test.ts': 1
+}
+const CODE_EVAL_DIRECTIVE = /^eslint-disable-next-line sonarjs\/code-eval -- \S/
+// Directives that predate the rule set; each leaves with its file's fix.
+const TRANSITIONAL_DIRECTIVES: { file: string; rule: string }[] = [
+  { file: 'src/main/services/projectParser.ts', rule: '@typescript-eslint/no-explicit-any' }
+]
+
+interface Directive {
+  file: string
+  text: string
+}
+const directives = (): Directive[] =>
+  codeFiles.flatMap((file) =>
+    commentsOf(file)
+      .map((comment) => directiveOf(comment))
+      .filter((text): text is string => text !== undefined)
+      .map((text) => ({ file, text }))
+  )
+const isTransitional = (entry: Directive): boolean =>
+  TRANSITIONAL_DIRECTIVES.some(
+    (allowed) => allowed.file === entry.file && entry.text.split(/\s+/, 2)[1] === allowed.rule
+  )
+
+const eslint = new ESLint({ cwd: ROOT })
+
+const prettierIgnore = [path.join(ROOT, '.gitignore'), path.join(ROOT, '.prettierignore')]
+const isFormatIgnored = async (file: string): Promise<boolean> => {
+  const info = await getFileInfo(path.join(ROOT, file), { ignorePath: prettierIgnore })
+  return info.ignored
+}
+const isFormatRead = async (file: string): Promise<boolean> => {
+  const info = await getFileInfo(path.join(ROOT, file), { ignorePath: prettierIgnore })
+  return !info.ignored && info.inferredParser !== null
+}
+const isLintIgnored = async (file: string): Promise<boolean> =>
+  eslint.isPathIgnored(path.join(ROOT, file))
+const isLintRead = async (file: string): Promise<boolean> => !(await isLintIgnored(file))
+const filterAsync = async (
+  files: string[],
+  isKept: (file: string) => Promise<boolean>
+): Promise<string[]> => {
+  const kept: string[] = []
+  for (const file of files) if (await isKept(file)) kept.push(file)
+  return kept
+}
+
+const SNIPPET_QUOTE = "'"
+const quoted = (text: string): string => `${SNIPPET_QUOTE}${text}${SNIPPET_QUOTE}`
+const SNIPPETS = [
+  {
+    file: 'src/renderer/src/App.tsx',
+    source: `import { ipcRenderer } from ${quoted('electron')}\nvoid ipcRenderer.invoke(${quoted('x')})\n`,
+    rule: 'no-restricted-syntax'
+  },
+  {
+    file: 'src/main/index.ts',
+    source: `import { ipcMain } from ${quoted('electron')}\nipcMain.handle(${quoted('x')}, () => 1)\n`,
+    rule: 'no-restricted-syntax'
+  },
+  {
+    file: 'tests/unit/static-scope.test.ts',
+    source: `import { usePluginStore } from ${quoted('../../src/renderer/src/stores/pluginStore')}\nexport const probe = usePluginStore.getState()\n`,
+    rule: 'no-restricted-imports'
+  },
+  {
+    file: 'src/shared/ipc-types.ts',
+    source: `// @ts-expect-error -- the probe assigns a string to a number\nexport const probe: number = ${quoted('x')}\n`,
+    rule: '@typescript-eslint/ban-ts-comment'
+  }
+]
+const missedSnippets = async (): Promise<string[]> => {
+  const missed: string[] = []
+  for (const snippet of SNIPPETS) {
+    const results = await eslint.lintText(snippet.source, {
+      filePath: path.join(ROOT, snippet.file)
+    })
+    const rules = results.flatMap((result) => result.messages.map((message) => message.ruleId))
+    if (!rules.includes(snippet.rule))
+      missed.push(`${snippet.file}: ${snippet.rule} (${rules.join(', ')})`)
+  }
+  return missed
+}
+
+const isLooseDirectiveConfig = (resolved: Resolved): boolean => {
+  const { reportUnusedDisableDirectives, reportUnusedInlineConfigs } = resolved.linterOptions
+  return (
+    severityOf(reportUnusedDisableDirectives) !== 2 ||
+    severityOf(reportUnusedInlineConfigs) !== 2 ||
+    !isSameSetting(resolved.rules['@eslint-community/eslint-comments/no-use'], [
+      'error',
+      { allow: ['eslint-disable-next-line'] }
+    ]) ||
+    severityOf(resolved.rules['@eslint-community/eslint-comments/require-description']) !== 2
+  )
+}
+const isRelaxedForTests = (resolved: Resolved): boolean =>
+  severityOf(resolved.rules['@typescript-eslint/no-explicit-any']) !== 2 ||
+  severityOf(resolved.rules['@typescript-eslint/no-non-null-assertion']) !== 2 ||
+  !isSameSetting(resolved.rules['no-console'], ['error', { allow: ['warn', 'error'] }])
+const hasNodeVersion = (resolved: Resolved): boolean => {
+  const { node } = resolved.settings
+  return isRecord(node) && Object.hasOwn(node, 'version')
+}
+
+describe('static scope: ESLint and Prettier', () => {
+  let configs = new Map<string, Resolved>()
+  beforeAll(async () => {
+    configs = await resolveAll(eslint, codeFiles)
+  }, 300_000)
+
+  it('lints and formats every code file and reads no data file', { timeout: 300_000 }, async () => {
+    const lintIgnoredCode = await filterAsync(codeFiles, isLintIgnored)
+    const formatIgnoredCode = await filterAsync(codeFiles, isFormatIgnored)
+    const lintedData = await filterAsync(dataFiles, isLintRead)
+    const formattedData = await filterAsync(dataFiles, isFormatRead)
+    report(
+      `eslint/prettier: code files ${codeFiles.length} (lint-ignored ${lintIgnoredCode.length}, format-ignored ${formatIgnoredCode.length}); data files ${dataFiles.length} (linted ${lintedData.length}, formatted ${formattedData.length})`
+    )
+    expect(dataFiles.length).toBeGreaterThan(0)
+    expect(lintIgnoredCode).toStrictEqual([])
+    expect(formatIgnoredCode).toStrictEqual([])
+    expect(lintedData).toStrictEqual([])
+    expect(formattedData).toStrictEqual([])
+    const probes = ['tools/reference-repos/probe.js', 'tools/output/probe.js']
+    expect(await filterAsync(probes, isLintIgnored)).toStrictEqual(probes)
+  })
+
+  it('scopes every block to tracked files and resolves no rule to warn', async () => {
+    expect.hasAssertions()
+    const { config } = await loadConfigModule()
+    const scoped: (Scoped & { name: string })[] = [
+      ...scope.presets.map((entry) => ({ ...entry, name: entry.id })),
+      ...scope.exclusions.map((entry) => ({ ...entry, name: `exclusion ${entry.rule}` })),
+      ...scope.ownerSwaps.map((entry) => ({ ...entry, name: `owner swap ${entry.rule}` })),
+      ...scope.optIns.map((entry) => ({ ...entry, name: `opt-in ${entry.files.join(',')}` }))
+    ]
+    const configGlobs = config.flatMap((block) => {
+      const { files } = isRecord(block) ? block : {}
+      return isStringArray(files) ? files : []
+    })
+    const unmatched = [...scoped.flatMap((entry) => entry.files), ...configGlobs].filter((glob) =>
+      codeFiles.every((file) => !path.matchesGlob(file, glob))
+    )
+    expect(unmatched).toStrictEqual([])
+
+    const unsampled = scoped.filter((entry) => firstInScope(entry) === undefined)
+    expect(unsampled.map((entry) => entry.name)).toStrictEqual([])
+    for (const entry of scoped) {
+      const rules = configs.get(firstInScope(entry) ?? '')?.rules ?? {}
+      report(`scope ${entry.name}: rules ${Object.keys(rules).length}`)
+    }
+    const warned = [...configs].flatMap(([file, resolved]) =>
+      Object.entries(resolved.rules)
+        .filter(([, entry]) => severityOf(entry) === 1)
+        .map(([rule]) => `${file}: ${rule}`)
+    )
+    expect(warned).toStrictEqual([])
+  })
+
+  it(
+    'explains every rule that resolves differently from its preset',
+    { timeout: 300_000 },
+    async () => {
+      const { presetBlocks, prettierOffRules } = await loadConfigModule()
+      const presetsOnly = new ESLint({
+        cwd: ROOT,
+        overrideConfigFile: true,
+        overrideConfig: presetBlocks
+      })
+      const expected = await resolveAll(presetsOnly, codeFiles)
+      expect(unexplainedDifferences(configs, expected, prettierOffRules)).toStrictEqual([])
+      expect(entriesNotInEffect(configs)).toStrictEqual([])
+
+      const byCode: Record<string, number> = {}
+      for (const row of scope.exclusions) byCode[row.code] = (byCode[row.code] ?? 0) + 1
+      const { S: safe = 0, D: duplicate = 0, 'X/D': falsePositive = 0 } = byCode
+      report(
+        `exclusions ${scope.exclusions.length} (S ${safe}, D ${duplicate}, X/D ${falsePositive})`
+      )
+      expect(scope.exclusions).toHaveLength(18)
+      expect(byCode).toStrictEqual({ S: 9, D: 8, 'X/D': 1 })
+
+      // Negative control: a preset rule switched off outside the tables is reported.
+      const control = new ESLint({
+        cwd: ROOT,
+        overrideConfig: [{ rules: { 'unicorn/no-array-reduce': 'off' } }]
+      })
+      const sample = codeFiles.slice(0, 1)
+      const controlled = await resolveAll(control, sample)
+      expect(unexplainedDifferences(controlled, expected, prettierOffRules)).toStrictEqual([
+        `unicorn/no-array-reduce (${sample.join('')})`
+      ])
+    }
+  )
+
+  it(
+    'reports raw IPC, a routed store import and a described ts-expect-error',
+    { timeout: 300_000 },
+    async () => {
+      const missed = await missedSnippets()
+      report(
+        `snippets ${SNIPPETS.length}, missed ${missed.length}; ipc exempt ${scope.ipcExempt.length}`
+      )
+      expect(missed).toStrictEqual([])
+      expect(scope.ipcExempt).toHaveLength(2)
+      expect(scope.ipcExempt.filter((file) => !tracked.includes(file))).toStrictEqual([])
+    }
+  )
+
+  it('keeps inline directives to the evaluation sites and the transitional list', () => {
+    const found = directives()
+    const tsComments = found.filter((entry) => entry.text.startsWith('@ts-'))
+    const codeEval = found.filter((entry) => CODE_EVAL_DIRECTIVE.test(entry.text))
+    const transitional = found.filter((entry) => isTransitional(entry))
+    const perFile: Record<string, number> = {}
+    for (const entry of codeEval) perFile[entry.file] = (perFile[entry.file] ?? 0) + 1
+    report(
+      `inline directives ${found.length} (allow-list ${codeEval.length}, transitional ${transitional.length})`
+    )
+    report(`@ts-* ${tsComments.length}`)
+    expect(perFile).toStrictEqual(CODE_EVAL_SITES)
+    expect(transitional).toHaveLength(TRANSITIONAL_DIRECTIVES.length)
+    expect(found).toHaveLength(codeEval.length + transitional.length)
+    expect(tsComments).toStrictEqual([])
+  })
+
+  it('reports unused directives and allows only described next-line disables', () => {
+    const loose = [...configs]
+      .filter(([, resolved]) => isLooseDirectiveConfig(resolved))
+      .map(([file]) => file)
+    report(`directive options: files ${configs.size}, loose ${loose.length}`)
+    expect(configs.size).toBeGreaterThan(0)
+    expect(loose).toStrictEqual([])
+  })
+
+  it('holds tests to the source rules for any, non-null assertions and console', () => {
+    const testFiles = [...configs].filter(([file]) => file.startsWith('tests/'))
+    const relaxed = testFiles
+      .filter(([, resolved]) => isRelaxedForTests(resolved))
+      .map(([file]) => file)
+    report(`test files ${testFiles.length}, relaxed ${relaxed.length}`)
+    expect(testFiles.length).toBeGreaterThan(0)
+    expect(relaxed).toStrictEqual([])
+  })
+
+  it('leaves the Node version to package.json engines', () => {
+    const pinned = [...configs]
+      .filter(([, resolved]) => hasNodeVersion(resolved))
+      .map(([file]) => file)
+    report(`node version settings: files ${configs.size}, pinned ${pinned.length}`)
+    expect(configs.size).toBeGreaterThan(0)
+    expect(pinned).toStrictEqual([])
+  })
+
+  it('freezes no evaluation, builtin or command-path finding, no data file and no new file', () => {
+    const suppressions: unknown = JSON.parse(
+      readFileSync(path.join(ROOT, 'eslint-suppressions.json'), 'utf8')
+    )
+    const entries = isRecord(suppressions) ? suppressions : {}
+    const files = Object.keys(entries)
+    const rules = Object.values(entries).flatMap((value) =>
+      isRecord(value) ? Object.keys(value) : []
+    )
+    report(`eslint-suppressions: files ${files.length}, rule entries ${rules.length}`)
+    expect(files.length).toBeGreaterThan(0)
+    const barred = new Set([
+      'sonarjs/code-eval',
+      'n/no-unsupported-features/node-builtins',
+      'sonarjs/no-os-command-from-path'
+    ])
+    const ownFiles = new Set(['eslint.config.mjs', 'tests/unit/static-scope.test.ts'])
+    expect(rules.filter((rule) => barred.has(rule))).toStrictEqual([])
+    expect(files.filter((file) => isData(file) || ownFiles.has(file))).toStrictEqual([])
   })
 })

@@ -147,8 +147,8 @@ describe('test layout', () => {
       return result.messages.filter((m) => m.ruleId === 'no-restricted-imports').length
     }
     for (const source of sources) {
-      expect(await routedMessages(source, 'tests/unit/routing-probe.test.ts')).toBe(1)
-      expect(await routedMessages(source, 'tests/dom/routing-probe.test.tsx')).toBe(0)
+      expect(await routedMessages(source, 'tests/unit/test-layout.test.ts')).toBe(1)
+      expect(await routedMessages(source, 'tests/dom/app-close.test.tsx')).toBe(0)
     }
   })
 })

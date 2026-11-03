@@ -51,6 +51,7 @@ export function describeThrown(error: unknown): string {
 /** Copies plain data into `context`, so the plugin reads values made in its own realm. */
 export function intoContext<T>(context: Context, value: T): T {
   const text = JSON.stringify(JSON.stringify(value))
+  // eslint-disable-next-line sonarjs/code-eval -- copies a value into the test runtime context as JSON
   return new Script(`JSON.parse(${text})`).runInContext(context) as T
 }
 
@@ -94,6 +95,7 @@ interface Loader {
 export function createMzShim(): MzRuntime {
   const context = createContext({})
   installStandIns(context)
+  // eslint-disable-next-line sonarjs/code-eval -- runs the plugin loader in the test runtime context
   const loader = new Script(LOADER_SOURCE, { filename: 'loader.js' }).runInContext(
     context
   ) as Loader
@@ -114,6 +116,7 @@ export function createMzShim(): MzRuntime {
           continue
         }
         try {
+          // eslint-disable-next-line sonarjs/code-eval -- runs a plugin script in the test runtime context
           new Script(source, { filename: path }).runInContext(context, { timeout: TIMEOUT_MS })
         } catch (error) {
           errors.push({ name: entry.name, message: describeThrown(error) })

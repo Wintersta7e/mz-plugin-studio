@@ -70,6 +70,7 @@ function load(...scripts: string[]): Loaded {
     }
   })
   scripts.forEach((code, i) => {
+    // eslint-disable-next-line sonarjs/code-eval -- runs each generated plugin in a fresh test context
     new Script(code, { filename: `plugin${i}.js` }).runInContext(context)
   })
   return { registered, read }

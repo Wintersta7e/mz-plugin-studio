@@ -33,7 +33,6 @@ jobs:
       - run: npm run ci:toolchain
       - run: npm run ci:runtime-deps
       - run: npm run lint
-      - run: npm run lint:scripts
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run licenses -- --check

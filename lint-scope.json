@@ -1,4 +1,257 @@
 {
   "dataGlobs": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
-  "jsAllowlist": ["eslint.config.mjs"]
+  "jsAllowlist": ["eslint.config.mjs"],
+  "presets": [
+    { "id": "@eslint/js recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
+    { "id": "typescript-eslint strictTypeChecked", "files": ["**/*.{ts,tsx,mts,cts}"] },
+    { "id": "typescript-eslint stylisticTypeChecked", "files": ["**/*.{ts,tsx,mts,cts}"] },
+    {
+      "id": "@eslint-react/eslint-plugin strict-type-checked",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "id": "eslint-plugin-react-hooks recommended-latest",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    { "id": "eslint-plugin-jsx-a11y strict", "files": ["src/renderer/**/*.tsx", "tests/**/*.tsx"] },
+    { "id": "eslint-plugin-no-unsanitized recommended", "files": ["src/renderer/**"] },
+    { "id": "eslint-plugin-unicorn recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
+    { "id": "eslint-plugin-sonarjs recommended", "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"] },
+    {
+      "id": "eslint-plugin-regexp flat/recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "eslint-plugin-promise flat/recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "eslint-plugin-n flat/recommended-module",
+      "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"]
+    },
+    {
+      "id": "@eslint-community/eslint-plugin-eslint-comments recommended",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
+    },
+    { "id": "@vitest/eslint-plugin recommended", "files": ["tests/**"] },
+    { "id": "eslint-plugin-testing-library flat/react", "files": ["tests/**/*.tsx"] },
+    { "id": "eslint-plugin-jest-dom flat/recommended", "files": ["tests/**"] },
+    { "id": "eslint-plugin-playwright flat/recommended", "files": ["e2e/**"] },
+    { "id": "typescript-eslint disableTypeChecked", "files": ["**/*.{js,mjs,cjs}"] }
+  ],
+  "optIns": [
+    {
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "rules": {
+        "eqeqeq": "error",
+        "no-duplicate-imports": "error",
+        "no-console": ["error", { "allow": ["warn", "error"] }],
+        "no-alert": "error",
+        "@eslint-community/eslint-comments/require-description": "error",
+        "@eslint-community/eslint-comments/no-use": [
+          "error",
+          { "allow": ["eslint-disable-next-line"] }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.{ts,tsx,mts,cts}"],
+      "rules": {
+        "@typescript-eslint/switch-exhaustiveness-check": [
+          "error",
+          { "considerDefaultExhaustiveForUnions": false, "requireDefaultForNonUnion": true }
+        ],
+        "@typescript-eslint/strict-boolean-expressions": "error",
+        "@typescript-eslint/no-unsafe-type-assertion": "error",
+        "@typescript-eslint/require-array-sort-compare": "error",
+        "@typescript-eslint/promise-function-async": "error",
+        "@typescript-eslint/consistent-type-exports": "error",
+        "@typescript-eslint/no-import-type-side-effects": "error",
+        "@typescript-eslint/consistent-type-imports": [
+          "error",
+          { "prefer": "type-imports", "fixStyle": "inline-type-imports" }
+        ],
+        "@typescript-eslint/ban-ts-comment": [
+          "error",
+          { "ts-expect-error": true, "ts-ignore": true, "ts-nocheck": true }
+        ]
+      }
+    },
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "vitest/prefer-strict-equal": "error",
+        "vitest/require-mock-type-parameters": "error",
+        "vitest/prefer-import-in-mock": "error",
+        "vitest/prefer-expect-assertions": ["error", { "onlyFunctionsWithAsyncKeyword": true }],
+        "vitest/no-conditional-in-test": "error",
+        "vitest/prefer-to-have-length": "error",
+        "vitest/prefer-to-contain": "error",
+        "vitest/prefer-strict-boolean-matchers": "error",
+        "vitest/prefer-spy-on": "error",
+        "vitest/prefer-vi-mocked": "error"
+      }
+    }
+  ],
+  "exclusions": [
+    {
+      "rule": "unicorn/prefer-single-call",
+      "files": ["src/renderer/src/lib/generator/**"],
+      "code": "S",
+      "reason": "One lines.push per emitted line is the template contract (docs/CONTRIBUTING_TEMPLATES.md)"
+    },
+    {
+      "rule": "unicorn/name-replacements",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "S",
+      "reason": "React and MZ API names (e, props, params, args) are the names those APIs use"
+    },
+    {
+      "rule": "@typescript-eslint/restrict-template-expressions",
+      "files": ["**/*.{ts,tsx,mts,cts}"],
+      "code": "S",
+      "reason": "Emitting numbers into plugin text is the generator's job; every other kind stays barred",
+      "options": [
+        {
+          "allowAny": false,
+          "allowArray": false,
+          "allowBoolean": false,
+          "allowNever": false,
+          "allowNullish": false,
+          "allowNumber": true,
+          "allowRegExp": false
+        }
+      ]
+    },
+    {
+      "rule": "unicorn/no-null",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "S",
+      "reason": "React, the DOM, JSON and IPC use null; converting persisted null would drop keys"
+    },
+    {
+      "rule": "no-console",
+      "files": ["tools/**", "scripts/**"],
+      "code": "S",
+      "reason": "Command-line tools print by design"
+    },
+    {
+      "rule": "sonarjs/prefer-regexp-exec",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "@typescript-eslint/prefer-regexp-exec owns the same check"
+    },
+    {
+      "rule": "unicorn/no-top-level-side-effects",
+      "files": ["src/renderer/src/lib/generator/templates/**"],
+      "code": "S",
+      "reason": "Templates register themselves on import (docs/CONTRIBUTING_TEMPLATES.md)"
+    },
+    {
+      "rule": "sonarjs/super-linear-regex",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "regexp/no-super-linear-backtracking owns the same check"
+    },
+    {
+      "rule": "n/no-unpublished-import",
+      "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"],
+      "code": "S",
+      "reason": "A desktop app, not an npm package: nothing is published"
+    },
+    {
+      "rule": "sonarjs/deprecation",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "@typescript-eslint/no-deprecated owns the same check"
+    },
+    {
+      "rule": "sonarjs/concise-regex",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "regexp/prefer-d, prefer-w and prefer-character-class own the same check"
+    },
+    {
+      "rule": "unicorn/filename-case",
+      "files": ["src/renderer/src/**/*.tsx"],
+      "ignores": ["src/renderer/src/components/ui/**", "src/renderer/src/main.tsx"],
+      "code": "S",
+      "reason": "React component files are PascalCase; kebab-case stays on everywhere else",
+      "options": [{ "case": "pascalCase", "checkDirectories": false }]
+    },
+    {
+      "rule": "n/no-missing-import",
+      "files": ["src/main/**", "tools/**", "scripts/**", "*.{ts,mts,cts,js,mjs,cjs}"],
+      "code": "X/D",
+      "reason": "Extensionless imports under bundler resolution are false positives; TypeScript owns resolution"
+    },
+    {
+      "rule": "unicorn/no-process-exit",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "n/no-process-exit owns the same check"
+    },
+    {
+      "rule": "sonarjs/no-unused-vars",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "@typescript-eslint/no-unused-vars owns the same check"
+    },
+    {
+      "rule": "sonarjs/no-redundant-assignments",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "Core no-useless-assignment owns the same check"
+    },
+    {
+      "rule": "sonarjs/no-alphabetical-sort",
+      "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+      "code": "D",
+      "reason": "@typescript-eslint/require-array-sort-compare owns the same check"
+    },
+    {
+      "rule": "sonarjs/no-os-command-from-path",
+      "files": ["scripts/**", "tests/**", "e2e/**"],
+      "code": "S",
+      "reason": "Development tooling resolves git and npm from PATH by design; no app source spawns a process"
+    }
+  ],
+  "ownerSwaps": [
+    {
+      "rule": "@eslint-react/rules-of-hooks",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/exhaustive-deps",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/set-state-in-effect",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/set-state-in-render",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/static-components",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@eslint-react/unsupported-syntax",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    { "rule": "@eslint-react/use-memo", "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"] },
+    { "rule": "@eslint-react/purity", "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"] },
+    {
+      "rule": "@eslint-react/error-boundaries",
+      "files": ["src/renderer/**/*.{ts,tsx}", "tests/**/*.tsx"]
+    },
+    {
+      "rule": "@typescript-eslint/unbound-method",
+      "files": ["tests/**"],
+      "replacement": "vitest/unbound-method"
+    }
+  ],
+  "ipcExempt": ["src/main/ipc/registration.ts", "src/preload/ipc.ts"]
 }

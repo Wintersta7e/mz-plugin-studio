@@ -62,6 +62,7 @@ type Compiled = { script: Script; problem: null } | { script: null; problem: Com
 
 function compile(code: string, filename: string): Compiled {
   try {
+    // eslint-disable-next-line sonarjs/code-eval -- compiles generated plugin text for the test-only executor
     return { script: new Script(code, { filename }), problem: null }
   } catch (error) {
     if (!(error instanceof Error) || error.name !== 'SyntaxError') throw error
@@ -121,6 +122,7 @@ function standInSource(): string {
 
 /** Defines a stand-in, created inside `context`, for every name of `listTemplateGlobals()`. */
 export function installStandIns(context: Context): void {
+  // eslint-disable-next-line sonarjs/code-eval -- installs the stand-in globals in the fresh test context
   new Script(standInSource(), { filename: 'stand-ins.js' }).runInContext(context)
 }
 
@@ -152,6 +154,7 @@ export function evaluatePlugin(
     return { compileProblem: compiled.problem, threw: null, sentinel: false, context: null }
   }
   const context: Record<string, unknown> = createContext({})
+  // eslint-disable-next-line sonarjs/code-eval -- runs the bootstrap in the fresh test context that holds the stub
   new Script(bootstrap(options.mode), { filename: 'bootstrap.js' }).runInContext(context)
   let threw: string | null = null
   try {

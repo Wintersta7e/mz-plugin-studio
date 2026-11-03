@@ -22,6 +22,7 @@ function coreScripts(dir: string): Script[] {
     scripts = CORESCRIPT_FILES.map((file) => {
       const path = join(dir, file)
       if (!existsSync(path)) throw new Error(`MZ core script not found: ${file}`)
+      // eslint-disable-next-line sonarjs/code-eval -- compiles a local engine script for the test runtime
       return new Script(readFileSync(path, 'utf8'), { filename: file })
     })
     compiled.set(dir, scripts)
@@ -75,6 +76,7 @@ function definedNames(): Script {
     const reads = names.map(
       (n) => `${JSON.stringify(n)}: typeof ${n} === 'undefined' ? undefined : ${n}`
     )
+    // eslint-disable-next-line sonarjs/code-eval -- compiles the defined-names probe for the test runtime
     definedSource = new Script(`({${reads.join(',')}})`, { filename: 'defined.js' })
   }
   return definedSource
@@ -121,12 +123,14 @@ export function createMzCorescript(dir: string): MzRuntime {
         return
       }
       try {
+        // eslint-disable-next-line sonarjs/code-eval -- runs a local engine script in the test runtime context
         new Script(source, { filename: path }).runInContext(context, { timeout: TIMEOUT_MS })
       } catch (error) {
         errors.push({ name, message: describeThrown(error) })
       }
     }
   }
+  // eslint-disable-next-line sonarjs/code-eval -- runs the browser shim in the test runtime context
   ;(new Script(BROWSER_SOURCE).runInContext(context) as (h: Host) => void)(host)
   for (const script of scripts) script.runInContext(context, { timeout: TIMEOUT_MS })
   const real = definedNames().runInContext(context) as Record<string, unknown>
@@ -134,6 +138,7 @@ export function createMzCorescript(dir: string): MzRuntime {
   for (const [name, value] of Object.entries(real)) {
     if (value !== undefined) context[name] = value
   }
+  // eslint-disable-next-line sonarjs/code-eval -- reads the observed state from the test runtime context
   const state = new Script(OBSERVE_SOURCE).runInContext(context) as { ran: boolean }
   const manager = context.PluginManager as {
     setup(plugins: unknown): void

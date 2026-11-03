@@ -494,6 +494,7 @@ function loadCase(
   parameters: Record<string, string>
 ): LoadedCase {
   const runtime = createRuntime()
+  // eslint-disable-next-line sonarjs/code-eval -- seeds the observation list in the test runtime context
   new Script(`globalThis.${OBSERVED} = [];`).runInContext(runtime.context)
   const report = runtime.load(
     [{ name: stem, status: true, description: '', parameters }],

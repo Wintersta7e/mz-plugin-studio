@@ -9,6 +9,7 @@ import type { SyntaxProblem } from '../../shared/ipc-types'
  */
 export function compileCheck(content: string, filename: string): SyntaxProblem | null {
   try {
+    // eslint-disable-next-line sonarjs/code-eval -- compile-only syntax check of generated plugin text; the script never runs
     new vm.Script(content, { filename })
     return null
   } catch (error) {

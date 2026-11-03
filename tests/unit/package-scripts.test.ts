@@ -83,26 +83,16 @@ describe('package.json scripts', () => {
     expect(golden).toEqual(['npm run test:golden:coverage'])
   })
 
-  it('check runs the scripts lint and the format check right after the source lint', () => {
+  it('check runs the format check right after the lint', () => {
     const commands = commandsOf(scripts.check)
     const lint = commands.indexOf('npm run lint')
     expect(lint).toBeGreaterThanOrEqual(0)
-    expect(commands.slice(lint + 1, lint + 3)).toEqual([
-      'npm run lint:scripts',
-      'npm run format:check'
-    ])
+    expect(commands.slice(lint + 1, lint + 2)).toEqual(['npm run format:check'])
   })
 
-  it('the source lint fails on any warning', () => {
-    expect(scripts.lint).toBe(
-      'node node_modules/eslint/bin/eslint.js --max-warnings 0 src/ tests/ e2e/'
-    )
-  })
-
-  it('the scripts lint fails on any warning in scripts/', () => {
-    expect(scripts['lint:scripts']).toBe(
-      'node node_modules/eslint/bin/eslint.js --max-warnings 0 scripts/'
-    )
+  it('the lint covers the whole tree and fails on any warning', () => {
+    expect(scripts.lint).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 .')
+    expect(scripts['lint:scripts']).toBeUndefined()
   })
 
   it('the format check covers the whole tree the formatter writes', () => {
