@@ -1,0 +1,10 @@
+// ==== case: type-violating: wrong types {"commandName":42,"pluginName":42,"waitType":7,"waitDuration":"abc"}
+// validation throws: TypeError
+// throws: TypeError
+
+// ==== case: type-violating: null {"commandName":null,"pluginName":null,"waitType":null,"waitDuration":null}
+// throws: TypeError
+
+// ==== case: type-violating: arrays {"commandName":["a","b"],"pluginName":["a","b"],"waitType":["a","b"],"waitDuration":["a","b"]}
+// validation throws: TypeError
+// throws: TypeError

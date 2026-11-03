@@ -1,0 +1,34 @@
+// ==== case: type-violating: wrong types {"className":42,"methodName":42,"timing":7,"callOriginal":"yes"}
+// rejects: Method "42" not found on class "42"
+// Alias: 42.42
+const _42_42 = 42.prototype.42;
+42.prototype.42 = function() {
+    const result = _42_42.apply(this, arguments);
+    
+    // Your code here
+    
+    return result;
+};
+
+// ==== case: type-violating: null {"className":null,"methodName":null,"timing":null,"callOriginal":null}
+// Alias: null.null
+const _null_null = null.prototype.null;
+null.prototype.null = function() {
+    const result = _null_null.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};
+
+// ==== case: type-violating: arrays {"className":["a","b"],"methodName":["a","b"],"timing":["a","b"],"callOriginal":["a","b"]}
+// rejects: Method "a,b" not found on class "a,b"
+// Alias: a,b.a,b
+const _a,b_a,b = a,b.prototype.a,b;
+a,b.prototype.a,b = function() {
+    const result = _a,b_a,b.apply(this, arguments);
+    
+    // Your code here
+    
+    return result;
+};

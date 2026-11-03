@@ -17,6 +17,7 @@ import { V160_FIXTURE } from './corpus/mzparams'
 import { persistedStores } from './corpus/persisted'
 import { EDITS, fixturePlugins } from './corpus/raw-mode'
 import { templateCases, templateIds } from './corpus/templates'
+import { typeViolatingDefaultCases, typeViolatingTemplateCases } from './corpus/type-violating'
 
 // Resolved from the repository root, like the fixture helpers.
 const ROOT = resolve(process.cwd(), 'tests/golden/__golden__')
@@ -59,12 +60,14 @@ const generatorGoldens = (name: string): string[] => [
   `generator/${name}.js`,
   `generator/${name}.exports.txt`
 ]
+const typeViolatingGolden = (id: string): string => `templates/${id}.type-violating.js`
 
 /** The golden files the corpus cases map to. */
 function expectedFiles(): string[] {
   return [
-    ...ids.map((id) => `templates/${id}.js`),
+    ...ids.flatMap((id) => [`templates/${id}.js`, typeViolatingGolden(id)]),
     ...GENERATOR_ENTRIES.flatMap((e) => generatorGoldens(e.name)),
+    ...typeViolatingDefaultCases.map((c) => `generator/${c.name}.js`),
     ...plugins.flatMap((f) => EDITS.map((e) => `raw-mode/${stem(f)}.${e.name}.js`)),
     PARSES,
     ...plugins.map((f) => `parser/${stem(f)}.json`),
@@ -84,12 +87,19 @@ describe('golden inventory', () => {
     let cases = 0
     let templatesDone = 0
     for (const id of ids) {
-      const headers = caseHeaders(`templates/${id}.js`)
-      const corpus = templateCases(id)
-      cases += headers.length
-      if (headers.length === corpus.length && corpus.every((c) => hasCase(headers, c.name))) {
-        templatesDone++
+      const files: [string, { name: string }[]][] = [
+        [`templates/${id}.js`, templateCases(id)],
+        [typeViolatingGolden(id), typeViolatingTemplateCases(id)]
+      ]
+      let isDone = true
+      for (const [path, corpus] of files) {
+        const headers = caseHeaders(path)
+        cases += headers.length
+        if (headers.length !== corpus.length || corpus.some((c) => !hasCase(headers, c.name))) {
+          isDone = false
+        }
       }
+      if (isDone) templatesDone++
     }
 
     const typesOf = (lists: PluginParameter[][]): Set<string> =>

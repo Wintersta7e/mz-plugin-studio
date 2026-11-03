@@ -7,7 +7,8 @@ import {
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { freezeTime, restoreTime } from './corpus/normalise'
-import { renderTemplateCases, templateCases, templateIds } from './corpus/templates'
+import { renderCases, renderTemplateCases, templateCases, templateIds } from './corpus/templates'
+import { typeViolatingTemplateCases } from './corpus/type-violating'
 
 const ids = templateIds()
 
@@ -18,6 +19,12 @@ describe('template goldens', () => {
   for (const id of ids) {
     it(`${id}: all cases`, async () => {
       await expect(renderTemplateCases(id)).toMatchFileSnapshot(`__golden__/templates/${id}.js`)
+    })
+    it(`${id}: type-violating cases`, async () => {
+      expect.hasAssertions()
+      await expect(renderCases(id, typeViolatingTemplateCases(id))).toMatchFileSnapshot(
+        `__golden__/templates/${id}.type-violating.js`
+      )
     })
   }
 

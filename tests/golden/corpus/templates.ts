@@ -189,23 +189,31 @@ export function templateCases(id: string): TemplateCase[] {
   return cases
 }
 
+const thrown = (error: unknown): string => (error instanceof Error ? error.name : typeof error)
+
 function renderCase(id: string, c: TemplateCase): string {
   const lines = [`// ==== case: ${c.name} ${oneLine(JSON.stringify(c.values))}`]
-  const verdict = validateTemplateValues(id, c.values)
-  if (!verdict.valid) lines.push(`// rejects: ${oneLine(verdict.errors.join(' | '))}`)
+  // Validation reads values as the field's type, so a value of another type can make it throw.
+  try {
+    const verdict = validateTemplateValues(id, c.values)
+    if (!verdict.valid) lines.push(`// rejects: ${oneLine(verdict.errors.join(' | '))}`)
+  } catch (error) {
+    lines.push(`// validation throws: ${thrown(error)}`)
+  }
   try {
     lines.push(template(id).generate(c.values))
   } catch (error) {
-    lines.push(`// throws: ${error instanceof Error ? error.name : typeof error}`)
+    lines.push(`// throws: ${thrown(error)}`)
   }
   return lines.join('\n')
 }
 
+// The given cases of one template as a golden file's text.
+export function renderCases(id: string, cases: TemplateCase[]): string {
+  return cases.map((c) => renderCase(id, c)).join('\n\n') + '\n'
+}
+
 /** Every case of one template as the golden file's text. */
 export function renderTemplateCases(id: string): string {
-  return (
-    templateCases(id)
-      .map((c) => renderCase(id, c))
-      .join('\n\n') + '\n'
-  )
+  return renderCases(id, templateCases(id))
 }
