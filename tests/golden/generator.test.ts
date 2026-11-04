@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { generatePlugin, validatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { getAllClassNames, getClassInfo } from '../../src/renderer/src/lib/generator/class-registry'
 import { getDefaultLiteral } from '../../src/renderer/src/lib/generator/escape'
-import type { PluginParameter } from '../../src/shared/types/plugin'
+import type { NoteParam, PluginParameter } from '../../src/shared/types/plugin'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { COMMENT_PAYLOADS } from '../helpers/hostile'
@@ -177,5 +177,22 @@ describe('generator rules no file golden reaches', () => {
   it('writes a boolean default from its text, any case', () => {
     expect(getDefaultLiteral('boolean', 'TRUE')).toBe('true')
     expect(getDefaultLiteral('boolean', 'no')).toBe('false')
+  })
+})
+
+// A saved note group is checked for its name and type only, so its other fields can hold any
+// saved value.
+describe('generator output for saved note groups', () => {
+  it('leaves out note group fields that hold an empty or false value of any type', () => {
+    const definition = customCodeRows()
+    const portrait: NoteParam = { name: 'Portrait', type: 'file' }
+    const face: NoteParam = { name: 'Face', type: 'file' }
+    Object.assign(portrait, JSON.parse('{"dir":0,"data":false}') as unknown)
+    Object.assign(face, JSON.parse('{"dir":null,"data":""}') as unknown)
+    definition.meta.noteParams = [portrait, face]
+
+    expect(generatePlugin(definition)).toContain(
+      ' * @noteParam Portrait\n * @noteType file\n * @noteParam Face\n * @noteType file\n'
+    )
   })
 })
