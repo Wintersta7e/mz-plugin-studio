@@ -49,6 +49,7 @@ describe('generatePluginOutput', () => {
   it('regenerates the plugin with raw mode off and keeps the file with raw mode on', () => {
     const plugin = imported('Fixture_HandWritten.js')
     const baseline = toBaseline(plugin)
+
     expect(generatePluginOutput(plugin, false, baseline)).toEqual({
       ok: true,
       code: generatePlugin(plugin)
@@ -63,6 +64,7 @@ describe('generatePluginOutput', () => {
     const plugin = imported('Fixture_HandWritten.js')
     const message =
       'Not saved: the original file Fixture_HandWritten.js is not loaded. Reload it from the project, or turn raw mode off to save regenerated code.'
+
     expect(generatePluginOutput(withoutSource(plugin), true, toBaseline(plugin))).toEqual({
       ok: false,
       refusal: 'source-missing',
@@ -79,6 +81,7 @@ describe('generatePluginOutput', () => {
     it(`refuses header changes to ${file}, which has no main block`, () => {
       const plugin = imported(file)
       const edited = { ...plugin, meta: { ...plugin.meta, description: 'Edited description' } }
+
       expect(generatePluginOutput(edited, true, toBaseline(plugin))).toEqual({
         ok: false,
         refusal: 'header-without-main-block',
@@ -93,8 +96,11 @@ describe('generatePluginOutput', () => {
         structs: [{ id: 'added-struct', name: 'Added', parameters: [] }]
       }
       const out = generatePluginOutput(edited, true, toBaseline(plugin))
+
       expect(out.ok).toBe(true)
+
       const code = out.ok ? out.code : ''
+
       expect(code).toContain('/*~struct~Added:')
       expect(code.replace('/*~struct~Added:\n */\n\n', '')).toBe(plugin.rawSource)
     })
@@ -105,8 +111,11 @@ describe('generatePluginOutput', () => {
     const text = plugin.rawSource ?? ''
     const edited = { ...plugin, meta: { ...plugin.meta, description: 'Edited description' } }
     const out = generatePluginOutput(edited, true, toBaseline(plugin))
+
     expect(out.ok).toBe(true)
+
     const code = out.ok ? out.code : ''
+
     expect(code.startsWith('/*:en\n')).toBe(true)
     expect(code).toContain(' * @plugindesc Edited description\n')
     expect(code.endsWith(text.slice(text.indexOf('/*:ja')))).toBe(true)
@@ -122,8 +131,11 @@ describe('generatePluginOutput', () => {
       parameters: plugin.parameters.map((p, i) => (i === 0 ? { ...p, default: 42 } : p))
     }
     const out = generatePluginOutput(edited, true, toBaseline(plugin))
+
     expect(out.ok).toBe(true)
+
     const code = out.ok ? out.code : ''
+
     expect(code).toContain(' * @default 42\n')
     expect(help).toContain('Generated from a fixed definition.')
     expect(code).toContain(help)
@@ -191,6 +203,7 @@ describe('fileNameMismatch', () => {
       "  PluginManager.registerCommand(name, 'Show', () => {});",
       '})();'
     ].join('\n')
+
     expect(fileNameMismatch(both, 'Bar.js', code)).toBeNull()
   })
 
@@ -198,6 +211,7 @@ describe('fileNameMismatch', () => {
     'loses commands and parameters under another name for code naming the plugin as %s',
     (literal) => {
       const code = `(() => { const params = PluginManager.parameters(${literal}); })();`
+
       expect(fileNameMismatch(both, 'Bar.js', code)).toEqual({ commands: true, parameters: true })
     }
   )

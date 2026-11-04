@@ -131,6 +131,7 @@ describe('ipc registration', () => {
       `handle registrations ${ipc.handled.length}/${INVOKE_CHANNELS.length}, ` +
         `on registrations ${ipc.listened.length}/${SEND_CHANNELS.length}`
     )
+
     expect(INVOKE_CHANNELS.length).toBeGreaterThan(0)
     expect(SEND_CHANNELS.length).toBeGreaterThan(0)
     expect(ipc.handled).toEqual([...INVOKE_CHANNELS])
@@ -148,6 +149,7 @@ describe('ipc registration', () => {
           () => 'answered',
           (error: Error) => error.message
         )
+
         expect({ channel, sender: sender.name, result }).toEqual({
           channel,
           sender: sender.name,
@@ -159,6 +161,7 @@ describe('ipc registration', () => {
           sender: sender.name,
           reached: 0
         })
+
         cases++
       }
     }
@@ -170,6 +173,7 @@ describe('ipc registration', () => {
         window = appWindow
         vi.mocked(log.warn).mockClear()
         ipc.sendFrom(sender.frame(), channel, true)
+
         expect({ channel, sender: sender.name, warned: refusals() }).toEqual({
           channel,
           sender: sender.name,
@@ -180,6 +184,7 @@ describe('ipc registration', () => {
           sender: sender.name,
           reached: 0
         })
+
         cases++
       }
     }
@@ -188,14 +193,18 @@ describe('ipc registration', () => {
   it('answers the app page', async () => {
     await expect(ipc.invoke('window-is-maximized')).resolves.toBe(false)
     expect(handlers['window-is-maximized'].run).toHaveBeenCalledOnce()
+
     ipc.send('log:set-level', true)
+
     expect(deps.setLogLevel).toHaveBeenCalledWith('debug')
     expect(vi.mocked(log.warn)).not.toHaveBeenCalled()
+
     cases += 2
   })
 
   it('admits the renderer entry file however its directory is spelled', () => {
     const spaced = resolve('/Synthetic App/Fixture é/renderer/index.html')
+
     expect(admits({ kind: 'file', path: spaced }, pathToFileURL(spaced).href)).toBe(true)
     expect(admits({ kind: 'file', path: entry }, entryUrl)).toBe(true)
     expect(admits({ kind: 'file', path: entry }, `${entryUrl}?x=1#top`)).toBe(true)
@@ -211,6 +220,7 @@ describe('ipc registration', () => {
     }
     const at = (file: string): string =>
       `file:///C:/Games/Synthetic%20App/resources/app.asar/out/renderer/${file}`
+
     expect(admits(win32, at('index.html'), 'win32')).toBe(true)
     expect(admits(win32, at('index.html').toLowerCase(), 'win32')).toBe(true)
     expect(admits(win32, at('other.html'), 'win32')).toBe(false)
@@ -219,6 +229,7 @@ describe('ipc registration', () => {
 
   it('admits only the dev server origin in development', () => {
     const dev: RendererEntry = { kind: 'dev-server', origin: 'http://localhost:5173' }
+
     expect(admits(dev, 'http://localhost:5173/src/x')).toBe(true)
     expect(admits(dev, 'http://localhost:5173/')).toBe(true)
     expect(admits(dev, 'http://localhost:5174/')).toBe(false)
@@ -231,11 +242,16 @@ describe('ipc registration', () => {
     const check = createSenderCheck(() => win, { kind: 'file', path: entry })
     const send = (): boolean => check({ senderFrame: win.webContents.mainFrame })
     vi.mocked(log.warn).mockClear()
+
     expect(send()).toBe(false)
     expect(send()).toBe(false)
+
     win = createFakeWindow('https://example.invalid/page?token=other')
+
     expect(send()).toBe(false)
+
     win = createFakeWindow(pathToFileURL(join(rendererDir, 'other.html')).href)
+
     expect(send()).toBe(false)
     expect(vi.mocked(log.warn).mock.calls).toEqual([
       [`[ipc] Refused requests from https://example.invalid/page: the app page is ${entry}`],
@@ -244,11 +260,13 @@ describe('ipc registration', () => {
           `the app page is ${entry}`
       ]
     ])
+
     cases += 4
   })
 
   it('counts its sender cases', () => {
     console.log(`sender cases ${cases}`)
+
     expect(cases).toBeGreaterThan(0)
   })
 })
@@ -325,6 +343,7 @@ describe("electron-log's channel", () => {
     const fake = routed()
     handleAll(handlers, isTrustedSender, fake.host)
     onAll(listeners, isTrustedSender, fake.host)
+
     // The page asks main nothing on this channel, so electron-log's handler is only taken off
     expect([...fake.handlers.keys()].sort()).toEqual([...INVOKE_CHANNELS].sort())
     expect([...fake.listeners.keys()].sort()).toEqual([...SEND_CHANNELS, LOG_CHANNEL].sort())
@@ -339,11 +358,13 @@ describe("electron-log's channel", () => {
       window = appWindow
       vi.mocked(log.warn).mockClear()
       fake.sendFrom(sender.frame(), line())
+
       expect({ sender: sender.name, warned: refusals() }).toEqual({
         sender: sender.name,
         warned: [[`[ipc] refused ${LOG_CHANNEL}: Access denied: sender`]]
       })
     }
+
     expect(writeLine).not.toHaveBeenCalled()
   })
 
@@ -378,6 +399,7 @@ describe("electron-log's channel", () => {
   it.each(refusedLines)('drops $name without throwing', ({ args }) => {
     const fake = routed()
     vi.mocked(log.warn).mockClear()
+
     expect(() => fake.sendFrom(frame, ...args)).not.toThrow()
     expect(writeLine).not.toHaveBeenCalled()
     expect(refusals()).toEqual([
@@ -392,6 +414,7 @@ describe("electron-log's channel", () => {
     const bare = Object.assign(Object.create(null) as Record<string, unknown>, line())
     fake.sendFrom(frame, scoped)
     fake.sendFrom(frame, bare)
+
     expect(writeLine.mock.calls).toEqual([
       [{ senderFrame: frame }, scoped],
       [{ senderFrame: frame }, bare]
@@ -403,6 +426,7 @@ describe("electron-log's channel", () => {
   it('says so when electron-log registered no listener to write the lines', () => {
     const fake = createLogHost()
     routeLogChannel(isTrustedSender, fake.host)
+
     expect(vi.mocked(log.error).mock.calls).toEqual([
       [`[ipc] electron-log has no listener on ${LOG_CHANNEL}: page log lines are lost`]
     ])

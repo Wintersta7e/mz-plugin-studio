@@ -375,6 +375,7 @@ describe('round trip of imported plugins', () => {
   for (const file of FIXTURES) {
     for (const property of NAMES) {
       const listed = KNOWN_FAILING[file]?.includes(property) ?? false
+
       it(`${property}: ${file}${listed ? ' (fails today)' : ''}`, () => {
         const problems = PROPERTIES[property](file)
         if (listed) expect(problems, 'expected property to fail').not.toEqual([])
@@ -391,6 +392,7 @@ describe('round trip of imported plugins', () => {
         `cases ${FIXTURES.length * NAMES.length}; characterized ${characterized}`
     )
     console.log(`round-trip: unedited over ${compiling} compiling fixtures`)
+
     expect(FIXTURES.length).toBeGreaterThan(0)
     expect(Object.keys(KNOWN_FAILING).filter((f) => !FIXTURES.includes(f))).toEqual([])
   })

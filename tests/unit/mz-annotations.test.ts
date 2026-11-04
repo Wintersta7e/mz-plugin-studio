@@ -43,6 +43,7 @@ describe('A1: combo parameter type', () => {
  * @default Option1
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters).toHaveLength(1)
     expect(result.parameters[0].type).toBe('combo')
     expect(result.parameters[0].options).toHaveLength(2)
@@ -67,6 +68,7 @@ describe('A1: combo parameter type', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@type combo')
     expect(output).toContain('@option Opt1')
     expect(output).toContain('@option Opt2')
@@ -86,12 +88,14 @@ describe('A1: combo parameter type', () => {
  * @default Arial
  */`
     const parsed = PluginParser.parsePlugin(original)
+
     expect(parsed.parameters[0].type).toBe('combo')
 
     const plugin = createTestPlugin({
       parameters: parsed.parameters
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@type combo')
   })
 })
@@ -111,6 +115,7 @@ describe('A2: @require on file/animation params', () => {
  * @default myImage
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].type).toBe('file')
     expect(result.parameters[0].dir).toBe('img/pictures')
     expect(result.parameters[0].require).toBe(true)
@@ -127,6 +132,7 @@ describe('A2: @require on file/animation params', () => {
  * @require 1
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].require).toBe(true)
   })
 
@@ -140,6 +146,7 @@ describe('A2: @require on file/animation params', () => {
  * @dir img/pictures
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].require).toBeUndefined()
   })
 
@@ -161,6 +168,7 @@ describe('A2: @require on file/animation params', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@dir img/pictures')
     expect(output).not.toContain('@require 1')
   })
@@ -180,6 +188,7 @@ describe('A2: @require on file/animation params', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).not.toContain('@require')
   })
 
@@ -197,6 +206,7 @@ describe('A2: @require on file/animation params', () => {
  * @require 1
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.commands[0].args[0].require).toBe(true)
   })
 })
@@ -211,6 +221,7 @@ describe('A3: @orderBefore', () => {
  * @orderBefore AnotherPlugin
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.orderBefore).toEqual(['SomePlugin', 'AnotherPlugin'])
   })
 
@@ -220,6 +231,7 @@ describe('A3: @orderBefore', () => {
  * @author Test
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.orderBefore).toEqual([])
   })
 
@@ -228,6 +240,7 @@ describe('A3: @orderBefore', () => {
       meta: { orderBefore: ['PluginA', 'PluginB'] } as any
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@orderBefore PluginA')
     expect(output).toContain('@orderBefore PluginB')
   })
@@ -241,6 +254,7 @@ describe('A3: @orderBefore', () => {
     const parsed = PluginParser.parsePlugin(content)
     const plugin = createTestPlugin({ meta: parsed.meta })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@orderBefore MyPlugin')
   })
 })
@@ -258,6 +272,7 @@ describe('A4: @noteParam annotation group', () => {
  * @noteRequire 1
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.noteParams).toHaveLength(1)
     expect(result.meta.noteParams![0]).toEqual({
       name: 'bgmTag',
@@ -283,6 +298,7 @@ describe('A4: @noteParam annotation group', () => {
  * @noteData enemies
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.noteParams).toHaveLength(2)
     expect(result.meta.noteParams![0].name).toBe('bgmTag')
     expect(result.meta.noteParams![0].data).toBe('actors')
@@ -299,6 +315,7 @@ describe('A4: @noteParam annotation group', () => {
  * @noteType file
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.noteParams).toHaveLength(1)
     expect(result.meta.noteParams![0]).toEqual({
       name: 'simpleTag',
@@ -321,6 +338,7 @@ describe('A4: @noteParam annotation group', () => {
       } as any
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@noteParam bgmTag')
     expect(output).toContain('@noteType file')
     expect(output).toContain('@noteDir audio/bgm/')
@@ -336,6 +354,7 @@ describe('A4: @noteParam annotation group', () => {
       } as any
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@noteParam tag')
     expect(output).toContain('@noteType file')
     expect(output).not.toContain('@noteDir')
@@ -349,6 +368,7 @@ describe('A4: @noteParam annotation group', () => {
  * @author Test
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.meta.noteParams).toEqual([])
   })
 })
@@ -366,6 +386,7 @@ describe('A5: icon parameter type', () => {
  * @default 16
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].type).toBe('icon')
     expect(result.parameters[0].default).toBe(16)
   })
@@ -384,6 +405,7 @@ describe('A5: icon parameter type', () => {
       ]
     })
     const output = generatePlugin(plugin)
+
     expect(output).toContain('@type icon')
     expect(output).toContain('@default 16')
     // Generated JS code should parse as Number
@@ -404,6 +426,7 @@ describe('A6: map parameter type', () => {
  * @default 1
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].type).toBe('map')
     expect(result.parameters[0].default).toBe(1)
   })
@@ -422,6 +445,7 @@ describe('A6: map parameter type', () => {
       ]
     })
     const output = generatePlugin(plugin)
+
     expect(output).toContain('@type map')
     expect(output).toContain("Number(params['targetMap']")
   })
@@ -439,6 +463,7 @@ describe('A7: hidden parameter type', () => {
  * @default 1.0.0
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].type).toBe('hidden')
     expect(result.parameters[0].default).toBe('1.0.0')
   })
@@ -457,6 +482,7 @@ describe('A7: hidden parameter type', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@type hidden')
     expect(output).toContain('@default 1.0.0')
   })
@@ -472,6 +498,7 @@ describe('A7: hidden parameter type', () => {
  * @default {}
  */`
     const result = PluginParser.parsePlugin(content)
+
     expect(result.parameters[0].type).toBe('hidden')
     // Should NOT have rawType since type matches
     expect(result.parameters[0].rawType).toBeUndefined()
@@ -534,6 +561,7 @@ describe('Round-trip: all new types together', () => {
       parameters: parsed.parameters
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@orderBefore LatePlugin')
     expect(output).toContain('@noteParam bgmTag')
     expect(output).toContain('@type combo')
@@ -565,6 +593,7 @@ describe('MZ annotation spec compliance', () => {
       }
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@requiredAssets img/pictures/hero')
     expect(output).toContain('@requiredAssets audio/bgm/theme')
   })
@@ -585,6 +614,7 @@ describe('MZ annotation spec compliance', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@dir img/pictures')
     expect(output).not.toContain('@require 1')
   })
@@ -608,6 +638,7 @@ describe('MZ annotation spec compliance', () => {
       }
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@noteParam bgm')
     expect(output).toContain('@noteType file')
     expect(output).toContain('@noteDir audio/bgm/')
@@ -624,6 +655,7 @@ describe('MZ annotation spec compliance', () => {
  * @requiredAssets audio/bgm/overworld
  */`
     const parsed = PluginParser.parsePlugin(content)
+
     expect(parsed.meta.requiredAssets).toEqual(['img/pictures/title', 'audio/bgm/overworld'])
   })
 
@@ -641,6 +673,7 @@ describe('MZ annotation spec compliance', () => {
       ]
     })
     const output = generateHeaderOnly(plugin)
+
     expect(output).toContain('@type location')
   })
 
@@ -654,6 +687,7 @@ describe('MZ annotation spec compliance', () => {
  * @type location
  */`
     const parsed = PluginParser.parsePlugin(content)
+
     expect(parsed.parameters[0].type).toBe('location')
   })
 })

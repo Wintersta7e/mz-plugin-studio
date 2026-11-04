@@ -12,6 +12,7 @@ describe('console guard', () => {
     const target = fakeConsole()
     const guard = createConsoleGuard(target)
     target.error('failed %d times:', 2, 'boom')
+
     expect(guard.finish()).toEqual(['unexpected console.error: failed 2 times: boom'])
   })
 
@@ -20,12 +21,14 @@ describe('console guard', () => {
     const guard = createConsoleGuard(target)
     guard.expect('warn', /deprecated/)
     target.warn('this option is deprecated')
+
     expect(guard.finish()).toEqual([])
   })
 
   it('reports an expectation that no call met', () => {
     const guard = createConsoleGuard(fakeConsole())
     guard.expect('warn', /deprecated/)
+
     expect(guard.finish()).toEqual(['expected console.warn matching /deprecated/, none came'])
   })
 
@@ -34,6 +37,7 @@ describe('console guard', () => {
     const guard = createConsoleGuard(target)
     guard.expect('warn', /boom/)
     target.error('boom')
+
     expect(guard.finish()).toEqual([
       'unexpected console.error: boom',
       'expected console.warn matching /boom/, none came'
@@ -44,6 +48,7 @@ describe('console guard', () => {
     const target = fakeConsole()
     const guard = createConsoleGuard(target)
     target.error = () => {}
+
     expect(guard.finish()).toEqual([
       'console.error was replaced during the test; use expectConsole'
     ])
@@ -53,8 +58,11 @@ describe('console guard', () => {
     const target = fakeConsole()
     const { error, warn } = target
     const guard = createConsoleGuard(target)
+
     expect(target.error).not.toBe(error)
+
     guard.finish()
+
     expect(target.error).toBe(error)
     expect(target.warn).toBe(warn)
   })

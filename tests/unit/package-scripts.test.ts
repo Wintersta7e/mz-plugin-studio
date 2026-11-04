@@ -85,11 +85,14 @@ describe('package.json scripts', () => {
     const names = Object.keys(scripts)
     const commands = names.flatMap((name) => located(scripts[name]).map((at) => ({ name, ...at })))
     console.log(`package scripts: scripts ${names.length}, commands ${commands.length}`)
+
     expect(commands.length).toBeGreaterThan(0)
+
     const failures = commands.flatMap(({ name, c, folder }) => {
       const why = locatedProblem(c, folder)
       return why ? [`${name}: "${c}" ${why}`] : []
     })
+
     expect(failures).toEqual([])
   })
 
@@ -102,6 +105,7 @@ describe('package.json scripts', () => {
     const golden = commandsOf(scripts.check).filter((c) =>
       (scripts[NPM_RUN.exec(c)?.[1] ?? ''] ?? '').includes('--project golden')
     )
+
     expect(golden).toEqual(['npm run test:golden:coverage'])
   })
 
@@ -117,6 +121,7 @@ describe('package.json scripts', () => {
       'npm run strictness:status',
       'npm run licenses -- --check'
     ]
+
     expect(commandsOf(scripts.check).slice(0, gates.length)).toStrictEqual(gates)
   })
 
@@ -139,13 +144,17 @@ describe('package.json scripts', () => {
     const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
     const section = (heading: string): string => {
       const start = readme.indexOf(`\n## ${heading}\n`)
+
       expect(start, heading).toBeGreaterThanOrEqual(0)
+
       const end = readme.indexOf('\n## ', start + 1)
       return readme.slice(start, end < 0 ? undefined : end)
     }
     console.log(`golden commit rules: scripts running them ${runners.length}`)
+
     expect(runners).toEqual(['check:commits'])
     expect(commandsOf(scripts.check)).not.toContain('npm run check:commits')
+
     for (const heading of ['Development', 'Contributing'])
       expect(section(heading), heading).toContain('npm run check:commits')
   })
@@ -155,11 +164,13 @@ describe('package.json scripts', () => {
       'node node_modules/vitest/vitest.mjs run --project node tests/integration/mz-parity.test.ts'
     )
     expect(commandsOf(scripts.check)).not.toContain('npm run test:parity')
+
     const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
     const development = readme.slice(
       readme.indexOf('\n## Development\n'),
       readme.indexOf('\n## Layout\n')
     )
+
     expect(development).toContain('MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity')
   })
 
@@ -173,6 +184,7 @@ describe('package.json scripts', () => {
     const e2e = ['npm run e2e:prepare', 'npm run e2e', 'npm run e2e:visual:update']
     const named = e2e.filter((command) => commented(command) !== undefined)
     console.log(`README e2e commands: named ${named.length}/${e2e.length}`)
+
     expect(named).toEqual(e2e)
     expect(commandsOf(scripts.check).filter((c) => c.startsWith('npm run e2e'))).toEqual([])
     expect(commented('npm run check')).toMatch(/not the e2e suite/)
@@ -198,9 +210,12 @@ describe('package.json scripts', () => {
     ]) {
       const lines = readFileSync(join(ROOT, '.github/workflows', file), 'utf8').split(/\r?\n/)
       const start = lines.indexOf(`  ${job}:`)
+
       expect(start, `${file} ${job}`).toBeGreaterThanOrEqual(0)
+
       const end = lines.findIndex((line, index) => index > start && /^ {0,2}\S/.test(line))
       const body = lines.slice(start + 1, end < 0 ? undefined : end)
+
       expect(body, `${file} ${job}`).toContain('      - run: npm run package:win')
     }
   })

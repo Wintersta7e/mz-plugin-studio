@@ -12,6 +12,7 @@ describe('ignore rules', () => {
   for (const path of IGNORED_PATHS) {
     it(`${path} is ignored by git`, () => {
       const result = spawnSync('git', ['check-ignore', '-q', path], { cwd: process.cwd() })
+
       expect(result.status).toBe(0)
     })
   }

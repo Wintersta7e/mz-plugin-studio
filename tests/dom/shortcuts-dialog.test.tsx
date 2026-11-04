@@ -13,8 +13,10 @@ describe('keyboard shortcuts dialog', () => {
     const dialog = screen.getByRole('dialog', { name: 'Keyboard Shortcuts' })
     const keys = Array.from(dialog.querySelectorAll('kbd'), (kbd) => kbd.textContent)
     console.log(`shortcuts ${SHORTCUTS.length}, rows ${keys.length}`)
+
     expect(SHORTCUTS.length).toBeGreaterThan(0)
     expect(keys.sort()).toEqual(SHORTCUTS.map((s) => s.label).sort())
+
     for (const shortcut of SHORTCUTS) {
       expect(within(dialog).getByText(shortcut.description)).toBeInTheDocument()
     }
@@ -25,6 +27,7 @@ describe('keyboard shortcuts dialog', () => {
     const onOpenChange = vi.fn()
     render(<ShortcutsDialog open onOpenChange={onOpenChange} />)
     await user.click(screen.getByRole('button', { name: 'Close' }))
+
     expect(onOpenChange).toHaveBeenCalledTimes(1)
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })

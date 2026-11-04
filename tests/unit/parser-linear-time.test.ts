@@ -62,6 +62,7 @@ describe('parse time of help text and tag values', () => {
       PluginParser.parsePlugin(content)
       const elapsed = performance.now() - start
       console.log(`${leg} ramp: ${size} chars ${Math.round(elapsed)} ms`)
+
       expect(elapsed, `${size} chars`).toBeLessThan(BOUND_MS)
     }
   })
@@ -103,6 +104,7 @@ function checkEquivalence<T>(
   }
   console.log(`equivalence ${name}: inputs ${count}, mismatches ${mismatches.length}`)
   for (const line of mismatches.slice(0, 5)) console.log(`  ${line}`)
+
   expect(count).toBeGreaterThan(0)
   expect(mismatches.length).toBe(0)
 }

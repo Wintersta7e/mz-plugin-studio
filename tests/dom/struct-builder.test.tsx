@@ -58,9 +58,13 @@ async function pick(user: UserEvent, current: string, option: string): Promise<v
 describe('struct blocks', () => {
   it('writes a new struct and its field into a block of its own', async () => {
     const user = renderTab()
+
     expect(screen.getByText('No structs defined')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Add Struct' }))
+
     expect(screen.queryByText('No structs defined')).not.toBeInTheDocument()
+
     await retype(user, screen.getByPlaceholderText('StructName'), 'Point')
     await waitFor(() => expect(preview()).toContain('/*~struct~Point:'))
 
@@ -81,6 +85,7 @@ describe('struct blocks', () => {
     await user.paste('a|Alpha\nb')
     await waitFor(() => {
       const block = structBlock('Point')
+
       expect(block).toContain(' * @type select\n')
       expect(block).toContain(' * @option Alpha\n * @value a\n')
       expect(block).toContain(' * @option b\n')
@@ -97,9 +102,12 @@ describe('struct blocks', () => {
     await user.click(fieldRow('NewParameter').querySelector('button')!)
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options, 'a|Alpha{Enter}b')
+
     expect(options).toHaveValue('a|Alpha\nb')
+
     await waitFor(() => {
       const block = structBlock('Point')
+
       expect(block).toContain(' * @option Alpha\n * @value a\n')
       expect(block).toContain(' * @option b\n')
     })
@@ -115,10 +123,12 @@ describe('struct blocks', () => {
     await user.click(fieldRow('NewParameter').querySelector('button')!)
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options, 'a|b|c')
+
     expect(options).toHaveValue('a|b|c')
     expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
       { value: 'a', text: 'b|c' }
     ])
+
     await waitFor(() => expect(structBlock('Point')).toContain(' * @option b|c\n * @value a\n'))
   })
 
@@ -143,6 +153,7 @@ describe('struct blocks', () => {
     // The first button of a field row shows its details
     await user.click(fieldRow('NewParameter').querySelector('button')!)
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'x')
+
     expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
       { value: 'a|b', text: 'Label' },
       { value: 'cx', text: 'cx' }
@@ -172,6 +183,7 @@ describe('struct blocks', () => {
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|Alpha')
     await waitFor(() => {
       const block = structBlock('Point')
+
       expect(block).toContain(' * @type combo\n')
       expect(block).toContain(' * @option Alpha\n * @value a\n')
     })

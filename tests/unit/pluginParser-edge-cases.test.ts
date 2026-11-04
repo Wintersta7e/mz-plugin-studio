@@ -31,6 +31,7 @@ describe('PluginParser edge cases', () => {
 })();`
 
       const result = PluginParser.parsePlugin(content, 'MyPlugin.js')
+
       expect(result.rawSource).toBe(content)
     })
 
@@ -40,12 +41,14 @@ describe('PluginParser edge cases', () => {
  * @author Test
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.rawSource).toBe(content)
     })
 
     it('stores rawSource for empty/malformed input', () => {
       const content = 'not a plugin at all'
       const result = PluginParser.parsePlugin(content)
+
       expect(result.rawSource).toBe(content)
     })
   })
@@ -87,6 +90,7 @@ describe('PluginParser edge cases', () => {
 })();`
 
       const result = PluginParser.parsePlugin(content, 'MultiIIFE.js')
+
       expect(result.meta.name).toBe('MultiIIFE')
       expect(result.meta.description).toBe('Plugin with multiple IIFEs')
       expect(result.parameters).toHaveLength(1)
@@ -169,6 +173,7 @@ describe('PluginParser edge cases', () => {
 })();`
 
       const result = PluginParser.parsePlugin(content, 'ES6ClassPlugin.js')
+
       expect(result.meta.name).toBe('ES6ClassPlugin')
       expect(result.meta.description).toBe('ES6 Class Plugin')
       expect(result.parameters).toHaveLength(1)
@@ -211,6 +216,7 @@ describe('PluginParser edge cases', () => {
 })();`
 
       const result = PluginParser.parsePlugin(content, 'ArrowIIFE.js')
+
       expect(result.meta.name).toBe('ArrowIIFE')
       expect(result.meta.description).toBe('Arrow IIFE Plugin')
       expect(result.parameters).toHaveLength(1)
@@ -246,6 +252,7 @@ Scene_Title.prototype.drawGameTitle = function() {
 };`
 
       const result = PluginParser.parsePlugin(content, 'TopLevelPlugin.js')
+
       expect(result.meta.name).toBe('TopLevelPlugin')
       expect(result.meta.description).toBe('Top Level Plugin')
       expect(result.parameters).toHaveLength(1)
@@ -262,6 +269,7 @@ Scene_Title.prototype.drawGameTitle = function() {
  * @author Nobody
  */`
       const result = PluginParser.parsePlugin(content, 'EmptyPlugin.js')
+
       expect(result.meta.name).toBe('EmptyPlugin')
       expect(result.codeBody).toBe('')
       expect(result.customCode).toBe('')
@@ -480,6 +488,7 @@ describe('empty tags', () => {
     const parsed = PluginParser.parsePlugin(
       '/*:\n * @plugindesc Short text\n *\n * @author Someone\n */\n'
     )
+
     expect(parsed.meta.description).toBe('Short text')
   })
 })
@@ -502,6 +511,7 @@ describe('tags count only at the start of a line', () => {
     const plugin = PluginParser.parsePlugin(
       `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n * @text Label\n *\n${guardedHelp}\n */\n`
     )
+
     expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
     expect(plugin.commands).toEqual([])
     expect(plugin.meta.dependencies).toEqual([])
@@ -512,6 +522,7 @@ describe('tags count only at the start of a line', () => {
     const plugin = PluginParser.parsePlugin(
       `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n *\n * @command go\n * @text Go\n *\n${guardedHelp}\n */\n`
     )
+
     expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
     expect(plugin.commands.map((c) => [c.name, c.args.length])).toEqual([['go', 0]])
     expect(plugin.meta.dependencies).toEqual([])
@@ -533,6 +544,7 @@ describe('tags count only at the start of a line', () => {
  * @desc Runs @command stop and @arg x
  */
 `)
+
     expect(plugin.meta.description).toBe('Set @param Hidden first')
     expect(plugin.parameters.map((p) => [p.name, p.type, p.desc])).toEqual([
       ['A', 'string', 'Works like @param B, see @type number'],
@@ -548,13 +560,16 @@ describe('tags count only at the start of a line', () => {
     const header =
       '/*:\n@target MZ\n@plugindesc Demo\n@help\nSome help\n@param Speed\n@type number\n@default 3\n*/\n'
     const plugin = PluginParser.parsePlugin(header)
+
     expect(plugin.meta.description).toBe('Demo')
     expect(plugin.meta.help).toBe('Some help')
     expect(plugin.parameters.map((p) => [p.name, p.type, p.default])).toEqual([
       ['Speed', 'number', 3]
     ])
+
     // Saved and read back, the help holds no copy of the parameter
     const again = PluginParser.parsePlugin(generatePlugin(plugin))
+
     expect(again.meta.help).toBe('Some help')
     expect(again.parameters.map((p) => p.name)).toEqual(['Speed'])
   })
@@ -563,6 +578,7 @@ describe('tags count only at the start of a line', () => {
     const plugin = PluginParser.parsePlugin(
       '/*:\n * @plugindesc x\n */\n/*:ja\n@plugindesc Demo\n@help\nSome help\n@param Speed\n*/\n'
     )
+
     expect(plugin.meta.localizations?.ja).toEqual({ description: 'Demo', help: 'Some help' })
   })
 })

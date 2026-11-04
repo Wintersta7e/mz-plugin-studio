@@ -216,8 +216,11 @@ describe('raw IPC lint ban', () => {
       if (severity !== 2 && severity !== 'error') exempt.push(file)
     }
     console.log(`ipc ban: files scanned ${files.length}, exempt ${exempt.length}`)
+
     expect(files.length).toBeGreaterThan(0)
+
     for (const wrapper of WRAPPERS) expect(existsSync(join(ROOT, wrapper))).toBe(true)
+
     expect(exempt).toEqual([...WRAPPERS].sort())
   })
 })

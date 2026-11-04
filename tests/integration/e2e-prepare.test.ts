@@ -54,6 +54,7 @@ function tree(files: Record<string, string>): string {
 describe('compareWires', () => {
   it('accepts wires that differ only in the inspect fuse', () => {
     counts.wire++
+
     expect(compareWires(wire(RELEASE), wire(TWIN))).toEqual({
       diff: ['EnableNodeCliInspectArguments 0→1']
     })
@@ -61,11 +62,13 @@ describe('compareWires', () => {
 
   it('rejects a second differing fuse, naming it', () => {
     counts.wire++
+
     expect(() => compareWires(wire(RELEASE), wire('110111011'))).toThrow(/RunAsNode/)
   })
 
   it('rejects a release with the inspect fuse on', () => {
     counts.wire++
+
     expect(() => compareWires(wire(TWIN), wire(TWIN))).toThrow(
       /release has EnableNodeCliInspectArguments/
     )
@@ -73,6 +76,7 @@ describe('compareWires', () => {
 
   it('rejects wires with no difference', () => {
     counts.wire++
+
     expect(() => compareWires(wire(RELEASE), wire(RELEASE))).toThrow(
       /EnableNodeCliInspectArguments/
     )
@@ -80,6 +84,7 @@ describe('compareWires', () => {
 
   it('prints each fuse state as 0, 1 or r', () => {
     counts.wire++
+
     expect(formatWire(wire('01r'))).toBe(
       'RunAsNode=0 EnableCookieEncryption=1 EnableNodeOptionsEnvironmentVariable=r'
     )
@@ -91,6 +96,7 @@ describe('diffTrees', () => {
     counts.tree++
     const release = tree({ [EXE]: 'release', 'resources/app.asar': 'a', 'locales/en.pak': 'e' })
     const twin = tree({ [EXE]: 'twin', 'resources/app.asar': 'b', 'locales/en.pak': 'e' })
+
     expect(await diffTrees(release, twin, EXE)).toEqual({
       compared: 2,
       differing: ['resources/app.asar']
@@ -101,6 +107,7 @@ describe('diffTrees', () => {
     counts.tree++
     const release = tree({ [EXE]: 'release', 'a.pak': 'a', 'b.pak': 'b' })
     const twin = tree({ [EXE]: 'twin', 'a.pak': 'a', 'c.pak': 'c' })
+
     expect(await diffTrees(release, twin, EXE)).toEqual({
       compared: 1,
       differing: ['b.pak (release only)', 'c.pak (twin only)']
@@ -111,6 +118,7 @@ describe('diffTrees', () => {
     counts.tree++
     const release = tree({ [EXE]: 'release' })
     const twin = tree({ [EXE]: 'twin' })
+
     await expect(diffTrees(release, twin, EXE)).rejects.toThrow(/no file compared/)
   })
 })
@@ -120,16 +128,19 @@ describe('shouldReuse', () => {
 
   it('rebuilds an existing unpacked release unless asked to reuse it', () => {
     counts.reuse++
+
     expect(shouldReuse([], unpacked())).toBe(false)
   })
 
   it('reuses an existing unpacked release when asked', () => {
     counts.reuse++
+
     expect(shouldReuse([REUSE_FLAG], unpacked())).toBe(true)
   })
 
   it('builds when asked to reuse a release that is absent', () => {
     counts.reuse++
+
     expect(shouldReuse([REUSE_FLAG], join(unpacked(), 'absent'))).toBe(false)
   })
 })
@@ -157,6 +168,7 @@ describe('checkStartScripts', () => {
       'assets/vendor-b2.js': '// node_modules/react/index.js\nvar react = {};\n',
       'assets/editor-d4.js': editor
     })
+
     expect(checkStartScripts(dir)).toEqual([
       { file: './assets/index-a1.js', bytes: 65, editorBytes: 0 },
       { file: './assets/vendor-b2.js', bytes: 47, editorBytes: 0 }
@@ -170,6 +182,7 @@ describe('checkStartScripts', () => {
       'assets/index-a1.js': app,
       'assets/vendor-b2.js': `${app}${editor}`
     })
+
     expect(() => checkStartScripts(dir)).toThrow(
       './assets/vendor-b2.js loads the code editor at start'
     )
@@ -178,6 +191,7 @@ describe('checkStartScripts', () => {
   it('fails when the page loads no script', () => {
     counts.start++
     const dir = tree({ 'index.html': page() })
+
     expect(() => checkStartScripts(dir)).toThrow(/loads no script/)
   })
 
@@ -187,6 +201,7 @@ describe('checkStartScripts', () => {
       'index.html': page('./assets/index-a1.js'),
       'assets/index-a1.js': 'var a=1;render();\n'
     })
+
     expect(() => checkStartScripts(dir)).toThrow(/no module comment/)
   })
 })

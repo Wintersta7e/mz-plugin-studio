@@ -107,11 +107,15 @@ function stepsInOrder(job: Job, commands: string[]): number[] {
 /** Asserts `job`'s last step uploads the report and traces only when a step failed */
 function expectReportUpload(job: Job, after: number): Step {
   const uploads = job.steps.filter((step) => UPLOAD.test(step.keys.get('uses') ?? ''))
+
   expect(uploads, job.id).toHaveLength(1)
+
   const [upload] = uploads
+
   expect(job.steps.indexOf(upload), job.id).toBeGreaterThan(after)
   expect(upload.keys.get('if'), job.id).toBe('failure()')
   expect(upload.nested.slice(-REPORT_PATHS.length), job.id).toEqual(REPORT_PATHS)
+
   return upload
 }
 
@@ -146,6 +150,7 @@ describe('e2e harness', () => {
     const lock = readJson('package-lock.json') as {
       packages: Record<string, { version: string }>
     }
+
     expect(pkg.devDependencies['@playwright/test']).toBe('1.64.1')
     expect(pkg.devDependencies['@electron/fuses']).toBe('2.1.3')
     expect(lock.packages['node_modules/@playwright/test'].version).toBe('1.64.1')
@@ -165,6 +170,7 @@ describe('e2e harness', () => {
     console.log(
       `e2e pins: workflows scanned ${workflows.length}, browser installs ${installs.length}`
     )
+
     expect(workflows.length).toBeGreaterThan(0)
     expect(installs).toEqual([])
   })
@@ -188,6 +194,7 @@ describe('e2e harness', () => {
     console.log(
       `e2e scope: files ${files.length}, launch sites ${launchSites}, spawn sites ${spawnSites}, violations ${violations.length}`
     )
+
     expect(files.length).toBeGreaterThan(0)
     expect(files).toContain(FIXTURE_MODULE)
     expect(launchSites).toBe(1)
@@ -200,8 +207,11 @@ describe('e2e harness', () => {
     const config = read(CONFIG)
     for (const setting of ['retries: 0', 'workers: 1', 'forbidOnly: !!process.env.CI'])
       expect(config, setting).toContain(setting)
+
     expect(config).toContain("'./reporter.ts'")
+
     const { scripts } = readJson('package.json') as { scripts: Record<string, string> }
+
     expect(scripts.e2e).toContain(`-c ${CONFIG}`)
     expect(scripts.e2e).not.toContain('--pass-with-no-tests')
 
@@ -214,6 +224,7 @@ describe('e2e harness', () => {
 
   it('copies back only Linux baselines from the image run', () => {
     expect(isCopyBack('e2e/__screenshots__/linux/a.png')).toBe(true)
+
     for (const path of [
       'e2e/__screenshots__/win32/a.png',
       'e2e/__screenshots__/linux/a.txt',
@@ -226,7 +237,9 @@ describe('e2e harness', () => {
 
   it('runs flows and the visual comparison in the pinned image on Linux', () => {
     const job = jobIn('ci.yml', 'e2e-linux')
+
     expect(job.keys.get('runs-on')).toBe('ubuntu-24.04')
+
     const at = stepsInOrder(job, [
       'npm ci --ignore-scripts',
       'node node_modules/electron/install.js',
@@ -242,7 +255,9 @@ describe('e2e harness', () => {
       )
     )
     console.log(`e2e xvfb runs in workflows: ${xvfbRuns.length}`)
+
     expect(xvfbRuns.length).toBeGreaterThan(0)
+
     for (const line of xvfbRuns) expect(line.startsWith(`${XVFB} `), line).toBe(true)
   })
 
@@ -253,8 +268,11 @@ describe('e2e harness', () => {
 
     it('exists only inside the pinned image on Linux', async () => {
       vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+
       expect(await configProjects('linux')).toEqual(['flows', 'release-smoke'])
+
       vi.stubEnv(VISUAL_IMAGE_ENV, '1')
+
       expect(await configProjects('linux')).toEqual(['flows', 'release-smoke', 'visual'])
       expect(await configProjects('win32')).toEqual(['flows', 'release-smoke'])
     })
@@ -265,11 +283,13 @@ describe('e2e harness', () => {
         await expect(configProjects('linux', argv), argv.join(' ')).rejects.toThrow(
           'npm run e2e:visual:update -- --check'
         )
+
       expect(await configProjects('linux', ['--project=flows'])).toEqual(['flows', 'release-smoke'])
     })
 
     it('is enabled by the CI image job and the local image run', () => {
       expect(jobIn('ci.yml', 'e2e-linux').nested.get('env')).toEqual([`${VISUAL_IMAGE_ENV}: '1'`])
+
       for (const check of [true, false])
         expect(imageCommand(check), String(check)).toContain(`${VISUAL_IMAGE_ENV}=1 ${XVFB} `)
     })
@@ -278,9 +298,13 @@ describe('e2e harness', () => {
   it('runs flows and release smoke on Windows and compares no pixels there', () => {
     const packageWin = jobIn('ci.yml', 'package-win')
     const fuses = packageWin.steps.findIndex((step) => step.keys.get('name') === 'Fuse wire')
+
     expect(fuses).toBeGreaterThanOrEqual(0)
+
     const at = stepsInOrder(packageWin, [PREPARE_REUSE, 'npm run e2e'])
+
     expect(at[0]).toBeGreaterThan(fuses)
+
     expectReportUpload(packageWin, at[1])
 
     const build = jobIn('release.yml', 'build')
@@ -289,6 +313,7 @@ describe('e2e harness', () => {
       (step) => step.keys.get('name') === 'Upload portable exe'
     )
     const smoke = stepsInOrder(build, [PREPARE_REUSE, RELEASE_SMOKE])
+
     expect(wire).toBeGreaterThanOrEqual(0)
     expect(smoke[0]).toBeGreaterThan(wire)
     expect(portable).toBeGreaterThan(smoke[1])
@@ -305,10 +330,12 @@ describe('e2e harness', () => {
         .map((line) => `${each.id}: ${line}`)
     )
     console.log(`e2e Windows jobs scanned ${windowsJobs.length}, pixel steps ${pixelLines.length}`)
+
     expect(windowsJobs.map((each) => each.id).sort()).toEqual(['build', 'package-win'])
     expect(pixelLines).toEqual([])
 
     const needs = jobIn('ci.yml', 'test').keys.get('needs') ?? ''
+
     expect(
       needs
         .replace(/^\[|\]$/g, '')
@@ -322,6 +349,7 @@ describe('e2e harness', () => {
       devDependencies: Record<string, string>
     }
     const version = devDependencies['@playwright/test'].replace(/\./g, '\\.')
+
     expect(IMAGE).toMatch(
       new RegExp(`^mcr\\.microsoft\\.com/playwright:v${version}-noble@sha256:[0-9a-f]{64}$`)
     )
@@ -329,11 +357,13 @@ describe('e2e harness', () => {
       `image: ${IMAGE}`,
       `options: ${[...CONTAINER_OPTIONS, '--user', CONTAINER_USER].join(' ')}`
     ])
+
     const refs = WORKFLOW_FILES.flatMap((file) =>
       read(`.github/workflows/${file}`)
         .split(/\r?\n/)
         .flatMap((line, i) => (line.includes('mcr.microsoft.com/') ? [`${file}:${i + 1}`] : []))
     )
+
     expect(refs).toHaveLength(1)
   })
 })

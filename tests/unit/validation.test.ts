@@ -36,6 +36,7 @@ describe('validation - existing checks', () => {
       commands: [{ id: '1', name: 'Heal', text: 'Heal', desc: 'Heal actor', args: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(true)
     expect(result.errors).toHaveLength(0)
   })
@@ -56,6 +57,7 @@ describe('validation - existing checks', () => {
       }
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(result.errors.length).toBeGreaterThan(0)
   })
@@ -68,6 +70,7 @@ describe('validation - existing checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.includes('Duplicate parameter name: alpha'))).toBe(true)
   })
@@ -80,6 +83,7 @@ describe('validation - existing checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.includes('Duplicate command name: Action'))).toBe(true)
   })
@@ -99,6 +103,7 @@ describe('validation - existing checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('MissingStruct'))).toBe(true)
   })
 
@@ -118,6 +123,7 @@ describe('validation - existing checks', () => {
       structs: [{ id: 's1', name: 'Position', parameters: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('Position'))).toBe(true)
   })
 })
@@ -130,6 +136,7 @@ describe('validation - parameter name warnings', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('my param'))).toBe(true)
   })
 
@@ -140,6 +147,7 @@ describe('validation - parameter name warnings', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('---Settings---'))).toBe(true)
   })
 })
@@ -150,6 +158,7 @@ describe('validation - empty parameter name', () => {
       parameters: [{ id: '1', name: '', text: 'Empty', desc: '', type: 'string', default: '' }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.includes('empty'))).toBe(true)
   })
@@ -173,6 +182,7 @@ describe('validation - COV-04 gaps', () => {
       structs: [{ id: 's1', name: 'Item', parameters: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('list') && w.includes('JSON'))).toBe(true)
   })
 
@@ -181,6 +191,7 @@ describe('validation - COV-04 gaps', () => {
       commands: [{ id: '1', name: 'ShowAnimation', text: 'Show Animation', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('ShowAnimation') && w.includes('built-in'))).toBe(
       true
     )
@@ -191,6 +202,7 @@ describe('validation - COV-04 gaps', () => {
       commands: [{ id: '1', name: 'CustomCommand', text: 'Custom', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('built-in'))).toBe(true)
   })
 
@@ -200,6 +212,7 @@ describe('validation - COV-04 gaps', () => {
       customCode: `PluginManager.registerCommand(PLUGIN_NAME, "MyAction", function(args) {});`
     })
     const result = validatePlugin(plugin)
+
     // The command name "MyAction" appears in customCode with double quotes
     expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
   })
@@ -211,6 +224,7 @@ describe('validation - new checks', () => {
       structs: [{ id: 's1', name: 'Orphan', parameters: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('Orphan') && w.includes('not referenced'))).toBe(
       true
     )
@@ -232,6 +246,7 @@ describe('validation - new checks', () => {
       structs: [{ id: 's1', name: 'Used', parameters: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('Used'))).toBe(true)
   })
 
@@ -259,6 +274,7 @@ describe('validation - new checks', () => {
       structs: [{ id: 's1', name: 'CmdStruct', parameters: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('CmdStruct'))).toBe(true)
   })
 
@@ -277,6 +293,7 @@ describe('validation - new checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(
       result.errors.some((e) => e.includes('nonexistent parent') && e.includes('nonExistentParent'))
@@ -299,6 +316,7 @@ describe('validation - new checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.errors.every((e) => !e.includes('nonexistent parent'))).toBe(true)
   })
 
@@ -308,6 +326,7 @@ describe('validation - new checks', () => {
       customCode: '// some code that does not mention the command'
     })
     const result = validatePlugin(plugin)
+
     expect(
       result.warnings.some((w) => w.includes('Unimplemented') && w.includes('no implementation'))
     ).toBe(true)
@@ -319,6 +338,7 @@ describe('validation - new checks', () => {
       customCode: "PluginManager.registerCommand(PLUGIN_NAME, 'Implemented', function(args) {});"
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('Implemented'))).toBe(true)
   })
 
@@ -327,6 +347,7 @@ describe('validation - new checks', () => {
       commands: [{ id: '1', name: 'NoCode', text: 'Test', desc: '', args: [] }]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
   })
 
@@ -352,6 +373,7 @@ describe('validation - new checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('pos') && w.includes('JSON'))).toBe(true)
   })
 
@@ -377,6 +399,7 @@ describe('validation - new checks', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.filter((w) => w.includes('JSON'))).toHaveLength(0)
   })
 })
@@ -390,6 +413,7 @@ describe('validation - identifier sanitization', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.valid).toBe(false)
     expect(result.errors.some((e) => e.includes('fooBar'))).toBe(true)
   })
@@ -401,6 +425,7 @@ describe('validation - identifier sanitization', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('class_'))).toBe(true)
   })
 
@@ -411,6 +436,7 @@ describe('validation - identifier sanitization', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(result.warnings.some((w) => w.includes('_2ndSlot') || w.includes('digit'))).toBe(true)
   })
 
@@ -421,6 +447,7 @@ describe('validation - identifier sanitization', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     expect(
       result.warnings.filter((w) => w.includes('reserved') || w.includes('digit'))
     ).toHaveLength(0)
@@ -434,6 +461,7 @@ describe('validation - identifier sanitization', () => {
       ]
     })
     const result = validatePlugin(plugin)
+
     // Section dividers are skipped by the collision detector
     expect(result.errors.filter((e) => e.includes('generate identifier'))).toHaveLength(0)
   })
@@ -453,6 +481,7 @@ describe('validation - line breaks in annotation text', () => {
         }
       ]
     })
+
     expect(validatePlugin(plugin).warnings).toContain(
       'Parameter "Speed" @desc: a line break is written as a space, because each annotation is one line.'
     )
@@ -461,6 +490,7 @@ describe('validation - line breaks in annotation text', () => {
   it('does not warn for help text, which is written one line per line', () => {
     const plugin = createTestPlugin()
     plugin.meta.help = 'line one\r\nline two'
+
     expect(validatePlugin(plugin).warnings.filter((w) => w.includes('line break'))).toEqual([])
   })
 })

@@ -33,6 +33,7 @@ describe('portable release without an updater', () => {
     )
     console.log(`updater scan: files ${files.length}, hits ${hits.length}`)
     for (const hit of hits) console.log(hit)
+
     expect(files.length).toBeGreaterThan(2)
     expect(hits).toEqual([])
   })
@@ -45,7 +46,9 @@ describe('portable release without an updater', () => {
     const topLevel = read('electron-builder.yml')
       .split(/\r?\n/)
       .flatMap((line) => /^([\w-]+):/.exec(line)?.[1] ?? [])
+
     expect(topLevel).toContain('win')
+
     for (const key of ['publish', 'mac', 'dmg', 'linux', 'appImage']) {
       expect(topLevel, key).not.toContain(key)
     }
@@ -56,6 +59,7 @@ describe('portable release without an updater', () => {
       scripts: Record<string, string>
       dependencies: Record<string, string>
     }
+
     expect(pkg.scripts).not.toHaveProperty('build:mac')
     expect(pkg.scripts).not.toHaveProperty('build:linux')
     expect(pkg.dependencies).not.toHaveProperty('electron-updater')
@@ -64,10 +68,13 @@ describe('portable release without an updater', () => {
   it('the 1.7.0 notes tell users where new versions come from', () => {
     const changelog = read('CHANGELOG.md').split(/\r?\n/)
     const start = changelog.findIndex((line) => line.startsWith('## [1.7.0] - '))
+
     expect(start).toBeGreaterThanOrEqual(0)
+
     const end = changelog.findIndex((line, index) => index > start && line.startsWith('## ['))
     const release = changelog.slice(start, end < 0 ? undefined : end)
     const removed = release.indexOf('### Removed')
+
     expect(removed).toBeGreaterThan(0)
     expect(release.indexOf(REMOVED_LINE)).toBeGreaterThan(removed)
   })

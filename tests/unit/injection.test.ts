@@ -378,7 +378,9 @@ function runMatrix(payloads: readonly Payload[] = ALL_PAYLOADS): MatrixCase[] {
 describe('generated plugin annotations', () => {
   it('field text stays inside the annotation comment', () => {
     expect(FIELD_ROWS.length).toBeGreaterThan(0)
+
     const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
+
     expect(notClean.map((c) => c.label)).toEqual([])
   })
 
@@ -393,11 +395,14 @@ describe('generated plugin annotations', () => {
           `does not compile ${count('does not compile')}, throws ${count('throws')}, ` +
           `ran ${count('runs the text')}`
       )
+
       expect(cases.length).toBeGreaterThan(0)
+
       notClean.push(
         ...cases.filter((c) => c.outcome !== 'clean' || !c.contained).map((c) => c.label)
       )
     }
+
     expect(notClean).toEqual([])
   })
 })
@@ -444,6 +449,7 @@ function runSnippets(): Record<string, string> {
 describe('snippet comments', () => {
   it('snippet comments stay on one line', () => {
     const results = Object.entries(runSnippets())
+
     expect(results).toHaveLength(SNIPPETS.length * SNIPPET_NAMES.length)
     expect(results.filter(([, result]) => result !== 'clean, contained')).toEqual([])
   })
@@ -454,11 +460,14 @@ describe('localization keys', () => {
     const def = cleanDefinition()
     def.meta.localizations = { 'ja */ x': { description: 'd' }, ja: { description: 'kept' } }
     const output = generatePlugin(def)
+
     expect(output.split('\n').filter((line) => line.startsWith('/*:ja'))).toEqual(['/*:ja'])
     expect(output).not.toContain('ja */ x')
     expect(output).not.toContain('ja *\\/ x')
     expect(output).toContain(' * @plugindesc kept')
+
     const { errors, warnings } = validatePlugin(def)
+
     expect(errors).toContain(
       'Localization "ja */ x" is left out: a language code may contain only letters and underscores.'
     )
@@ -481,7 +490,9 @@ function annotatedDefault(code: string, name: string): string {
 function runDefault(def: PluginDefinition, expression: (name: string) => string): unknown {
   def.customCode = `globalThis.__value = ${expression(camelCase(def.parameters[0].name))};`
   const result = evaluatePlugin(generatePlugin(def), { mode: 'generator' })
+
   expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: false })
+
   return result.context?.__value
 }
 
@@ -490,6 +501,7 @@ describe('parameter defaults', () => {
     const def = cleanDefinition()
     def.parameters[0].default = 'x */ y'
     const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
+
     expect(runDefault(def, (name) => name)).toBe(annotated)
     expect(annotated).toBe('x *\\/ y')
   })
@@ -500,6 +512,7 @@ describe('parameter defaults', () => {
     def.parameters[0].default = '{"a":"*/"}'
     const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
     const stored = runDefault(def, (name) => `JSON.stringify(${name})`)
+
     expect(JSON.parse(String(stored))).toEqual({ a: '*/' })
     expect(JSON.parse(annotated)).toEqual({ a: '*/' })
   })
@@ -521,6 +534,7 @@ describe('validatePlugin warnings', () => {
     const added = addedWarnings((def) => {
       def.parameters[0].desc = 'a */ b'
     })
+
     expect(added).toEqual([escapedWarning('Parameter "FixtureParam" @desc')])
   })
 
@@ -530,6 +544,7 @@ describe('validatePlugin warnings', () => {
       def.commands[0].desc = 'see @note here'
       def.meta.help = 'Read @help and @type first'
     })
+
     expect(added).toEqual([])
   })
 
@@ -560,6 +575,7 @@ describe('validatePlugin warnings', () => {
       def.commands[0].name = 'Run @type number'
       def.commands[0].args[0].name = 'Arg @type number'
     })
+
     expect(added.filter((w) => w.includes('setting tag'))).toEqual([])
   })
 

@@ -49,8 +49,11 @@ describe.skipIf(dir === '')('plugin loader stand-in against a local MZ install',
       `mz parity: plugins ${cases.length}, identical ${cases.length - differ.length}, ` +
         `differing ${differ.length}`
     )
+
     expect(cases.length).toBeGreaterThan(0)
+
     const first = differ[0]
+
     expect(
       first === undefined
         ? ''
@@ -65,6 +68,7 @@ describe.skipIf(dir === '')('plugin loader stand-in against a local MZ install',
       runConformance(core, generated),
       generated
     )
+
     expect(differ.length).toBeGreaterThan(0)
   }, 120_000)
 })

@@ -14,8 +14,11 @@ describe('dialog options', () => {
       defaultId: 1,
       cancelId: 1
     }
+
     await expect(showMessageDialog(dialog as unknown as Dialog, options)).resolves.toBe(0)
+
     const recorded = dialog.showMessageBox.mock.calls[0][0]
+
     expect(recorded.defaultId).toBe(1)
     expect(recorded.cancelId).toBe(1)
   })
@@ -27,6 +30,7 @@ describe('dialog options', () => {
     const options = { message: 'Discard?', buttons: ['Cancel', 'Discard'] }
     await showMessageDialog(dialog as unknown as Dialog, options)
     const recorded = dialog.showMessageBox.mock.calls[0][0]
+
     expect(recorded.defaultId).toBe(0)
     expect(recorded.cancelId).toBe(0)
   })
@@ -37,6 +41,7 @@ describe('dialog options', () => {
     }
     await showMessageDialog(dialog as unknown as Dialog, { message: 'Done' })
     const recorded = dialog.showMessageBox.mock.calls[0][0]
+
     expect(recorded).not.toHaveProperty('defaultId')
     expect(recorded).not.toHaveProperty('cancelId')
   })
@@ -49,6 +54,7 @@ describe('dialog options', () => {
       }))
     }
     await showSaveFileDialog(dialog, { defaultPath: 'Foo.js' })
+
     expect(dialog.showSaveDialog.mock.calls[0][0].properties).toEqual(['showOverwriteConfirmation'])
   })
 })

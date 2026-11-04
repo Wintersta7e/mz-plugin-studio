@@ -24,6 +24,7 @@ describe('ipc contract', () => {
       `contract channels: invoke ${INVOKE_CHANNELS.length}, send ${SEND_CHANNELS.length}, ` +
         `event ${EVENT_CHANNELS.length}, constants ${constants.size}`
     )
+
     expect(constants.size).toBeGreaterThan(0)
     expect(listed).toHaveLength(constants.size)
     expect(new Set(listed)).toEqual(constants)

@@ -85,6 +85,7 @@ describe('strictness status', () => {
   beforeEach(() => {
     counter.cases += 1
   })
+
   afterAll(() => {
     process.stdout.write(`cases ${counter.cases}\n`)
     for (const dir of repos) rmSync(dir, { recursive: true, force: true })
@@ -92,6 +93,7 @@ describe('strictness status', () => {
 
   it('(a) passes when the frozen count holds', () => {
     const result = status(makeRepo({}))
+
     expect(result.out).toContain(
       'eslint-suppressions: 2 violations in 1 entries, 1 files (parent 2, delta 0)'
     )
@@ -100,12 +102,14 @@ describe('strictness status', () => {
 
   it('(b) passes when the frozen count falls', () => {
     const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(1) }))
+
     expect(result.out).toContain('(parent 2, delta -1)')
     expect(result.status).toBe(0)
   })
 
   it('(c) fails a rise without a lint config change', () => {
     const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(3) }))
+
     expect(result.out).toContain('(parent 2, delta +1)')
     expect(result.status).toBe(1)
   })
@@ -116,6 +120,7 @@ describe('strictness status', () => {
       'eslint-suppressions.json': suppressions(3),
       'eslint.config.mjs': config
     })
+
     expect(status(dir).status).toBe(0)
   })
 
@@ -124,14 +129,18 @@ describe('strictness status', () => {
       'eslint-suppressions.json': suppressions(3),
       'package.json': packageJson('1.0.1')
     })
+
     expect(status(dir).status).toBe(0)
   })
 
   it('(f) counts the errors a pending flag holds and fails once it holds none', () => {
     const pending = status(makeRepo({}))
+
     expect(pending.out).toContain('pending web noPropertyAccessFromIndexSignature: 1 errors')
     expect(pending.status).toBe(0)
+
     const cleared = status(makeRepo({ 'index.ts': BRACKET_ACCESS }))
+
     expect(cleared.out).toContain('pending web noPropertyAccessFromIndexSignature: 0 errors')
     expect(cleared.status).toBe(1)
   })
@@ -142,6 +151,7 @@ describe('strictness status', () => {
 
   it('(h) fails on an entry naming an untracked file', () => {
     const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(2, 'gone.ts') }))
+
     expect(result.out).toContain('gone.ts')
     expect(result.status).toBe(1)
   })
@@ -153,8 +163,11 @@ describe('strictness status', () => {
       'eslint-suppressions.json': JSON.stringify({ 'a.js': { 'no-var': { count: 1 } } }),
       'a.js': 'var a = 1\nexport { a }\n'
     })
+
     expect(run(dir, ESLINT, ['a.js']).status).toBe(0)
+
     write(dir, { 'a.js': 'const a = 1\nexport { a }\n' })
+
     expect(run(dir, ESLINT, ['a.js']).status).toBe(2)
     expect(run(dir, ESLINT, ['--prune-suppressions', 'a.js']).status).toBe(0)
     expect(run(dir, ESLINT, ['a.js']).status).toBe(0)
@@ -168,6 +181,7 @@ describe('strictness status', () => {
     })
     write(directory, { 'eslint-suppressions.json': suppressions(4) })
     const result = status(directory)
+
     expect(result.out).toContain('(parent 3, delta +1)')
     expect(result.status).toBe(1)
   })
@@ -179,6 +193,7 @@ describe('strictness status', () => {
       'eslint.config.mjs': "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
     })
     const result = status(directory)
+
     expect(result.out).toContain('(parent 2, delta +1)')
     expect(result.status).toBe(0)
   })
@@ -193,6 +208,7 @@ describe('strictness status', () => {
       "node -e \"console.log('first'); console.log('last'); process.exit(3)\""
     write(directory, { 'package.json': JSON.stringify({ scripts }) })
     const result = run(directory, SCRIPT, ['--report', 'typecov'])
+
     expect(result.out).toContain('typecov web: (1 / 1) 100.00%')
     expect(result.out).toContain('typecov test: no summary or nothing scanned (exit 3)')
     expect(result.out).toContain('typecov test | first\ntypecov test | last\n')

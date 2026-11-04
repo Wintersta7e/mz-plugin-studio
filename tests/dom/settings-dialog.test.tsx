@@ -47,16 +47,21 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
 
   it('a deleted backup makes room for the backup of the next unreadable load', async () => {
     localStorage.setItem(KEY, '{"state":')
+
     expect((await loadSettings()).map((e) => e.backup)).toEqual(['kept'])
+
     window.api = createFakeApi({ dialog: { message: vi.fn(async () => 1) } })
     await openDataTab()
+
     expect(screen.getByText(BACKUP)).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete the Settings backup' }))
     await waitFor(() => expect(localStorage.getItem(BACKUP)).toBeNull())
+
     expect(screen.queryByText(BACKUP)).not.toBeInTheDocument()
 
     localStorage.setItem(KEY, '{"state":2')
+
     expect(await loadSettings()).toEqual([
       { name: KEY, area: 'Settings', kind: 'unparseable', fields: [], backup: 'kept' }
     ])
@@ -69,6 +74,7 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
     await openDataTab()
     fireEvent.click(screen.getByRole('button', { name: 'Delete the Settings backup' }))
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
+
     expect(window.api.dialog.message).toHaveBeenCalledWith(
       expect.objectContaining({ buttons: ['Cancel', 'Delete'] })
     )
@@ -89,6 +95,7 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
     await waitFor(() =>
       expect(saveToPath).toHaveBeenCalledWith('out/settings-backup.json', '{"state":')
     )
+
     expect(window.api.dialog.saveFile).toHaveBeenCalledWith(
       expect.objectContaining({ filters: [{ name: 'JSON', extensions: ['json'] }] })
     )
@@ -119,6 +126,7 @@ describe('saved-state backups in settings', { timeout: 30_000 }, () => {
   it('with no backups the section says so', async () => {
     await loadSettings()
     await openDataTab()
+
     expect(screen.getByText('No backups.')).toBeInTheDocument()
   })
 })
@@ -130,8 +138,11 @@ const rowOf = (title: string): HTMLElement =>
 /** Types 18 over the default font size 13 by replacing its last digit, as a user would. */
 async function setFontSize18(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   const input = screen.getByLabelText('Font Size')
+
   expect(input).toHaveValue(13)
+
   await user.type(input, '8', { initialSelectionStart: 1, initialSelectionEnd: 2 })
+
   expect(input).toHaveValue(18)
 }
 
@@ -151,9 +162,12 @@ describe('settings', () => {
         <CodePreview />
       </>
     )
+
     expect(monacoStub.editors).toHaveLength(1)
+
     const [preview] = monacoStub.editors
     await setFontSize18(user)
+
     expect(preview.updateOptions.mock.lastCall?.[0]).toMatchObject({ fontSize: 18 })
   })
 
@@ -161,6 +175,7 @@ describe('settings', () => {
     const user = userEvent.setup()
     render(<SettingsDialog open onOpenChange={() => {}} />)
     await user.click(screen.getByRole('switch', { name: 'Debug Logging' }))
+
     expect(window.api.log.setLevel).toHaveBeenCalledTimes(1)
     expect(window.api.log.setLevel).toHaveBeenCalledWith(true)
   })
@@ -169,6 +184,7 @@ describe('settings', () => {
     const user = userEvent.setup()
     render(<SettingsDialog open onOpenChange={() => {}} />)
     await user.click(within(rowOf('Log Files')).getByRole('button', { name: 'Open Folder' }))
+
     expect(window.api.log.openFolder).toHaveBeenCalledTimes(1)
   })
 
@@ -177,6 +193,7 @@ describe('settings', () => {
     render(<SettingsDialog open onOpenChange={() => {}} />)
     await setFontSize18(user)
     await user.click(screen.getByRole('button', { name: 'Reset to Defaults' }))
+
     expect(screen.getByLabelText('Font Size')).toHaveValue(13)
     expect(screen.getByRole('button', { name: 'Reset!' })).toBeDisabled()
   })
@@ -194,29 +211,34 @@ describe('settings', () => {
     const input = screen.getByLabelText('Font Size')
 
     await user.type(input, '18', { initialSelectionStart: 0, initialSelectionEnd: 2 })
+
     expect(input).toHaveValue(18)
     expect(fontSize()).toBe(18)
 
     await user.clear(input)
     await user.type(input, '20')
     await user.tab()
+
     expect(input).toHaveValue(20)
     expect(fontSize()).toBe(20)
 
     await user.clear(input)
     await user.type(input, '30')
     await user.tab()
+
     expect(input).toHaveValue(24)
     expect(fontSize()).toBe(24)
 
     await user.clear(input)
     await user.type(input, '9{Enter}')
+
     expect(input).toHaveValue(10)
     expect(fontSize()).toBe(10)
 
     // Leaving the field empty keeps the size it had
     await user.clear(input)
     await user.tab()
+
     expect(input).toHaveValue(10)
   })
 
@@ -238,6 +260,7 @@ describe('settings', () => {
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await user.click(screen.getByRole('button', { name: 'New Plugin' }))
+
     expect(screen.getByLabelText('Author')).toHaveValue('Sample Author')
   })
 
@@ -259,18 +282,25 @@ describe('settings', () => {
     ]
     for (const [title, before, after] of lists) {
       expect(within(rowOf(title)).getByText(before)).toBeInTheDocument()
+
       await user.click(within(rowOf(title)).getByRole('button', { name: 'Clear' }))
+
       expect(within(rowOf(title)).getByText(after)).toBeInTheDocument()
       expect(within(rowOf(title)).getByRole('button', { name: 'Cleared!' })).toBeDisabled()
     }
+
     expect(screen.getByText('2 preset(s) saved')).toBeInTheDocument()
+
     // A preset row's only button is its delete button
     const alpha = screen.getByText('Alpha (1 params)').parentElement as HTMLElement
     await user.click(within(alpha).getByRole('button'))
+
     expect(screen.queryByText('Alpha (1 params)')).not.toBeInTheDocument()
     expect(screen.getByText('Beta (1 params)')).toBeInTheDocument()
     expect(screen.getByText('1 preset(s) saved')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Clear All' }))
+
     expect(screen.getByText('0 preset(s) saved')).toBeInTheDocument()
     expect(screen.queryByText('Beta (1 params)')).not.toBeInTheDocument()
   })

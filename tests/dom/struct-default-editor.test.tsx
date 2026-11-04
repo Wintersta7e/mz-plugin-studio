@@ -24,6 +24,7 @@ describe('struct default editor', () => {
     const user = userEvent.setup()
     render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
     await user.type(screen.getByRole('spinbutton'), '5')
+
     expect(onChange).toHaveBeenLastCalledWith('{"x":"5"}')
   })
 
@@ -31,8 +32,11 @@ describe('struct default editor', () => {
     const { rerender } = render(
       <StructDefaultEditor struct={POINT} value='{"x":"5"}' onChange={vi.fn()} />
     )
+
     expect(screen.getByText('Valid JSON')).toBeInTheDocument()
+
     rerender(<StructDefaultEditor struct={POINT} value='{"x":' onChange={vi.fn()} />)
+
     expect(screen.queryByText('Valid JSON')).not.toBeInTheDocument()
     expect(screen.getByText('Invalid JSON: check syntax')).toBeInTheDocument()
   })
@@ -42,6 +46,7 @@ describe('struct default editor', () => {
     const user = userEvent.setup()
     render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'Fill from struct defaults' }))
+
     expect(onChange).toHaveBeenCalledExactlyOnceWith('{"x":"1","label":"Home"}')
     expect(screen.getByRole('spinbutton')).toHaveValue(1)
     expect(screen.getByRole('textbox')).toHaveValue('Home')
@@ -51,10 +56,15 @@ describe('struct default editor', () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
     const { rerender } = render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
+
     rerender(<StructDefaultEditor struct={POINT} value='{"x":"5"}' onChange={onChange} />)
+
     expect(screen.getByRole('spinbutton')).toHaveValue(5)
+
     await user.click(screen.getByRole('button', { name: 'Clear' }))
+
     expect(onChange).toHaveBeenCalledExactlyOnceWith('')
     expect(screen.getByRole('spinbutton')).toHaveValue(null)
   })

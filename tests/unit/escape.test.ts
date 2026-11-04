@@ -18,9 +18,12 @@ const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u2028b', 'a\u2029b', '\r\n\r\n
 describe('escapeBlockComment', () => {
   it('leaves no comment end and gives the same text when applied twice', () => {
     console.log(`escape inputs checked: ${BLOCK_INPUTS.length} ${JSON.stringify(BLOCK_INPUTS)}`)
+
     expect(BLOCK_INPUTS.length).toBeGreaterThan(0)
+
     for (const input of BLOCK_INPUTS) {
       const once = escapeBlockComment(input)
+
       expect(once, input).not.toContain('*/')
       expect(escapeBlockComment(once), input).toBe(once)
     }
@@ -30,12 +33,16 @@ describe('escapeBlockComment', () => {
 describe('escapeLineComment', () => {
   it('leaves no line break and gives the same text when applied twice', () => {
     console.log(`escape inputs checked: ${LINE_INPUTS.length} ${JSON.stringify(LINE_INPUTS)}`)
+
     expect(LINE_INPUTS.length).toBeGreaterThan(0)
+
     for (const input of LINE_INPUTS) {
       const once = escapeLineComment(input)
+
       expect(once, JSON.stringify(input)).not.toMatch(/[\r\n\u2028\u2029]/)
       expect(escapeLineComment(once), JSON.stringify(input)).toBe(once)
     }
+
     expect(escapeLineComment('a\r\nb')).toBe('a b')
   })
 })
@@ -66,6 +73,7 @@ describe('JS string escapes', () => {
         const result = evaluatePlugin(`globalThis.__value = ${literal(input)};`, {
           mode: 'generator'
         })
+
         expect(literal(input), `${quote} ${JSON.stringify(input)}`).not.toMatch(
           /[\r\n\u2028\u2029]/
         )
@@ -101,7 +109,9 @@ const NOT_EXPRESSIONS = [
 describe('isOneLineExpression', () => {
   it('accepts expressions that compile and refuses text that ends them early', () => {
     console.log(`expression inputs checked: ${EXPRESSIONS.length + NOT_EXPRESSIONS.length}`)
+
     expect(EXPRESSIONS.length * NOT_EXPRESSIONS.length).toBeGreaterThan(0)
+
     for (const text of EXPRESSIONS) {
       expect(isOneLineExpression(text), text).toBe(true)
       expect(compileCheck(`globalThis.__value = ${text};`, 'plugin.js'), text).toBeNull()

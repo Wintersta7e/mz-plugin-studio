@@ -57,6 +57,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
     const message =
       'Could not open "/fixture/not-a-project": not an RPG Maker MZ project ' +
       '(Missing required file: data/System.json).'
+
     expect(await screen.findByText(message)).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain(message)
     expect(useToastStore.getState().toasts).toMatchObject([
@@ -74,6 +75,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
       })
     })
     const message = 'Could not open "/fixture/not-a-project": Unexpected end of JSON input'
+
     expect(await screen.findByText(message)).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain(message)
     expect(useToastStore.getState().toasts).toMatchObject([
@@ -94,6 +96,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
       })
     })
     const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
+
     expect(await screen.findByText(message)).toBeTruthy()
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
@@ -109,6 +112,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
         })
       )
     })
+
     expect(window.api.project.load).toHaveBeenCalledWith(FOLDER)
     expect(useToastStore.getState().toasts).toEqual([])
     expect(useProjectStore.getState().error).toBeNull()
@@ -125,6 +129,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
       )
     })
     const message = `Could not open "/fixture/not-a-project": ${reason}.`
+
     expect(await screen.findByText(message)).toBeTruthy()
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
@@ -139,6 +144,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
       load: vi.fn(() => Promise.reject('data folder unreadable'))
     })
     const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
+
     expect(await screen.findByText(message)).toBeTruthy()
   })
 })
@@ -207,9 +213,11 @@ describe(
       await waitFor(() => {
         for (const [i, id] of ids.entries()) expect(tab(id)?.rawSource).toBe(textOf(FILES[i]))
       })
+
       expect(tab(elsewhere)?.rawSource).toBeUndefined()
       expect(window.api.dialog.message).not.toHaveBeenCalled()
       expect(window.api.plugin.readRaw).toHaveBeenCalledTimes(2)
+
       await waitFor(() =>
         expect(useToastStore.getState().toasts).toMatchObject([
           { type: 'success', message: 'Reloaded 2 of 2 plugins' }
@@ -225,10 +233,12 @@ describe(
       await waitFor(() => expect(tab(clean)?.rawSource).toBe(textOf(FILES[0])))
       await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
       const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+
       expect(options).toMatchObject({ title: 'Reload from project?' })
       expect(options.buttons?.[0]).toBe('Cancel')
       expect(tab(edited)?.rawSource).toBeUndefined()
       expect(tab(edited)?.meta.description).toBe('Edited before reload')
+
       await waitFor(() =>
         expect(useToastStore.getState().toasts).toMatchObject([
           {
@@ -245,6 +255,7 @@ describe(
       await openFixtureProject()
       await waitFor(() => expect(window.api.plugin.list).toHaveBeenCalledWith(PROJECT))
       await act(async () => {})
+
       expect(useToastStore.getState().toasts).toEqual([])
     })
 
@@ -252,6 +263,7 @@ describe(
       for (const file of FILES) openStaleTab(file)
       await openFixtureProject()
       await screen.findByRole('button', { name: RELOAD })
+
       expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
         `Raw mode cannot save ${FILES.join(', ')} until reloaded: the file text is not loaded. ` +
           `The project folder ${FOLDER_NAME} has these files.`
@@ -264,6 +276,7 @@ describe(
       await openFixtureProject([], files)
       const named = `${files.slice(0, 3).join(', ')} and 2 more`
       await screen.findByRole('button', { name: `Reload ${named} from ${FOLDER_NAME}` })
+
       expect(useToastStore.getState().toasts[0].message).toMatch(
         new RegExp(`^Raw mode cannot save ${named} until`)
       )
@@ -279,6 +292,7 @@ describe(
       try {
         await openFixtureProject()
         await screen.findByRole('button', { name: `Reload ${FILES[0]} from ${FOLDER_NAME}` })
+
         expect(build).not.toHaveBeenCalled()
       } finally {
         build.mockRestore()
@@ -313,9 +327,12 @@ describe('app shell', { timeout: 30_000 }, () => {
       for (let i = 1; i <= 6; i++) useProjectStore.getState().addRecentProject(`/projects/Game${i}`)
     })
     render(<App />)
+
     expect(screen.getByRole('button', { name: /Load an existing MZ project/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Start with a blank plugin/ })).toBeInTheDocument()
+
     const recent = screen.getAllByText(/^\/projects\/Game\d$/).map((el) => el.textContent)
+
     expect(recent).toEqual([6, 5, 4, 3, 2].map((i) => `/projects/Game${i}`))
   })
 
@@ -325,6 +342,7 @@ describe('app shell', { timeout: 30_000 }, () => {
     const tabs = within(tabList as HTMLElement)
       .getAllByRole('tab')
       .map((tab) => tab.textContent)
+
     expect(tabs).toEqual(['Metadata', 'Parameters', 'Commands', 'Structs', 'Code'])
     expect(screen.getByRole('tab', { name: 'Metadata' })).toHaveAttribute('aria-selected', 'true')
   })
@@ -340,23 +358,32 @@ describe('app shell', { timeout: 30_000 }, () => {
     ]
     for (const [key, name] of order) {
       await user.keyboard(`{Control>}${key}{/Control}`)
+
       expect(screen.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true')
     }
   })
 
   it('Ctrl+N opens another plugin', async () => {
     const user = await newPlugin()
+
     expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(1)
+
     await user.keyboard('{Control>}n{/Control}')
+
     expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(2)
   })
 
   it('Ctrl+B hides the code preview and shows it again', async () => {
     const user = await newPlugin()
+
     expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
+
     await user.keyboard('{Control>}b{/Control}')
+
     expect(screen.queryByRole('heading', { name: 'Generated Code' })).not.toBeInTheDocument()
+
     await user.keyboard('{Control>}b{/Control}')
+
     expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
   })
 
@@ -365,10 +392,13 @@ describe('app shell', { timeout: 30_000 }, () => {
     render(<App />)
     // The default key map has no F1 or comma; App matches the key's code
     await user.keyboard('[F1]')
+
     expect(await screen.findByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeInTheDocument()
+
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await user.keyboard('{Control>}[Comma]{/Control}')
+
     expect(await screen.findByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
   })
 
@@ -383,6 +413,7 @@ describe('app shell', { timeout: 30_000 }, () => {
     })
     render(<App />)
     await user.click(screen.getByRole('button', { name: /Load an existing MZ project/ }))
+
     expect(await screen.findByText('- Sample Game')).toBeInTheDocument()
     expect(screen.getByText('No plugin open')).toBeInTheDocument()
     expect(window.api.project.validate).toHaveBeenCalledWith('/project')
@@ -397,9 +428,13 @@ describe('app shell', { timeout: 30_000 }, () => {
     })
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Analysis' }))
+
     expect(await screen.findByRole('heading', { name: 'Plugin Analysis' })).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Editor' }))
+
     expect(await screen.findByRole('tab', { name: 'Metadata' })).toBeInTheDocument()
+
     await waitFor(() =>
       expect(screen.queryByRole('heading', { name: 'Plugin Analysis' })).not.toBeInTheDocument()
     )

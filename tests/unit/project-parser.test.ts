@@ -12,6 +12,7 @@ describe('parseNoteTags', () => {
 
   it('parses multiple tags', () => {
     const result = ProjectParser.parseNoteTags('<hp:100>\n<mp:50>\n<boss>')
+
     expect(result).toEqual({ hp: '100', mp: '50', boss: 'true' })
   })
 
@@ -49,6 +50,7 @@ describe('parseNoteTags', () => {
 
   it('overwrites duplicate tags with last value', () => {
     const result = ProjectParser.parseNoteTags('<x:1>\n<x:2>')
+
     expect(result).toEqual({ x: '2' })
   })
 })

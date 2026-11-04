@@ -58,7 +58,9 @@ async function session(userData?: string) {
     cases++
     const before = recorded.length
     await call()
+
     expect(recorded.length).toBe(before + 1)
+
     return recorded[recorded.length - 1].options
   }
   return { ipc, dialog, log, opens, saves, shown }
@@ -85,6 +87,7 @@ afterEach(async () => {
 
 afterAll(() => {
   console.log(`dialog memory: cases ${cases}`)
+
   expect(cases).toBeGreaterThan(0)
 })
 
@@ -94,6 +97,7 @@ describe('dialog memory', () => {
     const seed = join(root, 'Games', 'Proj')
     opens.push({ canceled: false, filePaths: [join(root, 'B', 'Proj2')] })
     const first = await shown(() => ipc.invoke('dialog:open-folder', { defaultPath: seed }))
+
     expect(first.defaultPath).toBe(join(root, 'Games'))
 
     // A folder chosen once is where the next folder dialog without a suggestion opens
@@ -109,6 +113,7 @@ describe('dialog memory', () => {
     const options = await shown(() =>
       ipc.invoke('dialog:open-folder', { defaultPath: join(root, 'Gone', 'Proj') })
     )
+
     expect(options).not.toHaveProperty('defaultPath')
   })
 
@@ -116,6 +121,7 @@ describe('dialog memory', () => {
     const { ipc, shown } = await session()
     for (const defaultPath of ['\\\\server\\share\\Proj', '//server/share/Proj']) {
       const options = await shown(() => ipc.invoke('dialog:open-folder', { defaultPath }))
+
       expect(options).not.toHaveProperty('defaultPath')
     }
   })
@@ -123,20 +129,27 @@ describe('dialog memory', () => {
   it('opens a file dialog where the same kind of file was last chosen', async () => {
     const { ipc, opens, shown } = await session()
     const params = [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
+
     expect(
       await shown(() => ipc.invoke('dialog:open-file', { filters: params }))
     ).not.toHaveProperty('defaultPath')
+
     opens.push({ canceled: false, filePaths: [join(root, 'params', 'Synthetic.mzparams')] })
     await shown(() => ipc.invoke('dialog:open-file', { filters: params }))
 
     const again = await shown(() => ipc.invoke('dialog:open-file', { filters: params }))
+
     expect(again.defaultPath).toBe(join(root, 'params'))
+
     const script = await shown(() => ipc.invoke('dialog:open-file', {}))
+
     expect(script).not.toHaveProperty('defaultPath')
+
     // The window cannot pick the folder
     const asked = await shown(() =>
       ipc.invoke('dialog:open-file', { defaultPath: join(root, 'B'), filters: params })
     )
+
     expect(asked.defaultPath).toBe(join(root, 'params'))
   })
 
@@ -149,8 +162,11 @@ describe('dialog memory', () => {
       await ipc.invoke('project:load', project)
 
       const plugin = await shown(() => ipc.invoke('dialog:save-file', { defaultPath: 'Name.js' }))
+
       expect(plugin.defaultPath).toBe(join(project, 'js', 'plugins', 'Name.js'))
+
       const script = await shown(() => ipc.invoke('dialog:open-file', {}))
+
       expect(script.defaultPath).toBe(join(project, 'js', 'plugins'))
 
       // Other kinds open where their kind last saved, beside nothing before that
@@ -158,7 +174,9 @@ describe('dialog memory', () => {
       const readme = await shown(() =>
         ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: md })
       )
+
       expect(readme.defaultPath).toBe('Name_README.md')
+
       saves.push({ canceled: false, filePath: join(root, 'B', 'Name_README.md') })
       await shown(() =>
         ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: md })
@@ -166,6 +184,7 @@ describe('dialog memory', () => {
       const next = await shown(() =>
         ipc.invoke('dialog:save-file', { defaultPath: 'Other_README.md', filters: md })
       )
+
       expect(next.defaultPath).toBe(join(root, 'B', 'Other_README.md'))
     } finally {
       await rm(dirname(project), { recursive: true, force: true })
@@ -178,10 +197,13 @@ describe('dialog memory', () => {
     const beside = await shown(() =>
       ipc.invoke('dialog:open-folder', { defaultPath: join(root, 'Games', 'Proj') })
     )
+
     expect(beside.defaultPath).toBe(join(root, 'Games'))
+
     const gone = await shown(() =>
       ipc.invoke('dialog:open-folder', { defaultPath: join(root, 'Gone', 'Proj') })
     )
+
     expect(gone).not.toHaveProperty('defaultPath')
     expect(statSync).not.toHaveBeenCalled()
   })
@@ -216,20 +238,27 @@ describe('dialog memory', () => {
     const params = await second.shown(() =>
       second.ipc.invoke('dialog:open-file', { filters: PARAMS })
     )
+
     expect(params.defaultPath).toBe(join(root, 'params'))
     expect((await second.shown(() => second.ipc.invoke('dialog:open-folder'))).defaultPath).toBe(
       join(root, 'B')
     )
+
     const readme = await second.shown(() =>
       second.ipc.invoke('dialog:save-file', { defaultPath: 'Other_README.md', filters: MD })
     )
+
     expect(readme.defaultPath).toBe(join(root, 'B', 'Other_README.md'))
+
     // Open and save of one type keep separate folders
     const script = await second.shown(() => second.ipc.invoke('dialog:open-file', {}))
+
     expect(script.defaultPath).toBe(join(root, 'Games', 'Proj'))
+
     const plugin = await second.shown(() =>
       second.ipc.invoke('dialog:save-file', { defaultPath: 'Next.js' })
     )
+
     expect(plugin.defaultPath).toBe(join(root, 'params', 'Next.js'))
     expect(second.log.warn).not.toHaveBeenCalledWith(expect.stringMatching(/^\[dialog\]/))
   })
@@ -240,15 +269,18 @@ describe('dialog memory', () => {
     const folders = { 'open-file:.mzparams': gone, 'open-folder': gone, 'save-file:.md': gone }
     await writeFile(join(userData, FOLDERS_FILE), JSON.stringify({ folders }))
     const s = await session(userData)
+
     expect(
       await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: PARAMS }))
     ).not.toHaveProperty('defaultPath')
     expect(await s.shown(() => s.ipc.invoke('dialog:open-folder'))).not.toHaveProperty(
       'defaultPath'
     )
+
     const readme = await s.shown(() =>
       s.ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: MD })
     )
+
     expect(readme.defaultPath).toBe('Name_README.md')
   })
 
@@ -266,6 +298,7 @@ describe('dialog memory', () => {
     const plugin = await second.shown(() =>
       second.ipc.invoke('dialog:save-file', { defaultPath: 'Next.js' })
     )
+
     expect(plugin.defaultPath).toBe(join(driveRoot, 'Next.js'))
   })
 
@@ -304,7 +337,9 @@ describe('dialog memory', () => {
       cases++
       const result = s.ipc.invoke('dialog:save-file', { defaultPath: 'Name.js' })
       const waiting = new Promise((resolve) => setTimeout(() => resolve('still waiting'), 2000))
+
       expect(await Promise.race([result, waiting])).toBe(chosen)
+
       // The write started and has not finished
       await vi.waitFor(() =>
         expect(replaceFile).toHaveBeenCalledWith(
@@ -325,6 +360,7 @@ describe('dialog memory', () => {
       await writeFile(join(userData, FOLDERS_FILE), broken)
       const s = await session(userData)
       const options = await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: PARAMS }))
+
       expect(options).not.toHaveProperty('defaultPath')
       expect(s.log.warn).toHaveBeenCalledWith(expect.stringMatching(/^\[dialog\] Ignoring /))
     }
@@ -345,15 +381,20 @@ describe('dialog memory', () => {
     await writeFile(join(userData, FOLDERS_FILE), JSON.stringify({ folders }).replace(/}}$/, proto))
     const s = await session(userData)
     const params = await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: PARAMS }))
+
     expect(params.defaultPath).toBe(join(root, 'params'))
     expect(await s.shown(() => s.ipc.invoke('dialog:open-folder'))).not.toHaveProperty(
       'defaultPath'
     )
+
     const readme = await s.shown(() =>
       s.ipc.invoke('dialog:save-file', { defaultPath: 'Name_README.md', filters: MD })
     )
+
     expect(readme.defaultPath).toBe('Name_README.md')
+
     const json = [{ name: 'JSON', extensions: ['json'] }]
+
     expect(
       await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: json }))
     ).not.toHaveProperty('defaultPath')
@@ -376,8 +417,10 @@ describe('dialog memory', () => {
       return { canceled: true }
     }
     cases++
+
     await expect(ipc.invoke('dialog:save-file', { defaultPath: 'Name.js' })).resolves.toBeNull()
     expect(replaced).toEqual([expect.objectContaining({ defaultPath: 'Name.js' })])
+
     // The folder dialog is still the recording one
     await shown(() => ipc.invoke('dialog:open-folder'))
   })

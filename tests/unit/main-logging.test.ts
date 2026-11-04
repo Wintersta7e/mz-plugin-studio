@@ -18,6 +18,7 @@ vi.mock('@electron-toolkit/utils', () => ({
 describe('main entry logging', () => {
   it('initialises electron-log once, without its page script', async () => {
     await import('../../src/main/index')
+
     expect(vi.mocked(log.initialize).mock.calls).toEqual([[{ preload: false }]])
   })
 })

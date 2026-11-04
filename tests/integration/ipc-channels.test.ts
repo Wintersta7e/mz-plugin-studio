@@ -112,26 +112,40 @@ describe('ipc channels', () => {
 
     // The project channels act only on the open project, opened from the folder dialog
     dialogs.queue({ canceled: false, filePaths: [project] })
+
     await expect(invoke('dialog:open-folder')).resolves.toBe(project)
     await expect(invoke('project:validate', project)).resolves.toEqual({ valid: true })
+
     const loaded = (await invoke('project:load', project)) as { gameTitle: unknown }
+
     expect(typeof loaded.gameTitle).toBe('string')
     expect(await invoke('plugin:list', project)).toContain(plugin)
+
     const headers = (await invoke('plugin:scan-headers', project)) as { filename: string }[]
+
     expect(headers.map((h) => h.filename)).toContain(plugin)
+
     const load = (await invoke('plugin:load', project, plugin)) as Record<string, unknown>
+
     expect(Object.keys(load).sort()).toEqual(['path', 'plugin', 'sha256'])
+
     const raw = (await invoke('plugin:read-raw', project, plugin)) as Record<string, unknown>
+
     expect(Object.keys(raw).sort()).toEqual(['content', 'path', 'sha256'])
+
     const parsed = (await invoke('plugin:parse', raw.content)) as { meta: { name: string } }
+
     expect(parsed.meta.name).toBe('Fixture_HandWritten')
+
     const saved = await invoke('plugin:save', project, 'Synthetic_New.js', '// new\n', {
       base: null
     })
+
     expect(saved).toMatchObject({ success: true })
 
     const chosen = join(tmp, 'Synthetic_Out.js')
     dialogs.queue({ canceled: false, filePath: chosen })
+
     await expect(invoke('dialog:save-file', { defaultPath: 'Synthetic_Out.js' })).resolves.toBe(
       chosen
     )
@@ -140,25 +154,37 @@ describe('ipc channels', () => {
       path: chosen
     })
     await expect(invoke('plugin:read-by-path', chosen)).resolves.toBe('// out\n')
+
     dialogs.queue({ canceled: false, filePaths: [chosen] })
+
     await expect(invoke('dialog:open-file', {})).resolves.toBe(chosen)
+
     dialogs.queue({ response: 1 })
+
     await expect(invoke('dialog:message', { message: 'Synthetic' })).resolves.toBe(1)
     await expect(invoke('window-is-maximized')).resolves.toBe(false)
     await expect(invoke('log:open-folder')).resolves.toBeUndefined()
     expect(deps.openLogFolder).toHaveBeenCalledOnce()
 
     send('window-minimize')
+
     expect(win.minimize).toHaveBeenCalledOnce()
+
     send('window-maximize')
+
     expect(win.maximize).toHaveBeenCalledOnce()
+
     send('window-close')
+
     expect(win.close).toHaveBeenCalledOnce()
+
     send('log:set-level', true)
+
     expect(deps.setLogLevel).toHaveBeenCalledWith('debug')
 
     const channels = [...INVOKE_CHANNELS, ...SEND_CHANNELS]
     console.log(`channels tested ${driven.size}/${channels.length}`)
+
     expect(channels.length).toBeGreaterThan(0)
     expect(channels.filter((c) => !driven.has(c))).toEqual([])
     expect(ipc.handled).toEqual([...INVOKE_CHANNELS])
@@ -201,7 +227,9 @@ describe('ipc channels', () => {
       for (const bad of badPaths) {
         vi.mocked(log.warn).mockClear()
         runs.get(channel)!.mockClear()
+
         await expect(ipc.invoke(channel, ...args(bad))).rejects.toThrow(/^Invalid path: /)
+
         const warned = vi.mocked(log.warn).mock.calls.map((call) => String(call[0]))
         const refusedHere =
           runs.get(channel)!.mock.calls.length === 0 &&
@@ -211,6 +239,7 @@ describe('ipc channels', () => {
       }
     }
     console.log(`channels guarded ${guarded.length - unguarded.size}/${guarded.length}`)
+
     expect(guarded.length).toBeGreaterThan(0)
     expect([...unguarded]).toEqual([])
     expect(readdirSync(outside)).toEqual(['Fixture Game'])

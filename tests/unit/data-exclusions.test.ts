@@ -47,6 +47,7 @@ describe('data exclusions', () => {
           `prettier ${prettierIgnored}/${files.length}, eslint ${eslintIgnored}/${files.length}, ` +
           `test program ${inProgram}`
       )
+
       expect(files.length).toBeGreaterThan(0)
       expect(prettierIgnored).toBe(files.length)
       expect(eslintIgnored).toBe(files.length)

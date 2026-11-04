@@ -105,8 +105,11 @@ describe('release CI gate', () => {
   it('fails after six tries when the commit has no CI run', () => {
     const { status, out, log } = runStep({ FAKE_RUN_ID: '' })
     const lists = log.filter((line) => line.startsWith('gh run list '))
+
     expect(lists).toHaveLength(6)
+
     for (const line of lists) expect(line).toContain(`--workflow ci.yml --commit ${SHA}`)
+
     expect(log.filter((line) => line.startsWith('gh run watch'))).toEqual([])
     expect(lastLine(out)).toContain(SHA)
     expect(status).toBe(1)
@@ -114,6 +117,7 @@ describe('release CI gate', () => {
 
   it('fails when the CI run did not succeed', () => {
     const { status, out, log } = runStep({ FAKE_RUN_ID: '42', FAKE_WATCH_EXIT: '1' })
+
     expect(log.some((line) => /^gh run watch 42 .*--exit-status/.test(line))).toBe(true)
     expect(lastLine(out)).toContain('run 42')
     expect(status).toBe(1)
@@ -121,12 +125,14 @@ describe('release CI gate', () => {
 
   it('passes when the CI run succeeded', () => {
     const { status, log } = runStep({ FAKE_RUN_ID: '42', FAKE_WATCH_EXIT: '0' })
+
     expect(log.filter((line) => line.startsWith('gh run list '))).toHaveLength(1)
     expect(status).toBe(0)
   })
 
   it('fails without watching when listing the runs fails', () => {
     const { status, log } = runStep({ FAKE_LIST_EXIT: '1', FAKE_RUN_ID: '42' })
+
     expect(log.filter((line) => line.startsWith('gh run watch'))).toEqual([])
     expect(status).toBe(1)
   })

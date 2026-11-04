@@ -75,6 +75,7 @@ afterEach(() => {
 describe('no-skips reporter', { timeout: 60_000 }, () => {
   it('passes a run with no skipped test', () => {
     const root = makeRoot({ 'a.test.js': "it('runs', () => {})\n" })
+
     expect(run(root)).toEqual({ status: 0, lines: [counter(0, 0, 0)] })
   })
 
@@ -82,6 +83,7 @@ describe('no-skips reporter', { timeout: 60_000 }, () => {
     const root = makeRoot({ 'a.test.js': ["it('runs', () => {})", ...SKIP_FORMS].join('\n') })
     const { status, lines } = run(root)
     console.log(`skip forms ${SKIP_FORMS.length}, counter lines ${lines.length}`)
+
     expect(status).toBe(1)
     expect(lines[0]).toBe(counter(9, 1, 0))
     expect(lines).toHaveLength(SKIP_FORMS.length + 1)
@@ -92,15 +94,19 @@ describe('no-skips reporter', { timeout: 60_000 }, () => {
 
   it('allows the parity file skipped without MZ_CORESCRIPT_DIR, and only then', () => {
     const root = makeRoot({ 'tests/integration/mz-parity.test.ts': PARITY_SKIPPED })
+
     expect(run(root)).toEqual({ status: 0, lines: [counter(0, 0, 2)] })
     expect(run(root, [], { MZ_CORESCRIPT_DIR: 'x' })).toMatchObject({ status: 1 })
+
     const other = makeRoot({ 'tests/integration/other.test.ts': PARITY_SKIPPED })
     const outside = run(other)
+
     expect([outside.status, outside.lines[0]]).toEqual([1, counter(2, 0, 0)])
   })
 
   it('counts but does not fail a run filtered by test name', () => {
     const root = makeRoot({ 'a.test.js': "it('kept', () => {})\nit('dropped', () => {})\n" })
+
     expect(run(root, ['-t', 'kept'])).toEqual({
       status: 0,
       lines: [

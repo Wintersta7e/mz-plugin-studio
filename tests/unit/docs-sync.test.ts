@@ -50,6 +50,7 @@ describe('published docs match the code', () => {
     console.log(
       `README parameter types: listed ${listed.length}, in the code ${ALL_PARAM_TYPES.size}`
     )
+
     expect(listed.filter((type, i) => listed.indexOf(type) !== i)).toEqual([])
     expect([...listed].sort()).toEqual([...ALL_PARAM_TYPES].sort())
   })
@@ -63,6 +64,7 @@ describe('published docs match the code', () => {
     console.log(
       `README template categories: listed ${listed.length}, in the code ${names.length}, differing ${differing.length}`
     )
+
     expect(names.length).toBeGreaterThan(0)
     expect([...listed].sort()).toEqual([...names].sort())
   })
@@ -85,6 +87,7 @@ describe('published docs match the code', () => {
         )
     )
     console.log(`docs denylist: files scanned ${scanned.length}, matches ${matches.length}`)
+
     expect(scanned.length).toBeGreaterThan(0)
     expect({ missing, matches }).toEqual({ missing: [], matches: [] })
   })
@@ -101,6 +104,7 @@ describe('published docs match the code', () => {
       return /(^|[^\w`/.])@[A-Za-z]/.test(prose) ? [`CHANGELOG.md:${i + 1}: ${line.trim()}`] : []
     })
     console.log(`changelog mentions: lines scanned ${lines.length}, bare @words ${mentions.length}`)
+
     expect(lines.length).toBeGreaterThan(0)
     expect(mentions).toEqual([])
   })
@@ -122,16 +126,21 @@ describe('published docs match the code', () => {
       return ts.parseJsonConfigFileContent(config, ts.sys, base).options.strict !== true
     })
     console.log(`strict badge: tsconfigs ${configs.length}, non-strict ${nonStrict.length}`)
+
     expect(configs.length).toBeGreaterThan(0)
+
     if (/img\.shields\.io\/badge\/tsc-strict\b/.test(readme)) expect(nonStrict).toEqual([])
   })
 
   it('README stack table names every test folder and the end-to-end suite', () => {
     const tests = tableAfter(readme, '## Stack').filter((row) => row[0] === 'Tests')
+
     expect(tests).toHaveLength(1)
+
     const named = [...TEST_DIRS.map((dir) => `tests/${dir}/`), 'e2e/']
     const missing = named.filter((path) => !tests[0].join(' ').includes(`\`${path}\``))
     console.log(`README test folders: named ${named.length - missing.length}/${named.length}`)
+
     expect(missing).toEqual([])
   })
 
@@ -145,6 +154,7 @@ describe('published docs match the code', () => {
       .filter(Boolean)
       .sort()
     console.log(`README screenshots: referenced ${referenced.length} / tracked ${tracked.length}`)
+
     expect(referenced.filter((file) => !existsSync(join(ROOT, file)))).toEqual([])
     expect(referenced).toEqual(tracked)
   })

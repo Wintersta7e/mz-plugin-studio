@@ -26,6 +26,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+s', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
   })
@@ -33,6 +34,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+shift+z (redo)', () => {
     const evt = makeKeyboardEvent({ code: 'KeyZ', ctrlKey: true, shiftKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+shift+z')
   })
@@ -40,6 +42,7 @@ describe('matchShortcut', () => {
   it('matches f5', () => {
     const evt = makeKeyboardEvent({ code: 'F5' })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('f5')
   })
@@ -47,6 +50,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+1 (switch to Meta tab)', () => {
     const evt = makeKeyboardEvent({ code: 'Digit1', ctrlKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+1')
   })
@@ -54,6 +58,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+, (open settings)', () => {
     const evt = makeKeyboardEvent({ code: 'Comma', ctrlKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+,')
   })
@@ -61,6 +66,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+b (toggle code preview)', () => {
     const evt = makeKeyboardEvent({ code: 'KeyB', ctrlKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+b')
   })
@@ -68,6 +74,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+shift+s (save all)', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true, shiftKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+shift+s')
   })
@@ -75,6 +82,7 @@ describe('matchShortcut', () => {
   it('matches ctrl+shift+e (toggle plugin browser)', () => {
     const evt = makeKeyboardEvent({ code: 'KeyE', ctrlKey: true, shiftKey: true })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+shift+e')
   })
@@ -82,24 +90,28 @@ describe('matchShortcut', () => {
   it('returns null for alt+key combinations', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', altKey: true })
     const result = matchShortcut(evt)
+
     expect(result).toBeNull()
   })
 
   it('returns null for unbound key', () => {
     const evt = makeKeyboardEvent({ code: 'KeyQ', ctrlKey: true })
     const result = matchShortcut(evt)
+
     expect(result).toBeNull()
   })
 
   it('returns null for plain key press without modifiers (non-F key)', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS' })
     const result = matchShortcut(evt)
+
     expect(result).toBeNull()
   })
 
   it('matches cmd+s on macOS (metaKey)', () => {
     const event = new KeyboardEvent('keydown', { key: 's', code: 'KeyS', metaKey: true })
     const result = matchShortcut(event)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
   })
@@ -107,6 +119,7 @@ describe('matchShortcut', () => {
   it('matches f1 (show shortcuts help)', () => {
     const evt = makeKeyboardEvent({ code: 'F1' })
     const result = matchShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('f1')
   })
@@ -120,6 +133,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Save',
       category: 'File' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
@@ -130,6 +144,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Save All',
       category: 'File' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
@@ -140,6 +155,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Toggle preview',
       category: 'View' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
@@ -150,6 +166,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Toggle plugin browser',
       category: 'View' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(true)
   })
 
@@ -160,6 +177,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Undo',
       category: 'Edit' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(false)
   })
 
@@ -170,6 +188,7 @@ describe('shouldOverrideMonaco', () => {
       description: 'Regenerate',
       category: 'View' as const
     }
+
     expect(shouldOverrideMonaco(shortcut)).toBe(false)
   })
 })
@@ -183,6 +202,7 @@ describe('shouldHandleShortcut', () => {
   it('returns the shortcut when no Monaco editor is focused', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
     const result = shouldHandleShortcut(evt)
+
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
   })
@@ -190,6 +210,7 @@ describe('shouldHandleShortcut', () => {
   it('returns null for unrecognized shortcut', () => {
     const evt = makeKeyboardEvent({ code: 'KeyQ', ctrlKey: true })
     const result = shouldHandleShortcut(evt)
+
     expect(result).toBeNull()
   })
 
@@ -205,6 +226,7 @@ describe('shouldHandleShortcut', () => {
 
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
     const result = shouldHandleShortcut(evt)
+
     // ctrl+s is in GLOBAL_OVERRIDE_SHORTCUTS so should still return
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
@@ -225,6 +247,7 @@ describe('shouldHandleShortcut', () => {
     // ctrl+z is NOT in GLOBAL_OVERRIDE_SHORTCUTS
     const evt = makeKeyboardEvent({ code: 'KeyZ', ctrlKey: true })
     const result = shouldHandleShortcut(evt)
+
     expect(result).toBeNull()
 
     document.body.removeChild(editorDiv)

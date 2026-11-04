@@ -9,16 +9,19 @@ import { freezeTime, restoreTime } from './corpus/normalise'
 
 describe('v1.6.0 parameter export', () => {
   beforeAll(freezeTime)
+
   afterAll(restoreTime)
 
   it('is the bytes the export writer produces', () => {
     const written = serializeParams(V160_PARAMS, V160_SOURCE)
+
     expect(readFileSync(V160_FIXTURE)).toEqual(Buffer.from(written, 'utf8'))
   })
 
   it('generates a plugin from the imported parameters', async () => {
     const imported = deserializeParams(readFileSync(V160_FIXTURE, 'utf8'))
     if (!imported.success) throw new Error(`file refused: ${imported.reason}`)
+
     expect(imported.parameters).toHaveLength(V160_PARAMS.length)
     await expect(
       generatePlugin({ ...MZPARAMS_HOST, parameters: imported.parameters })

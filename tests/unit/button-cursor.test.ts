@@ -33,6 +33,7 @@ describe('button cursor', () => {
       m[1].trim().replace(/\s+/g, ' ').replace(/'/g, '"')
     )
     console.log(`button cursor: base layer ${base.length} chars, pointer rules ${rules.length}`)
+
     expect(base.length).toBeGreaterThan(0)
     expect(rules).toContain('button:not(:disabled), [role="button"]:not(:disabled)')
   })

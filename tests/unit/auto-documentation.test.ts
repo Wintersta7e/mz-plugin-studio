@@ -35,6 +35,7 @@ describe('generateHelpText', () => {
       author: 'TestAuthor'
     })
     const help = generateHelpText(plugin)
+
     expect(help).toContain('TestPlugin v2.0.0')
     expect(help).toContain('by TestAuthor')
   })
@@ -42,6 +43,7 @@ describe('generateHelpText', () => {
   it('includes description when present', () => {
     const plugin = createMinimalPlugin({ description: 'A test plugin description' })
     const help = generateHelpText(plugin)
+
     expect(help).toContain('A test plugin description')
   })
 
@@ -52,6 +54,7 @@ describe('generateHelpText', () => {
     // (since there are no params/commands/structs/deps)
     const lines = help.split('\n')
     const titleEnd = lines.findIndex((l, i) => i > 0 && l.startsWith('===='))
+
     // Next line after title block should be empty (spacing before changelog)
     expect(lines[titleEnd + 1]).toBe('')
   })
@@ -71,6 +74,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Parameters')
     expect(help).toContain('Movement Speed (number, min: 1, max: 10)')
     expect(help).toContain('Default: 5')
@@ -80,6 +84,7 @@ describe('generateHelpText', () => {
     const plugin = createMinimalPlugin()
     plugin.parameters = []
     const help = generateHelpText(plugin)
+
     expect(help).not.toContain('Parameters')
   })
 
@@ -98,6 +103,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Parent')
     expect(help).not.toContain('Child')
   })
@@ -123,6 +129,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Plugin Commands')
     expect(help).toContain('Set Speed')
     expect(help).toContain('Speed Value (number) - The new speed')
@@ -141,6 +148,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Structs')
     expect(help).toContain('PositionData')
     expect(help).toContain('X (number), Y (number)')
@@ -151,6 +159,7 @@ describe('generateHelpText', () => {
     plugin.meta.dependencies = ['PluginBase', 'CoreEngine']
     plugin.meta.orderAfter = ['SomePlugin']
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Dependencies')
     expect(help).toContain('Required: PluginBase, CoreEngine')
     expect(help).toContain('Load After: SomePlugin')
@@ -161,12 +170,14 @@ describe('generateHelpText', () => {
     plugin.meta.dependencies = []
     plugin.meta.orderAfter = []
     const help = generateHelpText(plugin)
+
     expect(help).not.toContain('Dependencies')
   })
 
   it('always includes changelog stub', () => {
     const plugin = createMinimalPlugin({ version: '3.0.0' })
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Changelog')
     expect(help).toContain('v3.0.0 - Initial release')
   })
@@ -180,6 +191,7 @@ describe('generateHelpText', () => {
     plugin.meta.orderAfter = []
     plugin.meta.description = ''
     const help = generateHelpText(plugin)
+
     expect(help).toContain('NewPlugin v1.0.0')
     expect(help).toContain('Changelog')
     expect(help).not.toContain('Parameters')
@@ -209,6 +221,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).not.toContain('Visual Settings')
     expect(help).toContain('Opacity')
   })
@@ -236,6 +249,7 @@ describe('generateHelpText', () => {
       }
     ]
     const help = generateHelpText(plugin)
+
     expect(help).toContain('Data (struct<MyStruct>)')
     expect(help).toContain('List (number[])')
   })

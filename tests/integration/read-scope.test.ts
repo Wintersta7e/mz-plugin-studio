@@ -69,12 +69,14 @@ afterEach(async () => {
 
 afterAll(() => {
   console.log(`read scope: rows ${rows}`)
+
   expect(rows).toBeGreaterThan(0)
 })
 
 describe('read scope', () => {
   it("refuses the project's plugins before a project is loaded", async () => {
     const { read } = await session()
+
     await expect(read(pluginFile())).rejects.toThrow(DENIED)
   })
 
@@ -83,6 +85,7 @@ describe('read scope', () => {
     await openProject(project)
     const out = join(outside, 'outside', 'Synthetic_Out.js')
     await writeFile(out, '// out\n')
+
     await expect(read(pluginFile())).resolves.toBe('// in project\n')
     await expect(read(out)).rejects.toThrow(DENIED)
     await expect(read(join(project, 'data', 'System.json'))).rejects.toThrow(DENIED)
@@ -95,10 +98,13 @@ describe('read scope', () => {
     const savedTo = join(outside, 'outside', 'Synthetic_Saved.js')
     await writeFile(chosen, '// chosen\n')
     await writeFile(savedTo, '// saved\n')
+
     await expect(read(chosen)).rejects.toThrow(DENIED)
     await expect(read(savedTo)).rejects.toThrow(DENIED)
+
     await openFile(chosen)
     await saveFile(savedTo)
+
     await expect(read(chosen)).resolves.toBe('// chosen\n')
     await expect(read(savedTo)).resolves.toBe('// saved\n')
   })
@@ -108,6 +114,7 @@ describe('read scope', () => {
     const text = join(outside, 'outside', 'Synthetic_Notes.txt')
     await writeFile(text, 'notes\n')
     await openFile(text)
+
     await expect(read(text)).rejects.toThrow('File extension ".txt" is not allowed')
     expect(() => access.authorize('granted-read', text.replace(/\.txt$/, '.js'))).toThrow(DENIED)
   })
@@ -122,10 +129,12 @@ describe('read scope', () => {
         return true
       } catch (error) {
         expect(String(error)).toContain(DENIED)
+
         return false
       }
     }
     access.setCurrentProjectRoot('C:\\Games\\Proj', win)
+
     expect(allowed('C:\\Games\\Proj\\js\\plugins\\a.js')).toBe(true)
     expect(allowed('c:\\games\\proj\\JS\\Plugins\\a.js')).toBe(true)
     expect(allowed('C:\\Games\\Proj\\js\\plugins\\sub\\a.js')).toBe(true)
@@ -134,9 +143,13 @@ describe('read scope', () => {
     expect(allowed('C:\\Games\\Proj2\\js\\plugins\\a.js')).toBe(false)
     expect(allowed('C:\\Other\\a.js')).toBe(false)
     expect(allowed('\\\\host\\share\\x.js')).toBe(false)
+
     access.recordReadGrant('\\\\host\\share\\x.js', win)
+
     expect(allowed('\\\\HOST\\share\\X.js')).toBe(true)
+
     access.setCurrentProjectRoot('\\\\host\\share\\Proj', win)
+
     expect(allowed('\\\\host\\share\\Proj\\js\\plugins\\a.js')).toBe(false)
     expect(allowed('//host/share/Proj/js/plugins/a.js')).toBe(false)
   })

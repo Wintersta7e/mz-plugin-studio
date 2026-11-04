@@ -14,6 +14,7 @@ describe('PluginParser', () => {
  * @author TestAuthor
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.description).toBe('A simple test plugin')
       expect(result.meta.author).toBe('TestAuthor')
       expect(result.parameters).toHaveLength(0)
@@ -28,6 +29,7 @@ describe('PluginParser', () => {
  * @url https://example.com
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.target).toBe('MZ')
       expect(result.meta.url).toBe('https://example.com')
     })
@@ -40,6 +42,7 @@ describe('PluginParser', () => {
  * @base AnotherPlugin
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.dependencies).toEqual(['Synthetic_CoreBase', 'AnotherPlugin'])
     })
 
@@ -50,6 +53,7 @@ describe('PluginParser', () => {
  * @orderAfter Synthetic_CoreBase
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.orderAfter).toEqual(['Synthetic_CoreBase'])
     })
 
@@ -65,6 +69,7 @@ describe('PluginParser', () => {
  * @type string
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.help).toContain('This is help text.')
       expect(result.meta.help).toContain('It spans multiple lines.')
     })
@@ -83,6 +88,7 @@ describe('PluginParser', () => {
  * ヘルプテキスト
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.help).toBe('This is help text.\nIt spans multiple lines.')
       expect(result.meta.localizations!['ja'].help).toBe('ヘルプテキスト')
     })
@@ -97,6 +103,7 @@ describe('PluginParser', () => {
  * @plugindesc 最後の説明
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.description).toBe('Last description')
       expect(result.meta.localizations!['ja'].description).toBe('最後の説明')
     })
@@ -113,6 +120,7 @@ describe('PluginParser', () => {
  * @author Test
  */`
       const result = PluginParser.parsePlugin(content, 'MyPlugin.js')
+
       expect(result.meta.name).toBe('MyPlugin')
     })
   })
@@ -127,6 +135,7 @@ describe('PluginParser', () => {
  * @default Hello
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters).toHaveLength(1)
       expect(result.parameters[0].name).toBe('greeting')
       expect(result.parameters[0].text).toBe('Greeting Text')
@@ -147,6 +156,7 @@ describe('PluginParser', () => {
  * @default 10
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('number')
       expect(result.parameters[0].min).toBe(1)
       expect(result.parameters[0].max).toBe(100)
@@ -164,6 +174,7 @@ describe('PluginParser', () => {
  * @default true
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('boolean')
       expect(result.parameters[0].default).toBe(true)
       expect(result.parameters[0].onLabel).toBe('Yes')
@@ -184,6 +195,7 @@ describe('PluginParser', () => {
  * @default medium
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('select')
       expect(result.parameters[0].options).toHaveLength(3)
       expect(result.parameters[0].options![0]).toEqual({ value: 'easy', text: 'Easy' })
@@ -198,6 +210,7 @@ describe('PluginParser', () => {
  * @default {}
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('struct')
       expect(result.parameters[0].structType).toBe('GameSettings')
     })
@@ -210,6 +223,7 @@ describe('PluginParser', () => {
  * @default []
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('array')
       expect(result.parameters[0].arrayType).toBe('struct')
       expect(result.parameters[0].structType).toBe('Enemy')
@@ -224,6 +238,7 @@ describe('PluginParser', () => {
  * @default
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('file')
       expect(result.parameters[0].dir).toBe('img/pictures')
     })
@@ -242,6 +257,7 @@ describe('PluginParser', () => {
  * @default 0
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters).toHaveLength(2)
       expect(result.parameters[1].parent).toBe('parentParam')
     })
@@ -264,6 +280,7 @@ describe('PluginParser', () => {
  * @default true
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters).toHaveLength(3)
       expect(result.parameters[0].name).toBe('name')
       expect(result.parameters[1].name).toBe('age')
@@ -289,6 +306,7 @@ describe('PluginParser', () => {
  * @default 60
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.commands).toHaveLength(1)
       expect(result.commands[0].name).toBe('ShowMessage')
       expect(result.commands[0].text).toBe('Show Message')
@@ -309,6 +327,7 @@ describe('PluginParser', () => {
  * @desc Second command
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.commands).toHaveLength(2)
       expect(result.commands[0].name).toBe('CmdA')
       expect(result.commands[1].name).toBe('CmdB')
@@ -334,6 +353,7 @@ describe('PluginParser', () => {
  * @default 0
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.structs).toHaveLength(1)
       expect(result.structs[0].name).toBe('Position')
       expect(result.structs[0].parameters).toHaveLength(2)
@@ -365,6 +385,7 @@ describe('PluginParser', () => {
  * @type number
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.structs.map((s) => s.name)).toEqual(['Position'])
       expect(result.structs[0].parameters.map((p) => p.text)).toEqual(['X'])
     })
@@ -392,6 +413,7 @@ describe('PluginParser', () => {
  * @text Run now
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.description).toBe('Description')
       expect(result.parameters.map((p) => p.text)).toEqual(['Speed'])
       expect(result.commands.map((c) => c.text)).toEqual(['Run now'])
@@ -407,6 +429,7 @@ describe('PluginParser', () => {
  * @desc How fast.
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.commands[0].text).toBe('Run')
       expect(result.commands[0].desc).toBe('')
       expect(result.commands[0].args[0].text).toBe('Speed')
@@ -422,6 +445,7 @@ var before = 1;
  */
 var after = 2;`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.codeBody).toBe('var before = 1;\n\nvar after = 2;')
     })
   })
@@ -432,6 +456,7 @@ var after = 2;`
  * @param mySwitch @text My Switch @type switch @default 0
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters).toHaveLength(1)
       expect(result.parameters[0].name).toBe('mySwitch')
       expect(result.parameters[0].text).toBe('My Switch')
@@ -451,6 +476,7 @@ var after = 2;`
     console.log('hello');
 })();`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.codeBody).toContain('(() => {')
       expect(result.customCode).toContain('console.log')
     })
@@ -461,6 +487,7 @@ var after = 2;`
  * @author Test
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.customCode).toBe('')
     })
   })
@@ -478,6 +505,7 @@ var after = 2;`
  * ヘルプテキスト
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.meta.description).toBe('English description')
       expect(result.meta.localizations).toHaveProperty('ja')
       expect(result.meta.localizations!['ja'].description).toBe('日本語の説明')
@@ -492,6 +520,7 @@ var after = 2;`
 
       for (const input of ['', 'not a plugin', '/* unclosed comment']) {
         const result = PluginParser.parsePlugin(input)
+
         expect(result.parameters).toEqual([])
         expect(result.commands).toEqual([])
       }
@@ -499,6 +528,7 @@ var after = 2;`
 
     it('handles plugin with no header comment', () => {
       const result = PluginParser.parsePlugin('console.log("hello");')
+
       expect(result.parameters).toHaveLength(0)
       expect(result.commands).toHaveLength(0)
     })
@@ -514,6 +544,7 @@ var after = 2;`
  * @default y
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].id).not.toBe(result.parameters[1].id)
     })
   })
@@ -527,6 +558,7 @@ var after = 2;`
  * @default 5
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('number')
     })
 
@@ -537,6 +569,7 @@ var after = 2;`
  * @default true
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('boolean')
     })
 
@@ -547,6 +580,7 @@ var after = 2;`
  * @default []
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('array')
       expect(result.parameters[0].arrayType).toBe('string')
     })
@@ -558,6 +592,7 @@ var after = 2;`
  * @default {}
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('struct')
       expect(result.parameters[0].structType).toBe('Position')
       expect(result.parameters[0].rawType).toBe('struct<Position>')
@@ -568,6 +603,7 @@ var after = 2;`
  * @param mode @text Mode @type select @option Easy @value easy @option Hard @value hard @default easy
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.parameters[0].type).toBe('select')
       expect(result.parameters[0].options).toBeDefined()
       expect(result.parameters[0].options).toHaveLength(2)
@@ -590,6 +626,7 @@ var after = 2;`
  * @default true
  */`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.commands[0].args[0].type).toBe('boolean')
       expect(result.commands[0].args[0].onLabel).toBe('Show')
       expect(result.commands[0].args[0].offLabel).toBe('Hide')
@@ -610,6 +647,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
       const arg = result.commands[0].args[0]
+
       expect(arg.type).toBe('file')
       expect(arg.dir).toBe('img/pictures')
       expect(arg.require).toBe(true)
@@ -627,6 +665,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
       const arg = result.commands[0].args[0]
+
       expect(arg.type).toBe('struct')
       expect(arg.structType).toBe('Config')
     })
@@ -647,6 +686,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
       const arg = result.commands[0].args[0]
+
       expect(arg.type).toBe('select')
       expect(arg.options).toBeDefined()
       expect(arg.options!.some((o) => o.value === 'easy')).toBe(true)
@@ -668,6 +708,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
       const arg = result.commands[0].args[0]
+
       expect(arg.type).toBe('number')
       expect(arg.min).toBe(0)
       expect(arg.max).toBe(100)
@@ -694,6 +735,7 @@ var after = 2;`
     };
 })();`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.customCode).toContain('Game_Actor.prototype.myMethod')
     })
 
@@ -716,6 +758,7 @@ var after = 2;`
     Scene_Map.prototype.update = function() {};
 })();`
       const result = PluginParser.parsePlugin(content)
+
       // customCode should contain the post-command code or at least the full inner body
       expect(result.customCode).toContain('Scene_Map.prototype.update')
     })
@@ -733,6 +776,7 @@ var after = 2;`
     MyPlugin.init = function() { return true; };
 })();`
       const result = PluginParser.parsePlugin(content)
+
       expect(result.codeBody).toContain('(function()')
       // inner content should have been extracted into customCode
       expect(result.customCode).toContain('MyPlugin.init')
@@ -787,6 +831,7 @@ var after = 2;`
  * @type string
  */`
       const result = PluginParser.parsePlugin(content, 'Synthetic_BattleCore.js')
+
       expect(result.meta.name).toBe('Synthetic_BattleCore')
       expect(result.meta.target).toBe('MZ')
       expect(result.meta.author).toBe('Example Author')

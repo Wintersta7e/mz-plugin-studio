@@ -55,6 +55,7 @@ describe('commit message rules', () => {
       expect(messageProblems(message), message.body).toEqual([problem])
     }
     console.log(`commit message cases ${PASSING.length + FAILING.length}`)
+
     expect(PASSING.length + FAILING.length).toBeGreaterThan(0)
   })
 })

@@ -79,6 +79,7 @@ describe('parameter import from a file', () => {
   ])('says why it refuses a file %s', async (_label, text, expected) => {
     const message = importFile(text)
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'error',
       title: 'Import Failed',
@@ -93,6 +94,7 @@ describe('parameter import from a file', () => {
     file.parameters.push(42)
     const message = importFile(JSON.stringify(file))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'warning',
       title: 'Import Report',
@@ -111,6 +113,7 @@ describe('parameter import from a file', () => {
     file.parameters[1].options = [{ value: 'a', text: 'A', note: 'not an option field' }]
     const message = importFile(JSON.stringify(file))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'warning',
       title: 'Import Report',
@@ -133,11 +136,15 @@ describe('parameter import from a file', () => {
     })
     const message = importFile(text)
     await waitFor(() => expect(parameterNames()).toEqual(['Existing', 'Label']))
+
     expect(message).not.toHaveBeenCalled()
+
     const plugin = usePluginStore.getState().plugin
+
     expect(plugin.parameters[1].desc).toBe(payload.text)
 
     const result = evaluatePlugin(generatePlugin(plugin), { mode: 'generator' })
+
     expect(result.compileProblem).toBeNull()
     expect(result.threw).toBeNull()
     expect(result.sentinel).toBe(false)
@@ -171,6 +178,7 @@ describe('parameter import from a file that is not UTF-8', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: 'Import' }), { key: 'Enter' })
     fireEvent.click(screen.getByText(item))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'error',
       title: 'Import Failed',
@@ -224,6 +232,7 @@ describe('parameter export to a file', () => {
     const message = exportTo(target)
     const written = await waitFor(() => readFile(target, 'utf8'))
     const result = deserializeParams(written)
+
     expect(result.success && result.parameters.map((p) => p.name)).toEqual(['Existing'])
     expect(message).not.toHaveBeenCalled()
   })
@@ -232,6 +241,7 @@ describe('parameter export to a file', () => {
     const target = join(tmp, 'Alpha-params.mzparams')
     const message = exportTo(target, { throughDialog: false })
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'error',
       title: 'Export Failed',
@@ -250,6 +260,7 @@ describe('parameter usage comment', () => {
     fireEvent.click(screen.getByText(existing.text))
     fireEvent.change(screen.getByDisplayValue('Existing'), { target: { value: 'Renamed' } })
     const code = usePluginStore.getState().plugin.customCode
+
     expect(code).toContain(generateParameterComment({ ...existing, name: 'Renamed' }))
     expect(code).not.toContain(generateParameterComment(existing))
   })
@@ -264,6 +275,7 @@ describe('parameter usage comment', () => {
       render(<ParameterBuilder />)
       fireEvent.click(screen.getByText(existing.text))
       fireEvent.change(screen.getByDisplayValue('Existing'), { target: { value: name } })
+
       expect(usePluginStore.getState().plugin.customCode).toBe(
         generateParameterComment({ ...existing, name }) + rest
       )
@@ -286,6 +298,7 @@ describe('parameter prompts that discard work', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
     const options = message.mock.calls[0][0]
+
     expect(options.buttons).toEqual(['Cancel', 'Delete'])
     expect(parameterNames()).toEqual(['Existing'])
     // The main process makes Cancel the default from its button word
@@ -303,6 +316,7 @@ describe('parameter prompts that discard work', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
     const options = message.mock.calls[0][0]
+
     expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
     expect(useSettingsStore.getState().parameterPresets).toEqual({ Mine: [kept] })
     expect(options).not.toHaveProperty('defaultId')
@@ -374,9 +388,12 @@ describe('parameter rows', () => {
 
   it('shows an empty list, then a new row with its name field and the selection toolbar', async () => {
     const user = renderTab()
+
     expect(screen.getByText('No parameters defined')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Select All' })).not.toBeInTheDocument()
+
     await addParameter(user)
+
     expect(screen.queryByText('No parameters defined')).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('paramName')).toHaveValue('NewParameter')
     expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument()
@@ -389,7 +406,9 @@ describe('parameter rows', () => {
     await user.type(screen.getByPlaceholderText('paramName'), 'speed')
     await user.clear(screen.getByPlaceholderText('Parameter Label'))
     await user.type(screen.getByPlaceholderText('Parameter Label'), 'Speed')
+
     expect(row('Speed')).toBeInTheDocument()
+
     await waitFor(() => {
       expect(preview()).toContain('@param speed')
       expect(preview()).toContain('@text Speed')
@@ -402,10 +421,15 @@ describe('parameter rows', () => {
     const name = screen.getByPlaceholderText('paramName')
     await user.clear(name)
     await user.type(name, '1abc')
+
     expect(screen.getByText(/^Must be a valid identifier/)).toBeInTheDocument()
+
     await user.clear(name)
+
     expect(screen.getByText('Name is required')).toBeInTheDocument()
+
     await user.type(name, 'speed')
+
     expect(screen.getByText('Duplicate parameter name')).toBeInTheDocument()
     expect(screen.queryByText(/^Must be a valid identifier/)).not.toBeInTheDocument()
   })
@@ -414,7 +438,9 @@ describe('parameter rows', () => {
     const user = renderTab()
     await addParameter(user)
     await pickType(user, 'String', 'Number')
+
     expect(screen.getByText('(number)')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Show details' }))
     await user.type(screen.getByPlaceholderText('No min'), '5')
     await waitFor(() => {
@@ -441,7 +467,9 @@ describe('parameter rows', () => {
     await pickType(user, 'String', 'Select')
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options, 'x|Y{Backspace}Z{Enter}b')
+
     expect(options).toHaveValue('x|Z\nb')
+
     await waitFor(() => {
       expect(preview()).toContain(' * @option Z\n * @value x\n * @option b\n *\n')
     })
@@ -461,8 +489,11 @@ describe('parameter rows', () => {
     ])
     await user.click(screen.getByText('Mode'))
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
+
     expect(options).toHaveValue('a\\|b|Label\nA\\|B\nc')
+
     await user.type(options, 'x')
+
     expect(usePluginStore.getState().plugin.parameters[0].options).toEqual([
       { value: 'a|b', text: 'Label' },
       { value: 'A|B', text: 'A|B' },
@@ -479,8 +510,11 @@ describe('parameter rows', () => {
     const user = renderTab([select('first', 'First', 'a'), select('second', 'Second', 'b')])
     await user.click(screen.getByText('First'))
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), '|')
+
     expect(screen.getByPlaceholderText(/^option1\|Option 1/)).toHaveValue('a|')
+
     await user.click(screen.getByText('Second'))
+
     expect(within(row('Second')).getByPlaceholderText(/^option1\|Option 1/)).toHaveValue('b')
   })
 
@@ -488,9 +522,12 @@ describe('parameter rows', () => {
     const user = renderTab()
     await addParameter(user)
     await pickType(user, 'String', 'Switch')
+
     expect(screen.getByPlaceholderText('Load project first')).toBeDisabled()
+
     act(() => openProject({ ...sampleProject(), switches: [{ id: 1, name: 'Door Open' }] }))
     await user.click(combobox('Select switch...'))
+
     expect(await screen.findByRole('option', { name: '1: Door Open' })).toBeInTheDocument()
   })
 
@@ -505,7 +542,9 @@ describe('parameter rows', () => {
     await pickType(user, 'String', 'Struct')
     await user.click(combobox('Select struct...'))
     await user.click(await screen.findByRole('option', { name: 'Point' }))
+
     expect(screen.getByText('Horizontal')).toBeInTheDocument()
+
     await waitFor(() => expect(preview()).toContain('struct<Point>'))
   })
 
@@ -520,12 +559,15 @@ describe('parameter rows', () => {
     fireEvent.dragStart(row('Speed'), { dataTransfer })
     fireEvent.dragOver(row('Power'), { dataTransfer })
     fireEvent.drop(row('Power'), { dataTransfer })
+
     expect(screen.getAllByText(/^(Speed|Power)$/).map((e) => e.textContent)).toEqual([
       'Power',
       'Speed'
     ])
+
     await waitFor(() => {
       const power = preview().indexOf('@param power')
+
       expect(power).toBeGreaterThan(-1)
       expect(power).toBeLessThan(preview().indexOf('@param speed'))
     })
@@ -535,11 +577,15 @@ describe('parameter rows', () => {
     const user = renderTab()
     await addParameter(user)
     await pickType(user, 'String', 'Hidden')
+
     expect(within(row('New Parameter')).getByText('hidden in MZ')).toBeInTheDocument()
+
     await waitFor(() => expect(preview()).toContain('@param NewParameter'))
     // The delete button has no name; it is the first button in the row, inside its header
     await user.click(within(row('New Parameter')).getAllByRole('button')[0])
+
     expect(screen.queryByText('New Parameter')).not.toBeInTheDocument()
+
     await waitFor(() => expect(preview()).not.toContain('@param NewParameter'))
   })
 })
@@ -578,6 +624,7 @@ describe('parameter toolbar', () => {
     for (const name of selectionButtons) expect(screen.getByRole('button', { name })).toBeEnabled()
     await user.click(screen.getByRole('button', { name: 'Deselect' }))
     for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
+
     expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument()
   })
 
@@ -585,8 +632,10 @@ describe('parameter toolbar', () => {
     const user = renderToolbar([param('speed', ''), param('power', '')])
     await tick(user, 'speed')
     await user.click(screen.getByRole('button', { name: 'Duplicate' }))
+
     expect(row('speed_copy')).toBeInTheDocument()
     expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+
     for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
   })
 
@@ -602,12 +651,17 @@ describe('parameter toolbar', () => {
     await tick(user, 'Power')
     await user.click(screen.getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message.mock.calls[0][0].buttons).toContain('Cancel')
+
     await settle()
+
     expect(row('Speed')).toBeInTheDocument()
     expect(row('Power')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Delete' }))
     await waitFor(() => expect(screen.queryByText('Speed')).not.toBeInTheDocument())
+
     expect(screen.queryByText('Power')).not.toBeInTheDocument()
     expect(row('Range')).toBeInTheDocument()
   })
@@ -621,13 +675,18 @@ describe('parameter toolbar', () => {
     await tick(user, 'Power')
     await user.click(screen.getByRole('button', { name: 'Export' }))
     await waitFor(() => expect(api.plugin.saveToPath).toHaveBeenCalledTimes(1))
+
     expect(api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: 'Alpha-params.mzparams',
       filters: [{ name: 'MZ Parameters', extensions: ['mzparams'] }]
     })
+
     const [path, content] = vi.mocked(api.plugin.saveToPath).mock.calls[0]
+
     expect(path).toBe('/exports/Alpha-params.mzparams')
+
     const written: { parameters: PluginParameter[] } = JSON.parse(content)
+
     expect(written.parameters.map((p) => p.name)).toEqual(['power'])
   })
 
@@ -639,6 +698,7 @@ describe('parameter toolbar', () => {
     await user.click(screen.getByRole('button', { name: 'Export' }))
     await waitFor(() => expect(api.dialog.saveFile).toHaveBeenCalledTimes(1))
     await settle()
+
     expect(api.plugin.saveToPath).not.toHaveBeenCalled()
   })
 
@@ -659,6 +719,7 @@ describe('parameter toolbar', () => {
     window.api = api
     const user = renderToolbar([param('speed', 'Speed')])
     await chooseMenuItem(user, 'Import', 'From File (.mzparams)')
+
     expect(await screen.findByText('Alpha')).toBeInTheDocument()
     expect(row('Beta')).toBeInTheDocument()
     expect(api.dialog.openFile).toHaveBeenCalledWith({
@@ -674,6 +735,7 @@ describe('parameter toolbar', () => {
     await chooseMenuItem(user, 'Import', 'From File (.mzparams)')
     await waitFor(() => expect(api.dialog.openFile).toHaveBeenCalledTimes(1))
     await settle()
+
     expect(api.plugin.readByPath).not.toHaveBeenCalled()
     expect(screen.getAllByRole('checkbox')).toHaveLength(1)
   })
@@ -693,14 +755,17 @@ describe('parameter toolbar', () => {
     const user = renderToolbar([param('speed', 'Speed')])
     await chooseMenuItem(user, 'Import', 'From Plugin (.js)')
     const picker = await screen.findByRole('dialog', { name: 'Import Parameters from Plugin' })
+
     expect(within(picker).getByText(/\(2 found\)/)).toBeInTheDocument()
     expect(api.dialog.openFile).toHaveBeenCalledWith({
       filters: [{ name: 'JavaScript Plugin', extensions: ['js'] }]
     })
     expect(api.plugin.parse).toHaveBeenCalledWith('/* Beta */')
+
     await user.click(within(picker).getByRole('checkbox', { name: /^Beta/ }))
     await user.click(within(picker).getByRole('button', { name: 'Import 1 Parameter' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
     expect(row('Alpha')).toBeInTheDocument()
     expect(screen.queryByText('Beta')).not.toBeInTheDocument()
   })
@@ -723,6 +788,7 @@ describe('parameter toolbar', () => {
     const user = renderToolbar([param('speed', 'Speed')])
     await chooseMenuItem(user, 'Import', 'From Plugin (.js)')
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith(expect.objectContaining({ title }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getAllByRole('checkbox')).toHaveLength(1)
@@ -735,6 +801,7 @@ describe('parameter toolbar', () => {
     await user.type(await screen.findByLabelText('Preset Name'), 'Set A{Enter}')
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await chooseMenuItem(user, 'Presets', 'Set A (2 params)')
+
     expect(screen.getAllByText('Speed')).toHaveLength(2)
     expect(screen.getAllByText('Power')).toHaveLength(2)
   })
@@ -749,16 +816,20 @@ describe('parameter toolbar', () => {
       await chooseMenuItem(user, 'Presets', 'Save Selection as Preset...')
       const dialog = await screen.findByRole('dialog', { name: 'Save Preset' })
       const save = within(dialog).getByRole('button', { name: 'Save' })
+
       expect(save).toBeDisabled()
+
       await user.type(within(dialog).getByLabelText('Preset Name'), 'Set A')
       return save
     }
     /** Whether the Presets menu lists Set A with `count` parameters; closes the menu again. */
     const presetListed = async (count: number): Promise<void> => {
       await user.click(screen.getByRole('button', { name: 'Presets' }))
+
       expect(
         await screen.findByRole('menuitem', { name: `Set A (${count} params)` })
       ).toBeInTheDocument()
+
       await user.keyboard('{Escape}')
       await waitFor(() => expect(screen.queryByRole('menu')).not.toBeInTheDocument())
     }
@@ -771,14 +842,18 @@ describe('parameter toolbar', () => {
 
     await user.click(await openSave())
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message.mock.calls[0][0].buttons).toContain('Cancel')
+
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await presetListed(2)
 
     await user.click(await openSave())
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
     expect(message).toHaveBeenCalledTimes(2)
+
     await presetListed(1)
   })
 })

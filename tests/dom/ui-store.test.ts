@@ -14,12 +14,14 @@ describe('uiStore raw mode state', () => {
   it('stores raw mode by plugin id and supports clearing closed plugin state', () => {
     useUIStore.getState().setRawModeForPlugin('plugin-a', true)
     useUIStore.getState().setRawModeForPlugin('plugin-b', false)
+
     expect(useUIStore.getState().rawModeByPluginId).toEqual({
       'plugin-a': true,
       'plugin-b': false
     })
 
     useUIStore.getState().clearRawModeForPlugin('plugin-a')
+
     expect(useUIStore.getState().rawModeByPluginId).toEqual({ 'plugin-b': false })
   })
 
@@ -28,14 +30,19 @@ describe('uiStore raw mode state', () => {
     ui().setRawModeForPlugin('plugin-a', false)
     ui().confirmStructuralSave('plugin-a')
     ui().confirmStructuralSave('plugin-b')
+
     expect(ui().structuralSaveConfirmedByPluginId).toEqual({ 'plugin-a': true, 'plugin-b': true })
 
     ui().setRawModeForPlugin('plugin-a', true)
+
     expect(ui().structuralSaveConfirmedByPluginId).toHaveProperty('plugin-a')
+
     ui().setRawModeForPlugin('plugin-a', false)
+
     expect(ui().structuralSaveConfirmedByPluginId).not.toHaveProperty('plugin-a')
 
     ui().clearRawModeForPlugin('plugin-b')
+
     expect(ui().structuralSaveConfirmedByPluginId).toEqual({})
     expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('structuralSave')
   })
@@ -43,9 +50,12 @@ describe('uiStore raw mode state', () => {
   it('holds one diff request until it is cleared, and shows the preview for it', () => {
     useUIStore.getState().setPreviewCollapsed(true)
     useUIStore.getState().requestDiff('plugin-a')
+
     expect(useUIStore.getState().diffRequestPluginId).toBe('plugin-a')
     expect(useUIStore.getState().previewCollapsed).toBe(false)
+
     useUIStore.getState().clearDiffRequest()
+
     expect(useUIStore.getState().diffRequestPluginId).toBeNull()
     expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('diffRequest')
   })
@@ -61,9 +71,11 @@ describe('uiStore raw mode state', () => {
     expect(useUIStore.getState().previewWidth).toBe(300)
 
     useUIStore.getState().setPreviewWidth(1800)
+
     expect(useUIStore.getState().previewWidth).toBe(1200)
 
     const persisted = JSON.parse(localStorage.getItem('mz-plugin-studio-ui') ?? '{}')
+
     expect(persisted.state).toEqual({
       sidebarWidth: 360,
       previewWidth: 1200,

@@ -40,6 +40,7 @@ describe('preload ipc', () => {
 
   it('send forwards the channel and arguments', () => {
     send('log:set-level', true)
+
     expect(electron.ipcRenderer.send).toHaveBeenCalledWith('log:set-level', true)
   })
 
@@ -48,12 +49,17 @@ describe('preload ipc', () => {
     const unsubscribe = subscribe('window-maximized-changed', callback)
 
     expect(electron.ipcRenderer.on).toHaveBeenCalledTimes(1)
+
     const [channel, listener] = electron.ipcRenderer.on.mock.calls[0]
+
     expect(channel).toBe('window-maximized-changed')
+
     listener({ sender: 'event' }, true)
+
     expect(callback).toHaveBeenCalledWith(true)
 
     unsubscribe()
+
     expect(electron.ipcRenderer.removeListener).toHaveBeenCalledWith(
       'window-maximized-changed',
       listener
@@ -82,6 +88,7 @@ describe('preload ipc', () => {
     const line = { data: ['a synthetic line'], level: 'info', logId: 'default' }
 
     bridge.sendToMain(line)
+
     expect(electron.ipcRenderer.send.mock.calls).toEqual([['__ELECTRON_LOG__', line]])
   })
 
@@ -91,8 +98,11 @@ describe('preload ipc', () => {
     vi.stubGlobal('window', { postMessage })
     try {
       const [[channel, listener]] = electron.ipcRenderer.on.mock.calls
+
       expect(channel).toBe('__ELECTRON_LOG_IPC__')
+
       listener({ sender: 'event' }, { data: ['a synthetic line'], level: 'warn' })
+
       expect(postMessage.mock.calls).toEqual([
         [{ cmd: 'message', data: ['a synthetic line'], level: 'warn' }]
       ])

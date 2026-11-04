@@ -10,12 +10,14 @@ const DEEP = '(function(){'.repeat(600) + '})()'.repeat(600)
 describe('compileCheck', () => {
   it('compiles without running the code', () => {
     const scope = globalThis as { __compileOnlySentinel?: number }
+
     expect(compileCheck('globalThis.__compileOnlySentinel = 1', 'Probe.js')).toBeNull()
     expect(scope.__compileOnlySentinel).toBeUndefined()
   })
 
   it('names the line of a syntax error', () => {
     const problem = compileCheck('var a = 1;\nvar b = 2;\nlet x = ;\n', 'Probe.js')
+
     expect(problem).toMatchObject({ line: 3 })
     expect(problem?.message).toMatch(/Unexpected token/)
   })
@@ -32,6 +34,7 @@ describe('compileCheck', () => {
 
   it('passes code nested too deeply for the compiler to check', () => {
     vi.mocked(log.warn).mockClear()
+
     expect(compileCheck(DEEP, 'Probe.js')).toBeNull()
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('Probe.js'), expect.any(String))
   })

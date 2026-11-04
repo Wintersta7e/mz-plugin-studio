@@ -45,11 +45,13 @@ describe('detectIIFEStyle', () => {
 describe('detectParamLoading', () => {
   it('detects standard PluginManager.parameters', () => {
     const code = "const params = PluginManager.parameters('MyPlugin');"
+
     expect(detectParamLoading(code)).toBe('standard')
   })
 
   it('detects PluginManagerEx', () => {
     const code = 'const params = PluginManagerEx.createParameter(document.currentScript);'
+
     expect(detectParamLoading(code)).toBe('pluginmanagerex')
   })
 
@@ -58,6 +60,7 @@ describe('detectParamLoading', () => {
       const params = PluginManagerEx.createParameter(document.currentScript);
       const old = PluginManager.parameters('name');
     `
+
     expect(detectParamLoading(code)).toBe('pluginmanagerex')
   })
 
@@ -88,6 +91,7 @@ describe('extractAliases', () => {
   it('finds const alias', () => {
     const code = 'const _Game_Map_setup = Game_Map.prototype.setup;'
     const result = extractAliases(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ style: 'const', className: 'Game_Map', methodName: 'setup' })
   })
@@ -95,6 +99,7 @@ describe('extractAliases', () => {
   it('finds var alias', () => {
     const code = 'var _Scene_Boot_start = Scene_Boot.prototype.start;'
     const result = extractAliases(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ style: 'var', className: 'Scene_Boot', methodName: 'start' })
   })
@@ -102,6 +107,7 @@ describe('extractAliases', () => {
   it('finds let alias', () => {
     const code = 'let _Window_Base_update = Window_Base.prototype.update;'
     const result = extractAliases(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ style: 'let', className: 'Window_Base', methodName: 'update' })
   })
@@ -112,11 +118,13 @@ describe('extractAliases', () => {
       const _Game_System_onAfterLoad = Game_System.prototype.onAfterLoad;
       const _Scene_Map_update = Scene_Map.prototype.update;
     `
+
     expect(extractAliases(code)).toHaveLength(3)
   })
 
   it('ignores non-alias assignments', () => {
     const code = 'const x = Game_Map.prototype.setup;' // no underscore prefix
+
     expect(extractAliases(code)).toHaveLength(0)
   })
 
@@ -131,6 +139,7 @@ describe('extractMethodOverrides', () => {
   it('finds prototype method override', () => {
     const code = 'Game_Map.prototype.setup = function() {'
     const result = extractMethodOverrides(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ className: 'Game_Map', methodName: 'setup' })
   })
@@ -140,12 +149,14 @@ describe('extractMethodOverrides', () => {
       Scene_Map.prototype.update = function() { };
       Scene_Map.prototype.start = function() { };
     `
+
     expect(extractMethodOverrides(code)).toHaveLength(2)
   })
 
   it('captures single-letter class names (filtered later in aggregation)', () => {
     const code = 'n.prototype.apply = function() {'
     const result = extractMethodOverrides(code)
+
     // Single-letter detected but uppercase check fails (lowercase n)
     expect(result).toHaveLength(0)
   })
@@ -160,11 +171,13 @@ describe('extractMethodOverrides', () => {
 describe('extractRegisterCommands', () => {
   it('finds PluginManager.registerCommand', () => {
     const code = "PluginManager.registerCommand(pluginName, 'showDialog', args => {});"
+
     expect(extractRegisterCommands(code)).toEqual(['showDialog'])
   })
 
   it('finds PluginManagerEx.registerCommand', () => {
     const code = 'PluginManagerEx.registerCommand(document.currentScript, "doThing", args => {});'
+
     expect(extractRegisterCommands(code)).toEqual(['doThing'])
   })
 
@@ -173,6 +186,7 @@ describe('extractRegisterCommands', () => {
       PluginManager.registerCommand(name, 'cmd1', () => {});
       PluginManager.registerCommand(name, 'cmd2', () => {});
     `
+
     expect(extractRegisterCommands(code)).toEqual(['cmd1', 'cmd2'])
   })
 
@@ -190,16 +204,19 @@ describe('extractParamTypes', () => {
       * @type boolean
       * @type select
     `
+
     expect(extractParamTypes(code)).toEqual(['number', 'boolean', 'select'])
   })
 
   it('lowercases types', () => {
     const code = '* @type Number'
+
     expect(extractParamTypes(code)).toEqual(['number'])
   })
 
   it('handles struct types', () => {
     const code = '* @type struct<CustomStruct>'
+
     // Matches 'struct' from @type struct
     expect(extractParamTypes(code)).toEqual(['struct'])
   })
@@ -214,16 +231,19 @@ describe('extractParamTypes', () => {
 describe('detectNoteTagPattern', () => {
   it('detects meta bracket access', () => {
     const code = "const val = event.meta['CustomTag'];"
+
     expect(detectNoteTagPattern(code)).toContain('meta_bracket')
   })
 
   it('detects meta property access', () => {
     const code = 'const val = event.meta.CustomTag;'
+
     expect(detectNoteTagPattern(code)).toContain('meta_property')
   })
 
   it('detects note regex pattern', () => {
     const code = 'const match = obj.note.match(/<CustomTag:(\\d+)>/);'
+
     expect(detectNoteTagPattern(code)).toContain('note_regex')
   })
 
@@ -234,6 +254,7 @@ describe('detectNoteTagPattern', () => {
       obj.note.match(/<tag3>/);
     `
     const patterns = detectNoteTagPattern(code)
+
     expect(patterns).toHaveLength(3)
   })
 
@@ -243,6 +264,7 @@ describe('detectNoteTagPattern', () => {
 
   it('ignores meta.length (not a tag access)', () => {
     const code = 'if (obj.meta.length > 0) {}'
+
     // meta.length is excluded by the regex
     expect(detectNoteTagPattern(code)).not.toContain('meta_property')
   })
@@ -254,6 +276,7 @@ describe('detectNewClasses', () => {
   it('detects function constructor class', () => {
     const code = 'function Window_Custom() { this.initialize(...arguments); }'
     const result = detectNewClasses(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ name: 'Window_Custom', style: 'function' })
   })
@@ -261,6 +284,7 @@ describe('detectNewClasses', () => {
   it('detects ES6 class extends', () => {
     const code = 'class Scene_Custom extends Scene_Base {'
     const result = detectNewClasses(code)
+
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({ name: 'Scene_Custom', style: 'es6_extends' })
   })
@@ -272,6 +296,7 @@ describe('detectNewClasses', () => {
       function Spriteset_Custom() {}
     `
     const result = detectNewClasses(code)
+
     expect(result).toHaveLength(3)
   })
 
@@ -282,11 +307,13 @@ describe('detectNewClasses', () => {
     `
     // Function constructor found first, ES6 skipped (same name)
     const result = detectNewClasses(code)
+
     expect(result).toHaveLength(1)
   })
 
   it('ignores non-MZ-prefixed classes', () => {
     const code = 'function MyHelper() {}'
+
     expect(detectNewClasses(code)).toHaveLength(0)
   })
 

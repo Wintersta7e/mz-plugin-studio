@@ -104,9 +104,12 @@ afterEach(() => {
 describe('check-coverage suite', () => {
   it('passes with every directory at its floors and prints both figures per directory', () => {
     const run = check(makeRepo())
+
     expect(run.status).toBe(0)
+
     for (const dir of [...DIRS, 'global']) {
       const files = dir === 'global' ? DIRS.length : 1
+
       expect(run.lines).toContainEqual(
         expect.stringMatching(
           new RegExp(
@@ -121,8 +124,11 @@ describe('check-coverage suite', () => {
   it('passes with branch coverage exactly at a floor', () => {
     const dir = makeRepo()
     const floor = branchFloor(check(dir), 'src/main')
+
     expect(floor).toBeGreaterThan(0)
+
     const atFloor: Entry = { ...full, branches: { covered: floor, total: 100 } }
+
     expect(check(dir, { 'src/main': atFloor }).status).toBe(0)
   })
 
@@ -131,6 +137,7 @@ describe('check-coverage suite', () => {
     const floor = branchFloor(check(dir), 'src/main')
     const below: Entry = { ...full, branches: { covered: floor - 1, total: 100 } }
     const run = check(dir, { 'src/main': below })
+
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
       expect.stringMatching(
@@ -150,10 +157,14 @@ describe('check-coverage suite', () => {
       // Only the preload bridge has no line that tests cover.
       if (source === 'src/preload') {
         expect(floor).toBe(0)
+
         continue
       }
+
       expect(floor, source).toBeGreaterThan(0)
+
       const below: Entry = { ...full, lines: { covered: floor - 1, total: 100 } }
+
       expect(check(dir, { [source]: below }).status, source).toBe(1)
     }
     console.log(`line floors checked ${DIRS.length - 1}`)
@@ -161,6 +172,7 @@ describe('check-coverage suite', () => {
 
   it('fails when a summary entry has no branch figures', () => {
     const run = check(makeRepo(), { 'src/shared': { lines: { covered: 10, total: 10 } } })
+
     expect(run.status).toBe(1)
     expect(run.lines).toContain('coverage summary entry without branches: src/shared/file.ts')
   })
@@ -168,6 +180,7 @@ describe('check-coverage suite', () => {
   it('fails when a directory has no reported file', () => {
     const dirs = DIRS.filter((d) => d !== 'src/renderer/src/components')
     const run = check(makeRepo(dirs), {}, dirs)
+
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
       expect.stringMatching(/^coverage floor src\/renderer\/src\/components: .*, files 0$/)
@@ -206,6 +219,7 @@ describe('check-coverage suite', () => {
       branches: { covered: 0, total: 90 }
     }
     const run = check(dir, entries, dirs, { [APP]: uncovered })
+
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
       expect.stringMatching(/^coverage floor src\/renderer\/src: lines 0\.00% .*, files 1$/)
@@ -216,10 +230,13 @@ describe('check-coverage suite', () => {
     const stray = 'src/tools/file.ts'
     const dir = makeRepo(DIRS, [stray])
     const run = check(dir, {}, DIRS, { [stray]: full })
+
     expect(run.status).toBe(1)
     expect(run.lines).toContain(`coverage file without a floor directory: ${stray}`)
+
     // A file with no lines (a type-only module) needs no owner.
     const empty: Entry = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
+
     expect(check(dir, {}, DIRS, { [stray]: empty }).status).toBe(0)
   })
 
@@ -233,6 +250,7 @@ describe('check-coverage suite', () => {
       branches: { covered: 905, total: 1000 }
     }
     const run = check(dir, { 'src/main': measured })
+
     expect(run.lines).toContain(
       `floor src/main lines: measured 80.00%, floor ${lineFloor}%, ` +
         `slack ${(80 - lineFloor).toFixed(2)}%`
@@ -241,12 +259,14 @@ describe('check-coverage suite', () => {
       `floor src/main branches: measured 90.50%, floor ${branches}%, ` +
         `slack ${(90.5 - branches).toFixed(2)}%`
     )
+
     const slackLines = run.lines.filter((l) => l.startsWith('floor '))
     for (const line of slackLines) {
       expect(line).toMatch(
         /^floor \S+ (lines|branches): measured [\d.]+%, floor \d+%, slack -?[\d.]+%$/
       )
     }
+
     // Two floors per directory and two for the whole report.
     expect(slackLines).toHaveLength((DIRS.length + 1) * 2)
   })
@@ -269,8 +289,11 @@ describe('check-coverage golden', () => {
     const match = new RegExp(`^golden coverage ${index}: 95\\.00% \\(floor (\\d+)%\\)$`).exec(
       lines.find((l) => l.startsWith(`golden coverage ${index}:`)) ?? ''
     )
+
     expect(match).not.toBeNull()
+
     const floor = Number(match?.[1])
+
     expect(floor).toBeGreaterThan(0)
     expect(lines).toContain(
       `floor ${index} lines: measured 95.00%, floor ${floor}%, slack ${(95 - floor).toFixed(2)}%`

@@ -30,6 +30,7 @@ describe('settingsStore', () => {
       useSettingsStore.getState().savePreset('  My Preset  ', params)
 
       const presets = useSettingsStore.getState().parameterPresets
+
       expect(presets).toHaveProperty('My Preset')
       expect(presets['My Preset']).toHaveLength(1)
       expect(presets['My Preset'][0].name).toBe('TestParam')
@@ -54,6 +55,7 @@ describe('settingsStore', () => {
       useSettingsStore.getState().savePreset('Preset', [makeParam({ name: 'Second' })])
 
       const presets = useSettingsStore.getState().parameterPresets
+
       expect(presets['Preset']).toHaveLength(1)
       expect(presets['Preset'][0].name).toBe('Second')
     })
@@ -62,9 +64,11 @@ describe('settingsStore', () => {
   describe('deletePreset', () => {
     it('removes a saved preset by name', () => {
       useSettingsStore.getState().savePreset('ToDelete', [makeParam()])
+
       expect(useSettingsStore.getState().parameterPresets).toHaveProperty('ToDelete')
 
       useSettingsStore.getState().deletePreset('ToDelete')
+
       expect(useSettingsStore.getState().parameterPresets).not.toHaveProperty('ToDelete')
     })
 
@@ -94,29 +98,35 @@ describe('settingsStore', () => {
   describe('setEditorFontSize', () => {
     it('sets font size within valid range', () => {
       useSettingsStore.getState().setEditorFontSize(16)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(16)
     })
 
     it('clamps font size to minimum of 10', () => {
       useSettingsStore.getState().setEditorFontSize(5)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(10)
     })
 
     it('clamps font size to maximum of 24', () => {
       useSettingsStore.getState().setEditorFontSize(30)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(24)
     })
 
     it('clamps NaN font size to minimum', () => {
       useSettingsStore.getState().setEditorFontSize(NaN)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(10)
     })
 
     it('accepts boundary values 10 and 24', () => {
       useSettingsStore.getState().setEditorFontSize(10)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(10)
 
       useSettingsStore.getState().setEditorFontSize(24)
+
       expect(useSettingsStore.getState().editorFontSize).toBe(24)
     })
   })
@@ -132,6 +142,7 @@ describe('settingsStore', () => {
       params.push(makeParam({ name: 'Extra' }))
 
       const stored = useSettingsStore.getState().parameterPresets['Isolated']
+
       expect(stored).toHaveLength(1)
       expect(stored[0].name).toBe('Original')
       expect(stored[0].default).toBe('before')
@@ -158,6 +169,7 @@ describe('settingsStore - COV-19', () => {
       useSettingsStore.getState().resetEditorSettings()
 
       const state = useSettingsStore.getState()
+
       expect(state.theme).toBe('dark')
       expect(state.editorFontSize).toBe(13)
       expect(state.editorWordWrap).toBe(true)
@@ -193,34 +205,47 @@ describe('settingsStore - COV-19', () => {
   describe('individual setters', () => {
     it('setTheme toggles between dark and light', () => {
       useSettingsStore.getState().setTheme('light')
+
       expect(useSettingsStore.getState().theme).toBe('light')
+
       useSettingsStore.getState().setTheme('dark')
+
       expect(useSettingsStore.getState().theme).toBe('dark')
     })
 
     it('setEditorWordWrap sets word wrap', () => {
       useSettingsStore.getState().setEditorWordWrap(false)
+
       expect(useSettingsStore.getState().editorWordWrap).toBe(false)
+
       useSettingsStore.getState().setEditorWordWrap(true)
+
       expect(useSettingsStore.getState().editorWordWrap).toBe(true)
     })
 
     it('setEditorMinimap sets minimap visibility', () => {
       useSettingsStore.getState().setEditorMinimap(true)
+
       expect(useSettingsStore.getState().editorMinimap).toBe(true)
+
       useSettingsStore.getState().setEditorMinimap(false)
+
       expect(useSettingsStore.getState().editorMinimap).toBe(false)
     })
 
     it('setEditorLineNumbers sets line number visibility', () => {
       useSettingsStore.getState().setEditorLineNumbers(false)
+
       expect(useSettingsStore.getState().editorLineNumbers).toBe(false)
+
       useSettingsStore.getState().setEditorLineNumbers(true)
+
       expect(useSettingsStore.getState().editorLineNumbers).toBe(true)
     })
 
     it('setDefaultAuthor sets the author string', () => {
       useSettingsStore.getState().setDefaultAuthor('Plugin Dev')
+
       expect(useSettingsStore.getState().defaultAuthor).toBe('Plugin Dev')
     })
   })

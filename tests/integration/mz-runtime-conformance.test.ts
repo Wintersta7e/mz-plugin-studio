@@ -37,6 +37,7 @@ describe('plugin loader stand-in', () => {
   it('skips a plugin that is turned off', () => {
     const mz = createMzShim()
     const report = mz.load([entry('Off', {}, false)], sources({ Off: 'globalThis.ran = true;' }))
+
     expect(report.errors).toEqual([])
     expect(mz.context.ran).toBeUndefined()
   })
@@ -45,6 +46,7 @@ describe('plugin loader stand-in', () => {
     const mz = createMzShim()
     const code = 'globalThis.seen = (globalThis.seen || "") + PluginManager.parameters("Twice").a;'
     mz.load([entry('Twice', { a: '1' }), entry('Twice', { a: '2' })], sources({ Twice: code }))
+
     expect(mz.context.seen).toBe('1')
   })
 
@@ -52,6 +54,7 @@ describe('plugin loader stand-in', () => {
     const mz = createMzShim()
     const code = 'globalThis.lower = PluginManager.parameters("foo").a;'
     mz.load([entry('Foo', { a: 'x' })], sources({ Foo: code }))
+
     expect(mz.context.lower).toBe('x')
     expect(mz.parameters('FOO')).toEqual({ a: 'x' })
     expect(mz.parameters('Other')).toEqual({})
@@ -61,6 +64,7 @@ describe('plugin loader stand-in', () => {
     const mz = createMzShim()
     const code = 'PluginManager.registerCommand("Foo", "Run", function () {});'
     mz.load([entry('Foo')], sources({ Foo: code }))
+
     expect(mz.runCommand(['Foo', 'Run', '', {}])).toBe(true)
     expect(mz.runCommand(['foo', 'Run', '', {}])).toBe(false)
     expect(mz.runCommand(['Foo', 'run', '', {}])).toBe(false)
@@ -69,6 +73,7 @@ describe('plugin loader stand-in', () => {
   it('does nothing for a command nobody registered', () => {
     const mz = createMzShim()
     mz.load([entry('Foo')], sources({ Foo: '' }))
+
     expect(() => mz.runCommand(['Foo', 'Missing', '', {}])).not.toThrow()
     expect(mz.runCommand(['Foo', 'Missing', '', {}])).toBe(false)
   })
@@ -80,6 +85,7 @@ describe('plugin loader stand-in', () => {
       ' globalThis.self = this; globalThis.count = arguments.length; globalThis.value = args.v; });'
     mz.load([entry('Foo')], sources({ Foo: code }))
     mz.runCommand(['Foo', 'Run', 'Label', { v: 'given' }])
+
     expect(mz.context.self).toBe(mz.interpreter)
     expect(mz.context.count).toBe(1)
     expect(mz.context.value).toBe('given')
@@ -92,6 +98,7 @@ describe('plugin loader stand-in', () => {
       'PluginManager.registerCommand("Foo", "Run", function () { globalThis.which = 2; });'
     mz.load([entry('Foo')], sources({ Foo: code }))
     mz.runCommand(['Foo', 'Run', '', {}])
+
     expect(mz.context.which).toBe(2)
   })
 
@@ -101,6 +108,7 @@ describe('plugin loader stand-in', () => {
       'globalThis.a = PluginManager.parameters("Foo").a;' +
       'PluginManager.registerCommand("Foo", "Run", function () { globalThis.ran = true; });'
     const report = mz.load([entry('sub/Foo', { a: '1' })], sources({ 'sub/Foo': code }))
+
     expect(report.errors).toEqual([])
     expect(mz.context.a).toBe('1')
     expect(mz.runCommand(['sub/Foo', 'Run', '', {}])).toBe(true)
@@ -117,6 +125,7 @@ describe('plugin loader stand-in', () => {
         Next: 'globalThis.next = true;'
       })
     )
+
     expect(report.errors.map((e) => e.name)).toEqual(['Throws', 'Broken', 'Missing'])
     expect(report.errors[2].message).toBe('Failed to load: js/plugins/Missing.js')
     expect(mz.context.next).toBe(true)
@@ -140,6 +149,7 @@ function kindsOf(code: string): Set<ConformanceKind> {
 /** `code` with `from` replaced once, failing when `from` is not there. */
 function changed(code: string, from: string, to: string): string {
   expect(code).toContain(from)
+
   return code.replace(from, to)
 }
 
@@ -157,21 +167,25 @@ describe('conformance runner', () => {
       "PLUGIN_NAME = 'Fixture_Generated'",
       "PLUGIN_NAME = 'fixture_generated'"
     )
+
     expect(kindsOf(code).has('command-keys')).toBe(true)
   })
 
   it('reports a command callback that does not get the interpreter as this', () => {
     const code = changed(fixtureCode, 'function(args) {', '(args) => {')
+
     expect(kindsOf(code).has('callback-this')).toBe(true)
   })
 
   it('reports a parameter read as another type than its header declares', () => {
     const code = changed(fixtureCode, "Number(params['Speed']", "String(params['Speed']")
+
     expect(kindsOf(code).has('value')).toBe(true)
   })
 
   it('reports a parameter key the header does not declare', () => {
     const code = changed(fixtureCode, "params['Speed']", "params['speed']")
+
     expect(kindsOf(code).has('header-code-differ')).toBe(true)
   })
 })
@@ -185,14 +199,18 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
     let observed = 0
     for (const c of cases) {
       const observation = observe(c.code, c.kind)
+
       expect(unobserve(observation), c.id).toBe(c.code)
+
       observed += observation.insertions.length
     }
+
     expect(observed).toBeGreaterThan(0)
   })
 
   for (const c of cases) {
     const listed = KNOWN_NONCONFORMING[c.id] ?? []
+
     it(`${c.id}${listed.length > 0 ? ' (fails today)' : ''}`, () => {
       const found = corpusReport().findings.filter((f) => f.caseId === c.id)
       for (const kind of CONFORMANCE_KINDS) {
@@ -210,7 +228,9 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
         c.kind === 'generated' &&
         (c.definition.parameters.length > 0 || c.definition.commands.length > 0)
     )
+
     expect(new Set(renames.map((r) => r.caseId))).toEqual(new Set(withSomething.map((c) => c.id)))
+
     for (const r of renames) {
       expect(r.commandsLost, `${r.caseId} ${r.rename} commands`).toBe(r.hasCommands)
       expect(r.parametersLost, `${r.caseId} ${r.rename} parameters`).toBe(
@@ -221,13 +241,16 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
 
   it('the save warning names exactly what a plugin loses under another file name', () => {
     const { renames } = corpusReport()
+
     expect(renames.length).toBeGreaterThan(0)
+
     for (const r of renames) {
       const c = cases.find((x) => x.id === r.caseId)
       const lost =
         r.commandsLost || r.parametersLost
           ? { commands: r.commandsLost, parameters: r.parametersLost }
           : null
+
       expect(
         c && fileNameMismatch(c.definition, r.fileName, c.code),
         `${r.caseId} ${r.rename}`
@@ -251,10 +274,13 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
       `mz runtime exempt: refused command names ${commandNames}, hostile values ${hostileValues}, ` +
         `no main block ${noMainBlock}, own parameters name ${ownName}`
     )
+
     expect(counts.plugins).toBeGreaterThan(0)
     expect(counts.values).toBeGreaterThan(0)
     expect(counts.types.size).toBe(ALL_PARAM_TYPES.size)
+
     const ids = new Set(cases.map((c) => c.id))
+
     expect(Object.keys(KNOWN_NONCONFORMING).filter((id) => !ids.has(id))).toEqual([])
   })
 })

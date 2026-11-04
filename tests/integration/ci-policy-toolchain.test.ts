@@ -52,6 +52,7 @@ const FAKE_ELECTRON = 'module.exports = process.execPath\n'
 describe('ci-policy toolchain', () => {
   it('passes when Node and its type definitions match the engines major', () => {
     const { status, out } = toolchain(project({ engines: `^${MAJOR}.0.0`, types: `${MAJOR}.1.0` }))
+
     expect(out).toContain(`ci-policy toolchain: engines.node ^${MAJOR}.0.0\n`)
     expect(out).toContain(`ci-policy toolchain: node ${process.version}\n`)
     expect(out).toContain(`ci-policy toolchain: @types/node ${MAJOR}.1.0\n`)
@@ -61,6 +62,7 @@ describe('ci-policy toolchain', () => {
 
   it('fails without engines, as v1.6.0 shipped', () => {
     const { status, out } = toolchain(project({ types: '25.6.0' }))
+
     expect(out).toContain('engines.node')
     expect(out).toContain('ci-policy toolchain: FAILED')
     expect(status).toBe(1)
@@ -68,6 +70,7 @@ describe('ci-policy toolchain', () => {
 
   it('fails on an engines range that is not a caret range', () => {
     const { status } = toolchain(project({ engines: `>=${MAJOR}`, types: `${MAJOR}.1.0` }))
+
     expect(status).toBe(1)
   })
 
@@ -75,6 +78,7 @@ describe('ci-policy toolchain', () => {
     const { status, out } = toolchain(
       project({ engines: `^${MAJOR}.0.0`, types: `${MAJOR + 1}.0.0` })
     )
+
     expect(out).toContain('@types/node')
     expect(status).toBe(1)
   })
@@ -83,6 +87,7 @@ describe('ci-policy toolchain', () => {
     const { status, out } = toolchain(
       project({ engines: `^${MAJOR + 1}.0.0`, types: `${MAJOR + 1}.0.0` })
     )
+
     expect(out).toContain(`FAIL node ${process.version}`)
     expect(status).toBe(1)
   })
@@ -94,6 +99,7 @@ describe('ci-policy toolchain', () => {
       electron: FAKE_ELECTRON
     })
     const { status, out } = toolchain(dir, ['--electron'])
+
     expect(out).toContain(`ci-policy toolchain: electron node ${process.versions.node}\n`)
     expect(status).toBe(0)
   })
@@ -105,6 +111,7 @@ describe('ci-policy toolchain', () => {
       electron: "throw new Error('Electron failed to install correctly')\n"
     })
     const { status, out } = toolchain(dir, ['--electron'])
+
     expect(out).toContain('electron')
     expect(status).toBe(1)
   })
@@ -113,6 +120,7 @@ describe('ci-policy toolchain', () => {
     const { status } = toolchain(project({ engines: `^${MAJOR}.0.0`, types: `${MAJOR}.1.0` }), [
       '--electron'
     ])
+
     expect(status).toBe(1)
   })
 })

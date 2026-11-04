@@ -44,6 +44,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     const background = openTab('Edited')
     openTab()
     render(<App />)
+
     expect(usePluginStore.getState().dirtyByPluginId[background]).toBe(true)
     expect(usePluginStore.getState().isDirty).toBe(false)
     expect(unloadHeldBack()).toBe(true)
@@ -52,6 +53,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
   it('closing the window with no unsaved tab goes ahead', () => {
     openTab()
     render(<App />)
+
     expect(unloadHeldBack()).toBe(false)
   })
 
@@ -59,6 +61,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     openTab()
     openTab('Edited')
     render(<App />)
+
     expect(screen.getByText('(modified)')).toBeInTheDocument()
     expect(unloadHeldBack()).toBe(true)
   })
@@ -78,9 +81,12 @@ describe('closing the window', { timeout: 30_000 }, () => {
     openTab('Alpha')
     openTab('Beta')
     render(<App />)
+
     expect(unloadHeldBack()).toBe(true)
+
     await user.keyboard('{Control>}{Shift>}S{/Shift}{/Control}')
     await screen.findByText('2 plugins saved')
+
     expect(unloadHeldBack()).toBe(false)
   })
 
@@ -107,6 +113,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     render(<App />)
     await user.keyboard('{Control>}{Shift>}S{/Shift}{/Control}')
     await screen.findByText('Saved 1. Not saved, changed on disk: Beta.')
+
     expect(window.api.dialog.message).not.toHaveBeenCalled()
     expect(unloadHeldBack()).toBe(true)
   })
@@ -117,6 +124,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     openTab()
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Close window' }))
+
     expect(window.api.window.close).toHaveBeenCalledTimes(1)
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
@@ -132,6 +140,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     await user.click(screen.getByRole('button', { name: 'Close Beta' }))
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+
     // Main makes Cancel the default and the Escape answer; the sidebar passes neither
     expect(options.buttons).toContain('Cancel')
     expect(options).not.toHaveProperty('defaultId')
@@ -143,6 +152,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Close Beta' })).not.toBeInTheDocument()
     )
+
     expect(unloadHeldBack()).toBe(false)
   })
 })

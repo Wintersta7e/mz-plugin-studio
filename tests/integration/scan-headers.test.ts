@@ -42,6 +42,7 @@ it('reads load-order tags that start a line', async () => {
       '/*:\n * @target MZ\n * @base CoreLib\n * @orderAfter CoreLib\n * @orderBefore Last\n */\n',
     'Bare.js': '/*:\n@target MZ\n@base CoreLib\n*/\n'
   })
+
   expect(results.map(order)).toEqual([
     ['Bare.js', ['CoreLib'], [], []],
     ['Demo.js', ['CoreLib'], ['CoreLib'], ['Last']]
@@ -55,6 +56,7 @@ it('reads no dependency from help text, a guarded help line or an empty tag', as
     'Guarded.js': '/*:\n * @target MZ\n * @help\n * ​@base CoreLib\n */\n',
     'Empty.js': '/*:\n * @base\n * @orderAfter\n * @orderBefore\n * @target MZ\n */\n'
   })
+
   expect(results.map(order)).toEqual([
     ['Empty.js', [], [], []],
     ['Guarded.js', [], [], []],

@@ -30,9 +30,11 @@ describe('downgrade to v1.6.0', () => {
     await flushPrune()
     for (const key of keys) {
       stores[key].setState({})
+
       expect(localStorage.getItem(key), key).toBe(payloads[key])
     }
     console.log(`keys ${keys.length}/${PERSISTED_KEYS.length}`)
+
     expect(keys).toHaveLength(5)
   })
 
@@ -52,12 +54,15 @@ describe('downgrade to v1.6.0', () => {
       string,
       string
     >
+
     expect(Object.keys(savedPaths)).toHaveLength(2)
+
     const before = Object.fromEntries(
       PERSISTED_KEYS.map((key) => [key, JSON.stringify(current[key].getState())])
     )
     const beforeTabs = tabsOf(current['mz-plugin-studio-plugin'].getState())
     const written = writeAll(current)
+
     expect(written['mz-plugin-studio-plugin']).toContain('"rawSource"')
     expect(written['mz-plugin-studio-plugin']).toContain('"baselineByPluginId"')
     expect(written['mz-plugin-studio-plugin']).toContain('"baseByPluginId"')
@@ -69,9 +74,11 @@ describe('downgrade to v1.6.0', () => {
     for (const key of PERSISTED_KEYS) {
       old[key].setState({})
       downgraded[key] = localStorage.getItem(key) as string
+
       // v1.6.0 drops the schema number, so the next load runs every step again.
       expect(downgraded[key], key).not.toContain('schemaVersion')
     }
+
     expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"rawSource"')
     expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"baselineByPluginId"')
     expect(downgraded['mz-plugin-studio-plugin']).not.toContain('"baseByPluginId"')
@@ -81,10 +88,12 @@ describe('downgrade to v1.6.0', () => {
     await flushPrune()
     for (const key of PERSISTED_KEYS) {
       if (key === 'mz-plugin-studio-plugin') continue
+
       expect(JSON.stringify(again[key].getState()), key).toBe(before[key])
     }
     const pluginState = again['mz-plugin-studio-plugin'].getState()
     const tabs = tabsOf(pluginState)
+
     expect(tabs.map((p) => p.id)).toEqual(beforeTabs.map((p) => p.id))
     expect(tabs.map((p) => p.importedFrom)).toEqual(beforeTabs.map((p) => p.importedFrom))
     expect(tabs.filter(isImported).map((p) => 'rawSource' in p)).toEqual([false, false, false])
@@ -98,6 +107,7 @@ describe('downgrade to v1.6.0', () => {
     expect(tabIds(pluginState).slice(0, -1)).toEqual(
       tabIds(JSON.parse(payloads['mz-plugin-studio-plugin'] as string).state)
     )
+
     console.log(`keys ${PERSISTED_KEYS.length}/${PERSISTED_KEYS.length}`)
   })
 })

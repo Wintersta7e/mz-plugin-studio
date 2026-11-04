@@ -14,6 +14,7 @@ afterEach(() => {
 describe('compilePlugin', () => {
   it('returns the message and line of a syntax error', () => {
     const problem = compilePlugin('const a = ;', 'x.js')
+
     expect(problem).toEqual({ message: expect.any(String), line: 1 })
     expect(problem!.message).not.toBe('')
     expect(compilePlugin('const a = 1;', 'x.js')).toBeNull()
@@ -23,6 +24,7 @@ describe('compilePlugin', () => {
 describe('evaluatePlugin', () => {
   it('runs nothing when the code does not compile', () => {
     const result = evaluatePlugin('globalThis.__pwn = 1;\nconst a = ;', { mode: 'generator' })
+
     expect(result.compileProblem).toEqual({ message: expect.any(String), line: 2 })
     expect(result.threw).toBeNull()
     expect(result.sentinel).toBe(false)
@@ -32,6 +34,7 @@ describe('evaluatePlugin', () => {
 
   it('sees the sentinel a script sets inside the context', () => {
     const result = evaluatePlugin('/* X */ globalThis.__pwn = 1; /* Y */', { mode: 'generator' })
+
     expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: true })
     expect(result.context?.__pwn).toBe(1)
     expect(host.__pwn).toBeUndefined()
@@ -40,6 +43,7 @@ describe('evaluatePlugin', () => {
   it.each(MODES)('keeps a constructor walk from the stub inside the context (%s)', (mode) => {
     const code = "PluginManager.constructor.constructor('return globalThis')().__pwn = 1"
     const result = evaluatePlugin(code, { mode })
+
     expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: true })
     expect(host.__pwn).toBeUndefined()
   })
@@ -48,18 +52,21 @@ describe('evaluatePlugin', () => {
     const result = evaluatePlugin("Game_Actor.constructor('globalThis.__pwn = 1')()", {
       mode: 'template'
     })
+
     expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: false })
     expect(host.__pwn).toBeUndefined()
   })
 
   it('reports what the script throws', () => {
     const result = evaluatePlugin("throw new TypeError('x')", { mode: 'generator' })
+
     expect(result.threw).toBe('TypeError: x')
     expect(result.sentinel).toBe(false)
   })
 
   it('stops a script that never ends', () => {
     const result = evaluatePlugin('while (true) {}', { mode: 'generator' })
+
     expect(result.threw).toContain('timed out')
   })
 })
@@ -71,6 +78,7 @@ describe('listTemplateGlobals', () => {
       `template globals ${globals.names.length} (dictionary ${globals.dictionary}, ` +
         `sources ${globals.sources}, fixed ${globals.fixed})`
     )
+
     expect(globals.dictionary).toBe(Object.keys(classes).length)
     expect(globals.sources).toBeGreaterThan(0)
     expect(globals.fixed).toBe(2)

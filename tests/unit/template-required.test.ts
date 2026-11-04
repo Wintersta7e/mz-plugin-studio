@@ -25,6 +25,7 @@ describe('required template fields', () => {
       }
     }
     console.log(`required template fields checked: ${checked}`)
+
     expect(checked).toBeGreaterThan(0)
     expect(repeated).toEqual([])
   })

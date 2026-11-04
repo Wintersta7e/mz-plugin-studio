@@ -84,6 +84,7 @@ describe('raw mode adds code where the file can run it', () => {
       HEADER +
         "(() => {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n})();\n"
     )
+
     expect(load(save(addCommand(opened, 'Go'), opened)).registered).toEqual(['Go'])
   })
 
@@ -92,6 +93,7 @@ describe('raw mode adds code where the file can run it', () => {
       HEADER +
         "(function() {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n}());\n"
     )
+
     expect(load(save(addCommand(opened, 'Go'), opened)).registered).toEqual(['Go'])
   })
 
@@ -106,6 +108,7 @@ describe('raw mode adds code where the file can run it', () => {
           line +
           "    const params = PluginManager.parameters('P');\n    const a = Number(params['A'] || 1);\n})();\n"
       )
+
       expect(load(save(addParam(opened, 'B'), opened)).read).toContain('B')
     })
   }
@@ -116,6 +119,7 @@ describe('raw mode adds code where the file can run it', () => {
         "(() => {\n    'use strict';\n    const params = PluginManager.parameters('P');\n" +
         "    const a = Number(params['A'] || 1);\n    const speed = 4; // walking speed used below\n})();\n"
     )
+
     expect(load(save(addParam(opened, 'Speed'), opened)).read).toContain('Speed')
   })
 
@@ -124,6 +128,7 @@ describe('raw mode adds code where the file can run it', () => {
       HEADER + "(() => {\n    const params = PluginManager.parameters('P');\n})();\n"
     )
     const read = load(save(addParam(addParam(opened, 'Speed'), 'speed'), opened)).read
+
     expect(read).toEqual(expect.arrayContaining(['Speed', 'speed']))
   })
 
@@ -136,6 +141,7 @@ describe('raw mode adds code where the file can run it', () => {
         '    window.__speed = params.A;\n})();\n'
     )
     const code = save(addParam(opened, 'Jump'), opened)
+
     expect(() => load(code)).not.toThrow()
     expect(code).toContain("Number(params['Jump'] || 2)")
   })
@@ -146,6 +152,7 @@ describe('raw mode adds code where the file can run it', () => {
         "(() => {\n    'use strict';\n    var params =\n        PluginManager.parameters('P');\n" +
         "    window.__a = params['A'];\n})();\n"
     )
+
     expect(load(save(addParam(opened, 'Jump'), opened)).read).toContain('Jump')
   })
 
@@ -156,6 +163,7 @@ describe('raw mode adds code where the file can run it', () => {
         "(() => {\n    const p = window.Imported || {};\n    p.P = PluginManager.parameters('P');\n})();\n"
     )
     const code = save(addParam(opened, 'Jump'), opened)
+
     expect(blockCount(code)).toBe(1)
     expect(load(code).read).toContain('Jump')
   })
@@ -167,6 +175,7 @@ describe('raw mode adds code where the file can run it', () => {
       'Jump'
     )
     const code = save(edited, opened)
+
     expect(blockCount(code)).toBe(1)
     expect(code).toContain(' * @plugindesc Edited description\n')
     expect(load(code).read).toContain('Jump')
@@ -177,6 +186,7 @@ describe('raw mode adds code where the file can run it', () => {
     const edit = EDITS.find((e) => e.name === 'param-added')
     if (edit === undefined) throw new Error('no param-added edit')
     const code = save(edit.apply(opened), opened)
+
     expect(() => load(code, 'var addedParam = 1;')).not.toThrow()
   })
 })
@@ -188,8 +198,11 @@ describe('raw mode refuses what it cannot place or would not load', () => {
     const opened = open(unparsable)
     for (const edited of [addParam(opened, 'B'), addCommand(opened, 'Go')]) {
       const out = output(edited, opened)
+
       expect(out.ok).toBe(false)
+
       if (out.ok) continue
+
       expect(out.refusal).toBe('unparsable-source')
       expect(out.message).toContain('P.js')
       expect(out.message).toContain('Unexpected token (9:14)')
@@ -198,10 +211,13 @@ describe('raw mode refuses what it cannot place or would not load', () => {
 
   it('still saves an unedited or header-only edit of such a file', () => {
     const opened = open(unparsable)
+
     expect(output(opened, opened)).toEqual({ ok: true, code: unparsable })
+
     const described = { ...opened, meta: { ...opened.meta, description: 'Edited description' } }
     const out = output(described, opened)
     const code = out.ok ? out.code : ''
+
     expect(code).toContain(' * @plugindesc Edited description\n')
     expect(code.endsWith(unparsable.slice(unparsable.indexOf('(() =>')))).toBe(true)
   })
@@ -212,12 +228,17 @@ describe('raw mode refuses what it cannot place or would not load', () => {
       HEADER +
         '(() => {\n    const help = `\n/*~struct~Pos:\n * @param x\n * @type number\n */\n`;\n})();\n'
     )
+
     expect(opened.structs.map((s) => s.name)).toEqual(['Pos'])
+
     const edited = structuredClone(opened)
     edited.structs[0].parameters[0].desc = 'a`b'
     const out = output(edited, opened)
+
     expect(out.ok).toBe(false)
+
     if (out.ok) return
+
     expect(out.refusal).toBe('invalid-output')
     expect(out.message).toContain('P.js')
   })

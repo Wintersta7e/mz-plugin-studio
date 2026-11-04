@@ -541,10 +541,13 @@ describe('fixture project', () => {
     console.log(
       `fixture properties ${ROWS.length - failing.length}/${ROWS.length}, files ${present.length}`
     )
+
     expect(present.length).toBeGreaterThan(0)
     expect(failing).toEqual([])
     expect(filesOnDisk()).toEqual(listed)
+
     const size = present.reduce((sum, f) => sum + load(f)!.length, 0)
+
     expect(size).toBeLessThanOrEqual(50 * 1024)
   })
 })

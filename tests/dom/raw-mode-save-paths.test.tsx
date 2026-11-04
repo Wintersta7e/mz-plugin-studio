@@ -99,9 +99,11 @@ describe('saving an imported plugin', () => {
 
     press('KeyS')
     await waitFor(() => expect(toastsOf(stores)).toContain(`error: ${SOURCE_MISSING}`))
+
     expect(savedFiles(api)).toEqual([])
     expect(durations()[0]).toBeGreaterThanOrEqual(10_000)
     expect(log.warn).toHaveBeenCalledWith('[save] refused', FILE, 'source-missing')
+
     checked++
 
     act(() => stores.useToastStore.setState({ toasts: [] }))
@@ -111,20 +113,25 @@ describe('saving an imported plugin', () => {
         'warning: Saved 1. Not saved, file text not loaded (reload it from the project): Fixture_HandWritten.'
       ])
     )
+
     expect(durations()[0]).toBeGreaterThanOrEqual(10_000)
     expect(savedFiles(api)).toEqual(['NewPlugin.js'])
     expect(log.warn).toHaveBeenCalledTimes(2)
+
     checked++
 
     act(() => stores.useToastStore.setState({ toasts: [] }))
     fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
     await waitFor(() => expect(toastsOf(stores)).toEqual([`error: ${SOURCE_MISSING}`]))
+
     expect(savedFiles(api)).toEqual(['NewPlugin.js'])
     expect(api.dialog.saveFile).not.toHaveBeenCalled()
     expect(api.plugin.saveToPath).not.toHaveBeenCalled()
+
     checked++
 
     console.log(`save paths checked ${checked}`)
+
     expect(checked).toBe(3)
   }, 60_000)
 
@@ -141,18 +148,22 @@ describe('saving an imported plugin', () => {
     press('KeyS')
     await waitFor(() => expect(asked()).toBe(1))
     const options = vi.mocked(api.dialog.message).mock.calls[0][0]
+
     expect(options).toEqual({
       type: 'warning',
       title: 'Save without raw mode?',
       message: `Saving ${FILE} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
       buttons: ['Cancel', 'Show Diff', 'Save']
     })
+
     await waitFor(() => expect(answers).toEqual([2]))
     await act(async () => {})
+
     expect(savedFiles(api)).toEqual([])
 
     press('KeyS')
     await waitFor(() => expect(savedFiles(api)).toEqual([FILE]))
+
     // v1.6.0 saved this tab to its file, so the save checks against that file
     expect(vi.mocked(api.plugin.save).mock.calls[0]).toEqual([
       PROJECT,
@@ -165,6 +176,7 @@ describe('saving an imported plugin', () => {
     await waitFor(() => expect(toastsOf(stores)).toContain('success: Plugin saved'))
     press('KeyS')
     await waitFor(() => expect(savedFiles(api)).toEqual([FILE, FILE]))
+
     expect(asked()).toBe(2)
 
     fireEvent.click(screen.getByTitle(RAW_OFF))
@@ -173,6 +185,7 @@ describe('saving an imported plugin', () => {
     press('KeyS')
     await waitFor(() => expect(asked()).toBe(3))
     await act(async () => {})
+
     expect(savedFiles(api)).toEqual([FILE, FILE])
 
     // A restart keeps raw mode off but asks again.
@@ -183,6 +196,7 @@ describe('saving an imported plugin', () => {
     press('KeyS')
     await waitFor(() => expect(asked()).toBe(4))
     const diff = await screen.findByTestId('monaco-diff-modified')
+
     expect((diff as HTMLTextAreaElement).value).toBe(generatePlugin(tab()))
     expect(stores.useUIStore.getState().diffRequestPluginId).toBeNull()
     expect(savedFiles(api)).toEqual([FILE, FILE])
@@ -211,9 +225,11 @@ describe('saving an imported plugin', () => {
       run()
       await waitFor(() => expect(state().plugin.rawSource).toContain(description))
       const written = writes().find((code) => code.includes(description))
+
       expect(state().plugin.rawSource, path).toBe(written)
       expect(state().baselineByPluginId[opened.id].meta.description, path).toBe(description)
       expect(written?.startsWith(text.slice(0, text.indexOf('/*:')))).toBe(true)
+
       checked++
     }
     const before = state().plugin.rawSource
@@ -227,11 +243,14 @@ describe('saving an imported plugin', () => {
       expect(writes().some((code) => code.includes('Saved by Export'))).toBe(true)
     )
     await act(async () => {})
+
     expect(state().plugin.rawSource).toBe(before)
     expect(state().baselineByPluginId[opened.id].meta.description).toBe('Saved by Save All')
     expect(state().dirtyByPluginId[opened.id]).toBe(true)
+
     checked++
     console.log(`save paths checked ${checked}`)
+
     expect(checked).toBe(3)
   }, 90_000)
 
@@ -247,6 +266,7 @@ describe('saving an imported plugin', () => {
       seed({ ...payloads, 'mz-plugin-studio-plugin': JSON.stringify(persisted) })
       const api = createMainApi()
       const stores = await startApp(api, project)
+
       expect(stores.usePluginStore.getState().baseByPluginId[SAVED_TAB]).toEqual({
         path: file,
         sha256: null
@@ -255,6 +275,7 @@ describe('saving an imported plugin', () => {
       press('KeyS', true)
       await waitFor(() => expect(toastsOf(stores)).toHaveLength(1))
       const report = toastsOf(stores)[0]
+
       expect(report).not.toContain('changed on disk')
       expect(report).toContain(
         'Not saved, cannot confirm the file is unchanged (save it with Ctrl+S to confirm): Synthetic_Tool.'
@@ -281,11 +302,13 @@ describe('saving an imported plugin', () => {
         stores.usePluginStore.getState().openPlugin(opened)
         stores.usePluginStore.getState().updateMeta({ description: 'Edited' })
       })
+
       expect(stores.usePluginStore.getState().baseByPluginId[opened.id]).toBeUndefined()
 
       press('KeyS', true)
       await waitFor(() => expect(toastsOf(stores)).toHaveLength(1))
       const report = toastsOf(stores)[0]
+
       expect(report).not.toContain('a different file')
       expect(report).toContain(
         'Not saved, cannot confirm the file is unchanged (save it with Ctrl+S to confirm): Fixture_HandWritten.'

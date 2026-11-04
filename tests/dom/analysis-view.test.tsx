@@ -34,6 +34,7 @@ describe('analysis view', () => {
 
   it('with no project open it says so', () => {
     render(<AnalysisView />)
+
     expect(screen.getByText('No project loaded')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Plugin Analysis' })).not.toBeInTheDocument()
   })
@@ -48,6 +49,7 @@ describe('analysis view', () => {
     act(() => useProjectStore.getState().setProject(sampleProject()))
     await act(() => useProjectStore.getState().scanDependencies())
     render(<AnalysisView />)
+
     expect(screen.getByRole('heading', { name: 'Plugin Analysis' })).toBeInTheDocument()
     expect([counter('Plugins'), counter('Overrides'), counter('Conflicts')]).toEqual([
       '2',
@@ -55,9 +57,11 @@ describe('analysis view', () => {
       '1'
     ])
     expect(scanHeaders).toHaveBeenCalledTimes(1)
+
     const rescan = screen.getByRole('button', { name: 'Rescan' })
     await user.click(rescan)
     await waitFor(() => expect(rescan).toBeEnabled())
+
     expect(scanHeaders).toHaveBeenCalledTimes(2)
     expect(scanHeaders).toHaveBeenLastCalledWith('/project')
   })

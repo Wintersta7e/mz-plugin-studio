@@ -35,6 +35,7 @@ describe('title bar close', () => {
     openTab()
     render(<TitleBar />)
     clickClose()
+
     expect(window.api.window.close).toHaveBeenCalledTimes(1)
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
@@ -43,10 +44,13 @@ describe('title bar close', () => {
     const background = openTab('Edited')
     const active = openTab()
     const { dirtyByPluginId, activePluginId } = usePluginStore.getState()
+
     expect(dirtyByPluginId[background]).toBe(true)
     expect(activePluginId).toBe(active)
+
     render(<TitleBar />)
     clickClose()
+
     expect(window.api.window.close).toHaveBeenCalledTimes(1)
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
@@ -55,6 +59,7 @@ describe('title bar close', () => {
     openTab('Edited')
     render(<TitleBar />)
     clickClose()
+
     expect(window.api.window.close).toHaveBeenCalledTimes(1)
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
@@ -80,10 +85,12 @@ describe('title bar window controls', () => {
   it('names the app, and the game once a project is open', async () => {
     window.api = createFakeApi()
     await renderTitleBar()
+
     expect(screen.getByText('Plugin Studio')).toBeInTheDocument()
     expect(screen.queryByText('- Sample Game')).not.toBeInTheDocument()
 
     act(() => useProjectStore.getState().setProject(sampleProject()))
+
     expect(screen.getByText('- Sample Game')).toBeInTheDocument()
   })
 
@@ -94,10 +101,12 @@ describe('title bar window controls', () => {
     const [minimize, maximize] = windowButtons()
 
     await user.click(minimize)
+
     expect(window.api.window.minimize).toHaveBeenCalledTimes(1)
     expect(window.api.window.maximize).not.toHaveBeenCalled()
 
     await user.click(maximize)
+
     expect(window.api.window.maximize).toHaveBeenCalledTimes(1)
     expect(window.api.window.minimize).toHaveBeenCalledTimes(1)
   })
@@ -119,9 +128,11 @@ describe('title bar window controls', () => {
 
     act(() => report(false))
     const restored = maximize.innerHTML
+
     expect(restored).not.toBe(maximized)
 
     act(() => report(true))
+
     expect(maximize.innerHTML).toBe(maximized)
   })
 
@@ -129,8 +140,11 @@ describe('title bar window controls', () => {
     const unsubscribe = vi.fn()
     window.api = createFakeApi({ window: { onMaximizeChange: vi.fn(() => unsubscribe) } })
     const { unmount } = await renderTitleBar()
+
     expect(unsubscribe).not.toHaveBeenCalled()
+
     unmount()
+
     expect(unsubscribe).toHaveBeenCalledTimes(1)
   })
 })

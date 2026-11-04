@@ -17,12 +17,14 @@ async function loadCopy(leaf?: string): Promise<string> {
 
 async function expectLoads(path: string): Promise<void> {
   expect(await ProjectParser.validateProject(path)).toEqual({ valid: true })
+
   const project = await ProjectParser.parseProject(path)
   const counts = Object.entries(project)
     .filter(([, value]) => Array.isArray(value))
     .map(([field, value]) => [field, (value as unknown[]).length] as const)
 
   console.log(`fixture project: ${counts.map(([field, n]) => `${field} ${n}`).join(', ')}`)
+
   expect(project.gameTitle).toBe('Fixture Game')
   expect(counts.length).toBeGreaterThan(0)
   expect(counts.filter(([, n]) => n < 1)).toEqual([])
@@ -40,13 +42,17 @@ describe('fixture project', () => {
 
   it('loads through the project parser', async () => {
     const path = await loadCopy()
+
     expect(basename(path)).toBe('Fixture Game')
+
     await expectLoads(path)
   })
 
   it('loads from a path with spaces and parentheses', async () => {
     const path = await loadCopy('Fixture Game (copy)')
+
     expect(basename(path)).toBe('Fixture Game (copy)')
+
     await expectLoads(path)
   })
 })

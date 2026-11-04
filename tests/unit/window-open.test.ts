@@ -32,6 +32,7 @@ describe('window open handler', () => {
     })
 
     expect(handler({ url: 'https://example.invalid/a' })).toEqual({ action: 'deny' })
+
     await flush()
 
     expect(opened).toEqual(['https://example.invalid/a'])
@@ -44,8 +45,11 @@ describe('window open handler', () => {
     'opens %s in the system browser',
     async (url) => {
       const openExternal = vi.fn(() => Promise.resolve())
+
       expect(createWindowOpenHandler(openExternal)({ url })).toEqual({ action: 'deny' })
+
       await flush()
+
       expect(openExternal).toHaveBeenCalledTimes(1)
       expect(openExternal).toHaveBeenCalledWith(url)
       expect(log.warn).not.toHaveBeenCalled()
@@ -54,8 +58,11 @@ describe('window open handler', () => {
 
   it.each(['file:///x', 'javascript:alert(1)', 'not a url'])('never opens %s', async (url) => {
     const openExternal = vi.fn(() => Promise.resolve())
+
     expect(createWindowOpenHandler(openExternal)({ url })).toEqual({ action: 'deny' })
+
     await flush()
+
     expect(openExternal).not.toHaveBeenCalled()
   })
 })

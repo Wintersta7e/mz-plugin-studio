@@ -18,6 +18,7 @@ function closeAnswering(answer: (options: MessageBoxSyncOptions) => number) {
 describe('close prompt', () => {
   it('asks with Cancel as the Enter and Esc button', () => {
     const options = closePromptOptions()
+
     expect(options.defaultId).toBe(0)
     expect(options.cancelId).toBe(options.defaultId)
     expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
@@ -29,11 +30,13 @@ describe('close prompt', () => {
       defaultId: 0,
       cancelId: 0
     })
+
     console.log('unload prompt checked 1')
   })
 
   it('keeps the window open when the prompt is cancelled', () => {
     const { shown, closed } = closeAnswering((options) => options.cancelId as number)
+
     expect(shown).toEqual([closePromptOptions()])
     expect(closed).toBe(0)
   })
@@ -42,6 +45,7 @@ describe('close prompt', () => {
     const { shown, closed } = closeAnswering(
       (options) => options.buttons?.indexOf('Close without saving') ?? -1
     )
+
     expect(shown).toHaveLength(1)
     expect(closed).toBe(1)
   })

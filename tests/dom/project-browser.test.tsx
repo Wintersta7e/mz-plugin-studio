@@ -43,8 +43,11 @@ describe('project data browser', () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     render(<ProjectBrowser onClose={onClose} />)
+
     expect(screen.getByText('No project loaded')).toBeInTheDocument()
+
     await user.click(closeButton())
+
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -52,16 +55,23 @@ describe('project data browser', () => {
     const user = userEvent.setup()
     openProject()
     render(<ProjectBrowser onClose={() => {}} />)
+
     expect(screen.getByText('Sample Game')).toBeInTheDocument()
+
     const switches = screen.getByRole('button', { name: /^Switches/ })
+
     expect(switches).toHaveTextContent('Switches2')
     expect(screen.getByText('Door Open')).toBeInTheDocument()
     expect(screen.getByText('Boss Beaten')).toBeInTheDocument()
     expect(screen.queryByText('2:')).not.toBeInTheDocument()
     expect(screen.queryByText('Alpha')).not.toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: /^Actors/ }))
+
     expect(screen.getByText('Alpha')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: /^Variables/ }))
+
     expect(screen.getByText('No named variables')).toBeInTheDocument()
   })
 
@@ -70,6 +80,7 @@ describe('project data browser', () => {
     openProject()
     render(<ProjectBrowser onClose={() => {}} />)
     await user.click(screen.getByRole('button', { name: 'Copy ID 3' }))
+
     expect(await navigator.clipboard.readText()).toBe('3')
   })
 
@@ -79,6 +90,7 @@ describe('project data browser', () => {
     openProject()
     render(<ProjectBrowser onClose={onClose} />)
     await user.click(closeButton())
+
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

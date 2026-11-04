@@ -30,12 +30,14 @@ describe('buildStructDefault', () => {
       { name: 'y', type: 'number', default: 0 }
     ])
     const values = { x: '100', y: '200' }
+
     expect(buildStructDefault(struct, values)).toBe('{"x":"100","y":"200"}')
   })
 
   it('builds JSON with boolean string values', () => {
     const struct = makeStruct([{ name: 'visible', type: 'boolean', default: true }])
     const values = { visible: 'true' }
+
     expect(buildStructDefault(struct, values)).toBe('{"visible":"true"}')
   })
 
@@ -45,12 +47,14 @@ describe('buildStructDefault', () => {
       { name: 'x', type: 'number', default: 0 }
     ])
     const values = { name: '', x: '50' }
+
     expect(buildStructDefault(struct, values)).toBe('{"x":"50"}')
   })
 
   it('returns empty string when all fields empty', () => {
     const struct = makeStruct([{ name: 'a' }])
     const values = { a: '' }
+
     expect(buildStructDefault(struct, values)).toBe('')
   })
 })
@@ -58,6 +62,7 @@ describe('buildStructDefault', () => {
 describe('parseStructDefault', () => {
   it('parses valid JSON into field values', () => {
     const result = parseStructDefault('{"x":"100","y":"200"}')
+
     expect(result).toEqual({ x: '100', y: '200' })
   })
 
@@ -75,6 +80,7 @@ describe('parseStructDefault', () => {
 
   it('coerces non-string values to strings', () => {
     const result = parseStructDefault('{"x":100,"flag":true}')
+
     expect(result).toEqual({ x: '100', flag: 'true' })
   })
 })
@@ -86,6 +92,7 @@ describe('validateStructDefault', () => {
       { name: 'y', type: 'number' }
     ])
     const result = validateStructDefault('{"x":"100","y":"200"}', struct)
+
     expect(result.status).toBe('valid')
     expect(result.errors).toEqual([])
   })
@@ -93,12 +100,14 @@ describe('validateStructDefault', () => {
   it('returns valid for empty default', () => {
     const struct = makeStruct([{ name: 'x' }])
     const result = validateStructDefault('', struct)
+
     expect(result.status).toBe('valid')
   })
 
   it('returns error for malformed JSON', () => {
     const struct = makeStruct([{ name: 'x' }])
     const result = validateStructDefault('{bad json', struct)
+
     expect(result.status).toBe('error')
     expect(result.errors[0]).toContain('Invalid JSON')
   })
@@ -106,6 +115,7 @@ describe('validateStructDefault', () => {
   it('returns warning for unknown keys', () => {
     const struct = makeStruct([{ name: 'x' }])
     const result = validateStructDefault('{"x":"1","z":"2"}', struct)
+
     expect(result.status).toBe('warning')
     expect(result.errors[0]).toContain('z')
   })
@@ -113,6 +123,7 @@ describe('validateStructDefault', () => {
   it('returns valid for JSON object {}', () => {
     const struct = makeStruct([{ name: 'x' }])
     const result = validateStructDefault('{}', struct)
+
     expect(result.status).toBe('valid')
   })
 })
@@ -125,6 +136,7 @@ describe('fillFromStructDefaults', () => {
       { name: 'visible', type: 'boolean', default: true }
     ])
     const result = fillFromStructDefaults(struct)
+
     expect(result).toEqual({ x: '100', y: '200', visible: 'true' })
   })
 
@@ -134,6 +146,7 @@ describe('fillFromStructDefaults', () => {
       { name: 'x', type: 'number', default: 50 }
     ])
     const result = fillFromStructDefaults(struct)
+
     expect(result).toEqual({ x: '50' })
   })
 })

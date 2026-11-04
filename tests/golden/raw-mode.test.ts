@@ -39,6 +39,7 @@ describe('raw-mode goldens', () => {
     console.log(
       `raw-mode: fixtures ${fixtures.length} × edits ${EDITS.length}, compiling ${compiling}/${total}`
     )
+
     expect(fixtures.length).toBeGreaterThan(0)
     expect(compiling).toBe(total)
     await expect(JSON.stringify(parses, null, 2) + '\n').toMatchFileSnapshot(

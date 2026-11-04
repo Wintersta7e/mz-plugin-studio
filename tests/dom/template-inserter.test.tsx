@@ -37,6 +37,7 @@ describe('template dialog', () => {
   it('refuses to insert or copy a property name that is not an identifier', async () => {
     const onInsert = vi.fn()
     openPropertyTemplate(onInsert, HOSTILE_NAME)
+
     expect(screen.getByText(/must be a valid JavaScript identifier/)).toBeInTheDocument()
     expect(preview()).not.toContain(HOSTILE_NAME)
     expect(copyButton()).toBeDisabled()
@@ -46,6 +47,7 @@ describe('template dialog', () => {
     fireEvent.click(insertButton())
     fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true })
     await Promise.resolve()
+
     expect(writeText).not.toHaveBeenCalled()
     expect(onInsert).not.toHaveBeenCalled()
   })
@@ -55,9 +57,12 @@ describe('template dialog', () => {
     fireEvent.change(screen.getByPlaceholderText(/search/i), {
       target: { value: 'Custom Actor Property' }
     })
+
     expect(screen.getByText('Custom Actor Property')).toBeInTheDocument()
+
     const nested = baseElement.querySelectorAll('button button')
     console.log(`nested buttons ${nested.length}`)
+
     expect(nested).toHaveLength(0)
   })
 
@@ -67,6 +72,7 @@ describe('template dialog', () => {
       target: { value: 'Custom Actor Property' }
     })
     fireEvent.click(screen.getByRole('button', { name: 'Add Custom Actor Property to favorites' }))
+
     expect(
       screen.getByRole('button', { name: 'Remove Custom Actor Property from favorites' })
     ).toBeInTheDocument()
@@ -76,13 +82,16 @@ describe('template dialog', () => {
   it('inserts and copies a property name that passes the checks', async () => {
     const onInsert = vi.fn()
     openPropertyTemplate(onInsert, 'loyalty')
+
     expect(preview()).toContain('loyalty')
 
     fireEvent.click(copyButton())
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+
     expect(writeText.mock.calls[0][0]).toContain('loyalty')
 
     fireEvent.click(insertButton())
+
     expect(onInsert).toHaveBeenCalledTimes(1)
     expect(onInsert.mock.calls[0][0]).toContain('loyalty')
   })
@@ -125,11 +134,13 @@ const listedTemplate = (name: string): HTMLElement | null =>
 describe('template dialog actions', () => {
   it('opens with the registry count, nothing to insert and a prompt in the preview', async () => {
     renderInserter()
+
     expect(screen.getByText(`${getAllTemplates().length} templates available`)).toBeInTheDocument()
     expect(insertButton()).toBeDisabled()
     expect(
       screen.getByText('// Select a template to preview the generated code')
     ).toBeInTheDocument()
+
     await searchBox()
   })
 
@@ -138,10 +149,12 @@ describe('template dialog actions', () => {
     renderInserter()
     const search = await searchBox()
     await user.type(search, 'Sound Effect')
+
     expect(listedTemplate('Sound Effect Player')).toBeInTheDocument()
 
     await user.clear(search)
     await user.type(search, 'qqzzxx')
+
     expect(listedTemplate('Sound Effect Player')).not.toBeInTheDocument()
     expect(screen.getByText('No templates found')).toBeInTheDocument()
   })
@@ -154,7 +167,9 @@ describe('template dialog actions', () => {
     await user.click(insertButton())
 
     expect(onInsert).toHaveBeenCalledTimes(1)
+
     const code = onInsert.mock.calls[0][0] as string
+
     expect(code).toContain('Cursor9')
     expect(code).toBe(
       getTemplate(SE_ID)!.generate({ ...getTemplateDefaults(SE_ID), filename: 'Cursor9' })
@@ -167,13 +182,16 @@ describe('template dialog actions', () => {
     const { onClose, onInsert } = renderInserter()
     await searchBox()
     await user.click(screen.getByText('Code Templates'))
+
     expect(onClose).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
     expect(onClose).toHaveBeenCalledTimes(1)
 
     // The backdrop has no role or name: it is the element the dialog renders outermost.
     await user.click(document.body.firstElementChild!.firstElementChild!)
+
     expect(onClose).toHaveBeenCalledTimes(2)
     expect(onInsert).not.toHaveBeenCalled()
   })
@@ -183,12 +201,14 @@ describe('template dialog actions', () => {
     const { onClose, onInsert } = renderInserter()
     await searchBox()
     await user.keyboard('{Escape}')
+
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(onInsert).not.toHaveBeenCalled()
 
     await pickSoundEffect(user)
     await setFilename(user, 'Cursor9')
     await user.keyboard('{Control>}{Enter}{/Control}')
+
     expect(onInsert).toHaveBeenCalledTimes(1)
     expect(onInsert.mock.calls[0][0]).toContain('Cursor9')
     expect(onClose).toHaveBeenCalledTimes(2)
@@ -200,6 +220,7 @@ describe('template dialog actions', () => {
     await user.type(await searchBox(), 'Sound Effect')
     await user.click(screen.getByRole('button', { name: 'Add Sound Effect Player to favorites' }))
     await user.click(screen.getByRole('button', { name: /^Favorites/ }))
+
     expect(listedTemplate('Sound Effect Player')).toBeInTheDocument()
     expect(localStorage.getItem('mz-plugin-studio-templates')).toContain(SE_ID)
 
@@ -207,6 +228,7 @@ describe('template dialog actions', () => {
     renderInserter()
     await searchBox()
     await user.click(screen.getByRole('button', { name: /^Favorites/ }))
+
     expect(listedTemplate('Sound Effect Player')).toBeInTheDocument()
   })
 
@@ -217,6 +239,7 @@ describe('template dialog actions', () => {
     await setFilename(user, 'Cursor9')
     await user.click(insertButton())
     await user.click(screen.getByRole('button', { name: /^Recent/ }))
+
     expect(listedTemplate('Sound Effect Player')).toBeInTheDocument()
   })
 
@@ -226,10 +249,13 @@ describe('template dialog actions', () => {
     await pickSoundEffect(user)
     await setFilename(user, 'Cursor9')
     await user.click(copyButton())
+
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+
     const copied = await navigator.clipboard.readText()
 
     await user.click(insertButton())
+
     expect(copied).toContain('Cursor9')
     expect(copied).toBe(onInsert.mock.calls[0][0])
   })
@@ -239,11 +265,14 @@ describe('template dialog actions', () => {
     const { unmount } = render(<TemplateInserter open onClose={vi.fn()} onInsert={vi.fn()} />)
     await searchBox()
     await user.click(screen.getByRole('button', { name: /^Scene Hooks/ }))
+
     expect(screen.getByPlaceholderText('Search scene hooks templates...')).toBeInTheDocument()
 
     unmount()
     renderInserter()
+
     expect(screen.getByPlaceholderText('Search scene hooks templates...')).toBeInTheDocument()
+
     await searchBox()
   })
 
@@ -255,6 +284,7 @@ describe('template dialog actions', () => {
     const field = screen.getByLabelText(/Property Name/)
     await user.clear(field)
     await user.type(field, HOSTILE_NAME)
+
     expect(
       screen.getByText(
         'Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
@@ -266,8 +296,11 @@ describe('template dialog actions', () => {
 
     await user.clear(field)
     await user.type(field, 'loyalty')
+
     expect(screen.queryByText('Fix these fields to see the code:')).not.toBeInTheDocument()
+
     await user.click(insertButton())
+
     expect(onInsert).toHaveBeenCalledTimes(1)
     expect(onInsert.mock.calls[0][0]).toContain('loyalty')
     expect(onInsert.mock.calls[0][0]).not.toContain('__pwn')
@@ -279,9 +312,12 @@ describe('template dialog actions', () => {
     renderInserter()
     // The region is on the page before an error appears, so a screen reader announces the change.
     const errors = screen.getByRole('status')
+
     expect(errors).toBeEmptyDOMElement()
+
     await user.type(await searchBox(), 'Custom Actor Property')
     await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
+
     expect(errors).toHaveTextContent('Fix these fields to see the code:')
     expect(errors).toHaveTextContent('Field "Property Name" is required')
     expect(insertButton()).toHaveAccessibleDescription(
@@ -291,6 +327,7 @@ describe('template dialog actions', () => {
     const field = screen.getByLabelText(/Property Name/)
     await user.type(field, '1st')
     const message = 'Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
+
     expect(errors).toHaveTextContent(message)
     expect(errors).not.toHaveTextContent('is required')
     expect(insertButton()).toBeDisabled()
@@ -298,6 +335,7 @@ describe('template dialog actions', () => {
 
     await user.clear(field)
     await user.type(field, 'loyalty')
+
     expect(errors).toBeEmptyDOMElement()
     expect(insertButton()).toBeEnabled()
     expect(insertButton()).not.toHaveAccessibleDescription()

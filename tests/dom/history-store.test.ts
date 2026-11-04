@@ -56,10 +56,12 @@ describe('historyStore', () => {
       useHistoryStore.getState().push(pluginB)
       usePluginStore.getState().openPlugin(pluginB)
       undoShown()
+
       expect(useHistoryStore.getState().future).toHaveLength(1)
 
       // Push should clear future
       useHistoryStore.getState().push(pluginB)
+
       expect(useHistoryStore.getState().future).toHaveLength(0)
     })
 
@@ -89,10 +91,12 @@ describe('historyStore', () => {
 
       useHistoryStore.getState().push(pluginA)
       useHistoryStore.getState().push(pluginA) // dedup, still 1
+
       expect(useHistoryStore.getState().past).toHaveLength(1)
 
       // Push a different plugin — should clear old history and start fresh
       useHistoryStore.getState().push(pluginB)
+
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().past[0].plugin.id).toBe(pluginB.id)
       expect(useHistoryStore.getState().future).toHaveLength(0)
@@ -114,6 +118,7 @@ describe('historyStore', () => {
       usePluginStore.getState().openPlugin(pluginV2)
 
       const result = useHistoryStore.getState().undo()
+
       expect(result?.id).toBe(pluginV1.id)
       expect(result?.meta?.description).toBe('')
       expect(useHistoryStore.getState().past).toHaveLength(1)
@@ -135,6 +140,7 @@ describe('historyStore', () => {
 
     it('returns null when past is empty', () => {
       const result = useHistoryStore.getState().undo()
+
       expect(result).toBeNull()
     })
 
@@ -191,6 +197,7 @@ describe('historyStore', () => {
 
       // Now redo
       const result = redoShown()
+
       expect(result?.meta.description).toBe('v2')
       expect(useHistoryStore.getState().future).toHaveLength(0)
       expect(useHistoryStore.getState().past).toHaveLength(2)
@@ -199,6 +206,7 @@ describe('historyStore', () => {
 
     it('returns null when future is empty', () => {
       const result = useHistoryStore.getState().redo()
+
       expect(result).toBeNull()
     })
   })
@@ -302,10 +310,12 @@ describe('historyStore', () => {
 
       // Undo back to v1
       const undone = undoShown()
+
       expect(undone?.meta.description).toBe('')
 
       // Redo forward
       const redone = redoShown()
+
       expect(redone?.meta?.description).toBe('updated')
     })
   })
@@ -343,6 +353,7 @@ describe('duplicate pushes', () => {
       resetStores()
       useHistoryStore.getState().push(base)
       useHistoryStore.getState().push(edit)
+
       expect(useHistoryStore.getState().past).toHaveLength(2)
     }
   })
@@ -354,6 +365,7 @@ describe('duplicate pushes', () => {
     useHistoryStore.getState().push(plugin)
 
     const entry = useHistoryStore.getState().past[0]
+
     expect(entry.plugin.rawSource).toBeUndefined()
   })
 })

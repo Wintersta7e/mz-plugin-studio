@@ -29,6 +29,7 @@ describe('restore report at startup', () => {
 
     render(createElement(App))
     const toasts = useToastStore.getState().toasts
+
     expect(toasts).toHaveLength(1)
     expect(toasts[0].type).toBe('warning')
     expect(toasts[0].message).toBe(
@@ -37,6 +38,7 @@ describe('restore report at startup', () => {
 
     cleanup()
     render(createElement(App))
+
     expect(useToastStore.getState().toasts).toHaveLength(1)
   }, 30_000)
 
@@ -75,6 +77,7 @@ describe('restore report at startup', () => {
 
     render(createElement(App))
     const [toast] = useToastStore.getState().toasts
+
     expect(toast.message).toContain('parameter 1 of open plugin Good')
     expect(toast.message).toContain('description of parameter 1 of struct 1 of open plugin Good')
     expect(toast.message).toContain('entry 1 of parameter preset Mixed')

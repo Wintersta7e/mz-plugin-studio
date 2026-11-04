@@ -411,6 +411,7 @@ describe('path guard', () => {
     const posix = ROWS.filter((row) => row.platform === 'posix').length
     const win32 = ROWS.filter((row) => row.platform === 'win32').length
     console.log(`path guard rows: ${ROWS.length} (posix ${posix}, win32 ${win32})`)
+
     expect(posix).toBeGreaterThan(0)
     expect(win32).toBeGreaterThan(0)
   })

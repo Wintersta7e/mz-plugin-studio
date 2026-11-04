@@ -198,6 +198,7 @@ describe('raw mode controls of an imported plugin', () => {
       struct: unchangedOutputs(STRUCT, PLACES.struct),
       'struct field': unchangedOutputs(PARAMETER, PLACES['struct field'])
     }
+
     expect(results).toEqual({
       meta: [],
       parameter: [],
@@ -206,6 +207,7 @@ describe('raw mode controls of an imported plugin', () => {
       struct: [],
       'struct field': []
     })
+
     const tables: [Record<string, Edit<unknown>>, number][] = [
       [DEFINITION, 1],
       [META, 1],
@@ -220,17 +222,22 @@ describe('raw mode controls of an imported plugin', () => {
 
   it('the Code tab is read-only in raw mode and says why', () => {
     render(<CodeEditor />)
+
     expect(screen.getByTestId('monaco-editor')).toHaveAttribute('readonly')
+
     const insert = screen.getByRole('button', { name: /Insert Template/ })
+
     expect(insert).toBeDisabled()
     expect(insert).toHaveAttribute('title', NOTICE)
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
+
     checked++
   })
 
   it('the Code tab is editable with raw mode off', () => {
     useUIStore.getState().setRawModeForPlugin(usePluginStore.getState().plugin.id, false)
     render(<CodeEditor />)
+
     expect(screen.getByTestId('monaco-editor')).not.toHaveAttribute('readonly')
     expect(screen.getByRole('button', { name: /Insert Template/ })).toBeEnabled()
     expect(screen.queryByText(NOTICE)).toBeNull()
@@ -249,11 +256,15 @@ describe('raw mode controls of an imported plugin', () => {
     fireEvent.click(screen.getByText('Custom Actor Property'))
     fireEvent.change(screen.getByLabelText(/Property Name/), { target: { value: 'loyalty' } })
     const insert = screen.getByRole('button', { name: /Insert Code/ })
+
     expect(insert).toBeDisabled()
     expect(insert).toHaveAttribute('title', NOTICE)
+
     fireEvent.click(insert)
     fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true })
+
     expect(onInsert).not.toHaveBeenCalled()
+
     checked++
   })
 
@@ -265,18 +276,23 @@ describe('raw mode controls of an imported plugin', () => {
 
     const { unmount } = render(<CodeEditor />)
     const template = screen.getByRole('button', { name: /Insert Template/ })
+
     expect(template).toBeDisabled()
     expect(template).toHaveAccessibleDescription(NOTICE)
     expect(hintedAncestor(template)).not.toBeDisabled()
     expect(hintedAncestor(template)).toHaveAttribute('title', NOTICE)
+
     unmount()
 
     render(<TemplateInserter open readOnly onClose={vi.fn()} onInsert={vi.fn()} />)
     await user.type(screen.getByPlaceholderText(/search/i), 'Custom Actor Property')
     await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
+
     // A field error is listed too, but turning raw mode off is what enables the button
     expect(screen.getByRole('status')).toHaveTextContent('Field "Property Name" is required')
+
     const insert = screen.getByRole('button', { name: /Insert Code/ })
+
     expect(insert).toBeDisabled()
     expect(insert).toHaveAccessibleDescription(NOTICE)
     expect(hintedAncestor(insert)).not.toBeDisabled()
@@ -292,10 +308,13 @@ describe('raw mode controls of an imported plugin', () => {
       fireEvent.mouseDown(screen.getByRole('tab', { name: trigger }), { button: 0 })
       for (const id of [`description-${lang}`, `help-${lang}`]) {
         const field = document.getElementById(id)
+
         expect(field, id).toHaveAttribute('readonly')
         expect(field, id).toHaveAttribute('title', NOTICE)
       }
+
       expect(screen.getByText(NOTICE)).toBeInTheDocument()
+
       checked++
     })
   }
@@ -316,6 +335,7 @@ describe('raw mode controls of an imported plugin', () => {
       const { unmount } = render(<ParameterBuilder />)
       for (const p of params) {
         fireEvent.click(screen.getByText(p.text))
+
         expect(screen.getAllByText('Directory (relative to project)').length).toBeGreaterThan(0)
         expect(screen.queryByText(/Required for deployment/)).toBeNull()
       }
@@ -326,6 +346,7 @@ describe('raw mode controls of an imported plugin', () => {
 
   it('counts the controls it checked', () => {
     console.log(`controls checked ${checked}`)
+
     expect(checked).toBeGreaterThan(0)
   })
 })
@@ -374,7 +395,9 @@ describe('header editors of an imported file with no main annotation block', () 
   it('Meta, Parameters, Commands and Structs are read-only in raw mode and say why', () => {
     for (const Editor of [MetaEditor, ParameterBuilder, CommandBuilder, StructBuilder]) {
       const { unmount } = render(<Editor />)
+
       expect(screen.getByText(HEADER_NOTICE), Editor.name).toBeInTheDocument()
+
       unmount()
     }
     const controls = headerControls()
@@ -418,7 +441,9 @@ describe('header editors of an imported file with no main annotation block', () 
         within(screen.getByText('Array Element Type').parentElement!).getByRole('combobox'),
         ...screen.getAllByRole('combobox').filter((c) => c.textContent === 'Select struct...')
       ]
+
       expect(controls, Editor.name).toHaveLength(4)
+
       for (const control of controls) {
         expect(control).toBeDisabled()
         expect(control.closest('fieldset')).toHaveAttribute('title', HEADER_NOTICE)
@@ -432,17 +457,24 @@ describe('header editors of an imported file with no main annotation block', () 
     const kept = { ...createEmptyParameter(), name: 'Kept' }
     useSettingsStore.setState({ parameterPresets: { Mine: [kept] } })
     render(<ParameterBuilder />)
+
     expect(screen.getByRole('button', { name: /Add Parameter/ })).toBeDisabled()
+
     const selectAll = screen.getByRole('button', { name: /Select All/ })
+
     expect(selectAll).toBeEnabled()
+
     fireEvent.click(selectAll)
     const toolbar = within(selectAll.parentElement!)
+
     expect(toolbar.getByRole('button', { name: 'Export' })).toBeEnabled()
     expect(toolbar.getByRole('button', { name: 'Duplicate' })).toBeDisabled()
     expect(toolbar.getByRole('button', { name: 'Delete' })).toBeDisabled()
     expect(toolbar.getByRole('button', { name: /Import/ })).toBeDisabled()
+
     fireEvent.keyDown(toolbar.getByRole('button', { name: /Presets/ }), { key: 'Enter' })
     const item = (name: RegExp): HTMLElement => screen.getByRole('menuitem', { name })
+
     expect(item(/Save Selection as Preset/)).not.toHaveAttribute('aria-disabled')
     expect(item(/Mine/)).toHaveAttribute('aria-disabled', 'true')
   })
@@ -455,15 +487,20 @@ describe('header editors of an imported file with no main annotation block', () 
     const user = userEvent.setup()
     render(<ParameterBuilder />)
     const message = screen.getByText('メッセージ').closest<HTMLElement>('[draggable]')!
+
     // The delete button has no name; it is the only button in the row header
     expect(within(message).getByRole('button')).toBeDisabled()
+
     await user.click(within(message).getByRole('checkbox'))
+
     expect(within(message).getByRole('checkbox')).toBeChecked()
+
     await user.click(screen.getByRole('button', { name: 'Export' }))
     await waitFor(() => expect(api.plugin.saveToPath).toHaveBeenCalledTimes(1))
     const written: { parameters: PluginParameter[] } = JSON.parse(
       vi.mocked(api.plugin.saveToPath).mock.calls[0][1]
     )
+
     expect(written.parameters.map((p) => p.name)).toEqual(['Message'])
   })
 
@@ -472,6 +509,7 @@ describe('header editors of an imported file with no main annotation block', () 
     const first = usePluginStore.getState().plugin.parameters[0]
     const card = screen.getByText(first.text || first.name).closest('[draggable]')!
     const dataTransfer = { setData: vi.fn(), setDragImage: vi.fn() }
+
     expect(fireEvent.dragStart(card, { dataTransfer })).toBe(false)
     expect(dataTransfer.setData).not.toHaveBeenCalled()
   })
@@ -481,7 +519,9 @@ describe('header editors of an imported file with no main annotation block', () 
     for (const control of headerControls()) expect(control).toBeEnabled()
     for (const Editor of [MetaEditor, ParameterBuilder, CommandBuilder, StructBuilder]) {
       const { unmount } = render(<Editor />)
+
       expect(screen.queryByText(HEADER_NOTICE), Editor.name).toBeNull()
+
       unmount()
     }
   })

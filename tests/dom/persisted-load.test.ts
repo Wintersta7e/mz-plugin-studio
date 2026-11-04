@@ -103,16 +103,20 @@ describe('loading the state v1.6.0 saved', () => {
       const state = stores[key].getState()
       for (const [field, value] of Object.entries(stateOf(key))) {
         expect(state[field], `${key}.${field}`).toEqual(expectedField(field, value))
+
         fields++
       }
+
       expect(stores[key].persist.getOptions().version, key).toBe(0)
     }
     const written = writeAll(stores)
     for (const key of keys) {
       const envelope = JSON.parse(written[key]) as { state: { schemaVersion?: number } }
+
       expect(envelope.state.schemaVersion, key).toBe(SCHEMA[key])
     }
     console.log(`keys ${keys.length}/${PERSISTED_KEYS.length}, fields ${fields}`)
+
     expect(keys).toHaveLength(5)
   })
 
@@ -126,6 +130,7 @@ describe('loading the state v1.6.0 saved', () => {
     seed(written)
     const second = await loadStores()
     await flushPrune()
+
     expect(persistedFields(second)).toEqual(loaded)
     expect(writeAll(second)).toEqual(written)
 
@@ -140,6 +145,7 @@ describe('loading the state v1.6.0 saved', () => {
     seed(unversioned)
     const third = await loadStores()
     await flushPrune()
+
     expect(persistedFields(third)).toEqual(loaded)
   })
 
@@ -149,13 +155,16 @@ describe('loading the state v1.6.0 saved', () => {
     await flushPrune()
     const tabs = stores['mz-plugin-studio-plugin'].getState().openPlugins as PluginDefinition[]
     const tab = tabs.find((p) => p.id === IMPORTED_SAVED) as PluginDefinition
+
     expect(tab.importedFrom).toBe('Fixture_HandWritten.js')
     expect(tab).not.toHaveProperty('codeBody')
     expect(tab).not.toHaveProperty('rawSource')
+
     const rawMode = stores['mz-plugin-studio-ui'].getState().rawModeByPluginId as Record<
       string,
       boolean
     >
+
     expect(isRawMode(tab, rawMode[tab.id])).toBe(true)
     expect(generatePluginOutput(tab, true, null)).toMatchObject({
       ok: false,
@@ -169,11 +178,14 @@ describe('loading the state v1.6.0 saved', () => {
     await flushPrune()
     const state = stores['mz-plugin-studio-plugin'].getState()
     const saved = stateOf('mz-plugin-studio-plugin').savedPathsByPluginId as Record<string, string>
+
     expect(Object.keys(saved)).toHaveLength(2)
     expect(state.baseByPluginId).toEqual(
       Object.fromEntries(Object.entries(saved).map(([id, path]) => [id, { path, sha256: null }]))
     )
+
     const unsaved = (state.openPlugins as PluginDefinition[]).filter((p) => !(p.id in saved))
+
     expect(unsaved.map((p) => p.meta.name)).toContain('NewPlugin')
   })
 
@@ -189,6 +201,7 @@ describe('loading the state v1.6.0 saved', () => {
     seed({ ...payloads, 'mz-plugin-studio-plugin': JSON.stringify(saved) })
     const stores = await loadStores()
     await flushPrune()
+
     expect(stores['mz-plugin-studio-plugin'].getState().baseByPluginId).toEqual({
       [ids[0]]: { path: '/fixture/mz-project/js/plugins/Synthetic_Tool.js', sha256: 'ab' }
     })
@@ -202,6 +215,7 @@ describe('loading the state v1.6.0 saved', () => {
       string,
       boolean
     >
+
     expect(rawMode).not.toHaveProperty(IMPORTED_SAVED)
     expect(rawMode[IMPORTED_UNSHOWN]).toBe(true)
   })
@@ -217,6 +231,7 @@ describe('loading the state v1.6.0 saved', () => {
     }
     plugin.openPlugin(opened)
     const written = writeAll(first)
+
     expect(written['mz-plugin-studio-plugin']).not.toContain('codeBody')
 
     seed(written)
@@ -224,17 +239,22 @@ describe('loading the state v1.6.0 saved', () => {
     await flushPrune()
     const state = again['mz-plugin-studio-plugin'].getState()
     const tab = (state.openPlugins as PluginDefinition[])[0]
+
     expect(tab.rawSource).toBe(text)
     expect(tab.importedFrom).toBe(file)
     expect((state.baselineByPluginId as Record<string, PluginBaseline>)[tab.id]).toEqual(
       JSON.parse(JSON.stringify(toBaseline(opened)))
     )
+
     const rawMode = again['mz-plugin-studio-ui'].getState().rawModeByPluginId as Record<
       string,
       boolean
     >
+
     expect(isRawMode(tab, rawMode[tab.id])).toBe(true)
+
     const baseline = (state.baselineByPluginId as Record<string, PluginBaseline>)[tab.id]
+
     expect(generatePluginOutput(tab, true, baseline)).toEqual({ ok: true, code: text })
   })
 
@@ -251,6 +271,7 @@ describe('loading the state v1.6.0 saved', () => {
     const stores = await loadStores()
     await flushPrune()
     const plugin = stores['mz-plugin-studio-plugin']
+
     expect(plugin.getState().dirtyByPluginId).not.toHaveProperty('stale-tab')
     expect(plugin.getState().savedPathsByPluginId).not.toHaveProperty('stale-tab')
     expect(plugin.persist.hasHydrated()).toBe(true)
@@ -269,6 +290,7 @@ describe('loading the state v1.6.0 saved', () => {
       Record<string, unknown>[]
     >
     const { min, ...kept } = stored['Synthetic movement'][0]
+
     expect(min).toBeNull()
     expect(presets['Synthetic movement'][0]).toEqual(kept)
     expect(presets['Synthetic movement'][0]).not.toHaveProperty('min')

@@ -24,6 +24,7 @@ async function openProject(headers: ScannedPluginHeader[]): Promise<void> {
   window.api = createFakeApi({ plugin: { scanHeaders: vi.fn(async () => headers) } })
   act(() => useProjectStore.getState().setProject(sampleProject()))
   await act(() => useProjectStore.getState().scanDependencies())
+
   expect(window.api.plugin.scanHeaders).toHaveBeenCalledWith('/project')
 }
 
@@ -49,8 +50,11 @@ describe('status bar', () => {
 
   it('names the open project once one is open', async () => {
     render(<StatusBar />)
+
     expect(screen.getByText('No project loaded')).toBeInTheDocument()
+
     await openProject([])
+
     expect(screen.getByText('Project: Sample Game')).toBeInTheDocument()
     expect(screen.queryByText('No project loaded')).not.toBeInTheDocument()
   })
@@ -58,9 +62,12 @@ describe('status bar', () => {
   it('names the plugin and marks it modified while it has unsaved changes', () => {
     openTab('Alpha')
     render(<StatusBar />)
+
     expect(screen.getByText('Plugin: Alpha')).toBeInTheDocument()
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
+
     act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+
     expect(screen.getByText('(modified)')).toBeInTheDocument()
   })
 
@@ -68,7 +75,9 @@ describe('status bar', () => {
     const plugin = openTab('Alpha')
     act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
     render(<StatusBar />)
+
     expect(screen.queryByText('Saved')).not.toBeInTheDocument()
+
     const path = '/project/js/plugins/Alpha.js'
     act(() =>
       usePluginStore
@@ -77,6 +86,7 @@ describe('status bar', () => {
           { id: plugin.id, saved: usePluginStore.getState().plugin, path, sha256: '0', written: '' }
         ])
     )
+
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
     expect(screen.getByText('Saved')).toBeInTheDocument()
     expect(screen.getByText(path)).toBeInTheDocument()
@@ -85,6 +95,7 @@ describe('status bar', () => {
   it('a project whose plugins all find what they need reports it', async () => {
     render(<StatusBar />)
     await openProject([header('Alpha'), header('Beta', ['Alpha'])])
+
     expect(screen.getByRole('button', { name: 'All dependencies satisfied' })).toBeInTheDocument()
   })
 
@@ -94,6 +105,7 @@ describe('status bar', () => {
     await openProject([header('Alpha', ['Gamma']), header('Beta', ['Delta'])])
     await user.click(screen.getByRole('button', { name: '2 dependency issues' }))
     const dialog = await screen.findByRole('dialog', { name: 'Dependency Issues' })
+
     expect(within(dialog).getByText('2 issues found in project plugins')).toBeInTheDocument()
     expect(
       within(dialog).getByText('"Alpha" requires "Gamma" but it was not found in the project')

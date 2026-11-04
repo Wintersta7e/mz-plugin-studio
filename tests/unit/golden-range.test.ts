@@ -9,6 +9,7 @@ const SHA = 'c'.repeat(40)
 describe('golden commit range', () => {
   it('push with a previous commit checks before..sha', () => {
     const payload = { ref: 'refs/heads/main', before: BEFORE }
+
     expect(resolveRange({ name: 'push', payload, sha: SHA })).toEqual({
       range: `${BEFORE}..${SHA}`
     })
@@ -16,6 +17,7 @@ describe('golden commit range', () => {
 
   it('push whose previous commit is all zeros is skipped', () => {
     const payload = { ref: 'refs/heads/main', before: '0'.repeat(40) }
+
     expect(resolveRange({ name: 'push', payload, sha: SHA })).toEqual({
       skip: 'push (no previous commit)'
     })
@@ -23,6 +25,7 @@ describe('golden commit range', () => {
 
   it('push with no previous commit is skipped', () => {
     const payload = { ref: 'refs/heads/main' }
+
     expect(resolveRange({ name: 'push', payload, sha: SHA })).toEqual({
       skip: 'push (no previous commit)'
     })
@@ -30,6 +33,7 @@ describe('golden commit range', () => {
 
   it('push of a tag is skipped', () => {
     const payload = { ref: 'refs/tags/v1.6.1', before: BEFORE }
+
     expect(resolveRange({ name: 'push', payload, sha: SHA })).toEqual({ skip: 'push (tag ref)' })
   })
 
@@ -37,6 +41,7 @@ describe('golden commit range', () => {
     const pull_request = { base: { sha: 'a'.repeat(40) }, head: { sha: 'd'.repeat(40) } }
     const range = `${'a'.repeat(40)}..${'d'.repeat(40)}`
     const opened = { pull_request: { ...pull_request, user: { login: 'someone' } } }
+
     expect(resolveRange({ name: 'pull_request', payload: opened, sha: SHA })).toEqual({
       range,
       openedBy: 'someone'

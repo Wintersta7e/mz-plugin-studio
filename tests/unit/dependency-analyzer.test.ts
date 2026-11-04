@@ -19,6 +19,7 @@ describe('buildDependencyGraph', () => {
   it('builds graph from scanned headers', () => {
     const headers = [header('A', ['B']), header('B')]
     const graph = buildDependencyGraph(headers)
+
     expect(graph.plugins.size).toBe(2)
     expect(graph.edges.get('A')).toContain('B')
   })
@@ -26,11 +27,13 @@ describe('buildDependencyGraph', () => {
   it('handles plugins with no dependencies', () => {
     const headers = [header('A'), header('B')]
     const graph = buildDependencyGraph(headers)
+
     expect(graph.edges.get('A')).toEqual([])
   })
 
   it('handles empty plugin list', () => {
     const graph = buildDependencyGraph([])
+
     expect(graph.plugins.size).toBe(0)
   })
 })
@@ -39,6 +42,7 @@ describe('validateDependencies', () => {
   it('detects missing @base dependency', () => {
     const headers = [header('A', ['NonExistent'])]
     const report = validateDependencies(headers)
+
     expect(report.issues).toContainEqual(
       expect.objectContaining({
         type: 'missing',
@@ -52,6 +56,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B']), header('B')]
     const report = validateDependencies(headers)
     const missing = report.issues.filter((i) => i.type === 'missing')
+
     expect(missing).toHaveLength(0)
   })
 
@@ -59,6 +64,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B']), header('B', ['A'])]
     const report = validateDependencies(headers)
     const circular = report.issues.filter((i) => i.type === 'circular')
+
     expect(circular.length).toBeGreaterThan(0)
     expect(report.health).toBe('errors')
   })
@@ -67,6 +73,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B']), header('B', ['C']), header('C', ['A'])]
     const report = validateDependencies(headers)
     const circular = report.issues.filter((i) => i.type === 'circular')
+
     expect(circular.length).toBeGreaterThan(0)
   })
 
@@ -74,6 +81,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B']), header('B', ['C']), header('C')]
     const report = validateDependencies(headers)
     const circular = report.issues.filter((i) => i.type === 'circular')
+
     expect(circular).toHaveLength(0)
   })
 
@@ -82,6 +90,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B']), header('B')]
     const report = validateDependencies(headers)
     const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+
     expect(orderIssues.length).toBeGreaterThan(0)
     expect(orderIssues[0].severity).toBe('warning')
   })
@@ -91,6 +100,7 @@ describe('validateDependencies', () => {
     const headers = [header('B'), header('A', ['B'])]
     const report = validateDependencies(headers)
     const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+
     expect(orderIssues).toHaveLength(0)
   })
 
@@ -101,12 +111,14 @@ describe('validateDependencies', () => {
     ]
     const report = validateDependencies(headers)
     const dupes = report.issues.filter((i) => i.type === 'duplicate')
+
     expect(dupes.length).toBeGreaterThan(0)
   })
 
   it('reports healthy when no issues', () => {
     const headers = [header('B'), header('A', ['B'])]
     const report = validateDependencies(headers)
+
     expect(report.health).toBe('healthy')
   })
 
@@ -116,6 +128,7 @@ describe('validateDependencies', () => {
     const report = validateDependencies(headers)
     const errors = report.issues.filter((i) => i.severity === 'error')
     const warnings = report.issues.filter((i) => i.severity === 'warning')
+
     expect(errors).toHaveLength(0)
     expect(warnings.length).toBeGreaterThan(0)
     expect(report.health).toBe('warnings')
@@ -124,6 +137,7 @@ describe('validateDependencies', () => {
   it('returns all plugin names for autocomplete', () => {
     const headers = [header('Alpha'), header('Beta'), header('Gamma')]
     const report = validateDependencies(headers)
+
     expect(report.pluginNames).toEqual(['Alpha', 'Beta', 'Gamma'])
   })
 
@@ -133,6 +147,7 @@ describe('validateDependencies', () => {
     const report = validateDependencies(headers)
     // A before B with orderAfter should trigger load-order warning
     const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+
     expect(orderIssues.length).toBeGreaterThan(0)
   })
 
@@ -140,6 +155,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', [], ['NonExistent'])]
     const report = validateDependencies(headers)
     const missing = report.issues.filter((i) => i.type === 'missing')
+
     expect(missing.length).toBeGreaterThan(0)
     expect(missing[0].severity).toBe('warning')
     expect(missing[0].message).toContain('should load after')
@@ -149,6 +165,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['NonExistent'])]
     const report = validateDependencies(headers)
     const missing = report.issues.filter((i) => i.type === 'missing')
+
     expect(missing[0].severity).toBe('error')
     expect(missing[0].message).toContain('requires')
   })
@@ -158,6 +175,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', ['B'], ['B']), header('B')]
     const report = validateDependencies(headers)
     const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'A')
+
     expect(orderIssues).toHaveLength(1)
   })
 
@@ -165,6 +183,7 @@ describe('validateDependencies', () => {
     // A says orderBefore B → B depends on A (reverse edge)
     const headers = [header('A', [], [], ['B']), header('B')]
     const graph = buildDependencyGraph(headers)
+
     expect(graph.edges.get('B')).toContain('A')
   })
 
@@ -174,6 +193,7 @@ describe('validateDependencies', () => {
     const headers = [header('B'), header('A', [], [], ['B'])]
     const report = validateDependencies(headers)
     const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'B')
+
     expect(orderIssues.length).toBeGreaterThan(0)
     expect(orderIssues[0].message).toContain('B')
   })
@@ -182,6 +202,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', [], [], ['NonExistent'])]
     const report = validateDependencies(headers)
     const missing = report.issues.filter((i) => i.type === 'missing')
+
     expect(missing.length).toBeGreaterThan(0)
     expect(missing[0].severity).toBe('warning')
     expect(missing[0].message).toContain('should load before')
@@ -192,6 +213,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', [], [], ['B']), header('B')]
     const report = validateDependencies(headers)
     const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+
     expect(orderIssues).toHaveLength(0)
   })
 })

@@ -39,6 +39,7 @@ function request(
 
 afterAll(() => {
   console.log(`dialog defaults: rows ${rows}`)
+
   expect(rows).toBeGreaterThan(0)
 })
 
@@ -99,12 +100,14 @@ describe('dialog default path', () => {
   it.each(save)('save: %s', async (_label, partial, expected) => {
     rows++
     const existing = ['/work/exports', '/work/out']
+
     expect(await resolveDialogDefaultPath(request(partial, existing), path.posix)).toBe(expected)
   })
 
   it('opens the folder dialog beside the most recent project when its parent exists', async () => {
     rows++
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
+
     expect(await resolveDialogDefaultPath(request(seed, ['/work/Games']), path.posix)).toBe(
       '/work/Games'
     )
@@ -114,6 +117,7 @@ describe('dialog default path', () => {
     rows += 3
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
     const last = { ...seed, lastDirectory: '/work/Other' }
+
     expect(await resolveDialogDefaultPath(request(last, ['/work/Other']), path.posix)).toBe(
       '/work/Other'
     )
@@ -139,12 +143,15 @@ describe('dialog default path', () => {
         resolve()
       }, 0)
     )
+
     expect(ran).toBe(true)
     expect(checks).toHaveLength(1)
+
     checks[0](false)
     // Then the folder last chosen is checked the same way
     await vi.waitFor(() => expect(checks).toHaveLength(2))
     checks[1](true)
+
     expect(await resolved).toBe('/work/Other')
   })
 
@@ -191,6 +198,7 @@ describe('dialog default path', () => {
   it.each(open)('open: %s', async (_label, partial, expected) => {
     rows++
     const existing = ['/work/Game/js/plugins', '/work/Bare', '/work/last', '/work/out']
+
     expect(
       await resolveDialogDefaultPath(
         request({ channel: 'open-file', ...partial }, existing),
@@ -216,6 +224,7 @@ describe('dialog default path', () => {
     ]
   ] as const)('kind of %s with filters %j is %s', (channel, filters, expected) => {
     rows++
+
     expect(dialogKind(channel, filters)).toBe(expected)
   })
 })
@@ -243,6 +252,7 @@ describe('dialog folders kept across restarts', () => {
     ['posix', '/\0', false]
   ] as const)('%s %j is kept: %s', (platform, folder, kept) => {
     rows++
+
     expect(checkDialogFolder(folder, path[platform])).toBe(kept ? folder : undefined)
   })
 })

@@ -89,11 +89,14 @@ describe('code editor entry', () => {
       (file) => rel(file) !== SETUP && readFileSync(file, 'utf8').includes(SETUP_NAME)
     )
     console.log(`monaco entry: src files scanned ${files.length}, importers ${importers.length}`)
+
     expect(files.length).toBeGreaterThan(0)
     expect(importers.map(rel).sort()).toEqual([...HOSTS].sort())
     expect(readFileSync(join(ROOT, SETUP), 'utf8')).not.toContain(SETUP_NAME)
+
     for (const host of HOSTS) {
       const first = imports(parse(join(ROOT, host)))[0]?.from ?? ''
+
       expect(resolveSource(join(ROOT, host), first), host).toBe(join(ROOT, SETUP))
     }
   })
@@ -101,11 +104,14 @@ describe('code editor entry', () => {
   it('is not reached from the renderer entry through static imports', () => {
     const { files, packages } = staticGraph(join(ROOT, ENTRY))
     console.log(`monaco entry: files reached statically ${files.size}, packages ${packages.size}`)
+
     expect(files.has(join(ROOT, 'src/renderer/src/App.tsx'))).toBe(true)
     expect([SETUP, ...HOSTS].filter((file) => files.has(join(ROOT, file)))).toEqual([])
+
     const editorPackages = [...packages].filter(
       (from) => isEditorPackage(from) || from === '@monaco-editor/react'
     )
+
     expect(editorPackages).toEqual([])
   })
 
@@ -113,6 +119,7 @@ describe('code editor entry', () => {
     const valueImporters = sourceFiles(SRC).filter((file) =>
       imports(parse(file)).some(({ from, value }) => value && isEditorPackage(from))
     )
+
     expect(valueImporters.map(rel)).toEqual([SETUP])
   })
 
@@ -121,6 +128,7 @@ describe('code editor entry', () => {
       dependencies?: Record<string, string>
       devDependencies?: Record<string, string>
     }
+
     expect(pkg.devDependencies?.['monaco-editor']).toBeDefined()
     expect(pkg.dependencies?.['monaco-editor']).toBeUndefined()
     expect(readFileSync(join(ROOT, 'THIRD_PARTY_LICENSES.md'), 'utf8')).toContain(NOTICES_MARK)

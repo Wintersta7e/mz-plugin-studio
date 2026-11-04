@@ -127,6 +127,7 @@ describe('code preview export with no project', () => {
     render(<CodePreview />)
     clickExportDts()
     await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
+
     expect(useToastStore.getState().toasts[0]).toMatchObject({
       type: 'warning',
       message:
@@ -145,6 +146,7 @@ describe('code preview export with no project', () => {
     const expected = generatePlugin(usePluginStore.getState().plugin)
     clickExport()
     await waitFor(async () => expect(await readFile(target, 'utf8')).toBe(expected))
+
     expect(errorToasts()).toEqual([])
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
@@ -160,6 +162,7 @@ describe('code preview export with no project', () => {
     act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
     await act(async () => release())
     await waitFor(() => expect(successToasts()).toEqual([`Exported to ${target}`]))
+
     expect(usePluginStore.getState().plugin.meta.description).toBe('edited during save')
     expect(usePluginStore.getState().dirtyByPluginId[id]).toBe(true)
     expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
@@ -174,13 +177,16 @@ describe('code preview export with no project', () => {
     await writeFile(target, '// changed elsewhere\n')
     clickExport()
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
+
     expect(vi.mocked(window.api.dialog.message).mock.calls[0][0]).toEqual({
       type: 'warning',
       title: 'Overwrite file?',
       message: `"${target}" has changed on disk since this tab last read or saved it. Overwrite it?`,
       buttons: ['Cancel', 'Overwrite']
     })
+
     await act(async () => {})
+
     expect(await readFile(target, 'utf8')).toBe('// changed elsewhere\n')
     expect(successToasts()).toHaveLength(1)
   })
@@ -191,6 +197,7 @@ describe('code preview export with no project', () => {
     render(<CodePreview />)
     clickExport()
     await waitFor(() => expect(errorToasts()).toHaveLength(1))
+
     expect(errorToasts()[0]).toMatch(/^Export failed: /)
     await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
   })
@@ -210,6 +217,7 @@ describe('code preview export with no project', () => {
           `Export failed: ${ACCESS_DENIED}${target} was not chosen in a save dialog`
         ])
       )
+
       await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   )
@@ -235,6 +243,7 @@ describe('code preview export under another file name', () => {
     clickExport()
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledWith(RENAMED))
     await act(async () => {})
+
     expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
     await expect(access(target)).rejects.toMatchObject({ code: 'ENOENT' })
     expect(successToasts()).toEqual([])
@@ -247,6 +256,7 @@ describe('code preview export under another file name', () => {
     render(<CodePreview />)
     clickExport()
     await waitFor(() => expect(successToasts()).toHaveLength(1))
+
     expect(vi.mocked(window.api.dialog.message).mock.calls).toEqual([[RENAMED]])
     expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
     expect(await readFile(target, 'utf8')).toBe(generatePlugin(usePluginStore.getState().plugin))
@@ -258,6 +268,7 @@ describe('code preview export under another file name', () => {
     render(<CodePreview />)
     clickExport()
     await waitFor(() => expect(successToasts()).toHaveLength(1))
+
     expect(window.api.dialog.message).not.toHaveBeenCalled()
   })
 })
@@ -285,14 +296,18 @@ describe('code preview export', () => {
 
     clickExport()
     await waitFor(() => expect(successToasts()).toContain(`Exported to ${exported}`))
+
     expect(await readFile(exported, 'utf8')).toBe(expected)
     expect(await readFile(projectFile, 'utf8')).toBe(saved)
+
     const state = usePluginStore.getState()
+
     expect(state.dirtyByPluginId[id]).toBe(true)
     expect(state.baseByPluginId[id]?.path).toBe(projectFile)
     expect(state.savedPathsByPluginId[id]).toBe(projectFile)
 
     await act(() => savePlugin(id, 'save'))
+
     expect(window.api.dialog.message).not.toHaveBeenCalled()
     expect(await readFile(projectFile, 'utf8')).toBe(expected)
     expect(usePluginStore.getState().dirtyByPluginId[id]).toBeUndefined()
@@ -311,14 +326,18 @@ describe('code preview export', () => {
 
     clickExport()
     await waitFor(() => expect(successToasts()).toEqual(['Plugin saved', 'Plugin saved']))
+
     expect(await readFile(projectFile, 'utf8')).toBe(exported)
+
     const state = usePluginStore.getState()
+
     expect(state.dirtyByPluginId[id]).toBeUndefined()
     expect(state.baseByPluginId[id]?.path).toBe(projectFile)
 
     act(() => usePluginStore.getState().updateMeta({ description: 'edited again' }))
     const expected = generatePlugin(usePluginStore.getState().plugin)
     await act(() => savePlugin(id, 'save'))
+
     expect(window.api.dialog.message).not.toHaveBeenCalled()
     expect(await readFile(projectFile, 'utf8')).toBe(expected)
     expect(usePluginStore.getState().dirtyByPluginId[id]).toBeUndefined()
@@ -334,6 +353,7 @@ describe('code preview export', () => {
 
     clickExport()
     await waitFor(() => expect(successToasts()).toHaveLength(1))
+
     expect(await readFile(chosen, 'utf8')).toBe(expected)
     expect(vi.mocked(dialog.saveFile).mock.calls).toEqual([
       [{ defaultPath: 'Alpha.js', filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }]
@@ -397,6 +417,7 @@ describe('code preview diff', () => {
     usePluginStore.setState((s) => ({ plugin: { ...s.plugin, rawSource: '// raw' } }))
     render(<CodePreview />)
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+
     expect(await screen.findByText(LAST_COPY)).toBeInTheDocument()
     expect(screen.getByTestId('monaco-diff-original')).toHaveValue('// raw')
     expect(errorToasts()).toEqual([])
@@ -406,10 +427,13 @@ describe('code preview diff', () => {
     wireDeniedSave(CHOSEN)
     render(<CodePreview />)
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+
     expect(await screen.findByText(NOTICE)).toBeInTheDocument()
     expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+
     fireEvent.click(screen.getByRole('button', { name: 'Choose file' }))
     await waitFor(() => expect(screen.getByTestId('monaco-diff-original')).toHaveValue('// chosen'))
+
     expect(window.api.dialog.openFile).toHaveBeenCalledWith({
       filters: [{ name: 'JavaScript', extensions: ['js'] }]
     })
@@ -425,6 +449,7 @@ describe('code preview diff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Choose file' }))
     await waitFor(() => expect(window.api.dialog.openFile).toHaveBeenCalledOnce())
+
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
     expect(window.api.plugin.readByPath).toHaveBeenCalledOnce()
     expect(errorToasts()).toEqual([])
@@ -440,6 +465,7 @@ describe('code preview diff', () => {
     await waitFor(() =>
       expect(errorToasts()).toEqual(["Couldn't open the chosen file: Alpha.js is not UTF-8"])
     )
+
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
     expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
   })
@@ -457,8 +483,11 @@ describe('code preview diff', () => {
     usePluginStore.setState((s) => ({ plugin: { ...s.plugin, rawSource: '// Alpha copy' } }))
     render(<CodePreview />)
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+
     expect(await screen.findByText(LAST_COPY)).toBeInTheDocument()
+
     switchToBeta()
+
     expect(screen.queryByText(LAST_COPY)).toBeNull()
     expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
   })
@@ -467,8 +496,11 @@ describe('code preview diff', () => {
     wireDeniedSave(CHOSEN)
     render(<CodePreview />)
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
+
     expect(await screen.findByText(NOTICE)).toBeInTheDocument()
+
     switchToBeta()
+
     expect(screen.queryByText(NOTICE)).toBeNull()
   })
 
@@ -483,6 +515,7 @@ describe('code preview diff', () => {
     await waitFor(() => expect(window.api.plugin.readByPath).toHaveBeenCalledWith(SAVED))
     switchToBeta()
     await act(async () => finish('// Alpha on disk'))
+
     expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
   })
 })
@@ -511,10 +544,13 @@ describe('code preview banner', () => {
     openImported(FILE, { withSource: false })
     render(<CodePreview />)
     const banner = await bannerOf(missingText)
+
     expect(banner).toHaveAttribute('role', 'status')
     expect(banner).toHaveClass('bg-yellow-500/10', 'text-warning-text')
     expect(banner).not.toHaveClass('text-destructive-text')
+
     const button = screen.getByRole('button', { name: RELOAD })
+
     expect(button).toBeEnabled()
     expect(button).not.toHaveAttribute('title')
   })
@@ -525,6 +561,7 @@ describe('code preview banner', () => {
     render(<CodePreview />)
     await bannerOf(missingText)
     const button = screen.getByRole('button', { name: RELOAD })
+
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('title', 'Open the project first.')
   })
@@ -535,10 +572,13 @@ describe('code preview banner', () => {
     render(<CodePreview />)
     await bannerOf(missingText)
     const button = screen.getByRole('button', { name: RELOAD })
+
     expect(button).toBeDisabled()
     expect(button).toHaveAccessibleDescription('Open the project first.')
+
     // A disabled button ignores the pointer, so the hover hint sits on an ancestor that does not
     const hinted = button.parentElement?.closest('[title]')
+
     expect(hinted).not.toBeNull()
     expect(hinted).not.toBeDisabled()
     expect(hinted).toHaveAttribute('title', 'Open the project first.')
@@ -550,10 +590,13 @@ describe('code preview banner', () => {
     openImported(FILE, { withSource: true })
     usePluginStore.setState({ baselineByPluginId: {} })
     render(<CodePreview />)
+
     expect(await screen.findByRole('button', { name: RELOAD })).toBeEnabled()
+
     const banner = await bannerOf(
       `The app's copy of ${FILE} as it was last read is missing, so raw mode cannot tell what changed. Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.`
     )
+
     expect(banner).toHaveAttribute('role', 'status')
   })
 
@@ -563,6 +606,7 @@ describe('code preview banner', () => {
     useUIStore.getState().setRawModeForPlugin(usePluginStore.getState().plugin.id, false)
     render(<CodePreview />)
     await screen.findByText('Generated Code')
+
     expect(screen.queryByText(missingText)).toBeNull()
     expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
   })
@@ -575,6 +619,7 @@ describe('code preview banner', () => {
     const banner = await bannerOf(
       'Header changes cannot be saved: Fixture_NoBlock.js has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.'
     )
+
     expect(banner).toHaveAttribute('role', 'alert')
     expect(banner).toHaveClass('bg-destructive/10', 'text-destructive-text')
     expect(banner).not.toHaveClass('text-warning-text')
@@ -607,6 +652,7 @@ describe('code preview panel', () => {
     render(<CodePreview />)
     await waitFor(() => expect(preview()).toContain('@plugindesc Moves things'))
     const raw = screen.getByRole('button', { name: 'Raw' })
+
     expect(raw).toBeDisabled()
     expect(raw).toHaveAttribute(
       'title',
@@ -621,10 +667,13 @@ describe('code preview panel', () => {
     window.api = createFakeApi()
     render(<CodePreview />)
     const button = screen.getByRole('button', { name })
+
     expect(button).toBeDisabled()
     expect(button).toHaveAccessibleDescription(hint)
+
     // A disabled button ignores the pointer, so the hover hint sits on an ancestor that does not
     const hinted = button.parentElement?.closest('[title]')
+
     expect(hinted).not.toBeNull()
     expect(hinted).not.toBeDisabled()
     expect(hinted).toHaveAttribute('title', hint)
@@ -645,12 +694,17 @@ describe('code preview panel', () => {
     await waitFor(() => expect(preview()).toContain('// body-kept'))
 
     await user.click(screen.getByRole('button', { name: 'Raw ON' }))
+
     expect(screen.getByRole('button', { name: 'Raw' })).toBeInTheDocument()
+
     await waitFor(() => expect(preview()).toBe(generatePlugin({ ...imported, rawSource })))
+
     expect(preview()).not.toContain('// body-kept')
 
     await user.click(screen.getByRole('button', { name: 'Raw' }))
+
     expect(screen.getByRole('button', { name: 'Raw ON' })).toBeInTheDocument()
+
     await waitFor(() => expect(preview()).toContain('// body-kept'))
   })
 
@@ -662,8 +716,11 @@ describe('code preview panel', () => {
       usePluginStore.getState().addParameter({ ...createEmptyParameter(), name: 'speed' })
     })
     render(<CodePreview />)
+
     expect(screen.queryByText('Duplicate parameter name: speed')).not.toBeInTheDocument()
+
     await user.click(await screen.findByRole('button', { name: /^1 error\b/ }))
+
     expect(screen.getByText('Duplicate parameter name: speed')).toBeInTheDocument()
   })
 
@@ -677,6 +734,7 @@ describe('code preview panel', () => {
       </>
     )
     await user.click(screen.getByRole('button', { name: 'Copy' }))
+
     expect(await screen.findByText('Code copied to clipboard')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Copied!' })).toBeInTheDocument()
     expect(await navigator.clipboard.readText()).toBe(preview())
@@ -686,11 +744,14 @@ describe('code preview panel', () => {
     const user = userEvent.setup()
     fakeExport()
     render(<CodePreview />)
+
     expect(diffButton()).toBeDisabled()
+
     const code = preview()
 
     await user.click(screen.getByRole('button', { name: 'Export' }))
     await waitFor(() => expect(diffButton()).toBeEnabled())
+
     expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: 'Alpha.js',
       filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
@@ -715,9 +776,11 @@ describe('code preview panel', () => {
       await user.click(screen.getByTitle('Export in other formats'))
       await user.click(screen.getByText(item))
       await waitFor(() => expect(saveToPath).toHaveBeenCalledTimes(calls + 1))
+
       expect(vi.mocked(saveFile).mock.lastCall?.[0]).toMatchObject({ defaultPath: name })
       expect(vi.mocked(saveToPath).mock.lastCall).toEqual([`/exports/${name}`, expect.any(String)])
     }
+
     expect(diffButton()).toBeDisabled()
   })
 
@@ -726,8 +789,11 @@ describe('code preview panel', () => {
     window.api = createFakeApi()
     render(<CodePreview />)
     await user.click(screen.getByTitle('Export in other formats'))
+
     expect(screen.getByText('Export README.md')).toBeInTheDocument()
+
     await user.click(screen.getByText('Generated Code'))
+
     expect(screen.queryByText('Export README.md')).not.toBeInTheDocument()
   })
 
@@ -740,11 +806,13 @@ describe('code preview panel', () => {
     await waitFor(() => expect(diffButton()).toBeEnabled())
 
     await user.click(diffButton())
+
     expect(await screen.findByTestId('monaco-diff-original')).toHaveValue('// on disk')
     expect(screen.getByTestId('monaco-diff-modified')).toHaveValue(code)
     expect(window.api.plugin.readByPath).toHaveBeenCalledWith(EXPORTED)
 
     await user.click(diffButton())
+
     expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
     expect(preview()).toBe(code)
   })

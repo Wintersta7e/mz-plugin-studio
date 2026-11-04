@@ -31,6 +31,7 @@ describe('command skeleton', () => {
       render(<CommandBuilder />)
       fireEvent.click(screen.getByText(cmd.text))
       fireEvent.change(screen.getByDisplayValue('Show'), { target: { value: name } })
+
       expect(usePluginStore.getState().plugin.customCode).toBe(
         generateCommandSkeleton({ ...cmd, name }) + rest
       )
@@ -84,9 +85,13 @@ describe('command annotations', () => {
 
   it('writes a new command and its number argument, and drops them when deleted', async () => {
     const user = renderTab()
+
     expect(screen.getByText('No commands defined')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Add Command' }))
+
     expect(screen.queryByText('No commands defined')).not.toBeInTheDocument()
+
     await retype(user, screen.getByPlaceholderText('myCommand'), 'showBanner')
     await waitFor(() => expect(preview()).toContain(' * @command showBanner\n'))
 
@@ -108,12 +113,14 @@ describe('command annotations', () => {
     const argButtons = argRow('count').querySelectorAll('button')
     await user.click(argButtons[argButtons.length - 1])
     await waitFor(() => expect(preview()).not.toContain('@arg count'))
+
     expect(preview()).toContain(' * @command showBanner\n')
 
     // The command header holds one button, which deletes the command
     const header = screen.getByText('(0 args)').closest<HTMLElement>('.cursor-pointer')!
     await user.click(header.querySelector('button')!)
     await waitFor(() => expect(preview()).not.toContain('@command showBanner'))
+
     expect(screen.getByText('No commands defined')).toBeInTheDocument()
   })
 

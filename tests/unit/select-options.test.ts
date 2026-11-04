@@ -44,6 +44,7 @@ describe('select options text', () => {
     for (const value of parts) {
       for (const text of labels) {
         const opts = [{ value, text }]
+
         expect(parseOptions(optionsText(opts)), JSON.stringify(opts)).toEqual(opts)
       }
     }

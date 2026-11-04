@@ -112,6 +112,7 @@ describe('golden commit check', () => {
     commit(dir, 'test: add a golden')
     write(dir, 'src/a.ts', 'export const a = 1\n')
     commit(dir, 'feat: change src')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
   })
 
@@ -120,6 +121,7 @@ describe('golden commit check', () => {
     write(dir, 'src/a.ts', 'export const a = 1\n')
     write(dir, `${GOLDEN}/templates/b.js`, '// ==== case: base\nlet b\n')
     const sha = commit(dir, 'feat: change src with a new golden')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -137,6 +139,7 @@ describe('golden commit check', () => {
     write(dir, 'CHANGELOG.md', '- Changed a\n')
     write(dir, `${GOLDEN}/templates/a.js`, '// ==== case: base\nlet a\n// ==== case: more\nlet b\n')
     const sha = commit(dir, 'feat: change src and add a case')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -152,6 +155,7 @@ describe('golden commit check', () => {
     commit(dir, 'test: add a golden')
     write(dir, `${GOLDEN}/parser/p.json`, '{\n}\n')
     const sha = commit(dir, 'test: drop a golden line')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -168,6 +172,7 @@ describe('golden commit check', () => {
     write(dir, 'src/a.ts', 'export const a = 1\n')
     write(dir, `${GOLDEN}/generator/g.js`, 'let b\n')
     const sha = commit(dir, 'fix: change output')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -179,6 +184,7 @@ describe('golden commit check', () => {
     git(dir, ...IDENTITY, 'reset', '-q', '--soft', 'HEAD^')
     write(dir, 'CHANGELOG.md', '- Changed output\n')
     commit(dir, 'fix: change output with a changelog entry')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
   })
 
@@ -193,6 +199,7 @@ describe('golden commit check', () => {
         '// ==== case: last\nlet z\n'
     )
     commit(dir, 'test: add two cases')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
   })
 
@@ -202,6 +209,7 @@ describe('golden commit check', () => {
     commit(dir, 'test: add a golden')
     write(dir, `${GOLDEN}/templates/a.js`, '// ==== case: one\nlet b\n\n// ==== case: two\nlet c\n')
     const sha = commit(dir, 'test: add a case and change another')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -222,6 +230,7 @@ describe('golden commit check', () => {
       '{\n  "a.none": false,\n  "b.none": true,\n  "c.none": true\n}\n'
     )
     commit(dir, 'test: add an entry')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
   })
 
@@ -235,6 +244,7 @@ describe('golden commit check', () => {
       '{\n  "a.none": true,\n  "b.none": true,\n  "c.none": true\n}\n'
     )
     const sha = commit(dir, 'test: add an entry and change another')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -252,6 +262,7 @@ describe('golden commit check', () => {
     write(dir, 'src/a.ts', 'export const a = 1\n')
     write(dir, `${GOLDEN}/parser/p.json`, '{\n  "a": 2\n}\n')
     commit(dir, 'fix: change parser output')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
   })
 
@@ -264,6 +275,7 @@ describe('golden commit check', () => {
     write(dir, 'src/a.ts', 'export const a = 1\n')
     commit(dir, 'feat: change src')
     git(dir, ...IDENTITY, 'merge', '-q', '--no-ff', '-m', 'merge side', 'side')
+
     expect(git(dir, 'rev-list', '--count', `${base}..HEAD`)).toBe('3')
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 1, 0, 0, 0, 0)] })
   })
@@ -272,6 +284,7 @@ describe('golden commit check', () => {
     const { dir, base } = makeRepo()
     write(dir, 'notes.txt', 'a\n')
     const sha = commit(dir, `docs: ${'x'.repeat(67)}`)
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -286,6 +299,7 @@ describe('golden commit check', () => {
     const { dir, base } = makeRepo()
     write(dir, 'notes.txt', 'a\n')
     const sha = commit(dir, 'docs: add notes\n\nSigned-off-by: Someone <someone@example.invalid>')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -307,6 +321,7 @@ describe('golden commit check', () => {
     const { dir, base } = makeRepo()
     write(dir, 'notes.txt', 'a\n')
     const sha = commit(dir, `docs: add notes\n\n${body}`)
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -326,6 +341,7 @@ describe('golden commit check', () => {
     )
     write(dir, 'notes.txt', 'b\n')
     commit(dir, 'docs: change notes\n\nWhy: the notes drifted, so\nthey are rewritten.')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({ status: 0, lines: [counts(2, 0, 0, 0, 0, 0)] })
   })
 
@@ -333,6 +349,7 @@ describe('golden commit check', () => {
     const { dir, base } = makeRepo()
     write(dir, 'notes.txt', 'a\n')
     const sha = commit(dir, 'docs: add notes\n\nCo-authored-by: X <x@example.invalid>')
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 1,
       lines: [
@@ -346,6 +363,7 @@ describe('golden commit check', () => {
   it('skips the message rules for a bot commit that the hosting service committed', () => {
     const { dir, base } = makeRepo()
     botCommit(dir, HOST_IDENTITY)
+
     expect(check(dir, [`${base}..HEAD`])).toEqual({
       status: 0,
       lines: [counts(1, 0, 0, 0, 0, 0, { bots: 1 })]
@@ -355,6 +373,7 @@ describe('golden commit check', () => {
   it('checks a commit that only carries the bot author email', () => {
     const { dir, base } = makeRepo()
     const sha = botCommit(dir, IDENTITY)
+
     expect(check(dir, [`${base}..HEAD`])).toEqual(botFailure(sha))
   })
 
@@ -371,6 +390,7 @@ describe('golden commit check', () => {
         GITHUB_SHA: sha
       })
     }
+
     expect(run('dependabot[bot]')).toEqual({
       status: 0,
       lines: [counts(1, 0, 0, 0, 0, 0, { bots: 1 })]
@@ -380,6 +400,7 @@ describe('golden commit check', () => {
 
   it('fails an empty range', () => {
     const { dir } = makeRepo()
+
     expect(check(dir, ['HEAD..HEAD'])).toEqual({
       status: 1,
       lines: ['G5: range HEAD..HEAD has 0 commits']
@@ -395,6 +416,7 @@ describe('golden commit check', () => {
       GITHUB_EVENT_PATH: event,
       GITHUB_SHA: base
     })
+
     expect(run).toEqual({ status: 0, lines: ['G5 skipped: push (tag ref)'] })
   })
 })

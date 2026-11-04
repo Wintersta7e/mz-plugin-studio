@@ -156,6 +156,7 @@ describe('golden inventory', () => {
     ]) {
       expect(denominator).toBeGreaterThan(0)
     }
+
     expect(registryIds.sort()).toEqual(ids)
     expect(templatesDone).toBe(ids.length)
     expect(typesDone).toBe(ALL_PARAM_TYPES.size)

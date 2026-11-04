@@ -159,6 +159,7 @@ describe('template field text', () => {
       `free-text field types: ${free.join(', ')}; fields ${cases.length} over ` +
         `${templateIds().length} templates (renderers scanned: ${types.join(', ')})`
     )
+
     expect(types.length).toBeGreaterThan(0)
     expect(cases.length).toBeGreaterThan(0)
   })
@@ -175,6 +176,7 @@ describe('template field text', () => {
       `template contexts: ${CONTEXTS.map((c) => `${c} ${counts[c]}`).join(', ')}; ` +
         `not emitted ${notEmitted.length}${notEmitted.length > 0 ? ` (${notEmitted.join(', ')})` : ''}`
     )
+
     expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBeGreaterThan(0)
     expect(notEmitted).toEqual([])
     expect(counts).toEqual(CONTEXT_COUNTS)
@@ -207,6 +209,7 @@ describe('template field text', () => {
       `template payload cases: ${total}; rejected ${tally.rejected}, contained ${tally.contained}, ` +
         `throws ${tally.throws}, ran ${tally.ran}, escaped ${tally.escaped}`
     )
+
     expect(total).toBeGreaterThan(0)
     expect(table).toEqual({})
 
@@ -224,6 +227,7 @@ describe('template field text', () => {
       `code-position fields ${code.length}, pattern fields ${regex.length}, ` +
         `passing a payload ${passing.length}; sanitized to identifiers: ${sanitized.join(', ')}`
     )
+
     expect(code.length).toBeGreaterThan(0)
     expect(regex.length).toBeGreaterThan(0)
     expect(passing).toEqual([])
@@ -263,6 +267,7 @@ describe('template field text', () => {
     }
     for (const [key, outcome] of Object.entries(table)) console.log(`  ${key}: ${outcome}`)
     const ran = Object.values(tallies).reduce((sum, t) => sum + t.ran, 0)
+
     expect(Object.values(tallies).every((t) => t.rejected + t.contained > 0)).toBe(true)
     expect(ran).toBe(0)
     expect(table).toEqual({})
@@ -282,6 +287,7 @@ describe('template field text', () => {
     )
     for (const [id, errors] of Object.entries(failing))
       console.log(`  ${id}: ${errors.join(' | ')}`)
+
     expect(ids.length).toBeGreaterThan(0)
   })
 })
@@ -337,6 +343,7 @@ describe('accepted template field text', () => {
       `accepted-text cases: ${accepted.cases}; rejected ${accepted.rejected}, ` +
         `accepted and in place ${accepted.cases - accepted.rejected}`
     )
+
     expect(accepted.cases).toBeGreaterThan(0)
   })
 
@@ -347,6 +354,7 @@ describe('accepted template field text', () => {
       .fields.filter((f) => free.includes(f.type))
       .map((f) => [id, f.id] as const)
   )
+
   it.each(fields)('stays in place with a payload or line break added (%s.%s)', (id, fieldId) => {
     expect(acceptedTextFailures(id, fieldId)).toEqual([])
   })

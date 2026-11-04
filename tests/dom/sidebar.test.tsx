@@ -29,6 +29,7 @@ describe('sidebar tab close', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close Edited' }))
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+
     expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
     // The fake answers 0, Cancel
     expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual([plugin.id])
@@ -76,6 +77,7 @@ describe('sidebar', () => {
     openTab('Alpha')
     renderSidebar()
     await user.click(screen.getByRole('button', { name: 'New Plugin' }))
+
     expect(screen.getByRole('button', { name: 'NewPlugin' })).toBeInTheDocument()
     expect(screen.getByText('Plugin: NewPlugin')).toBeInTheDocument()
   })
@@ -85,8 +87,11 @@ describe('sidebar', () => {
     openTab('Alpha')
     openTab('Beta')
     renderSidebar()
+
     expect(screen.getByText('Plugin: Beta')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: 'Alpha' }))
+
     expect(screen.getByText('Plugin: Alpha')).toBeInTheDocument()
   })
 
@@ -94,6 +99,7 @@ describe('sidebar', () => {
     openTab('Alpha')
     act(() => usePluginStore.getState().updateMeta({ name: 'Beta' }))
     renderSidebar()
+
     expect(screen.getByRole('button', { name: 'Beta (unsaved changes)' })).toBeInTheDocument()
   })
 
@@ -102,6 +108,7 @@ describe('sidebar', () => {
     openTab('Alpha')
     renderSidebar()
     await user.click(screen.getByRole('button', { name: 'Close Alpha' }))
+
     expect(window.api.dialog.message).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Alpha' })).not.toBeInTheDocument()
   })
@@ -109,6 +116,7 @@ describe('sidebar', () => {
   it('a tab with no name is called Untitled', () => {
     openTab('')
     renderSidebar()
+
     expect(screen.getByRole('button', { name: 'Untitled' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close Untitled' })).toBeInTheDocument()
   })
@@ -126,6 +134,7 @@ describe('sidebar', () => {
     ]
     for (const [name, callback] of buttons) {
       await user.click(screen.getByRole('button', { name }))
+
       expect(callbacks[callback]).toHaveBeenCalledTimes(1)
     }
     for (const callback of Object.values(callbacks)) expect(callback).toHaveBeenCalledTimes(1)

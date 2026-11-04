@@ -82,6 +82,7 @@ function applyFuses(states: string, fuses: Map<string, boolean>): string {
 describe('ci-policy fuses', () => {
   it('passes the production wire and prints every fuse', () => {
     const { status, out } = fuses(binary(wire(PRODUCTION)))
+
     expect(out.match(/^fuse /gm)).toHaveLength(9)
     expect(out).toContain('fuse RunAsNode: disabled (required disabled)\n')
     expect(out).toContain('fuse GrantFileProtocolExtraPrivileges: enabled (required enabled)\n')
@@ -93,6 +94,7 @@ describe('ci-policy fuses', () => {
 
   it("fails an unfused Electron binary's wire, naming RunAsNode", () => {
     const { status, out } = fuses(binary(wire(STOCK)))
+
     expect(out).toContain('FAIL fuse RunAsNode: enabled, required disabled\n')
     expect(out).toContain('ci-policy fuses: FAILED (6 problems)\n')
     expect(status).toBe(1)
@@ -100,6 +102,7 @@ describe('ci-policy fuses', () => {
 
   it('fails when file protocol privileges are off', () => {
     const { status, out } = fuses(binary(wire('010011001')))
+
     expect(out).toContain(
       'FAIL fuse GrantFileProtocolExtraPrivileges: disabled, required enabled\n'
     )
@@ -108,6 +111,7 @@ describe('ci-policy fuses', () => {
 
   it('does not check the two fuses left at their default', () => {
     const { status, out } = fuses(binary(wire('010011110')))
+
     expect(out).toContain(
       'fuse LoadBrowserProcessSpecificV8Snapshot: enabled (default, not checked)\n'
     )
@@ -117,6 +121,7 @@ describe('ci-policy fuses', () => {
 
   it('fails a removed or inherited required fuse', () => {
     const { status, out } = fuses(binary(wire(`r1${'\x90'}011011`)))
+
     expect(out).toContain('FAIL fuse RunAsNode: removed, required disabled\n')
     expect(out).toContain(
       'FAIL fuse EnableNodeOptionsEnvironmentVariable: inherit, required disabled\n'
@@ -126,30 +131,35 @@ describe('ci-policy fuses', () => {
 
   it('fails a file without a fuse wire', () => {
     const { status, out } = fuses(binary())
+
     expect(out).toContain('FAIL no fuse wire found\n')
     expect(status).toBe(1)
   })
 
   it('fails a file with two fuse wires', () => {
     const { status, out } = fuses(binary(wire(PRODUCTION), wire(PRODUCTION)))
+
     expect(out).toContain('FAIL 2 fuse wires found\n')
     expect(status).toBe(1)
   })
 
   it('fails a wire shorter than eight fuses', () => {
     const { status, out } = fuses(binary(wire('010')))
+
     expect(out).toContain('FAIL wire length 3, expected at least 8\n')
     expect(status).toBe(1)
   })
 
   it('fails a wire of another version', () => {
     const { status, out } = fuses(binary(wire(PRODUCTION, 2)))
+
     expect(out).toContain('FAIL wire version 2, expected 1\n')
     expect(status).toBe(1)
   })
 
   it('fails a missing file', () => {
     const { status, out } = fuses(join(tmpdir(), 'ci-policy-fuses-absent.exe'))
+
     expect(out).toContain('not found: ')
     expect(status).toBe(1)
   })
@@ -159,15 +169,19 @@ describe('ci-policy fuses', () => {
     const { out } = fuses(binary(wire(STOCK.padEnd(names.length, '0'))))
     const printed = [...out.matchAll(/^fuse (\w+): /gm)].map((match) => match[1])
     console.log(`fuse names: ${printed.length} printed, ${names.length} in the fuses package`)
+
     expect(printed).toEqual(names)
   })
 
   it('agrees with the fuses electron-builder.yml asks the packager for', () => {
     const configured = builderFuses()
+
     expect(configured.size).toBeGreaterThan(0)
     expect(fuses(binary(wire(applyFuses(STOCK, configured)))).status).toBe(0)
+
     configured.set('runAsNode', true)
     const { status, out } = fuses(binary(wire(applyFuses(STOCK, configured))))
+
     expect(out).toContain('FAIL fuse RunAsNode: enabled, required disabled\n')
     expect(status).toBe(1)
   })

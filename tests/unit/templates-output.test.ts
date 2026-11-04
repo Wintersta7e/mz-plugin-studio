@@ -28,6 +28,7 @@ describe('save-load template', () => {
       dataType: 'object',
       defaultValue: ''
     })
+
     expect(out).toMatch(/WARNING: Game_Actors is a CONTAINER/i)
     expect(out).toMatch(/will be lost on save reload/i)
   })
@@ -40,6 +41,7 @@ describe('save-load template', () => {
       dataType: 'object',
       defaultValue: ''
     })
+
     expect(out).toMatch(/WARNING: Game_Map is reinitialized/i)
   })
 
@@ -51,6 +53,7 @@ describe('save-load template', () => {
       dataType: 'object',
       defaultValue: ''
     })
+
     expect(out).not.toMatch(/WARNING/i)
   })
 })
@@ -63,6 +66,7 @@ describe('input-handler template (global scene)', () => {
       triggerType: 'isTriggered',
       activeScene: 'all'
     })
+
     // Method name should include the key suffix
     expect(out).toMatch(/updateGlobalKeyInput_Q/)
     // The old colliding name should not appear as a bare call
@@ -76,6 +80,7 @@ describe('input-handler template (global scene)', () => {
       triggerType: 'isTriggered',
       activeScene: 'all'
     })
+
     expect(out).toMatch(/_Scene_Base_update_tab/)
   })
 })
@@ -89,6 +94,7 @@ describe('method-alias template', () => {
       timing: 'replace',
       callOriginal: false
     })
+
     expect(out).toMatch(/WARNING: This replacement does NOT call the original/i)
     expect(out).toMatch(/canMove/)
     expect(out).toMatch(/TODO: return an appropriate value/i)
@@ -102,6 +108,7 @@ describe('method-alias template', () => {
       timing: 'after',
       callOriginal: true
     })
+
     expect(out).not.toMatch(/WARNING/i)
   })
 })
@@ -114,6 +121,7 @@ describe('battle-system damage modifier', () => {
       modifyValue: 1.5,
       condition: 'always'
     })
+
     // New behavior: value >= 0 ? floor : ceil — keeps heals symmetric
     expect(out).toMatch(/value >= 0 \? Math\.floor\(value \* 1\.5\) : Math\.ceil\(value \* 1\.5\)/)
   })
@@ -128,6 +136,7 @@ describe('message-system custom escape code', () => {
       hasParameter: false,
       replacementText: "'replaced'"
     })
+
     // Word boundary prevents \X from matching \XY, \XX, etc.
     expect(out).toMatch(/\/\\\\X\(\?!\[A-Za-z\]\)\/gi/)
   })
@@ -141,6 +150,7 @@ describe('plugin-commands async callback', () => {
       pluginName: 'MyPlugin',
       waitType: 'callback'
     })
+
     // The key/interpreter-based pattern should appear
     expect(out).toMatch(/_LoadDataPendingKey/)
     expect(out).toMatch(/interpreter\[_LoadDataPendingKey\]/)

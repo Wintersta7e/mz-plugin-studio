@@ -113,6 +113,7 @@ describe('dialog default path', () => {
     for (const platform of row.platforms) {
       it(`classifies ${JSON.stringify(row.input)} as ${row.expected} (${platform})`, () => {
         rows++
+
         expect(classifyDialogDefault(row.input, PATH_RULES[platform])).toBe(row.expected)
       })
     }
@@ -121,9 +122,11 @@ describe('dialog default path', () => {
   for (const row of SAVE_ROWS) {
     for (const platform of row.platforms) {
       const verb = row.kept ? 'keeps' : 'drops'
+
       it(`save dialog ${verb} ${JSON.stringify(row.input)} (${platform})`, () => {
         rows++
         const expected = row.kept ? row.input : undefined
+
         expect(checkSaveDefaultPath(row.input, PATH_RULES[platform])).toBe(expected)
       })
     }
@@ -131,6 +134,7 @@ describe('dialog default path', () => {
 
   it('counts its rows and touched no file', () => {
     console.log(`dialog default rows ${rows}`)
+
     expect(rows).toBeGreaterThan(0)
     expect(fsSpies.length).toBeGreaterThan(0)
     expect(fsSpies.filter((spy) => spy.calls() > 0).map((spy) => spy.name)).toEqual([])

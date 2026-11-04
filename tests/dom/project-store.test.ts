@@ -66,6 +66,7 @@ describe('projectStore', () => {
       const project = makeProject()
       useProjectStore.getState().setProject(project)
       const state = useProjectStore.getState()
+
       expect(state.project).toEqual(project)
       expect(state.error).toBeNull()
     })
@@ -85,6 +86,7 @@ describe('projectStore', () => {
       useProjectStore.getState().setProject(null)
 
       const state = useProjectStore.getState()
+
       expect(state.project).toBeNull()
       expect(state.dependencyReport).toBeNull()
       expect(state.conflictReport).toBeNull()
@@ -96,6 +98,7 @@ describe('projectStore', () => {
       useProjectStore.getState().addRecentProject('/tmp/project/a')
       useProjectStore.getState().addRecentProject('/tmp/project/b')
       const state = useProjectStore.getState()
+
       expect(state.recentProjects[0]).toBe('/tmp/project/b')
       expect(state.recentProjects[1]).toBe('/tmp/project/a')
     })
@@ -105,6 +108,7 @@ describe('projectStore', () => {
       useProjectStore.getState().addRecentProject('/tmp/b')
       useProjectStore.getState().addRecentProject('/tmp/a')
       const state = useProjectStore.getState()
+
       expect(state.recentProjects[0]).toBe('/tmp/a')
       expect(state.recentProjects.filter((p) => p === '/tmp/a')).toHaveLength(1)
     })
@@ -113,6 +117,7 @@ describe('projectStore', () => {
       for (let i = 0; i < 12; i++) {
         useProjectStore.getState().addRecentProject(`/tmp/project/${i}`)
       }
+
       expect(useProjectStore.getState().recentProjects).toHaveLength(10)
     })
 
@@ -121,6 +126,7 @@ describe('projectStore', () => {
         useProjectStore.getState().addRecentProject(`/tmp/project/${i}`)
       }
       const recents = useProjectStore.getState().recentProjects
+
       expect(recents[0]).toBe('/tmp/project/10')
       expect(recents.includes('/tmp/project/0')).toBe(false)
     })
@@ -146,6 +152,7 @@ describe('projectStore', () => {
       useProjectStore.getState().clearProject()
 
       const state = useProjectStore.getState()
+
       expect(state.project).toBeNull()
       expect(state.switches).toHaveLength(0)
       expect(state.variables).toHaveLength(0)

@@ -153,6 +153,7 @@ describe('generatePluginsJsonEntry', () => {
       parameters: [makeParam({ name: '__proto__', default: 'a' }), makeParam({ name: 'speed' })]
     })
     const { parameters } = JSON.parse(generatePluginsJsonEntry(plugin))
+
     expect(Object.keys(parameters)).toEqual(['__proto__', 'speed'])
     expect(Object.getOwnPropertyDescriptor(parameters, '__proto__')?.value).toBe('a')
   })
@@ -550,6 +551,7 @@ describe('generatePluginsJsonEntry - COV-20 edge types', () => {
       parameters: [makeParam({ name: 'mode', type: 'combo', default: 'auto' })]
     })
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+
     expect(parsed.parameters.mode).toBe('auto')
   })
 
@@ -558,6 +560,7 @@ describe('generatePluginsJsonEntry - COV-20 edge types', () => {
       parameters: [makeParam({ name: 'token', type: 'hidden', default: 'secret' })]
     })
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+
     expect(parsed.parameters.token).toBe('secret')
   })
 
@@ -566,6 +569,7 @@ describe('generatePluginsJsonEntry - COV-20 edge types', () => {
       parameters: [makeParam({ name: 'bg', type: 'color', default: '#ffffff' })]
     })
     const parsed = JSON.parse(generatePluginsJsonEntry(plugin))
+
     expect(parsed.parameters.bg).toBe('#ffffff')
   })
 })
@@ -624,11 +628,13 @@ describe('exports against the generated header', () => {
   it('the plugins.json entry holds every parameter the header stores, with its value', () => {
     for (const c of generated) {
       const header = headerParameters(c.code, c.fileName)
+
       expect
         .soft(JSON.parse(generatePluginsJsonEntry(c.definition)).parameters, c.id)
         .toEqual(storedValues(header))
     }
     console.log(`plugins.json: ${generated.length} cases`)
+
     expect(generated.length).toBeGreaterThan(0)
   })
 
@@ -639,7 +645,9 @@ describe('exports against the generated header', () => {
     for (const c of generated) {
       const refused = refusedCommandNames(c.definition)
       const header = PluginParser.parsePlugin(c.code, c.fileName)
+
       expect(header.commands.length, c.id).toBe(c.definition.commands.length)
+
       const expected: Record<string, string[]> = {}
       if (header.parameters.length > 0) expected.Parameters = header.parameters.map((p) => p.name)
       header.commands.forEach((cmd, i) => {
@@ -649,12 +657,14 @@ describe('exports against the generated header', () => {
         else expected[`${cmd.name}Args`] = cmd.args.map((a) => a.name)
       })
       const { diagnostics, interfaces } = declarations(generateTypeDeclaration(c.definition))
+
       expect.soft(diagnostics, c.id).toEqual([])
       expect.soft(interfaces, c.id).toEqual(expected)
     }
     console.log(
       `type declaration: ${generated.length} cases, refused command names skipped ${skipped}`
     )
+
     expect(generated.length).toBeGreaterThan(0)
   })
 
@@ -668,6 +678,7 @@ describe('exports against the generated header', () => {
       ]
     })
     const header = headerParameters(generatePlugin(plugin), 'TestPlugin.js')
+
     expect(JSON.parse(generatePluginsJsonEntry(plugin)).parameters).toEqual({
       Group: 'top',
       nested: '5',
@@ -684,6 +695,7 @@ describe('exports against the generated header', () => {
       parameters: [makeParam({ name: 'Move Speed' }), makeParam({ name: 'speed' })]
     })
     const text = generateTypeDeclaration(plugin)
+
     expect(text).toContain('    "Move Speed": string\n')
     expect(text).toContain('    speed: string\n')
     expect(declaredParameters(text)).toEqual({ diagnostics: [], members: ['Move Speed', 'speed'] })
@@ -711,6 +723,7 @@ describe('type declaration namespace', () => {
     ]
     for (const [name, expected] of table) {
       const text = generateTypeDeclaration(createMinimalPlugin({ metaOverrides: { name } }))
+
       expect(declarations(text).diagnostics, name).toEqual([])
       expect(namespaceOf(text), name).toBe(expected)
     }
@@ -726,9 +739,11 @@ describe('type declaration namespace', () => {
     }
     for (const name of words) {
       const text = generateTypeDeclaration(createMinimalPlugin({ metaOverrides: { name } }))
+
       expect.soft(declarations(text).diagnostics, name).toEqual([])
     }
     console.log(`type declaration namespace reserved words: ${words.length}`)
+
     expect(words).toContain('delete')
   })
 
@@ -742,6 +757,7 @@ describe('type declaration namespace', () => {
       ]
     })
     const { content, notes } = typeDeclaration(plugin)
+
     expect(content).toBe(generateTypeDeclaration(plugin))
     expect(declarations(content).interfaces).toHaveProperty('ZeigéArgs')
     expect(notes).toEqual([
@@ -755,6 +771,7 @@ describe('type declaration namespace', () => {
     const text = generateTypeDeclaration(
       createMinimalPlugin({ metaOverrides: { name: 'My-Plugin\nv2' } })
     )
+
     expect(text.split('\n')[0]).toBe('// Type declarations for My-Plugin v2 v1.0.0')
   })
 
@@ -763,6 +780,7 @@ describe('type declaration namespace', () => {
       expect.soft(declarations(generateTypeDeclaration(def)).diagnostics, name).toEqual([])
     }
     console.log(`type declaration namespace: ${GENERATOR_ENTRIES.length} entries`)
+
     expect(GENERATOR_ENTRIES.length).toBeGreaterThan(0)
   })
 })

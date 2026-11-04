@@ -74,6 +74,7 @@ describe('template registry', () => {
     it('registers a template and makes it retrievable by id', () => {
       const tmpl = makeTemplate()
       registerTemplate(tmpl)
+
       expect(hasTemplate('test-template')).toBe(true)
       expect(getTemplate('test-template')).toEqual(tmpl)
     })
@@ -83,13 +84,16 @@ describe('template registry', () => {
       const tmpl2 = makeTemplate({ name: 'Second' })
       registerTemplate(tmpl1)
       registerTemplate(tmpl2)
+
       expect(getTemplate('test-template')!.name).toBe('Second')
     })
 
     it('increments getTemplateCount after each register', () => {
       expect(getTemplateCount()).toBe(0)
+
       registerTemplate(makeTemplate({ id: 'a' }))
       registerTemplate(makeTemplate({ id: 'b' }))
+
       expect(getTemplateCount()).toBe(2)
     })
   })
@@ -97,6 +101,7 @@ describe('template registry', () => {
   describe('unregisterTemplate', () => {
     it('removes a registered template', () => {
       registerTemplate(makeTemplate())
+
       expect(unregisterTemplate('test-template')).toBe(true)
       expect(hasTemplate('test-template')).toBe(false)
     })
@@ -113,6 +118,7 @@ describe('template registry', () => {
       registerTemplate(makeTemplate({ id: 'sc1', category: 'scene-hooks' }))
 
       const methodAliasTemplates = getTemplatesByCategory('method-alias')
+
       expect(methodAliasTemplates).toHaveLength(2)
       expect(methodAliasTemplates.every((t) => t.category === 'method-alias')).toBe(true)
     })
@@ -127,6 +133,7 @@ describe('template registry', () => {
       registerTemplate(makeTemplate({ id: 't1' }))
       registerTemplate(makeTemplate({ id: 't2' }))
       registerTemplate(makeTemplate({ id: 't3' }))
+
       expect(getAllTemplates()).toHaveLength(3)
     })
 
@@ -143,6 +150,7 @@ describe('template registry', () => {
         methodName: 'setup',
         timing: 'before'
       })
+
       expect(result).not.toBeNull()
       expect(result).toContain('Game_Actor.prototype.setup')
       expect(result).toContain('before:')
@@ -150,6 +158,7 @@ describe('template registry', () => {
 
     it('returns null for non-existent template id', () => {
       const result = generateFromTemplate('nonexistent', {})
+
       expect(result).toBeNull()
     })
 
@@ -160,6 +169,7 @@ describe('template registry', () => {
       })
       registerTemplate(strictTemplate)
       const result = generateFromTemplate('strict', {})
+
       expect(result).toBeNull()
     })
 
@@ -172,6 +182,7 @@ describe('template registry', () => {
         // timing omitted — generate() reads from values, will be undefined
         // The template generate() uses '?? after' fallback
       })
+
       expect(result).not.toBeNull()
       expect(result).toContain('after')
     })
@@ -187,6 +198,7 @@ describe('template registry', () => {
         className: 'Game_Actor',
         methodName: 'initialize'
       })
+
       expect(result.valid).toBe(true)
       expect(result.errors).toHaveLength(0)
     })
@@ -196,6 +208,7 @@ describe('template registry', () => {
         className: 'Game_Actor'
         // methodName is required but missing
       })
+
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.includes('Method Name'))).toBe(true)
     })
@@ -205,11 +218,13 @@ describe('template registry', () => {
         className: 'Game_Actor',
         methodName: ''
       })
+
       expect(result.valid).toBe(false)
     })
 
     it('returns invalid for non-existent template id', () => {
       const result = validateTemplateValues('nonexistent', {})
+
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.includes('nonexistent'))).toBe(true)
     })
@@ -229,6 +244,7 @@ describe('template registry', () => {
         className: 'Game_Battler',
         methodName: 'initialize'
       })
+
       expect(invalid.valid).toBe(false)
       expect(invalid.errors.some((e) => e.includes('Only Game_Actor'))).toBe(true)
 
@@ -236,6 +252,7 @@ describe('template registry', () => {
         className: 'Game_Actor',
         methodName: 'initialize'
       })
+
       expect(valid.valid).toBe(true)
     })
   })
@@ -244,6 +261,7 @@ describe('template registry', () => {
     it('returns default values for all fields that have defaults', () => {
       registerTemplate(makeTemplate())
       const defaults = getTemplateDefaults('test-template')
+
       expect(defaults).toEqual({
         className: 'Game_Actor',
         methodName: 'initialize',
@@ -253,6 +271,7 @@ describe('template registry', () => {
 
     it('returns empty object for non-existent template', () => {
       const defaults = getTemplateDefaults('nonexistent')
+
       expect(defaults).toEqual({})
     })
 
@@ -267,6 +286,7 @@ describe('template registry', () => {
         })
       )
       const defaults = getTemplateDefaults('no-defaults')
+
       expect(defaults).toEqual({})
     })
   })

@@ -16,8 +16,11 @@ describe('diff view', () => {
 
   it('shows the original on the left and the modified text on the right, and follows changes', () => {
     const { rerender } = render(<DiffView original="a" modified="b" />)
+
     expect(sides()).toEqual(['a', 'b'])
+
     rerender(<DiffView original="c" modified="d" />)
+
     expect(sides()).toEqual(['c', 'd'])
   })
 })

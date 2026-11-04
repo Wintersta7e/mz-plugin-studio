@@ -26,10 +26,13 @@ describe('refusal text', () => {
   it('only the shared contract spells out the refusal prefix', () => {
     const files = sourceFiles(SRC)
     console.log(`refusal prefix: scanned ${files.length} source files`)
+
     expect(files.length).toBeGreaterThan(50)
+
     const writers = files
       .filter((file) => readFileSync(file, 'utf8').includes(ACCESS_DENIED.trim()))
       .map((file) => relative(SRC, file).split('\\').join('/'))
+
     expect(writers).toEqual(['shared/ipc-types.ts'])
   })
 

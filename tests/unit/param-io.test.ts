@@ -36,6 +36,7 @@ describe('serializeParams', () => {
     const params = [makeParam({ name: 'speed', text: 'Speed', default: 5 })]
     const json = serializeParams(params, 'TestPlugin')
     const parsed = JSON.parse(json)
+
     expect(parsed.version).toBe(1)
     expect(parsed.source).toBe('TestPlugin')
     expect(parsed.parameters).toHaveLength(1)
@@ -54,6 +55,7 @@ describe('serializeParams', () => {
     ]
     const json = serializeParams(params, 'Test')
     const parsed = JSON.parse(json)
+
     expect(parsed.parameters[0].name).toBe('color')
     expect(parsed.parameters[0].desc).toBe('Pick a color')
     expect(parsed.parameters[0].default).toBe('#FF0000')
@@ -62,6 +64,7 @@ describe('serializeParams', () => {
   it('handles empty parameter list', () => {
     const json = serializeParams([], 'Empty')
     const parsed = JSON.parse(json)
+
     expect(parsed.parameters).toEqual([])
     expect(parsed.source).toBe('Empty')
   })
@@ -78,6 +81,7 @@ describe('serializeParams', () => {
     ]
     const json = serializeParams(params, 'Test')
     const parsed = JSON.parse(json)
+
     expect(parsed.parameters[0].min).toBe(0)
     expect(parsed.parameters[0].max).toBe(100)
   })
@@ -92,6 +96,7 @@ describe('deserializeParams', () => {
       parameters: [makeParam({ name: 'x', text: 'X' })]
     })
     const result = loaded(content)
+
     expect(result.parameters).toHaveLength(1)
     expect(result.source).toBe('Test')
   })
@@ -104,6 +109,7 @@ describe('deserializeParams', () => {
       exportedAt: '2026-01-01',
       parameters: [makeParam({ id: originalId, name: 'x' })]
     })
+
     expect(loaded(content).parameters[0].id).not.toBe(originalId)
   })
 
@@ -113,16 +119,19 @@ describe('deserializeParams', () => {
 
   it('refuses a file without a version', () => {
     const content = JSON.stringify({ parameters: [] })
+
     expect(deserializeParams(content)).toEqual({ success: false, reason: 'not-mzparams' })
   })
 
   it('refuses a file from a newer version', () => {
     const content = JSON.stringify({ version: 2, parameters: [makeParam()] })
+
     expect(deserializeParams(content)).toEqual({ success: false, reason: 'newer-version' })
   })
 
   it('refuses a file without a parameters list', () => {
     const content = JSON.stringify({ version: 1 })
+
     expect(deserializeParams(content)).toEqual({ success: false, reason: 'not-mzparams' })
   })
 
@@ -140,6 +149,7 @@ describe('deserializeParams', () => {
       ]
     })
     const result = loaded(content)
+
     expect(result.parameters.map((p) => p.name)).toEqual(['valid', 'alsoValid'])
     expect(result.skipped).toEqual([
       { index: 1, name: null, reason: 'shape' },
@@ -154,6 +164,7 @@ describe('deserializeParams', () => {
       exportedAt: '2026-01-01',
       parameters: [makeParam()]
     })
+
     expect(loaded(content).source).toBe('Unknown')
   })
 
@@ -165,6 +176,7 @@ describe('deserializeParams', () => {
       parameters: [makeParam({ name: 'a' }), makeParam({ name: 'b' }), makeParam({ name: 'c' })]
     })
     const result = loaded(content)
+
     expect(result.parameters).toHaveLength(3)
     expect(result.parameters[0].name).toBe('a')
     expect(result.parameters[2].name).toBe('c')
@@ -179,6 +191,7 @@ describe('deserializeParams', () => {
       ]
     })
     const result = loaded(content)
+
     expect(result.parameters.map((p) => p.name)).toEqual(['good'])
     expect(result.skipped).toEqual([{ index: 1, name: 'bad', reason: 'type' }])
   })
@@ -192,6 +205,7 @@ describe('param-io round-trip', () => {
     params[0].default = '42'
     const serialized = serializeParams(params, 'TestPlugin')
     const result = loaded(serialized)
+
     expect(result.parameters).toHaveLength(1)
     expect(result.parameters[0].name).toBe('testParam')
     expect(result.parameters[0].type).toBe('number')
@@ -224,6 +238,7 @@ describe('deserializeParams with files it was not written for', () => {
 
   it('skips a parameter of an unknown type and lists it', () => {
     const result = loaded(fixtureText('invalid-unknown-type.mzparams'))
+
     expect(result.parameters.map((p) => p.name)).toEqual(['Label'])
     expect(result.skipped).toEqual([{ index: 1, name: 'Shape', reason: 'type' }])
     expect(result.dropped).toEqual([])
@@ -232,6 +247,7 @@ describe('deserializeParams with files it was not written for', () => {
   it('drops an unknown key and a description that is not text, and lists them', () => {
     const withKey = loaded(fixtureText('invalid-unknown-key.mzparams'))
     const wrongType = loaded(fixtureText('invalid-wrong-type-field.mzparams'))
+
     expect(withKey.parameters[0]).not.toHaveProperty('extra')
     expect(withKey.dropped).toEqual([{ param: 'Label', field: 'extra' }])
     expect(wrongType.parameters[0].desc).toBe('')
@@ -241,6 +257,7 @@ describe('deserializeParams with files it was not written for', () => {
   it('names the source Unknown when it is not text', () => {
     for (const source of [7, '', null]) {
       const result = loaded(JSON.stringify({ version: 1, source, parameters: [] }))
+
       expect(result.source).toBe('Unknown')
     }
   })
@@ -252,14 +269,18 @@ describe('deserializeParams with files it was not written for', () => {
       parameters: [{ ...makeParam({ name: 'speed' }), min: null }]
     })
     const result = loaded(content)
+
     expect(result.parameters[0]).not.toHaveProperty('min')
     expect(result.dropped).toEqual([])
+
     const code = generatePlugin({ ...createEmptyPlugin(), parameters: result.parameters })
+
     expect(code).not.toContain('@min')
   })
 
   it('loads every parameter of a file the released version exported, with every field', () => {
     const result = loaded(readFileSync(V160_FIXTURE, 'utf8'))
+
     expect(result.source).toBe(V160_SOURCE)
     expect(result.skipped).toEqual([])
     expect(result.dropped).toEqual([])
@@ -347,9 +368,12 @@ describe('parameter fields read from a .mzparams file', () => {
   it('loads every field the released version could write', () => {
     const cleared = { ...EVERY_FIELD, name: 'Cleared', min: null, max: null, decimals: null }
     const result = loaded(fileOf([EVERY_FIELD, cleared]))
+
     expect(result.skipped).toEqual([])
     expect(result.dropped).toEqual([])
+
     const { min: _min, max: _max, decimals: _decimals, ...noNumbers } = FULL_LOADED
+
     expect(result.parameters.map(({ id: _id, ...p }) => p)).toEqual([
       FULL_LOADED,
       { ...noNumbers, name: 'Cleared' }
@@ -359,6 +383,7 @@ describe('parameter fields read from a .mzparams file', () => {
   it('drops each wrong-typed field and skips what is not a parameter', () => {
     for (const value of NOT_PARAMETERS) {
       const result = loaded(fileOf([value]))
+
       expect(result.parameters).toEqual([])
       expect(result.skipped).toEqual([{ index: 0, name: null, reason: 'shape' }])
     }
@@ -366,13 +391,16 @@ describe('parameter fields read from a .mzparams file', () => {
       const result = loaded(fileOf([{ ...EVERY_FIELD, [field]: value }]))
       if ('skip' in expected) {
         const name = field === 'name' ? null : 'Full'
+
         expect(result.parameters, field).toEqual([])
         expect(result.skipped, field).toEqual([{ index: 0, name, reason: expected.skip }])
+
         continue
       }
       const { id: _id, ...parameter } = result.parameters[0]
       const { [field]: _left, ...without } = FULL_LOADED as Record<string, unknown>
       const reads = 'reads' in expected ? { ...FULL_LOADED, [field]: expected.reads } : without
+
       expect(parameter, `${field}: ${JSON.stringify(value)}`).toEqual(reads)
       expect(result.dropped, field).toEqual(
         expected.dropped.map((f) => ({ param: 'Full', field: f }))
@@ -384,6 +412,7 @@ describe('parameter fields read from a .mzparams file', () => {
       `mzparams fields checked: ${fields.size} and the parameter itself ` +
         `(cases ${WRONG_VALUES.length + NOT_PARAMETERS.length})`
     )
+
     expect(fields.size).toBeGreaterThan(0)
     expect(Object.keys(EVERY_FIELD).filter((key) => !fields.has(key))).toEqual([])
   })
@@ -396,6 +425,7 @@ describe('duplicateParams', () => {
       makeParam({ id: 'id-2', name: 'volume', default: 100 })
     ]
     const duped = duplicateParams(params)
+
     expect(duped).toHaveLength(2)
     expect(duped[0].id).not.toBe('id-1')
     expect(duped[0].name).toBe('speed_copy')
@@ -411,8 +441,11 @@ describe('duplicateParams', () => {
   it('does not accumulate _copy suffixes on re-duplication', () => {
     const params = [makeParam({ name: 'speed_copy' })]
     const duped = duplicateParams(params)
+
     expect(duped[0].name).toBe('speed_copy')
+
     const duped2 = duplicateParams(duped)
+
     expect(duped2[0].name).toBe('speed_copy')
   })
 
@@ -429,6 +462,7 @@ describe('duplicateParams', () => {
       })
     ]
     const duped = duplicateParams(params)
+
     expect(duped[0].text).toBe('Test')
     expect(duped[0].desc).toBe('A description')
     expect(duped[0].type).toBe('number')

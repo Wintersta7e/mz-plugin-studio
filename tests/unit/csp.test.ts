@@ -74,6 +74,7 @@ describe('Content Security Policy module', () => {
     expect(DEV_SERVER_CSP).toBe(DEV_SERVER)
     expect(buildCsp({ devServer: false })).toBe(PRODUCTION_CSP)
     expect(buildCsp({ devServer: true })).toBe(DEV_SERVER_CSP)
+
     for (const policy of [PRODUCTION_CSP, DEV_SERVER_CSP]) {
       expect(policy).toContain("default-src 'none'")
       // No remote source of any kind
@@ -81,7 +82,9 @@ describe('Content Security Policy module', () => {
       expect(policy).not.toContain('http:')
     }
     const workerSrc = PRODUCTION_CSP.split('; ').find((d) => d.startsWith('worker-src'))
+
     expect(workerSrc).toBe('worker-src blob:')
+
     console.log('csp: strings 2')
   })
 
@@ -89,7 +92,9 @@ describe('Content Security Policy module', () => {
     const source = ts.createSourceFile(MODULE, readFileSync(MODULE, 'utf8'), ts.ScriptTarget.Latest)
     const statements = [...source.statements]
     console.log(`csp module: statements checked ${statements.length}`)
+
     expect(statements.length).toBeGreaterThan(0)
+
     for (const statement of statements) {
       const text = statement.getText(source)
       if (ts.isImportDeclaration(statement)) {
@@ -97,6 +102,7 @@ describe('Content Security Policy module', () => {
         if (from === 'electron') expect(text, 'a runtime electron import').toMatch(/^import type /)
         continue
       }
+
       // Declarations only: no statement that runs on import
       expect(
         ts.isFunctionDeclaration(statement) ||
@@ -114,11 +120,13 @@ describe('Content Security Policy module', () => {
       .filter((file) => readFileSync(file, 'utf8').includes(POLICY_MARK))
       .map((file) => relative(ROOT, file).split('\\').join('/'))
     console.log(`csp: files scanned ${files.length}, holders ${holders.length}`)
+
     expect(files.length).toBeGreaterThan(0)
     expect(holders).toEqual(['src/main/csp.ts'])
 
     const imports = [...readFileSync(INDEX, 'utf8').matchAll(/import \{([^}]*)\} from '\.\/csp'/g)]
     const names = imports.flatMap((match) => match[1].split(',').map((name) => name.trim()))
+
     expect(names.sort()).toEqual(['DEV_SERVER_CSP', 'PRODUCTION_CSP', 'installFileRequestFilter'])
   })
 })
@@ -136,10 +144,13 @@ describe('file request filter', () => {
   it('cancels every file request the predicate rejects', () => {
     const { session, recorded } = fakeSession()
     installFileRequestFilter(session, '/app/out/renderer')
+
     expect(recorded.filter).toEqual({ urls: ['file://*/*'] })
+
     const answers: { cancel: boolean }[] = []
     recorded.listener?.({ url: 'file:///app/out/renderer/index.html' }, (r) => answers.push(r))
     recorded.listener?.({ url: 'file:///etc/passwd' }, (r) => answers.push(r))
+
     expect(answers).toEqual([{ cancel: false }, { cancel: true }])
   })
 })

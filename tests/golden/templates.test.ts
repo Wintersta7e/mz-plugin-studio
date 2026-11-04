@@ -14,12 +14,14 @@ const ids = templateIds()
 
 describe('template goldens', () => {
   beforeAll(freezeTime)
+
   afterAll(restoreTime)
 
   for (const id of ids) {
     it(`${id}: all cases`, async () => {
       await expect(renderTemplateCases(id)).toMatchFileSnapshot(`__golden__/templates/${id}.js`)
     })
+
     it(`${id}: type-violating cases`, async () => {
       expect.hasAssertions()
       await expect(renderCases(id, typeViolatingTemplateCases(id))).toMatchFileSnapshot(
@@ -55,6 +57,7 @@ describe('template goldens', () => {
       `template cases: templates ${ids.length}, cases ${total} (base ${counts.base}, ` +
         `variants ${counts.variants}, hostile ${counts.hostile}; rejected ${counts.rejected})`
     )
+
     expect(ids.length).toBeGreaterThan(0)
     expect(rejectedBases).toEqual([])
     expect(problems).toEqual([])

@@ -39,12 +39,15 @@ describe('plugin browser', () => {
     await waitFor(() => expect(usePluginStore.getState().plugin.importedFrom).toBe(FILE))
     const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
     setItem.mockRestore()
+
     expect(writes).toHaveLength(1)
+
     const path = join(project, 'js', 'plugins', FILE)
     const sha256 = createHash('sha256')
       .update(await readFile(path))
       .digest('hex')
     const { plugin, baseByPluginId } = usePluginStore.getState()
+
     expect(baseByPluginId).toEqual({ [plugin.id]: { path, sha256 } })
   })
 
@@ -62,6 +65,7 @@ describe('plugin browser', () => {
     fireEvent.click(await screen.findByTitle(name))
     await waitFor(() => expect(useToastStore.getState().toasts).toHaveLength(1))
     const [toast] = useToastStore.getState().toasts
+
     expect(toast).toMatchObject({ type: 'error', duration: 10_000 })
     expect(toast.message).toMatch(/^Failed to load plugin "NotUtf8\.js": NotUtf8\.js is not UTF-8/)
     expect(toast.message).toContain('convert it to UTF-8')
@@ -74,6 +78,7 @@ describe('plugin browser', () => {
     await screen.findByRole('button', { name: `Close ${FILE.replace(/\.js$/, '')}` })
     const nested = container.querySelectorAll('button button')
     console.log(`nested buttons ${nested.length}`)
+
     expect(nested).toHaveLength(0)
   })
 
@@ -86,6 +91,7 @@ describe('plugin browser', () => {
     fireEvent.click(screen.getByRole('button', { name: `Close ${FILE.replace(/\.js$/, '')}` }))
     await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
     const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+
     expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
     expect(options).not.toHaveProperty('defaultId')
     expect(options).not.toHaveProperty('cancelId')
@@ -111,9 +117,12 @@ describe('plugin browser', () => {
     await listAlphaAndBeta()
     const user = userEvent.setup()
     render(<PluginBrowser onClose={() => {}} />)
+
     expect(await screen.findByRole('button', { name: 'Alpha' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Beta' })).toBeInTheDocument()
+
     await user.type(screen.getByPlaceholderText('Search plugins…'), 'be')
+
     expect(screen.queryByRole('button', { name: 'Alpha' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Beta' })).toBeInTheDocument()
   })
@@ -123,6 +132,7 @@ describe('plugin browser', () => {
     const user = userEvent.setup()
     render(<PluginBrowser onClose={() => {}} />)
     await user.click(await screen.findByRole('button', { name: 'Alpha' }))
+
     expect(await screen.findByRole('button', { name: 'Close Alpha' })).toBeInTheDocument()
     expect(window.api.plugin.load).toHaveBeenCalledExactlyOnceWith(project, 'Alpha.js')
     expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('aria-current', 'page')
@@ -135,8 +145,11 @@ describe('plugin browser', () => {
     render(<PluginBrowser onClose={() => {}} />)
     await user.click(await screen.findByRole('button', { name: 'Alpha' }))
     await screen.findByRole('button', { name: 'Close Alpha' })
+
     expect(screen.queryByLabelText('unsaved changes')).not.toBeInTheDocument()
+
     act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+
     expect(within(row('Alpha')).getByLabelText('unsaved changes')).toBeInTheDocument()
     expect(screen.getAllByLabelText('unsaved changes')).toHaveLength(1)
   })
@@ -146,9 +159,12 @@ describe('plugin browser', () => {
     const user = userEvent.setup()
     render(<PluginBrowser onClose={() => {}} />)
     await screen.findByRole('button', { name: 'Alpha' })
+
     expect(window.api.plugin.list).toHaveBeenCalledTimes(1)
+
     await user.click(screen.getByRole('button', { name: 'Refresh plugin list' }))
     await waitFor(() => expect(window.api.plugin.scanHeaders).toHaveBeenCalledWith(project))
+
     expect(window.api.plugin.list).toHaveBeenCalledTimes(2)
     expect(window.api.plugin.list).toHaveBeenLastCalledWith(project)
   })
@@ -170,6 +186,7 @@ describe('plugin browser', () => {
     await act(() => useProjectStore.getState().scanDependencies())
     render(<PluginBrowser onClose={() => {}} />)
     await screen.findByTitle(/^"Beta" requires "Gamma"/)
+
     expect(within(row('Beta')).getByLabelText('has errors')).toBeInTheDocument()
     expect(screen.getAllByLabelText('has errors')).toHaveLength(1)
   })
@@ -180,6 +197,7 @@ describe('plugin browser', () => {
     render(<PluginBrowser onClose={onClose} />)
     await screen.findByTitle(FILE)
     await user.click(screen.getByRole('button', { name: 'Close plugin browser' }))
+
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

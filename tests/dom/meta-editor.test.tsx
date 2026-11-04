@@ -39,13 +39,16 @@ describe('meta editor help text', () => {
     const confirm = vi.spyOn(window, 'confirm')
     const message = generateAnswering(0)
     await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+
     expect(message).toHaveBeenCalledWith({
       type: 'question',
       title: 'Replace help text',
       message: 'This will replace the existing help text. Continue?',
       buttons: ['Cancel', 'Replace']
     })
+
     await act(async () => {})
+
     expect(usePluginStore.getState().plugin.meta.help).toBe(HELP)
     expect(confirm).not.toHaveBeenCalled()
   })
@@ -75,10 +78,13 @@ describe('meta editor plugin name', () => {
     const { rerender } = render(<MetaEditor />)
     const notice =
       'Loaded from Loaded.js: the plugin name is the file name, so it cannot be changed here.'
+
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('title', notice)
+
     act(() => useUIStore.getState().setRawModeForPlugin(plugin.id, false))
     rerender(<MetaEditor />)
+
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('title', notice)
   })
@@ -88,16 +94,22 @@ describe('meta editor plugin name', () => {
       usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), importedFrom: 'Loaded.js' })
     )
     render(<MetaEditor />)
+
     expect(screen.getByText(NAME_NOTICE)).toBeInTheDocument()
   })
 
   it('is editable for a plugin made in the app', () => {
     act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
     render(<MetaEditor />)
+
     expect(screen.queryByText(NAME_NOTICE)).toBeNull()
+
     const name = screen.getByLabelText('Plugin Name')
+
     expect(name).not.toHaveAttribute('readonly')
+
     fireEvent.change(name, { target: { value: 'Renamed' } })
+
     expect(usePluginStore.getState().plugin.meta.name).toBe('Renamed')
   })
 })
@@ -138,7 +150,9 @@ describe('meta editor fields in the plugin code', () => {
     await retype(user, screen.getByLabelText('Version'), '2.1.0')
     await retype(user, screen.getByLabelText('Author'), 'Sample Author')
     await retype(user, screen.getByLabelText('URL'), 'https://example.com/alpha')
+
     expect(screen.getByLabelText('Version')).toHaveValue('2.1.0')
+
     await waitFor(() => {
       expect(preview()).toContain(' * @author Sample Author\n')
       expect(preview()).toContain(' * @url https://example.com/alpha\n')
@@ -173,20 +187,25 @@ describe('meta editor fields in the plugin code', () => {
   ])('keeps an Enter typed at the end of %s', async (label, tag) => {
     const user = renderWithPreview()
     await user.type(screen.getByLabelText(label), 'Alpha{Enter}Beta')
+
     expect(screen.getByLabelText(label)).toHaveValue('Alpha\nBeta')
+
     await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
   })
 
   it('shows the dependencies of the plugin opened after an Enter was typed', async () => {
     const user = renderWithPreview()
     await user.type(screen.getByLabelText('Dependencies (one per line)'), 'Alpha{Enter}')
+
     expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Alpha\n')
+
     const beta = createEmptyPlugin()
     act(() =>
       usePluginStore
         .getState()
         .openPlugin({ ...beta, meta: { ...beta.meta, dependencies: ['Beta'] } })
     )
+
     expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Beta')
   })
 })

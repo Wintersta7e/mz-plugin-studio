@@ -64,10 +64,12 @@ describe('pluginStore multi-plugin state', () => {
     expect(usePluginStore.getState().isDirty).toBe(true)
 
     usePluginStore.getState().setActivePlugin(beta.id)
+
     expect(usePluginStore.getState().plugin.id).toBe(beta.id)
     expect(usePluginStore.getState().isDirty).toBe(false)
 
     usePluginStore.getState().setActivePlugin(alpha.id)
+
     expect(usePluginStore.getState().plugin.meta.name).toBe('Alpha Updated')
     expect(usePluginStore.getState().isDirty).toBe(true)
   })
@@ -89,13 +91,16 @@ describe('pluginStore multi-plugin state', () => {
     expect(usePluginStore.getState().savedPath).toBe('/tmp/alpha.js')
 
     usePluginStore.getState().openPlugin(beta)
+
     expect(usePluginStore.getState().savedPath).toBeNull()
 
     recordSave(beta.id, '/tmp/beta.js')
     usePluginStore.getState().setActivePlugin(alpha.id)
+
     expect(usePluginStore.getState().savedPath).toBe('/tmp/alpha.js')
 
     usePluginStore.getState().setActivePlugin(beta.id)
+
     expect(usePluginStore.getState().savedPath).toBe('/tmp/beta.js')
     expect(usePluginStore.getState().baseByPluginId).toEqual({
       [alpha.id]: baseOf('/tmp/alpha.js'),
@@ -192,6 +197,7 @@ describe('pluginStore CRUD operations', () => {
     it('addParameter appends and marks dirty', () => {
       usePluginStore.getState().addParameter(makeParam('p1', 'alpha'))
       const state = usePluginStore.getState()
+
       expect(state.plugin.parameters).toHaveLength(1)
       expect(state.plugin.parameters[0].name).toBe('alpha')
       expect(state.isDirty).toBe(true)
@@ -201,6 +207,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p1', 'alpha'))
       usePluginStore.getState().updateParameter('p1', { name: 'updated', type: 'number' })
       const param = usePluginStore.getState().plugin.parameters[0]
+
       expect(param.name).toBe('updated')
       expect(param.type).toBe('number')
     })
@@ -210,6 +217,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p2', 'remove'))
       usePluginStore.getState().removeParameter('p2')
       const params = usePluginStore.getState().plugin.parameters
+
       expect(params).toHaveLength(1)
       expect(params[0].id).toBe('p1')
     })
@@ -218,12 +226,14 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p1', 'keep'))
       const before = usePluginStore.getState().plugin.parameters.length
       usePluginStore.getState().removeParameters([])
+
       expect(usePluginStore.getState().plugin.parameters).toHaveLength(before)
     })
 
     it('removeParameters no-op when ids do not match anything', () => {
       usePluginStore.getState().addParameter(makeParam('p1', 'keep'))
       usePluginStore.getState().removeParameters(['nonexistent'])
+
       expect(usePluginStore.getState().plugin.parameters).toHaveLength(1)
     })
 
@@ -233,6 +243,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p3', 'c'))
       usePluginStore.getState().removeParameters(['p1', 'p3'])
       const params = usePluginStore.getState().plugin.parameters
+
       expect(params).toHaveLength(1)
       expect(params[0].id).toBe('p2')
     })
@@ -243,6 +254,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p3', 'third'))
       usePluginStore.getState().reorderParameters(0, 2)
       const params = usePluginStore.getState().plugin.parameters
+
       expect(params[0].id).toBe('p2')
       expect(params[1].id).toBe('p3')
       expect(params[2].id).toBe('p1')
@@ -253,6 +265,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p2', 'b'))
       const before = [...usePluginStore.getState().plugin.parameters]
       usePluginStore.getState().reorderParameters(99, 0)
+
       expect(usePluginStore.getState().plugin.parameters).toEqual(before)
     })
 
@@ -261,6 +274,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addParameter(makeParam('p2', 'b'))
       const before = [...usePluginStore.getState().plugin.parameters]
       usePluginStore.getState().reorderParameters(0, 99)
+
       expect(usePluginStore.getState().plugin.parameters).toEqual(before)
     })
   })
@@ -269,6 +283,7 @@ describe('pluginStore CRUD operations', () => {
     it('addCommand appends and marks dirty', () => {
       usePluginStore.getState().addCommand(makeCommand('c1', 'DoThing'))
       const state = usePluginStore.getState()
+
       expect(state.plugin.commands).toHaveLength(1)
       expect(state.plugin.commands[0].name).toBe('DoThing')
       expect(state.isDirty).toBe(true)
@@ -278,6 +293,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addCommand(makeCommand('c1', 'DoThing'))
       usePluginStore.getState().updateCommand('c1', { name: 'Updated', desc: 'new desc' })
       const cmd = usePluginStore.getState().plugin.commands[0]
+
       expect(cmd.name).toBe('Updated')
       expect(cmd.desc).toBe('new desc')
     })
@@ -287,6 +303,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addCommand(makeCommand('c2', 'Remove'))
       usePluginStore.getState().removeCommand('c2')
       const cmds = usePluginStore.getState().plugin.commands
+
       expect(cmds).toHaveLength(1)
       expect(cmds[0].id).toBe('c1')
     })
@@ -295,6 +312,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addCommand(makeCommand('c1', 'DoThing'))
       usePluginStore.getState().addCommandArg('c1', makeParam('a1', 'target'))
       const args = usePluginStore.getState().plugin.commands[0].args
+
       expect(args).toHaveLength(1)
       expect(args[0].name).toBe('target')
     })
@@ -304,6 +322,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addCommandArg('c1', makeParam('a1', 'target'))
       usePluginStore.getState().updateCommandArg('c1', 'a1', { name: 'updated', type: 'number' })
       const arg = usePluginStore.getState().plugin.commands[0].args[0]
+
       expect(arg.name).toBe('updated')
       expect(arg.type).toBe('number')
     })
@@ -314,6 +333,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addCommandArg('c1', makeParam('a2', 'remove'))
       usePluginStore.getState().removeCommandArg('c1', 'a2')
       const args = usePluginStore.getState().plugin.commands[0].args
+
       expect(args).toHaveLength(1)
       expect(args[0].id).toBe('a1')
     })
@@ -323,6 +343,7 @@ describe('pluginStore CRUD operations', () => {
     it('addStruct appends and marks dirty', () => {
       usePluginStore.getState().addStruct(makeStruct('s1', 'Position'))
       const state = usePluginStore.getState()
+
       expect(state.plugin.structs).toHaveLength(1)
       expect(state.plugin.structs[0].name).toBe('Position')
       expect(state.isDirty).toBe(true)
@@ -331,6 +352,7 @@ describe('pluginStore CRUD operations', () => {
     it('updateStruct mutates the matching struct', () => {
       usePluginStore.getState().addStruct(makeStruct('s1', 'Position'))
       usePluginStore.getState().updateStruct('s1', { name: 'Location' })
+
       expect(usePluginStore.getState().plugin.structs[0].name).toBe('Location')
     })
 
@@ -339,6 +361,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addStruct(makeStruct('s2', 'Remove'))
       usePluginStore.getState().removeStruct('s2')
       const structs = usePluginStore.getState().plugin.structs
+
       expect(structs).toHaveLength(1)
       expect(structs[0].id).toBe('s1')
     })
@@ -347,6 +370,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addStruct(makeStruct('s1', 'Position'))
       usePluginStore.getState().addStructParam('s1', makeParam('sp1', 'x'))
       const params = usePluginStore.getState().plugin.structs[0].parameters
+
       expect(params).toHaveLength(1)
       expect(params[0].name).toBe('x')
     })
@@ -356,6 +380,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addStructParam('s1', makeParam('sp1', 'x'))
       usePluginStore.getState().updateStructParam('s1', 'sp1', { name: 'coordX', type: 'number' })
       const param = usePluginStore.getState().plugin.structs[0].parameters[0]
+
       expect(param.name).toBe('coordX')
       expect(param.type).toBe('number')
     })
@@ -366,6 +391,7 @@ describe('pluginStore CRUD operations', () => {
       usePluginStore.getState().addStructParam('s1', makeParam('sp2', 'remove'))
       usePluginStore.getState().removeStructParam('s1', 'sp2')
       const params = usePluginStore.getState().plugin.structs[0].parameters
+
       expect(params).toHaveLength(1)
       expect(params[0].id).toBe('sp1')
     })
@@ -375,6 +401,7 @@ describe('pluginStore CRUD operations', () => {
     it('setCustomCode updates customCode and marks dirty', () => {
       usePluginStore.getState().setCustomCode('// my custom code')
       const state = usePluginStore.getState()
+
       expect(state.plugin.customCode).toBe('// my custom code')
       expect(state.isDirty).toBe(true)
     })
@@ -382,9 +409,12 @@ describe('pluginStore CRUD operations', () => {
     it('updateMeta updates meta fields and syncs to openPlugins', () => {
       usePluginStore.getState().updateMeta({ version: '2.0.0', author: 'NewAuthor' })
       const state = usePluginStore.getState()
+
       expect(state.plugin.meta.version).toBe('2.0.0')
       expect(state.plugin.meta.author).toBe('NewAuthor')
+
       const inOpenPlugins = state.openPlugins.find((p) => p.id === state.plugin.id)
+
       expect(inOpenPlugins?.meta.version).toBe('2.0.0')
     })
   })
@@ -412,6 +442,7 @@ describe('pluginStore baseline of an imported plugin', () => {
   it('records the definition an imported plugin was opened with, once', () => {
     const alpha = importedPlugin('Alpha')
     usePluginStore.getState().openPlugin(alpha)
+
     expect(baselines()).toEqual({ [alpha.id]: toBaseline(alpha) })
     expect(baselines()[alpha.id]).not.toHaveProperty('rawSource')
     expect(baselines()[alpha.id]).not.toHaveProperty('codeBody')
@@ -419,6 +450,7 @@ describe('pluginStore baseline of an imported plugin', () => {
 
     usePluginStore.getState().updateMeta({ description: 'Edited' })
     usePluginStore.getState().openPlugin(usePluginStore.getState().plugin)
+
     expect(baselines()).toEqual({ [alpha.id]: toBaseline(alpha) })
   })
 
@@ -426,6 +458,7 @@ describe('pluginStore baseline of an imported plugin', () => {
     const { rawSource: _rawSource, ...missing } = importedPlugin('Beta')
     usePluginStore.getState().openPlugin(createPlugin('Alpha'))
     usePluginStore.getState().openPlugin(missing)
+
     expect(baselines()).toEqual({})
   })
 
@@ -435,6 +468,7 @@ describe('pluginStore baseline of an imported plugin', () => {
     usePluginStore.getState().openPlugin(alpha)
     usePluginStore.getState().openPlugin(beta)
     usePluginStore.getState().closePlugin(alpha.id)
+
     expect(Object.keys(baselines())).toEqual([beta.id])
   })
 
@@ -442,12 +476,15 @@ describe('pluginStore baseline of an imported plugin', () => {
     const alpha = importedPlugin('Alpha')
     usePluginStore.getState().openPlugin(alpha)
     const saved = JSON.parse(localStorage.getItem('mz-plugin-studio-plugin') ?? '{}').state
+
     expect(saved.schemaVersion).toBe(3)
+
     for (const def of [saved.plugin, saved.openPlugins[0]]) {
       expect(def.rawSource).toBe(alpha.rawSource)
       expect(def.importedFrom).toBe('Alpha.js')
       expect(def).not.toHaveProperty('codeBody')
     }
+
     expect(saved.baselineByPluginId).toEqual({
       [alpha.id]: JSON.parse(JSON.stringify(toBaseline(alpha)))
     })
@@ -499,6 +536,7 @@ describe('pluginStore file text of an imported plugin', () => {
     it('keeping or replacing the tab records the file it was read from', () => {
       for (const keepTab of [false, true]) {
         reattach(true, keepTab)
+
         expect(usePluginStore.getState().baseByPluginId).toEqual({ [missing.id]: base })
       }
     })
@@ -508,10 +546,13 @@ describe('pluginStore file text of an imported plugin', () => {
         reattach(active, true)
         const state = usePluginStore.getState()
         const tab = state.openPlugins.find((p) => p.id === missing.id)
+
         expect(tab?.rawSource).toBe(text)
         expect(tab?.meta.description).toBe('Edited')
         expect(state.plugin.id).toBe(active ? missing.id : other.id)
+
         if (active) expect(state.plugin.rawSource).toBe(text)
+
         expect(state.dirtyByPluginId[missing.id]).toBe(true)
         expect(state.baselineByPluginId[missing.id]).toEqual(toBaseline(fromFile))
       }
@@ -521,6 +562,7 @@ describe('pluginStore file text of an imported plugin', () => {
       for (const active of [false, true]) {
         reattach(active, false)
         const state = usePluginStore.getState()
+
         expect(state.openPlugins.find((p) => p.id === missing.id)).toEqual(fromFile)
         expect(state.plugin).toEqual(active ? fromFile : other)
         expect(state.isDirty).toBe(false)
@@ -543,6 +585,7 @@ describe('pluginStore file text of an imported plugin', () => {
       ])
 
     const state = usePluginStore.getState()
+
     expect(state.plugin.rawSource).toBe('written text')
     expect(state.plugin.meta.description).toBe('Edited after the save started')
     expect(state.openPlugins[0].rawSource).toBe('written text')
@@ -565,6 +608,7 @@ describe('pluginStore file text of an imported plugin', () => {
         { id: created.id, saved, path: '/p/Created.js', sha256: 'cc', written: 'text' }
       ])
     const state = usePluginStore.getState()
+
     expect(state.plugin.rawSource).toBeUndefined()
     expect(state.openPlugins[0].rawSource).toBeUndefined()
     expect(state.baselineByPluginId).toEqual({})
@@ -593,6 +637,7 @@ describe('pluginStore file text of an imported plugin', () => {
     unsubscribe()
 
     const state = usePluginStore.getState()
+
     expect(updates).toBe(1)
     expect(state.dirtyByPluginId).toEqual({ [gamma.id]: true })
     expect(state.savedPathsByPluginId).toEqual({
@@ -611,10 +656,13 @@ describe('pluginStore file text of an imported plugin', () => {
   it('openPlugin records the file a tab was read from; closing the tab drops it', () => {
     const alpha = importedPlugin('Alpha')
     usePluginStore.getState().openPlugin(alpha, { path: '/p/Alpha.js', sha256: 'aa' })
+
     expect(usePluginStore.getState().baseByPluginId).toEqual({
       [alpha.id]: { path: '/p/Alpha.js', sha256: 'aa' }
     })
+
     usePluginStore.getState().closePlugin(alpha.id)
+
     expect(usePluginStore.getState().baseByPluginId).toEqual({})
   })
 })
@@ -662,6 +710,7 @@ describe('pluginStore type edits on an imported plugin', () => {
     const entry = imported.structs.find((s) => s.name === 'Entry')!
 
     store.updateParameter(id('rate'), { desc: 'Edited' })
+
     expect(usePluginStore.getState().plugin.parameters[0].rawType).toBe('Number')
 
     store.updateParameter(id('rate'), { type: 'string' })
@@ -676,6 +725,7 @@ describe('pluginStore type edits on an imported plugin', () => {
     )
     const types = (params: PluginParameter[]) =>
       params.map((p) => [p.name, p.rawType ?? p.type, p.structType])
+
     expect(types(saved.parameters)).toEqual([
       ['rate', 'string', undefined],
       ['list', 'struct<Other>[]', 'Other']

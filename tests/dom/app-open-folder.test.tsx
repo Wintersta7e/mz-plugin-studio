@@ -27,6 +27,7 @@ describe('open project', { timeout: 30_000 }, () => {
     window.api = createFakeApi()
     render(<App />)
     await userEvent.click(screen.getByRole('button', { name: 'Open Project' }))
+
     expect(window.api.dialog.openFolder).toHaveBeenCalledExactlyOnceWith({ defaultPath: expected })
   })
 })

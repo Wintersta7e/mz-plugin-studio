@@ -122,6 +122,7 @@ describe('reloading an imported plugin from the project', () => {
     })
     const stores = await startApp(api, true)
     const tab = (): PluginDefinition => stores.usePluginStore.getState().plugin
+
     expect(tab().rawSource).toBeUndefined()
     // Saved by v1.6.0, so the tab knows its file but not what it held
     expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
@@ -131,10 +132,13 @@ describe('reloading an imported plugin from the project', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
     await waitFor(() => expect(tab().rawSource).toBe(TEXT))
+
     expect(api.dialog.message).toHaveBeenCalledWith(QUESTION)
     expect(api.plugin.readRaw).toHaveBeenCalledWith(PROJECT, FILE)
     expect(parsed).not.toBeNull()
+
     const loaded = parsed as unknown as PluginDefinition
+
     expect(stores.usePluginStore.getState().baselineByPluginId[TAB]).toEqual(
       toBaseline({
         ...loaded,
@@ -152,6 +156,7 @@ describe('reloading an imported plugin from the project', () => {
     expect(stores.usePluginStore.getState().openPlugins.find((p) => p.id === TAB)?.rawSource).toBe(
       TEXT
     )
+
     await waitFor(() => expect(screen.queryByRole('button', { name: RELOAD })).toBeNull())
   }, 60_000)
 
@@ -160,14 +165,19 @@ describe('reloading an imported plugin from the project', () => {
     const stores = await startApp(api, true)
     fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
     await waitFor(() => expect(stores.usePluginStore.getState().plugin.rawSource).toBe(TEXT))
+
     expect(api.dialog.message).toHaveBeenCalledWith(QUESTION)
+
     const state = stores.usePluginStore.getState()
+
     expect(state.plugin.id).toBe(TAB)
     expect(state.plugin.importedFrom).toBe(FILE)
     expect(state.plugin.meta.description).not.toBe('Edited before reload')
     expect(state.isDirty).toBe(false)
     expect(state.dirtyByPluginId[TAB]).toBeUndefined()
+
     const { prepareSave } = await import('../../src/renderer/src/lib/raw-mode')
+
     expect(await prepareSave(TAB, { ask: false })).toMatchObject({ status: 'ready', code: TEXT })
   }, 60_000)
 
@@ -177,6 +187,7 @@ describe('reloading an imported plugin from the project', () => {
     fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
     await waitFor(() => expect(api.dialog.message).toHaveBeenCalledTimes(1))
     await act(async () => {})
+
     expect(api.plugin.readRaw).not.toHaveBeenCalled()
     expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
   }, 60_000)
@@ -203,9 +214,12 @@ describe('reloading an imported plugin from the project', () => {
         })
       )
     )
+
     expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
+
     // The app's own copy of the logger, imported afresh with it
     const { default: log } = await import('electron-log/renderer')
+
     expect(log.error).toHaveBeenCalledWith('[reload]', PATH, refusal)
     expect(stores.usePluginStore.getState().baseByPluginId[TAB]).toEqual({
       path: PATH,
@@ -217,6 +231,7 @@ describe('reloading an imported plugin from the project', () => {
     const api = createFakeApi()
     await startApp(api, false)
     const button = await screen.findByRole('button', { name: RELOAD })
+
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('title', 'Open the project first.')
   }, 60_000)
@@ -232,6 +247,7 @@ describe('reloading a tab with no unsaved edits', () => {
       const text = readFileSync(fixturePath('js', 'plugins', `${name}.js`), 'utf-8')
       const api = apiReading(text)
       const { stores, rawMode } = await startStores(api)
+
       expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
 
       expect(await rawMode.reloadFromProject(id)).toBe(true)

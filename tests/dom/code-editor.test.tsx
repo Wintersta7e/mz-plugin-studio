@@ -44,6 +44,7 @@ async function insertSoundEffect(user: UserEvent): Promise<void> {
   await user.click(screen.getByRole('button', { name: /^Sound Effect Player/ }))
   await user.type(screen.getByLabelText(/SE Filename/), 'Cursor9')
   await user.click(screen.getByRole('button', { name: /Insert Code/ }))
+
   expect(screen.queryByText('Code Templates')).not.toBeInTheDocument()
 }
 
@@ -57,12 +58,14 @@ describe('code tab', () => {
   it('fills an empty editor with the inserted template', async () => {
     const user = renderTab()
     await insertSoundEffect(user)
+
     expect(editor()).toHaveValue(SE_CODE)
   })
 
   it('appends the template after a blank line to code already there', async () => {
     const user = renderTab('const a = 1;')
     await insertSoundEffect(user)
+
     expect(editor()).toHaveValue('const a = 1;\n\n' + SE_CODE)
   })
 
@@ -75,13 +78,17 @@ describe('code tab', () => {
       { keys: '[/MouseLeft]' }
     ])
     await insertSoundEffect(user)
+
     expect(editor()).toHaveValue('const a = 1;\n' + SE_CODE)
   })
 
   it('registers one completion provider while the tab is shown', () => {
     const { unmount } = render(<CodeEditor />)
+
     expect(monacoStub.providers).toEqual([{ language: 'javascript', disposed: false }])
+
     unmount()
+
     expect(monacoStub.providers).toEqual([{ language: 'javascript', disposed: true }])
   })
 })

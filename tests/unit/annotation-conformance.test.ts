@@ -33,6 +33,7 @@ const rulesOf = (code: string): AnnotationRule[] => [
 /** `code` with `from` replaced once, failing when `from` is not there. */
 function changed(code: string, from: string, to: string): string {
   expect(code).toContain(from)
+
   return code.replace(from, to)
 }
 
@@ -44,7 +45,9 @@ const BROKEN: Record<AnnotationRule, () => string> = {
   'type-known': () => changed(fixtureCode, ' * @type number', ' * @type numbr'),
   'struct-block': () => {
     const block = STRUCT_BLOCK.exec(fixtureCode)
+
     expect(block).not.toBeNull()
+
     return `${fixtureCode}\n${block![0]}\n`
   },
   parent: () => changed(fixtureCode, ' * @type string\n', ' * @type string\n * @parent Nope\n'),
@@ -76,6 +79,7 @@ const cases = conformanceCases()
 describe('every generated and raw-mode plugin header', () => {
   for (const c of cases) {
     const listed = KNOWN_NONCONFORMING[c.id] ?? []
+
     it(`${c.id}${listed.length > 0 ? ' (fails today)' : ''}`, () => {
       const findings = checkAnnotations(c.code, scopeFor(c))
       for (const rule of ANNOTATION_RULES) {
@@ -109,9 +113,12 @@ describe('every generated and raw-mode plugin header', () => {
         `${cases.filter((c) => c.hostile === true).length} and raw-mode ` +
         `${cases.filter((c) => c.kind === 'raw-mode').length}, refused command names ${refused}`
     )
+
     expect(cases.length).toBeGreaterThan(0)
     expect(blocks.length).toBeGreaterThan(0)
+
     const ids = new Set(cases.map((c) => c.id))
+
     expect(Object.keys(KNOWN_NONCONFORMING).filter((id) => !ids.has(id))).toEqual([])
   })
 })
@@ -123,6 +130,7 @@ describe('a help line starting with "@"', () => {
     const help = PluginParser.parsePlugin(code, `${def.meta.name}.js`).meta.help
     const again = generatePlugin({ ...def, meta: { ...def.meta, help } })
     const zwsp = String.fromCodePoint(0x200b)
+
     expect(code).toContain(` * ${zwsp}@param injected\n`)
     expect(code).not.toContain(zwsp + zwsp)
     expect(again).toBe(code)

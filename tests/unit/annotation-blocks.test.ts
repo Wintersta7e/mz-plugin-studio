@@ -78,6 +78,7 @@ describe('findAnnotationBlocks', () => {
   it('each block runs from its opener to the first closing marker after it', () => {
     const source = '﻿/*:\n * @plugindesc A\n */\r\n\r\n/*:ja\r\n * x\r\n */\r\n' + CODE
     const blocks = findAnnotationBlocks(source)
+
     expect(blocks.map((b) => source.slice(b.start, b.end))).toEqual([
       '/*:\n * @plugindesc A\n */',
       '/*:ja\r\n * x\r\n */'
@@ -90,12 +91,14 @@ describe('findAnnotationBlocks', () => {
     const crlf = lf.replace(/\n/g, '\r\n')
     const slices = (text: string): string[] =>
       findAnnotationBlocks(text).map((b) => text.slice(b.start, b.end).replace(/\r\n/g, '\n'))
+
     expect(slices(crlf)).toEqual(slices(lf))
     expect(findAnnotationBlocks(crlf)[1].start).toBe(crlf.indexOf('/*~'))
   })
 
   it('prints its case count', () => {
     console.log(`annotation blocks: cases ${CASES.length + 2}`)
+
     expect(CASES.length).toBeGreaterThan(0)
   })
 })

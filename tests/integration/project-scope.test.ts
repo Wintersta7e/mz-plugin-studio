@@ -126,6 +126,7 @@ afterEach(async () => {
 
 afterAll(() => {
   console.log(`project scope: channels checked ${checked}`)
+
   expect(checked).toBeGreaterThan(0)
 })
 
@@ -141,6 +142,7 @@ describe('project scope', () => {
     const scoped = INVOKE_CHANNELS.filter(
       (c: InvokeChannel) => handlers[c].access === 'current-project'
     )
+
     expect(scoped).toEqual([...PROJECT_CHANNELS])
   })
 
@@ -148,10 +150,12 @@ describe('project scope', () => {
     const { ipc } = await session()
     for (const channel of PROJECT_CHANNELS) {
       checked++
+
       await expect(ipc.invoke(channel, ...callsOn(a)[channel])).rejects.toThrow(
         'Access denied: no project is open'
       )
     }
+
     expect(existsSync(scopeFile(a))).toBe(false)
   })
 
@@ -161,11 +165,13 @@ describe('project scope', () => {
     await ipc.invoke('project:load', a)
     for (const channel of PROJECT_CHANNELS) {
       checked++
+
       await expect(ipc.invoke(channel, ...callsOn(a)[channel])).resolves.toBeTruthy()
       await expect(ipc.invoke(channel, ...callsOn(b)[channel])).rejects.toThrow(
         'Access denied: not the open project'
       )
     }
+
     expect(await readFile(scopeFile(a), 'utf8')).toBe('// scope\n')
     expect(existsSync(scopeFile(b))).toBe(false)
     expect(dialog.showMessageBox).not.toHaveBeenCalled()
@@ -176,15 +182,20 @@ describe('project scope', () => {
     await choose(a)
     await ipc.invoke('project:load', a)
     const empty = await tempDir('project-scope-empty-')
+
     await expect(ipc.invoke('project:load', empty)).rejects.toThrow(
       'Access denied: not an RPG Maker MZ project folder'
     )
+
     await choose(empty)
+
     await expect(ipc.invoke('project:load', empty)).rejects.toThrow(
       'Access denied: not an RPG Maker MZ project folder'
     )
     expect(dialog.showMessageBox).not.toHaveBeenCalled()
+
     checked++
+
     expect(await ipc.invoke('plugin:list', a)).toContain('Fixture_HandWritten.js')
   })
 
@@ -193,11 +204,14 @@ describe('project scope', () => {
     await choose(b)
     await ipc.invoke('project:load', b)
     answer(CANCEL)
+
     await expect(ipc.invoke('project:load', a)).rejects.toThrow(
       `${ACCESS_DENIED}${PROJECT_OPEN_CANCELLED}`
     )
     expect(dialog.showMessageBox).toHaveBeenCalledOnce()
+
     const options = dialog.showMessageBox.mock.calls[0][0]
+
     expect(options).toMatchObject({
       buttons: ['Open', 'Cancel'],
       defaultId: CANCEL,
@@ -208,7 +222,9 @@ describe('project scope', () => {
     expect(String(options.detail)).toContain('The app has no record of this folder being chosen')
     expect(String(options.detail)).not.toMatch(/was not chosen|never chosen/)
     expect(access.getCurrentProjectRoot()).toBe(path.resolve(b))
+
     checked++
+
     await expect(ipc.invoke('plugin:save', ...callsOn(a)['plugin:save'])).rejects.toThrow(
       'Access denied: not the open project'
     )
@@ -220,10 +236,15 @@ describe('project scope', () => {
     const { ipc, dialog, answer } = await session()
     answer(0)
     const loaded = (await ipc.invoke('project:load', a)) as { path: string }
+
     expect(loaded.path).toBe(a)
+
     await ipc.invoke('project:load', a)
+
     expect(dialog.showMessageBox).toHaveBeenCalledOnce()
+
     checked++
+
     expect(await ipc.invoke('plugin:list', a)).toContain('Fixture_HandWritten.js')
   })
 
@@ -232,12 +253,19 @@ describe('project scope', () => {
     const first = await session(userData)
     await first.choose(a)
     const second = await session(userData)
+
     expect(second.access.getCurrentProjectRoot()).toBeNull()
+
     await second.ipc.invoke('project:load', a)
+
     expect(second.dialog.showMessageBox).not.toHaveBeenCalled()
+
     checked++
+
     expect(await second.ipc.invoke('plugin:list', a)).toContain('Fixture_HandWritten.js')
+
     const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8'))
+
     expect(kept).toEqual({ roots: [path.resolve(a)] })
   })
 
@@ -245,6 +273,7 @@ describe('project scope', () => {
     const userData = await tempDir('project-scope-user-data-')
     const missing = await session(userData)
     missing.answer(CANCEL)
+
     await expect(missing.ipc.invoke('project:load', a)).rejects.toThrow(/^Access denied: /)
     expect(missing.log.warn).not.toHaveBeenCalledWith(expect.stringMatching(/^\[file-access\]/))
 
@@ -252,6 +281,7 @@ describe('project scope', () => {
       await writeFile(join(userData, 'project-roots.json'), broken)
       const s = await session(userData)
       s.answer(CANCEL)
+
       await expect(s.ipc.invoke('project:load', a)).rejects.toThrow(/^Access denied: /)
       expect(s.dialog.showMessageBox).toHaveBeenCalledOnce()
       expect(s.log.warn).toHaveBeenCalledWith(expect.stringMatching(/^\[file-access\] Ignoring /))
@@ -269,6 +299,7 @@ describe('project scope', () => {
     const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8')) as {
       roots: string[]
     }
+
     expect(kept.roots).toHaveLength(access.MAX_PROJECT_ROOTS)
     expect(kept.roots[0]).toBe(roots[5])
     expect(kept.roots[1]).toBe(roots[roots.length - 1])
@@ -279,6 +310,7 @@ describe('project scope', () => {
     const { ipc, dialog } = await session()
     const network = `//${NETWORK_HOST}/share/Proj`
     networkCalls.length = 0
+
     await expect(ipc.invoke('project:validate', network)).rejects.toThrow(/^Access denied: /)
     await expect(ipc.invoke('project:load', network)).rejects.toThrow(/^Access denied: /)
     expect(networkCalls).toEqual([])
@@ -290,6 +322,7 @@ describe('project scope', () => {
     const network = `//${NETWORK_HOST}/share/Proj`
     await access.recordProjectRoot(network)
     networkCalls.length = 0
+
     await expect(ipc.invoke('project:validate', network)).resolves.toMatchObject({ valid: false })
     await expect(ipc.invoke('project:load', network)).rejects.toThrow(
       'Access denied: not an RPG Maker MZ project folder'
@@ -306,8 +339,11 @@ describe('project scope', () => {
     })
     renameFailures.push(locked)
     await access.recordProjectRoot(a)
+
     expect(renameFailures).toEqual([])
+
     const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8'))
+
     expect(kept).toEqual({ roots: [path.resolve(a)] })
     expect(log.warn).not.toHaveBeenCalled()
   })
@@ -325,6 +361,7 @@ describe('project scope', () => {
     const kept = JSON.parse(await readFile(join(userData, 'project-roots.json'), 'utf8')) as {
       roots: string[]
     }
+
     expect(kept.roots.length).toBeGreaterThan(0)
     expect((await readdir(userData)).filter((name) => name.endsWith('.tmp'))).toEqual([])
     expect(first.log.warn).not.toHaveBeenCalled()
@@ -335,6 +372,7 @@ describe('project scope', () => {
     const { access } = await session()
     access.setCurrentProjectRoot('C:\\Games\\Proj', path.win32)
     checked++
+
     expect(() => access.authorize('current-project', 'c:\\games\\PROJ', path.win32)).not.toThrow()
     expect(() => access.authorize('current-project', 'C:\\Games\\Proj\\', path.win32)).not.toThrow()
     expect(() => access.authorize('current-project', 'C:\\Games\\Proj2', path.win32)).toThrow(

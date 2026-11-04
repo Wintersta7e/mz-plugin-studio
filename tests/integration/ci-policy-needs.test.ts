@@ -24,6 +24,7 @@ describe('ci-policy needs', () => {
         'package-win': job('success')
       })
     )
+
     expect(out).toContain('ci-policy needs: static success\n')
     expect(out).toContain('ci-policy needs: package-win success\n')
     expect(out).toContain('ci-policy needs: jobs 3\n')
@@ -33,6 +34,7 @@ describe('ci-policy needs', () => {
 
   it('fails when one job failed', () => {
     const { status, out } = needs(JSON.stringify({ static: job('success'), unit: job('failure') }))
+
     expect(out).toContain('ci-policy needs: unit failure\n')
     expect(out).toContain('ci-policy needs: FAILED')
     expect(status).toBe(1)
@@ -40,17 +42,20 @@ describe('ci-policy needs', () => {
 
   it('fails when one job was skipped', () => {
     const { status } = needs(JSON.stringify({ static: job('success'), unit: job('skipped') }))
+
     expect(status).toBe(1)
   })
 
   it('fails on no jobs', () => {
     const { status, out } = needs('{}')
+
     expect(out).toContain('ci-policy needs: jobs 0\n')
     expect(status).toBe(1)
   })
 
   it('fails when NEEDS_JSON is not set', () => {
     const { status, out } = needs(undefined)
+
     expect(out).toContain('NEEDS_JSON')
     expect(status).toBe(1)
   })

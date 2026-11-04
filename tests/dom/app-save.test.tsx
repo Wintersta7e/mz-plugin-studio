@@ -141,11 +141,13 @@ let dialogsChecked = 0
 /** The `index`th message dialog, checked as a save conflict's. */
 function conflictDialog(index: number, kind: SaveConflict): MessageDialogOptions {
   const options = messages()[index]
+
   expect(options.title).toBe('Overwrite file?')
   // Main makes Cancel the default and the Escape answer; the routine passes neither
   expect(options.buttons).toContain('Cancel')
   expect(options).not.toHaveProperty('defaultId')
   expect(options).not.toHaveProperty('cancelId')
+
   checkedKinds.add(kind)
   dialogsChecked++
   return options
@@ -185,6 +187,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await waitFor(() => expect(messages()).toHaveLength(1))
     await settle()
     const options = conflictDialog(0, 'exists-unrelated')
+
     expect(options.message).toBe(
       `"${fileIn('NewPlugin.js')}" is not the file this tab last opened or saved. Overwrite it?`
     )
@@ -204,19 +207,27 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await openProject()
     openTab('Alpha')
     render(<App />)
+
     expect(screen.getByText('(modified)')).toBeInTheDocument()
+
     const code = generatePlugin(plugin())
     await user.keyboard('{Control>}s{/Control}')
     await screen.findByText('Plugin saved')
+
     expect(window.api.plugin.save).toHaveBeenCalledWith(root, 'Alpha.js', code, { base: null })
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
+
     const first = await readFile(fileIn('Alpha.js'))
 
     await user.type(screen.getByLabelText('Author'), 'Someone')
+
     expect(screen.getByText('(modified)')).toBeInTheDocument()
+
     await user.keyboard('{Control>}s{/Control}')
     await waitFor(() => expect(window.api.plugin.save).toHaveBeenCalledTimes(2))
+
     expect(guards()[1]).toEqual({ base: { path: fileIn('Alpha.js'), sha256: sha(first) } })
+
     await waitFor(() => expect(screen.queryByText('(modified)')).not.toBeInTheDocument())
   })
 
@@ -230,6 +241,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await user.keyboard('{Control>}s{/Control}')
     await waitFor(() => expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1))
     await settle()
+
     expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
     expect(window.api.plugin.save).not.toHaveBeenCalled()
     expect(screen.getByText('(modified)')).toBeInTheDocument()
@@ -237,6 +249,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const code = generatePlugin(plugin())
     await user.keyboard('{Control>}s{/Control}')
     await screen.findByText('Plugin saved')
+
     expect(window.api.plugin.saveToPath).toHaveBeenCalledWith(target, code, { base: null })
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
   })
@@ -248,11 +261,14 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     render(<App />)
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
     expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: 'Alpha.js',
       filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
     })
+
     const bytes = await readFile(target)
+
     expect(bytes.toString('utf8')).toBe(generatePlugin(plugin()))
     expect(isDirty(id)).toBe(false)
     expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
@@ -272,6 +288,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
     pressSave()
     await waitFor(() => expect(toasts()).toHaveLength(2))
+
     expect(toasts()[1]).toBe('success: Plugin saved')
     expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1)
     expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
@@ -298,6 +315,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     render(<App />)
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
     expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: target,
       filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
@@ -331,6 +349,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       pressSave()
       await waitFor(() => expect(messages()).toEqual([RENAMED]))
       await settle()
+
       expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
       await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
       expect(isDirty(id)).toBe(true)
@@ -344,6 +363,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       render(<App />)
       pressSave()
       await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
       expect(messages()).toEqual([RENAMED])
       expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
       expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
@@ -360,6 +380,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
       pressSave()
       await waitFor(() => expect(toasts()).toHaveLength(2))
+
       expect(toasts()[1]).toBe('success: Plugin saved')
       expect(messages()).toEqual([RENAMED])
       expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
@@ -374,13 +395,18 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       render(<App />)
       pressSave()
       await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
       expect(messages()).toEqual([RENAMED])
+
       const asked = vi.mocked(window.api.dialog.saveFile).mock.calls[1]
+
       expect(asked).toEqual([
         { defaultPath: named, filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }
       ])
+
       // Main's check passes the remembered folder and name to the dialog unchanged
       const saveDialog = createDialogHandlers({} as DialogPort)['dialog:save-file']
+
       expect(saveDialog.check(asked)).toEqual(asked)
       expect(await readFile(named, 'utf8')).toBe(generatePlugin(plugin()))
       await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
@@ -411,6 +437,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       render(<App />)
       pressSave()
       await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
       expect(messages()).toEqual([])
       expect(await readFile(target, 'utf8')).toBe(source)
     })
@@ -422,6 +449,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       render(<App />)
       pressSave()
       await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
       expect(messages()).toEqual([])
     })
   })
@@ -438,6 +466,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await settle()
     const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
     setItem.mockRestore()
+
     expect(writes).toHaveLength(1)
   })
 
@@ -449,6 +478,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
     await historyHolds(2)
     await settle()
+
     expect(await pluginWrites(pressUndo)).toBe(1)
     expect(useHistoryStore.getState().future).toHaveLength(1)
     expect(isDirty(plugin().id)).toBe(true)
@@ -465,6 +495,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const writes = await pluginWrites(async () => {
       reloaded = await act(() => reloadFromProject(id))
     })
+
     expect(reloaded).toBe(true)
     expect(writes).toBe(1)
   })
@@ -483,9 +514,12 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
     await act(async () => gate.resolve())
     await waitFor(() => expect(toasts()).toContain(toast))
+
     expect(plugin().meta.description).toBe('edited during save')
     expect(isDirty(id)).toBe(true)
+
     const bytes = await readFile(fileIn('Alpha.js'))
+
     expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
       path: fileIn('Alpha.js'),
       sha256: sha(bytes)
@@ -521,6 +555,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
         'warning: Saved 1, failed 1. Not saved, the file there is not the one this tab last opened or saved: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
       ])
     )
+
     expect(useToastStore.getState().toasts[0].duration).toBeGreaterThanOrEqual(10_000)
     expect(await readFile(fileIn('Beta.js'), 'utf8')).toBe('unrelated')
     expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('@target MZ')
@@ -541,6 +576,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
         'warning: Saved 1. Not saved, the file there is not the one this tab last opened or saved: NewPlugin.'
       ])
     )
+
     expect(await readFile(fileIn('NewPlugin.js'), 'utf8')).toBe(firstCode)
     expect([first, second].map(isDirty)).toEqual([false, true])
   })
@@ -560,6 +596,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
     const onDisk = await readFile(fileIn(FILE, project))
     const state = usePluginStore.getState()
+
     expect(onDisk.toString('utf8')).toContain('Edited and saved')
     expect(state.plugin.rawSource).toBe(onDisk.toString('utf8'))
     expect(state.baselineByPluginId[id]).toEqual(toBaseline(saved))
@@ -573,11 +610,14 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await openProject(project)
     const id = await openFromProject(project, FILE)
     render(<App />)
+
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
+
     // A name that differs from the file, as a tab restored from an older version can hold
     act(() => usePluginStore.getState().updateMeta({ name: 'Renamed', description: 'Kept' }))
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
     expect(vi.mocked(window.api.plugin.save).mock.calls.map((call) => call[1])).toEqual([FILE])
     expect(await readFile(fileIn(FILE, project), 'utf8')).toContain('Kept')
     await expect(readFile(fileIn('Renamed.js', project))).rejects.toThrow(/ENOENT/)
@@ -598,6 +638,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await waitFor(() => expect(messages()).toHaveLength(1))
     await settle()
     const options = conflictDialog(0, 'exists-unrelated')
+
     expect(options.message).toBe(
       `"${fileIn(FILE, second)}" is not the file this tab last opened or saved. Overwrite it?`
     )
@@ -613,6 +654,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     window.api = createMainApi()
     const id = await openFromProject(first, FILE)
     await openProject(second)
+
     expect(await act(() => reloadFromProject(id))).toBe(false)
     expect(messages()).toEqual([
       {
@@ -634,6 +676,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     window.api = createMainApi({ answers: [1] })
     const id = await openFromProject(first, FILE)
     await openProject(second)
+
     expect(await act(() => reloadFromProject(id))).toBe(true)
     expect(messages()).toHaveLength(1)
     expect(plugin().rawSource).toBe(text)
@@ -648,9 +691,12 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     window.api = createMainApi()
     await openProject(project)
     const read = await openFromProject(project, FILE)
+
     expect(await act(() => reloadFromProject(read))).toBe(true)
+
     const loaded = await window.api.plugin.load(project, FILE)
     act(() => usePluginStore.getState().openPlugin(loaded.plugin))
+
     expect(await act(() => reloadFromProject(loaded.plugin.id))).toBe(true)
     expect(messages()).toEqual([])
     expect(usePluginStore.getState().baseByPluginId[loaded.plugin.id]?.path).toBe(
@@ -687,11 +733,13 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await settle()
     for (const index of [0, 1]) {
       const options = conflictDialog(index, 'changed-on-disk')
+
       expect(options.message).toBe(
         `"${path}" has changed on disk since this tab last read or saved it. Overwrite it?`
       )
       expect(options.buttons).toEqual(['Cancel', 'Overwrite', 'Reload from project'])
     }
+
     expect(guards()).toEqual([
       { base: { path, sha256: sha(text) } },
       { base: { path, sha256: sha(changed) } }
@@ -713,12 +761,15 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
     conflictDialog(0, 'exists-unrelated')
+
     expect(guards()).toEqual([
       { base: null },
       { base: { path: fileIn('Alpha.js'), sha256: sha('// old file\n') } }
     ])
     expect(guards()[1]).not.toHaveProperty('overwriteBroken')
+
     const bytes = await readFile(fileIn('Alpha.js'))
+
     expect(bytes.toString('utf8')).toBe(generatePlugin(plugin()))
     expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
       path: fileIn('Alpha.js'),
@@ -738,20 +789,27 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressSave()
     await waitFor(() => expect(toasts()).toHaveLength(3))
     const options = conflictDialog(0, 'would-break')
+
     expect(options.message).toMatch(
       new RegExp(
         `^Saving would stop "${escaped(fileIn('Alpha.js'))}" from compiling \\(line \\d+: .+\\)\\. Overwrite it anyway\\?$`
       )
     )
+
     const base = { path: fileIn('Alpha.js'), sha256: sha(compiling) }
+
     expect(guards().slice(1)).toEqual([{ base }, { base, overwriteBroken: true }])
     expect(toasts()[1]).toBe('success: Plugin saved')
     expect(toasts()[2]).toMatch(/^warning: Saved, but the file does not compile \(line \d+\): .+/)
+
     const written = await readFile(fileIn('Alpha.js'), 'utf8')
+
     expect(written).toContain('let broken = ;')
     expect(isDirty(id)).toBe(false)
+
     // The prompt and the warning both name the line of the file that does not compile
     const brokenLine = written.split('\n').findIndex((line) => line.includes('let broken = ;')) + 1
+
     expect(options.message).toContain(`(line ${brokenLine}: `)
     expect(
       screen.getByText(new RegExp(`does not compile \\(line ${brokenLine}\\)`))
@@ -767,8 +825,11 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await historyHolds(2)
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
     expect(isDirty(id)).toBe(false)
+
     pressUndo()
+
     expect(useHistoryStore.getState().future).toHaveLength(1)
     expect(isDirty(id)).toBe(true)
   })
@@ -783,8 +844,11 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressUndo()
     pressSave()
     await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+
     expect(isDirty(id)).toBe(false)
+
     pressRedo()
+
     expect(useHistoryStore.getState().future).toHaveLength(0)
     expect(isDirty(id)).toBe(true)
   })
@@ -797,8 +861,11 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
     await historyHolds(2)
     pressUndo()
+
     expect(plugin().meta.name).toBe('NewPlugin')
+
     pressRedo()
+
     expect(plugin().meta.name).toBe('Alpha')
   })
 
@@ -816,6 +883,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       press()
       names.push(plugin().meta.name)
     }
+
     expect(names).toEqual(['Alpha', 'NewPlugin', 'NewPlugin', 'Alpha', 'Beta', 'Beta'])
   })
 
@@ -835,8 +903,11 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     // Outlasts the app's delay before it records an edit, so undo returns to this state
     await new Promise((resolve) => setTimeout(resolve, 600))
     await user.type(options(), 'b')
+
     expect(options()).toHaveValue('a|b')
+
     pressUndo()
+
     expect(options()).toHaveValue('a')
   })
 
@@ -847,13 +918,17 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await historyHolds(1)
     act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
     pressUndo()
+
     expect(plugin().meta.name).toBe('NewPlugin')
+
     pressRedo()
+
     expect(plugin().meta.name).toBe('Alpha')
   })
 
   it('checked the dialog of every save conflict', () => {
     console.log(`save conflict dialogs checked ${dialogsChecked}`)
+
     expect(dialogsChecked).toBeGreaterThan(0)
     expect([...checkedKinds].sort()).toEqual(['changed-on-disk', 'exists-unrelated', 'would-break'])
   })

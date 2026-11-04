@@ -93,6 +93,7 @@ describe('damaged saved state', () => {
   it('unreadable saved data is backed up, defaults load and the report names it', async () => {
     localStorage.setItem(KEY, '{"state":')
     const { useSettingsStore, persist } = await loadSettings()
+
     expect(useSettingsStore.getState()).toEqual(useSettingsStore.getInitialState())
     expect(localStorage.getItem(BACKUP)).toBe('{"state":')
     expect(persist.takeRestoreReport()).toEqual([
@@ -103,6 +104,7 @@ describe('damaged saved state', () => {
     const stored = JSON.parse(localStorage.getItem(KEY) as string) as {
       state: { theme: string }
     }
+
     expect(stored.state.theme).toBe('light')
     expect(localStorage.getItem(BACKUP)).toBe('{"state":')
   })
@@ -112,6 +114,7 @@ describe('damaged saved state', () => {
     await loadSettings()
     const setItem = vi.spyOn(Storage.prototype, 'setItem')
     const { persist } = await loadSettings()
+
     expect(setItem).not.toHaveBeenCalledWith(BACKUP, expect.anything())
     expect(localStorage.getItem(BACKUP)).toBe('{"state":')
     expect(persist.takeRestoreReport().map((e) => e.kind)).toEqual(['unparseable'])
@@ -121,8 +124,11 @@ describe('damaged saved state', () => {
     localStorage.setItem(BACKUP, '{"state":1}')
     localStorage.setItem(KEY, '{"state":2}')
     const { persist } = await loadSettings()
+
     expect(localStorage.getItem(BACKUP)).toBe('{"state":1}')
+
     const entries = persist.takeRestoreReport()
+
     expect(entries).toEqual([
       { name: KEY, area: 'Settings', kind: 'unparseable', fields: [], backup: 'earlier-copy-kept' }
     ])
@@ -135,13 +141,18 @@ describe('damaged saved state', () => {
     localStorage.setItem(KEY, '{"state":')
     failBackupWrites()
     const { useSettingsStore, persist } = await loadSettings()
+
     expect(useSettingsStore.getState()).toEqual(useSettingsStore.getInitialState())
     expect(localStorage.getItem(BACKUP)).toBeNull()
+
     const entries = persist.takeRestoreReport()
+
     expect(entries).toEqual([
       { name: KEY, area: 'Settings', kind: 'unparseable', fields: [], backup: 'failed' }
     ])
+
     const text = persist.formatRestoreReport(entries)
+
     expect(text).toBe(
       `Settings: the saved data could not be read, so defaults were loaded; it could not be copied to ${BACKUP} because storage is full, and it will be replaced at the next save. ${SEE_BACKUPS}`
     )
@@ -152,6 +163,7 @@ describe('damaged saved state', () => {
     localStorage.setItem(KEY, JSON.stringify({ state: { schemaVersion: 99 }, version: 0 }))
     failBackupWrites()
     const { persist } = await loadSettings()
+
     expect(persist.takeRestoreReport()).toEqual([
       { name: KEY, area: 'Settings', kind: 'newer-schema', fields: [], backup: 'failed' }
     ])
@@ -165,6 +177,7 @@ describe('damaged saved state', () => {
     localStorage.setItem(KEY, raw)
     const { useSettingsStore, persist } = await loadSettings()
     const state = useSettingsStore.getState() as unknown as Record<string, unknown>
+
     expect(state.theme).toBe('light')
     expect(state.editorFontSize).toBe(15)
     expect(state).not.toHaveProperty('laterField')
@@ -181,10 +194,13 @@ describe('damaged saved state', () => {
     localStorage.setItem(KEY, raw)
     const { useSettingsStore, persist, log } = await loadSettings()
     const state = useSettingsStore.getState()
+
     expect(state.theme).toBe('dark')
     expect(state.editorFontSize).toBe(13)
     expect(state.defaultAuthor).toBe('Example Author')
+
     const entries = persist.takeRestoreReport()
+
     expect(entries).toEqual([
       {
         name: KEY,
@@ -216,9 +232,12 @@ describe('damaged saved state', () => {
     vi.resetModules()
     const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
     const persist = await import('../../src/renderer/src/stores/persist')
+
     expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual(['a'])
     expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).toBe(raw)
+
     const entries = persist.takeRestoreReport()
+
     expect(entries).toEqual([
       {
         name: PLUGIN_KEY,
@@ -246,9 +265,12 @@ describe('damaged saved state', () => {
       const { default: App } = await import('../../src/renderer/src/App')
       const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
       const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
+
       expect(() => render(createElement(App))).not.toThrow()
       expect(usePluginStore.getState().plugin.meta.dependencies).toEqual([])
+
       const messages = useToastStore.getState().toasts.map((t) => t.message)
+
       expect(messages).toEqual([expect.stringContaining('dependencies of the active plugin')])
       expect(messages[0]).toContain('dependencies of open plugin NoDeps')
       expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).not.toBeNull()
@@ -276,10 +298,12 @@ describe('damaged saved state', () => {
     localStorage.setItem(PLUGIN_KEY, raw)
     const { usePluginStore, persist } = await loadPlugins()
     const { parameters, commands, structs } = usePluginStore.getState().openPlugins[0]
+
     expect(parameters.map((p) => p.name)).toEqual(['Kept'])
     expect(commands).toEqual([{ id: 'c', name: 'Run', text: 'Run', desc: '', args: [] }])
     expect(structs.map((s) => s.parameters.map((p) => [p.name, p.desc]))).toEqual([[['X', '']]])
     expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).toBe(raw)
+
     const dropped = persist.takeRestoreReport().find((e) => e.kind === 'entries-dropped')
     const inGood = (...steps: Record<string, unknown>[]) => [
       { key: 'openPlugins' },
@@ -287,6 +311,7 @@ describe('damaged saved state', () => {
       ...steps
     ]
     const at = (index: number) => ({ index })
+
     expect(dropped?.fields.filter((f) => 'key' in f[0] && f[0].key === 'openPlugins')).toEqual([
       inGood({ key: 'parameters' }, at(0)),
       inGood({ key: 'parameters' }, at(1)),
@@ -306,13 +331,18 @@ describe('damaged saved state', () => {
       ])
     )
     const { usePluginStore, persist } = await loadPlugins()
+
     expect(usePluginStore.getState().openPlugins[0].parameters).toHaveLength(keys.length)
+
     const entries = persist.takeRestoreReport()
     let text = ''
+
     expect(() => (text = persist.formatRestoreReport(entries))).not.toThrow()
+
     const named = keys.map((key, i) => `${key} of parameter ${i + 1} of open plugin Good`)
     named[3] = 'to string of parameter 4 of open plugin Good'
     for (const words of named) expect(text).toContain(words)
+
     expect(text).not.toContain('v1) (Good')
   })
 
@@ -326,6 +356,7 @@ describe('damaged saved state', () => {
     })
     localStorage.setItem(KEY, raw)
     const { useSettingsStore, persist } = await loadSettings()
+
     expect(useSettingsStore.getState().parameterPresets.Mixed.map((p) => p.id)).toEqual(['k'])
     expect(localStorage.getItem(BACKUP)).toBe(raw)
     expect(persist.takeRestoreReport()).toEqual([
@@ -349,8 +380,11 @@ describe('damaged saved state', () => {
     vi.mocked(log.error).mockClear()
     full()
     for (let size = 0; size < 50; size++) useSettingsStore.getState().setEditorFontSize(10 + size)
+
     expect(log.error).toHaveBeenCalledTimes(1)
+
     usePluginStore.getState().setDirty(true)
+
     expect(log.error).toHaveBeenCalledTimes(2)
     expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
       expect.stringContaining('recent changes to settings were not saved'),
@@ -359,11 +393,14 @@ describe('damaged saved state', () => {
 
     vi.mocked(Storage.prototype.setItem).mockRestore()
     useSettingsStore.getState().setTheme('light')
+
     expect(log.warn).toHaveBeenCalledWith(
       'mz-plugin-studio-settings could not be saved 49 more times while storage was full'
     )
+
     full()
     useSettingsStore.getState().setTheme('dark')
+
     expect(log.error).toHaveBeenCalledTimes(3)
     expect(useToastStore.getState().toasts).toHaveLength(3)
   })
@@ -375,10 +412,13 @@ describe('damaged saved state', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('full', 'QuotaExceededError')
     })
+
     expect(() => useSettingsStore.getState().setTheme('light')).not.toThrow()
     expect(() => useSettingsStore.getState().setEditorFontSize(16)).not.toThrow()
     expect(log.error).toHaveBeenCalled()
+
     const toasts = useToastStore.getState().toasts
+
     expect(toasts).toHaveLength(1)
     expect(toasts[0].message).toBe(
       'Storage is full: recent changes to settings were not saved. Backup entries present: mz-plugin-studio-ui.backup; export or delete them in Settings > Data > Saved-state backups. Nothing was deleted.'

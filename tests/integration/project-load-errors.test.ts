@@ -30,6 +30,7 @@ describe('optional project data files', () => {
 
   it('a malformed optional data file is logged as an error', async () => {
     await writeFile(join(root, 'data', 'Skills.json'), '[null, {"id": 1,')
+
     expect(await ProjectParser.getSkills(root)).toEqual([])
     expect(vi.mocked(log.debug)).not.toHaveBeenCalled()
     expect(vi.mocked(log.error)).toHaveBeenCalledTimes(1)

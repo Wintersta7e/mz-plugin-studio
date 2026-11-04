@@ -44,6 +44,7 @@ beforeEach(() => {
 async function refuses(channel: InvokeChannel, ...args: unknown[]): Promise<void> {
   cases++
   vi.mocked(log.warn).mockClear()
+
   await expect(ipc.invoke(channel, ...args)).rejects.toThrow(`Invalid arguments: ${channel}`)
   expect(runs.get(channel)).not.toHaveBeenCalled()
   expect(vi.mocked(log.warn).mock.calls).toEqual([
@@ -54,11 +55,13 @@ async function refuses(channel: InvokeChannel, ...args: unknown[]): Promise<void
 /** The channel's check turns `args` into `expected` */
 function passes(channel: InvokeChannel, args: unknown[], expected: unknown[]): void {
   cases++
+
   expect(handlers[channel].check(args)).toEqual(expected)
 }
 
 function listens(channel: SendChannel, args: unknown[], expected: unknown[]): void {
   cases++
+
   expect(listeners[channel].check(args)).toEqual(expected)
 }
 
@@ -106,6 +109,7 @@ describe('ipc arguments', () => {
     const extra = { base: { ...base, size: 3 }, force: ['changed-on-disk'] }
     const [, , , guard] = handlers['plugin:save'].check(['/p', 'a.js', 'code', extra])
     cases++
+
     expect(guard).toStrictEqual({ base })
   })
 
@@ -120,6 +124,7 @@ describe('ipc arguments', () => {
   it('never logs the content of a refused request', async () => {
     const secret = 'Synthetic content that stays out of the log'
     await refuses('plugin:save', '/p', 'a.js', secret, { base: { path: 1 } })
+
     expect(JSON.stringify(vi.mocked(log.warn).mock.calls)).not.toContain(secret)
   })
 
@@ -139,6 +144,7 @@ describe('ipc arguments', () => {
     cases++
     showMessageBox.mockClear()
     const options = { message: 'm', buttons: ['Overwrite', 'Cancel'], defaultId: 1, cancelId: 1 }
+
     await expect(ipc.invoke('dialog:message', options)).resolves.toBe(1)
     expect(showMessageBox).toHaveBeenCalledWith(
       expect.objectContaining({ buttons: ['Overwrite', 'Cancel'], defaultId: 1, cancelId: 1 })
@@ -194,12 +200,14 @@ describe('ipc arguments', () => {
     cases++
     showSaveDialog.mockClear()
     await ipc.invoke('dialog:save-file', { defaultPath: '\\\\server\\share\\x.js' })
+
     expect(showSaveDialog.mock.calls[0][0]).toEqual(
       expect.not.objectContaining({ defaultPath: expect.anything() })
     )
 
     cases++
     showSaveDialog.mockClear()
+
     await expect(ipc.invoke('dialog:save-file', { filters: [{ name: 1 }] })).resolves.toBeNull()
     expect(showSaveDialog).toHaveBeenCalledWith(
       expect.objectContaining({ filters: [{ name: 'JavaScript', extensions: ['js'] }] })
@@ -251,6 +259,7 @@ describe('ipc arguments', () => {
       cases++
       vi.mocked(deps.setLogLevel).mockClear()
       ipc.send('log:set-level', value)
+
       expect(deps.setLogLevel).toHaveBeenCalledExactlyOnceWith(level)
     }
     listens('log:set-level', ['yes'], [false])
@@ -258,6 +267,7 @@ describe('ipc arguments', () => {
 
   it('counts its cases', () => {
     console.log(`argument cases ${cases}`)
+
     expect(cases).toBeGreaterThan(0)
   })
 })

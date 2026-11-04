@@ -139,6 +139,7 @@ describe('ipc callers', () => {
       `ipc callers: members ${members.length}, called ${called.length}, ` +
         `renderer files scanned ${files.length}, allow-listed ${ALLOW_UNCALLED.length}`
     )
+
     expect(members.length).toBeGreaterThan(0)
     expect(files.length).toBeGreaterThan(0)
     expect(uncalled).toEqual([])
@@ -157,6 +158,7 @@ describe('ipc callers', () => {
         `listeners ${listeners.length}/${SEND_CHANNELS.length}, ` +
         `emitters ${emitters.length}/${EVENT_CHANNELS.length}, main files scanned ${files.length}`
     )
+
     expect(files.length).toBeGreaterThan(0)
     expect(handlers.sort()).toEqual([...INVOKE_CHANNELS].sort())
     expect(listeners.sort()).toEqual([...SEND_CHANNELS].sort())

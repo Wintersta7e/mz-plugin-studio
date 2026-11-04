@@ -39,12 +39,14 @@ function renderDefaultCase(c: TypeViolatingDefaultCase): string {
 
 describe('generator goldens', () => {
   beforeAll(freezeTime)
+
   afterAll(restoreTime)
 
   for (const e of GENERATOR_ENTRIES) {
     it(`${e.name}: generatePlugin`, async () => {
       await expect(generatePlugin(e.def)).toMatchFileSnapshot(`__golden__/generator/${e.name}.js`)
     })
+
     it(`${e.name}: exports`, async () => {
       await expect(renderExports(e)).toMatchFileSnapshot(
         `__golden__/generator/${e.name}.exports.txt`
@@ -68,7 +70,9 @@ describe('generator goldens', () => {
       `generator entries ${GENERATOR_ENTRIES.length} (hostile ${hostile}, ` +
         `leaves ${leaves[0].holding}/${leaves[0].total})`
     )
+
     expect(hostile).toBe(COMMENT_PAYLOADS.length)
+
     for (const count of leaves) {
       expect(count.total).toBeGreaterThan(0)
       expect(count).toEqual(leaves[0])

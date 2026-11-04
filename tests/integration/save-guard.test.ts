@@ -73,6 +73,7 @@ afterEach(async () => {
 
 afterAll(() => {
   console.log(`save guard cases ${cases}`)
+
   expect(cases).toBeGreaterThan(0)
 })
 
@@ -112,6 +113,7 @@ async function expectConflict(
   before: string
 ): Promise<void> {
   cases++
+
   expect(result).toMatchObject({ success: false, path: target, conflict, diskSha256: sha(before) })
   expect(await readFile(target, 'utf8')).toBe(before)
 }
@@ -120,6 +122,7 @@ async function expectConflict(
 async function expectWritten(result: SaveResult, target: string, content: string): Promise<void> {
   cases++
   const bytes = await readFile(target)
+
   expect(bytes.toString('utf8')).toBe(content)
   expect(result).toMatchObject({ success: true, path: target, sha256: sha(bytes) })
 }
@@ -191,6 +194,7 @@ describe('the save guard', () => {
     const base = { path: target, sha256: sha(COMPILES) }
     const result = await savePluginFile(tmp, 'Foo.js', `\n\n${BROKEN}`, guard(base))
     await expectConflict(result, 'would-break', target, COMPILES)
+
     expect(result).toMatchObject({ syntaxError: { line: 3 } })
   })
 
@@ -198,6 +202,7 @@ describe('the save guard', () => {
     const target = await projectFile(null)
     const result = await savePluginFile(tmp, 'Foo.js', BROKEN, guard(null))
     await expectWritten(result, target, BROKEN)
+
     expect(result).toMatchObject({ syntaxWarning: { line: 1 } })
   })
 
@@ -206,6 +211,7 @@ describe('the save guard', () => {
     const base = { path: target, sha256: sha(BROKEN) }
     const result = await savePluginFile(tmp, 'Foo.js', BROKEN, guard(base))
     await expectWritten(result, target, BROKEN)
+
     expect(result).toMatchObject({ syntaxWarning: { line: 1 } })
   })
 
@@ -215,6 +221,7 @@ describe('the save guard', () => {
     const deep = '(function(){'.repeat(600) + '})()'.repeat(600)
     const result = await savePluginFile(tmp, 'Foo.js', deep, guard(base))
     await expectWritten(result, target, deep)
+
     expect(result).not.toHaveProperty('syntaxWarning')
   })
 
@@ -224,6 +231,7 @@ describe('the save guard', () => {
     const forced = guard(base, { overwriteBroken: true })
     const result = await savePluginFile(tmp, 'Foo.js', BROKEN, forced)
     await expectWritten(result, target, BROKEN)
+
     expect(result).toMatchObject({ syntaxWarning: { line: 1 } })
   })
 
@@ -262,12 +270,14 @@ describe('the save guard', () => {
   it('rejects a target that is a folder and writes nothing', async () => {
     const target = await projectFile(null)
     await mkdir(target, { recursive: true })
+
     await expect(savePluginFile(tmp, 'Foo.js', 'B', guard(null))).rejects.toMatchObject({
       code: 'EISDIR'
     })
     await expect(
       savePluginFile(tmp, 'Foo.js', 'B', guard({ path: target, sha256: null }))
     ).rejects.toMatchObject({ code: 'EISDIR' })
+
     cases++
   })
 
@@ -281,7 +291,9 @@ describe('the save guard', () => {
     } finally {
       await chmod(target, 0o600)
     }
+
     expect(await readFile(target, 'utf8')).toBe('A')
+
     cases++
   })
 })
@@ -299,10 +311,14 @@ describe('replacing a file', () => {
     const target = await projectFile(COMPILES)
     disk.full = true
     const save = savePluginFile(tmp, 'Foo.js', 'var b = 2;\n'.repeat(100), unchanged(target))
+
     await expect(save).rejects.toMatchObject({ code: 'ENOSPC' })
+
     disk.full = false
+
     expect(await readFile(target, 'utf8')).toBe(COMPILES)
     expect(await pluginsFolder()).toEqual(['Foo.js'])
+
     cases++
   })
 
@@ -313,6 +329,7 @@ describe('replacing a file', () => {
     })
     vi.mocked(rename).mockRejectedValueOnce(locked).mockRejectedValueOnce(locked)
     await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+
     expect(rename).toHaveBeenCalledTimes(3)
     expect(await pluginsFolder()).toEqual(['Foo.js'])
   })
@@ -324,9 +341,11 @@ describe('replacing a file', () => {
     })
     vi.mocked(rename).mockRejectedValueOnce(across)
     const save = savePluginFile(tmp, 'Foo.js', 'B', unchanged(target))
+
     await expect(save).rejects.toMatchObject({ code: 'EXDEV' })
     expect(await readFile(target, 'utf8')).toBe(COMPILES)
     expect(await pluginsFolder()).toEqual(['Foo.js'])
+
     cases++
   })
 
@@ -336,15 +355,18 @@ describe('replacing a file', () => {
     await chmod(target, 0o444)
     try {
       const save = savePluginFile(tmp, 'Foo.js', 'B', unchanged(target))
+
       await expect(save).rejects.toMatchObject({
         code: process.platform === 'win32' ? 'EPERM' : 'EACCES'
       })
     } finally {
       await chmod(target, 0o644)
     }
+
     expect(await readFile(target, 'utf8')).toBe(COMPILES)
     expect(await pluginsFolder()).toEqual(['Foo.js'])
     expect(rename).not.toHaveBeenCalled()
+
     cases++
   })
 
@@ -352,6 +374,7 @@ describe('replacing a file', () => {
     const target = await projectFile(COMPILES)
     await chmod(target, 0o640)
     await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+
     expect((await stat(target)).mode & 0o777).toBe(0o640)
   })
 
@@ -362,6 +385,7 @@ describe('replacing a file', () => {
     await mkdir(join(tmp, 'js', 'plugins'), { recursive: true })
     await symlink(shared, target)
     await expectWritten(await savePluginFile(tmp, 'Foo.js', 'B', unchanged(target)), target, 'B')
+
     expect((await lstat(target)).isSymbolicLink()).toBe(true)
     expect(await readFile(shared, 'utf8')).toBe('B')
   })
@@ -387,6 +411,7 @@ describe('reading a plugin file', () => {
     await writeFile(target, TEXT)
     const bytes = await readFile(target)
     const loaded = await loadPluginFile(tmp, 'Bom.js')
+
     expect({ path: loaded.path, sha256: loaded.sha256 }).toEqual({
       path: target,
       sha256: sha(bytes)

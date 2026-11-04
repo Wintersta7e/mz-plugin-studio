@@ -64,6 +64,7 @@ beforeEach(() => {
 describe('code editor setup', () => {
   it('hands the bundled editor to the React wrapper', async () => {
     const monaco = await import('monaco-editor/editor')
+
     expect(configCalls).toHaveLength(1)
     expect(configCalls[0]?.[0]).toEqual({ monaco })
     expect((configCalls[0]?.[0] as { monaco: unknown }).monaco).toBe(monaco)
@@ -79,10 +80,15 @@ describe('code editor setup', () => {
     ]
     for (const [label, url] of cases) {
       const worker = getWorker(label)
+
       expect(worker.options, label).toBeUndefined()
+
       const blob = blobs.get(worker.url)
+
       expect(blob, `${label}: a blob URL`).toBeDefined()
+
       const absolute = new URL(url, PAGE).href
+
       expect(await blob?.text(), label).toBe(`importScripts(${JSON.stringify(absolute)});`)
     }
     console.log(`monaco setup: built worker labels ${cases.length}`)
@@ -91,8 +97,11 @@ describe('code editor setup', () => {
   it('starts module workers from their URL under the dev server', () => {
     vi.stubEnv('DEV', true)
     const ts = getWorker('typescript')
+
     expect([ts.url, ts.options]).toEqual([h.tsWorkerUrl, { type: 'module' }])
+
     const editor = getWorker('css')
+
     expect([editor.url, editor.options]).toEqual([h.editorWorkerUrl, { type: 'module' }])
   })
 })

@@ -96,6 +96,7 @@ describe('test layout', () => {
       `test layout: files ${testFiles.length} (unit ${counts.unit}, integration ${counts.integration}, ` +
         `dom ${counts.dom}, golden ${counts.golden}); imports scanned ${importsScanned}`
     )
+
     expect(testFiles.length).toBeGreaterThan(0)
     expect(importsScanned).toBeGreaterThan(0)
     expect(misplaced).toEqual([])
@@ -114,6 +115,7 @@ describe('test layout', () => {
       `test layout: environment pragmas ${pragmas.length}, ` +
         `module-only syntax in shared helpers ${helperModuleSyntax.length}`
     )
+
     expect(pragmas).toEqual([])
     expect(helperModuleSyntax).toEqual([])
   })
@@ -125,12 +127,15 @@ describe('test layout', () => {
         b.rules?.['no-restricted-imports'] !== undefined &&
         (b.files ?? []).some((f) => f.startsWith('tests/'))
     )
+
     expect(block).toBeDefined()
     expect(block!.ignores).toEqual(['tests/dom/**', 'tests/golden/**'])
+
     const [, options] = block!.rules!['no-restricted-imports'] as [
       string,
       { patterns: { group: string[] }[] }
     ]
+
     expect(options.patterns).toHaveLength(1)
     expect([...options.patterns[0].group].sort()).toEqual([...ROUTED_GROUPS].sort())
   })

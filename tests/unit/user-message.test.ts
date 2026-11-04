@@ -8,6 +8,7 @@ describe('userMessage', () => {
     const error = new Error(
       "Error invoking remote method 'project:load': Error: data folder unreadable"
     )
+
     expect(userMessage(error)).toBe('data folder unreadable')
   })
 
@@ -15,11 +16,13 @@ describe('userMessage', () => {
     const error = new Error(
       "Error invoking remote method 'plugin:read-raw': TypeError: Foo.js is not UTF-8"
     )
+
     expect(userMessage(error)).toBe('Foo.js is not UTF-8')
   })
 
   it('keeps a message main threw without an error name', () => {
     const error = new Error("Error invoking remote method 'plugin:save': disk full")
+
     expect(userMessage(error)).toBe('disk full')
   })
 
