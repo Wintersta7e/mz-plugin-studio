@@ -168,46 +168,40 @@ export interface OpenFolderOptions {
 }
 
 /**
-Request/reply channels: the window calls, main answers
+Request/reply channels: the window calls, main answers; each entry is main's handler signature
 */
-export type InvokeContract = {
-  [IPC_CHANNELS.PROJECT_VALIDATE]: { args: [path: string]; result: ProjectValidation }
-  [IPC_CHANNELS.PROJECT_LOAD]: { args: [path: string]; result: MZProject }
-  [IPC_CHANNELS.PLUGIN_SAVE]: {
-    args: [projectPath: string, filename: string, content: string, guard: SaveGuard]
-    result: SaveResult
-  }
-  [IPC_CHANNELS.PLUGIN_SAVE_TO_PATH]: {
-    args: [filePath: string, content: string, guard?: SaveGuard]
-    result: SaveResult
-  }
-  [IPC_CHANNELS.PLUGIN_LOAD]: {
-    args: [projectPath: string, filename: string]
-    result: LoadedPlugin
-  }
-  [IPC_CHANNELS.PLUGIN_PARSE]: { args: [content: string]; result: PluginDefinition }
-  [IPC_CHANNELS.PLUGIN_READ_RAW]: {
-    args: [projectPath: string, filename: string]
-    result: RawPluginFile
-  }
-  [IPC_CHANNELS.PLUGIN_LIST]: { args: [projectPath: string]; result: string[] }
-  [IPC_CHANNELS.PLUGIN_READ_BY_PATH]: { args: [filePath: string]; result: string }
-  [IPC_CHANNELS.PLUGIN_SCAN_HEADERS]: {
-    args: [projectPath: string]
-    result: ScannedPluginHeader[]
-  }
-  [IPC_CHANNELS.DIALOG_OPEN_FOLDER]: { args: [options?: OpenFolderOptions]; result: string | null }
-  [IPC_CHANNELS.DIALOG_SAVE_FILE]: { args: [options?: SaveFileOptions]; result: string | null }
-  [IPC_CHANNELS.DIALOG_OPEN_FILE]: { args: [options?: OpenFileOptions]; result: string | null }
-  [IPC_CHANNELS.DIALOG_MESSAGE]: { args: [options: MessageDialogOptions]; result: number }
-  [IPC_CHANNELS.WINDOW_IS_MAXIMIZED]: { args: []; result: boolean }
-  [IPC_CHANNELS.LOG_OPEN_FOLDER]: { args: []; result: void }
+interface InvokeContract {
+  [IPC_CHANNELS.PROJECT_VALIDATE]: (path: string) => ProjectValidation
+  [IPC_CHANNELS.PROJECT_LOAD]: (path: string) => MZProject
+  [IPC_CHANNELS.PLUGIN_SAVE]: (
+    projectPath: string,
+    filename: string,
+    content: string,
+    guard: SaveGuard
+  ) => SaveResult
+  [IPC_CHANNELS.PLUGIN_SAVE_TO_PATH]: (
+    filePath: string,
+    content: string,
+    guard?: SaveGuard
+  ) => SaveResult
+  [IPC_CHANNELS.PLUGIN_LOAD]: (projectPath: string, filename: string) => LoadedPlugin
+  [IPC_CHANNELS.PLUGIN_PARSE]: (content: string) => PluginDefinition
+  [IPC_CHANNELS.PLUGIN_READ_RAW]: (projectPath: string, filename: string) => RawPluginFile
+  [IPC_CHANNELS.PLUGIN_LIST]: (projectPath: string) => string[]
+  [IPC_CHANNELS.PLUGIN_READ_BY_PATH]: (filePath: string) => string
+  [IPC_CHANNELS.PLUGIN_SCAN_HEADERS]: (projectPath: string) => ScannedPluginHeader[]
+  [IPC_CHANNELS.DIALOG_OPEN_FOLDER]: (options?: OpenFolderOptions) => string | null
+  [IPC_CHANNELS.DIALOG_SAVE_FILE]: (options?: SaveFileOptions) => string | null
+  [IPC_CHANNELS.DIALOG_OPEN_FILE]: (options?: OpenFileOptions) => string | null
+  [IPC_CHANNELS.DIALOG_MESSAGE]: (options: MessageDialogOptions) => number
+  [IPC_CHANNELS.WINDOW_IS_MAXIMIZED]: () => boolean
+  [IPC_CHANNELS.LOG_OPEN_FOLDER]: () => void
 }
 
 /**
 One-way channels from the window to main
 */
-export type SendContract = {
+interface SendContract {
   [IPC_CHANNELS.WINDOW_MINIMIZE]: []
   [IPC_CHANNELS.WINDOW_MAXIMIZE]: []
   [IPC_CHANNELS.WINDOW_CLOSE]: []
@@ -217,15 +211,15 @@ export type SendContract = {
 /**
 One-way channels from main to the window
 */
-export type EventContract = {
+interface EventContract {
   [IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED]: [isMaximized: boolean]
 }
 
 export type InvokeChannel = keyof InvokeContract
 export type SendChannel = keyof SendContract
 export type EventChannel = keyof EventContract
-export type InvokeArgs<C extends InvokeChannel> = InvokeContract[C]['args']
-export type InvokeResult<C extends InvokeChannel> = InvokeContract[C]['result']
+export type InvokeArgs<C extends InvokeChannel> = Parameters<InvokeContract[C]>
+export type InvokeResult<C extends InvokeChannel> = ReturnType<InvokeContract[C]>
 export type SendArgs<C extends SendChannel> = SendContract[C]
 export type EventArgs<C extends EventChannel> = EventContract[C]
 
@@ -263,12 +257,12 @@ type Invoker<C extends InvokeChannel> = (...args: InvokeArgs<C>) => Promise<Invo
 type Sender<C extends SendChannel> = (...args: SendArgs<C>) => void
 type Subscriber<C extends EventChannel> = (callback: (...args: EventArgs<C>) => void) => () => void
 
-export interface ProjectAPI {
+interface ProjectAPI {
   validate: Invoker<typeof IPC_CHANNELS.PROJECT_VALIDATE>
   load: Invoker<typeof IPC_CHANNELS.PROJECT_LOAD>
 }
 
-export interface PluginAPI {
+interface PluginAPI {
   save: Invoker<typeof IPC_CHANNELS.PLUGIN_SAVE>
   saveToPath: Invoker<typeof IPC_CHANNELS.PLUGIN_SAVE_TO_PATH>
   load: Invoker<typeof IPC_CHANNELS.PLUGIN_LOAD>
@@ -279,14 +273,14 @@ export interface PluginAPI {
   scanHeaders: Invoker<typeof IPC_CHANNELS.PLUGIN_SCAN_HEADERS>
 }
 
-export interface DialogAPI {
+interface DialogAPI {
   openFolder: Invoker<typeof IPC_CHANNELS.DIALOG_OPEN_FOLDER>
   saveFile: Invoker<typeof IPC_CHANNELS.DIALOG_SAVE_FILE>
   openFile: Invoker<typeof IPC_CHANNELS.DIALOG_OPEN_FILE>
   message: Invoker<typeof IPC_CHANNELS.DIALOG_MESSAGE>
 }
 
-export interface WindowAPI {
+interface WindowAPI {
   minimize: Sender<typeof IPC_CHANNELS.WINDOW_MINIMIZE>
   maximize: Sender<typeof IPC_CHANNELS.WINDOW_MAXIMIZE>
   close: Sender<typeof IPC_CHANNELS.WINDOW_CLOSE>
@@ -294,15 +288,15 @@ export interface WindowAPI {
   onMaximizeChange: Subscriber<typeof IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED>
 }
 
-export interface LogAPI {
+interface LogAPI {
   openFolder: Invoker<typeof IPC_CHANNELS.LOG_OPEN_FOLDER>
   setLevel: Sender<typeof IPC_CHANNELS.LOG_SET_LEVEL>
 }
 
 /**
-What the preload exposes as `window.api`; a type alias, so it converts to a plain record
+What the preload exposes as `window.api`
 */
-export type API = {
+export interface API {
   project: ProjectAPI
   plugin: PluginAPI
   dialog: DialogAPI

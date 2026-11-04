@@ -1465,14 +1465,6 @@
       "count": 1
     }
   },
-  "src/preload/ipc.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    }
-  },
   "src/renderer/src/App.tsx": {
     "@eslint-react/dom-no-missing-button-type": {
       "count": 5
@@ -4069,55 +4061,6 @@
       "count": 4
     },
     "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "src/shared/annotation-blocks.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    }
-  },
-  "src/shared/ipc-types.ts": {
-    "@typescript-eslint/consistent-type-definitions": {
-      "count": 4
-    },
-    "@typescript-eslint/no-invalid-void-type": {
-      "count": 1
-    }
-  },
-  "src/shared/override-extractor.ts": {
-    "sonarjs/regex-complexity": {
-      "count": 1
-    }
-  },
-  "src/shared/path-safety.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 1
-    }
-  },
-  "src/shared/types/plugin.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
       "count": 1
     }
   },

@@ -5,18 +5,20 @@ Extracts prototype override method names from RPG Maker MZ plugin code.
 Used by the IPC scan handler (main) and conflict detector (renderer).
 */
 
+// Order matters: block comments, single-line comments,
+// template literals, double-quoted strings, single-quoted strings
+const COMMENT = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/
+const STRING_LITERAL = /`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/
+const COMMENTS = new RegExp(COMMENT.source, 'g')
+const COMMENTS_AND_STRINGS = new RegExp(`${COMMENT.source}|${STRING_LITERAL.source}`, 'g')
+
 /**
 Replace comments and string literals with spaces so that
 prototype references inside them are not matched by the
 extraction regexes.
 */
 export function stripCommentsAndStrings(code: string): string {
-  // Order matters: block comments, single-line comments,
-  // template literals, double-quoted strings, single-quoted strings
-  return code.replaceAll(
-    /\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
-    (match) => ' '.repeat(match.length)
-  )
+  return code.replaceAll(COMMENTS_AND_STRINGS, (match) => ' '.repeat(match.length))
 }
 
 /**
@@ -25,7 +27,7 @@ intact. Used for substring matching where the search target is a string
 literal that must remain comparable (e.g. command name dedup).
 */
 export function stripCommentsOnly(code: string): string {
-  return code.replaceAll(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
+  return code.replaceAll(COMMENTS, (match) => ' '.repeat(match.length))
 }
 
 /**

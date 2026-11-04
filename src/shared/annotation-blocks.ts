@@ -22,7 +22,8 @@ export interface AnnotationBlock {
   end: number
 }
 
-const OPENER = /\/\*(?::([A-Za-z_]*)|~struct~(\w+):([A-Za-z_]*))/g
+const OPENER = /\/\*(?::[A-Za-z_]*|~struct~\w+:[A-Za-z_]*)/g
+const STRUCT_OPENER = '/*~struct~'
 
 /**
 Every annotation block of a plugin file, in file order. The main block is the bare `/*:`
@@ -34,14 +35,17 @@ export function findAnnotationBlocks(source: string): AnnotationBlock[] {
   const opener = new RegExp(OPENER)
   let match: RegExpExecArray | null
   while ((match = opener.exec(source)) !== null) {
-    const close = source.indexOf('*/', match.index + match[0].length)
+    const text = match[0]
+    const close = source.indexOf('*/', match.index + text.length)
     if (close === -1) break
-    const isStruct = match[2] !== undefined
+    // A struct name is word characters, so the first ':' ends it and the language follows
+    const colon = text.indexOf(':')
+    const isStruct = text.startsWith(STRUCT_OPENER)
     blocks.push({
       kind: isStruct ? 'struct' : 'language',
-      lang: (isStruct ? match[3] : match[1]) ?? '',
-      structName: isStruct ? match[2] : null,
-      opener: match[0],
+      lang: text.slice(colon + 1),
+      structName: isStruct ? text.slice(STRUCT_OPENER.length, colon) : null,
+      opener: text,
       start: match.index,
       end: close + 2
     })

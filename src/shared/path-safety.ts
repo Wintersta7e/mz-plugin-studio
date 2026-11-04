@@ -23,7 +23,7 @@ LPT1-9 and COM or LPT with a superscript 1-3, in any case, also with spaces afte
 extension (`NUL.js`, `aux .js`). COM0 and LPT0 are not on Node's own list for `path.win32`.
 */
 const WIN32_DEVICE_NAME =
-  /^(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9\u00B9\u00B2\u00B3]) *(?:\..*)?$/i
+  /^(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9\u{B9}\u{B2}\u{B3}]) *(?:\..*)?$/iu
 
 /**
 Whether the text starts with two separators: a network path (`\\host\share`, `//host/share`)
@@ -85,24 +85,23 @@ Validate that a file path is safe for read/write operations.
 */
 export function assertSafeFilePath(filePath: string, pathImpl: PlatformPath = path): void {
   const resolved = resolveCheckedPath(filePath, pathImpl)
-  if (!isAllowedExtension(resolved, pathImpl)) {
-    const extension = pathImpl.extname(resolved).toLowerCase()
-    throw new Error(
-      `File extension "${extension}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`
-    )
-  }
+  if (isAllowedExtension(resolved, pathImpl)) return
+  const extension = pathImpl.extname(resolved).toLowerCase()
+  throw new Error(
+    `File extension "${extension}" is not allowed. Allowed: ${[...ALLOWED_EXTENSIONS].join(', ')}`
+  )
 }
 
 /**
 Validate that a filename is a simple name (no path separators, NUL, ':', traversal or Windows
-device name). It is checked for both platforms, so `_pathImpl` does not change the result.
+device name). It is checked for both platforms at once, so it takes no path implementation.
 */
-export function assertSafeFilename(filename: string, _pathImpl: PlatformPath = path): void {
+export function assertSafeFilename(filename: string): void {
   // ':' would open an alternate data stream on NTFS (x.js:ads.js)
   if (typeof filename !== 'string' || filename.includes('\0') || filename.includes(':')) {
     throw new Error(`Invalid filename: ${JSON.stringify(filename)}`)
   }
-  if (/[\\/]/.test(filename) || filename === '.' || filename === '..') {
+  if (filename === '.' || filename === '..' || /[\\/]/.test(filename)) {
     throw new Error('Invalid filename: must not contain path separators or traversal')
   }
   if (WIN32_DEVICE_NAME.test(filename)) {

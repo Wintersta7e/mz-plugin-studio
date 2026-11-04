@@ -119,17 +119,20 @@ The definition an imported plugin was loaded with, without the file text it came
 */
 export type PluginBaseline = Omit<PluginDefinition, 'rawSource' | 'codeBody' | 'customCode'>
 
-export function toBaseline(def: PluginDefinition): PluginBaseline {
-  const { rawSource: _rawSource, codeBody: _codeBody, customCode: _customCode, ...baseline } = def
+export function toBaseline(definition: PluginDefinition): PluginBaseline {
+  const baseline = { ...definition }
+  delete baseline.rawSource
+  delete baseline.codeBody
+  delete baseline.customCode
   return baseline
 }
 
 // Default empty plugin
 // Lazy import to avoid circular dependency - settings store may not exist yet
-let _getSettings: (() => { defaultAuthor: string }) | null = null
+const settingsSource: { getter: (() => { defaultAuthor: string }) | null } = { getter: null }
 
 export function setSettingsGetter(getter: () => { defaultAuthor: string }): void {
-  _getSettings = getter
+  settingsSource.getter = getter
 }
 
 /**
@@ -191,13 +194,13 @@ export const ALL_PARAM_TYPES: ReadonlySet<string> = new Set<string>([
 ])
 
 export function createEmptyPlugin(): PluginDefinition {
-  const settings = _getSettings?.()
+  const settings = settingsSource.getter?.()
   return {
     id: crypto.randomUUID(),
     meta: {
       name: 'NewPlugin',
       version: '1.0.0',
-      author: settings?.defaultAuthor || '',
+      author: settings?.defaultAuthor ?? '',
       description: '',
       help: '',
       url: '',

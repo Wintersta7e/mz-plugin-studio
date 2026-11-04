@@ -2,11 +2,11 @@
   "e2e": {
     "exactOptionalPropertyTypes": 3,
     "noPropertyAccessFromIndexSignature": 8,
-    "noUncheckedIndexedAccess": 10
+    "noUncheckedIndexedAccess": 9
   },
   "node": {
     "exactOptionalPropertyTypes": 5,
-    "noUncheckedIndexedAccess": 67
+    "noUncheckedIndexedAccess": 66
   },
   "scripts": {
     "strict": 37,
@@ -17,7 +17,7 @@
   "test": {
     "exactOptionalPropertyTypes": 41,
     "noPropertyAccessFromIndexSignature": 178,
-    "noUncheckedIndexedAccess": 677,
+    "noUncheckedIndexedAccess": 676,
     "erasableSyntaxOnly": 6
   },
   "tools": {
@@ -26,7 +26,7 @@
   "web": {
     "exactOptionalPropertyTypes": 23,
     "noPropertyAccessFromIndexSignature": 59,
-    "noUncheckedIndexedAccess": 45,
+    "noUncheckedIndexedAccess": 44,
     "erasableSyntaxOnly": 1
   }
 }

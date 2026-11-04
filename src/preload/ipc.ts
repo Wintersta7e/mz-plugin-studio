@@ -35,11 +35,19 @@ export function onMainLogLine(callback: (line: LogLine) => void): void {
   })
 }
 
-export function invoke<C extends InvokeChannel>(
+/**
+Electron's invoke typed by the contract: main's handler for each channel answers with its result
+*/
+const invokeChannel: <C extends InvokeChannel>(
+  channel: C,
+  ...args: InvokeArgs<C>
+) => Promise<InvokeResult<C>> = ipcRenderer.invoke.bind(ipcRenderer)
+
+export async function invoke<C extends InvokeChannel>(
   channel: C,
   ...args: InvokeArgs<C>
 ): Promise<InvokeResult<C>> {
-  return ipcRenderer.invoke(channel, ...args)
+  return invokeChannel(channel, ...args)
 }
 
 export function send<C extends SendChannel>(channel: C, ...args: SendArgs<C>): void {
@@ -53,8 +61,8 @@ export function subscribe<C extends EventChannel>(
   channel: C,
   callback: (...args: EventArgs<C>) => void
 ): () => void {
-  const listener = (_event: IpcRendererEvent, ...args: unknown[]): void => {
-    callback(...(args as EventArgs<C>))
+  const listener = (_event: IpcRendererEvent, ...args: EventArgs<C>): void => {
+    callback(...args)
   }
   ipcRenderer.on(channel, listener)
   return () => {
