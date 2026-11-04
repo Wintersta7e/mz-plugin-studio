@@ -6,13 +6,17 @@
 //                     pending flag with no error left (it must move to its program).
 //   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
 //                     of the production code alone (fails unless at its ceiling).
+//   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
+//                     ceilings given as --clones and --duplicated-lines, or without a report).
 //   --report typecov: the type coverage of each program; exits 0 below 100%.
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
 // print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { parseArgs } from 'node:util'
 
 const SUPPRESSIONS = 'eslint-suppressions.json'
 const LINT_CONFIGS = new Set(['eslint.config.mjs', 'lint-scope.json'])
@@ -173,11 +177,17 @@ async function checkPending(tracked) {
   return isOk
 }
 
-// Runs an npm script and returns its output, its exit status and how it ended.
-function npmRun(script) {
+// Runs an npm script with extra arguments and returns its output, its exit status and how it
+// ended.
+/**
+@param {string} script
+@param {string[]} [extra]
+*/
+function npmRun(script, extra = []) {
   const npm = process.env.npm_execpath
   const [command, args] = npm === undefined ? ['npm', []] : [process.execPath, [npm]]
-  const result = spawnSync(command, [...args, 'run', '-s', script], { encoding: 'utf8' })
+  const tail = extra.length === 0 ? [] : ['--', ...extra]
+  const result = spawnSync(command, [...args, 'run', '-s', script, ...tail], { encoding: 'utf8' })
   const ending =
     result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
   return {
@@ -268,6 +278,63 @@ function reportKnip() {
   return reportKnipProduction() && isAllOk
 }
 
+// The copy-paste run's clones and duplicated lines, each held exactly at the ceiling the
+// `jscpd:report` script names: a rise fails, and so does a fall, so a ceiling only moves down
+// with the copies it counts. A share would let new copies through as the code around them grows.
+/**
+@typedef {{ sources: number, clones: number, duplicatedLines: number, percentage: number }} JscpdTotal
+@param {string[]} args
+*/
+function reportJscpd(args) {
+  const { values } = parseArgs({
+    args,
+    options: { clones: { type: 'string' }, 'duplicated-lines': { type: 'string' } }
+  })
+  const output = mkdtempSync(path.join(tmpdir(), 'jscpd-'))
+  const report = path.join(output, 'jscpd-report.json')
+  try {
+    const run = npmRun('jscpd', ['--reporters', 'json', '--output', output])
+    /**
+    @type {{ statistics?: { total?: JscpdTotal } } | null | undefined}
+    */
+    const parsed = existsSync(report) ? parseJson(readFileSync(report, 'utf8')) : undefined
+    const total = parsed?.statistics?.total
+    if (total === undefined || run.status !== 0) {
+      printFailedRun('jscpd', run.status === 0 ? 'the run wrote no report' : 'the run failed', run)
+      return false
+    }
+    const { sources, clones, duplicatedLines, percentage } = total
+    const ceilings = { clones: values.clones, lines: values['duplicated-lines'] }
+    print(
+      `jscpd: files scanned ${sources}, clones ${clones}, duplicated lines ${duplicatedLines} ` +
+        `(${percentage.toFixed(2)}%), ceilings clones ${ceilings.clones ?? 'none'}, ` +
+        `duplicated lines ${ceilings.lines ?? 'none'}`
+    )
+    if (sources === 0) {
+      print('jscpd: the run scanned no file')
+      return false
+    }
+    /**
+    @type {[string, number, string | undefined][]}
+    */
+    const counts = [
+      ['clones', clones, ceilings.clones],
+      ['duplicated-lines', duplicatedLines, ceilings.lines]
+    ]
+    let isOk = true
+    for (const [name, count, ceiling] of counts) {
+      if (ceiling === undefined) print(`jscpd: the jscpd:report script names no --${name} ceiling`)
+      else if (count > Number(ceiling)) print(`jscpd: ${name} rose above the ceiling ${ceiling}`)
+      else if (count < Number(ceiling)) print(`jscpd: ${name} fell; lower --${name} to ${count}`)
+      else continue
+      isOk = false
+    }
+    return isOk
+  } finally {
+    rmSync(output, { recursive: true, force: true })
+  }
+}
+
 function reportTypecov() {
   let isOk = true
   for (const program of TYPECOV_PROGRAMS) {
@@ -286,13 +353,14 @@ function reportTypecov() {
 const [flag, kind] = process.argv.slice(2)
 let ok
 if (flag === '--report' && kind === 'knip') ok = reportKnip()
+else if (flag === '--report' && kind === 'jscpd') ok = reportJscpd(process.argv.slice(4))
 else if (flag === '--report' && kind === 'typecov') ok = reportTypecov()
 else if (flag === undefined) {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
   ok = (await checkPending(tracked)) && suppressionsOk
 } else {
-  print('usage: node scripts/strictness-status.mjs [--report knip|typecov]')
+  print('usage: node scripts/strictness-status.mjs [--report knip|jscpd|typecov]')
   ok = false
 }
 process.exitCode = ok ? 0 : 1

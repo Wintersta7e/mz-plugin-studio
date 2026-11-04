@@ -3,7 +3,6 @@
   "format": ["typescript", "tsx", "javascript"],
   "ignore": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "minTokens": 50,
-  "threshold": 2.13,
   "failOnEmpty": true,
   "reporters": ["console"],
   "noColors": true,

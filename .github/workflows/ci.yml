@@ -37,7 +37,7 @@ jobs:
       - run: npm run typecov:report
       - run: npm run deps
       - run: npm run knip:report
-      - run: npm run jscpd
+      - run: npm run jscpd:report
       - run: npm run format:check
       - run: npm run strictness:status
       - run: npm run licenses -- --check

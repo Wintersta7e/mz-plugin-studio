@@ -953,15 +953,13 @@ const jscpdSources = (): number => {
   try {
     execFileSync(
       process.execPath,
-      // The smallest clone size counts every file; the threshold no longer applies to it.
+      // The smallest clone size counts every file.
       [
         'node_modules/jscpd/run-jscpd.js',
         '--min-tokens',
         '1',
         '--min-lines',
         '1',
-        '--threshold',
-        '100',
         '--reporters',
         'json',
         '--output',

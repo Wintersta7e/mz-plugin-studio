@@ -118,7 +118,7 @@ describe('package.json scripts', () => {
       'npm run typecov:report',
       'npm run deps',
       'npm run knip:report',
-      'npm run jscpd',
+      'npm run jscpd:report',
       'npm run format:check',
       'npm run strictness:status',
       'npm run licenses -- --check'

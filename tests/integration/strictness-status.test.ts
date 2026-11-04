@@ -95,6 +95,33 @@ const reportKnip = (production: string): { status: number | null; out: string } 
   return run(directory, SCRIPT, ['--report', 'knip'])
 }
 
+// A jscpd run that writes a JSON report with these totals into the folder `--output` names, or no
+// report, measured against the ceilings 2 clones and 20 duplicated lines unless others are given.
+interface JscpdTotal {
+  sources: number
+  clones: number
+  duplicatedLines: number
+}
+const CEILINGS = ['--clones', '2', '--duplicated-lines', '20']
+const reportJscpd = (
+  total: JscpdTotal | undefined,
+  ceilings: string[] = CEILINGS
+): { status: number | null; out: string } => {
+  const directory = tempDir()
+  const report = JSON.stringify({ statistics: { total: { ...total, percentage: 2.5 } } })
+  const fake = [
+    "import { writeFileSync } from 'node:fs'",
+    "const output = process.argv[process.argv.indexOf('--output') + 1]",
+    total === undefined ? '' : `writeFileSync(\`\${output}/jscpd-report.json\`, '${report}')`
+  ].join('\n')
+  write(directory, {
+    'package.json': JSON.stringify({ scripts: { jscpd: 'node fake-jscpd.mjs' } }),
+    'fake-jscpd.mjs': fake
+  })
+  return run(directory, SCRIPT, ['--report', 'jscpd', ...ceilings])
+}
+const AT_CEILINGS: JscpdTotal = { sources: 3, clones: 2, duplicatedLines: 20 }
+
 describe('strictness status', () => {
   beforeEach(() => {
     counter.cases += 1
@@ -252,5 +279,52 @@ describe('strictness status', () => {
 
     expect(result.out).toContain('knip production: the run scanned no file')
     expect(result.status).toBe(1)
+  })
+
+  it('(p) passes the jscpd clones and duplicated lines at their ceilings', () => {
+    const result = reportJscpd(AT_CEILINGS)
+
+    expect(result.out).toContain(
+      'jscpd: files scanned 3, clones 2, duplicated lines 20 (2.50%), ceilings clones 2, duplicated lines 20'
+    )
+    expect(result.status).toBe(0)
+  })
+
+  it('(q) fails the jscpd clones or duplicated lines above their ceilings', () => {
+    const clones = reportJscpd({ ...AT_CEILINGS, clones: 3 })
+    const lines = reportJscpd({ ...AT_CEILINGS, duplicatedLines: 21 })
+
+    expect(clones.out).toContain('jscpd: clones rose above the ceiling 2')
+    expect(clones.status).toBe(1)
+    expect(lines.out).toContain('jscpd: duplicated-lines rose above the ceiling 20')
+    expect(lines.status).toBe(1)
+  })
+
+  it('(r) fails the jscpd clones or duplicated lines below their ceilings', () => {
+    const clones = reportJscpd({ ...AT_CEILINGS, clones: 1 })
+    const lines = reportJscpd({ ...AT_CEILINGS, duplicatedLines: 19 })
+
+    expect(clones.out).toContain('jscpd: clones fell; lower --clones to 1')
+    expect(clones.status).toBe(1)
+    expect(lines.out).toContain('jscpd: duplicated-lines fell; lower --duplicated-lines to 19')
+    expect(lines.status).toBe(1)
+  })
+
+  it('(s) fails a jscpd run that scanned no file', () => {
+    const result = reportJscpd({ ...AT_CEILINGS, sources: 0 })
+
+    expect(result.out).toContain('jscpd: the run scanned no file')
+    expect(result.status).toBe(1)
+  })
+
+  it('(t) fails a jscpd run that wrote no report, and ceilings that are not named', () => {
+    const missing = reportJscpd(undefined)
+    const unnamed = reportJscpd(AT_CEILINGS, [])
+
+    expect(missing.out).toContain('jscpd: the run wrote no report (exit 0)')
+    expect(missing.status).toBe(1)
+    expect(unnamed.out).toContain('jscpd: the jscpd:report script names no --clones ceiling')
+    expect(unnamed.out).toContain('jscpd: the jscpd:report script names no --duplicated-lines')
+    expect(unnamed.status).toBe(1)
   })
 })
