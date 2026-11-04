@@ -8,6 +8,7 @@ import {
   getTemplate,
   getTemplateDefaults
 } from '../../src/renderer/src/lib/generator/templates'
+import { getClassMethods } from '../../src/renderer/src/lib/generator/class-registry'
 import { resetStores } from './support/reset-stores'
 
 const HOSTILE_NAME = 'x = 0; globalThis.__pwn = 1; this.y'
@@ -339,5 +340,48 @@ describe('template dialog actions', () => {
     expect(errors).toBeEmptyDOMElement()
     expect(insertButton()).toBeEnabled()
     expect(insertButton()).not.toHaveAccessibleDescription()
+  })
+})
+
+const byText = (a: string, b: string): number => a.localeCompare(b)
+
+const methodLabels = (className: string): string[] =>
+  getClassMethods(className).map((method) => `${method.name}(${method.params.join(', ')})`)
+
+const combobox = (text: string): HTMLElement => {
+  const found = screen.getAllByRole('combobox').find((box) => box.textContent === text)
+  if (found === undefined) throw new Error(`no combobox reads ${text}`)
+  return found
+}
+
+// Opens the select that shows `shown` and picks the option named `name`.
+async function choose(user: UserEvent, shown: string, name: string): Promise<void> {
+  await user.click(combobox(shown))
+  await user.click(await screen.findByRole('option', { name }))
+}
+
+describe('template dialog class and method fields', () => {
+  it('lists the picked class’s methods and clears the method when the class changes', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    renderInserter()
+    await user.type(await searchBox(), 'Alias Method')
+    await user.click(screen.getByRole('button', { name: /^Alias Method/ }))
+    await choose(user, 'Select a class...', 'Game_Actor')
+    await user.click(combobox('Select a method...'))
+    const options = await screen.findAllByRole('option')
+    const listed = options.map((option) => option.textContent)
+
+    expect(listed.toSorted(byText)).toStrictEqual(methodLabels('Game_Actor').toSorted(byText))
+
+    await user.click(screen.getByRole('option', { name: /^levelUp\(/ }))
+
+    expect(preview()).toContain('Game_Actor.prototype.levelUp = function')
+
+    await choose(user, 'Game_Actor', 'Game_Party')
+
+    expect(combobox('Select a method...')).toBeEnabled()
+    expect(screen.getByRole('status')).toHaveTextContent('Field "Method" is required')
   })
 })
