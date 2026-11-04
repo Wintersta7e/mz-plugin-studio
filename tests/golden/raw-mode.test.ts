@@ -159,6 +159,65 @@ describe('raw mode on hand-written plugins', () => {
   })
 })
 
+describe('raw mode beside loop labels', () => {
+  it('names added code after the labels of loops, which are not variables', () => {
+    const source = [
+      '/*:',
+      ' * @target MZ',
+      ' */',
+      '(function (PLUGIN_NAME) {',
+      "  'use strict';",
+      '  params: for (const row of [[1], [2]]) {',
+      '    speed: for (const value of row) {',
+      '      if (value > 1) break speed;',
+      '      continue params;',
+      '    }',
+      '  }',
+      "})('Labelled');",
+      ''
+    ].join('\n')
+    const { opened, baseline } = open(source, 'Labelled.js')
+    const edited = structuredClone(opened)
+    edited.parameters.push({
+      id: 'speed',
+      name: 'speed',
+      text: 'Speed',
+      desc: '',
+      type: 'number',
+      default: 1
+    })
+
+    const code = [
+      '/*:',
+      ' * @target MZ',
+      ' *',
+      ' * @param speed',
+      ' * @text Speed',
+      ' * @type number',
+      ' * @default 1',
+      ' *',
+      ' */',
+      '(function (PLUGIN_NAME) {',
+      "  'use strict';",
+      '',
+      '    const params = PluginManager.parameters(PLUGIN_NAME);',
+      '    // --- New parameters (added by MZ Plugin Studio) ---',
+      "    const speed = Number(params['speed'] || 1);",
+      '    // --- End new parameters ---',
+      '  params: for (const row of [[1], [2]]) {',
+      '    speed: for (const value of row) {',
+      '      if (value > 1) break speed;',
+      '      continue params;',
+      '    }',
+      '  }',
+      "})('Labelled');",
+      ''
+    ].join('\n')
+
+    expect(generatePluginOutput(edited, true, baseline)).toStrictEqual({ ok: true, code })
+  })
+})
+
 describe('override scan of the fixture plugins', () => {
   it.each(fixtures)('%s: blanks comments and strings in place', (file) => {
     const source = readFileSync(fixturePath('js', 'plugins', file), 'utf8')
