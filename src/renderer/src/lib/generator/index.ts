@@ -19,7 +19,7 @@ import {
 } from 'acorn'
 import { annotationText, escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
-import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
+import { findAnnotationBlocks, type AnnotationBlock } from '../../../../shared/annotation-blocks'
 import { COMPACT_PARAM_TAG } from '../../../../shared/compact-param'
 
 /**
@@ -894,6 +894,29 @@ function freeName(place: Placement, name: string): string {
 }
 
 /**
+A replacement of [start, end) in the source; its text is built with \n.
+*/
+interface SourceEdit {
+  start: number
+  end: number
+  text: string
+}
+
+/**
+What raw mode's added code shares: the file, its placement (read from the syntax tree only when
+code or a block is added), and the constant added code declares for the plugin name when the
+file's own is out of reach, with whether it went into the IIFE body, where later added code can
+read it too.
+*/
+interface AddedCode {
+  source: string
+  pluginName: string
+  placement: () => Placement
+  nameConstant: string | undefined
+  isNameInBody: boolean
+}
+
+/**
 Generate plugin output in "raw mode" for an imported plugin: the file's own text, with only
 the annotation blocks whose content changed since `baseline` rewritten and code added only
 for parameters and commands absent from `baseline`. Language blocks are never touched, the
@@ -904,27 +927,56 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   if (!source) {
     throw new Error('generateRawMode needs rawSource')
   }
-  const eol = source.includes('\r\n') ? '\r\n' : '\n'
   const blocks = findAnnotationBlocks(source)
-  // Replacements of [start, end) in the source; text is built with \n
-  const edits: { start: number; end: number; text: string }[] = []
-  // Read from the syntax tree, only when code or a block is added
   let parsed: Placement | undefined
-  const placement = (): Placement => (parsed ??= placementOf(source))
+  const added: AddedCode = {
+    source,
+    pluginName: plugin.meta.name || 'NewPlugin',
+    placement: () => (parsed ??= placementOf(source)),
+    nameConstant: undefined,
+    isNameInBody: false
+  }
+  // In this order: parameter code may declare the plugin name constant command code reads
+  const edits = [
+    ...mainBlockEdits(plugin, baseline, source, blocks),
+    ...structEdits(plugin, baseline, blocks, added),
+    ...parameterEdits(plugin, baseline, added),
+    ...commandEdits(plugin, baseline, added)
+  ]
+  return applyEdits(source, edits)
+}
 
-  // 1. The main block, when its rendering changed
+/**
+The main block, rewritten when its rendering changed since `baseline`.
+*/
+function mainBlockEdits(
+  plugin: PluginDefinition,
+  baseline: PluginBaseline,
+  source: string,
+  blocks: readonly AnnotationBlock[]
+): SourceEdit[] {
   const main = blocks.find((b) => b.kind === 'main')
   const header = generateHeader(plugin, undefined, true)
-  if (main !== undefined && header !== generateHeader(baseline, undefined, true)) {
-    const preamble = extractHeaderPreamble(
-      source.slice(main.start, main.end).replaceAll('\r\n', '\n')
-    )
-    const rest = header.slice(header.indexOf('\n') + 1)
-    edits.push({ start: main.start, end: main.end, text: `${main.opener}\n${preamble}${rest}` })
-  }
+  if (main === undefined || header === generateHeader(baseline, undefined, true)) return []
+  const preamble = extractHeaderPreamble(
+    source.slice(main.start, main.end).replaceAll('\r\n', '\n')
+  )
+  const rest = header.slice(header.indexOf('\n') + 1)
+  return [{ start: main.start, end: main.end, text: `${main.opener}\n${preamble}${rest}` }]
+}
 
-  // 2. Struct blocks: a struct's own block (bare, else :en) is rewritten when its rendering
-  // changed; translated blocks stay; a struct without its own block is added before the IIFE
+/**
+Struct blocks: a struct's own block (bare, else :en) is rewritten when its rendering changed;
+translated blocks stay; a struct without its own block is added before the IIFE.
+*/
+function structEdits(
+  plugin: PluginDefinition,
+  baseline: PluginBaseline,
+  blocks: readonly AnnotationBlock[],
+  added: AddedCode
+): SourceEdit[] {
+  const { source } = added
+  const edits: SourceEdit[] = []
   for (const struct of plugin.structs) {
     const text = generateStructDefinition(struct, undefined, true)
     const before = baseline.structs.find((s) => s.name === struct.name)
@@ -932,7 +984,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     const own = blocks.filter((b) => b.kind === 'struct' && b.structName === struct.name)
     const block = own.find((b) => b.lang === '') ?? own.find((b) => b.lang === 'en')
     if (block === undefined) {
-      const at = placement().iifeStart
+      const at = added.placement().iifeStart
       edits.push(
         at === undefined
           ? { start: source.length, end: source.length, text: `\n\n${text}` }
@@ -946,107 +998,152 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
       })
     }
   }
+  return edits
+}
 
-  const pluginName = plugin.meta.name || 'NewPlugin'
-  // The constant added code declares for the plugin name when the file's own is out of reach,
-  // and whether it went into the IIFE body, where later added code can read it too
-  let nameConstant: string | undefined
-  let isNameInBody = false
-  const pluginNameAt = (place: Placement, at: number): { name: string; line?: string } => {
-    if (place.pluginNameFrom !== undefined && place.pluginNameFrom <= at)
-      return { name: 'PLUGIN_NAME' }
-    nameConstant ??= freeName(place, 'PLUGIN_NAME')
-    return {
-      name: nameConstant,
-      line: `    const ${nameConstant} = '${escapeJSString(pluginName)}';`
-    }
+/**
+How added code at `at` reads the plugin name: the file's `PLUGIN_NAME` when it holds its value
+there, else the constant added code declares, with the line declaring it.
+*/
+function pluginNameAt(
+  added: AddedCode,
+  place: Placement,
+  at: number
+): { name: string; line?: string } {
+  if (place.pluginNameFrom !== undefined && place.pluginNameFrom <= at)
+    return { name: 'PLUGIN_NAME' }
+  added.nameConstant ??= freeName(place, 'PLUGIN_NAME')
+  return {
+    name: added.nameConstant,
+    line: `    const ${added.nameConstant} = '${escapeJSString(added.pluginName)}';`
   }
-  // At the script top level a block keeps added names out of the scope every plugin shares
-  const wrap = (place: Placement, lines: string[]): string =>
-    place.body === undefined ? `{\n${lines.join('\n')}\n}` : lines.join('\n')
+}
 
-  // 3. Parsing code for parameters added since load, after the file's parameters variable when
-  // it has one
+/**
+Added lines as code: at the script top level a block keeps added names out of the scope every
+plugin shares.
+*/
+function scopedLines(place: Placement, lines: readonly string[]): string {
+  return place.body === undefined ? `{\n${lines.join('\n')}\n}` : lines.join('\n')
+}
+
+/**
+Parsing code for parameters added since load, after the file's parameters variable when it has
+one.
+*/
+function parameterEdits(
+  plugin: PluginDefinition,
+  baseline: PluginBaseline,
+  added: AddedCode
+): SourceEdit[] {
   const knownParams = new Set(baseline.parameters.map((p) => p.name))
   const newParams = plugin.parameters.filter(
     (p) => !isSeparator(p.name) && !knownParams.has(p.name)
   )
-  if (newParams.length > 0) {
-    const place = placement()
-    const lines: string[] = []
-    let variable = place.parameters?.name
-    const at =
-      place.parameters === undefined ? place.start : afterNode(source, place.parameters.end)
-    if (variable === undefined) {
-      const { name, line } = pluginNameAt(place, at)
-      if (line !== undefined) {
-        lines.push(line)
-        isNameInBody = place.body !== undefined
-      }
-      variable = freeName(place, 'params')
-      lines.push(`    const ${variable} = PluginManager.parameters(${name});`)
+  if (newParams.length === 0) return []
+  const place = added.placement()
+  const lines: string[] = []
+  let variable = place.parameters?.name
+  const at =
+    place.parameters === undefined ? place.start : afterNode(added.source, place.parameters.end)
+  if (variable === undefined) {
+    const { name, line } = pluginNameAt(added, place, at)
+    if (line !== undefined) {
+      lines.push(line)
+      added.isNameInBody = place.body !== undefined
     }
-    lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
-    for (const param of newParams) {
-      const accessor = `${variable}['${escapeJSString(annotationText(param.name))}']`
-      const constant = freeName(place, camelCase(param.name))
-      lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
-    }
-    lines.push(`    // --- End new parameters ---`)
-    edits.push({ start: at, end: at, text: `\n${wrap(place, lines)}\n` })
+    variable = freeName(place, 'params')
+    lines.push(`    const ${variable} = PluginManager.parameters(${name});`)
   }
+  lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
+  for (const param of newParams) {
+    const accessor = `${variable}['${escapeJSString(annotationText(param.name))}']`
+    const constant = freeName(place, camelCase(param.name))
+    lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
+  }
+  lines.push(`    // --- End new parameters ---`)
+  return [{ start: at, end: at, text: `\n${scopedLines(place, lines)}\n` }]
+}
 
-  // 4. Registration code for commands added since load, at the end of the IIFE body
+/**
+The start of the line closing the IIFE body, or its closing brace when code shares that line;
+the end of the file at the top level.
+*/
+function bodyCloseAt(source: string, place: Placement): number {
+  if (place.body === undefined) return source.length
+  const close = place.body.end - 1
+  const lineStart = source.lastIndexOf('\n', close) + 1
+  return /^[ \t]*$/.test(source.slice(lineStart, close)) ? lineStart : close
+}
+
+/**
+An added command's registration, its arguments parsed into constants with distinct names.
+*/
+function registrationLines(command: PluginCommand, name: string): string[] {
+  const lines = [
+    `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(command.name))}', function(args) {`
+  ]
+  const argNames = new Set<string>()
+  const constants = command.args.map((arg) => {
+    let constant = camelCase(arg.name)
+    while (argNames.has(constant)) constant += '_'
+    argNames.add(constant)
+    return constant
+  })
+  for (const [index, arg] of command.args.entries()) {
+    lines.push(`        const ${constants[index]} = ${generateArgParser(arg)};`)
+  }
+  lines.push('')
+  lines.push('        // TODO: Implement command logic')
+  if (command.args.length > 0) {
+    lines.push(`        // Parsed args available as: ${constants.join(', ')}`)
+  }
+  lines.push('    });')
+  return lines
+}
+
+/**
+Registration code for commands added since load, at the end of the IIFE body.
+*/
+function commandEdits(
+  plugin: PluginDefinition,
+  baseline: PluginBaseline,
+  added: AddedCode
+): SourceEdit[] {
   const knownCommands = new Set(baseline.commands.map((c) => c.name))
   const newCommands = plugin.commands.filter((command) => !knownCommands.has(command.name))
-  if (newCommands.length > 0) {
-    const place = placement()
-    // The start of the line closing the body, or the closing brace when code shares its line
-    let at = source.length
-    if (place.body !== undefined) {
-      const close = place.body.end - 1
-      const lineStart = source.lastIndexOf('\n', close) + 1
-      at = /^[ \t]*$/.test(source.slice(lineStart, close)) ? lineStart : close
-    }
-    const lines: string[] = []
-    let name = nameConstant
-    if (!isNameInBody || name === undefined) {
-      const reach = pluginNameAt(place, at)
-      name = reach.name
-      if (reach.line !== undefined) lines.push(reach.line)
-    }
-    lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
-    for (const command of newCommands) {
-      lines.push(
-        `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(command.name))}', function(args) {`
-      )
-      const argNames = new Set<string>()
-      const constants = command.args.map((arg) => {
-        let constant = camelCase(arg.name)
-        while (argNames.has(constant)) constant += '_'
-        argNames.add(constant)
-        return constant
-      })
-      for (const [index, arg] of command.args.entries()) {
-        lines.push(`        const ${constants[index]} = ${generateArgParser(arg)};`)
-      }
-      lines.push('')
-      lines.push('        // TODO: Implement command logic')
-      if (command.args.length > 0) {
-        lines.push(`        // Parsed args available as: ${constants.join(', ')}`)
-      }
-      lines.push('    });')
-    }
-    lines.push(`    // --- End new commands ---`)
-    edits.push({
+  if (newCommands.length === 0) return []
+  const place = added.placement()
+  const at = bodyCloseAt(added.source, place)
+  const lines: string[] = []
+  let name = added.nameConstant
+  if (name === undefined || !added.isNameInBody) {
+    const reach = pluginNameAt(added, place, at)
+    name = reach.name
+    if (reach.line !== undefined) lines.push(reach.line)
+  }
+  lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
+  for (const command of newCommands) {
+    lines.push(...registrationLines(command, name))
+  }
+  lines.push(`    // --- End new commands ---`)
+  return [
+    {
       start: at,
       end: at,
-      text: place.body === undefined ? `\n${wrap(place, lines)}\n` : `\n${lines.join('\n')}\n\n`
-    })
-  }
+      text:
+        place.body === undefined ? `\n${scopedLines(place, lines)}\n` : `\n${lines.join('\n')}\n\n`
+    }
+  ]
+}
 
-  // Apply from the end so earlier offsets stay valid; at one offset a replacement goes before
-  // an insertion, and insertions keep their order
+/**
+`source` with `edits` applied in the file's line endings. They apply from the end so earlier
+offsets stay valid; at one offset a replacement goes before an insertion, and insertions keep
+their order.
+*/
+function applyEdits(source: string, edits: readonly SourceEdit[]): string {
+  const eol = source.includes('\r\n') ? '\r\n' : '\n'
   let output = source
   const ordered = edits
     .map((e, index) => ({ ...e, i: index }))
