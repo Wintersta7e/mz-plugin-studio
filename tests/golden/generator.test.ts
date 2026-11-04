@@ -126,6 +126,40 @@ describe('generator rules no file golden reaches', () => {
     })
   })
 
+  it('names parameters whose identifiers collide, are reserved or start with a digit', () => {
+    const definition = customCodeRows()
+    const param: PluginParameter = {
+      id: 'p',
+      name: 'p',
+      text: '',
+      desc: '',
+      type: 'string',
+      default: ''
+    }
+    definition.customCode = ''
+    definition.commands = []
+    definition.structs = []
+    definition.parameters = ['foo-bar', 'Foo Bar', 'class', '1st'].map((name) => ({
+      ...param,
+      id: name,
+      name
+    }))
+
+    expect(validatePlugin(definition)).toStrictEqual({
+      valid: false,
+      errors: [
+        'Parameters "foo-bar" and "Foo Bar" both generate identifier "fooBar" — rename one to avoid a duplicate declaration'
+      ],
+      warnings: [
+        'Parameter "foo-bar" is not a valid JS identifier (will still work in MZ)',
+        'Parameter "Foo Bar" is not a valid JS identifier (will still work in MZ)',
+        'Parameter "class" is a reserved name; the generated variable will be "class_"',
+        'Parameter "1st" is not a valid JS identifier (will still work in MZ)',
+        'Parameter "1st" starts with a digit; the generated variable will be "_1st"'
+      ]
+    })
+  })
+
   it('lists the class registry in code-unit order', () => {
     const names = getAllClassNames()
 
