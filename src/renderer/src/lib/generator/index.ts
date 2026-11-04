@@ -38,6 +38,14 @@ function blockValue(sink: BlockSink | undefined, field: string, value: string): 
 }
 
 /**
+The annotation line ` * <tag> <value>`; `sink` receives the value labelled `<owner> <tag>`.
+*/
+function tagLine(sink: BlockSink | undefined, owner: string, tag: string, value: string): string {
+  const text = blockValue(sink, `${owner} ${tag}`, value)
+  return ` * ${tag} ${text}`
+}
+
+/**
 Whether a help line would be read as a tag: its first non-space character is `@`.
 */
 const HELP_TAG_LINE = /^(\s*)@/
@@ -79,10 +87,8 @@ function findRegisteredCommandNames(strippedSource: string, pluginName: string):
 Generate a complete RPG Maker MZ plugin from a PluginDefinition
 */
 export function generatePlugin(plugin: PluginDefinition): string {
-  const parts: string[] = []
-
   // Generate header comment
-  parts.push(generateHeader(plugin))
+  const parts = [generateHeader(plugin)]
 
   // Generate localized headers
   const localizedHeaders = generateLocalizedHeaders(plugin)
@@ -235,13 +241,13 @@ function generateParameterBlock(
   shouldKeepRequire: boolean
 ): string[] {
   const lines = [
-    ` * @param ${blockValue(sink, `${owner} @param`, param.name)}`,
+    tagLine(sink, owner, '@param', param.name),
     ...fieldLines(param, owner, sink, shouldKeepRequire)
   ]
 
   // Parent (for nested parameters)
   if (param.parent !== undefined && param.parent !== '') {
-    lines.push(` * @parent ${blockValue(sink, `${owner} @parent`, param.parent)}`)
+    lines.push(tagLine(sink, owner, '@parent', param.parent))
   }
 
   return lines
@@ -259,15 +265,15 @@ function fieldLines(
   const lines: string[] = []
 
   if (param.text && param.text !== param.name) {
-    lines.push(` * @text ${blockValue(sink, `${owner} @text`, param.text)}`)
+    lines.push(tagLine(sink, owner, '@text', param.text))
   }
 
   if (param.desc) {
-    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, param.desc)}`)
+    lines.push(tagLine(sink, owner, '@desc', param.desc))
   }
 
   // Type
-  lines.push(` * @type ${blockValue(sink, `${owner} @type`, formatParamType(param))}`)
+  lines.push(tagLine(sink, owner, '@type', formatParamType(param)))
   lines.push(...typeSettingLines(param, owner, sink))
 
   if (
@@ -275,7 +281,7 @@ function fieldLines(
     param.dir !== undefined &&
     param.dir !== ''
   ) {
-    lines.push(` * @dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
+    lines.push(tagLine(sink, owner, '@dir', param.dir))
   }
   // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
   // Use @requiredAssets at the plugin level instead. Raw mode keeps an imported file's line.
@@ -285,9 +291,7 @@ function fieldLines(
 
   // Default value
   if (param.default !== '') {
-    lines.push(
-      ` * @default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default))}`
-    )
+    lines.push(tagLine(sink, owner, '@default', formatDefaultValue(param.default)))
   }
 
   return lines
@@ -306,23 +310,23 @@ function typeSettingLines(
   // Boolean-specific @on/@off labels
   if (param.type === 'boolean') {
     if (param.onLabel !== undefined && param.onLabel !== '') {
-      lines.push(` * @on ${blockValue(sink, `${owner} @on`, param.onLabel)}`)
+      lines.push(tagLine(sink, owner, '@on', param.onLabel))
     }
     if (param.offLabel !== undefined && param.offLabel !== '') {
-      lines.push(` * @off ${blockValue(sink, `${owner} @off`, param.offLabel)}`)
+      lines.push(tagLine(sink, owner, '@off', param.offLabel))
     }
   }
 
   // Type-specific attributes
   if (param.type === 'number') {
     if (param.min !== undefined) {
-      lines.push(` * @min ${blockValue(sink, `${owner} @min`, String(param.min))}`)
+      lines.push(tagLine(sink, owner, '@min', String(param.min)))
     }
     if (param.max !== undefined) {
-      lines.push(` * @max ${blockValue(sink, `${owner} @max`, String(param.max))}`)
+      lines.push(tagLine(sink, owner, '@max', String(param.max)))
     }
     if (param.decimals !== undefined) {
-      lines.push(` * @decimals ${blockValue(sink, `${owner} @decimals`, String(param.decimals))}`)
+      lines.push(tagLine(sink, owner, '@decimals', String(param.decimals)))
     }
   }
 
@@ -336,9 +340,9 @@ function optionLines(param: PluginParameter, owner: string, sink: BlockSink | un
   const lines: string[] = []
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
     for (const opt of param.options) {
-      lines.push(` * @option ${blockValue(sink, `${owner} @option`, opt.text)}`)
+      lines.push(tagLine(sink, owner, '@option', opt.text))
       if (opt.value !== opt.text) {
-        lines.push(` * @value ${blockValue(sink, `${owner} @value`, opt.value)}`)
+        lines.push(tagLine(sink, owner, '@value', opt.value))
       }
     }
   }
@@ -395,21 +399,21 @@ function generateCommandBlock(
   const lines: string[] = []
   const owner = `Command "${command.name}"`
 
-  lines.push(` * @command ${blockValue(sink, `${owner} @command`, command.name)}`)
+  lines.push(tagLine(sink, owner, '@command', command.name))
 
   if (command.text && command.text !== command.name) {
-    lines.push(` * @text ${blockValue(sink, `${owner} @text`, command.text)}`)
+    lines.push(tagLine(sink, owner, '@text', command.text))
   }
 
   if (command.desc) {
-    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, command.desc)}`)
+    lines.push(tagLine(sink, owner, '@desc', command.desc))
   }
 
   // Command arguments
   for (const arg of command.args) {
     const argOwner = `${owner} argument "${arg.name}"`
     lines.push(' *')
-    lines.push(` * @arg ${blockValue(sink, `${argOwner} @arg`, arg.name)}`)
+    lines.push(tagLine(sink, argOwner, '@arg', arg.name))
     lines.push(...fieldLines(arg, argOwner, sink, shouldKeepRequire))
   }
 
@@ -433,19 +437,18 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
     const help = content.help ?? ''
     if (description === '' && help === '') continue
 
-    const lines: string[] = []
-    lines.push(`/*:${blockValue(sink, `Localization "${lang}"`, lang)}`)
+    const owner = `Localization "${lang}"`
+    const lines = [`/*:${blockValue(sink, owner, lang)}`]
 
     if (description !== '') {
-      lines.push(
-        ` * @plugindesc ${blockValue(sink, `Localization "${lang}" @plugindesc`, description)}`
-      )
+      lines.push(tagLine(sink, owner, '@plugindesc', description))
     }
 
     if (help !== '') {
       lines.push(' * @help')
+      const helpField = `${owner} @help`
       for (const helpLine of help.split(/\r\n|\r|\n/)) {
-        lines.push(` * ${helpText(blockValue(sink, `Localization "${lang}" @help`, helpLine))}`)
+        lines.push(` * ${helpText(blockValue(sink, helpField, helpLine))}`)
       }
     }
 
@@ -464,9 +467,8 @@ function generateStructDefinition(
   sink?: BlockSink,
   shouldKeepRequire = false
 ): string {
-  const lines: string[] = []
-
-  lines.push(`/*~struct~${blockValue(sink, `Struct "${struct.name}"`, struct.name)}:`)
+  const structOwner = `Struct "${struct.name}"`
+  const lines = [`/*~struct~${blockValue(sink, structOwner, struct.name)}:`]
 
   for (const param of struct.parameters) {
     const owner = `Struct "${struct.name}" field "${param.name}"`
@@ -1719,13 +1721,12 @@ function checkFieldText(plugin: PluginDefinition, { warnings }: ValidationProble
 Generate a command skeleton for insertion into customCode
 */
 export function generateCommandSkeleton(command: PluginCommand): string {
-  const lines: string[] = []
-  lines.push(`// --- ${escapeLineComment(command.name)} ---`)
-  lines.push(
-    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`
-  )
-  lines.push(`    // TODO: Implement ${escapeJSString(command.name)} logic`)
-  lines.push('});')
+  const lines = [
+    `// --- ${escapeLineComment(command.name)} ---`,
+    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`,
+    `    // TODO: Implement ${escapeJSString(command.name)} logic`,
+    '});'
+  ]
   return lines.join('\n')
 }
 
