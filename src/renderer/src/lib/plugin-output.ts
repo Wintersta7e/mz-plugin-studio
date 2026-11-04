@@ -112,7 +112,7 @@ export function generatePluginOutput(
   // still written as edited
   if (code !== rawSource) {
     const problem = scriptParseError(code)
-    if (problem !== null && scriptParseError(rawSource) === null) {
+    if (problem !== undefined && scriptParseError(rawSource) === undefined) {
       return {
         ok: false,
         refusal: 'invalid-output',

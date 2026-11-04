@@ -154,7 +154,7 @@ describe('raw mode on hand-written plugins', () => {
   })
 
   it('reads a parse error only from code that does not parse', () => {
-    expect(scriptParseError('var a = 1;')).toBeNull()
+    expect(scriptParseError('var a = 1;')).toBeUndefined()
     expect(scriptParseError('var a = ;')).toBe('Unexpected token (1:8)')
   })
 })

@@ -393,10 +393,10 @@ function generateCommandBlock(
 /**
 Generate localized header blocks for multi-language support
 */
-function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): string | null {
+function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): string | undefined {
   const localizations = plugin.meta.localizations
   if (!localizations || Object.keys(localizations).length === 0) {
-    return null
+    return undefined
   }
 
   const parts: string[] = []
@@ -425,7 +425,7 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
     parts.push(lines.join('\n'))
   }
 
-  return parts.length > 0 ? parts.join('\n\n') : null
+  return parts.length > 0 ? parts.join('\n\n') : undefined
 }
 
 /**
@@ -572,12 +572,12 @@ const parseScript = (code: string): Program =>
   parse(code, { ecmaVersion: 'latest', sourceType: 'script' })
 
 /**
-Why `code` does not parse as a classic script, or null when it does.
+Why `code` does not parse as a classic script, or undefined when it does.
 */
-export function scriptParseError(code: string): string | null {
+export function scriptParseError(code: string): string | undefined {
   try {
     parseScript(code)
-    return null
+    return undefined
   } catch (error) {
     if (error instanceof SyntaxError) return error.message
     throw error
@@ -618,7 +618,7 @@ function collectNames(node: AnyNode, names: Set<string>): void {
             node.type === 'BreakStatement' ||
             node.type === 'ContinueStatement'
           ? node.label
-          : null
+          : undefined
   for (const child of childNodes(node)) if (child !== notAName) collectNames(child, names)
 }
 
@@ -631,12 +631,13 @@ const hasBlockBody = (
 /**
 The function a statement calls in place: `(function () {…})()`, `(function () {…}())`, `(() => {…})()`.
 */
-function calledFunction(statement: AnyNode): CalledFunction | null {
+function calledFunction(statement: AnyNode): CalledFunction | undefined {
   if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'CallExpression')
-    return null
+    return undefined
   const callee = statement.expression.callee
-  if (callee.type !== 'FunctionExpression' && callee.type !== 'ArrowFunctionExpression') return null
-  return hasBlockBody(callee) ? callee : null
+  if (callee.type !== 'FunctionExpression' && callee.type !== 'ArrowFunctionExpression')
+    return undefined
+  return hasBlockBody(callee) ? callee : undefined
 }
 
 /**
@@ -688,15 +689,15 @@ interface Placement {
   /**
   Start of the first top-level IIFE: a struct block without a block of its own goes there
   */
-  iifeStart: number | null
+  iifeStart: number | undefined
   /**
-  The body of the IIFE added code goes into; null for the script's top level
+  The body of the IIFE added code goes into; undefined for the script's top level
   */
-  body: BlockStatement | null
+  body: BlockStatement | undefined
   /**
   The variable the file reads its parameters into, and the end of its declaration
   */
-  parameters: { name: string; end: number } | null
+  parameters: { name: string; end: number } | undefined
   /**
   Where code for added parameters goes when the file has no parameters variable
   */
@@ -704,7 +705,7 @@ interface Placement {
   /**
   The index from which the file's own `PLUGIN_NAME` holds its value in that scope
   */
-  pluginNameFrom: number | null
+  pluginNameFrom: number | undefined
   /**
   Every name the file declares or reads; a name added code declares is added here
   */
@@ -754,15 +755,16 @@ function placementOf(source: string): Placement {
   }
   const statements = program.body
   const units = statements.map((statement) => ({ statement, fn: calledFunction(statement) }))
-  const firstCall = units.find((unit): unit is CallUnit => unit.fn !== null)
+  const firstCall = units.find((unit): unit is CallUnit => unit.fn !== undefined)
 
   // The first declaration of the top level or of a top-level IIFE body reading the parameters
   let parameters: { name: string; end: number } | undefined
   let parametersCall: CallUnit | undefined
   for (const unit of units) {
-    parameters = parametersDeclaration(unit.fn === null ? [unit.statement] : unit.fn.body.body)
+    parameters = parametersDeclaration(unit.fn === undefined ? [unit.statement] : unit.fn.body.body)
     if (parameters !== undefined) {
-      parametersCall = unit.fn === null ? undefined : { statement: unit.statement, fn: unit.fn }
+      parametersCall =
+        unit.fn === undefined ? undefined : { statement: unit.statement, fn: unit.fn }
       break
     }
   }
@@ -770,8 +772,8 @@ function placementOf(source: string): Placement {
   const scope = owner === undefined ? statements : owner.fn.body.body
 
   const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
-  let pluginNameFrom = own === undefined ? null : own.end
-  if (owner !== undefined && pluginNameFrom === null) {
+  let pluginNameFrom = own?.end
+  if (owner !== undefined && pluginNameFrom === undefined) {
     const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
     const isParam = owner.fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
     if (isParam || (outer !== undefined && outer.end <= owner.statement.start)) {
@@ -791,9 +793,9 @@ function placementOf(source: string): Placement {
   const names = new Set<string>()
   collectNames(program, names)
   return {
-    iifeStart: firstCall === undefined ? null : firstCall.statement.start,
-    body: owner === undefined ? null : owner.fn.body,
-    parameters: parameters ?? null,
+    iifeStart: firstCall?.statement.start,
+    body: owner?.fn.body,
+    parameters,
     start,
     pluginNameFrom,
     names
@@ -851,7 +853,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     if (block === undefined) {
       const at = placement().iifeStart
       edits.push(
-        at === null
+        at === undefined
           ? { start: source.length, end: source.length, text: `\n\n${text}` }
           : { start: at, end: at, text: `${text}\n\n` }
       )
@@ -870,7 +872,8 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   let nameConstant: string | undefined
   let isNameInBody = false
   const pluginNameAt = (place: Placement, at: number): { name: string; line?: string } => {
-    if (place.pluginNameFrom !== null && place.pluginNameFrom <= at) return { name: 'PLUGIN_NAME' }
+    if (place.pluginNameFrom !== undefined && place.pluginNameFrom <= at)
+      return { name: 'PLUGIN_NAME' }
     nameConstant ??= freeName(place, 'PLUGIN_NAME')
     return {
       name: nameConstant,
@@ -879,7 +882,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   }
   // At the script top level a block keeps added names out of the scope every plugin shares
   const wrap = (place: Placement, lines: string[]): string =>
-    place.body === null ? `{\n${lines.join('\n')}\n}` : lines.join('\n')
+    place.body === undefined ? `{\n${lines.join('\n')}\n}` : lines.join('\n')
 
   // 3. Parsing code for parameters added since load, after the file's parameters variable when
   // it has one
@@ -891,12 +894,13 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     const place = placement()
     const lines: string[] = []
     let variable = place.parameters?.name
-    const at = place.parameters === null ? place.start : afterNode(source, place.parameters.end)
+    const at =
+      place.parameters === undefined ? place.start : afterNode(source, place.parameters.end)
     if (variable === undefined) {
       const { name, line } = pluginNameAt(place, at)
       if (line !== undefined) {
         lines.push(line)
-        isNameInBody = place.body !== null
+        isNameInBody = place.body !== undefined
       }
       variable = freeName(place, 'params')
       lines.push(`    const ${variable} = PluginManager.parameters(${name});`)
@@ -918,7 +922,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     const place = placement()
     // The start of the line closing the body, or the closing brace when code shares its line
     let at = source.length
-    if (place.body !== null) {
+    if (place.body !== undefined) {
       const close = place.body.end - 1
       const lineStart = source.lastIndexOf('\n', close) + 1
       at = /^[ \t]*$/.test(source.slice(lineStart, close)) ? lineStart : close
@@ -956,7 +960,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     edits.push({
       start: at,
       end: at,
-      text: place.body === null ? `\n${wrap(place, lines)}\n` : `\n${lines.join('\n')}\n\n`
+      text: place.body === undefined ? `\n${wrap(place, lines)}\n` : `\n${lines.join('\n')}\n\n`
     })
   }
 

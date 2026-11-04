@@ -2613,9 +2613,6 @@
     "unicorn/no-lonely-if": {
       "count": 1
     },
-    "unicorn/no-null": {
-      "count": 11
-    },
     "unicorn/no-unnecessary-parameters": {
       "count": 2
     },
