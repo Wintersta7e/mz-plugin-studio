@@ -114,7 +114,9 @@ export interface PluginDefinition {
   importedFrom?: string // File name the plugin was loaded from; unset for plugins created here
 }
 
-/** The definition an imported plugin was loaded with, without the file text it came from. */
+/**
+The definition an imported plugin was loaded with, without the file text it came from.
+*/
 export type PluginBaseline = Omit<PluginDefinition, 'rawSource' | 'codeBody' | 'customCode'>
 
 export function toBaseline(def: PluginDefinition): PluginBaseline {
@@ -131,9 +133,9 @@ export function setSettingsGetter(getter: () => { defaultAuthor: string }): void
 }
 
 /**
- * Parameter types that represent numeric database IDs in RPG Maker MZ.
- * Used by the generator (accessor parser, formatJSDefault) and export formats (paramTypeToTS).
- */
+Parameter types that represent numeric database IDs in RPG Maker MZ.
+Used by the generator (accessor parser, formatJSDefault) and export formats (paramTypeToTS).
+*/
 export const ID_BASED_PARAM_TYPES: ReadonlySet<ParamType> = new Set<ParamType>([
   'variable',
   'switch',
@@ -154,8 +156,8 @@ export const ID_BASED_PARAM_TYPES: ReadonlySet<ParamType> = new Set<ParamType>([
 ])
 
 /**
- * All valid ParamType values, for runtime validation of imported data.
- */
+All valid ParamType values, for runtime validation of imported data.
+*/
 export const ALL_PARAM_TYPES: ReadonlySet<string> = new Set<string>([
   'string',
   'number',

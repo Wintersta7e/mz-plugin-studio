@@ -1,42 +1,42 @@
 /**
- * Override Extractor — Shared between main and renderer processes
- *
- * Extracts prototype override method names from RPG Maker MZ plugin code.
- * Used by the IPC scan handler (main) and conflict detector (renderer).
- */
+Override Extractor — Shared between main and renderer processes
+
+Extracts prototype override method names from RPG Maker MZ plugin code.
+Used by the IPC scan handler (main) and conflict detector (renderer).
+*/
 
 /**
- * Replace comments and string literals with spaces so that
- * prototype references inside them are not matched by the
- * extraction regexes.
- */
+Replace comments and string literals with spaces so that
+prototype references inside them are not matched by the
+extraction regexes.
+*/
 export function stripCommentsAndStrings(code: string): string {
   // Order matters: block comments, single-line comments,
   // template literals, double-quoted strings, single-quoted strings
-  return code.replace(
+  return code.replaceAll(
     /\/\*[\s\S]*?\*\/|\/\/[^\n]*|`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
     (match) => ' '.repeat(match.length)
   )
 }
 
 /**
- * Replace only comments (block + line) with spaces, keeping string contents
- * intact. Used for substring matching where the search target is a string
- * literal that must remain comparable (e.g. command name dedup).
- */
+Replace only comments (block + line) with spaces, keeping string contents
+intact. Used for substring matching where the search target is a string
+literal that must remain comparable (e.g. command name dedup).
+*/
 export function stripCommentsOnly(code: string): string {
-  return code.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
+  return code.replaceAll(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match) => ' '.repeat(match.length))
 }
 
 /**
- * Extract prototype override method names from JavaScript plugin code.
- *
- * Detects two patterns:
- *  1. Direct assignment:  `ClassName.prototype.method = ...`
- *  2. Alias capture:      `const|let|var _alias = ClassName.prototype.method;`
- *
- * Returns a deduplicated array of `"ClassName.prototype.methodName"` strings.
- */
+Extract prototype override method names from JavaScript plugin code.
+
+Detects two patterns:
+ 1. Direct assignment:  `ClassName.prototype.method = ...`
+ 2. Alias capture:      `const|let|var _alias = ClassName.prototype.method;`
+
+Returns a deduplicated array of `"ClassName.prototype.methodName"` strings.
+*/
 export function extractOverrides(code: string): string[] {
   if (!code) return []
 

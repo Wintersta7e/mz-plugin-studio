@@ -4080,20 +4080,6 @@
   "src/shared/annotation-blocks.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
-  "src/shared/compact-param.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
     }
   },
   "src/shared/ipc-types.ts": {
@@ -4107,12 +4093,6 @@
   "src/shared/override-extractor.ts": {
     "sonarjs/regex-complexity": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
     }
   },
   "src/shared/path-safety.ts": {
@@ -4142,13 +4122,7 @@
     "unicorn/name-replacements": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
     "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
       "count": 1
     }
   },
