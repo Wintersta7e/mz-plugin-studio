@@ -1409,6 +1409,14 @@ const MZ_BUILTIN_COMMANDS = new Set([
 ])
 
 /**
+What validation found: errors and warnings, each list in the order the checks ran.
+*/
+interface ValidationProblems {
+  errors: string[]
+  warnings: string[]
+}
+
+/**
 Validate a plugin definition
 Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
 We only strictly validate plugin name and command names since those are used in code.
@@ -1418,9 +1426,24 @@ export function validatePlugin(plugin: PluginDefinition): {
   errors: string[]
   warnings: string[]
 } {
-  const errors: string[] = []
-  const warnings: string[] = []
+  const problems: ValidationProblems = { errors: [], warnings: [] }
+  checkPluginName(plugin, problems)
+  checkParameterNames(plugin.parameters, problems)
+  checkCommands(plugin.commands, problems)
+  checkStructReferences(plugin, problems)
+  checkStructDefaults(plugin.parameters, problems)
+  checkUnusedStructs(plugin, problems)
+  checkParents(plugin.parameters, problems)
+  checkImplementations(plugin, problems)
+  checkFieldText(plugin, problems)
+  const { errors, warnings } = problems
+  return { valid: errors.length === 0, errors, warnings }
+}
 
+/**
+The plugin name and the localization keys, which code and MZ read.
+*/
+function checkPluginName(plugin: PluginDefinition, { errors }: ValidationProblems): void {
   // Plugin name must be a valid identifier (used in PluginManager.parameters())
   if (!isIdentifierName(plugin.meta.name)) {
     errors.push(
@@ -1435,12 +1458,22 @@ export function validatePlugin(plugin: PluginDefinition): {
       )
     }
   }
+}
 
+/**
+Parameter names: empty and duplicate names, names that are not identifiers, and names whose
+generated identifiers collide or differ from the name.
+*/
+function checkParameterNames(
+  parameters: readonly PluginParameter[],
+  problems: ValidationProblems
+): void {
+  const { errors, warnings } = problems
   // Check for duplicate parameter names (but allow any string - MZ supports it)
   const paramNames = new Set<string>()
   // Collect post-transform identifiers to detect collisions after camelCase sanitization
   const identifierOrigins = new Map<string, string>()
-  for (const param of plugin.parameters) {
+  for (const param of parameters) {
     if (!param.name) {
       errors.push('Parameter name cannot be empty')
     } else if (paramNames.has(param.name)) {
@@ -1461,39 +1494,57 @@ export function validatePlugin(plugin: PluginDefinition): {
       }
     }
 
-    // Post-transform collision detection: two params with different raw names
-    // can camelCase() to the same identifier (e.g., "foo-bar" and "Foo Bar")
-    // which produces duplicate `const` declarations inside the IIFE.
     if (param.name && !isSectionDivider) {
-      const identifier = camelCase(param.name)
-      const previousOrigin = identifierOrigins.get(identifier)
-      if (previousOrigin && previousOrigin !== param.name) {
-        errors.push(
-          `Parameters "${previousOrigin}" and "${param.name}" both generate identifier "${identifier}" — rename one to avoid a duplicate declaration`
-        )
-      } else {
-        identifierOrigins.set(identifier, param.name)
-      }
-
-      // Warn about reserved-word and digit-start transforms so users know the
-      // generated variable differs from their parameter name.
-      if (identifier !== param.name) {
-        if (JS_RESERVED.has(param.name)) {
-          warnings.push(
-            `Parameter "${param.name}" is a reserved name; the generated variable will be "${identifier}"`
-          )
-        } else if (/^\d/.test(param.name)) {
-          warnings.push(
-            `Parameter "${param.name}" starts with a digit; the generated variable will be "${identifier}"`
-          )
-        }
-      }
+      checkGeneratedIdentifier(param.name, identifierOrigins, problems)
     }
   }
+}
 
-  // Command names must be valid identifiers (used in PluginManager.registerCommand())
+/**
+Post-transform collision detection: two params with different raw names can camelCase() to the
+same identifier (e.g., "foo-bar" and "Foo Bar"), which produces duplicate `const` declarations
+inside the IIFE. `identifierOrigins` maps each identifier to the first name that gave it.
+*/
+function checkGeneratedIdentifier(
+  name: string,
+  identifierOrigins: Map<string, string>,
+  { errors, warnings }: ValidationProblems
+): void {
+  const identifier = camelCase(name)
+  const previousOrigin = identifierOrigins.get(identifier)
+  if (previousOrigin && previousOrigin !== name) {
+    errors.push(
+      `Parameters "${previousOrigin}" and "${name}" both generate identifier "${identifier}" — rename one to avoid a duplicate declaration`
+    )
+  } else {
+    identifierOrigins.set(identifier, name)
+  }
+
+  // Warn about reserved-word and digit-start transforms so users know the
+  // generated variable differs from their parameter name.
+  if (identifier !== name) {
+    if (JS_RESERVED.has(name)) {
+      warnings.push(
+        `Parameter "${name}" is a reserved name; the generated variable will be "${identifier}"`
+      )
+    } else if (/^\d/.test(name)) {
+      warnings.push(
+        `Parameter "${name}" starts with a digit; the generated variable will be "${identifier}"`
+      )
+    }
+  }
+}
+
+/**
+Command names must be valid identifiers (used in PluginManager.registerCommand()); duplicate
+commands and arguments, and commands that shadow a built-in one.
+*/
+function checkCommands(
+  commands: readonly PluginCommand[],
+  { errors, warnings }: ValidationProblems
+): void {
   const commandNames = new Set<string>()
-  for (const command of plugin.commands) {
+  for (const command of commands) {
     if (commandNames.has(command.name)) {
       errors.push(`Duplicate command name: ${command.name}`)
     }
@@ -1516,8 +1567,12 @@ export function validatePlugin(plugin: PluginDefinition): {
       warnings.push(`Command "${command.name}" shadows a built-in RPG Maker MZ command`)
     }
   }
+}
 
-  // Check struct references
+/**
+Struct parameters that name a struct the plugin does not define (warning).
+*/
+function checkStructReferences(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
   const structNames = new Set(plugin.structs.map((s) => s.name))
   for (const param of plugin.parameters) {
     if (param.type === 'struct' && param.structType && !structNames.has(param.structType)) {
@@ -1526,9 +1581,16 @@ export function validatePlugin(plugin: PluginDefinition): {
       )
     }
   }
+}
 
-  // Validate struct param defaults are valid JSON
-  for (const param of plugin.parameters) {
+/**
+Struct parameter defaults that are not a JSON object (warning).
+*/
+function checkStructDefaults(
+  parameters: readonly PluginParameter[],
+  { warnings }: ValidationProblems
+): void {
+  for (const param of parameters) {
     if (
       param.type === 'struct' &&
       typeof param.default === 'string' &&
@@ -1545,8 +1607,12 @@ export function validatePlugin(plugin: PluginDefinition): {
       }
     }
   }
+}
 
-  // Unused struct definitions (warning)
+/**
+Struct definitions no parameter or command argument references (warning).
+*/
+function checkUnusedStructs(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
   const referencedStructs = new Set<string>()
   for (const param of plugin.parameters) {
     if (param.structType) referencedStructs.add(param.structType)
@@ -1563,28 +1629,43 @@ export function validatePlugin(plugin: PluginDefinition): {
       )
     }
   }
+}
 
-  // Parameters referencing nonexistent parent (error)
-  for (const param of plugin.parameters) {
+/**
+Parameters referencing a nonexistent parent (error).
+*/
+function checkParents(
+  parameters: readonly PluginParameter[],
+  { errors }: ValidationProblems
+): void {
+  const paramNames = new Set(parameters.map((p) => p.name))
+  for (const param of parameters) {
     if (param.parent && !paramNames.has(param.parent)) {
       errors.push(`Parameter "${param.name}" references nonexistent parent "${param.parent}"`)
     }
   }
+}
 
-  // Commands with no implementation in custom code (warning)
-  if (plugin.customCode) {
-    // Ignore comments to avoid false positives (e.g., a `// 'Heal'` note counting as impl)
-    const strippedImpl = stripCommentsOnly(plugin.customCode)
-    for (const command of plugin.commands) {
-      const hasImplementation =
-        strippedImpl.includes(`'${command.name}'`) || strippedImpl.includes(`"${command.name}"`)
-      if (!hasImplementation) {
-        warnings.push(`Command "${command.name}" has no implementation in custom code`)
-      }
+/**
+Commands with no implementation in custom code (warning).
+*/
+function checkImplementations(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
+  if (!plugin.customCode) return
+  // Ignore comments to avoid false positives (e.g., a `// 'Heal'` note counting as impl)
+  const strippedImpl = stripCommentsOnly(plugin.customCode)
+  for (const command of plugin.commands) {
+    const hasImplementation =
+      strippedImpl.includes(`'${command.name}'`) || strippedImpl.includes(`"${command.name}"`)
+    if (!hasImplementation) {
+      warnings.push(`Command "${command.name}" has no implementation in custom code`)
     }
   }
+}
 
-  // Field text written escaped or read by MZ as a tag (warning, once per field and kind)
+/**
+Field text written escaped or read by MZ as a tag (warning, once per field and kind).
+*/
+function checkFieldText(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
   const reported = new Set<string>()
   const report = (key: string, warning: string): void => {
     if (reported.has(key)) return
@@ -1622,8 +1703,6 @@ export function validatePlugin(plugin: PluginDefinition): {
   for (const struct of plugin.structs) {
     generateStructDefinition(struct, collect)
   }
-
-  return { valid: errors.length === 0, errors, warnings }
 }
 
 /**

@@ -2577,15 +2577,6 @@
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
     "sonarjs/different-types-comparison": {
       "count": 1
     },
@@ -2620,9 +2611,6 @@
       "count": 4
     },
     "unicorn/no-unsafe-string-replacement": {
-      "count": 1
-    },
-    "unicorn/prefer-continue": {
       "count": 1
     },
     "unicorn/prefer-else-if": {
