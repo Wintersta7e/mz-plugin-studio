@@ -3,7 +3,8 @@
 // files whose defaults are not the declared type.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { generatePlugin, validatePlugin } from '../../src/renderer/src/lib/generator/index'
-import { getAllClassNames } from '../../src/renderer/src/lib/generator/class-registry'
+import { getAllClassNames, getClassInfo } from '../../src/renderer/src/lib/generator/class-registry'
+import { getDefaultLiteral } from '../../src/renderer/src/lib/generator/escape'
 import type { PluginParameter } from '../../src/shared/types/plugin'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { compileCheck } from '../../src/main/services/syntax-check'
@@ -132,5 +133,15 @@ describe('generator rules no file golden reaches', () => {
     expect(names.every((name, index) => index === 0 || (names.at(index - 1) ?? name) < name)).toBe(
       true
     )
+  })
+
+  it('finds a registry class by name and none for an unknown one', () => {
+    expect(getClassInfo('Bitmap')?.category).toBe('core')
+    expect(getClassInfo('NoSuchClass')).toBeUndefined()
+  })
+
+  it('writes a boolean default from its text, any case', () => {
+    expect(getDefaultLiteral('boolean', 'TRUE')).toBe('true')
+    expect(getDefaultLiteral('boolean', 'no')).toBe('false')
   })
 })
