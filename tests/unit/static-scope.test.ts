@@ -917,6 +917,7 @@ const TRANSITIONAL_ARTEFACTS: string[] = [
   'tsconfig.tools.pending.json',
   'tsconfig.scripts.pending.json',
   'tsconfig.e2e.pending.json',
+  'pending-ceilings.json',
   KNOWN_VIOLATIONS,
   'scripts/strictness-status.mjs'
 ]

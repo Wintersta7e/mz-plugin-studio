@@ -1,6 +1,6 @@
 // The strictness status script run against throwaway repositories with a two-commit history: a
 // rise in frozen lint findings needs a lint config change in the same commit, and a pending
-// type-check flag fails once no error is left for it.
+// type-check flag holds its error count exactly at its ceiling and fails once no error is left.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -17,6 +17,9 @@ const GIT_USER = ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid
 const DOT_ACCESS = 'const table: Record<string, number> = {}\nexport const value = table.key\n'
 const BRACKET_ACCESS =
   "const table: Record<string, number> = {}\nexport const value = table['key']\n"
+const TWO_DOT_ACCESSES = `${DOT_ACCESS}export const other = table.other\n`
+const ceilings = (value: Record<string, Record<string, number>>): string => JSON.stringify(value)
+const WEB_CEILING = { web: { noPropertyAccessFromIndexSignature: 1 } }
 const suppressions = (count: number, file = 'index.ts'): string =>
   JSON.stringify({ [file]: { 'no-var': { count } } })
 const packageJson = (lintVersion: string): string =>
@@ -34,6 +37,7 @@ const PARENT: Record<string, string> = {
     extends: './tsconfig.web.json',
     compilerOptions: { noPropertyAccessFromIndexSignature: true }
   }),
+  'pending-ceilings.json': ceilings(WEB_CEILING),
   'index.ts': DOT_ACCESS
 }
 
@@ -177,13 +181,59 @@ describe('strictness status', () => {
   it('(f) counts the errors a pending flag holds and fails once it holds none', () => {
     const pending = status(makeRepo({}))
 
-    expect(pending.out).toContain('pending web noPropertyAccessFromIndexSignature: 1 errors')
+    expect(pending.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: 1 errors, ceiling 1'
+    )
     expect(pending.status).toBe(0)
 
     const cleared = status(makeRepo({ 'index.ts': BRACKET_ACCESS }))
 
     expect(cleared.out).toContain('pending web noPropertyAccessFromIndexSignature: 0 errors')
+    expect(cleared.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: no error left; move the flag to its program'
+    )
     expect(cleared.status).toBe(1)
+  })
+
+  it('(u) fails a pending count above its ceiling', () => {
+    const result = status(makeRepo({ 'index.ts': TWO_DOT_ACCESSES }))
+
+    expect(result.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: the count rose above the ceiling 1'
+    )
+    expect(result.status).toBe(1)
+  })
+
+  it('(v) fails a pending count below its ceiling', () => {
+    const lowered = ceilings({ web: { noPropertyAccessFromIndexSignature: 2 } })
+    const result = status(makeRepo({ 'pending-ceilings.json': lowered }))
+
+    expect(result.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: the count fell; lower its ceiling in pending-ceilings.json to 1'
+    )
+    expect(result.status).toBe(1)
+  })
+
+  it('(w) fails a pending flag without a ceiling, and a missing ceilings file', () => {
+    const unnamed = status(makeRepo({ 'pending-ceilings.json': ceilings({}) }))
+    const missing = status(makeRepo({}, ['pending-ceilings.json']))
+
+    expect(unnamed.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
+    )
+    expect(unnamed.status).toBe(1)
+    expect(missing.out).toContain('pending: pending-ceilings.json missing or unreadable')
+    expect(missing.status).toBe(1)
+  })
+
+  it('(x) fails a ceiling for a flag that is not pending', () => {
+    const stale = ceilings({ ...WEB_CEILING, node: { noUncheckedIndexedAccess: 3 } })
+    const result = status(makeRepo({ 'pending-ceilings.json': stale }))
+
+    expect(result.out).toContain(
+      'pending node noUncheckedIndexedAccess: pending-ceilings.json holds a ceiling for a flag no pending file holds'
+    )
+    expect(result.status).toBe(1)
   })
 
   it('(g) fails without a suppressions file', () => {

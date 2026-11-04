@@ -1,8 +1,10 @@
 // Reports what the strict configuration still holds back, from the repository root.
 //   default:          the frozen lint findings in eslint-suppressions.json against the parent
 //                     commit's (HEAD's while tracked files are uncommitted), and the type-check
-//                     errors each pending flag still has. Fails a rise unless the change under
-//                     test changes the lint config or a lint package version, and fails a
+//                     errors each pending flag still has. Fails a lint rise unless the change
+//                     under test changes the lint config or a lint package version; fails a
+//                     pending count off the exact ceiling pending-ceilings.json holds for it, a
+//                     pending flag without a ceiling or a ceiling without a pending flag, and a
 //                     pending flag with no error left (it must move to its program).
 //   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
 //                     of the production code alone (fails unless at its ceiling).
@@ -20,6 +22,7 @@ import { parseArgs } from 'node:util'
 
 const SUPPRESSIONS = 'eslint-suppressions.json'
 const LINT_CONFIGS = new Set(['eslint.config.mjs', 'lint-scope.json'])
+const PENDING_CEILINGS = 'pending-ceilings.json'
 const PENDING_FILE = /^tsconfig\.(?<program>[\w\-]+)\.pending\.json$/v
 const TYPECOV_PROGRAMS = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
 // Each pending check is a full type-check of its program; four at a time bounds memory.
@@ -156,6 +159,39 @@ function pendingErrors({ config, flag }) {
   })
 }
 
+// Why a pending count fails against its ceiling; undefined when it holds the ceiling. Each count
+// is held exactly, so a rise fails and so does a fall: the commit that fixes errors lowers the
+// ceiling with them.
+/**
+@param {number | undefined} count
+@param {unknown} ceiling
+*/
+function pendingProblem(count, ceiling) {
+  if (count === undefined) return 'tsc failed'
+  if (count === 0) return 'no error left; move the flag to its program'
+  if (typeof ceiling !== 'number' || !Number.isSafeInteger(ceiling) || ceiling < 0) {
+    return `${PENDING_CEILINGS} names no ceiling`
+  }
+  if (count > ceiling) return `the count rose above the ceiling ${ceiling}`
+  return count < ceiling
+    ? `the count fell; lower its ceiling in ${PENDING_CEILINGS} to ${count}`
+    : undefined
+}
+
+// Ceilings named for a (program, flag) that no pending file holds.
+/**
+@param {Record<string, unknown>} ceilings
+@param {{ program: string, flag: string }[]} pairs
+*/
+function staleCeilings(ceilings, pairs) {
+  const pending = new Set(pairs.map(({ program, flag }) => `${program} ${flag}`))
+  return Object.entries(ceilings).flatMap(([program, flags]) =>
+    Object.keys(typeof flags === 'object' && flags !== null ? flags : {})
+      .map((flag) => `${program} ${flag}`)
+      .filter((name) => !pending.has(name))
+  )
+}
+
 async function checkPending(tracked) {
   const pairs = pendingPairs(tracked)
   const counts = Array.from({ length: pairs.length })
@@ -168,11 +204,28 @@ async function checkPending(tracked) {
     }
   }
   await Promise.all(Array.from({ length: TSC_JOBS }, worker))
+  const ceilings = existsSync(PENDING_CEILINGS)
+    ? parseJson(readFileSync(PENDING_CEILINGS, 'utf8'))
+    : undefined
+  if (typeof ceilings !== 'object' || !ceilings || Array.isArray(ceilings)) {
+    print(`pending: ${PENDING_CEILINGS} missing or unreadable`)
+    return false
+  }
   let isOk = true
   for (const [index, { program, flag }] of pairs.entries()) {
     const count = counts[index]
-    print(`pending ${program} ${flag}: ${count ?? 'tsc failed,'} errors`)
-    if (count === undefined || count === 0) isOk = false
+    const ceiling = ceilings[program]?.[flag]
+    print(
+      `pending ${program} ${flag}: ${count ?? 'tsc failed,'} errors, ceiling ${ceiling ?? 'none'}`
+    )
+    const problem = pendingProblem(count, ceiling)
+    if (problem === undefined) continue
+    print(`pending ${program} ${flag}: ${problem}`)
+    isOk = false
+  }
+  for (const name of staleCeilings(ceilings, pairs)) {
+    print(`pending ${name}: ${PENDING_CEILINGS} holds a ceiling for a flag no pending file holds`)
+    isOk = false
   }
   return isOk
 }

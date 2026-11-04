@@ -1,0 +1,32 @@
+{
+  "e2e": {
+    "exactOptionalPropertyTypes": 3,
+    "noPropertyAccessFromIndexSignature": 8,
+    "noUncheckedIndexedAccess": 10
+  },
+  "node": {
+    "exactOptionalPropertyTypes": 5,
+    "noUncheckedIndexedAccess": 67
+  },
+  "scripts": {
+    "strict": 37,
+    "noImplicitAny": 135,
+    "exactOptionalPropertyTypes": 1,
+    "noPropertyAccessFromIndexSignature": 14
+  },
+  "test": {
+    "exactOptionalPropertyTypes": 41,
+    "noPropertyAccessFromIndexSignature": 179,
+    "noUncheckedIndexedAccess": 677,
+    "erasableSyntaxOnly": 6
+  },
+  "tools": {
+    "noUncheckedIndexedAccess": 17
+  },
+  "web": {
+    "exactOptionalPropertyTypes": 23,
+    "noPropertyAccessFromIndexSignature": 59,
+    "noUncheckedIndexedAccess": 45,
+    "erasableSyntaxOnly": 1
+  }
+}
