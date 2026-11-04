@@ -2638,15 +2638,6 @@
     "no-duplicate-imports": {
       "count": 2
     },
-    "regexp/prefer-d": {
-      "count": 2
-    },
-    "regexp/prefer-w": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
-      "count": 4
-    },
     "sonarjs/cognitive-complexity": {
       "count": 7
     },

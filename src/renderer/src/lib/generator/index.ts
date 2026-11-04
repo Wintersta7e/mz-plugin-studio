@@ -28,7 +28,7 @@ type BlockSink = (field: string, value: string) => void
 /**
 A language code MZ reads after `/*:`; any other key is left out of the output.
 */
-const LOCALIZATION_KEY = /^[A-Za-z_]+$/
+const LOCALIZATION_KEY = /^[A-Z_]+$/i
 
 function blockValue(sink: BlockSink | undefined, field: string, value: string): string {
   sink?.(field, value)
@@ -43,7 +43,7 @@ const HELP_TAG_LINE = /^(\s*)@/
 /**
 A plugin or command name the validator accepts: an identifier, as code that names it uses it.
 */
-export const isIdentifierName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
+export const isIdentifierName = (name: string): boolean => /^[A-Z_]\w*$/i.test(name)
 
 /**
 A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
@@ -1130,14 +1130,14 @@ Guarantees: output is always a syntactically legal strict-mode identifier
 export function camelCase(string_: string): string {
   if (!string_) return 'unnamed'
   // Fast path: already a valid identifier with no separators (e.g. myCombo → myCombo)
-  if (/^[a-zA-Z$][a-zA-Z0-9$]*$/.test(string_)) {
+  if (/^[a-z$][a-z0-9$]*$/i.test(string_)) {
     const normalized = string_.charAt(0).toLowerCase() + string_.slice(1)
     return sanitizeIdentifier(normalized)
   }
   // Strip leading/trailing underscores, split on non-alphanumeric
   const stripped = string_.replaceAll(/^_+|_+$/g, '')
   const words = stripped
-    .replaceAll(/[^a-zA-Z0-9]/g, ' ')
+    .replaceAll(/[^a-z0-9]/gi, ' ')
     .split(' ')
     .filter(Boolean)
   const result = words
@@ -1156,7 +1156,7 @@ export function camelCase(string_: string): string {
 function sanitizeIdentifier(name: string): string {
   if (!name) return 'unnamed'
   // Digit-start: prefix with underscore so `const 123abc` becomes `const _123abc`
-  if (/^[0-9]/.test(name)) {
+  if (/^\d/.test(name)) {
     return '_' + name
   }
   // Reserved word: suffix with underscore so `const class` becomes `const class_`
@@ -1279,7 +1279,7 @@ export function validatePlugin(plugin: PluginDefinition): {
           warnings.push(
             `Parameter "${param.name}" is a reserved name; the generated variable will be "${identifier}"`
           )
-        } else if (/^[0-9]/.test(param.name)) {
+        } else if (/^\d/.test(param.name)) {
           warnings.push(
             `Parameter "${param.name}" starts with a digit; the generated variable will be "${identifier}"`
           )
