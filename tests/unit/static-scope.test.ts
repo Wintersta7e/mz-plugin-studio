@@ -997,7 +997,7 @@ const cruiseScan = async (
 
 // type-coverage resolves a config's folder twice, so each script runs from its program's folder.
 const TYPECOV_SCRIPT =
-  /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion --at-least \d+(?:\.\d+)?$/v
+  /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion$/v
 const typecovConfig = (script = ''): string | undefined => {
   // An optional group that did not take part in the match is undefined.
   const groups: Partial<Record<string, string>> = TYPECOV_SCRIPT.exec(script)?.groups ?? {}

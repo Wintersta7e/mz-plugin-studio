@@ -54,7 +54,7 @@
     "noPropertyAccessFromIndexSignature": {
       "scripts/check-golden-commits.mjs": 3,
       "scripts/ci-policy.mjs": 1,
-      "scripts/strictness-status.mjs": 10
+      "scripts/strictness-status.mjs": 6
     }
   },
   "test": {

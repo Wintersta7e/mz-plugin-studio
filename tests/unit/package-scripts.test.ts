@@ -127,7 +127,7 @@ describe('package.json scripts', () => {
     expect(commandsOf(scripts.check).slice(0, gates.length)).toStrictEqual(gates)
   })
 
-  it('each type coverage script runs one program or the report that holds their floors', () => {
+  it('each type coverage script runs one program or the report that holds their ceilings', () => {
     const typecov = Object.keys(scripts).filter(
       (name) => name === 'typecov' || name.startsWith('typecov:')
     )

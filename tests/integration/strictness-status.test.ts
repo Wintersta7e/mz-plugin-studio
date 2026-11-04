@@ -112,19 +112,29 @@ const statusWithTsc = (directory: string, tsc: string): { status: number | null;
 }
 
 // A type coverage report whose test program runs `test`, with `files` beside it, and whose other
-// programs each print a full summary at their floor.
+// programs each print a full summary with nothing uncovered. The report holds the uncovered
+// ceilings `ceilings` names over 0 for each program and 2 for the test program; undefined drops one.
 const reportTypecov = (
   test: string,
-  files: Record<string, string> = {}
+  files: Record<string, string> = {},
+  ceilings: Record<string, number | undefined> = {}
 ): { status: number | null; out: string } => {
   const directory = tempDir()
-  const summary = 'node -e "console.log(\'(1 / 1) 100.00%\')" -- --at-least 100'
+  const programs = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
   const scripts = Object.fromEntries(
-    ['node', 'web', 'tools', 'scripts', 'e2e'].map((name) => [`typecov:${name}`, summary])
+    programs.map((name) => [`typecov:${name}`, 'node -e "console.log(\'(1 / 1) 100.00%\')"'])
   )
   scripts['typecov:test'] = test
   write(directory, { ...files, 'package.json': JSON.stringify({ scripts }) })
-  return run(directory, SCRIPT, ['--report', 'typecov'])
+  const held: Record<string, number | undefined> = {
+    ...Object.fromEntries(programs.map((name) => [name, 0])),
+    test: 2,
+    ...ceilings
+  }
+  const args = Object.entries(held).flatMap(([name, count]) =>
+    count === undefined ? [] : [`--${name}`, String(count)]
+  )
+  return run(directory, SCRIPT, ['--report', 'typecov', ...args])
 }
 
 // A production knip run printing one summary line and its scanned files, under the ceiling 2.
@@ -444,42 +454,52 @@ describe('strictness status', () => {
       "console.log('(10 / 12) 83.33%')",
       'process.exit(1)'
     ].join('\n')
-    const result = reportTypecov('node fake-typecov.mjs -- --at-least 90', {
-      'fake-typecov.mjs': fake
-    })
+    const result = reportTypecov('node fake-typecov.mjs', { 'fake-typecov.mjs': fake }, { test: 1 })
 
-    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, floor 90')
-    expect(result.out).toContain('typecov test: the coverage fell below its floor 90')
+    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling 1')
+    expect(result.out).toContain('typecov test: the uncovered count rose above the ceiling 1')
     expect(result.status).toBe(1)
   })
 
-  it('(ag) passes each program exactly at the floor its script names', () => {
-    const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\')" -- --at-least 83.33')
+  it('(ag) passes each program exactly at the uncovered ceiling the report names', () => {
+    const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\')"')
 
-    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, floor 83.33')
-    expect(result.out).toContain('typecov web: (1 / 1) 100.00%, floor 100')
+    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling 2')
+    expect(result.out).toContain('typecov web: (1 / 1) 100.00%, uncovered 0, ceiling 0')
     expect(result.status).toBe(0)
   })
 
-  it('(ah) fails a program above its floor, and one whose script names no floor', () => {
-    const above = reportTypecov('node -e "console.log(\'(11 / 12) 91.66%\')" -- --at-least 83.33')
-    const none = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\')"')
+  it('(ah) fails a program under its ceiling, and one the report names no ceiling for', () => {
+    const under = reportTypecov('node -e "console.log(\'(11 / 12) 91.66%\')"')
+    const none = reportTypecov(
+      'node -e "console.log(\'(10 / 12) 83.33%\')"',
+      {},
+      { test: undefined }
+    )
 
-    expect(above.out).toContain('typecov test: the coverage rose; raise --at-least to 91.66')
-    expect(above.status).toBe(1)
-    expect(none.out).toContain('typecov test: (10 / 12) 83.33%, floor none')
-    expect(none.out).toContain('typecov test: the typecov:test script names no --at-least floor')
+    expect(under.out).toContain('typecov test: the uncovered count fell; lower --test to 1')
+    expect(under.status).toBe(1)
+    expect(none.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling none')
+    expect(none.out).toContain('typecov test: the typecov:report script names no --test ceiling')
     expect(none.status).toBe(1)
   })
 
-  it('(ai) fails a run that exits non-zero at its floor, printing how it ended', () => {
-    const result = reportTypecov(
-      'node -e "console.log(\'(10 / 12) 83.33%\'); process.exit(2)" -- --at-least 83.33'
-    )
+  it('(ai) fails a run that exits non-zero at its ceiling, printing how it ended', () => {
+    const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\'); process.exit(2)"')
 
     expect(result.out).toContain('typecov test: the run failed (exit 2, ')
     expect(result.out).toContain('typecov test | (10 / 12) 83.33%')
     expect(result.status).toBe(1)
+  })
+
+  it('(aj) passes fully typed code added or removed with the report unchanged', () => {
+    const added = reportTypecov('node -e "console.log(\'(15 / 17) 88.23%\')"')
+    const removed = reportTypecov('node -e "console.log(\'(4 / 6) 66.66%\')"')
+
+    expect(added.out).toContain('typecov test: (15 / 17) 88.23%, uncovered 2, ceiling 2')
+    expect(added.status).toBe(0)
+    expect(removed.out).toContain('typecov test: (4 / 6) 66.66%, uncovered 2, ceiling 2')
+    expect(removed.status).toBe(0)
   })
 
   it('(m) passes the production knip count at its ceiling', () => {

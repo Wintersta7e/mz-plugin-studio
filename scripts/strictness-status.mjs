@@ -12,8 +12,9 @@
 //                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
 //                     ceilings given as --clones and --duplicated-lines, or without a report).
-//   --report typecov: the type coverage of each program (fails unless each is at the floor its
-//                     typecov:<program> script names as --at-least, or when a run fails).
+//   --report typecov: the type coverage of each program (fails unless each program's count of
+//                     identifiers without a type is at the ceiling given as --<program>, or
+//                     when a run fails).
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
 // print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
@@ -510,40 +511,47 @@ function reportJscpd(args) {
   }
 }
 
-// Each program's coverage is held exactly at the floor its `typecov:<program>` script names in
-// `--at-least`, below which type-coverage fails that script itself. A fall fails here, and so
-// does a rise, so a floor only moves up with the coverage it holds.
-const TYPECOV_FLOOR = /--at-least (?<floor>\d+(?:\.\d+)?)/v
-// What is wrong with a measured coverage against its script's floor; empty at the floor.
+// Each program's count of identifiers without a type is held exactly at the ceiling the
+// `typecov:report` script names as `--<program>`: a rise fails, and so does a fall, so a ceiling
+// only moves down with the identifiers it counts. A percentage would move with every typed line.
 /**
-@param {string} script
-@param {string | undefined} floor
-@param {string} measured
+@param {string} program
+@param {string | undefined} ceiling
+@param {number} uncovered
 */
-function typecovProblem(script, floor, measured) {
-  if (floor === undefined) return `the ${script} script names no --at-least floor`
-  if (Number(measured) < Number(floor)) return `the coverage fell below its floor ${floor}`
-  if (Number(measured) > Number(floor)) return `the coverage rose; raise --at-least to ${measured}`
+function typecovProblem(program, ceiling, uncovered) {
+  if (ceiling === undefined) return `the typecov:report script names no --${program} ceiling`
+  if (uncovered > Number(ceiling)) return `the uncovered count rose above the ceiling ${ceiling}`
+  if (uncovered < Number(ceiling))
+    return `the uncovered count fell; lower --${program} to ${uncovered}`
   return ''
 }
-function reportTypecov() {
-  const scripts = readManifest()?.scripts ?? {}
+/**
+@param {string[]} args
+*/
+function reportTypecov(args) {
+  const { values } = parseArgs({
+    args,
+    options: Object.fromEntries(TYPECOV_PROGRAMS.map((program) => [program, { type: 'string' }]))
+  })
   let isOk = true
   for (const program of TYPECOV_PROGRAMS) {
-    const script = `typecov:${program}`
     const label = `typecov ${program}`
-    const run = npmRun(script)
+    const run = npmRun(`typecov:${program}`)
     const groups = /\((?<covered>\d+) \/ (?<total>\d+)\) (?<pct>[\d.]+)%/v.exec(run.out)?.groups
-    if (groups === undefined || Number(groups.total) === 0) {
+    if (groups === undefined || Number(groups['total']) === 0) {
       printFailedRun(label, 'no summary or nothing scanned', run)
       isOk = false
       continue
     }
-    const floor = TYPECOV_FLOOR.exec(scripts[script] ?? '')?.groups?.['floor']
+    const { covered, total, pct } = groups
+    const uncovered = Number(total) - Number(covered)
+    const ceiling = values[program]
     print(
-      `${label}: (${groups.covered} / ${groups.total}) ${groups.pct}%, floor ${floor ?? 'none'}`
+      `${label}: (${covered} / ${total}) ${pct}%, uncovered ${uncovered}, ` +
+        `ceiling ${ceiling ?? 'none'}`
     )
-    const problem = typecovProblem(script, floor, groups['pct'] ?? '')
+    const problem = typecovProblem(program, ceiling, uncovered)
     if (problem === '' && run.status === 0) continue
     if (problem === '') printFailedRun(label, 'the run failed', run)
     else print(`${label}: ${problem}`)
@@ -556,7 +564,7 @@ const [flag, kind] = process.argv.slice(2)
 let ok
 if (flag === '--report' && kind === 'knip') ok = reportKnip()
 else if (flag === '--report' && kind === 'jscpd') ok = reportJscpd(process.argv.slice(4))
-else if (flag === '--report' && kind === 'typecov') ok = reportTypecov()
+else if (flag === '--report' && kind === 'typecov') ok = reportTypecov(process.argv.slice(4))
 else if (flag === undefined) {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
