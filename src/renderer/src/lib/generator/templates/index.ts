@@ -28,7 +28,7 @@ Get all registered templates
 @returns Array of all templates
 */
 export function getAllTemplates(): CodeTemplate[] {
-  return Array.from(templates.values())
+  return templates.values().toArray()
 }
 
 /**
@@ -37,7 +37,10 @@ Get templates filtered by category
 @returns Array of templates in the specified category
 */
 export function getTemplatesByCategory(category: TemplateCategory): CodeTemplate[] {
-  return Array.from(templates.values()).filter((t) => t.category === category)
+  return templates
+    .values()
+    .filter((t) => t.category === category)
+    .toArray()
 }
 
 /**
@@ -67,7 +70,7 @@ export function validateTemplateValues(
   // Check required fields
   const errors: string[] = []
   for (const field of template.fields) {
-    if (field.required && (values[field.id] === undefined || values[field.id] === '')) {
+    if (field.required === true && (values[field.id] === undefined || values[field.id] === '')) {
       errors.push(`Field "${field.label}" is required`)
     }
   }

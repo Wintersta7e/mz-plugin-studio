@@ -17,8 +17,8 @@
   "test": {
     "exactOptionalPropertyTypes": 40,
     "noPropertyAccessFromIndexSignature": 178,
-    "noUncheckedIndexedAccess": 672,
-    "erasableSyntaxOnly": 6
+    "noUncheckedIndexedAccess": 660,
+    "erasableSyntaxOnly": 5
   },
   "tools": {
     "noUncheckedIndexedAccess": 17
@@ -26,7 +26,6 @@
   "web": {
     "exactOptionalPropertyTypes": 23,
     "noPropertyAccessFromIndexSignature": 59,
-    "noUncheckedIndexedAccess": 40,
-    "erasableSyntaxOnly": 1
+    "noUncheckedIndexedAccess": 28
   }
 }

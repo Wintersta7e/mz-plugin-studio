@@ -3,13 +3,13 @@
 // output is compiled and run in a sealed context that reports whether the text ran as code.
 import { describe, it, expect } from 'vitest'
 import {
-  camelCase,
   generateCommandSkeleton,
   generateParameterComment,
   generatePlugin,
   generateRawMode,
   validatePlugin
 } from '../../src/renderer/src/lib/generator/index'
+import { parameterConstant } from '../helpers/generated-names'
 import type {
   LocalizedContent,
   NoteParam,
@@ -499,7 +499,7 @@ function annotatedDefault(code: string, name: string): string {
 
 /** Generates `def` with code that stores `expression` of the first parameter, then runs it. */
 function runDefault(def: PluginDefinition, expression: (name: string) => string): unknown {
-  def.customCode = `globalThis.__value = ${expression(camelCase(def.parameters[0].name))};`
+  def.customCode = `globalThis.__value = ${expression(parameterConstant(def.parameters[0].name))};`
   const result = evaluatePlugin(generatePlugin(def), { mode: 'generator' })
 
   expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: false })

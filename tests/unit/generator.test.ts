@@ -4,9 +4,9 @@ import {
   generatePlugin,
   generateRawMode,
   validatePlugin,
-  camelCase,
   generateHeaderOnly
 } from '../../src/renderer/src/lib/generator/index'
+import { parameterConstant } from '../helpers/generated-names'
 import type { PluginDefinition, PluginParameter } from '../../src/renderer/src/types/plugin'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { toBaseline } from '../../src/shared/types/plugin'
@@ -725,22 +725,22 @@ describe('generateHeaderOnly', () => {
 
 describe('camelCase', () => {
   it('converts simple names', () => {
-    expect(camelCase('hello')).toBe('hello')
-    expect(camelCase('Hello')).toBe('hello')
+    expect(parameterConstant('hello')).toBe('hello')
+    expect(parameterConstant('Hello')).toBe('hello')
   })
 
   it('converts multi-word names', () => {
-    expect(camelCase('battle speed')).toBe('battleSpeed')
-    expect(camelCase('Max HP')).toBe('maxHP')
+    expect(parameterConstant('battle speed')).toBe('battleSpeed')
+    expect(parameterConstant('Max HP')).toBe('maxHP')
   })
 
   it('handles special characters', () => {
-    expect(camelCase('my-param')).toBe('myParam')
-    expect(camelCase('my_param')).toBe('myParam')
+    expect(parameterConstant('my-param')).toBe('myParam')
+    expect(parameterConstant('my_param')).toBe('myParam')
   })
 
   it('handles empty string', () => {
-    expect(camelCase('')).toBe('unnamed')
+    expect(parameterConstant('')).toBe('unnamed')
   })
 })
 
@@ -857,7 +857,7 @@ describe('generatePlugin - accessor parser for all param types', () => {
 
 // COV-03: formatJSDefault edge cases
 describe('generatePlugin - formatJSDefault', () => {
-  it('handles undefined default for number type (falls back to 0)', () => {
+  it('handles empty default for number type (falls back to 0)', () => {
     const plugin = createTestPlugin({
       parameters: [
         {
@@ -866,7 +866,7 @@ describe('generatePlugin - formatJSDefault', () => {
           text: 'Count',
           desc: '',
           type: 'number',
-          default: undefined as unknown as number
+          default: ''
         }
       ]
     })
@@ -875,7 +875,7 @@ describe('generatePlugin - formatJSDefault', () => {
     expect(output).toContain("Number(params['count'] || 0)")
   })
 
-  it('handles undefined default for ID-based types (falls back to 0)', () => {
+  it('handles empty default for ID-based types (falls back to 0)', () => {
     const plugin = createTestPlugin({
       parameters: [
         {
@@ -884,7 +884,7 @@ describe('generatePlugin - formatJSDefault', () => {
           text: 'Actor',
           desc: '',
           type: 'actor',
-          default: undefined as unknown as number
+          default: ''
         }
       ]
     })
@@ -1324,19 +1324,19 @@ describe('camelCase edge cases', () => {
   it('preserves internal structure of _private_ style names (but sanitizes if reserved)', () => {
     // Strips leading/trailing underscores, splits on non-alnum.
     // "private" is a strict-mode reserved word, so the sanitizer suffixes _.
-    const result = camelCase('_private_')
+    const result = parameterConstant('_private_')
 
     expect(result).toBe('private_')
   })
 
   it('handles triple underscore (all underscores after stripping = empty) → unnamed', () => {
-    const result = camelCase('___')
+    const result = parameterConstant('___')
 
     expect(result).toBe('unnamed')
   })
 
   it('handles double hyphen foo--bar', () => {
-    const result = camelCase('foo--bar')
+    const result = parameterConstant('foo--bar')
 
     expect(result).toBe('fooBar')
   })
@@ -1344,25 +1344,25 @@ describe('camelCase edge cases', () => {
   it('lowercases ALLCAPS first word', () => {
     // 'ALLCAPS' is a single identifier token, no separators
     // Goes through the /^[a-zA-Z$].../ check → just lowercase first char
-    const result = camelCase('ALLCAPS')
+    const result = parameterConstant('ALLCAPS')
 
     expect(result).toBe('aLLCAPS')
   })
 
   it('handles all-symbols input (no alphanumeric) → unnamed', () => {
     // After stripping, no word segments remain
-    const result = camelCase('!@#$%')
+    const result = parameterConstant('!@#$%')
 
     expect(result).toBe('unnamed')
   })
 
   // Reserved-word and digit-start sanitization — preventing SyntaxError in generated plugins
   it('suffixes underscore on JS reserved words (class, default, for)', () => {
-    expect(camelCase('class')).toBe('class_')
-    expect(camelCase('default')).toBe('default_')
-    expect(camelCase('for')).toBe('for_')
-    expect(camelCase('return')).toBe('return_')
-    expect(camelCase('const')).toBe('const_')
+    expect(parameterConstant('class')).toBe('class_')
+    expect(parameterConstant('default')).toBe('default_')
+    expect(parameterConstant('for')).toBe('for_')
+    expect(parameterConstant('return')).toBe('return_')
+    expect(parameterConstant('const')).toBe('const_')
   })
 
   // `params` and `args` are names the generated code declares itself; `eval` and `arguments`
@@ -1401,14 +1401,14 @@ describe('camelCase edge cases', () => {
   )
 
   it('prefixes underscore on digit-start names', () => {
-    expect(camelCase('123abc')).toBe('_123abc')
-    expect(camelCase('7')).toBe('_7')
+    expect(parameterConstant('123abc')).toBe('_123abc')
+    expect(parameterConstant('7')).toBe('_7')
   })
 
   it('preserves already-valid camelCase names that happen to start with a keyword prefix', () => {
     // "classroom" is not reserved; should pass through unchanged
-    expect(camelCase('classroom')).toBe('classroom')
-    expect(camelCase('awaitable')).toBe('awaitable')
+    expect(parameterConstant('classroom')).toBe('classroom')
+    expect(parameterConstant('awaitable')).toBe('awaitable')
   })
 })
 

@@ -41,8 +41,28 @@ export interface MZClassInfo {
 // Internal Data Access
 // ============================================================================
 
-// Type assertion for the imported JSON data
-const mzClasses = mzClassesData as Record<string, MZClassInfo>
+const CATEGORIES: readonly ClassCategory[] = [
+  'core',
+  'manager',
+  'object',
+  'scene',
+  'sprite',
+  'window'
+]
+
+// The dictionary by class name; a class whose category is not one of CATEGORIES is left out
+const mzClasses = new Map<string, MZClassInfo>(
+  Object.entries(mzClassesData).flatMap(([name, info]): [string, MZClassInfo][] => {
+    const category = CATEGORIES.find((known) => known === info.category)
+    return category === undefined ? [] : [[name, { ...info, category }]]
+  })
+)
+
+// Code-unit order, as a sort without a compare function orders strings
+function byCodeUnit(a: string, b: string): number {
+  if (a === b) return 0
+  return a < b ? -1 : 1
+}
 
 // ============================================================================
 // Exported Functions
@@ -52,29 +72,31 @@ const mzClasses = mzClassesData as Record<string, MZClassInfo>
 Returns sorted array of all class names
 */
 export function getAllClassNames(): string[] {
-  return Object.keys(mzClasses).sort()
+  return mzClasses.keys().toArray().toSorted(byCodeUnit)
 }
 
 /**
 Filter classes by category
 */
 function getClassesByCategory(category: ClassCategory): MZClassInfo[] {
-  return Object.values(mzClasses).filter((cls) => cls.category === category)
+  return mzClasses
+    .values()
+    .filter((cls) => cls.category === category)
+    .toArray()
 }
 
 /**
 Get single class info by name
 */
 export function getClassInfo(className: string): MZClassInfo | undefined {
-  return mzClasses[className]
+  return mzClasses.get(className)
 }
 
 /**
 Get methods for a class
 */
 export function getClassMethods(className: string): MZMethodInfo[] {
-  const classInfo = mzClasses[className]
-  return classInfo?.methods ?? []
+  return mzClasses.get(className)?.methods ?? []
 }
 
 /**
@@ -89,13 +111,12 @@ export function getMethodInfo(className: string, methodName: string): MZMethodIn
 All classes grouped by category
 */
 export function getClassesGrouped(): Record<ClassCategory, MZClassInfo[]> {
-  const categories: ClassCategory[] = ['core', 'manager', 'object', 'scene', 'sprite', 'window']
-
-  const result = {} as Record<ClassCategory, MZClassInfo[]>
-
-  for (const category of categories) {
-    result[category] = getClassesByCategory(category)
+  return {
+    core: getClassesByCategory('core'),
+    manager: getClassesByCategory('manager'),
+    object: getClassesByCategory('object'),
+    scene: getClassesByCategory('scene'),
+    sprite: getClassesByCategory('sprite'),
+    window: getClassesByCategory('window')
   }
-
-  return result
 }

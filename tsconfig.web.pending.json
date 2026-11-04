@@ -3,7 +3,6 @@
   "compilerOptions": {
     "exactOptionalPropertyTypes": true,
     "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "erasableSyntaxOnly": true
+    "noUncheckedIndexedAccess": true
   }
 }

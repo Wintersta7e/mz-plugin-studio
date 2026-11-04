@@ -8,7 +8,7 @@ import { Script } from 'vm'
 import {
   generatePlugin,
   generateRawMode,
-  isIdentifierName
+  validatePlugin
 } from '../../src/renderer/src/lib/generator/index'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
@@ -123,7 +123,7 @@ export function conformanceCases(): ConformanceCase[] {
   for (const entry of GENERATOR_ENTRIES) {
     let def = entry.def
     let renamedFrom: string | undefined
-    if (!isIdentifierName(def.meta.name)) {
+    if (isPluginNameRefused(def)) {
       renamedFrom = def.meta.name
       const { importedFrom: _importedFrom, ...rest } = def
       def = { ...rest, meta: { ...def.meta, name: `Hostile_${++renamed}` } }
@@ -440,9 +440,21 @@ const swapCase = (text: string): string =>
 const show = (value: unknown): string => JSON.stringify(value) ?? 'undefined'
 const UNDECLARED_COMMAND = 'UndeclaredCommand'
 
+/**
+Whether `validatePlugin` refuses the plugin's name as not being an identifier.
+*/
+function isPluginNameRefused(definition: PluginDefinition): boolean {
+  return validatePlugin(definition).errors.some((error) => error.startsWith('Plugin name must be'))
+}
+
 /** Command names `validatePlugin` refuses as not being identifiers. */
 export function refusedCommandNames(def: PluginDefinition): Set<string> {
-  return new Set(def.commands.map((cmd) => cmd.name).filter((name) => !isIdentifierName(name)))
+  const errors = new Set(validatePlugin(def).errors)
+  return new Set(
+    def.commands
+      .map((cmd) => cmd.name)
+      .filter((name) => errors.has(`Invalid command name: ${name} (must be valid identifier)`))
+  )
 }
 
 /**

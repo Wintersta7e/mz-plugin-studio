@@ -669,12 +669,11 @@ describe('exports against the generated header', () => {
   })
 
   it('a nested parameter and one with no default are written as the header stores them', () => {
-    const noDefault = { ...makeParam({ name: 'noDefault' }), default: undefined }
     const plugin = createMinimalPlugin({
       parameters: [
         makeParam({ name: 'Group', type: 'string', default: 'top' }),
         makeParam({ name: 'nested', type: 'number', default: 5, parent: 'Group' }),
-        noDefault as unknown as PluginParameter
+        makeParam({ name: 'noDefault', default: '' })
       ]
     })
     const header = headerParameters(generatePlugin(plugin), 'TestPlugin.js')

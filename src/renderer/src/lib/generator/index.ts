@@ -1,20 +1,20 @@
-import type {
-  PluginBaseline,
-  PluginDefinition,
-  PluginParameter,
-  PluginCommand,
-  PluginStruct,
-  ParamType
+import {
+  ID_BASED_PARAM_TYPES,
+  type PluginBaseline,
+  type PluginDefinition,
+  type PluginParameter,
+  type PluginCommand,
+  type PluginStruct,
+  type ParamType
 } from '../../types/plugin'
-import { parse } from 'acorn'
-import type {
-  AnyNode,
-  ArrowFunctionExpression,
-  BlockStatement,
-  FunctionExpression,
-  Program
+import {
+  parse,
+  type AnyNode,
+  type ArrowFunctionExpression,
+  type BlockStatement,
+  type FunctionExpression,
+  type Program
 } from 'acorn'
-import { ID_BASED_PARAM_TYPES } from '../../types/plugin'
 import { annotationText, escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
@@ -43,7 +43,7 @@ const HELP_TAG_LINE = /^(\s*)@/
 /**
 A plugin or command name the validator accepts: an identifier, as code that names it uses it.
 */
-export const isIdentifierName = (name: string): boolean => /^[A-Z_]\w*$/i.test(name)
+const isIdentifierName = (name: string): boolean => /^[A-Z_]\w*$/i.test(name)
 
 /**
 A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
@@ -67,7 +67,8 @@ function findRegisteredCommandNames(strippedSource: string, pluginName: string):
     'g'
   )
   for (const match of strippedSource.matchAll(pattern)) {
-    names.add(match[1])
+    const name = match.at(1)
+    if (name !== undefined) names.add(name)
   }
   return names
 }
@@ -255,9 +256,9 @@ function generateParameterBlock(
   }
 
   // Default value
-  if (param.default !== undefined && param.default !== '') {
+  if (param.default !== '') {
     lines.push(
-      `${prefix}@default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default, param.type))}`
+      `${prefix}@default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default))}`
     )
   }
 
@@ -300,17 +301,14 @@ function formatParamType(param: PluginParameter): string {
 /**
 Format a default value for output
 */
-function formatDefaultValue(
-  value: string | number | boolean | undefined,
-  _type: ParamType
-): string {
+function formatDefaultValue(value: string | number | boolean): string {
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
   }
   if (typeof value === 'number') {
     return String(value)
   }
-  return String(value ?? '')
+  return value
 }
 
 /**
@@ -382,9 +380,9 @@ function generateCommandBlock(
       }
     }
 
-    if (arg.default !== undefined && arg.default !== '') {
+    if (arg.default !== '') {
       lines.push(
-        ` * @default ${blockValue(sink, `${argOwner} @default`, formatDefaultValue(arg.default, arg.type))}`
+        ` * @default ${blockValue(sink, `${argOwner} @default`, formatDefaultValue(arg.default))}`
       )
     }
   }
@@ -558,8 +556,11 @@ const isSeparator = (name: string): boolean => name.includes('---') || name.incl
 Raw mode had code to place in a file that does not parse as JavaScript.
 */
 export class RawModeParseError extends Error {
-  constructor(readonly parseError: string) {
+  readonly parseError: string
+
+  constructor(parseError: string) {
     super(`The file is not valid JavaScript: ${parseError}`)
+    this.parseError = parseError
     this.name = 'RawModeParseError'
   }
 }
@@ -623,6 +624,10 @@ function collectNames(node: AnyNode, names: Set<string>): void {
 
 type CalledFunction = (FunctionExpression | ArrowFunctionExpression) & { body: BlockStatement }
 
+const hasBlockBody = (
+  callee: FunctionExpression | ArrowFunctionExpression
+): callee is CalledFunction => callee.body.type === 'BlockStatement'
+
 /**
 The function a statement calls in place: `(function () {…})()`, `(function () {…}())`, `(() => {…})()`.
 */
@@ -630,10 +635,8 @@ function calledFunction(statement: AnyNode): CalledFunction | null {
   if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'CallExpression')
     return null
   const callee = statement.expression.callee
-  return (callee.type === 'FunctionExpression' || callee.type === 'ArrowFunctionExpression') &&
-    callee.body.type === 'BlockStatement'
-    ? (callee as CalledFunction)
-    : null
+  if (callee.type !== 'FunctionExpression' && callee.type !== 'ArrowFunctionExpression') return null
+  return hasBlockBody(callee) ? callee : null
 }
 
 /**
@@ -711,6 +714,36 @@ interface Placement {
 /**
 Where added code goes: the parameters variable's scope, else the first IIFE, else the top level.
 */
+/**
+A top-level statement that calls a function in place, with that function.
+*/
+interface CallUnit {
+  statement: Program['body'][number]
+  fn: CalledFunction
+}
+
+/**
+The first declaration in `scope` of a variable read from `PluginManager.parameters`.
+*/
+function parametersDeclaration(
+  scope: readonly AnyNode[]
+): { name: string; end: number } | undefined {
+  for (const statement of scope) {
+    if (statement.type !== 'VariableDeclaration') continue
+    const declarator = statement.declarations.find(
+      (d) =>
+        d.id.type === 'Identifier' &&
+        d.init !== null &&
+        d.init !== undefined &&
+        readsParameters(d.init)
+    )
+    if (declarator?.id.type === 'Identifier') {
+      return { name: declarator.id.name, end: statement.end }
+    }
+  }
+  return undefined
+}
+
 function placementOf(source: string): Placement {
   let program: Program
   try {
@@ -720,59 +753,47 @@ function placementOf(source: string): Placement {
     throw error
   }
   const statements = program.body
-  const called = statements.map(calledFunction)
-  const first = called.findIndex((function_) => function_ !== null)
+  const units = statements.map((statement) => ({ statement, fn: calledFunction(statement) }))
+  const firstCall = units.find((unit): unit is CallUnit => unit.fn !== null)
 
   // The first declaration of the top level or of a top-level IIFE body reading the parameters
-  let parameters: { name: string; end: number; owner: number | null } | null = null
-  for (let index = 0; index < statements.length && parameters === null; index++) {
-    const function__ = called[index]
-    for (const statement of function__ === null ? [statements[index]] : function__.body.body) {
-      if (statement.type !== 'VariableDeclaration') continue
-      const declarator = statement.declarations.find(
-        (d) => d.id.type === 'Identifier' && d.init != undefined && readsParameters(d.init)
-      )
-      if (declarator !== undefined && declarator.id.type === 'Identifier') {
-        parameters = {
-          name: declarator.id.name,
-          end: statement.end,
-          owner: function__ === null ? null : index
-        }
-        break
-      }
+  let parameters: { name: string; end: number } | undefined
+  let parametersCall: CallUnit | undefined
+  for (const unit of units) {
+    parameters = parametersDeclaration(unit.fn === null ? [unit.statement] : unit.fn.body.body)
+    if (parameters !== undefined) {
+      parametersCall = unit.fn === null ? undefined : { statement: unit.statement, fn: unit.fn }
+      break
     }
   }
-  const owner = parameters === null ? (first === -1 ? null : first) : parameters.owner
-  const function_ = owner === null ? null : called[owner]
-  const scope = function_ === null ? statements : function_.body.body
+  const owner = parameters === undefined ? firstCall : parametersCall
+  const scope = owner === undefined ? statements : owner.fn.body.body
 
   const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
   let pluginNameFrom = own === undefined ? null : own.end
-  if (function_ !== null && owner !== null && pluginNameFrom === null) {
+  if (owner !== undefined && pluginNameFrom === null) {
     const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
-    const isParam = function_.params.some(
-      (p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME'
-    )
-    if (isParam || (outer !== undefined && outer.end <= statements[owner].start)) {
-      pluginNameFrom = function_.body.start
+    const isParam = owner.fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
+    if (isParam || (outer !== undefined && outer.end <= owner.statement.start)) {
+      pluginNameFrom = owner.fn.body.start
     }
   }
 
   let start = source.length
-  if (function_ !== null) {
+  if (owner !== undefined) {
     const directives = scope.filter(
       (s) => s.type === 'ExpressionStatement' && s.directive !== undefined
     )
-    start = afterNode(source, directives.at(-1)?.end ?? function_.body.start + 1)
+    start = afterNode(source, directives.at(-1)?.end ?? owner.fn.body.start + 1)
     if (own !== undefined) start = Math.max(start, afterNode(source, own.end))
   }
 
   const names = new Set<string>()
   collectNames(program, names)
   return {
-    iifeStart: first === -1 ? null : statements[first].start,
-    body: function_ === null ? null : function_.body,
-    parameters: parameters && { name: parameters.name, end: parameters.end },
+    iifeStart: firstCall === undefined ? null : firstCall.statement.start,
+    body: owner === undefined ? null : owner.fn.body,
+    parameters: parameters ?? null,
     start,
     pluginNameFrom,
     names
@@ -966,9 +987,9 @@ function extractHeaderPreamble(blockContent: string): string {
     /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
 
   const preambleLines: string[] = []
-  for (let index = 1; index < lines.length; index++) {
-    if (mzAnnotation.test(lines[index])) break
-    preambleLines.push(lines[index])
+  for (const line of lines.slice(1)) {
+    if (mzAnnotation.test(line)) break
+    preambleLines.push(line)
   }
 
   return preambleLines.length === 0 ? '' : preambleLines.join('\n') + '\n'
@@ -1048,7 +1069,7 @@ function generateArgParser(arg: PluginParameter): string {
 /**
 Format default value for JavaScript code
 */
-function formatJSDefault(value: string | number | boolean | undefined, type: ParamType): string {
+function formatJSDefault(value: string | number | boolean, type: ParamType): string {
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
   }
@@ -1058,7 +1079,7 @@ function formatJSDefault(value: string | number | boolean | undefined, type: Par
   if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) {
     return '0'
   }
-  return `'${escapeJSString(annotationText(String(value ?? '')))}'`
+  return `'${escapeJSString(annotationText(value))}'`
 }
 
 // Reserved words that would cause a SyntaxError if used as `const <name>`.
@@ -1127,7 +1148,7 @@ Convert parameter name to a valid JS camelCase identifier.
 Guarantees: output is always a syntactically legal strict-mode identifier
 (never a reserved word, never starts with a digit, never empty).
 */
-export function camelCase(string_: string): string {
+function camelCase(string_: string): string {
   if (!string_) return 'unnamed'
   // Fast path: already a valid identifier with no separators (e.g. myCombo → myCombo)
   if (/^[a-z$][a-z0-9$]*$/i.test(string_)) {
@@ -1333,7 +1354,7 @@ export function validatePlugin(plugin: PluginDefinition): {
       param.default.trim() !== '{}'
     ) {
       try {
-        const parsed = JSON.parse(param.default)
+        const parsed: unknown = JSON.parse(param.default)
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
           warnings.push(`Parameter "${param.name}" struct default is not a valid JSON object`)
         }

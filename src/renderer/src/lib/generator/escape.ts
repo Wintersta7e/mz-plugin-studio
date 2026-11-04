@@ -52,8 +52,11 @@ Escape a string for interpolation inside a line comment: each line break or line
 becomes one space, so the text cannot end the comment.
 */
 export function escapeLineComment(string_: string): string {
-  return string_.replaceAll(/\r\n|[\r\n\u2028\u2029]/g, ' ')
+  return string_.replaceAll(/\r\n|[\r\n\u{2028}\u{2029}]/gu, ' ')
 }
+
+// Its type holds undefined, as an indexed read of `text` does where indexed access is checked
+const QUOTES: ReadonlySet<string | undefined> = new Set(["'", '"', '`'])
 
 /**
 Whether text a template writes as a JavaScript expression stays one expression on one line:
@@ -62,23 +65,36 @@ marker and no literal written against a name or value (as in `x' + y + 'z`). A c
 parser: a few valid expressions fail it, such as `'a' in obj`.
 */
 export function isOneLineExpression(text: string): boolean {
-  if (/[\r\n\u2028\u2029]/.test(text)) return false
+  if (/[\r\n\u{2028}\u{2029}]/u.test(text)) return false
   let outside = ''
-  for (let index = 0; index < text.length; index++) {
+  let index = 0
+  while (index < text.length) {
     const quote = text[index]
-    if (quote !== "'" && quote !== '"' && quote !== '`') {
+    if (!QUOTES.has(quote)) {
       outside += quote
+      index++
       continue
     }
     let end = index + 1
-    while (end < text.length && text[end] !== quote) end += text[end] === '\\' ? 2 : 1
+    while (end < text.length && text[end] !== quote) {
+      end += text[end] === '\\' ? 2 : 1
+    }
     if (end >= text.length) return false
     // The whole literal reads as one quote from here on.
     outside += "'"
-    index = end
+    index = end + 1
   }
-  return !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(']/.test(outside)
+  return !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(]/.test(outside)
 }
+
+// The literal of each type when the default is empty; any other type gets `null`
+const EMPTY_LITERALS = new Map([
+  ['number', '0'],
+  ['string', '""'],
+  ['boolean', 'false'],
+  ['object', '{}'],
+  ['array', '[]']
+])
 
 /**
 Sanitize a user-provided default into a JS literal of the requested type.
@@ -88,46 +104,26 @@ JSON.parse → JSON.stringify so injected code can't escape the literal.
 Unknown / empty defaults fall through to the empty literal for their type.
 */
 export function getDefaultLiteral(dataType: string, customDefault?: string): string {
-  if (customDefault !== undefined && customDefault !== '') {
-    switch (dataType) {
-      case 'number': {
-        return String(Number(customDefault))
-      }
-      case 'string': {
-        return `'${escapeJSString(customDefault)}'`
-      }
-      case 'boolean': {
-        return customDefault.toLowerCase() === 'true' ? 'true' : 'false'
-      }
-      case 'object':
-      case 'array': {
-        try {
-          return JSON.stringify(JSON.parse(customDefault))
-        } catch {
-          return dataType === 'object' ? '{}' : '[]'
-        }
-      }
-      default: {
-        return 'null'
-      }
-    }
+  if (customDefault === undefined || customDefault === '') {
+    return EMPTY_LITERALS.get(dataType) ?? 'null'
   }
-
   switch (dataType) {
     case 'number': {
-      return '0'
+      return String(Number(customDefault))
     }
     case 'string': {
-      return '""'
+      return `'${escapeJSString(customDefault)}'`
     }
     case 'boolean': {
-      return 'false'
+      return customDefault.toLowerCase() === 'true' ? 'true' : 'false'
     }
-    case 'object': {
-      return '{}'
-    }
+    case 'object':
     case 'array': {
-      return '[]'
+      try {
+        return JSON.stringify(JSON.parse(customDefault))
+      } catch {
+        return dataType === 'object' ? '{}' : '[]'
+      }
     }
     default: {
       return 'null'
