@@ -940,19 +940,31 @@ Before exporting, the studio validates your plugin:
 
 **Errors** (must fix)
 
-- Missing or invalid plugin name
-- Duplicate parameter or command names
-- Parameters referencing nonexistent parent
+- A plugin name that is not a valid identifier (letters, numbers and underscores, not starting with a number)
 - Translations whose language code has characters other than letters and underscores (the translation is left out)
+- An empty parameter name
+- Duplicate parameter names
+- Two parameters whose names make the same variable name in the code (`foo-bar` and `foo_bar` both make `fooBar`)
+- Duplicate command names
+- Command names that are not valid identifiers
+- Duplicate argument names within one command
+- Two arguments of one command whose names make the same variable name in the code
+- Two structs with the same name (in raw mode, such a save is refused)
+- Parameters referencing a nonexistent parent
 
 **Warnings** (review recommended)
 
+- Parameter names that aren't valid JS identifiers (section dividers holding `---` or `===` excepted)
+- Parameter names that are reserved words or start with a digit, so their variable in the code is renamed
+- Commands that share a name with a built-in RPG Maker MZ command
+- Struct parameters referencing a struct this plugin does not define
+- Struct parameter defaults that are not valid JSON, or not a JSON object
 - Unused struct definitions (defined but not referenced)
-- Invalid JSON in struct parameter defaults
 - Commands with no implementation in custom code
-- Parameter names that aren't valid JS identifiers
 - Field text containing `*/`, which is written as `*\/` so it cannot end the comment
-- Field text containing `@` followed by a word, which MZ reads as a new annotation tag
+- Field text containing a line break, which is written as a space because each annotation is one line
+- A help line starting with `@`, which is written with an invisible zero-width space before the `@` so MZ shows it as help text
+- A parameter name holding a setting tag such as `@type`, which reads back as the parameter's settings when the plugin is opened again
 
 ---
 

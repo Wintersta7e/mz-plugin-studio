@@ -42,6 +42,9 @@ function tableAfter(markdown: string, heading: string): string[][] {
 
 describe('published docs match the code', () => {
   const readme = read('README.md')
+  const { scripts } = JSON.parse(read('package.json')) as {
+    scripts: Record<string, string> & { check: string }
+  }
 
   it(`README parameter-type table lists all ${ALL_PARAM_TYPES.size} types`, () => {
     const listed = tableAfter(readme, '### Parameter Types').flatMap((row) =>
@@ -110,8 +113,6 @@ describe('published docs match the code', () => {
   })
 
   it('README shows the tsc-strict badge only while every type-checked tsconfig is strict', () => {
-    const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> })
-      .scripts
     // The tsconfigs `npm run typecheck` passes to tsc, through the scripts it runs
     const configs = scripts.typecheck.split('&&').flatMap((command) => {
       const run = /^npm run ([\w:-]+)$/.exec(command.trim())
@@ -130,6 +131,17 @@ describe('published docs match the code', () => {
     expect(configs.length).toBeGreaterThan(0)
 
     if (/img\.shields\.io\/badge\/tsc-strict\b/.test(readme)) expect(nonStrict).toEqual([])
+  })
+
+  it('the README names every gate `npm run check` runs', () => {
+    const gates = Array.from(scripts.check.matchAll(/npm run ([\w:-]+)/g), ([, gate = '']) => gate)
+    // The paragraph under the Development commands that lists the gates
+    const start = readme.indexOf('`npm run check` runs')
+    const paragraph = start === -1 ? '' : readme.slice(start, readme.indexOf('\n\n', start))
+    const missing = gates.filter((gate) => !paragraph.includes(`\`${gate}\``))
+
+    expect(gates.length).toBeGreaterThan(0)
+    expect(missing).toStrictEqual([])
   })
 
   it('README stack table names every test folder and the end-to-end suite', () => {

@@ -179,7 +179,7 @@ templates from the code editor, and save into your project's `js/plugins/` folde
 ## Development
 
 ```bash
-npm run check          # the tree: lint, format, types, licences, tests; not the e2e suite
+npm run check          # every gate of the tree, listed below; not the e2e suite
 npm run check:commits  # the commits since origin/main: golden-output and commit-message rules, as CI runs them
 npm run typecheck      # tsc for main, renderer, tests, tools, scripts and e2e
 npm run lint           # ESLint
@@ -188,6 +188,13 @@ npm test               # Vitest
 npm run test:golden    # generated-plugin output against the golden corpus
 npm run build:win      # portable Windows build into dist/
 ```
+
+`npm run check` runs, in order: `ci:runtime-deps`, `lint`, `typecheck`, `typecov:report`, `deps`,
+`knip:report`, `jscpd:report`, `format:check`, `strictness:status`, `licenses`, `test:coverage` and
+`test:golden:coverage`. Lint findings, pending type-check errors, unused exports and duplicated code
+each hold an exact ceiling that fails when the count rises or falls, so a change that lowers a count
+lowers its ceiling in the same commit. The ceilings live in `eslint-suppressions.json`,
+`pending-ceilings.json` and the `knip:production` and `jscpd:report` scripts in `package.json`.
 
 The end-to-end suite drives the packaged app, and CI requires it:
 

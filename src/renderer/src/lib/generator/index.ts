@@ -215,8 +215,8 @@ function noteParamLines(
   shouldKeepRequire: boolean
 ): string[] {
   const lines: string[] = []
-  // A saved note group is checked for its name and type only, so its other fields can hold a
-  // value of any type: one JavaScript reads as false is left out.
+  // `@noteDir`, `@noteData` and `@noteRequire` are written only when their field is set to a
+  // value JavaScript reads as true; nothing here checks that `dir` and `data` hold text.
   for (const np of noteParams) {
     lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
     lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
@@ -1177,7 +1177,8 @@ Generate a parsing expression for a parameter/argument accessor.
 function generateAccessorParser(accessor: string, param: PluginParameter): string {
   const defaultValue = formatJSDefault(param.default, param.type)
 
-  // A type outside the known ones, which an imported file can hold, reads as text
+  // Every type but number, boolean, location, struct and array is a scalar read: an ID-based
+  // type as a number, any other as the text stored
   if (isScalarType(param.type)) return scalarAccessor(accessor, param.type, defaultValue)
 
   switch (param.type) {
@@ -1431,9 +1432,11 @@ interface ValidationProblems {
 }
 
 /**
-Validate a plugin definition
-Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
-We only strictly validate plugin name and command names since those are used in code.
+Validate a plugin definition with nine checks, in this order: the plugin name and localization
+keys, parameter names, commands and their arguments, struct names and references, struct
+defaults, unused structs, parents, command implementations, and field text. Each check's own
+comment says what it reports. RPG Maker MZ allows any string as a parameter name (section
+dividers such as "---Settings---" among them), so a name that is not an identifier only warns.
 */
 export function validatePlugin(plugin: PluginDefinition): {
   valid: boolean
