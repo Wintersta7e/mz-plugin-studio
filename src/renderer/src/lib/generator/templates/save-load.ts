@@ -187,18 +187,18 @@ const saveLoadTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const dataName = values.dataName as string
-    const storageLocation = (values.storageLocation as string) || 'Game_System'
-    const dataType = (values.dataType as string) || 'object'
-    const defaultValue = values.defaultValue as string | undefined
+    const dataName = values['dataName'] as string
+    const storageLocation = (values['storageLocation'] as string) || 'Game_System'
+    const dataType = (values['dataType'] as string) || 'object'
+    const defaultValue = values['defaultValue'] as string | undefined
 
     return generateSaveLoadCode(dataName, storageLocation, dataType, defaultValue)
   },
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.dataName) {
-      const dataName = values.dataName as string
+    if (values['dataName']) {
+      const dataName = values['dataName'] as string
 
       // Check for valid JavaScript identifier
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(dataName)) {
@@ -226,9 +226,9 @@ const saveLoadTemplate: CodeTemplate = {
     }
 
     // Validate default value format based on type
-    if (values.defaultValue && values.dataType) {
-      const defaultValue = values.defaultValue as string
-      const dataType = values.dataType as string
+    if (values['defaultValue'] && values['dataType']) {
+      const defaultValue = values['defaultValue'] as string
+      const dataType = values['dataType'] as string
 
       try {
         switch (dataType) {

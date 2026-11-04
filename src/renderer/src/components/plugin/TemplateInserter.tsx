@@ -333,9 +333,11 @@ export function TemplateInserter({
     }))
   }, [])
 
+  const selectedClassName = fieldValues['className']
+
   // Get method options for selected class, sorted by popularity (descending) then name
   const methodOptions = useMemo(() => {
-    const className = fieldValues.className as string
+    const className = selectedClassName as string
     if (!className) return []
     const methods = getClassMethods(className)
     return [...methods]
@@ -349,7 +351,7 @@ export function TemplateInserter({
         value: method.name,
         label: `${method.name}(${method.params.join(', ')})`
       }))
-  }, [fieldValues.className])
+  }, [selectedClassName])
 
   // Update preview when template or field values change; values failing the template's own
   // checks produce no code, so nothing they would generate can be inserted or copied
@@ -395,10 +397,10 @@ export function TemplateInserter({
 
   // Reset method when class changes
   useEffect(() => {
-    if (fieldValues.className) {
+    if (selectedClassName) {
       setFieldValues((prev) => ({ ...prev, methodName: '' }))
     }
-  }, [fieldValues.className])
+  }, [selectedClassName])
 
   // Focus search on open
   useEffect(() => {

@@ -73,11 +73,11 @@ const customTextCodeTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const escapeChar = (values.escapeChar as string).toUpperCase()
-    const hasParameter = values.hasParameter as boolean
-    const codeType = (values.codeType as string) || 'replace'
-    const replacementText = (values.replacementText as string) || "''"
-    const effectType = (values.effectType as string) || 'color'
+    const escapeChar = (values['escapeChar'] as string).toUpperCase()
+    const hasParameter = values['hasParameter'] as boolean
+    const codeType = (values['codeType'] as string) || 'replace'
+    const replacementText = (values['replacementText'] as string) || "''"
+    const effectType = (values['effectType'] as string) || 'color'
 
     const lines: string[] = []
 
@@ -178,8 +178,8 @@ const customTextCodeTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.escapeChar) {
-      const escapeChar = values.escapeChar as string
+    if (values['escapeChar']) {
+      const escapeChar = values['escapeChar'] as string
       // Validate escape character format
       if (!/^[A-Za-z]+$/.test(escapeChar)) {
         errors.push('Escape character must contain only letters (A-Z)')
@@ -193,10 +193,13 @@ const customTextCodeTemplate: CodeTemplate = {
       }
     }
 
-    const codeType = values.codeType as string
-    if (codeType === 'replace' && !values.replacementText) {
+    const codeType = values['codeType'] as string
+    if (codeType === 'replace' && !values['replacementText']) {
       errors.push('Replacement expression is required for text replacement codes')
-    } else if (codeType === 'replace' && !isOneLineExpression(values.replacementText as string)) {
+    } else if (
+      codeType === 'replace' &&
+      !isOneLineExpression(values['replacementText'] as string)
+    ) {
       errors.push('Replacement Expression must be one expression on one line (no ";" or comments)')
     }
 
@@ -333,14 +336,14 @@ const messageWindowModTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = (values.modType as string) || 'position'
+    const modType = (values['modType'] as string) || 'position'
     const lines: string[] = []
 
     switch (modType) {
       case 'position': {
-        const positionType = (values.positionType as string) || 'top'
-        const customX = (values.customX as number) || 0
-        const customY = (values.customY as number) || 0
+        const positionType = (values['positionType'] as string) || 'top'
+        const customX = (values['customX'] as number) || 0
+        const customY = (values['customY'] as number) || 0
 
         lines.push('// Message Window Position Modification')
         lines.push('// Changes the default position of the message window')
@@ -382,8 +385,8 @@ const messageWindowModTemplate: CodeTemplate = {
       }
 
       case 'size': {
-        const windowWidth = (values.windowWidth as number) || 816
-        const numLines = (values.numLines as number) || 4
+        const windowWidth = (values['windowWidth'] as number) || 816
+        const numLines = (values['numLines'] as number) || 4
 
         lines.push('// Message Window Size Modification')
         lines.push('// Changes the dimensions of the message window')
@@ -410,8 +413,8 @@ const messageWindowModTemplate: CodeTemplate = {
       }
 
       case 'background': {
-        const bgType = (values.bgType as string) || 'dim'
-        const bgColor = (values.bgColor as string) || 'rgba(0, 0, 0, 0.6)'
+        const bgType = (values['bgType'] as string) || 'dim'
+        const bgColor = (values['bgColor'] as string) || 'rgba(0, 0, 0, 0.6)'
 
         lines.push('// Message Window Background Modification')
         lines.push('// Changes the visual style of the message window background')
@@ -446,7 +449,7 @@ const messageWindowModTemplate: CodeTemplate = {
       }
 
       case 'opacity': {
-        const opacityValue = (values.opacityValue as number) ?? 255
+        const opacityValue = (values['opacityValue'] as number) ?? 255
 
         lines.push('// Message Window Opacity Modification')
         lines.push('// Changes the transparency of the message window')
@@ -467,7 +470,7 @@ const messageWindowModTemplate: CodeTemplate = {
       }
 
       case 'nameBox': {
-        const nameBoxPosition = (values.nameBoxPosition as string) || 'center'
+        const nameBoxPosition = (values['nameBoxPosition'] as string) || 'center'
 
         lines.push('// Name Box Position Modification')
         lines.push('// Changes where the speaker name appears relative to the message window')
@@ -500,11 +503,11 @@ const messageWindowModTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values.modType as string
+    const modType = values['modType'] as string
 
     if (modType === 'size') {
-      const windowWidth = values.windowWidth as number
-      const numLines = values.numLines as number
+      const windowWidth = values['windowWidth'] as number
+      const numLines = values['numLines'] as number
 
       if (windowWidth !== undefined && windowWidth <= 0) {
         errors.push('Window width must be a positive number')
@@ -518,14 +521,14 @@ const messageWindowModTemplate: CodeTemplate = {
     }
 
     if (modType === 'opacity') {
-      const opacityValue = values.opacityValue as number
+      const opacityValue = values['opacityValue'] as number
       if (opacityValue !== undefined && (opacityValue < 0 || opacityValue > 255)) {
         errors.push('Opacity must be between 0 and 255')
       }
     }
 
-    if (modType === 'background' && values.bgType === 'custom') {
-      if (!values.bgColor) {
+    if (modType === 'background' && values['bgType'] === 'custom') {
+      if (!values['bgColor']) {
         errors.push('Background color is required for custom background')
       }
     }
@@ -643,12 +646,12 @@ const choiceHandlerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = (values.modType as string) || 'position'
+    const modType = (values['modType'] as string) || 'position'
     const lines: string[] = []
 
     switch (modType) {
       case 'position': {
-        const choicePosition = (values.choicePosition as string) || 'center'
+        const choicePosition = (values['choicePosition'] as string) || 'center'
 
         lines.push('// Choice Window Position Modification')
         lines.push('// Changes where the choice window appears on screen')
@@ -695,8 +698,8 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
 
       case 'columns': {
-        const numColumns = (values.numColumns as number) || 2
-        const choiceWidth = (values.choiceWidth as number) || 400
+        const numColumns = (values['numColumns'] as number) || 2
+        const choiceWidth = (values['choiceWidth'] as number) || 400
 
         lines.push('// Choice Window Column Layout')
         lines.push(`// Displays choices in ${numColumns} column(s)`)
@@ -719,10 +722,10 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
 
       case 'style': {
-        const highlightColor = (values.highlightColor as number) ?? 17
-        const normalColor = (values.normalColor as number) ?? 0
-        const disabledColor = (values.disabledColor as number) ?? 8
-        const windowOpacity = (values.windowOpacity as number) ?? 255
+        const highlightColor = (values['highlightColor'] as number) ?? 17
+        const normalColor = (values['normalColor'] as number) ?? 0
+        const disabledColor = (values['disabledColor'] as number) ?? 8
+        const windowOpacity = (values['windowOpacity'] as number) ?? 255
 
         lines.push('// Choice Window Visual Style')
         lines.push('// Customizes colors and appearance of the choice window')
@@ -767,8 +770,8 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
 
       case 'behavior': {
-        const wrapAround = values.wrapAround as boolean
-        const rememberChoice = values.rememberChoice as boolean
+        const wrapAround = values['wrapAround'] as boolean
+        const rememberChoice = values['rememberChoice'] as boolean
 
         lines.push('// Choice Window Selection Behavior')
         lines.push('// Customizes how choice selection works')
@@ -833,11 +836,11 @@ const choiceHandlerTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values.modType as string
+    const modType = values['modType'] as string
 
     if (modType === 'columns') {
-      const numColumns = values.numColumns as number
-      const choiceWidth = values.choiceWidth as number
+      const numColumns = values['numColumns'] as number
+      const choiceWidth = values['choiceWidth'] as number
 
       if (numColumns !== undefined && (numColumns < 1 || numColumns > 4)) {
         errors.push('Number of columns must be between 1 and 4')
@@ -848,10 +851,10 @@ const choiceHandlerTemplate: CodeTemplate = {
     }
 
     if (modType === 'style') {
-      const highlightColor = values.highlightColor as number
-      const normalColor = values.normalColor as number
-      const disabledColor = values.disabledColor as number
-      const windowOpacity = values.windowOpacity as number
+      const highlightColor = values['highlightColor'] as number
+      const normalColor = values['normalColor'] as number
+      const disabledColor = values['disabledColor'] as number
+      const windowOpacity = values['windowOpacity'] as number
 
       if (highlightColor !== undefined && (highlightColor < 0 || highlightColor > 31)) {
         errors.push('Highlight color index must be between 0 and 31')

@@ -268,12 +268,12 @@ const customWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values.windowName as string
+    const rawName = values['windowName'] as string
     const windowName = sanitizeWindowName(rawName)
-    const parentClass = (values.parentClass as string) || 'Window_Base'
-    const width = (values.width as number) || 300
-    const height = (values.height as number) || 200
-    const addToScene = (values.addToScene as string) || 'none'
+    const parentClass = (values['parentClass'] as string) || 'Window_Base'
+    const width = (values['width'] as number) || 300
+    const height = (values['height'] as number) || 200
+    const addToScene = (values['addToScene'] as string) || 'none'
 
     // Generate window class
     let code = generateWindowClass(windowName, parentClass)
@@ -288,8 +288,8 @@ const customWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.windowName) {
-      const name = values.windowName as string
+    if (values['windowName']) {
+      const name = values['windowName'] as string
       // Check for valid identifier
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
@@ -297,11 +297,11 @@ const customWindowTemplate: CodeTemplate = {
     }
 
     // Validate width and height are positive
-    if (values.width !== undefined && (values.width as number) <= 0) {
+    if (values['width'] !== undefined && (values['width'] as number) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values.height !== undefined && (values.height as number) <= 0) {
+    if (values['height'] !== undefined && (values['height'] as number) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -395,15 +395,15 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values.windowName as string
+    const rawName = values['windowName'] as string
     const windowName = sanitizeWindowName(rawName)
-    const hudType = (values.hudType as string) || 'health'
-    const posX = (values.positionX as number) || 10
-    const posY = (values.positionY as number) || 10
-    const width = (values.width as number) || 200
-    const height = (values.height as number) || 80
-    const opacity = (values.opacity as number) ?? 255
-    const showFrame = values.showFrame !== 'false'
+    const hudType = (values['hudType'] as string) || 'health'
+    const posX = (values['positionX'] as number) || 10
+    const posY = (values['positionY'] as number) || 10
+    const width = (values['width'] as number) || 200
+    const height = (values['height'] as number) || 80
+    const opacity = (values['opacity'] as number) ?? 255
+    const showFrame = values['showFrame'] !== 'false'
 
     const fullClassName = `Window_${windowName}`
     const lines: string[] = []
@@ -557,14 +557,14 @@ const hudOverlayWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.windowName) {
-      const name = values.windowName as string
+    if (values['windowName']) {
+      const name = values['windowName'] as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const opacity = values.opacity as number
+    const opacity = values['opacity'] as number
     if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
@@ -657,15 +657,15 @@ const popupNotificationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values.windowName as string
+    const rawName = values['windowName'] as string
     const windowName = sanitizeWindowName(rawName)
-    const duration = (values.defaultDuration as number) || 120
-    const width = (values.width as number) || 400
-    const height = (values.height as number) || 60
-    const position = (values.position as string) || 'top'
-    const fadeEffect = (values.fadeEffect as string) || 'fade'
-    const bgColor = (values.bgColor as string) || '#000000'
-    const textColor = (values.textColor as string) || '#ffffff'
+    const duration = (values['defaultDuration'] as number) || 120
+    const width = (values['width'] as number) || 400
+    const height = (values['height'] as number) || 60
+    const position = (values['position'] as string) || 'top'
+    const fadeEffect = (values['fadeEffect'] as string) || 'fade'
+    const bgColor = (values['bgColor'] as string) || '#000000'
+    const textColor = (values['textColor'] as string) || '#ffffff'
 
     const fullClassName = `Window_${windowName}`
     const lines: string[] = []
@@ -858,14 +858,14 @@ const popupNotificationTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.windowName) {
-      const name = values.windowName as string
+    if (values['windowName']) {
+      const name = values['windowName'] as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const duration = values.defaultDuration as number
+    const duration = values['defaultDuration'] as number
     if (duration !== undefined && duration <= 0) {
       errors.push('Duration must be a positive number')
     }
@@ -1036,25 +1036,25 @@ const gaugeWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values.windowName as string
+    const rawName = values['windowName'] as string
     const windowName = sanitizeWindowName(rawName)
-    const gaugeCount = parseInt((values.gaugeCount as string) || '2', 10)
-    const gauge1Label = (values.gauge1Label as string) || 'HP'
-    const gauge1Color1 = (values.gauge1Color1 as string) || '#e08040'
-    const gauge1Color2 = (values.gauge1Color2 as string) || '#f0c040'
-    const gauge2Label = (values.gauge2Label as string) || 'MP'
-    const gauge2Color1 = (values.gauge2Color1 as string) || '#4080c0'
-    const gauge2Color2 = (values.gauge2Color2 as string) || '#40c0f0'
-    const gauge3Label = (values.gauge3Label as string) || 'TP'
-    const gauge3Color1 = (values.gauge3Color1 as string) || '#40c040'
-    const gauge3Color2 = (values.gauge3Color2 as string) || '#80f080'
-    const posX = (values.positionX as number) || 10
-    const posY = (values.positionY as number) || 10
-    const width = (values.width as number) || 300
-    const gaugeHeight = (values.gaugeHeight as number) || 12
-    const showLabels = values.showLabels !== 'false'
-    const showValues = values.showValues !== 'false'
-    const dataSource = (values.dataSource as string) || 'actor'
+    const gaugeCount = parseInt((values['gaugeCount'] as string) || '2', 10)
+    const gauge1Label = (values['gauge1Label'] as string) || 'HP'
+    const gauge1Color1 = (values['gauge1Color1'] as string) || '#e08040'
+    const gauge1Color2 = (values['gauge1Color2'] as string) || '#f0c040'
+    const gauge2Label = (values['gauge2Label'] as string) || 'MP'
+    const gauge2Color1 = (values['gauge2Color1'] as string) || '#4080c0'
+    const gauge2Color2 = (values['gauge2Color2'] as string) || '#40c0f0'
+    const gauge3Label = (values['gauge3Label'] as string) || 'TP'
+    const gauge3Color1 = (values['gauge3Color1'] as string) || '#40c040'
+    const gauge3Color2 = (values['gauge3Color2'] as string) || '#80f080'
+    const posX = (values['positionX'] as number) || 10
+    const posY = (values['positionY'] as number) || 10
+    const width = (values['width'] as number) || 300
+    const gaugeHeight = (values['gaugeHeight'] as number) || 12
+    const showLabels = values['showLabels'] !== 'false'
+    const showValues = values['showValues'] !== 'false'
+    const dataSource = (values['dataSource'] as string) || 'actor'
 
     // Calculate window height based on gauge count
     const lineHeight = 36
@@ -1281,19 +1281,19 @@ const gaugeWindowTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.windowName) {
-      const name = values.windowName as string
+    if (values['windowName']) {
+      const name = values['windowName'] as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const width = values.width as number
+    const width = values['width'] as number
     if (width !== undefined && width <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    const gaugeHeight = values.gaugeHeight as number
+    const gaugeHeight = values['gaugeHeight'] as number
     if (gaugeHeight !== undefined && gaugeHeight <= 0) {
       errors.push('Gauge Height must be a positive number')
     }

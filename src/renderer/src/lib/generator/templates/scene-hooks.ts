@@ -53,8 +53,8 @@ const sceneHooksTemplate: CodeTemplate = {
     }
   ],
   generate: (values) => {
-    const sceneName = values.sceneName as string
-    const hookPoint = values.hookPoint as string
+    const sceneName = values['sceneName'] as string
+    const hookPoint = values['hookPoint'] as string
 
     return `// Hook: ${sceneName}.${hookPoint}
 const _${sceneName}_${hookPoint} = ${sceneName}.prototype.${hookPoint};

@@ -158,10 +158,10 @@ const methodAliasTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const className = values.className as string
-    const methodName = values.methodName as string
-    const timing = (values.timing as string) || 'after'
-    const callOriginal = values.callOriginal !== false // Default to true
+    const className = values['className'] as string
+    const methodName = values['methodName'] as string
+    const timing = (values['timing'] as string) || 'after'
+    const callOriginal = values['callOriginal'] !== false // Default to true
 
     // Get method info for accurate parameter names
     const methodInfo = getMethodInfo(className, methodName)
@@ -173,10 +173,13 @@ const methodAliasTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // Verify the method exists on the class
-    if (values.className && values.methodName) {
-      const methodInfo = getMethodInfo(values.className as string, values.methodName as string)
+    if (values['className'] && values['methodName']) {
+      const methodInfo = getMethodInfo(
+        values['className'] as string,
+        values['methodName'] as string
+      )
       if (!methodInfo) {
-        errors.push(`Method "${values.methodName}" not found on class "${values.className}"`)
+        errors.push(`Method "${values['methodName']}" not found on class "${values['className']}"`)
       }
     }
 

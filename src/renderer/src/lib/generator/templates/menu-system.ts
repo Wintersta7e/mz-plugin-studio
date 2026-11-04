@@ -76,11 +76,11 @@ const customMenuSceneTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const sceneName = toValidIdentifier(values.sceneName as string)
-    const windowName = toValidIdentifier(values.windowName as string)
-    const windowType = (values.windowType as string) || 'selectable'
-    const includeHelp = values.includeHelp as boolean
-    const includeGold = values.includeGold as boolean
+    const sceneName = toValidIdentifier(values['sceneName'] as string)
+    const windowName = toValidIdentifier(values['windowName'] as string)
+    const windowType = (values['windowType'] as string) || 'selectable'
+    const includeHelp = values['includeHelp'] as boolean
+    const includeGold = values['includeGold'] as boolean
 
     const sceneClass = `Scene_${sceneName}`
     const windowClass = `Window_${windowName}`
@@ -279,8 +279,8 @@ const customMenuSceneTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.sceneName) {
-      const sceneName = values.sceneName as string
+    if (values['sceneName']) {
+      const sceneName = values['sceneName'] as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sceneName)) {
         errors.push(
           'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
@@ -288,8 +288,8 @@ const customMenuSceneTemplate: CodeTemplate = {
       }
     }
 
-    if (values.windowName) {
-      const windowName = values.windowName as string
+    if (values['windowName']) {
+      const windowName = values['windowName'] as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(windowName)) {
         errors.push('Window name must be a valid JavaScript identifier')
       }
@@ -357,13 +357,13 @@ const titleScreenModTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = (values.modType as string) || 'addCommand'
+    const modType = (values['modType'] as string) || 'addCommand'
     const lines: string[] = []
 
     switch (modType) {
       case 'addCommand': {
-        const commandName = (values.commandName as string) || 'Custom'
-        const commandSymbol = (values.commandSymbol as string) || 'custom'
+        const commandName = (values['commandName'] as string) || 'Custom'
+        const commandSymbol = (values['commandSymbol'] as string) || 'custom'
 
         lines.push(`// Title Screen Mod: Add "${escapeLineComment(commandName)}" Command`)
         lines.push('')
@@ -434,7 +434,7 @@ const titleScreenModTemplate: CodeTemplate = {
       }
 
       case 'hideCommand': {
-        const hideTarget = (values.hideTarget as string) || 'options'
+        const hideTarget = (values['hideTarget'] as string) || 'options'
 
         let methodName: string
         let description: string
@@ -508,16 +508,16 @@ const titleScreenModTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values.modType as string
+    const modType = values['modType'] as string
 
     if (modType === 'addCommand') {
-      if (!values.commandName) {
+      if (!values['commandName']) {
         errors.push('Command name is required')
       }
-      if (!values.commandSymbol) {
+      if (!values['commandSymbol']) {
         errors.push('Command symbol is required')
       } else {
-        const symbol = values.commandSymbol as string
+        const symbol = values['commandSymbol'] as string
         if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
           errors.push('Command symbol must be a valid JavaScript identifier')
         }
@@ -604,12 +604,12 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values.commandName as string
-    const commandSymbol = values.commandSymbol as string
-    const insertPosition = (values.insertPosition as string) || 'beforeOptions'
-    const requiresActor = values.requiresActor as boolean
-    const enableCondition = (values.enableCondition as string) || 'always'
-    const switchId = (values.switchId as number) || 1
+    const commandName = values['commandName'] as string
+    const commandSymbol = values['commandSymbol'] as string
+    const insertPosition = (values['insertPosition'] as string) || 'beforeOptions'
+    const requiresActor = values['requiresActor'] as boolean
+    const enableCondition = (values['enableCondition'] as string) || 'always'
+    const switchId = (values['switchId'] as number) || 1
 
     const symbolId = toValidIdentifier(commandSymbol)
     const lines: string[] = []
@@ -759,16 +759,16 @@ const menuCommandAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.commandSymbol) {
-      const symbol = values.commandSymbol as string
+    if (values['commandSymbol']) {
+      const symbol = values['commandSymbol'] as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
       }
     }
 
-    const enableCondition = values.enableCondition as string
+    const enableCondition = values['enableCondition'] as string
     if (enableCondition === 'switch') {
-      const switchId = values.switchId as number
+      const switchId = values['switchId'] as number
       if (!switchId || switchId < 1) {
         errors.push('Switch ID must be a positive number')
       }
@@ -845,12 +845,12 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const optionName = values.optionName as string
-    const optionSymbol = values.optionSymbol as string
-    const optionType = (values.optionType as string) || 'boolean'
-    const defaultValue = values.defaultValue as string
-    const choices = values.choices as string
-    const persistToConfig = values.persistToConfig !== false
+    const optionName = values['optionName'] as string
+    const optionSymbol = values['optionSymbol'] as string
+    const optionType = (values['optionType'] as string) || 'boolean'
+    const defaultValue = values['defaultValue'] as string
+    const choices = values['choices'] as string
+    const persistToConfig = values['persistToConfig'] !== false
 
     const lines: string[] = []
 
@@ -1030,20 +1030,20 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.optionSymbol) {
-      const symbol = values.optionSymbol as string
+    if (values['optionSymbol']) {
+      const symbol = values['optionSymbol'] as string
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
       }
     }
 
-    const optionType = values.optionType as string
-    if (optionType === 'select' && !values.choices) {
+    const optionType = values['optionType'] as string
+    if (optionType === 'select' && !values['choices']) {
       errors.push('Choices are required for select-type options')
     }
 
     // Written as code for these two types: a volume, or the index of the chosen choice.
-    const defaultValue = values.defaultValue as string
+    const defaultValue = values['defaultValue'] as string
     if ((optionType === 'volume' || optionType === 'select') && defaultValue) {
       if (!/^\d+$/.test(defaultValue)) {
         errors.push(`Default Value must be a whole number for a ${optionType} option`)

@@ -89,10 +89,10 @@ const damageModifierTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modifyType = (values.modifyType as string) || 'multiply'
+    const modifyType = (values['modifyType'] as string) || 'multiply'
     // The check reads the value trimmed, so the code is written with the same text.
-    const modifyValue = String(values.modifyValue ?? '').trim()
-    const condition = (values.condition as string) || 'always'
+    const modifyValue = String(values['modifyValue'] ?? '').trim()
+    const condition = (values['condition'] as string) || 'always'
 
     const lines: string[] = []
 
@@ -151,9 +151,9 @@ const damageModifierTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.modifyValue) {
-      const modifyType = values.modifyType as string
-      const modifyValue = values.modifyValue as string
+    if (values['modifyValue']) {
+      const modifyType = values['modifyType'] as string
+      const modifyValue = values['modifyValue'] as string
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
@@ -209,7 +209,7 @@ const battleEventTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = (values.eventType as string) || 'victory'
+    const eventType = (values['eventType'] as string) || 'victory'
     const lines: string[] = []
 
     // Map event types to their MZ methods and appropriate timing
@@ -318,8 +318,8 @@ const stateHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const hookType = (values.hookType as string) || 'add'
-    const stateId = String(values.stateId ?? '').trim()
+    const hookType = (values['hookType'] as string) || 'add'
+    const stateId = String(values['stateId'] ?? '').trim()
     const lines: string[] = []
 
     const hasStateFilter = stateId && stateId.trim() !== ''
@@ -389,7 +389,7 @@ const stateHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const stateId = values.stateId as string
+    const stateId = values['stateId'] as string
 
     // Validate state ID if provided
     if (stateId && stateId.trim() !== '') {
@@ -445,8 +445,8 @@ const actionSequenceTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = (values.timing as string) || 'after'
-    const actionType = (values.actionType as string) || 'all'
+    const timing = (values['timing'] as string) || 'after'
+    const actionType = (values['actionType'] as string) || 'all'
     const lines: string[] = []
 
     // Determine action type check

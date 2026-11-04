@@ -282,12 +282,12 @@ const databaseExtTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const databaseType = values.databaseType as string
-    const tagName = values.tagName as string
-    const tagFormat = (values.tagFormat as string) || 'simple'
-    const valueType = (values.valueType as string) || 'number'
-    const propertyName = values.propertyName as string
-    const defaultValue = values.defaultValue as string | undefined
+    const databaseType = values['databaseType'] as string
+    const tagName = values['tagName'] as string
+    const tagFormat = (values['tagFormat'] as string) || 'simple'
+    const valueType = (values['valueType'] as string) || 'number'
+    const propertyName = values['propertyName'] as string
+    const defaultValue = values['defaultValue'] as string | undefined
 
     return generateNotetagCode(
       databaseType,
@@ -302,8 +302,8 @@ const databaseExtTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // Validate tag name
-    if (values.tagName) {
-      const tagName = values.tagName as string
+    if (values['tagName']) {
+      const tagName = values['tagName'] as string
 
       // Check for valid tag name (letters, numbers, underscores)
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tagName)) {
@@ -322,17 +322,17 @@ const databaseExtTemplate: CodeTemplate = {
     }
 
     // Validate property name if provided
-    if (values.propertyName) {
-      const propertyName = values.propertyName as string
+    if (values['propertyName']) {
+      const propertyName = values['propertyName'] as string
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(propertyName)) {
         errors.push('Property Name must be a valid JavaScript identifier')
       }
     }
 
     // Validate default value format based on value type
-    if (values.defaultValue && values.valueType) {
-      const defaultValue = values.defaultValue as string
-      const valueType = values.valueType as string
+    if (values['defaultValue'] && values['valueType']) {
+      const defaultValue = values['defaultValue'] as string
+      const valueType = values['valueType'] as string
 
       switch (valueType) {
         case 'number':

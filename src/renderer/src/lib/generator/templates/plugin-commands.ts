@@ -123,12 +123,12 @@ const basicCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
-    const commandName = String(values.commandName ?? '').trim()
-    const pluginName = values.pluginName as string
-    const arg1Name = values.arg1Name as string
-    const arg1Type = (values.arg1Type as string) || 'string'
-    const arg2Name = values.arg2Name as string
-    const arg2Type = (values.arg2Type as string) || 'number'
+    const commandName = String(values['commandName'] ?? '').trim()
+    const pluginName = values['pluginName'] as string
+    const arg1Name = values['arg1Name'] as string
+    const arg1Type = (values['arg1Type'] as string) || 'string'
+    const arg2Name = values['arg2Name'] as string
+    const arg2Type = (values['arg2Type'] as string) || 'number'
 
     const lines: string[] = []
 
@@ -175,8 +175,8 @@ const basicCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const commandName = values.commandName as string
-    const pluginName = values.pluginName as string
+    const commandName = values['commandName'] as string
+    const pluginName = values['pluginName'] as string
 
     if (commandName && !commandName.trim()) {
       errors.push('Command name is required')
@@ -191,8 +191,8 @@ const basicCommandTemplate: CodeTemplate = {
     }
 
     // Validate argument names if provided
-    const arg1Name = values.arg1Name as string
-    const arg2Name = values.arg2Name as string
+    const arg1Name = values['arg1Name'] as string
+    const arg2Name = values['arg2Name'] as string
 
     if (arg1Name && arg1Name.trim() && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(arg1Name.trim())) {
       errors.push('Argument 1 name must be a valid identifier')
@@ -261,10 +261,10 @@ const asyncCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
-    const commandName = String(values.commandName ?? '').trim()
-    const pluginName = values.pluginName as string
-    const waitType = (values.waitType as string) || 'callback'
-    const waitDuration = (values.waitDuration as number) || 60
+    const commandName = String(values['commandName'] ?? '').trim()
+    const pluginName = values['pluginName'] as string
+    const waitType = (values['waitType'] as string) || 'callback'
+    const waitDuration = (values['waitDuration'] as number) || 60
 
     const lines: string[] = []
 
@@ -370,10 +370,10 @@ const asyncCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const commandName = values.commandName as string
-    const pluginName = values.pluginName as string
-    const waitType = values.waitType as string
-    const waitDuration = values.waitDuration as number
+    const commandName = values['commandName'] as string
+    const pluginName = values['pluginName'] as string
+    const waitType = values['waitType'] as string
+    const waitDuration = values['waitDuration'] as number
 
     if (commandName && !commandName.trim()) {
       errors.push('Command name is required')
@@ -475,13 +475,13 @@ const validatedCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
-    const commandName = String(values.commandName ?? '').trim()
-    const pluginName = values.pluginName as string
-    const validateActorId = values.validateActorId as boolean
-    const validateNumberRange = values.validateNumberRange as boolean
-    const minValue = (values.minValue as number) ?? 0
-    const maxValue = (values.maxValue as number) ?? 9999
-    const errorHandling = (values.errorHandling as string) || 'warning'
+    const commandName = String(values['commandName'] ?? '').trim()
+    const pluginName = values['pluginName'] as string
+    const validateActorId = values['validateActorId'] as boolean
+    const validateNumberRange = values['validateNumberRange'] as boolean
+    const minValue = (values['minValue'] as number) ?? 0
+    const maxValue = (values['maxValue'] as number) ?? 9999
+    const errorHandling = (values['errorHandling'] as string) || 'warning'
 
     const lines: string[] = []
 
@@ -591,11 +591,11 @@ const validatedCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const commandName = values.commandName as string
-    const pluginName = values.pluginName as string
-    const validateNumberRange = values.validateNumberRange as boolean
-    const minValue = values.minValue as number
-    const maxValue = values.maxValue as number
+    const commandName = values['commandName'] as string
+    const pluginName = values['pluginName'] as string
+    const validateNumberRange = values['validateNumberRange'] as boolean
+    const minValue = values['minValue'] as number
+    const maxValue = values['maxValue'] as number
 
     if (commandName && !commandName.trim()) {
       errors.push('Command name is required')

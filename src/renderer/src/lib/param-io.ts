@@ -40,13 +40,13 @@ function checkOptions(elements: unknown[], dropped: FieldPath[]): SelectOption[]
   elements.forEach((element, i) => {
     if (
       !isRecord(element) ||
-      typeof element.value !== 'string' ||
-      typeof element.text !== 'string'
+      typeof element['value'] !== 'string' ||
+      typeof element['text'] !== 'string'
     ) {
       dropped.push([{ key: 'options' }, { index: i }])
       return
     }
-    options.push({ value: element.value, text: element.text })
+    options.push({ value: element['value'], text: element['text'] })
     for (const key of Object.keys(element)) {
       if (key !== 'value' && key !== 'text')
         dropped.push([{ key: 'options' }, { index: i }, { key }])
@@ -61,10 +61,10 @@ function checkOptions(elements: unknown[], dropped: FieldPath[]): SelectOption[]
  * generator escapes what it writes. The caller assigns `id`.
  */
 function checkParameterShape(value: unknown): ParameterShape {
-  if (!isRecord(value) || typeof value.name !== 'string') return { ok: false, reason: 'shape' }
-  if (!isParamType(value.type)) return { ok: false, reason: 'type' }
+  if (!isRecord(value) || typeof value['name'] !== 'string') return { ok: false, reason: 'shape' }
+  if (!isParamType(value['type'])) return { ok: false, reason: 'type' }
   const dropped: FieldPath[] = []
-  const name = value.name
+  const name = value['name']
   const take = <T>(key: string, accepted: boolean, fallback: T): T => {
     if (accepted) return value[key] as T
     dropped.push([{ key }])
@@ -72,12 +72,12 @@ function checkParameterShape(value: unknown): ParameterShape {
   }
   const parameter: Omit<PluginParameter, 'id'> = {
     name,
-    text: take('text', typeof value.text === 'string', name),
-    desc: take('desc', typeof value.desc === 'string', ''),
-    type: value.type,
+    text: take('text', typeof value['text'] === 'string', name),
+    desc: take('desc', typeof value['desc'] === 'string', ''),
+    type: value['type'],
     default: take<PluginParameter['default']>(
       'default',
-      ['string', 'number', 'boolean'].includes(typeof value.default),
+      ['string', 'number', 'boolean'].includes(typeof value['default']),
       ''
     )
   }
@@ -135,7 +135,7 @@ export function checkSavedParameter(
   const shape = checkParameterShape(value)
   if (!shape.ok) return undefined
   for (const path of shape.dropped) drop(path)
-  const id = isRecord(value) && typeof value.id === 'string' ? value.id : crypto.randomUUID()
+  const id = isRecord(value) && typeof value['id'] === 'string' ? value['id'] : crypto.randomUUID()
   return { id, ...shape.parameter }
 }
 
@@ -170,15 +170,15 @@ export function deserializeParams(content: string): ParamImportResult {
     return { success: false, reason: 'not-mzparams' }
   }
   if (version > 1) return { success: false, reason: 'newer-version' }
-  if (!Array.isArray(data.parameters)) return { success: false, reason: 'not-mzparams' }
+  if (!Array.isArray(data['parameters'])) return { success: false, reason: 'not-mzparams' }
 
   const parameters: PluginParameter[] = []
   const skipped: Extract<ParamImportResult, { success: true }>['skipped'] = []
   const dropped: Extract<ParamImportResult, { success: true }>['dropped'] = []
-  data.parameters.forEach((value: unknown, index) => {
+  data['parameters'].forEach((value: unknown, index) => {
     const shape = checkParameterShape(value)
     if (!shape.ok) {
-      const name = isRecord(value) && typeof value.name === 'string' ? value.name : null
+      const name = isRecord(value) && typeof value['name'] === 'string' ? value['name'] : null
       skipped.push({ index, name, reason: shape.reason })
       return
     }
@@ -187,7 +187,8 @@ export function deserializeParams(content: string): ParamImportResult {
       dropped.push({ param: shape.parameter.name, field: pathText(path) })
     }
   })
-  const source = typeof data.source === 'string' && data.source !== '' ? data.source : 'Unknown'
+  const source =
+    typeof data['source'] === 'string' && data['source'] !== '' ? data['source'] : 'Unknown'
   return { success: true, parameters, source, skipped, dropped }
 }
 

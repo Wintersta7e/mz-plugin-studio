@@ -189,9 +189,9 @@ const inputHandlerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const keyName = values.keyName as string
-    const triggerType = (values.triggerType as string) || 'isTriggered'
-    const activeScene = (values.activeScene as string) || 'Scene_Map'
+    const keyName = values['keyName'] as string
+    const triggerType = (values['triggerType'] as string) || 'isTriggered'
+    const activeScene = (values['activeScene'] as string) || 'Scene_Map'
 
     if (activeScene === 'all') {
       return generateGlobalHandler(keyName, triggerType)
@@ -202,18 +202,18 @@ const inputHandlerTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values.keyName && !KEY_CODES[values.keyName as string]) {
-      errors.push(`Unknown key: ${values.keyName}`)
+    if (values['keyName'] && !KEY_CODES[values['keyName'] as string]) {
+      errors.push(`Unknown key: ${values['keyName']}`)
     }
 
     const validTriggers = ['isTriggered', 'isPressed', 'isRepeated']
-    if (values.triggerType && !validTriggers.includes(values.triggerType as string)) {
-      errors.push(`Invalid trigger type: ${values.triggerType}`)
+    if (values['triggerType'] && !validTriggers.includes(values['triggerType'] as string)) {
+      errors.push(`Invalid trigger type: ${values['triggerType']}`)
     }
 
     const validScenes = ['Scene_Map', 'Scene_Battle', 'Scene_Menu', 'all']
-    if (values.activeScene && !validScenes.includes(values.activeScene as string)) {
-      errors.push(`Invalid scene: ${values.activeScene}`)
+    if (values['activeScene'] && !validScenes.includes(values['activeScene'] as string)) {
+      errors.push(`Invalid scene: ${values['activeScene']}`)
     }
 
     return {

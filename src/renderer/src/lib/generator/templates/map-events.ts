@@ -55,10 +55,10 @@ const eventSpawnTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = (values.functionName as string) || 'spawnEvent'
-    const templateEventId = values.templateEventId as number
-    const persistAcrossTransfer = values.persistAcrossTransfer as boolean
-    const maxSpawnedEvents = (values.maxSpawnedEvents as number) || 100
+    const functionName = (values['functionName'] as string) || 'spawnEvent'
+    const templateEventId = values['templateEventId'] as number
+    const persistAcrossTransfer = values['persistAcrossTransfer'] as boolean
+    const maxSpawnedEvents = (values['maxSpawnedEvents'] as number) || 100
 
     const lines: string[] = []
 
@@ -260,14 +260,14 @@ const eventSpawnTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const functionName = values.functionName as string
+    const functionName = values['functionName'] as string
     if (functionName && functionName.trim() === '') {
       errors.push('Function name is required')
     } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
       errors.push('Function name must be a valid JavaScript identifier')
     }
 
-    const maxSpawned = values.maxSpawnedEvents as number
+    const maxSpawned = values['maxSpawnedEvents'] as number
     if (maxSpawned !== undefined && maxSpawned < 1) {
       errors.push('Max spawned events must be at least 1')
     }
@@ -315,9 +315,9 @@ const movementRouteTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = (values.functionName as string) || 'setCustomRoute'
-    const includeHelpers = values.includeHelpers as boolean
-    const waitForCompletion = values.waitForCompletion as boolean
+    const functionName = (values['functionName'] as string) || 'setCustomRoute'
+    const includeHelpers = values['includeHelpers'] as boolean
+    const waitForCompletion = values['waitForCompletion'] as boolean
 
     const lines: string[] = []
 
@@ -519,7 +519,7 @@ const movementRouteTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const functionName = values.functionName as string
+    const functionName = values['functionName'] as string
     if (functionName && functionName.trim() === '') {
       errors.push('Function name is required')
     } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
@@ -580,10 +580,10 @@ const mapTransferHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = (values.timing as string) || 'after'
-    const filterMapId = String(values.filterMapId ?? '').trim()
-    const includeFadeInfo = values.includeFadeInfo as boolean
-    const includeDirection = values.includeDirection as boolean
+    const timing = (values['timing'] as string) || 'after'
+    const filterMapId = String(values['filterMapId'] ?? '').trim()
+    const includeFadeInfo = values['includeFadeInfo'] as boolean
+    const includeDirection = values['includeDirection'] as boolean
 
     const hasMapFilter = filterMapId && filterMapId.trim() !== ''
 
@@ -693,7 +693,7 @@ const mapTransferHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const filterMapId = values.filterMapId as string
+    const filterMapId = values['filterMapId'] as string
 
     // Validate map ID if provided
     if (filterMapId && filterMapId.trim() !== '') {
@@ -783,13 +783,13 @@ const parallelProcessTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const processName = (values.processName as string) || 'myParallelProcess'
-    const updateInterval = (values.updateInterval as number) || 1
-    const activeCondition = (values.activeCondition as string) || 'always'
-    const conditionId = (values.conditionId as number) || 1
-    const conditionValue = (values.conditionValue as number) || 1
-    const pauseInMenu = values.pauseInMenu as boolean
-    const pauseInBattle = values.pauseInBattle as boolean
+    const processName = (values['processName'] as string) || 'myParallelProcess'
+    const updateInterval = (values['updateInterval'] as number) || 1
+    const activeCondition = (values['activeCondition'] as string) || 'always'
+    const conditionId = (values['conditionId'] as number) || 1
+    const conditionValue = (values['conditionValue'] as number) || 1
+    const pauseInMenu = values['pauseInMenu'] as boolean
+    const pauseInBattle = values['pauseInBattle'] as boolean
 
     const lines: string[] = []
 
@@ -951,20 +951,20 @@ const parallelProcessTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const processName = values.processName as string
+    const processName = values['processName'] as string
     if (processName && processName.trim() === '') {
       errors.push('Process name is required')
     } else if (processName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(processName)) {
       errors.push('Process name must be a valid JavaScript identifier')
     }
 
-    const updateInterval = values.updateInterval as number
+    const updateInterval = values['updateInterval'] as number
     if (updateInterval !== undefined && updateInterval < 1) {
       errors.push('Update interval must be at least 1 frame')
     }
 
-    const activeCondition = values.activeCondition as string
-    const conditionId = values.conditionId as number
+    const activeCondition = values['activeCondition'] as string
+    const conditionId = values['conditionId'] as number
 
     if (
       (activeCondition === 'switch' || activeCondition === 'variable') &&

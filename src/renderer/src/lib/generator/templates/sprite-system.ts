@@ -97,14 +97,14 @@ const customSpriteClassTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values.spriteName as string
+    const rawName = values['spriteName'] as string
     const spriteName = sanitizeSpriteName(rawName)
-    const parentClass = (values.parentClass as string) || 'Sprite'
-    const width = (values.width as number) || 48
-    const height = (values.height as number) || 48
-    const useBitmap = (values.useBitmap as string) || 'none'
-    const fillColor = (values.fillColor as string) || '#ffffff'
-    const includeUpdate = values.includeUpdate !== false
+    const parentClass = (values['parentClass'] as string) || 'Sprite'
+    const width = (values['width'] as number) || 48
+    const height = (values['height'] as number) || 48
+    const useBitmap = (values['useBitmap'] as string) || 'none'
+    const fillColor = (values['fillColor'] as string) || '#ffffff'
+    const includeUpdate = values['includeUpdate'] !== false
 
     const fullClassName = `Sprite_${spriteName}`
     const lines: string[] = []
@@ -206,18 +206,18 @@ const customSpriteClassTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.spriteName) {
-      const name = values.spriteName as string
+    if (values['spriteName']) {
+      const name = values['spriteName'] as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Sprite Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    if (values.width !== undefined && (values.width as number) <= 0) {
+    if (values['width'] !== undefined && (values['width'] as number) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values.height !== undefined && (values.height as number) <= 0) {
+    if (values['height'] !== undefined && (values['height'] as number) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -380,22 +380,22 @@ const pictureManipulationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = (values.operation as string) || 'show'
-    const pictureId = (values.pictureId as number) || 1
-    const imageName = (values.imageName as string) || 'Picture1'
-    const origin = parseInt((values.origin as string) || '0', 10)
-    const x = (values.x as number) || 0
-    const y = (values.y as number) || 0
-    const scaleX = (values.scaleX as number) || 100
-    const scaleY = (values.scaleY as number) || 100
-    const opacity = (values.opacity as number) || 255
-    const blendMode = parseInt((values.blendMode as string) || '0', 10)
-    const duration = (values.duration as number) || 60
-    const rotationSpeed = (values.rotationSpeed as number) || 1
-    const tintRed = (values.tintRed as number) || 0
-    const tintGreen = (values.tintGreen as number) || 0
-    const tintBlue = (values.tintBlue as number) || 0
-    const tintGray = (values.tintGray as number) || 0
+    const operation = (values['operation'] as string) || 'show'
+    const pictureId = (values['pictureId'] as number) || 1
+    const imageName = (values['imageName'] as string) || 'Picture1'
+    const origin = parseInt((values['origin'] as string) || '0', 10)
+    const x = (values['x'] as number) || 0
+    const y = (values['y'] as number) || 0
+    const scaleX = (values['scaleX'] as number) || 100
+    const scaleY = (values['scaleY'] as number) || 100
+    const opacity = (values['opacity'] as number) || 255
+    const blendMode = parseInt((values['blendMode'] as string) || '0', 10)
+    const duration = (values['duration'] as number) || 60
+    const rotationSpeed = (values['rotationSpeed'] as number) || 1
+    const tintRed = (values['tintRed'] as number) || 0
+    const tintGreen = (values['tintGreen'] as number) || 0
+    const tintBlue = (values['tintBlue'] as number) || 0
+    const tintGray = (values['tintGray'] as number) || 0
 
     const lines: string[] = []
 
@@ -580,18 +580,18 @@ const pictureManipulationTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const pictureId = values.pictureId as number
+    const pictureId = values['pictureId'] as number
     if (pictureId === undefined || pictureId < 1 || pictureId > 100) {
       errors.push('Picture ID must be between 1 and 100')
     }
 
-    const opacity = values.opacity as number
+    const opacity = values['opacity'] as number
     if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
 
-    const operation = values.operation as string
-    if (operation === 'show' && !values.imageName) {
+    const operation = values['operation'] as string
+    if (operation === 'show' && !values['imageName']) {
       errors.push('Image Name is required for Show Picture operation')
     }
 
@@ -695,17 +695,17 @@ const spriteAnimationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const animationType = (values.animationType as string) || 'horizontal'
-    const rawName = values.spriteName as string
+    const animationType = (values['animationType'] as string) || 'horizontal'
+    const rawName = values['spriteName'] as string
     const spriteName = sanitizeSpriteName(rawName)
-    const frameCount = (values.frameCount as number) || 4
-    const frameWidth = (values.frameWidth as number) || 48
-    const frameHeight = (values.frameHeight as number) || 48
-    const columns = (values.columns as number) || 4
-    const frameDelay = (values.frameDelay as number) || 12
-    const loop = values.loop !== false
-    const autoPlay = values.autoPlay !== false
-    const targetClass = (values.targetClass as string) || 'Sprite_Base'
+    const frameCount = (values['frameCount'] as number) || 4
+    const frameWidth = (values['frameWidth'] as number) || 48
+    const frameHeight = (values['frameHeight'] as number) || 48
+    const columns = (values['columns'] as number) || 4
+    const frameDelay = (values['frameDelay'] as number) || 12
+    const loop = values['loop'] !== false
+    const autoPlay = values['autoPlay'] !== false
+    const targetClass = (values['targetClass'] as string) || 'Sprite_Base'
 
     const fullClassName = `Sprite_${spriteName}`
     const lines: string[] = []
@@ -967,39 +967,39 @@ const spriteAnimationTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.spriteName) {
-      const name = values.spriteName as string
+    if (values['spriteName']) {
+      const name = values['spriteName'] as string
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Sprite Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const frameCount = values.frameCount as number
+    const frameCount = values['frameCount'] as number
     if (frameCount !== undefined && frameCount < 1) {
       errors.push('Frame Count must be at least 1')
     }
 
-    const frameWidth = values.frameWidth as number
+    const frameWidth = values['frameWidth'] as number
     if (frameWidth !== undefined && frameWidth <= 0) {
       errors.push('Frame Width must be a positive number')
     }
 
-    const frameHeight = values.frameHeight as number
+    const frameHeight = values['frameHeight'] as number
     if (frameHeight !== undefined && frameHeight <= 0) {
       errors.push('Frame Height must be a positive number')
     }
 
-    const frameDelay = values.frameDelay as number
+    const frameDelay = values['frameDelay'] as number
     if (frameDelay !== undefined && frameDelay < 1) {
       errors.push('Frame Delay must be at least 1')
     }
 
-    const animationType = values.animationType as string
-    if (animationType === 'mixin' && !values.targetClass) {
+    const animationType = values['animationType'] as string
+    if (animationType === 'mixin' && !values['targetClass']) {
       errors.push('Target Sprite Class is required for Animation Mixin')
     } else if (
       animationType === 'mixin' &&
-      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(values.targetClass as string)
+      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(values['targetClass'] as string)
     ) {
       errors.push('Target Sprite Class must be a class name (letters, numbers, _ or $)')
     }

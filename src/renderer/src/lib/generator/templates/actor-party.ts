@@ -84,13 +84,13 @@ const customActorPropertyTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const propertyName = values.propertyName as string
-    const dataType = (values.dataType as string) || 'number'
-    const defaultValue = values.defaultValue as string | undefined
+    const propertyName = values['propertyName'] as string
+    const dataType = (values['dataType'] as string) || 'number'
+    const defaultValue = values['defaultValue'] as string | undefined
     // Number() in the check ignores surrounding whitespace; the code gets the trimmed text.
-    const minValue = String(values.minValue ?? '').trim()
-    const maxValue = String(values.maxValue ?? '').trim()
-    const includeChange = values.includeChange !== false
+    const minValue = String(values['minValue'] ?? '').trim()
+    const maxValue = String(values['maxValue'] ?? '').trim()
+    const includeChange = values['includeChange'] !== false
 
     const pascalName = toPascalCase(propertyName)
     const defaultLiteral = getDefaultLiteral(dataType, defaultValue)
@@ -162,8 +162,8 @@ const customActorPropertyTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.propertyName) {
-      const propertyName = values.propertyName as string
+    if (values['propertyName']) {
+      const propertyName = values['propertyName'] as string
 
       // Check for valid JavaScript identifier
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(propertyName)) {
@@ -198,10 +198,10 @@ const customActorPropertyTemplate: CodeTemplate = {
     }
 
     // Validate min/max for numbers
-    const dataType = values.dataType as string
+    const dataType = values['dataType'] as string
     if (dataType === 'number') {
-      const minValue = values.minValue as string
-      const maxValue = values.maxValue as string
+      const minValue = values['minValue'] as string
+      const maxValue = values['maxValue'] as string
 
       if (minValue && isNaN(Number(minValue))) {
         errors.push('Minimum Value must be a valid number')
@@ -286,12 +286,12 @@ const partyManagementTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const featureType = (values.featureType as string) || 'sizeLimit'
+    const featureType = (values['featureType'] as string) || 'sizeLimit'
     const lines: string[] = []
 
     if (featureType === 'sizeLimit') {
-      const maxSize = (values.maxSize as number) || 4
-      const minSize = (values.minSize as number) || 1
+      const maxSize = (values['maxSize'] as number) || 4
+      const minSize = (values['minSize'] as number) || 1
 
       lines.push(`// Party Size Limit: ${minSize} to ${maxSize} members`)
       lines.push('')
@@ -336,7 +336,7 @@ const partyManagementTemplate: CodeTemplate = {
       lines.push('    return Math.max(0, this.maxBattleMembers() - this._actors.length);')
       lines.push('};')
     } else if (featureType === 'addRemoveHook') {
-      const hookTiming = (values.hookTiming as string) || 'after'
+      const hookTiming = (values['hookTiming'] as string) || 'after'
 
       lines.push('// Party Member Change Hooks')
       lines.push('')
@@ -419,7 +419,7 @@ const partyManagementTemplate: CodeTemplate = {
         lines.push('};')
       }
     } else if (featureType === 'reserveParty') {
-      const maxReserve = (values.maxReserve as number) || 10
+      const maxReserve = (values['maxReserve'] as number) || 10
 
       lines.push('// Reserve Party System')
       lines.push(`// Maximum reserve members: ${maxReserve}`)
@@ -490,11 +490,11 @@ const partyManagementTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const featureType = values.featureType as string
+    const featureType = values['featureType'] as string
 
     if (featureType === 'sizeLimit') {
-      const maxSize = values.maxSize as number
-      const minSize = values.minSize as number
+      const maxSize = values['maxSize'] as number
+      const minSize = values['minSize'] as number
 
       if (maxSize !== undefined && maxSize < 1) {
         errors.push('Maximum Party Size must be at least 1')
@@ -508,7 +508,7 @@ const partyManagementTemplate: CodeTemplate = {
     }
 
     if (featureType === 'reserveParty') {
-      const maxReserve = values.maxReserve as number
+      const maxReserve = values['maxReserve'] as number
       if (maxReserve !== undefined && maxReserve < 1) {
         errors.push('Maximum Reserve Size must be at least 1')
       }
@@ -576,9 +576,9 @@ const equipmentHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = (values.eventType as string) || 'both'
-    const timing = (values.timing as string) || 'after'
-    const slotFilter = (values.slotFilter as string) || 'all'
+    const eventType = (values['eventType'] as string) || 'both'
+    const timing = (values['timing'] as string) || 'after'
+    const slotFilter = (values['slotFilter'] as string) || 'all'
 
     const lines: string[] = []
     const hasSlotFilter = slotFilter !== 'all'

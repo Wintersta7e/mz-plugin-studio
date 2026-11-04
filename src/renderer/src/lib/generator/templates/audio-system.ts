@@ -103,16 +103,17 @@ const bgmControlTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = (values.operation as string) || 'play'
-    const filename = values.filename as string
-    const volume = values.volume !== undefined ? (values.volume as number) : 90
-    const pitch = values.pitch !== undefined ? (values.pitch as number) : 100
-    const pan = values.pan !== undefined ? (values.pan as number) : 0
-    const fadeDuration = values.fadeDuration !== undefined ? (values.fadeDuration as number) : 1
+    const operation = (values['operation'] as string) || 'play'
+    const filename = values['filename'] as string
+    const volume = values['volume'] !== undefined ? (values['volume'] as number) : 90
+    const pitch = values['pitch'] !== undefined ? (values['pitch'] as number) : 100
+    const pan = values['pan'] !== undefined ? (values['pan'] as number) : 0
+    const fadeDuration =
+      values['fadeDuration'] !== undefined ? (values['fadeDuration'] as number) : 1
     const fadeInDuration =
-      values.fadeInDuration !== undefined ? (values.fadeInDuration as number) : 1
-    const wrapInFunction = values.wrapInFunction !== false
-    const functionName = (values.functionName as string) || 'customBgmControl'
+      values['fadeInDuration'] !== undefined ? (values['fadeInDuration'] as number) : 1
+    const wrapInFunction = values['wrapInFunction'] !== false
+    const functionName = (values['functionName'] as string) || 'customBgmControl'
 
     const lines: string[] = []
 
@@ -185,35 +186,35 @@ const bgmControlTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const operation = values.operation as string
+    const operation = values['operation'] as string
 
-    if (operation === 'play' && !values.filename) {
+    if (operation === 'play' && !values['filename']) {
       errors.push('BGM filename is required for Play operation')
     }
 
-    if (values.volume !== undefined) {
-      const volume = values.volume as number
+    if (values['volume'] !== undefined) {
+      const volume = values['volume'] as number
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
-    if (values.pitch !== undefined) {
-      const pitch = values.pitch as number
+    if (values['pitch'] !== undefined) {
+      const pitch = values['pitch'] as number
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
-    if (values.pan !== undefined) {
-      const pan = values.pan as number
+    if (values['pan'] !== undefined) {
+      const pan = values['pan'] as number
       if (pan < -100 || pan > 100) {
         errors.push('Pan must be between -100 and 100')
       }
     }
 
-    if (values.wrapInFunction && values.functionName) {
-      const functionName = values.functionName as string
+    if (values['wrapInFunction'] && values['functionName']) {
+      const functionName = values['functionName'] as string
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
         errors.push('Function name must be a valid JavaScript identifier')
       }
@@ -298,15 +299,15 @@ const sePlayerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const filename = values.filename as string
-    const volume = values.volume !== undefined ? (values.volume as number) : 90
-    const pitch = values.pitch !== undefined ? (values.pitch as number) : 100
-    const pan = values.pan !== undefined ? (values.pan as number) : 0
-    const wrapInFunction = values.wrapInFunction !== false
-    const functionName = (values.functionName as string) || 'playCustomSE'
-    const randomizePitch = values.randomizePitch === true
+    const filename = values['filename'] as string
+    const volume = values['volume'] !== undefined ? (values['volume'] as number) : 90
+    const pitch = values['pitch'] !== undefined ? (values['pitch'] as number) : 100
+    const pan = values['pan'] !== undefined ? (values['pan'] as number) : 0
+    const wrapInFunction = values['wrapInFunction'] !== false
+    const functionName = (values['functionName'] as string) || 'playCustomSE'
+    const randomizePitch = values['randomizePitch'] === true
     const pitchVariation =
-      values.pitchVariation !== undefined ? (values.pitchVariation as number) : 10
+      values['pitchVariation'] !== undefined ? (values['pitchVariation'] as number) : 10
 
     const lines: string[] = []
 
@@ -353,36 +354,36 @@ const sePlayerTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values.volume !== undefined) {
-      const volume = values.volume as number
+    if (values['volume'] !== undefined) {
+      const volume = values['volume'] as number
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
-    if (values.pitch !== undefined) {
-      const pitch = values.pitch as number
+    if (values['pitch'] !== undefined) {
+      const pitch = values['pitch'] as number
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
-    if (values.pan !== undefined) {
-      const pan = values.pan as number
+    if (values['pan'] !== undefined) {
+      const pan = values['pan'] as number
       if (pan < -100 || pan > 100) {
         errors.push('Pan must be between -100 and 100')
       }
     }
 
-    if (values.wrapInFunction && values.functionName) {
-      const functionName = values.functionName as string
+    if (values['wrapInFunction'] && values['functionName']) {
+      const functionName = values['functionName'] as string
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
         errors.push('Function name must be a valid JavaScript identifier')
       }
     }
 
-    if (values.pitchVariation !== undefined) {
-      const pitchVariation = values.pitchVariation as number
+    if (values['pitchVariation'] !== undefined) {
+      const pitchVariation = values['pitchVariation'] as number
       if (pitchVariation < 0 || pitchVariation > 50) {
         errors.push('Pitch variation should be between 0 and 50')
       }
@@ -480,17 +481,19 @@ const audioCrossfadeTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const crossfadeType = (values.crossfadeType as string) || 'crossfade'
+    const crossfadeType = (values['crossfadeType'] as string) || 'crossfade'
     const newBgmFilename =
-      (values.newBgmFilename as string) || (values.fadeFromSilenceBgm as string)
+      (values['newBgmFilename'] as string) || (values['fadeFromSilenceBgm'] as string)
     const fadeOutDuration =
-      values.fadeOutDuration !== undefined ? (values.fadeOutDuration as number) : 2
+      values['fadeOutDuration'] !== undefined ? (values['fadeOutDuration'] as number) : 2
     const fadeInDuration =
-      values.fadeInDuration !== undefined ? (values.fadeInDuration as number) : 2
-    const newBgmVolume = values.newBgmVolume !== undefined ? (values.newBgmVolume as number) : 90
-    const newBgmPitch = values.newBgmPitch !== undefined ? (values.newBgmPitch as number) : 100
-    const wrapInFunction = values.wrapInFunction !== false
-    const functionName = (values.functionName as string) || 'crossfadeBgm'
+      values['fadeInDuration'] !== undefined ? (values['fadeInDuration'] as number) : 2
+    const newBgmVolume =
+      values['newBgmVolume'] !== undefined ? (values['newBgmVolume'] as number) : 90
+    const newBgmPitch =
+      values['newBgmPitch'] !== undefined ? (values['newBgmPitch'] as number) : 100
+    const wrapInFunction = values['wrapInFunction'] !== false
+    const functionName = (values['functionName'] as string) || 'crossfadeBgm'
 
     const lines: string[] = []
 
@@ -572,50 +575,50 @@ const audioCrossfadeTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const crossfadeType = values.crossfadeType as string
+    const crossfadeType = values['crossfadeType'] as string
 
     // Validate BGM filename based on crossfade type
-    if (crossfadeType === 'crossfade' && !values.newBgmFilename) {
+    if (crossfadeType === 'crossfade' && !values['newBgmFilename']) {
       errors.push('New BGM filename is required for crossfade')
     }
 
-    if (crossfadeType === 'fadeFromSilence' && !values.fadeFromSilenceBgm) {
+    if (crossfadeType === 'fadeFromSilence' && !values['fadeFromSilenceBgm']) {
       errors.push('BGM filename is required for fade from silence')
     }
 
     // Validate durations
-    if (values.fadeOutDuration !== undefined) {
-      const duration = values.fadeOutDuration as number
+    if (values['fadeOutDuration'] !== undefined) {
+      const duration = values['fadeOutDuration'] as number
       if (duration < 0 || duration > 60) {
         errors.push('Fade out duration must be between 0 and 60 seconds')
       }
     }
 
-    if (values.fadeInDuration !== undefined) {
-      const duration = values.fadeInDuration as number
+    if (values['fadeInDuration'] !== undefined) {
+      const duration = values['fadeInDuration'] as number
       if (duration < 0 || duration > 60) {
         errors.push('Fade in duration must be between 0 and 60 seconds')
       }
     }
 
     // Validate volume and pitch
-    if (values.newBgmVolume !== undefined) {
-      const volume = values.newBgmVolume as number
+    if (values['newBgmVolume'] !== undefined) {
+      const volume = values['newBgmVolume'] as number
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
-    if (values.newBgmPitch !== undefined) {
-      const pitch = values.newBgmPitch as number
+    if (values['newBgmPitch'] !== undefined) {
+      const pitch = values['newBgmPitch'] as number
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
     // Validate function name
-    if (values.wrapInFunction && values.functionName) {
-      const functionName = values.functionName as string
+    if (values['wrapInFunction'] && values['functionName']) {
+      const functionName = values['functionName'] as string
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
         errors.push('Function name must be a valid JavaScript identifier')
       }
