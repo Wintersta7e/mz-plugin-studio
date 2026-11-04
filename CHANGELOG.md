@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-11-05
+
+### Fixed
+
+- In raw mode, saving a plugin that has two structs of one name is refused with a message naming the struct, and the editor shows the repeated name as an error; before, the save could write the second struct over the first one's fields in the file and still report success. **Add Struct** now names each new struct apart from the structs already there (`NewStruct`, `NewStruct2`, `NewStruct3`…), so a new struct no longer takes the name of the first one.
+- With raw mode off, a command with two arguments whose names turn into the same name in the code, such as `foo-bar` and `fooBar`, no longer writes a plugin that RPG Maker MZ fails to load: each argument now gets a constant of its own in the command's code, and the editor shows such a pair as an error, as it already did for parameters.
+- **Duplicate** names each copy apart from the parameters already there and from the other copies made in the same press (`speed_copy`, `speed_copy2`…); before, duplicating a parameter twice, or duplicating a copy, gave the copy the name of an existing parameter, and the next save wrote a plugin that RPG Maker MZ fails to load. A plugin that already holds two parameters of one name keeps showing that as an error until you rename one of them.
+
 ## [1.8.0] - 2026-11-02
 
 ### Upgrading from 1.7.x
