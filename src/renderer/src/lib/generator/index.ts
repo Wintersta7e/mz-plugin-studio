@@ -746,13 +746,23 @@ interface Placement {
 }
 
 /**
-Where added code goes: the parameters variable's scope, else the first IIFE, else the top level.
+A statement of the script's top level or of a function body.
 */
+type ScopeStatement = Program['body'][number]
+
+/**
+A top-level statement, with the function it calls in place if it calls one.
+*/
+interface StatementUnit {
+  statement: ScopeStatement
+  fn: CalledFunction | undefined
+}
+
 /**
 A top-level statement that calls a function in place, with that function.
 */
 interface CallUnit {
-  statement: Program['body'][number]
+  statement: ScopeStatement
   fn: CalledFunction
 }
 
@@ -778,59 +788,97 @@ function parametersDeclaration(
   return undefined
 }
 
-function placementOf(source: string): Placement {
-  let program: Program
+/**
+The first declaration of the top level or of a top-level IIFE body reading the parameters,
+with that IIFE.
+*/
+function findParameters(
+  units: readonly StatementUnit[]
+): { variable: { name: string; end: number }; call: CallUnit | undefined } | undefined {
+  for (const unit of units) {
+    const variable = parametersDeclaration(
+      unit.fn === undefined ? [unit.statement] : unit.fn.body.body
+    )
+    if (variable !== undefined) {
+      return {
+        variable,
+        call: unit.fn === undefined ? undefined : { statement: unit.statement, fn: unit.fn }
+      }
+    }
+  }
+  return undefined
+}
+
+/**
+The script's syntax tree; a syntax error is raised as a RawModeParseError.
+*/
+function parseRawSource(source: string): Program {
   try {
-    program = parseScript(source)
+    return parseScript(source)
   } catch (error) {
     if (error instanceof SyntaxError) throw new RawModeParseError(error.message)
     throw error
   }
+}
+
+/**
+The index from which the file's own `PLUGIN_NAME` holds its value in the owner's scope: the end
+of its declaration there, else the owner's body when the owner takes it as a parameter or an
+earlier top-level statement declares it.
+*/
+function pluginNameStart(
+  statements: readonly ScopeStatement[],
+  own: ScopeStatement | undefined,
+  owner: CallUnit | undefined
+): number | undefined {
+  if (own !== undefined) return own.end
+  if (owner === undefined) return undefined
+  const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
+  const isParam = owner.fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
+  return isParam || (outer !== undefined && outer.end <= owner.statement.start)
+    ? owner.fn.body.start
+    : undefined
+}
+
+/**
+Where code for added parameters goes in the owner's body: after its directives and its own
+`PLUGIN_NAME`; the end of the file when there is no owner.
+*/
+function addedCodeStart(
+  source: string,
+  scope: readonly ScopeStatement[],
+  owner: CallUnit | undefined,
+  own: ScopeStatement | undefined
+): number {
+  if (owner === undefined) return source.length
+  const directives = scope.filter(
+    (s) => s.type === 'ExpressionStatement' && s.directive !== undefined
+  )
+  const start = afterNode(source, directives.at(-1)?.end ?? owner.fn.body.start + 1)
+  return own === undefined ? start : Math.max(start, afterNode(source, own.end))
+}
+
+/**
+Where added code goes: the parameters variable's scope, else the first IIFE, else the top level.
+*/
+function placementOf(source: string): Placement {
+  const program = parseRawSource(source)
   const statements = program.body
   const units = statements.map((statement) => ({ statement, fn: calledFunction(statement) }))
   const firstCall = units.find((unit): unit is CallUnit => unit.fn !== undefined)
-
-  // The first declaration of the top level or of a top-level IIFE body reading the parameters
-  let parameters: { name: string; end: number } | undefined
-  let parametersCall: CallUnit | undefined
-  for (const unit of units) {
-    parameters = parametersDeclaration(unit.fn === undefined ? [unit.statement] : unit.fn.body.body)
-    if (parameters !== undefined) {
-      parametersCall =
-        unit.fn === undefined ? undefined : { statement: unit.statement, fn: unit.fn }
-      break
-    }
-  }
-  const owner = parameters === undefined ? firstCall : parametersCall
+  const site = findParameters(units)
+  const owner = site === undefined ? firstCall : site.call
   const scope = owner === undefined ? statements : owner.fn.body.body
-
   const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
-  let pluginNameFrom = own?.end
-  if (owner !== undefined && pluginNameFrom === undefined) {
-    const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
-    const isParam = owner.fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
-    if (isParam || (outer !== undefined && outer.end <= owner.statement.start)) {
-      pluginNameFrom = owner.fn.body.start
-    }
-  }
-
-  let start = source.length
-  if (owner !== undefined) {
-    const directives = scope.filter(
-      (s) => s.type === 'ExpressionStatement' && s.directive !== undefined
-    )
-    start = afterNode(source, directives.at(-1)?.end ?? owner.fn.body.start + 1)
-    if (own !== undefined) start = Math.max(start, afterNode(source, own.end))
-  }
 
   const names = new Set<string>()
   collectNames(program, names)
   return {
     iifeStart: firstCall?.statement.start,
     body: owner?.fn.body,
-    parameters,
-    start,
-    pluginNameFrom,
+    parameters: site?.variable,
+    start: addedCodeStart(source, scope, owner, own),
+    pluginNameFrom: pluginNameStart(statements, own, owner),
     names
   }
 }
