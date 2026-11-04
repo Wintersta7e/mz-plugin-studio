@@ -6,9 +6,39 @@ import { POPULATED, persistedStores } from './corpus/persisted'
 
 interface StoreHook {
   setState(partial: Record<string, unknown>): void
+  getState(): Record<string, unknown>
 }
 
 const stores = persistedStores()
+
+// Every string `id` property in `value`, depth first (an array's entries are its items).
+function ids(value: unknown): string[] {
+  if (typeof value !== 'object' || value === null) return []
+  const found: string[] = []
+  const entries: [string, unknown][] = Object.entries(value)
+  for (const [k, v] of entries) {
+    if (k === 'id' && typeof v === 'string') found.push(v)
+    else found.push(...ids(v))
+  }
+  return found
+}
+
+const isStoreHook = (value: unknown): value is StoreHook =>
+  typeof value === 'function' &&
+  'getState' in value &&
+  typeof value.getState === 'function' &&
+  'setState' in value &&
+  typeof value.setState === 'function'
+
+// The store `exportName` of a fresh copy of `modulePath`, which loads what localStorage holds.
+async function freshStore(modulePath: string, exportName: string): Promise<StoreHook> {
+  vi.resetModules()
+  const module: unknown = await import(modulePath)
+  const store: unknown =
+    typeof module === 'object' && module !== null ? Reflect.get(module, exportName) : undefined
+  if (!isStoreHook(store)) throw new Error(`${modulePath} exports no store ${exportName}`)
+  return store
+}
 
 describe('persisted store goldens', () => {
   it('finds every persisted store and a populated state for each', () => {
@@ -36,4 +66,31 @@ describe('persisted store goldens', () => {
       })
     }
   }
+
+  // A restart loads the saved form back through each store's shape checks, which keep the id of
+  // every plugin, parameter and entry they restore; a new id would orphan what refers to the old.
+  const withIds = stores.filter(({ key }) => ids(Object.values(POPULATED[key] ?? {})).length > 0)
+
+  it('finds stores that save ids', () => {
+    expect(withIds.length).toBeGreaterThan(0)
+  })
+
+  it.each(withIds)(
+    '$key: keeps every saved id across a restart',
+    async ({ key, modulePath, exportName }) => {
+      expect.assertions(1)
+
+      localStorage.clear()
+      const populated = POPULATED[key] ?? {}
+      const saving = await freshStore(modulePath, exportName)
+      saving.setState(populated)
+      const loading = await freshStore(modulePath, exportName)
+      const restored = loading.getState()
+      const fields = Object.keys(populated)
+
+      expect(ids(fields.map((f) => restored[f]))).toStrictEqual(
+        ids(fields.map((f) => populated[f]))
+      )
+    }
+  )
 })
