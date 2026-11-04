@@ -12,7 +12,8 @@
 //                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
 //                     ceilings given as --clones and --duplicated-lines, or without a report).
-//   --report typecov: the type coverage of each program; exits 0 below 100%.
+//   --report typecov: the type coverage of each program (fails unless each is at the floor its
+//                     typecov:<program> script names as --at-least, or when a run fails).
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
 // print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
@@ -509,17 +510,44 @@ function reportJscpd(args) {
   }
 }
 
+// Each program's coverage is held exactly at the floor its `typecov:<program>` script names in
+// `--at-least`, below which type-coverage fails that script itself. A fall fails here, and so
+// does a rise, so a floor only moves up with the coverage it holds.
+const TYPECOV_FLOOR = /--at-least (?<floor>\d+(?:\.\d+)?)/v
+// What is wrong with a measured coverage against its script's floor; empty at the floor.
+/**
+@param {string} script
+@param {string | undefined} floor
+@param {string} measured
+*/
+function typecovProblem(script, floor, measured) {
+  if (floor === undefined) return `the ${script} script names no --at-least floor`
+  if (Number(measured) < Number(floor)) return `the coverage fell below its floor ${floor}`
+  if (Number(measured) > Number(floor)) return `the coverage rose; raise --at-least to ${measured}`
+  return ''
+}
 function reportTypecov() {
+  const scripts = readManifest()?.scripts ?? {}
   let isOk = true
   for (const program of TYPECOV_PROGRAMS) {
-    const run = npmRun(`typecov:${program}`)
+    const script = `typecov:${program}`
+    const label = `typecov ${program}`
+    const run = npmRun(script)
     const groups = /\((?<covered>\d+) \/ (?<total>\d+)\) (?<pct>[\d.]+)%/v.exec(run.out)?.groups
     if (groups === undefined || Number(groups.total) === 0) {
-      printFailedRun(`typecov ${program}`, 'no summary or nothing scanned', run)
+      printFailedRun(label, 'no summary or nothing scanned', run)
       isOk = false
       continue
     }
-    print(`typecov ${program}: (${groups.covered} / ${groups.total}) ${groups.pct}%`)
+    const floor = TYPECOV_FLOOR.exec(scripts[script] ?? '')?.groups?.['floor']
+    print(
+      `${label}: (${groups.covered} / ${groups.total}) ${groups.pct}%, floor ${floor ?? 'none'}`
+    )
+    const problem = typecovProblem(script, floor, groups['pct'] ?? '')
+    if (problem === '' && run.status === 0) continue
+    if (problem === '') printFailedRun(label, 'the run failed', run)
+    else print(`${label}: ${problem}`)
+    isOk = false
   }
   return isOk
 }

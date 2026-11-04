@@ -195,6 +195,8 @@ npm run build:win      # portable Windows build into dist/
 duplicated code each hold an exact ceiling that fails when the count rises or falls, so a change
 that lowers a count lowers its ceiling in the same commit. The ceilings live in `eslint-suppressions.json`,
 `pending-ceilings.json` and the `knip:production` and `jscpd:report` scripts in `package.json`.
+Each program's type coverage holds an exact floor, the `--at-least` of its `typecov:<program>`
+script, that fails when the coverage falls or rises, so a change that raises it raises the floor.
 
 The end-to-end suite drives the packaged app, and CI requires it:
 

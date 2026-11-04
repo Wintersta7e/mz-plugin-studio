@@ -127,6 +127,16 @@ describe('package.json scripts', () => {
     expect(commandsOf(scripts.check).slice(0, gates.length)).toStrictEqual(gates)
   })
 
+  it('each type coverage script runs one program or the report that holds their floors', () => {
+    const typecov = Object.keys(scripts).filter(
+      (name) => name === 'typecov' || name.startsWith('typecov:')
+    )
+    const other = typecov.filter((name) => name.split(':').length !== 2)
+
+    expect(typecov.length).toBeGreaterThan(1)
+    expect(other).toStrictEqual([])
+  })
+
   it('the lint covers the whole tree and fails on any warning', () => {
     expect(scripts.lint).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 .')
     expect(scripts['lint:scripts']).toBeUndefined()
