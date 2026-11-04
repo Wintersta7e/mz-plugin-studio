@@ -3,7 +3,7 @@
 // change, and a pending type-check flag holds its error count exactly at its ceiling and fails
 // once no error is left.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
@@ -97,6 +97,18 @@ const status = (
   directory: string,
   variables: Record<string, string> = {}
 ): { status: number | null; out: string } => run(directory, SCRIPT, [], variables)
+
+// The script copied into a repository whose `typescript` package is a fake tsc running `tsc`.
+const statusWithTsc = (directory: string, tsc: string): { status: number | null; out: string } => {
+  mkdirSync(path.join(directory, 'scripts'))
+  mkdirSync(path.join(directory, 'node_modules/typescript/bin'), { recursive: true })
+  copyFileSync(SCRIPT, path.join(directory, 'scripts/strictness-status.mjs'))
+  write(directory, {
+    'node_modules/typescript/package.json': '{"name":"typescript","version":"0.0.0"}',
+    'node_modules/typescript/bin/tsc': tsc
+  })
+  return run(directory, path.join(directory, 'scripts/strictness-status.mjs'), [])
+}
 
 // A type coverage report whose test program runs `test`, with `files` beside it, and whose other
 // programs each print a full summary.
@@ -349,6 +361,29 @@ describe('strictness status', () => {
 
     expect(result.out).toContain('(parent 2, delta 0)')
     expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
+    expect(result.status).toBe(1)
+  })
+
+  it('(ac) fails a pending check whose tsc was killed, with how it ended and what it printed', () => {
+    const tsc = "process.stdout.write('checking\\n')\nprocess.kill(process.pid, 'SIGKILL')\n"
+    const result = statusWithTsc(makeRepo({}), tsc)
+
+    expect(result.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: tsc failed (SIGKILL, 9 bytes received)'
+    )
+    expect(result.out).toContain('pending web noPropertyAccessFromIndexSignature | checking')
+    expect(result.out).not.toContain('no error left')
+    expect(result.status).toBe(1)
+  })
+
+  it('(ad) fails a pending check whose tsc stops on an error without a location, printing it', () => {
+    const pending = { extends: './tsconfig.web.json', compilerOptions: { unknownFlag: true } }
+    const result = status(makeRepo({ 'tsconfig.web.pending.json': JSON.stringify(pending) }))
+
+    expect(result.out).toContain('pending web unknownFlag: tsc failed (exit 1, ')
+    expect(result.out).toContain(
+      "pending web unknownFlag | error TS5023: Unknown compiler option '--unknownFlag'."
+    )
     expect(result.status).toBe(1)
   })
 

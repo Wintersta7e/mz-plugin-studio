@@ -4,8 +4,9 @@
 //                     has. Fails a rise in any (file, rule) entry unless the change under test
 //                     changes the lint config or a lint package version; fails a pending count
 //                     off the exact ceiling pending-ceilings.json holds for it, a pending flag
-//                     without a ceiling or a ceiling without a pending flag, and a pending flag
-//                     with no error left (it must move to its program).
+//                     without a ceiling or a ceiling without a pending flag, a pending flag
+//                     with no error left (it must move to its program), and a pending check
+//                     whose tsc did not finish (printing how it ended and its last lines).
 //   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
 //                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
@@ -167,7 +168,9 @@ const TSC = path.join(
 const ERROR_AT = /^.+\(\d+,\d+\): error TS\d+:/gmv
 const ERROR_ANYWHERE = /^error TS\d+:/mv
 
-// The type-check errors the program has with the flag on; undefined when tsc could not run.
+// The type-check errors the program has with the flag on, and how the tsc run ended. The count is
+// undefined when tsc did not finish a check: killed, stopped on an error without a location, or
+// an exit status that does not match the errors it printed.
 function pendingErrors({ config, flag }) {
   return new Promise((resolve) => {
     const args = [
@@ -185,9 +188,18 @@ function pendingErrors({ config, flag }) {
     let out = ''
     child.stdout.on('data', (chunk) => (out += chunk))
     child.stderr.on('data', (chunk) => (out += chunk))
-    child.on('close', () =>
-      resolve(ERROR_ANYWHERE.test(out) ? undefined : (out.match(ERROR_AT) ?? []).length)
-    )
+    child.on('close', (code, signal) => {
+      const located = (out.match(ERROR_AT) ?? []).length
+      const isChecked =
+        signal === null &&
+        !ERROR_ANYWHERE.test(out) &&
+        (code === 0 ? located === 0 : code === 2 && located > 0)
+      const ending = signal ?? `exit ${code}`
+      resolve({
+        count: isChecked ? located : undefined,
+        run: { out, bytes: Buffer.byteLength(out), ending }
+      })
+    })
   })
 }
 
@@ -195,11 +207,10 @@ function pendingErrors({ config, flag }) {
 // is held exactly, so a rise fails and so does a fall: the commit that fixes errors lowers the
 // ceiling with them.
 /**
-@param {number | undefined} count
+@param {number} count
 @param {unknown} ceiling
 */
 function pendingProblem(count, ceiling) {
-  if (count === undefined) return 'tsc failed'
   if (count === 0) return 'no error left; move the flag to its program'
   if (typeof ceiling !== 'number' || !Number.isSafeInteger(ceiling) || ceiling < 0) {
     return `${PENDING_CEILINGS} names no ceiling`
@@ -226,13 +237,13 @@ function staleCeilings(ceilings, pairs) {
 
 async function checkPending(tracked) {
   const pairs = pendingPairs(tracked)
-  const counts = Array.from({ length: pairs.length })
+  const results = Array.from({ length: pairs.length })
   let next = 0
   const worker = async () => {
     while (next < pairs.length) {
       const index = next
       next += 1
-      counts[index] = await pendingErrors(pairs[index])
+      results[index] = await pendingErrors(pairs[index])
     }
   }
   await Promise.all(Array.from({ length: TSC_JOBS }, worker))
@@ -245,11 +256,14 @@ async function checkPending(tracked) {
   }
   let isOk = true
   for (const [index, { program, flag }] of pairs.entries()) {
-    const count = counts[index]
+    const { count, run } = results[index]
+    if (count === undefined) {
+      printFailedRun(`pending ${program} ${flag}`, 'tsc failed', run)
+      isOk = false
+      continue
+    }
     const ceiling = ceilings[program]?.[flag]
-    print(
-      `pending ${program} ${flag}: ${count ?? 'tsc failed,'} errors, ceiling ${ceiling ?? 'none'}`
-    )
+    print(`pending ${program} ${flag}: ${count} errors, ceiling ${ceiling ?? 'none'}`)
     const problem = pendingProblem(count, ceiling)
     if (problem === undefined) continue
     print(`pending ${program} ${flag}: ${problem}`)
