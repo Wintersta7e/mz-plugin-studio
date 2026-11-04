@@ -130,6 +130,17 @@ describe('CI workflow', () => {
     expect(golden[0].keys.has('if')).toBe(false)
   })
 
+  it('the strictness status measures the pushed range from its base, on a full clone', () => {
+    const job = jobOf('static')
+    const status = job.steps.filter((step) => step.run.includes('npm run strictness:status'))
+
+    expect(status).toHaveLength(1)
+    expect(status.at(0)?.nested).toStrictEqual([
+      'STRICTNESS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}'
+    ])
+    expect(job.steps.at(0)?.nested).toContain('fetch-depth: 0')
+  })
+
   it('the Windows job tests fixture bytes before Electron and checks the package it builds', () => {
     const job = jobOf('package-win')
     const fixtures = indexOfRun(job, /tests\/unit\/fixture-set\.test\.ts/)

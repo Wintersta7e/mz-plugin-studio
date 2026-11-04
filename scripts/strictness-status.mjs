@@ -1,11 +1,11 @@
 // Reports what the strict configuration still holds back, from the repository root.
-//   default:          the frozen lint findings in eslint-suppressions.json against the parent
-//                     commit's (HEAD's while tracked files are uncommitted), and the type-check
-//                     errors each pending flag still has. Fails a lint rise unless the change
-//                     under test changes the lint config or a lint package version; fails a
-//                     pending count off the exact ceiling pending-ceilings.json holds for it, a
-//                     pending flag without a ceiling or a ceiling without a pending flag, and a
-//                     pending flag with no error left (it must move to its program).
+//   default:          the frozen lint findings in eslint-suppressions.json against the base
+//                     commit's (baseCommit), and the type-check errors each pending flag still
+//                     has. Fails a rise in any (file, rule) entry unless the change under test
+//                     changes the lint config or a lint package version; fails a pending count
+//                     off the exact ceiling pending-ceilings.json holds for it, a pending flag
+//                     without a ceiling or a ceiling without a pending flag, and a pending flag
+//                     with no error left (it must move to its program).
 //   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
 //                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
@@ -30,10 +30,20 @@ const TSC_JOBS = 4
 
 const print = (line) => process.stdout.write(`${line}\n`)
 const git = (args) => execFileSync('git', args, { encoding: 'utf8' })
-// The commit the working tree is measured against: HEAD while tracked files hold uncommitted
-// changes (a gate run before committing), else HEAD's parent (the commit under test, as in CI).
-const baseCommit = () =>
-  git(['status', '--porcelain', '--untracked-files=no']) === '' ? 'HEAD^' : 'HEAD'
+// The commit the working tree is measured against, the start of the change under test. CI names
+// it in STRICTNESS_BASE: the pushed range's base (a push's previous tip, a pull request's base);
+// an empty or all-zero value (a new branch, an event without a pushed range) stands for the
+// merge-base with origin/main. Unset (a local run): HEAD while tracked files hold uncommitted
+// changes (a gate run before committing), else HEAD's parent. Undefined without a merge-base.
+function baseCommit() {
+  const named = process.env['STRICTNESS_BASE']
+  if (named === undefined) {
+    return git(['status', '--porcelain', '--untracked-files=no']) === '' ? 'HEAD^' : 'HEAD'
+  }
+  if (named !== '' && !/^0+$/v.test(named)) return named
+  const result = spawnSync('git', ['merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8' })
+  return result.status === 0 ? result.stdout.trim() : undefined
+}
 // A file's text at the base commit; null when the base or the file is absent.
 const baseFile = (base, file) => {
   const result = spawnSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' })
@@ -48,20 +58,30 @@ const parseJson = (text) => {
   }
 }
 
-// N violations, E entries and F files of a suppressions file's text; null if unreadable.
-function countSuppressions(text) {
+/**
+@typedef {{ file: string, rule: string, count: number }} SuppressionEntry
+*/
+// The (file, rule, count) entries of a suppressions file's text; null if unreadable.
+/**
+@param {string | null} text
+@returns {SuppressionEntry[] | null}
+*/
+function suppressionEntries(text) {
   const data = parseJson(text)
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) return null
-  let violations = 0
-  let entries = 0
-  for (const rules of Object.values(data)) {
-    for (const { count } of Object.values(rules)) {
-      violations += count
-      entries += 1
-    }
-  }
-  return { violations, entries, files: Object.keys(data) }
+  return typeof data !== 'object' || data === null || Array.isArray(data)
+    ? null
+    : Object.entries(data).flatMap(([file, rules]) =>
+        Object.entries(rules).map(([rule, { count }]) => ({ file, rule, count }))
+      )
 }
+/**
+@param {SuppressionEntry[]} entries
+*/
+const violations = (entries) => entries.reduce((sum, { count }) => sum + count, 0)
+/**
+@param {SuppressionEntry} entry
+*/
+const entryName = ({ file, rule }) => `${file} ${rule}`
 
 // The packages the ESLint config imports, plus ESLint and TypeScript themselves.
 function lintPackages() {
@@ -86,7 +106,7 @@ function changesLintSetup(base) {
 }
 
 function checkSuppressions(tracked) {
-  const now = countSuppressions(
+  const now = suppressionEntries(
     existsSync(SUPPRESSIONS) ? readFileSync(SUPPRESSIONS, 'utf8') : null
   )
   if (now === null) {
@@ -94,19 +114,31 @@ function checkSuppressions(tracked) {
     return false
   }
   const base = baseCommit()
-  const parent = countSuppressions(baseFile(base, SUPPRESSIONS))
+  if (base === undefined) {
+    print('eslint-suppressions: no base commit; HEAD and origin/main have no merge-base')
+    return false
+  }
+  const parent = suppressionEntries(baseFile(base, SUPPRESSIONS))
   if (parent === null) {
     print(`eslint-suppressions: ${base} has no readable ${SUPPRESSIONS}`)
     return false
   }
-  const delta = now.violations - parent.violations
+  const files = [...new Set(now.map(({ file }) => file))]
+  const delta = violations(now) - violations(parent)
   print(
-    `eslint-suppressions: ${now.violations} violations in ${now.entries} entries, ${now.files.length} files (parent ${parent.violations}, delta ${delta > 0 ? '+' : ''}${delta})`
+    `eslint-suppressions: ${violations(now)} violations in ${now.length} entries, ${files.length} files (parent ${violations(parent)}, delta ${delta > 0 ? '+' : ''}${delta})`
   )
-  const untracked = now.files.filter((name) => !tracked.has(name))
+  const untracked = files.filter((name) => !tracked.has(name))
   for (const file of untracked) print(`eslint-suppressions: entry for an untracked file ${file}`)
   let isOk = untracked.length === 0
-  if (delta > 0 && !changesLintSetup(base)) {
+  const before = new Map(parent.map((entry) => [entryName(entry), entry.count]))
+  const rises = now
+    .map((entry) => ({ ...entry, name: entryName(entry), was: before.get(entryName(entry)) ?? 0 }))
+    .filter(({ count, was }) => count > was)
+  if (rises.length > 0 && !changesLintSetup(base)) {
+    for (const { name, count, was } of rises) {
+      print(`eslint-suppressions: ${name}: ${count} (parent ${was})`)
+    }
     print('eslint-suppressions: the count rose without a lint config or lint package change')
     isOk = false
   }

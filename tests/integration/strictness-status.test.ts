@@ -1,6 +1,7 @@
-// The strictness status script run against throwaway repositories with a two-commit history: a
-// rise in frozen lint findings needs a lint config change in the same commit, and a pending
-// type-check flag holds its error count exactly at its ceiling and fails once no error is left.
+// The strictness status script run against throwaway repositories with a short history: a rise in
+// any frozen lint finding entry since the base commit needs a lint config change in the same
+// change, and a pending type-check flag holds its error count exactly at its ceiling and fails
+// once no error is left.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -56,34 +57,46 @@ const tempDir = (): string => {
 const write = (dir: string, files: Record<string, string>): void => {
   for (const [file, text] of Object.entries(files)) writeFileSync(path.join(dir, file), text)
 }
+// Commits `files` (and the removal of `removed`) on top of the repository's HEAD.
+const commit = (directory: string, files: Record<string, string>, removed: string[] = []): void => {
+  write(directory, files)
+  for (const file of removed) git(directory, ['rm', '-q', file])
+  git(directory, ['add', '.'])
+  git(directory, ['commit', '-q', '--allow-empty', '-m', 'change'])
+}
+const revParse = (directory: string, revision: string): string =>
+  execFileSync('git', ['rev-parse', revision], {
+    cwd: directory,
+    env: ENV,
+    encoding: 'utf8'
+  }).trim()
 
 // A repository whose parent commit holds PARENT and whose HEAD applies `head` (and `removed`).
 const makeRepo = (head: Record<string, string>, removed: string[] = []): string => {
   const dir = tempDir()
   git(dir, ['init', '-q'])
-  write(dir, PARENT)
-  git(dir, ['add', '.'])
-  git(dir, ['commit', '-q', '-m', 'parent'])
-  write(dir, head)
-  for (const file of removed) git(dir, ['rm', '-q', file])
-  git(dir, ['add', '.'])
-  git(dir, ['commit', '-q', '--allow-empty', '-m', 'head'])
+  commit(dir, PARENT)
+  commit(dir, head, removed)
   return dir
 }
 
 const run = (
   dir: string,
   command: string,
-  args: string[]
+  args: string[],
+  variables: Record<string, string> = {}
 ): { status: number | null; out: string } => {
   const result = spawnSync(process.execPath, [command, ...args], {
     cwd: dir,
-    env: ENV,
+    env: { ...ENV, ...variables },
     encoding: 'utf8'
   })
   return { status: result.status, out: `${result.stdout}${result.stderr}` }
 }
-const status = (dir: string): { status: number | null; out: string } => run(dir, SCRIPT, [])
+const status = (
+  directory: string,
+  variables: Record<string, string> = {}
+): { status: number | null; out: string } => run(directory, SCRIPT, [], variables)
 
 // A type coverage report whose test program runs `test`, with `files` beside it, and whose other
 // programs each print a full summary.
@@ -303,6 +316,40 @@ describe('strictness status', () => {
 
     expect(result.out).toContain('(parent 2, delta +1)')
     expect(result.status).toBe(0)
+  })
+
+  it('(z) measures a clean tree against the base CI names, so a later commit hides no rise', () => {
+    const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
+    const base = revParse(directory, 'HEAD^')
+    commit(directory, { 'notes.txt': 'unrelated\n' })
+    const result = status(directory, { STRICTNESS_BASE: base })
+
+    expect(result.out).toContain('(parent 2, delta +48)')
+    expect(result.out).toContain('eslint-suppressions: index.ts no-var: 50 (parent 2)')
+    expect(result.status).toBe(1)
+  })
+
+  it('(aa) measures against the merge-base with origin/main when CI names no base', () => {
+    const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
+    git(directory, ['update-ref', 'refs/remotes/origin/main', 'HEAD^'])
+    commit(directory, { 'notes.txt': 'unrelated\n' })
+
+    const empty = status(directory, { STRICTNESS_BASE: '' })
+    const zeros = status(directory, { STRICTNESS_BASE: '0'.repeat(40) })
+
+    expect(empty.out).toContain('(parent 2, delta +48)')
+    expect(empty.status).toBe(1)
+    expect(zeros.out).toContain('(parent 2, delta +48)')
+    expect(zeros.status).toBe(1)
+  })
+
+  it('(ab) fails a rise in one entry that a fall in another hides from the total', () => {
+    const swapped = { 'index.ts': { 'no-var': { count: 1 }, 'no-eval': { count: 1 } } }
+    const result = status(makeRepo({ 'eslint-suppressions.json': JSON.stringify(swapped) }))
+
+    expect(result.out).toContain('(parent 2, delta 0)')
+    expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
+    expect(result.status).toBe(1)
   })
 
   it('(l) names how a report run without a summary ended and what it printed', () => {

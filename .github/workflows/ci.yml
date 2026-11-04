@@ -40,6 +40,8 @@ jobs:
       - run: npm run jscpd:report
       - run: npm run format:check
       - run: npm run strictness:status
+        env:
+          STRICTNESS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       - run: npm run licenses -- --check
       - name: Golden commit rules
         run: node scripts/check-golden-commits.mjs --github-event
