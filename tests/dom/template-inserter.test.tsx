@@ -34,6 +34,12 @@ const preview = (): string => document.querySelector('code')?.textContent ?? ''
 const copyButton = (): HTMLElement => screen.getByRole('button', { name: /Copy/ })
 const insertButton = (): HTMLElement => screen.getByRole('button', { name: /Insert Code/ })
 
+// Timeouts at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
+// Two property names typed key by key, each keystroke re-rendering the dialog and its preview.
+const TYPED_NAMES_TIMEOUT_MS = 15_000
+// Two class pickers and a method picker opened, each listing its options in the full dialog.
+const CLASS_PICKERS_TIMEOUT_MS = 20_000
+
 describe('template dialog', () => {
   it('refuses to insert or copy a property name that is not an identifier', async () => {
     const onInsert = vi.fn()
@@ -277,36 +283,40 @@ describe('template dialog actions', () => {
     await searchBox()
   })
 
-  it('a property name fixed in place clears the error and inserts the fixed code', async () => {
-    const user = userEvent.setup()
-    const { onInsert } = renderInserter()
-    await user.type(await searchBox(), 'Custom Actor Property')
-    await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
-    const field = screen.getByLabelText(/Property Name/)
-    await user.clear(field)
-    await user.type(field, HOSTILE_NAME)
+  it(
+    'a property name fixed in place clears the error and inserts the fixed code',
+    async () => {
+      const user = userEvent.setup()
+      const { onInsert } = renderInserter()
+      await user.type(await searchBox(), 'Custom Actor Property')
+      await user.click(screen.getByRole('button', { name: /^Custom Actor Property/ }))
+      const field = screen.getByLabelText(/Property Name/)
+      await user.clear(field)
+      await user.type(field, HOSTILE_NAME)
 
-    expect(
-      screen.getByText(
-        'Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
-      )
-    ).toBeInTheDocument()
-    expect(document.body.textContent).not.toContain('__pwn')
-    expect(insertButton()).toBeDisabled()
-    expect(copyButton()).toBeDisabled()
+      expect(
+        screen.getByText(
+          'Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
+        )
+      ).toBeInTheDocument()
+      expect(document.body.textContent).not.toContain('__pwn')
+      expect(insertButton()).toBeDisabled()
+      expect(copyButton()).toBeDisabled()
 
-    await user.clear(field)
-    await user.type(field, 'loyalty')
+      await user.clear(field)
+      await user.type(field, 'loyalty')
 
-    expect(screen.queryByText('Fix these fields to see the code:')).not.toBeInTheDocument()
+      expect(screen.queryByText('Fix these fields to see the code:')).not.toBeInTheDocument()
 
-    await user.click(insertButton())
+      await user.click(insertButton())
 
-    expect(onInsert).toHaveBeenCalledTimes(1)
-    expect(onInsert.mock.calls[0][0]).toContain('loyalty')
-    expect(onInsert.mock.calls[0][0]).not.toContain('__pwn')
-    expect((globalThis as Record<string, unknown>).__pwn).toBeUndefined()
-  })
+      expect(onInsert).toHaveBeenCalledTimes(1)
+      expect(onInsert.mock.calls[0][0]).toContain('loyalty')
+      expect(onInsert.mock.calls[0][0]).not.toContain('__pwn')
+      expect((globalThis as Record<string, unknown>).__pwn).toBeUndefined()
+    },
+    TYPED_NAMES_TIMEOUT_MS
+  )
 
   it('announces the field errors and gives them as the disabled Insert button’s description', async () => {
     const user = userEvent.setup()
@@ -361,27 +371,31 @@ async function choose(user: UserEvent, shown: string, name: string): Promise<voi
 }
 
 describe('template dialog class and method fields', () => {
-  it('lists the picked class’s methods and clears the method when the class changes', async () => {
-    expect.hasAssertions()
+  it(
+    'lists the picked class’s methods and clears the method when the class changes',
+    async () => {
+      expect.hasAssertions()
 
-    const user = userEvent.setup()
-    renderInserter()
-    await user.type(await searchBox(), 'Alias Method')
-    await user.click(screen.getByRole('button', { name: /^Alias Method/ }))
-    await choose(user, 'Select a class...', 'Game_Actor')
-    await user.click(combobox('Select a method...'))
-    const options = await screen.findAllByRole('option')
-    const listed = options.map((option) => option.textContent)
+      const user = userEvent.setup()
+      renderInserter()
+      await user.type(await searchBox(), 'Alias Method')
+      await user.click(screen.getByRole('button', { name: /^Alias Method/ }))
+      await choose(user, 'Select a class...', 'Game_Actor')
+      await user.click(combobox('Select a method...'))
+      const options = await screen.findAllByRole('option')
+      const listed = options.map((option) => option.textContent)
 
-    expect(listed.toSorted(byText)).toStrictEqual(methodLabels('Game_Actor').toSorted(byText))
+      expect(listed.toSorted(byText)).toStrictEqual(methodLabels('Game_Actor').toSorted(byText))
 
-    await user.click(screen.getByRole('option', { name: /^levelUp\(/ }))
+      await user.click(screen.getByRole('option', { name: /^levelUp\(/ }))
 
-    expect(preview()).toContain('Game_Actor.prototype.levelUp = function')
+      expect(preview()).toContain('Game_Actor.prototype.levelUp = function')
 
-    await choose(user, 'Game_Actor', 'Game_Party')
+      await choose(user, 'Game_Actor', 'Game_Party')
 
-    expect(combobox('Select a method...')).toBeEnabled()
-    expect(screen.getByRole('status')).toHaveTextContent('Field "Method" is required')
-  })
+      expect(combobox('Select a method...')).toBeEnabled()
+      expect(screen.getByRole('status')).toHaveTextContent('Field "Method" is required')
+    },
+    CLASS_PICKERS_TIMEOUT_MS
+  )
 })

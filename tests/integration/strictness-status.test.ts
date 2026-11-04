@@ -190,6 +190,14 @@ const reportJscpd = (
 }
 const AT_CEILINGS: JscpdTotal = { sources: 3, clones: 2, duplicatedLines: 20 }
 
+// Timeouts at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
+// One spawned status run (ESLint and tsc on a fixture repo), or two type coverage report runs.
+const SPAWN_TIMEOUT_MS = 10_000
+// Two spawned status runs.
+const TWO_SPAWNS_TIMEOUT_MS = 15_000
+// Two spawned status runs, measured at 5.3 s together on CI.
+const SLOW_TWO_SPAWNS_TIMEOUT_MS = 20_000
+
 describe('strictness status', () => {
   beforeEach(() => {
     counter.cases += 1
@@ -242,22 +250,26 @@ describe('strictness status', () => {
     expect(status(dir).status).toBe(0)
   })
 
-  it('(f) counts the errors a pending flag holds and fails once it holds none', () => {
-    const pending = status(makeRepo({}))
+  it(
+    '(f) counts the errors a pending flag holds and fails once it holds none',
+    { timeout: TWO_SPAWNS_TIMEOUT_MS },
+    () => {
+      const pending = status(makeRepo({}))
 
-    expect(pending.out).toContain(
-      'pending web noPropertyAccessFromIndexSignature: 1 errors in 1 files, ceiling 1'
-    )
-    expect(pending.status).toBe(0)
+      expect(pending.out).toContain(
+        'pending web noPropertyAccessFromIndexSignature: 1 errors in 1 files, ceiling 1'
+      )
+      expect(pending.status).toBe(0)
 
-    const cleared = status(makeRepo({ 'index.ts': BRACKET_ACCESS }))
+      const cleared = status(makeRepo({ 'index.ts': BRACKET_ACCESS }))
 
-    expect(cleared.out).toContain('pending web noPropertyAccessFromIndexSignature: 0 errors in 0')
-    expect(cleared.out).toContain(
-      'pending web noPropertyAccessFromIndexSignature: no error left; move the flag to its program'
-    )
-    expect(cleared.status).toBe(1)
-  })
+      expect(cleared.out).toContain('pending web noPropertyAccessFromIndexSignature: 0 errors in 0')
+      expect(cleared.out).toContain(
+        'pending web noPropertyAccessFromIndexSignature: no error left; move the flag to its program'
+      )
+      expect(cleared.status).toBe(1)
+    }
+  )
 
   it('(u) fails a pending count above its ceiling, naming the errors and their command', () => {
     const result = status(makeRepo({ 'index.ts': TWO_DOT_ACCESSES }))
@@ -304,17 +316,21 @@ describe('strictness status', () => {
     expect(result.status).toBe(1)
   })
 
-  it('(w) fails a pending flag without per-file ceilings, and a missing ceilings file', () => {
-    const unnamed = status(makeRepo({ 'pending-ceilings.json': ceilings({}) }))
-    const missing = status(makeRepo({}, ['pending-ceilings.json']))
+  it(
+    '(w) fails a pending flag without per-file ceilings, and a missing ceilings file',
+    { timeout: SLOW_TWO_SPAWNS_TIMEOUT_MS },
+    () => {
+      const unnamed = status(makeRepo({ 'pending-ceilings.json': ceilings({}) }))
+      const missing = status(makeRepo({}, ['pending-ceilings.json']))
 
-    expect(unnamed.out).toContain(
-      'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
-    )
-    expect(unnamed.status).toBe(1)
-    expect(missing.out).toContain('pending: pending-ceilings.json missing or unreadable')
-    expect(missing.status).toBe(1)
-  })
+      expect(unnamed.out).toContain(
+        'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
+      )
+      expect(unnamed.status).toBe(1)
+      expect(missing.out).toContain('pending: pending-ceilings.json missing or unreadable')
+      expect(missing.status).toBe(1)
+    }
+  )
 
   it('(af) fails a ceiling held as one total rather than per file', () => {
     const total = '{"web":{"noPropertyAccessFromIndexSignature":1}}'
@@ -340,7 +356,7 @@ describe('strictness status', () => {
     expect(status(makeRepo({}, ['eslint-suppressions.json'])).status).toBe(1)
   })
 
-  it('(h) fails on an entry naming an untracked file', () => {
+  it('(h) fails on an entry naming an untracked file', { timeout: SPAWN_TIMEOUT_MS }, () => {
     const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(2, 'gone.ts') }))
 
     expect(result.out).toContain('gone.ts')
@@ -400,19 +416,23 @@ describe('strictness status', () => {
     expect(result.status).toBe(1)
   })
 
-  it('(aa) measures against the merge-base with origin/main when CI names no base', () => {
-    const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
-    git(directory, ['update-ref', 'refs/remotes/origin/main', 'HEAD^'])
-    commit(directory, { 'notes.txt': 'unrelated\n' })
+  it(
+    '(aa) measures against the merge-base with origin/main when CI names no base',
+    { timeout: TWO_SPAWNS_TIMEOUT_MS },
+    () => {
+      const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
+      git(directory, ['update-ref', 'refs/remotes/origin/main', 'HEAD^'])
+      commit(directory, { 'notes.txt': 'unrelated\n' })
 
-    const empty = status(directory, { STRICTNESS_BASE: '' })
-    const zeros = status(directory, { STRICTNESS_BASE: '0'.repeat(40) })
+      const empty = status(directory, { STRICTNESS_BASE: '' })
+      const zeros = status(directory, { STRICTNESS_BASE: '0'.repeat(40) })
 
-    expect(empty.out).toContain('(parent 2, delta +48)')
-    expect(empty.status).toBe(1)
-    expect(zeros.out).toContain('(parent 2, delta +48)')
-    expect(zeros.status).toBe(1)
-  })
+      expect(empty.out).toContain('(parent 2, delta +48)')
+      expect(empty.status).toBe(1)
+      expect(zeros.out).toContain('(parent 2, delta +48)')
+      expect(zeros.status).toBe(1)
+    }
+  )
 
   it('(ab) fails a rise in one entry that a fall in another hides from the total', () => {
     const swapped = { 'index.ts': { 'no-var': { count: 1 }, 'no-eval': { count: 1 } } }
@@ -431,30 +451,38 @@ describe('strictness status', () => {
     expect(result.status).toBe(0)
   })
 
-  it('(al) fails the rises over a base without a suppressions file and no lint change', () => {
-    const result = sinceBaseWithoutSuppressions({})
+  it(
+    '(al) fails the rises over a base without a suppressions file and no lint change',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const result = sinceBaseWithoutSuppressions({})
 
-    expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
-    expect(result.out).toContain('eslint-suppressions: index.ts no-var: 2 (parent 0)')
-    expect(result.status).toBe(1)
-  })
+      expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
+      expect(result.out).toContain('eslint-suppressions: index.ts no-var: 2 (parent 0)')
+      expect(result.status).toBe(1)
+    }
+  )
 
-  it('(am) fails a base whose suppressions file is not JSON, or that is not a commit', () => {
-    const directory = makeRepo({ 'eslint-suppressions.json': '{ not json' })
-    const base = revParse(directory, 'HEAD')
-    commit(directory, {
-      'eslint-suppressions.json': suppressions(2),
-      'eslint.config.mjs': ALL_RULES_CONFIG
-    })
-    const unparseable = status(directory, { STRICTNESS_BASE: base })
-    const absent = 'f'.repeat(40)
-    const missing = status(directory, { STRICTNESS_BASE: absent })
+  it(
+    '(am) fails a base whose suppressions file is not JSON, or that is not a commit',
+    { timeout: TWO_SPAWNS_TIMEOUT_MS },
+    () => {
+      const directory = makeRepo({ 'eslint-suppressions.json': '{ not json' })
+      const base = revParse(directory, 'HEAD')
+      commit(directory, {
+        'eslint-suppressions.json': suppressions(2),
+        'eslint.config.mjs': ALL_RULES_CONFIG
+      })
+      const unparseable = status(directory, { STRICTNESS_BASE: base })
+      const absent = 'f'.repeat(40)
+      const missing = status(directory, { STRICTNESS_BASE: absent })
 
-    expect(unparseable.out).toContain(`${base} has no readable eslint-suppressions.json`)
-    expect(unparseable.status).toBe(1)
-    expect(missing.out).toContain(`eslint-suppressions: base ${absent} is not a commit`)
-    expect(missing.status).toBe(1)
-  })
+      expect(unparseable.out).toContain(`${base} has no readable eslint-suppressions.json`)
+      expect(unparseable.status).toBe(1)
+      expect(missing.out).toContain(`eslint-suppressions: base ${absent} is not a commit`)
+      expect(missing.status).toBe(1)
+    }
+  )
 
   it('(ac) fails a pending check whose tsc was killed, with how it ended and what it printed', () => {
     const tsc = "process.stdout.write('checking\\n')\nprocess.kill(process.pid, 'SIGKILL')\n"
@@ -514,20 +542,24 @@ describe('strictness status', () => {
     expect(result.status).toBe(0)
   })
 
-  it('(ah) fails a program under its ceiling, and one the report names no ceiling for', () => {
-    const under = reportTypecov('node -e "console.log(\'(11 / 12) 91.66%\')"')
-    const none = reportTypecov(
-      'node -e "console.log(\'(10 / 12) 83.33%\')"',
-      {},
-      { test: undefined }
-    )
+  it(
+    '(ah) fails a program under its ceiling, and one the report names no ceiling for',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const under = reportTypecov('node -e "console.log(\'(11 / 12) 91.66%\')"')
+      const none = reportTypecov(
+        'node -e "console.log(\'(10 / 12) 83.33%\')"',
+        {},
+        { test: undefined }
+      )
 
-    expect(under.out).toContain('typecov test: the uncovered count fell; lower --test to 1')
-    expect(under.status).toBe(1)
-    expect(none.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling none')
-    expect(none.out).toContain('typecov test: the typecov:report script names no --test ceiling')
-    expect(none.status).toBe(1)
-  })
+      expect(under.out).toContain('typecov test: the uncovered count fell; lower --test to 1')
+      expect(under.status).toBe(1)
+      expect(none.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling none')
+      expect(none.out).toContain('typecov test: the typecov:report script names no --test ceiling')
+      expect(none.status).toBe(1)
+    }
+  )
 
   it('(ai) fails a run that exits non-zero at its ceiling, printing how it ended', () => {
     const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\'); process.exit(2)"')
@@ -537,15 +569,19 @@ describe('strictness status', () => {
     expect(result.status).toBe(1)
   })
 
-  it('(aj) passes fully typed code added or removed with the report unchanged', () => {
-    const added = reportTypecov('node -e "console.log(\'(15 / 17) 88.23%\')"')
-    const removed = reportTypecov('node -e "console.log(\'(4 / 6) 66.66%\')"')
+  it(
+    '(aj) passes fully typed code added or removed with the report unchanged',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const added = reportTypecov('node -e "console.log(\'(15 / 17) 88.23%\')"')
+      const removed = reportTypecov('node -e "console.log(\'(4 / 6) 66.66%\')"')
 
-    expect(added.out).toContain('typecov test: (15 / 17) 88.23%, uncovered 2, ceiling 2')
-    expect(added.status).toBe(0)
-    expect(removed.out).toContain('typecov test: (4 / 6) 66.66%, uncovered 2, ceiling 2')
-    expect(removed.status).toBe(0)
-  })
+      expect(added.out).toContain('typecov test: (15 / 17) 88.23%, uncovered 2, ceiling 2')
+      expect(added.status).toBe(0)
+      expect(removed.out).toContain('typecov test: (4 / 6) 66.66%, uncovered 2, ceiling 2')
+      expect(removed.status).toBe(0)
+    }
+  )
 
   it('(m) passes the production knip count at its ceiling', () => {
     const result = reportKnip(knipProduction({ issues: 2, files: 3 }))

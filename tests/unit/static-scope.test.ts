@@ -564,6 +564,9 @@ interface Directive {
   file: string
   text: string
 }
+// Three times the slowest CI time under coverage, rounded up to the next 5 s: the scan parses the
+// comments of every code file in the repository.
+const DIRECTIVE_SCAN_TIMEOUT_MS = 20_000
 const directives = (): Directive[] =>
   codeFiles.flatMap((file) =>
     commentsOf(file)
@@ -826,23 +829,27 @@ describe('static scope: ESLint directives, test rules and suppressions', () => {
     configs = await loadConfigs()
   }, 300_000)
 
-  it('keeps inline directives to the evaluation sites and the transitional list', () => {
-    const found = directives()
-    const tsComments = found.filter((entry) => entry.text.startsWith('@ts-'))
-    const codeEval = found.filter((entry) => CODE_EVAL_DIRECTIVE.test(entry.text))
-    const transitional = found.filter((entry) => isTransitional(entry))
-    const perFile: Record<string, number> = {}
-    for (const entry of codeEval) perFile[entry.file] = (perFile[entry.file] ?? 0) + 1
-    report(
-      `inline directives ${String(found.length)} (allow-list ${String(codeEval.length)}, transitional ${String(transitional.length)})`
-    )
-    report(`@ts-* ${String(tsComments.length)}`)
+  it(
+    'keeps inline directives to the evaluation sites and the transitional list',
+    { timeout: DIRECTIVE_SCAN_TIMEOUT_MS },
+    () => {
+      const found = directives()
+      const tsComments = found.filter((entry) => entry.text.startsWith('@ts-'))
+      const codeEval = found.filter((entry) => CODE_EVAL_DIRECTIVE.test(entry.text))
+      const transitional = found.filter((entry) => isTransitional(entry))
+      const perFile: Record<string, number> = {}
+      for (const entry of codeEval) perFile[entry.file] = (perFile[entry.file] ?? 0) + 1
+      report(
+        `inline directives ${String(found.length)} (allow-list ${String(codeEval.length)}, transitional ${String(transitional.length)})`
+      )
+      report(`@ts-* ${String(tsComments.length)}`)
 
-    expect(perFile).toStrictEqual(CODE_EVAL_SITES)
-    expect(transitional).toHaveLength(TRANSITIONAL_DIRECTIVES.length)
-    expect(found).toHaveLength(codeEval.length + transitional.length)
-    expect(tsComments).toStrictEqual([])
-  })
+      expect(perFile).toStrictEqual(CODE_EVAL_SITES)
+      expect(transitional).toHaveLength(TRANSITIONAL_DIRECTIVES.length)
+      expect(found).toHaveLength(codeEval.length + transitional.length)
+      expect(tsComments).toStrictEqual([])
+    }
+  )
 
   it('reports unused directives and allows only described next-line disables', () => {
     const loose = [...configs]
