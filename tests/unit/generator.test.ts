@@ -2,7 +2,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   generatePlugin,
-  generateBodyPreserved,
   generateRawMode,
   validatePlugin,
   camelCase,
@@ -1503,28 +1502,6 @@ describe('generatePlugin - body dedup and section dividers', () => {
     // The more important case — commented-out calls — is covered above.
     // Documents current behavior (string-literal false-match is acceptable).
     expect(output).toContain('const note =')
-  })
-})
-
-// COV-18: generateBodyPreserved
-describe('generateBodyPreserved', () => {
-  it('plugin with codeBody set returns it verbatim', () => {
-    const plugin = createTestPlugin({
-      codeBody: '/* verbatim code */'
-    })
-    const result = generateBodyPreserved(plugin)
-
-    expect(result).toBe('/* verbatim code */')
-  })
-
-  it('plugin without codeBody falls back to generated body', () => {
-    const plugin = createTestPlugin({
-      codeBody: undefined
-    })
-    const result = generateBodyPreserved(plugin)
-
-    expect(result).toContain('(() => {')
-    expect(result).toContain("'use strict';")
   })
 })
 

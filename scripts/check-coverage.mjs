@@ -33,12 +33,8 @@ const FLOORS = {
     files: {
       [`${GENERATOR}/index.ts`]: 91,
       [`${GENERATOR}/escape.ts`]: 91,
-      // Below the 60% bar: lines 109-176 are exports no production code calls
-      // (getClassOptions, getMethodOptions, searchClassesAndMethods).
-      [`${GENERATOR}/class-registry.ts`]: 31,
-      // Below the 60% bar: lines 31, 66, 74, 84-109 and 167 are exports only unit tests call
-      // (unregisterTemplate, hasTemplate, getTemplateCount, generateFromTemplate, clearTemplates).
-      [`${GENERATOR}/templates/index.ts`]: 52,
+      [`${GENERATOR}/class-registry.ts`]: 84,
+      [`${GENERATOR}/templates/index.ts`]: 84,
       [`${GENERATOR}/templates/types.ts`]: 100
     }
   }

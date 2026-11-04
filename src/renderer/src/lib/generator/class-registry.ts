@@ -33,13 +33,6 @@ export interface MZClassInfo {
   popularity?: number
 }
 
-export interface SearchResult {
-  type: 'class' | 'method'
-  className: string
-  methodName?: string
-  info: string
-}
-
 // ============================================================================
 // Internal Data Access
 // ============================================================================
@@ -61,7 +54,7 @@ export function getAllClassNames(): string[] {
 /**
  * Filter classes by category
  */
-export function getClassesByCategory(category: ClassCategory): MZClassInfo[] {
+function getClassesByCategory(category: ClassCategory): MZClassInfo[] {
   return Object.values(mzClasses).filter((cls) => cls.category === category)
 }
 
@@ -101,76 +94,4 @@ export function getClassesGrouped(): Record<ClassCategory, MZClassInfo[]> {
   }
 
   return result
-}
-
-/**
- * Get class options for select dropdowns
- */
-export function getClassOptions(): { value: string; label: string; category: string }[] {
-  return getAllClassNames().map((name) => {
-    const classInfo = mzClasses[name]
-    return {
-      value: name,
-      label: name,
-      category: classInfo.category
-    }
-  })
-}
-
-/**
- * Get method options for a class (for select dropdowns)
- */
-export function getMethodOptions(className: string): { value: string; label: string }[] {
-  const methods = getClassMethods(className)
-  return methods.map((method) => ({
-    value: method.name,
-    label: `${method.name}(${method.params.join(', ')})`
-  }))
-}
-
-/**
- * Search classes and methods (case-insensitive)
- * Returns max 50 results
- */
-export function searchClassesAndMethods(query: string): SearchResult[] {
-  const results: SearchResult[] = []
-  const lowerQuery = query.toLowerCase()
-  const maxResults = 50
-
-  // Search through all classes
-  for (const className of Object.keys(mzClasses)) {
-    if (results.length >= maxResults) break
-
-    const classInfo = mzClasses[className]
-    const lowerClassName = className.toLowerCase()
-    const lowerDescription = classInfo.description.toLowerCase()
-
-    // Check if class name or description matches
-    if (lowerClassName.includes(lowerQuery) || lowerDescription.includes(lowerQuery)) {
-      results.push({
-        type: 'class',
-        className,
-        info: classInfo.description
-      })
-    }
-
-    // Search methods within this class
-    for (const method of classInfo.methods) {
-      if (results.length >= maxResults) break
-
-      const lowerMethodName = method.name.toLowerCase()
-      const lowerMethodDesc = method.description.toLowerCase()
-
-      if (lowerMethodName.includes(lowerQuery) || lowerMethodDesc.includes(lowerQuery)) {
-        results.push({
-          type: 'method',
-          className,
-          methodName: method.name,
-          info: `${className}.${method.name}() - ${method.description}`
-        })
-      }
-    }
-  }
-
-  return results.slice(0, maxResults)
 }

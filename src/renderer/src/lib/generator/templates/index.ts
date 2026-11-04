@@ -24,15 +24,6 @@ export function registerTemplate(template: CodeTemplate): void {
 }
 
 /**
- * Unregister a template from the registry
- * @param templateId - The ID of the template to remove
- * @returns true if the template was removed, false if it didn't exist
- */
-export function unregisterTemplate(templateId: string): boolean {
-  return templates.delete(templateId)
-}
-
-/**
  * Get all registered templates
  * @returns Array of all templates
  */
@@ -56,53 +47,6 @@ export function getTemplatesByCategory(category: TemplateCategory): CodeTemplate
  */
 export function getTemplate(id: string): CodeTemplate | undefined {
   return templates.get(id)
-}
-
-/**
- * Check if a template exists
- * @param id - The template ID to check
- * @returns true if the template exists
- */
-export function hasTemplate(id: string): boolean {
-  return templates.has(id)
-}
-
-/**
- * Get the count of registered templates
- * @returns Number of registered templates
- */
-export function getTemplateCount(): number {
-  return templates.size
-}
-
-/**
- * Generate code from a template with the given values
- * @param templateId - The ID of the template to use
- * @param values - The field values to pass to the generator
- * @returns Generated code string, or null if generation failed
- */
-export function generateFromTemplate(
-  templateId: string,
-  values: Record<string, unknown>
-): string | null {
-  const template = templates.get(templateId)
-  if (!template) {
-    log.error(`Template "${templateId}" not found`)
-    return null
-  }
-
-  const validation = validateTemplateValues(templateId, values)
-  if (!validation.valid) {
-    log.error('Template validation failed:', validation.errors)
-    return null
-  }
-
-  try {
-    return template.generate(values)
-  } catch (error) {
-    log.error(`Error generating code from template "${templateId}":`, error)
-    return null
-  }
 }
 
 /**
@@ -159,11 +103,4 @@ export function getTemplateDefaults(templateId: string): Record<string, unknown>
   }
 
   return defaults
-}
-
-/**
- * Clear all registered templates (useful for testing)
- */
-export function clearTemplates(): void {
-  templates.clear()
 }

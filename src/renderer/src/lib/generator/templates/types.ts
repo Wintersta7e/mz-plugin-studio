@@ -21,7 +21,7 @@ export type TemplateCategory =
   | 'actor-party'
 
 // Option for select-type fields
-export interface SelectOption {
+interface SelectOption {
   value: string
   label: string
   group?: string // For grouped dropdowns

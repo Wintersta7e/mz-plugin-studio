@@ -2578,13 +2578,7 @@
       "count": 1
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 10
-    },
-    "unicorn/no-break-in-nested-loop": {
-      "count": 1
-    },
-    "unicorn/prefer-object-iterable-methods": {
-      "count": 1
+      "count": 7
     },
     "unicorn/require-array-sort-compare": {
       "count": 1
@@ -2648,7 +2642,7 @@
       "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 32
+      "count": 31
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
@@ -2699,7 +2693,7 @@
       "count": 1
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 21
+      "count": 20
     },
     "unicorn/no-break-in-nested-loop": {
       "count": 1
@@ -2756,7 +2750,7 @@
       "count": 4
     },
     "unicorn/prefer-ternary": {
-      "count": 7
+      "count": 6
     },
     "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
@@ -3040,14 +3034,8 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 12
-    },
-    "unicorn/no-null": {
-      "count": 3
+      "count": 7
     },
     "unicorn/prefer-spread": {
       "count": 2
@@ -8792,7 +8780,7 @@
       "count": 5
     },
     "vitest/prefer-describe-function-title": {
-      "count": 6
+      "count": 5
     },
     "vitest/prefer-each": {
       "count": 1
@@ -9718,9 +9706,6 @@
     },
     "unicorn/no-negated-condition": {
       "count": 1
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 7
     },
     "vitest/prefer-import-in-mock": {
       "count": 1

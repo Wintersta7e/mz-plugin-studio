@@ -932,17 +932,6 @@ function extractHeaderPreamble(blockContent: string): string {
 }
 
 /**
- * Generate body using original codeBody (for plugins that shouldn't be regenerated)
- * Use this when you want to preserve the exact original implementation.
- */
-export function generateBodyPreserved(plugin: PluginDefinition): string {
-  if (plugin.codeBody) {
-    return plugin.codeBody
-  }
-  return generateBody(plugin)
-}
-
-/**
  * Generate a parsing expression for a parameter/argument accessor.
  */
 function generateAccessorParser(accessor: string, param: PluginParameter): string {
