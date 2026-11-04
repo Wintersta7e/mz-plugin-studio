@@ -315,10 +315,8 @@ function typeSettingLines(
     if (param.offLabel !== undefined && param.offLabel !== '') {
       lines.push(tagLine(sink, owner, '@off', param.offLabel))
     }
-  }
-
-  // Type-specific attributes
-  if (param.type === 'number') {
+  } else if (param.type === 'number') {
+    // Type-specific attributes
     if (param.min !== undefined) {
       lines.push(tagLine(sink, owner, '@min', String(param.min)))
     }
@@ -644,20 +642,31 @@ function collectNames(node: AnyNode, names: Set<string>): void {
     names.add(node.name)
     return
   }
-  const notAName =
-    node.type === 'MemberExpression' && !node.computed
-      ? node.property
-      : (node.type === 'Property' ||
-            node.type === 'MethodDefinition' ||
-            node.type === 'PropertyDefinition') &&
-          !node.computed
-        ? node.key
-        : node.type === 'LabeledStatement' ||
-            node.type === 'BreakStatement' ||
-            node.type === 'ContinueStatement'
-          ? node.label
-          : undefined
+  const notAName = nonNameChild(node)
   for (const child of childNodes(node)) if (child !== notAName) collectNames(child, names)
+}
+
+/**
+The child of `node` that is a property name or a label rather than a name, if it has one.
+*/
+function nonNameChild(node: AnyNode): AnyNode | undefined {
+  if (node.type === 'MemberExpression' && !node.computed) return node.property
+  if (
+    (node.type === 'Property' ||
+      node.type === 'MethodDefinition' ||
+      node.type === 'PropertyDefinition') &&
+    !node.computed
+  ) {
+    return node.key
+  }
+  if (
+    node.type === 'LabeledStatement' ||
+    node.type === 'BreakStatement' ||
+    node.type === 'ContinueStatement'
+  ) {
+    return node.label ?? undefined
+  }
+  return undefined
 }
 
 type CalledFunction = (FunctionExpression | ArrowFunctionExpression) & { body: BlockStatement }
@@ -681,7 +690,7 @@ function calledFunction(statement: AnyNode): CalledFunction | undefined {
 /**
 Whether the code calls `PluginManager.parameters`, outside the functions it defines.
 */
-function readsParameters(node: AnyNode): boolean {
+function doesReadParameters(node: AnyNode): boolean {
   if (
     node.type === 'CallExpression' &&
     node.callee.type === 'MemberExpression' &&
@@ -700,10 +709,11 @@ function readsParameters(node: AnyNode): boolean {
   ) {
     return false
   }
-  return childNodes(node).some(readsParameters)
+  return childNodes(node).some((child) => doesReadParameters(child))
 }
 
-function declares(statement: AnyNode, name: string): boolean {
+function isPluginNameDeclaration(statement: AnyNode): boolean {
+  const name = 'PLUGIN_NAME'
   return statement.type === 'VariableDeclaration'
     ? statement.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === name)
     : (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') &&
@@ -784,7 +794,7 @@ function parametersDeclaration(
         d.id.type === 'Identifier' &&
         d.init !== null &&
         d.init !== undefined &&
-        readsParameters(d.init)
+        doesReadParameters(d.init)
     )
     if (declarator?.id.type === 'Identifier') {
       return { name: declarator.id.name, end: statement.end }
@@ -838,7 +848,7 @@ function pluginNameStart(
 ): number | undefined {
   if (own !== undefined) return own.end
   if (owner === undefined) return undefined
-  const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
+  const outer = statements.find((s) => isPluginNameDeclaration(s))
   const isParam = owner.fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
   return isParam || (outer !== undefined && outer.end <= owner.statement.start)
     ? owner.fn.body.start
@@ -874,7 +884,7 @@ function placementOf(source: string): Placement {
   const site = findParameters(units)
   const owner = site === undefined ? firstCall : site.call
   const scope = owner === undefined ? statements : owner.fn.body.body
-  const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
+  const own = scope.find((s) => isPluginNameDeclaration(s))
 
   const names = new Set<string>()
   collectNames(program, names)
@@ -1151,10 +1161,10 @@ function applyEdits(source: string, edits: readonly SourceEdit[]): string {
   const eol = source.includes('\r\n') ? '\r\n' : '\n'
   let output = source
   const ordered = edits
-    .map((e, index) => ({ ...e, i: index }))
-    .sort((a, b) => b.start - a.start || b.end - a.end || b.i - a.i)
+    .map((edit, index) => ({ ...edit, i: index }))
+    .toSorted((a, b) => b.start - a.start || b.end - a.end || b.i - a.i)
   for (const edit of ordered) {
-    const text = eol === '\n' ? edit.text : edit.text.replaceAll('\n', eol)
+    const text = eol === '\n' ? edit.text : edit.text.split('\n').join(eol)
     output = output.slice(0, edit.start) + text + output.slice(edit.end)
   }
   return output
@@ -1188,6 +1198,9 @@ Generate a parsing expression for a parameter/argument accessor.
 function generateAccessorParser(accessor: string, param: PluginParameter): string {
   const defaultValue = formatJSDefault(param.default, param.type)
 
+  // A type outside the known ones, which an imported file can hold, reads as text
+  if (isScalarType(param.type)) return scalarAccessor(accessor, param.type, defaultValue)
+
   switch (param.type) {
     case 'number': {
       return `Number(${accessor} || ${defaultValue})`
@@ -1197,8 +1210,8 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       // MZ omits the param key entirely when the user never opens the Plugin
       // Manager, so `accessor` may be undefined even when @default is true.
       // Nullish-coalesce to the declared default before comparing.
-      const defBool = param.default === true ? 'true' : 'false'
-      return `(${accessor} ?? '${defBool}') === 'true'`
+      const defaultText = param.default === true ? 'true' : 'false'
+      return `(${accessor} ?? '${defaultText}') === 'true'`
     }
 
     case 'location': {
@@ -1225,15 +1238,34 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       }
       return parsed
     }
-
-    default: {
-      if (ID_BASED_PARAM_TYPES.has(param.type)) {
-        return `Number(${accessor} || ${defaultValue})`
-      }
-      // `??`, not `||`: a value set to empty in MZ is stored as "" and must stay empty
-      return `${accessor} ?? ${defaultValue}`
-    }
   }
+}
+
+/**
+The types whose accessor is not a scalar read, or `number`'s own.
+*/
+const NON_SCALAR_TYPES = [
+  'number',
+  'boolean',
+  'location',
+  'struct',
+  'array'
+] as const satisfies readonly ParamType[]
+
+type ScalarType = Exclude<ParamType, (typeof NON_SCALAR_TYPES)[number]>
+
+const NON_SCALAR: ReadonlySet<ParamType> = new Set<ParamType>(NON_SCALAR_TYPES)
+
+const isScalarType = (type: ParamType): type is ScalarType => !NON_SCALAR.has(type)
+
+/**
+The expression reading a scalar: a number for an ID-based type, else the text as stored.
+*/
+function scalarAccessor(accessor: string, type: ScalarType, defaultValue: string): string {
+  // `??`, not `||`: a value set to empty in MZ is stored as "" and must stay empty
+  return ID_BASED_PARAM_TYPES.has(type)
+    ? `Number(${accessor} || ${defaultValue})`
+    : `${accessor} ?? ${defaultValue}`
 }
 
 /**
@@ -1349,14 +1381,12 @@ function camelCase(string_: string): string {
     .split(' ')
     .filter(Boolean)
   const result = words
-    .map((word, index) => {
-      if (index === 0) {
-        // First word: lowercase first char, preserve rest (keeps internal camelCase)
-        return word.charAt(0).toLowerCase() + word.slice(1)
-      }
-      // Subsequent words: uppercase first char, preserve rest
-      return word.charAt(0).toUpperCase() + word.slice(1)
-    })
+    // The first word's first char goes lower case (keeping internal camelCase), each later
+    // word's upper case; the rest is preserved
+    .map(
+      (word, index) =>
+        (index === 0 ? word.charAt(0).toLowerCase() : word.charAt(0).toUpperCase()) + word.slice(1)
+    )
     .join('')
   return sanitizeIdentifier(result)
 }
@@ -1456,7 +1486,8 @@ function checkPluginName(plugin: PluginDefinition, { errors }: ValidationProblem
     )
   }
 
-  for (const lang of Object.keys(plugin.meta.localizations ?? {})) {
+  const languages = Object.keys(plugin.meta.localizations ?? {})
+  for (const lang of languages) {
     if (!LOCALIZATION_KEY.test(lang)) {
       errors.push(
         `Localization "${lang}" is left out: a language code may contain only letters and underscores.`
@@ -1491,15 +1522,13 @@ function checkParameterNames(
 
     // Warn (not error) if parameter name isn't a valid identifier - it will still work in MZ
     // but won't be easily accessible in code
-    if (param.name && !isIdentifierName(param.name)) {
-      if (!isSectionDivider) {
-        warnings.push(
-          `Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`
-        )
-      }
+    if (!isSectionDivider && param.name && !isIdentifierName(param.name)) {
+      warnings.push(
+        `Parameter "${param.name}" is not a valid JS identifier (will still work in MZ)`
+      )
     }
 
-    if (param.name && !isSectionDivider) {
+    if (!isSectionDivider && param.name) {
       checkGeneratedIdentifier(param.name, identifierOrigins, problems)
     }
   }

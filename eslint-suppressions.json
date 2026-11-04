@@ -2567,50 +2567,6 @@
       "count": 2
     }
   },
-  "src/renderer/src/lib/generator/index.ts": {
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 1
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/no-unsafe-string-replacement": {
-      "count": 1
-    },
-    "unicorn/prefer-else-if": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 2
-    }
-  },
   "src/renderer/src/lib/generator/templates/actor-party.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 2
