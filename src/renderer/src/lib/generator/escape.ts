@@ -1,117 +1,136 @@
 /**
- * Escape a string for safe interpolation inside a single-quoted JS string literal.
- * Handles backslash, single-quote, newline, carriage return and the two line separators,
- * which would otherwise end a line comment the same text is also written into.
- */
-export function escapeJSString(str: string): string {
+Escape a string for safe interpolation inside a single-quoted JS string literal.
+Handles backslash, single-quote, newline, carriage return and the two line separators,
+which would otherwise end a line comment the same text is also written into.
+*/
+export function escapeJSString(string_: string): string {
   return escapeLineSeparators(
-    str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+    string_
+      .replaceAll('\\', '\\\\')
+      .replaceAll("'", "\\'")
+      .replaceAll('\n', '\\n')
+      .replaceAll('\r', '\\r')
   )
 }
 
 /**
- * Escape a string for safe interpolation inside a double-quoted JS string literal.
- */
-export function escapeJSDoubleQuote(str: string): string {
+Escape a string for safe interpolation inside a double-quoted JS string literal.
+*/
+export function escapeJSDoubleQuote(string_: string): string {
   return escapeLineSeparators(
-    str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+    string_
+      .replaceAll('\\', '\\\\')
+      .replaceAll('"', '\\"')
+      .replaceAll('\n', '\\n')
+      .replaceAll('\r', '\\r')
   )
 }
 
-function escapeLineSeparators(str: string): string {
-  return str.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')
+function escapeLineSeparators(string_: string): string {
+  return string_.replaceAll('\u{2028}', '\\u2028').replaceAll('\u{2029}', '\\u2029')
 }
 
 /**
- * Escape a string for interpolation inside a block comment: a backslash goes between each `*`
- * and the `/` after it, so the text cannot end the comment.
- */
-export function escapeBlockComment(str: string): string {
-  return str.replace(/\*\//g, '*\\/')
+Escape a string for interpolation inside a block comment: a backslash goes between each `*`
+and the `/` after it, so the text cannot end the comment.
+*/
+export function escapeBlockComment(string_: string): string {
+  return string_.replaceAll('*/', '*\\/')
 }
 
 /**
- * The text MZ reads from an annotation line holding `str`: each line break becomes one space,
- * as each annotation is one line, and `*` `/` is escaped. Code that reads a header value back
- * (a parameter key, a command name, a default) uses the same text, so both agree.
- */
-export function annotationText(str: string): string {
-  return escapeBlockComment(str.replace(/\r\n|\r|\n/g, ' '))
+The text MZ reads from an annotation line holding `str`: each line break becomes one space,
+as each annotation is one line, and `*` `/` is escaped. Code that reads a header value back
+(a parameter key, a command name, a default) uses the same text, so both agree.
+*/
+export function annotationText(string_: string): string {
+  return escapeBlockComment(string_.replaceAll(/\r\n|\r|\n/g, ' '))
 }
 
 /**
- * Escape a string for interpolation inside a line comment: each line break or line separator
- * becomes one space, so the text cannot end the comment.
- */
-export function escapeLineComment(str: string): string {
-  return str.replace(/\r\n|[\r\n\u2028\u2029]/g, ' ')
+Escape a string for interpolation inside a line comment: each line break or line separator
+becomes one space, so the text cannot end the comment.
+*/
+export function escapeLineComment(string_: string): string {
+  return string_.replaceAll(/\r\n|[\r\n\u2028\u2029]/g, ' ')
 }
 
 /**
- * Whether text a template writes as a JavaScript expression stays one expression on one line:
- * no line break, every string literal closed, and outside the literals no `;`, no comment
- * marker and no literal written against a name or value (as in `x' + y + 'z`). A check, not a
- * parser: a few valid expressions fail it, such as `'a' in obj`.
- */
+Whether text a template writes as a JavaScript expression stays one expression on one line:
+no line break, every string literal closed, and outside the literals no `;`, no comment
+marker and no literal written against a name or value (as in `x' + y + 'z`). A check, not a
+parser: a few valid expressions fail it, such as `'a' in obj`.
+*/
 export function isOneLineExpression(text: string): boolean {
   if (/[\r\n\u2028\u2029]/.test(text)) return false
   let outside = ''
-  for (let i = 0; i < text.length; i++) {
-    const quote = text[i]
+  for (let index = 0; index < text.length; index++) {
+    const quote = text[index]
     if (quote !== "'" && quote !== '"' && quote !== '`') {
       outside += quote
       continue
     }
-    let end = i + 1
+    let end = index + 1
     while (end < text.length && text[end] !== quote) end += text[end] === '\\' ? 2 : 1
     if (end >= text.length) return false
     // The whole literal reads as one quote from here on.
     outside += "'"
-    i = end
+    index = end
   }
   return !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(']/.test(outside)
 }
 
 /**
- * Sanitize a user-provided default into a JS literal of the requested type.
- * Strings are single-quoted via escapeJSString. Numbers go through Number().
- * Booleans match 'true'/'false' (default false). Object/array round-trip through
- * JSON.parse → JSON.stringify so injected code can't escape the literal.
- * Unknown / empty defaults fall through to the empty literal for their type.
- */
+Sanitize a user-provided default into a JS literal of the requested type.
+Strings are single-quoted via escapeJSString. Numbers go through Number().
+Booleans match 'true'/'false' (default false). Object/array round-trip through
+JSON.parse → JSON.stringify so injected code can't escape the literal.
+Unknown / empty defaults fall through to the empty literal for their type.
+*/
 export function getDefaultLiteral(dataType: string, customDefault?: string): string {
   if (customDefault !== undefined && customDefault !== '') {
     switch (dataType) {
-      case 'number':
+      case 'number': {
         return String(Number(customDefault))
-      case 'string':
+      }
+      case 'string': {
         return `'${escapeJSString(customDefault)}'`
-      case 'boolean':
+      }
+      case 'boolean': {
         return customDefault.toLowerCase() === 'true' ? 'true' : 'false'
+      }
       case 'object':
-      case 'array':
+      case 'array': {
         try {
           return JSON.stringify(JSON.parse(customDefault))
         } catch {
           return dataType === 'object' ? '{}' : '[]'
         }
-      default:
+      }
+      default: {
         return 'null'
+      }
     }
   }
 
   switch (dataType) {
-    case 'number':
+    case 'number': {
       return '0'
-    case 'string':
+    }
+    case 'string': {
       return '""'
-    case 'boolean':
+    }
+    case 'boolean': {
       return 'false'
-    case 'object':
+    }
+    case 'object': {
       return '{}'
-    case 'array':
+    }
+    case 'array': {
       return '[]'
-    default:
+    }
+    default: {
       return 'null'
+    }
   }
 }

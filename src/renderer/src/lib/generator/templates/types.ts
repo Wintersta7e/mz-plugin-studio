@@ -1,7 +1,7 @@
 /**
- * Template System Type Definitions
- * Core types for the MZ Plugin Studio code template system
- */
+Template System Type Definitions
+Core types for the MZ Plugin Studio code template system
+*/
 
 // Template category enum
 export type TemplateCategory =

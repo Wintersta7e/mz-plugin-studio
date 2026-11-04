@@ -20,10 +20,14 @@ import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks } from '../../../../shared/annotation-blocks'
 import { COMPACT_PARAM_TAG } from '../../../../shared/compact-param'
 
-/** Receives each field's text as it is written into an annotation comment, with its label. */
+/**
+Receives each field's text as it is written into an annotation comment, with its label.
+*/
 type BlockSink = (field: string, value: string) => void
 
-/** A language code MZ reads after `/*:`; any other key is left out of the output. */
+/**
+A language code MZ reads after `/*:`; any other key is left out of the output.
+*/
 const LOCALIZATION_KEY = /^[A-Za-z_]+$/
 
 function blockValue(sink: BlockSink | undefined, field: string, value: string): string {
@@ -31,26 +35,30 @@ function blockValue(sink: BlockSink | undefined, field: string, value: string): 
   return annotationText(value)
 }
 
-/** Whether a help line would be read as a tag: its first non-space character is `@`. */
+/**
+Whether a help line would be read as a tag: its first non-space character is `@`.
+*/
 const HELP_TAG_LINE = /^(\s*)@/
 
-/** A plugin or command name the validator accepts: an identifier, as code that names it uses it. */
+/**
+A plugin or command name the validator accepts: an identifier, as code that names it uses it.
+*/
 export const isIdentifierName = (name: string): boolean => /^[A-Za-z_][A-Za-z0-9_]*$/.test(name)
 
 /**
- * A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
- * as help instead of reading it as a tag. A guarded line starts with that space, which is not
- * whitespace, so writing it again adds no second one.
- */
+A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
+as help instead of reading it as a tag. A guarded line starts with that space, which is not
+whitespace, so writing it again adds no second one.
+*/
 function helpText(line: string): string {
-  return line.replace(HELP_TAG_LINE, '$1\u200B@')
+  return line.replace(HELP_TAG_LINE, '$1\u{200B}@')
 }
 
 /**
- * Find names of `PluginManager.registerCommand(...)` calls already present in
- * comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
- * plugin name. Used to skip re-emitting commands the user already wrote.
- */
+Find names of `PluginManager.registerCommand(...)` calls already present in
+comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
+plugin name. Used to skip re-emitting commands the user already wrote.
+*/
 function findRegisteredCommandNames(strippedSource: string, pluginName: string): Set<string> {
   const names = new Set<string>()
   const escapedName = pluginName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -65,8 +73,8 @@ function findRegisteredCommandNames(strippedSource: string, pluginName: string):
 }
 
 /**
- * Generate a complete RPG Maker MZ plugin from a PluginDefinition
- */
+Generate a complete RPG Maker MZ plugin from a PluginDefinition
+*/
 export function generatePlugin(plugin: PluginDefinition): string {
   const parts: string[] = []
 
@@ -91,14 +99,12 @@ export function generatePlugin(plugin: PluginDefinition): string {
 }
 
 /**
- * Generate the plugin header comment block with all metadata, parameters, and commands.
- * `keepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
- * raw mode keeps when it rewrites the file's blocks.
- */
+Generate the plugin header comment block with all metadata, parameters, and commands.
+`keepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
+raw mode keeps when it rewrites the file's blocks.
+*/
 function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire = false): string {
-  const lines: string[] = []
-
-  lines.push('/*:')
+  const lines: string[] = ['/*:']
 
   // Target
   if (plugin.meta.target) {
@@ -121,8 +127,8 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
   }
 
   // Dependencies
-  for (const dep of plugin.meta.dependencies) {
-    lines.push(` * @base ${blockValue(sink, 'Plugin @base', dep)}`)
+  for (const dependency of plugin.meta.dependencies) {
+    lines.push(` * @base ${blockValue(sink, 'Plugin @base', dependency)}`)
   }
 
   // Order After
@@ -163,8 +169,8 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
   }
 
   // Commands
-  for (const cmd of plugin.commands) {
-    lines.push(...generateCommandBlock(cmd, sink, keepRequire))
+  for (const command of plugin.commands) {
+    lines.push(...generateCommandBlock(command, sink, keepRequire))
     lines.push(' *')
   }
 
@@ -182,8 +188,8 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
 }
 
 /**
- * Generate a parameter block for the header
- */
+Generate a parameter block for the header
+*/
 function generateParameterBlock(
   param: PluginParameter,
   prefix = ' * ',
@@ -264,8 +270,8 @@ function generateParameterBlock(
 }
 
 /**
- * Format the @type value based on parameter type
- */
+Format the @type value based on parameter type
+*/
 function formatParamType(param: PluginParameter): string {
   // Use rawType for round-trip fidelity when available
   if (param.rawType) {
@@ -281,10 +287,9 @@ function formatParamType(param: PluginParameter): string {
       return `struct<${param.structType}>[]`
     }
     if (param.arrayType) {
-      if (param.arrayType === 'struct' && param.structType) {
-        return `struct<${param.structType}>[]`
-      }
-      return `${param.arrayType}[]`
+      return param.arrayType === 'struct' && param.structType
+        ? `struct<${param.structType}>[]`
+        : `${param.arrayType}[]`
     }
     return 'string[]'
   }
@@ -293,8 +298,8 @@ function formatParamType(param: PluginParameter): string {
 }
 
 /**
- * Format a default value for output
- */
+Format a default value for output
+*/
 function formatDefaultValue(
   value: string | number | boolean | undefined,
   _type: ParamType
@@ -309,24 +314,28 @@ function formatDefaultValue(
 }
 
 /**
- * Generate a command block for the header
- */
-function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink, keepRequire = false): string[] {
+Generate a command block for the header
+*/
+function generateCommandBlock(
+  command: PluginCommand,
+  sink?: BlockSink,
+  keepRequire = false
+): string[] {
   const lines: string[] = []
-  const owner = `Command "${cmd.name}"`
+  const owner = `Command "${command.name}"`
 
-  lines.push(` * @command ${blockValue(sink, `${owner} @command`, cmd.name)}`)
+  lines.push(` * @command ${blockValue(sink, `${owner} @command`, command.name)}`)
 
-  if (cmd.text && cmd.text !== cmd.name) {
-    lines.push(` * @text ${blockValue(sink, `${owner} @text`, cmd.text)}`)
+  if (command.text && command.text !== command.name) {
+    lines.push(` * @text ${blockValue(sink, `${owner} @text`, command.text)}`)
   }
 
-  if (cmd.desc) {
-    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, cmd.desc)}`)
+  if (command.desc) {
+    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, command.desc)}`)
   }
 
   // Command arguments
-  for (const arg of cmd.args) {
+  for (const arg of command.args) {
     const argOwner = `${owner} argument "${arg.name}"`
     lines.push(' *')
     lines.push(` * @arg ${blockValue(sink, `${argOwner} @arg`, arg.name)}`)
@@ -384,8 +393,8 @@ function generateCommandBlock(cmd: PluginCommand, sink?: BlockSink, keepRequire 
 }
 
 /**
- * Generate localized header blocks for multi-language support
- */
+Generate localized header blocks for multi-language support
+*/
 function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): string | null {
   const localizations = plugin.meta.localizations
   if (!localizations || Object.keys(localizations).length === 0) {
@@ -422,8 +431,8 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
 }
 
 /**
- * Generate struct definition comment block
- */
+Generate struct definition comment block
+*/
 function generateStructDefinition(
   struct: PluginStruct,
   sink?: BlockSink,
@@ -445,16 +454,12 @@ function generateStructDefinition(
 }
 
 /**
- * Generate the plugin body (IIFE with parameter parsing and command registration)
- * Always regenerates template sections (param parsing, command registration)
- * and appends preserved custom code.
- */
+Generate the plugin body (IIFE with parameter parsing and command registration)
+Always regenerates template sections (param parsing, command registration)
+and appends preserved custom code.
+*/
 function generateBody(plugin: PluginDefinition): string {
-  const lines: string[] = []
-
-  lines.push('(() => {')
-  lines.push(`    'use strict';`)
-  lines.push('')
+  const lines: string[] = ['(() => {', `    'use strict';`, '']
 
   // Plugin name constant
   const pluginName = plugin.meta.name || 'NewPlugin'
@@ -484,27 +489,29 @@ function generateBody(plugin: PluginDefinition): string {
   const alreadyRegistered = customCode
     ? findRegisteredCommandNames(stripCommentsOnly(customCode), pluginName)
     : new Set<string>()
-  const commandsToGenerate = plugin.commands.filter((cmd) => !alreadyRegistered.has(cmd.name))
+  const commandsToGenerate = plugin.commands.filter(
+    (command) => !alreadyRegistered.has(command.name)
+  )
 
   if (commandsToGenerate.length > 0) {
     lines.push('    // Register plugin commands')
 
-    for (const cmd of commandsToGenerate) {
+    for (const command of commandsToGenerate) {
       lines.push('')
       lines.push(
-        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
+        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`
       )
 
       // Parse command arguments
-      for (const arg of cmd.args) {
+      for (const arg of command.args) {
         lines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
       }
 
       lines.push('')
       lines.push('        // TODO: Implement command logic')
-      if (cmd.args.length > 0) {
+      if (command.args.length > 0) {
         lines.push(
-          `        // Parsed args available as: ${cmd.args.map((a) => camelCase(a.name)).join(', ')}`
+          `        // Parsed args available as: ${command.args.map((a) => camelCase(a.name)).join(', ')}`
         )
       }
       lines.push('    });')
@@ -525,26 +532,31 @@ function generateBody(plugin: PluginDefinition): string {
         lines.push(`    ${customLine}`)
       }
     }
-    lines.push('')
   } else {
     lines.push('    // Custom plugin code goes here')
-    lines.push('')
   }
+  lines.push('')
 
   lines.push('})();')
 
   return lines.join('\n')
 }
 
-/** Whether raw mode can rewrite the file's main annotation block (/*: or /*:en). */
+/**
+Whether raw mode can rewrite the file's main annotation block (/*: or /*:en).
+*/
 export function hasMainBlock(source: string): boolean {
   return findAnnotationBlocks(source).some((b) => b.kind === 'main')
 }
 
-/** A separator parameter only groups others in the MZ editor; no code reads it. */
+/**
+A separator parameter only groups others in the MZ editor; no code reads it.
+*/
 const isSeparator = (name: string): boolean => name.includes('---') || name.includes('===')
 
-/** Raw mode had code to place in a file that does not parse as JavaScript. */
+/**
+Raw mode had code to place in a file that does not parse as JavaScript.
+*/
 export class RawModeParseError extends Error {
   constructor(readonly parseError: string) {
     super(`The file is not valid JavaScript: ${parseError}`)
@@ -552,11 +564,15 @@ export class RawModeParseError extends Error {
   }
 }
 
-/** Parses code the way MZ loads a plugin: as a classic script. */
+/**
+Parses code the way MZ loads a plugin: as a classic script.
+*/
 const parseScript = (code: string): Program =>
   parse(code, { ecmaVersion: 'latest', sourceType: 'script' })
 
-/** Why `code` does not parse as a classic script, or null when it does. */
+/**
+Why `code` does not parse as a classic script, or null when it does.
+*/
 export function scriptParseError(code: string): string | null {
   try {
     parseScript(code)
@@ -581,7 +597,9 @@ function childNodes(node: AnyNode): AnyNode[] {
   return children
 }
 
-/** Adds every name the code declares or reads to `names`; property names and labels are not names. */
+/**
+Adds every name the code declares or reads to `names`; property names and labels are not names.
+*/
 function collectNames(node: AnyNode, names: Set<string>): void {
   if (node.type === 'Identifier') {
     names.add(node.name)
@@ -605,10 +623,12 @@ function collectNames(node: AnyNode, names: Set<string>): void {
 
 type CalledFunction = (FunctionExpression | ArrowFunctionExpression) & { body: BlockStatement }
 
-/** The function a statement calls in place: `(function () {…})()`, `(function () {…}())`, `(() => {…})()`. */
+/**
+The function a statement calls in place: `(function () {…})()`, `(function () {…}())`, `(() => {…})()`.
+*/
 function calledFunction(statement: AnyNode): CalledFunction | null {
-  if (statement.type !== 'ExpressionStatement') return null
-  if (statement.expression.type !== 'CallExpression') return null
+  if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'CallExpression')
+    return null
   const callee = statement.expression.callee
   return (callee.type === 'FunctionExpression' || callee.type === 'ArrowFunctionExpression') &&
     callee.body.type === 'BlockStatement'
@@ -616,7 +636,9 @@ function calledFunction(statement: AnyNode): CalledFunction | null {
     : null
 }
 
-/** Whether the code calls `PluginManager.parameters`, outside the functions it defines. */
+/**
+Whether the code calls `PluginManager.parameters`, outside the functions it defines.
+*/
 function readsParameters(node: AnyNode): boolean {
   if (
     node.type === 'CallExpression' &&
@@ -640,16 +662,15 @@ function readsParameters(node: AnyNode): boolean {
 }
 
 function declares(statement: AnyNode, name: string): boolean {
-  if (statement.type === 'VariableDeclaration') {
-    return statement.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === name)
-  }
-  return (
-    (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') &&
-    statement.id?.name === name
-  )
+  return statement.type === 'VariableDeclaration'
+    ? statement.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === name)
+    : (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') &&
+        statement.id?.name === name
 }
 
-/** Index `end`, or the start of the next line when only blanks or a line comment follow it. */
+/**
+Index `end`, or the start of the next line when only blanks or a line comment follow it.
+*/
 function afterNode(source: string, end: number): number {
   const lineEnd = source.indexOf('\n', end)
   const rest = source.slice(end, lineEnd === -1 ? source.length : lineEnd)
@@ -657,23 +678,39 @@ function afterNode(source: string, end: number): number {
   return lineEnd === -1 ? source.length : lineEnd + 1
 }
 
-/** Where raw mode puts code it adds to a file, read from the file's syntax tree. */
+/**
+Where raw mode puts code it adds to a file, read from the file's syntax tree.
+*/
 interface Placement {
-  /** Start of the first top-level IIFE: a struct block without a block of its own goes there */
+  /**
+  Start of the first top-level IIFE: a struct block without a block of its own goes there
+  */
   iifeStart: number | null
-  /** The body of the IIFE added code goes into; null for the script's top level */
+  /**
+  The body of the IIFE added code goes into; null for the script's top level
+  */
   body: BlockStatement | null
-  /** The variable the file reads its parameters into, and the end of its declaration */
+  /**
+  The variable the file reads its parameters into, and the end of its declaration
+  */
   parameters: { name: string; end: number } | null
-  /** Where code for added parameters goes when the file has no parameters variable */
+  /**
+  Where code for added parameters goes when the file has no parameters variable
+  */
   start: number
-  /** The index from which the file's own `PLUGIN_NAME` holds its value in that scope */
+  /**
+  The index from which the file's own `PLUGIN_NAME` holds its value in that scope
+  */
   pluginNameFrom: number | null
-  /** Every name the file declares or reads; a name added code declares is added here */
+  /**
+  Every name the file declares or reads; a name added code declares is added here
+  */
   names: Set<string>
 }
 
-/** Where added code goes: the parameters variable's scope, else the first IIFE, else the top level. */
+/**
+Where added code goes: the parameters variable's scope, else the first IIFE, else the top level.
+*/
 function placementOf(source: string): Placement {
   let program: Program
   try {
@@ -684,43 +721,49 @@ function placementOf(source: string): Placement {
   }
   const statements = program.body
   const called = statements.map(calledFunction)
-  const first = called.findIndex((fn) => fn !== null)
+  const first = called.findIndex((function_) => function_ !== null)
 
   // The first declaration of the top level or of a top-level IIFE body reading the parameters
   let parameters: { name: string; end: number; owner: number | null } | null = null
-  for (let i = 0; i < statements.length && parameters === null; i++) {
-    const fn = called[i]
-    for (const statement of fn === null ? [statements[i]] : fn.body.body) {
+  for (let index = 0; index < statements.length && parameters === null; index++) {
+    const function__ = called[index]
+    for (const statement of function__ === null ? [statements[index]] : function__.body.body) {
       if (statement.type !== 'VariableDeclaration') continue
       const declarator = statement.declarations.find(
-        (d) => d.id.type === 'Identifier' && d.init != null && readsParameters(d.init)
+        (d) => d.id.type === 'Identifier' && d.init != undefined && readsParameters(d.init)
       )
       if (declarator !== undefined && declarator.id.type === 'Identifier') {
-        parameters = { name: declarator.id.name, end: statement.end, owner: fn === null ? null : i }
+        parameters = {
+          name: declarator.id.name,
+          end: statement.end,
+          owner: function__ === null ? null : index
+        }
         break
       }
     }
   }
-  const owner = parameters !== null ? parameters.owner : first === -1 ? null : first
-  const fn = owner === null ? null : called[owner]
-  const scope = fn === null ? statements : fn.body.body
+  const owner = parameters === null ? (first === -1 ? null : first) : parameters.owner
+  const function_ = owner === null ? null : called[owner]
+  const scope = function_ === null ? statements : function_.body.body
 
   const own = scope.find((s) => declares(s, 'PLUGIN_NAME'))
   let pluginNameFrom = own === undefined ? null : own.end
-  if (fn !== null && owner !== null && pluginNameFrom === null) {
+  if (function_ !== null && owner !== null && pluginNameFrom === null) {
     const outer = statements.find((s) => declares(s, 'PLUGIN_NAME'))
-    const isParam = fn.params.some((p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME')
+    const isParam = function_.params.some(
+      (p) => p.type === 'Identifier' && p.name === 'PLUGIN_NAME'
+    )
     if (isParam || (outer !== undefined && outer.end <= statements[owner].start)) {
-      pluginNameFrom = fn.body.start
+      pluginNameFrom = function_.body.start
     }
   }
 
   let start = source.length
-  if (fn !== null) {
+  if (function_ !== null) {
     const directives = scope.filter(
       (s) => s.type === 'ExpressionStatement' && s.directive !== undefined
     )
-    start = afterNode(source, directives.at(-1)?.end ?? fn.body.start + 1)
+    start = afterNode(source, directives.at(-1)?.end ?? function_.body.start + 1)
     if (own !== undefined) start = Math.max(start, afterNode(source, own.end))
   }
 
@@ -728,7 +771,7 @@ function placementOf(source: string): Placement {
   collectNames(program, names)
   return {
     iifeStart: first === -1 ? null : statements[first].start,
-    body: fn === null ? null : fn.body,
+    body: function_ === null ? null : function_.body,
     parameters: parameters && { name: parameters.name, end: parameters.end },
     start,
     pluginNameFrom,
@@ -736,7 +779,9 @@ function placementOf(source: string): Placement {
   }
 }
 
-/** `name`, suffixed with `_` until no name of the file uses it; then taken. */
+/**
+`name`, suffixed with `_` until no name of the file uses it; then taken.
+*/
 function freeName(place: Placement, name: string): string {
   let free = name
   while (place.names.has(free)) free += '_'
@@ -745,11 +790,11 @@ function freeName(place: Placement, name: string): string {
 }
 
 /**
- * Generate plugin output in "raw mode" for an imported plugin: the file's own text, with only
- * the annotation blocks whose content changed since `baseline` rewritten and code added only
- * for parameters and commands absent from `baseline`. Language blocks are never touched, the
- * file's line endings are kept, and an unedited plugin is written back byte for byte.
- */
+Generate plugin output in "raw mode" for an imported plugin: the file's own text, with only
+the annotation blocks whose content changed since `baseline` rewritten and code added only
+for parameters and commands absent from `baseline`. Language blocks are never touched, the
+file's line endings are kept, and an unedited plugin is written back byte for byte.
+*/
 export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseline): string {
   const source = plugin.rawSource
   if (!source) {
@@ -768,7 +813,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   const header = generateHeader(plugin, undefined, true)
   if (main !== undefined && header !== generateHeader(baseline, undefined, true)) {
     const preamble = extractHeaderPreamble(
-      source.slice(main.start, main.end).replace(/\r\n/g, '\n')
+      source.slice(main.start, main.end).replaceAll('\r\n', '\n')
     )
     const rest = header.slice(header.indexOf('\n') + 1)
     edits.push({ start: main.start, end: main.end, text: `${main.opener}\n${preamble}${rest}` })
@@ -782,19 +827,19 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     if (before !== undefined && generateStructDefinition(before, undefined, true) === text) continue
     const own = blocks.filter((b) => b.kind === 'struct' && b.structName === struct.name)
     const block = own.find((b) => b.lang === '') ?? own.find((b) => b.lang === 'en')
-    if (block !== undefined) {
-      edits.push({
-        start: block.start,
-        end: block.end,
-        text: block.opener + text.slice(text.indexOf('\n'))
-      })
-    } else {
+    if (block === undefined) {
       const at = placement().iifeStart
       edits.push(
         at === null
           ? { start: source.length, end: source.length, text: `\n\n${text}` }
           : { start: at, end: at, text: `${text}\n\n` }
       )
+    } else {
+      edits.push({
+        start: block.start,
+        end: block.end,
+        text: block.opener + text.slice(text.indexOf('\n'))
+      })
     }
   }
 
@@ -802,7 +847,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
   // The constant added code declares for the plugin name when the file's own is out of reach,
   // and whether it went into the IIFE body, where later added code can read it too
   let nameConstant: string | undefined
-  let nameInBody = false
+  let isNameInBody = false
   const pluginNameAt = (place: Placement, at: number): { name: string; line?: string } => {
     if (place.pluginNameFrom !== null && place.pluginNameFrom <= at) return { name: 'PLUGIN_NAME' }
     nameConstant ??= freeName(place, 'PLUGIN_NAME')
@@ -830,7 +875,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
       const { name, line } = pluginNameAt(place, at)
       if (line !== undefined) {
         lines.push(line)
-        nameInBody = place.body !== null
+        isNameInBody = place.body !== null
       }
       variable = freeName(place, 'params')
       lines.push(`    const ${variable} = PluginManager.parameters(${name});`)
@@ -847,7 +892,7 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
 
   // 4. Registration code for commands added since load, at the end of the IIFE body
   const knownCommands = new Set(baseline.commands.map((c) => c.name))
-  const newCommands = plugin.commands.filter((cmd) => !knownCommands.has(cmd.name))
+  const newCommands = plugin.commands.filter((command) => !knownCommands.has(command.name))
   if (newCommands.length > 0) {
     const place = placement()
     // The start of the line closing the body, or the closing brace when code shares its line
@@ -859,59 +904,59 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
     }
     const lines: string[] = []
     let name = nameConstant
-    if (!nameInBody || name === undefined) {
+    if (!isNameInBody || name === undefined) {
       const reach = pluginNameAt(place, at)
       name = reach.name
       if (reach.line !== undefined) lines.push(reach.line)
     }
     lines.push(`    // --- New commands (added by MZ Plugin Studio) ---`)
-    for (const cmd of newCommands) {
+    for (const command of newCommands) {
       lines.push(
-        `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
+        `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(command.name))}', function(args) {`
       )
       const argNames = new Set<string>()
-      const constants = cmd.args.map((arg) => {
+      const constants = command.args.map((arg) => {
         let constant = camelCase(arg.name)
         while (argNames.has(constant)) constant += '_'
         argNames.add(constant)
         return constant
       })
-      cmd.args.forEach((arg, i) => {
-        lines.push(`        const ${constants[i]} = ${generateArgParser(arg)};`)
-      })
+      for (const [index, arg] of command.args.entries()) {
+        lines.push(`        const ${constants[index]} = ${generateArgParser(arg)};`)
+      }
       lines.push('')
       lines.push('        // TODO: Implement command logic')
-      if (cmd.args.length > 0) {
+      if (command.args.length > 0) {
         lines.push(`        // Parsed args available as: ${constants.join(', ')}`)
       }
       lines.push('    });')
     }
     lines.push(`    // --- End new commands ---`)
-    edits.push(
-      place.body === null
-        ? { start: at, end: at, text: `\n${wrap(place, lines)}\n` }
-        : { start: at, end: at, text: `\n${lines.join('\n')}\n\n` }
-    )
+    edits.push({
+      start: at,
+      end: at,
+      text: place.body === null ? `\n${wrap(place, lines)}\n` : `\n${lines.join('\n')}\n\n`
+    })
   }
 
   // Apply from the end so earlier offsets stay valid; at one offset a replacement goes before
   // an insertion, and insertions keep their order
   let output = source
   const ordered = edits
-    .map((e, i) => ({ ...e, i }))
+    .map((e, index) => ({ ...e, i: index }))
     .sort((a, b) => b.start - a.start || b.end - a.end || b.i - a.i)
   for (const edit of ordered) {
-    const text = eol === '\n' ? edit.text : edit.text.replace(/\n/g, eol)
+    const text = eol === '\n' ? edit.text : edit.text.replaceAll('\n', eol)
     output = output.slice(0, edit.start) + text + output.slice(edit.end)
   }
   return output
 }
 
 /**
- * Extract preamble text from an MZ annotation comment block (/*: ... ).
- * Captures license text, version history, social links, etc. that appear
- * before the first recognized MZ annotation (@target, @plugindesc, etc.).
- */
+Extract preamble text from an MZ annotation comment block (/*: ... ).
+Captures license text, version history, social links, etc. that appear
+before the first recognized MZ annotation (@target, @plugindesc, etc.).
+*/
 function extractHeaderPreamble(blockContent: string): string {
   // Line 0 is the opener of the main block
   const lines = blockContent.split('\n')
@@ -921,25 +966,24 @@ function extractHeaderPreamble(blockContent: string): string {
     /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
 
   const preambleLines: string[] = []
-  for (let i = 1; i < lines.length; i++) {
-    if (mzAnnotation.test(lines[i])) break
-    preambleLines.push(lines[i])
+  for (let index = 1; index < lines.length; index++) {
+    if (mzAnnotation.test(lines[index])) break
+    preambleLines.push(lines[index])
   }
 
-  if (preambleLines.length === 0) return ''
-
-  return preambleLines.join('\n') + '\n'
+  return preambleLines.length === 0 ? '' : preambleLines.join('\n') + '\n'
 }
 
 /**
- * Generate a parsing expression for a parameter/argument accessor.
- */
+Generate a parsing expression for a parameter/argument accessor.
+*/
 function generateAccessorParser(accessor: string, param: PluginParameter): string {
-  const defaultVal = formatJSDefault(param.default, param.type)
+  const defaultValue = formatJSDefault(param.default, param.type)
 
   switch (param.type) {
-    case 'number':
-      return `Number(${accessor} || ${defaultVal})`
+    case 'number': {
+      return `Number(${accessor} || ${defaultValue})`
+    }
 
     case 'boolean': {
       // MZ omits the param key entirely when the user never opens the Plugin
@@ -949,11 +993,13 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       return `(${accessor} ?? '${defBool}') === 'true'`
     }
 
-    case 'location':
+    case 'location': {
       return `JSON.parse(${accessor} || '{"mapId":"0","x":"0","y":"0"}')`
+    }
 
-    case 'struct':
+    case 'struct': {
       return `JSON.parse(${accessor} || '${jsonFallback(param, '{}')}')`
+    }
 
     case 'array': {
       // MZ double-encodes struct<X>[]: outer JSON array of JSON strings.
@@ -972,16 +1018,19 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       return parsed
     }
 
-    default:
+    default: {
       if (ID_BASED_PARAM_TYPES.has(param.type)) {
-        return `Number(${accessor} || ${defaultVal})`
+        return `Number(${accessor} || ${defaultValue})`
       }
       // `??`, not `||`: a value set to empty in MZ is stored as "" and must stay empty
-      return `${accessor} ?? ${defaultVal}`
+      return `${accessor} ?? ${defaultValue}`
+    }
   }
 }
 
-/** The JSON text a struct or array reads when its key is absent: its `@default`, else `empty`. */
+/**
+The JSON text a struct or array reads when its key is absent: its `@default`, else `empty`.
+*/
 function jsonFallback(param: PluginParameter, empty: string): string {
   return typeof param.default === 'string' && param.default !== ''
     ? escapeJSString(annotationText(param.default))
@@ -997,8 +1046,8 @@ function generateArgParser(arg: PluginParameter): string {
 }
 
 /**
- * Format default value for JavaScript code
- */
+Format default value for JavaScript code
+*/
 function formatJSDefault(value: string | number | boolean | undefined, type: ParamType): string {
   if (typeof value === 'boolean') {
     return value ? 'true' : 'false'
@@ -1074,21 +1123,21 @@ const JS_RESERVED: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Convert parameter name to a valid JS camelCase identifier.
- * Guarantees: output is always a syntactically legal strict-mode identifier
- * (never a reserved word, never starts with a digit, never empty).
- */
-export function camelCase(str: string): string {
-  if (!str) return 'unnamed'
+Convert parameter name to a valid JS camelCase identifier.
+Guarantees: output is always a syntactically legal strict-mode identifier
+(never a reserved word, never starts with a digit, never empty).
+*/
+export function camelCase(string_: string): string {
+  if (!string_) return 'unnamed'
   // Fast path: already a valid identifier with no separators (e.g. myCombo → myCombo)
-  if (/^[a-zA-Z$][a-zA-Z0-9$]*$/.test(str)) {
-    const normalized = str.charAt(0).toLowerCase() + str.slice(1)
+  if (/^[a-zA-Z$][a-zA-Z0-9$]*$/.test(string_)) {
+    const normalized = string_.charAt(0).toLowerCase() + string_.slice(1)
     return sanitizeIdentifier(normalized)
   }
   // Strip leading/trailing underscores, split on non-alphanumeric
-  const stripped = str.replace(/^_+|_+$/g, '')
+  const stripped = string_.replaceAll(/^_+|_+$/g, '')
   const words = stripped
-    .replace(/[^a-zA-Z0-9]/g, ' ')
+    .replaceAll(/[^a-zA-Z0-9]/g, ' ')
     .split(' ')
     .filter(Boolean)
   const result = words
@@ -1118,8 +1167,8 @@ function sanitizeIdentifier(name: string): string {
 }
 
 /**
- * Generate only the header portion (for quick preview)
- */
+Generate only the header portion (for quick preview)
+*/
 export function generateHeaderOnly(plugin: PluginDefinition): string {
   return generateHeader(plugin)
 }
@@ -1157,10 +1206,10 @@ const MZ_BUILTIN_COMMANDS = new Set([
 ])
 
 /**
- * Validate a plugin definition
- * Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
- * We only strictly validate plugin name and command names since those are used in code.
- */
+Validate a plugin definition
+Note: RPG Maker MZ allows any string for parameter names (often used as section dividers like "---Settings---")
+We only strictly validate plugin name and command names since those are used in code.
+*/
 export function validatePlugin(plugin: PluginDefinition): {
   valid: boolean
   errors: string[]
@@ -1240,28 +1289,28 @@ export function validatePlugin(plugin: PluginDefinition): {
   }
 
   // Command names must be valid identifiers (used in PluginManager.registerCommand())
-  const cmdNames = new Set<string>()
-  for (const cmd of plugin.commands) {
-    if (cmdNames.has(cmd.name)) {
-      errors.push(`Duplicate command name: ${cmd.name}`)
+  const commandNames = new Set<string>()
+  for (const command of plugin.commands) {
+    if (commandNames.has(command.name)) {
+      errors.push(`Duplicate command name: ${command.name}`)
     }
-    cmdNames.add(cmd.name)
+    commandNames.add(command.name)
 
-    if (!isIdentifierName(cmd.name)) {
-      errors.push(`Invalid command name: ${cmd.name} (must be valid identifier)`)
+    if (!isIdentifierName(command.name)) {
+      errors.push(`Invalid command name: ${command.name} (must be valid identifier)`)
     }
 
     // Check command arguments
     const argNames = new Set<string>()
-    for (const arg of cmd.args) {
+    for (const arg of command.args) {
       if (argNames.has(arg.name)) {
-        errors.push(`Duplicate argument name in command ${cmd.name}: ${arg.name}`)
+        errors.push(`Duplicate argument name in command ${command.name}: ${arg.name}`)
       }
       argNames.add(arg.name)
     }
 
-    if (MZ_BUILTIN_COMMANDS.has(cmd.name)) {
-      warnings.push(`Command "${cmd.name}" shadows a built-in RPG Maker MZ command`)
+    if (MZ_BUILTIN_COMMANDS.has(command.name)) {
+      warnings.push(`Command "${command.name}" shadows a built-in RPG Maker MZ command`)
     }
   }
 
@@ -1299,8 +1348,8 @@ export function validatePlugin(plugin: PluginDefinition): {
   for (const param of plugin.parameters) {
     if (param.structType) referencedStructs.add(param.structType)
   }
-  for (const cmd of plugin.commands) {
-    for (const arg of cmd.args) {
+  for (const command of plugin.commands) {
+    for (const arg of command.args) {
       if (arg.structType) referencedStructs.add(arg.structType)
     }
   }
@@ -1323,11 +1372,11 @@ export function validatePlugin(plugin: PluginDefinition): {
   if (plugin.customCode) {
     // Ignore comments to avoid false positives (e.g., a `// 'Heal'` note counting as impl)
     const strippedImpl = stripCommentsOnly(plugin.customCode)
-    for (const cmd of plugin.commands) {
+    for (const command of plugin.commands) {
       const hasImplementation =
-        strippedImpl.includes(`'${cmd.name}'`) || strippedImpl.includes(`"${cmd.name}"`)
+        strippedImpl.includes(`'${command.name}'`) || strippedImpl.includes(`"${command.name}"`)
       if (!hasImplementation) {
-        warnings.push(`Command "${cmd.name}" has no implementation in custom code`)
+        warnings.push(`Command "${command.name}" has no implementation in custom code`)
       }
     }
   }
@@ -1343,7 +1392,7 @@ export function validatePlugin(plugin: PluginDefinition): {
     if (escapeBlockComment(value) !== value) {
       report(
         `escaped ${field}`,
-        `${field}: "*/" is written as "*\\/" so it cannot end the comment.`
+        String.raw`${field}: "*/" is written as "*\/" so it cannot end the comment.`
       )
     }
     if (/[\r\n]/.test(value)) {
@@ -1375,22 +1424,22 @@ export function validatePlugin(plugin: PluginDefinition): {
 }
 
 /**
- * Generate a command skeleton for insertion into customCode
- */
-export function generateCommandSkeleton(cmd: PluginCommand): string {
+Generate a command skeleton for insertion into customCode
+*/
+export function generateCommandSkeleton(command: PluginCommand): string {
   const lines: string[] = []
-  lines.push(`// --- ${escapeLineComment(cmd.name)} ---`)
+  lines.push(`// --- ${escapeLineComment(command.name)} ---`)
   lines.push(
-    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(cmd.name))}', function(args) {`
+    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`
   )
-  lines.push(`    // TODO: Implement ${escapeJSString(cmd.name)} logic`)
+  lines.push(`    // TODO: Implement ${escapeJSString(command.name)} logic`)
   lines.push('});')
   return lines.join('\n')
 }
 
 /**
- * Generate a parameter usage comment for insertion into customCode
- */
+Generate a parameter usage comment for insertion into customCode
+*/
 export function generateParameterComment(param: PluginParameter): string {
   const text = `Parameter '${param.name}' (${param.type}) is available as: ${camelCase(param.name)}`
   return `// ${escapeLineComment(text)}`

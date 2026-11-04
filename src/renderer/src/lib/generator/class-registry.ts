@@ -1,9 +1,9 @@
 /**
- * MZ Class Registry
- *
- * Provides TypeScript-typed access to RPG Maker MZ class data.
- * Used by the code generator for class/method lookups and UI dropdowns.
- */
+MZ Class Registry
+
+Provides TypeScript-typed access to RPG Maker MZ class data.
+Used by the code generator for class/method lookups and UI dropdowns.
+*/
 
 import mzClassesData from '../../data/mz-classes.json'
 
@@ -18,7 +18,9 @@ export interface MZMethodInfo {
   params: string[]
   description: string
   returnType?: string
-  /** Popularity weight from plugin dictionary analysis (higher = more commonly overridden) */
+  /**
+  Popularity weight from plugin dictionary analysis (higher = more commonly overridden)
+  */
   popularity?: number
 }
 
@@ -29,7 +31,9 @@ export interface MZClassInfo {
   parent?: string
   description: string
   methods: MZMethodInfo[]
-  /** Popularity weight from plugin dictionary analysis (higher = more commonly used) */
+  /**
+  Popularity weight from plugin dictionary analysis (higher = more commonly used)
+  */
   popularity?: number
 }
 
@@ -45,45 +49,45 @@ const mzClasses = mzClassesData as Record<string, MZClassInfo>
 // ============================================================================
 
 /**
- * Returns sorted array of all class names
- */
+Returns sorted array of all class names
+*/
 export function getAllClassNames(): string[] {
   return Object.keys(mzClasses).sort()
 }
 
 /**
- * Filter classes by category
- */
+Filter classes by category
+*/
 function getClassesByCategory(category: ClassCategory): MZClassInfo[] {
   return Object.values(mzClasses).filter((cls) => cls.category === category)
 }
 
 /**
- * Get single class info by name
- */
+Get single class info by name
+*/
 export function getClassInfo(className: string): MZClassInfo | undefined {
   return mzClasses[className]
 }
 
 /**
- * Get methods for a class
- */
+Get methods for a class
+*/
 export function getClassMethods(className: string): MZMethodInfo[] {
   const classInfo = mzClasses[className]
   return classInfo?.methods ?? []
 }
 
 /**
- * Get specific method info from a class
- */
+Get specific method info from a class
+*/
 export function getMethodInfo(className: string, methodName: string): MZMethodInfo | undefined {
   const methods = getClassMethods(className)
   return methods.find((m) => m.name === methodName)
 }
 
 /**
- * All classes grouped by category
- */
+All classes grouped by category
+*/
 export function getClassesGrouped(): Record<ClassCategory, MZClassInfo[]> {
   const categories: ClassCategory[] = ['core', 'manager', 'object', 'scene', 'sprite', 'window']
 

@@ -2577,14 +2577,8 @@
     "unicorn/no-array-sort": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
-    },
     "unicorn/require-array-sort-compare": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
     }
   },
   "src/renderer/src/lib/generator/escape.ts": {
@@ -2597,23 +2591,11 @@
     "sonarjs/updated-loop-counter": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 7
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
-    },
     "unicorn/prefer-includes-over-repeated-comparisons": {
       "count": 1
     },
-    "unicorn/prefer-string-replace-all": {
-      "count": 13
-    },
     "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 4
-    },
-    "unicorn/switch-case-braces": {
-      "count": 11
+      "count": 2
     }
   },
   "src/renderer/src/lib/generator/index.ts": {
@@ -2678,10 +2660,10 @@
       "count": 34
     },
     "unicorn/consistent-boolean-name": {
-      "count": 7
+      "count": 6
     },
     "unicorn/name-replacements": {
-      "count": 23
+      "count": 2
     },
     "unicorn/no-array-callback-reference": {
       "count": 2
@@ -2689,26 +2671,17 @@
     "unicorn/no-array-sort": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 20
-    },
     "unicorn/no-break-in-nested-loop": {
       "count": 1
     },
-    "unicorn/no-for-each": {
-      "count": 1
-    },
     "unicorn/no-immediate-mutation": {
-      "count": 7
+      "count": 5
     },
     "unicorn/no-lonely-if": {
       "count": 1
     },
-    "unicorn/no-negated-condition": {
-      "count": 2
-    },
     "unicorn/no-null": {
-      "count": 15
+      "count": 13
     },
     "unicorn/no-unnecessary-parameters": {
       "count": 2
@@ -2722,41 +2695,17 @@
     "unicorn/no-useless-coercion": {
       "count": 2
     },
-    "unicorn/prefer-combined-guards": {
-      "count": 1
-    },
     "unicorn/prefer-continue": {
       "count": 1
     },
     "unicorn/prefer-else-if": {
       "count": 2
     },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
-    "unicorn/prefer-minimal-ternary": {
-      "count": 1
-    },
     "unicorn/prefer-simple-condition-first": {
       "count": 2
     },
-    "unicorn/prefer-string-raw": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 4
-    },
     "unicorn/prefer-ternary": {
-      "count": 6
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 23
-    },
-    "unicorn/switch-case-braces": {
-      "count": 4
+      "count": 3
     }
   },
   "src/renderer/src/lib/generator/templates/actor-party.ts": {
@@ -3027,9 +2976,6 @@
   "src/renderer/src/lib/generator/templates/index.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
     },
     "unicorn/prefer-spread": {
       "count": 2
@@ -3435,11 +3381,6 @@
     },
     "unicorn/prefer-switch": {
       "count": 2
-    }
-  },
-  "src/renderer/src/lib/generator/templates/types.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
     }
   },
   "src/renderer/src/lib/monaco-setup.ts": {
