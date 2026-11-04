@@ -6406,9 +6406,6 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
-    "vitest/no-conditional-expect": {
-      "count": 1
-    },
     "vitest/require-top-level-describe": {
       "count": 1
     },

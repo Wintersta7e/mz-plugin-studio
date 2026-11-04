@@ -97,13 +97,65 @@ function printedFloor(run: Run, dir: string, kind: 'lines' | 'branches'): number
 
 const branchFloor = (run: Run, dir: string): number => printedFloor(run, dir, 'branches')
 
+// Counts half a point above `floor` (on it at 100), `weight` times 200 lines or branches.
+const halfAbove = (floor: number, weight = 1): Counts => ({
+  covered: (floor === 100 ? 200 : 2 * floor + 1) * weight,
+  total: 200 * weight
+})
+
+// The directory furthest above the global floor, and the weight that lands the whole report on
+// its own floor while every directory sits half a point above its printed floor.
+function heaviest(run: Run, kind: 'lines' | 'branches'): { source?: string; weight: number } {
+  const valueOf = (source: string): number => Math.min(printedFloor(run, source, kind) + 0.5, 100)
+  const values = DIRS.map((source) => valueOf(source))
+  const target = printedFloor(run, 'global', kind) + 0.5
+  const top = Math.max(...values)
+  const short = values.reduce((sum, value) => sum + target - value, 0)
+  const weight = Math.max(1, Math.round(short / (top - target) + 1))
+  const source = DIRS.find((candidate) => valueOf(candidate) === top)
+  return source === undefined ? { weight } : { source, weight }
+}
+
+// Entries that hold every directory and the whole report on their printed floors.
+function atFloors(run: Run): Record<string, Entry> {
+  const heavy = { lines: heaviest(run, 'lines'), branches: heaviest(run, 'branches') }
+  const counts = (source: string, kind: 'lines' | 'branches'): Counts =>
+    halfAbove(
+      printedFloor(run, source, kind),
+      source === heavy[kind].source ? heavy[kind].weight : 1
+    )
+  return Object.fromEntries(
+    DIRS.map((source) => [
+      source,
+      { lines: counts(source, 'lines'), branches: counts(source, 'branches') }
+    ])
+  )
+}
+
+// Writes a golden summary holding `entries` by repository path and runs the golden check.
+function checkGolden(repository: string, entries: Record<string, Entry>): Run {
+  const path = join(repository, 'coverage/golden/coverage-summary.json')
+  mkdirSync(dirname(path), { recursive: true })
+  const summary = Object.fromEntries(
+    Object.entries(entries).map(([file, entry]) => [join(repository, file), entry])
+  )
+  writeFileSync(path, JSON.stringify({ total: full, ...summary }))
+  const result = spawnSync(process.execPath, [SCRIPT, 'golden'], {
+    cwd: repository,
+    env: ENV,
+    encoding: 'utf8'
+  })
+  return { status: result.status, lines: result.stdout.split('\n').filter((line) => line !== '') }
+}
+
 afterEach(() => {
   for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true })
 })
 
 describe('check-coverage suite', () => {
   it('passes with every directory at its floors and prints both figures per directory', () => {
-    const run = check(makeRepo())
+    const repository = makeRepo()
+    const run = check(repository, atFloors(check(repository)))
 
     expect(run.status).toBe(0)
 
@@ -123,26 +175,54 @@ describe('check-coverage suite', () => {
 
   it('passes with branch coverage exactly at a floor', () => {
     const dir = makeRepo()
-    const floor = branchFloor(check(dir), 'src/main')
+    const floors = check(dir)
+    const floor = branchFloor(floors, 'src/main')
 
     expect(floor).toBeGreaterThan(0)
 
-    const atFloor: Entry = { ...full, branches: { covered: floor, total: 100 } }
+    const atFloor: Entry = {
+      lines: halfAbove(printedFloor(floors, 'src/main', 'lines')),
+      branches: { covered: floor, total: 100 }
+    }
 
-    expect(check(dir, { 'src/main': atFloor }).status).toBe(0)
+    expect(check(dir, { ...atFloors(floors), 'src/main': atFloor }).status).toBe(0)
+  })
+
+  it('fails a floor a whole point or more below its measured value, naming the floor to write', () => {
+    const repository = makeRepo()
+    const floors = check(repository)
+    const base = atFloors(floors)
+    const floor = printedFloor(floors, 'src/main', 'lines')
+    const above: Entry = {
+      lines: { covered: floor + 1, total: 100 },
+      branches: halfAbove(branchFloor(floors, 'src/main'))
+    }
+
+    expect(check(repository, base).status).toBe(0)
+
+    const run = check(repository, { ...base, 'src/main': above })
+
+    expect(run.status).toBe(1)
+    expect(run.lines).toContain(
+      `coverage floor src/main lines: raise the floor to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
+    )
   })
 
   it('fails when one directory has branch coverage below its floor', () => {
     const dir = makeRepo()
-    const floor = branchFloor(check(dir), 'src/main')
-    const below: Entry = { ...full, branches: { covered: floor - 1, total: 100 } }
-    const run = check(dir, { 'src/main': below })
+    const floors = check(dir)
+    const floor = branchFloor(floors, 'src/main')
+    const below: Entry = {
+      lines: halfAbove(printedFloor(floors, 'src/main', 'lines')),
+      branches: { covered: floor - 1, total: 100 }
+    }
+    const run = check(dir, { ...atFloors(floors), 'src/main': below })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
       expect.stringMatching(
         new RegExp(
-          `^coverage floor src/main: lines 100\\.00% \\(floor \\d+%\\), ` +
+          `^coverage floor src/main: lines [\\d.]+% \\(floor \\d+%\\), ` +
             `branches ${floor - 1}\\.00% \\(floor ${floor}%\\), files 1$`
         )
       )
@@ -152,22 +232,23 @@ describe('check-coverage suite', () => {
   it('fails when any directory has line coverage below its floor', () => {
     const dir = makeRepo()
     const floors = check(dir)
+    const base = atFloors(floors)
+
+    expect(check(dir, base).status).toBe(0)
+
     for (const source of DIRS) {
       const floor = printedFloor(floors, source, 'lines')
-      // Only the preload bridge has no line that tests cover.
-      if (source === 'src/preload') {
-        expect(floor).toBe(0)
-
-        continue
-      }
 
       expect(floor, source).toBeGreaterThan(0)
 
-      const below: Entry = { ...full, lines: { covered: floor - 1, total: 100 } }
+      const below: Entry = {
+        lines: { covered: floor - 1, total: 100 },
+        branches: halfAbove(branchFloor(floors, source))
+      }
 
-      expect(check(dir, { [source]: below }).status, source).toBe(1)
+      expect(check(dir, { ...base, [source]: below }).status, source).toBe(1)
     }
-    console.log(`line floors checked ${DIRS.length - 1}`)
+    console.log(`line floors checked ${DIRS.length}`)
   })
 
   it('fails when a summary entry has no branch figures', () => {
@@ -237,7 +318,7 @@ describe('check-coverage suite', () => {
     // A file with no lines (a type-only module) needs no owner.
     const empty: Entry = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
 
-    expect(check(dir, {}, DIRS, { [stray]: empty }).status).toBe(0)
+    expect(check(dir, atFloors(run), DIRS, { [stray]: empty }).status).toBe(0)
   })
 
   it('prints each floor with its measured value and slack', () => {
@@ -297,6 +378,36 @@ describe('check-coverage golden', () => {
     expect(floor).toBeGreaterThan(0)
     expect(lines).toContain(
       `floor ${index} lines: measured 95.00%, floor ${floor}%, slack ${(95 - floor).toFixed(2)}%`
+    )
+  })
+
+  it('fails a generator file a whole point or more above its floor, naming the floor to write', () => {
+    const index = 'src/renderer/src/lib/generator/index.ts'
+    const repository = makeRepo([], [index])
+    const floors = new Map(
+      checkGolden(repository, {}).lines.flatMap((line): [string, number][] => {
+        const match = /^golden coverage (\S+): missing \(floor (\d+)%\)$/.exec(line)
+        if (match === null) return []
+        const [, file = '', floor = ''] = match
+        return [[file, Number(floor)]]
+      })
+    )
+    const atFloor = Object.fromEntries(
+      [...floors].map(([file, floor]): [string, Entry] => [file, { lines: halfAbove(floor) }])
+    )
+
+    expect(floors.size).toBeGreaterThan(1)
+    expect(checkGolden(repository, atFloor).status).toBe(0)
+
+    const floor = floors.get(index) ?? 0
+    const run = checkGolden(repository, {
+      ...atFloor,
+      [index]: { lines: { covered: floor + 1, total: 100 } }
+    })
+
+    expect(run.status).toBe(1)
+    expect(run.lines).toContain(
+      `coverage floor ${index} lines: raise the floor to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
     )
   })
 })

@@ -3,8 +3,10 @@
 //           is at or above its floors (coverage/coverage-summary.json).
 //   golden: each tracked generator file, covered by the golden tests alone, is at or above its
 //           line floor (coverage/golden/coverage-summary.json).
-// Floors only rise: each is the measured value rounded down when it was set, measured on the
-// local Node (`node --version`), while CI runs the Node that `engines` in package.json names.
+// Each floor is its measured value rounded down to the integer. A value below its floor fails, and
+// so does one a whole point or more above it, naming the floor to write, so a floor only moves up
+// with the coverage it holds. Floors are measured on the local Node (`node --version`), while CI
+// runs the Node that `engines` in package.json names.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { relative, sep } from 'node:path'
@@ -17,25 +19,39 @@ const FLOORS = {
   // main.tsx); a file with lines that no directory owns fails the check. `global` is the whole
   // report.
   suite: {
-    'src/main': { lines: 75, branches: 77 },
-    'src/preload': { lines: 0, branches: 0 },
-    'src/shared': { lines: 100, branches: 98 },
-    'src/renderer/src/stores': { lines: 95, branches: 87 },
-    'src/renderer/src/lib': { lines: 95, branches: 87 },
-    [GENERATOR]: { lines: 94, branches: 85 },
-    'src/renderer/src/components': { lines: 87, branches: 75 },
-    'src/renderer/src': { lines: 81, branches: 77 },
-    global: { lines: 91, branches: 83 }
+    'src/main': { lines: 93, branches: 91 },
+    'src/preload': { lines: 44, branches: 0 },
+    'src/shared': { lines: 100, branches: 100 },
+    'src/renderer/src/stores': { lines: 96, branches: 88 },
+    'src/renderer/src/lib': { lines: 96, branches: 88 },
+    [GENERATOR]: { lines: 95, branches: 90 },
+    'src/renderer/src/components': { lines: 90, branches: 83 },
+    'src/renderer/src': { lines: 82, branches: 79 },
+    global: { lines: 94, branches: 88 }
   },
   golden: {
-    // Each category module under templates/, that is every file there but index.ts and types.ts.
-    templateModules: 80,
+    // Every generator file, the category modules under templates/ included: a new one needs its
+    // own floor.
     files: {
-      [`${GENERATOR}/index.ts`]: 91,
-      [`${GENERATOR}/escape.ts`]: 91,
-      [`${GENERATOR}/class-registry.ts`]: 84,
-      [`${GENERATOR}/templates/index.ts`]: 84,
-      [`${GENERATOR}/templates/types.ts`]: 100
+      [`${GENERATOR}/index.ts`]: 96,
+      [`${GENERATOR}/escape.ts`]: 97,
+      [`${GENERATOR}/class-registry.ts`]: 100,
+      [`${GENERATOR}/templates/index.ts`]: 85,
+      [`${GENERATOR}/templates/types.ts`]: 100,
+      [`${GENERATOR}/templates/actor-party.ts`]: 80,
+      [`${GENERATOR}/templates/audio-system.ts`]: 96,
+      [`${GENERATOR}/templates/battle-system.ts`]: 94,
+      [`${GENERATOR}/templates/custom-window.ts`]: 94,
+      [`${GENERATOR}/templates/database-ext.ts`]: 93,
+      [`${GENERATOR}/templates/input-handler.ts`]: 100,
+      [`${GENERATOR}/templates/map-events.ts`]: 94,
+      [`${GENERATOR}/templates/menu-system.ts`]: 97,
+      [`${GENERATOR}/templates/message-system.ts`]: 95,
+      [`${GENERATOR}/templates/method-alias.ts`]: 100,
+      [`${GENERATOR}/templates/plugin-commands.ts`]: 94,
+      [`${GENERATOR}/templates/save-load.ts`]: 90,
+      [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
+      [`${GENERATOR}/templates/sprite-system.ts`]: 99
     }
   }
 }
@@ -47,21 +63,46 @@ const SUMMARY = {
 
 const print = (line) => process.stdout.write(`${line}\n`)
 const percent = ({ covered, total }) => (total === 0 ? 100 : (covered / total) * 100)
+// The percentage rounded down to the integer, in integer arithmetic so that 57 of 100 is 57.
+/**
+@param {{ covered: number, total: number }} counts
+*/
+const wholePercent = ({ covered, total }) =>
+  total === 0 ? 100 : Math.floor((covered * 100) / total)
 const atFloor = (lines, floor) => `${percent(lines).toFixed(2)}% (floor ${floor}%)`
 const below = (sum, floors) =>
-  percent(sum.lines) < floors.lines || percent(sum.branches) < floors.branches
+  wholePercent(sum.lines) < floors.lines || wholePercent(sum.branches) < floors.branches
 const bothAtFloor = (sum, floors) =>
   `lines ${atFloor(sum.lines, floors.lines)}, branches ${atFloor(sum.branches, floors.branches)}`
-// Report only: how far each floor sits below its measured value, so a floor left with no slack,
-// or one copied by hand without a measurement, shows in every run's log.
-const printSlack = (scope, metric, counts, floor) =>
+// How far each floor sits below its measured value, printed for every floor; a floor a whole
+// point or more below it also prints the floor to write. Whether the floor must rise.
+const printSlack = (scope, metric, counts, floor) => {
   print(
     `floor ${scope} ${metric}: measured ${percent(counts).toFixed(2)}%, floor ${floor}%, ` +
       `slack ${(percent(counts) - floor).toFixed(2)}%`
   )
-const printSlacks = (scope, sum, floors) => {
-  for (const metric of ['lines', 'branches']) printSlack(scope, metric, sum[metric], floors[metric])
+  const isRising = wholePercent(counts) > floor
+  if (isRising) {
+    print(
+      `coverage floor ${scope} ${metric}: raise the floor to ${wholePercent(counts)} ` +
+        `(measured ${percent(counts).toFixed(2)}%)`
+    )
+  }
+  return isRising
 }
+const printSlacks = (scope, sum, floors) =>
+  ['lines', 'branches']
+    .map((metric) => printSlack(scope, metric, sum[metric], floors[metric]))
+    .includes(true)
+// Whether a directory or the whole report fails: a floor to raise, no file, or a value below one.
+/**
+@param {string} scope
+@param {{ lines: { covered: number, total: number }, branches: { covered: number, total: number } }} sum
+@param {{ lines: number, branches: number }} floors
+@param {number} files
+*/
+const scopeFails = (scope, sum, floors, files) =>
+  printSlacks(scope, sum, floors) || files === 0 || below(sum, floors)
 
 /** Report entries ({ lines, branches }) by repository-relative path, with `/` separators. */
 function readReport(path) {
@@ -122,18 +163,15 @@ function checkSuite({ files, total }) {
   for (const [dir, sum] of sums) {
     const floors = FLOORS.suite[dir]
     print(`coverage floor ${dir}: ${bothAtFloor(sum, floors)}, files ${sum.files}`)
-    printSlacks(dir, sum, floors)
-    if (sum.files === 0 || below(sum, floors)) failed = true
+    if (scopeFails(dir, sum, floors, sum.files)) failed = true
   }
   print(`coverage floor global: ${bothAtFloor(total, FLOORS.suite.global)}, files ${files.size}`)
-  printSlacks('global', total, FLOORS.suite.global)
-  if (files.size === 0 || below(total, FLOORS.suite.global)) failed = true
+  if (scopeFails('global', total, FLOORS.suite.global, files.size)) failed = true
   return failed
 }
 
 function goldenFloor(path) {
-  if (path in FLOORS.golden.files) return FLOORS.golden.files[path]
-  return path.startsWith(`${GENERATOR}/templates/`) ? FLOORS.golden.templateModules : undefined
+  return path in FLOORS.golden.files ? FLOORS.golden.files[path] : undefined
 }
 
 function checkGolden({ files }) {
@@ -150,8 +188,8 @@ function checkGolden({ files }) {
       print(`golden coverage ${path}: missing (floor ${floor}%)`)
     } else {
       print(`golden coverage ${path}: ${atFloor(lines, floor)}`)
-      printSlack(path, 'lines', lines, floor)
-      if (percent(lines) >= floor) atBar++
+      const isRising = printSlack(path, 'lines', lines, floor)
+      if (!isRising && wholePercent(lines) >= floor) atBar++
     }
   }
   print(`golden coverage: ${atBar}/${paths.length} files at bar`)

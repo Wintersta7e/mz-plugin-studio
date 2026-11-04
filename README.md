@@ -197,6 +197,8 @@ that lowers a count lowers its ceiling in the same commit. The ceilings live in 
 `pending-ceilings.json` and the `knip:production` and `jscpd:report` scripts in `package.json`.
 Each program's type coverage holds an exact floor, the `--at-least` of its `typecov:<program>`
 script, that fails when the coverage falls or rises, so a change that raises it raises the floor.
+The test coverage floors in `scripts/check-coverage.mjs` are the measured values rounded down,
+and fail when coverage falls below one or rises a whole point above it.
 
 The end-to-end suite drives the packaged app, and CI requires it:
 
