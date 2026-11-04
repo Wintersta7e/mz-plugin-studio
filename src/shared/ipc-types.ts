@@ -6,9 +6,13 @@
 import type { PluginDefinition } from './types/plugin'
 import type { MZProject } from './types/mz'
 
-/** electron-log's channel for the page's log lines to main */
+/**
+electron-log's channel for the page's log lines to main
+*/
 export const LOG_CHANNEL = '__ELECTRON_LOG__'
-/** electron-log's channel for main's log lines to the page, sent only in development */
+/**
+electron-log's channel for main's log lines to the page, sent only in development
+*/
 export const MAIN_LOG_CHANNEL = '__ELECTRON_LOG_IPC__'
 
 export const IPC_CHANNELS = {
@@ -44,18 +48,26 @@ export const IPC_CHANNELS = {
   LOG_SET_LEVEL: 'log:set-level'
 } as const
 
-/** How the message of every request main refuses begins; the rest says why in plain words */
+/**
+How the message of every request main refuses begins; the rest says why in plain words
+*/
 export const ACCESS_DENIED = 'Access denied: '
 
-/** Why main refuses a project when the user chose Cancel in the confirm before it opens */
+/**
+Why main refuses a project when the user chose Cancel in the confirm before it opens
+*/
 export const PROJECT_OPEN_CANCELLED = 'opening the project was cancelled'
 
-/** The error main throws to refuse a request, for `reason` */
+/**
+The error main throws to refuse a request, for `reason`
+*/
 export function accessDenied(reason: string): Error {
   return new Error(`${ACCESS_DENIED}${reason}`)
 }
 
-/** Scanned plugin header from MZ annotation block — shared across main/renderer */
+/**
+Scanned plugin header from MZ annotation block — shared across main/renderer
+*/
 export interface ScannedPluginHeader {
   filename: string
   name: string
@@ -65,7 +77,9 @@ export interface ScannedPluginHeader {
   overrides: string[]
 }
 
-/** The file a tab was read from or last saved to; `sha256` null = unknown (migrated) */
+/**
+The file a tab was read from or last saved to; `sha256` null = unknown (migrated)
+*/
 export interface FileBase {
   path: string
   sha256: string | null
@@ -74,9 +88,9 @@ export interface FileBase {
 export type SaveConflict = 'exists-unrelated' | 'changed-on-disk' | 'would-break'
 
 /**
- * What a save checks before replacing an existing file; a guarded save also checks the syntax.
- * `overwriteBroken` skips only `would-break`
- */
+What a save checks before replacing an existing file; a guarded save also checks the syntax.
+`overwriteBroken` skips only `would-break`
+*/
 export interface SaveGuard {
   base: FileBase | null
   overwriteBroken?: boolean
@@ -114,9 +128,13 @@ export interface MessageDialogOptions {
   title?: string
   message: string
   buttons?: string[]
-  /** The button Enter chooses */
+  /**
+  The button Enter chooses
+  */
   defaultId?: number
-  /** The button Escape or closing the dialog chooses */
+  /**
+  The button Escape or closing the dialog chooses
+  */
   cancelId?: number
 }
 
@@ -135,17 +153,23 @@ export interface SaveFileOptions {
   filters?: FileFilter[]
 }
 
-/** Main picks the folder an open dialog starts in */
+/**
+Main picks the folder an open dialog starts in
+*/
 export interface OpenFileOptions {
   filters?: FileFilter[]
 }
 
 export interface OpenFolderOptions {
-  /** A project folder: the dialog opens in the folder that holds it */
+  /**
+  A project folder: the dialog opens in the folder that holds it
+  */
   defaultPath?: string
 }
 
-/** Request/reply channels: the window calls, main answers */
+/**
+Request/reply channels: the window calls, main answers
+*/
 export type InvokeContract = {
   [IPC_CHANNELS.PROJECT_VALIDATE]: { args: [path: string]; result: ProjectValidation }
   [IPC_CHANNELS.PROJECT_LOAD]: { args: [path: string]; result: MZProject }
@@ -180,7 +204,9 @@ export type InvokeContract = {
   [IPC_CHANNELS.LOG_OPEN_FOLDER]: { args: []; result: void }
 }
 
-/** One-way channels from the window to main */
+/**
+One-way channels from the window to main
+*/
 export type SendContract = {
   [IPC_CHANNELS.WINDOW_MINIMIZE]: []
   [IPC_CHANNELS.WINDOW_MAXIMIZE]: []
@@ -188,7 +214,9 @@ export type SendContract = {
   [IPC_CHANNELS.LOG_SET_LEVEL]: [debug: boolean]
 }
 
-/** One-way channels from main to the window */
+/**
+One-way channels from main to the window
+*/
 export type EventContract = {
   [IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED]: [isMaximized: boolean]
 }
@@ -271,7 +299,9 @@ export interface LogAPI {
   setLevel: Sender<typeof IPC_CHANNELS.LOG_SET_LEVEL>
 }
 
-/** What the preload exposes as `window.api`; a type alias, so it converts to a plain record */
+/**
+What the preload exposes as `window.api`; a type alias, so it converts to a plain record
+*/
 export type API = {
   project: ProjectAPI
   plugin: PluginAPI

@@ -1465,26 +1465,12 @@
       "count": 1
     }
   },
-  "src/preload/index.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 6
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 16
-    }
-  },
   "src/preload/ipc.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 2
-    },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
     },
     "@typescript-eslint/promise-function-async": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
     }
   },
   "src/renderer/src/App.tsx": {
@@ -4116,12 +4102,6 @@
     },
     "@typescript-eslint/no-invalid-void-type": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 15
     }
   },
   "src/shared/override-extractor.ts": {
@@ -4139,25 +4119,7 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
-    "regexp/use-ignore-case": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/escape-case": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
     "unicorn/prefer-early-return": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
       "count": 1
     },
     "unicorn/prefer-simple-condition-first": {
@@ -4165,9 +4127,6 @@
     },
     "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
     }
   },
   "src/shared/types/plugin.ts": {

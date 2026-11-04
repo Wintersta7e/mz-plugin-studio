@@ -14,17 +14,25 @@ import {
   type SendChannel
 } from '../shared/ipc-types'
 
-/** A log line as electron-log passes it between the page and main */
+/**
+A log line as electron-log passes it between the page and main
+*/
 export type LogLine = Record<string, unknown>
 
-/** Sends one of the page logger's lines to main */
+/**
+Sends one of the page logger's lines to main
+*/
 export function sendLogLine(line: LogLine): void {
   ipcRenderer.send(LOG_CHANNEL, line)
 }
 
-/** Calls `callback` with each of its own log lines main sends the page */
+/**
+Calls `callback` with each of its own log lines main sends the page
+*/
 export function onMainLogLine(callback: (line: LogLine) => void): void {
-  ipcRenderer.on(MAIN_LOG_CHANNEL, (_event: IpcRendererEvent, line: LogLine) => callback(line))
+  ipcRenderer.on(MAIN_LOG_CHANNEL, (_event: IpcRendererEvent, line: LogLine) => {
+    callback(line)
+  })
 }
 
 export function invoke<C extends InvokeChannel>(
@@ -38,13 +46,16 @@ export function send<C extends SendChannel>(channel: C, ...args: SendArgs<C>): v
   ipcRenderer.send(channel, ...args)
 }
 
-/** Calls `callback` with each event's arguments; the returned function stops it */
+/**
+Calls `callback` with each event's arguments; the returned function stops it
+*/
 export function subscribe<C extends EventChannel>(
   channel: C,
   callback: (...args: EventArgs<C>) => void
 ): () => void {
-  const listener = (_event: IpcRendererEvent, ...args: unknown[]): void =>
+  const listener = (_event: IpcRendererEvent, ...args: unknown[]): void => {
     callback(...(args as EventArgs<C>))
+  }
   ipcRenderer.on(channel, listener)
   return () => {
     ipcRenderer.removeListener(channel, listener)
