@@ -16,7 +16,7 @@
   },
   "test": {
     "exactOptionalPropertyTypes": 41,
-    "noPropertyAccessFromIndexSignature": 179,
+    "noPropertyAccessFromIndexSignature": 178,
     "noUncheckedIndexedAccess": 677,
     "erasableSyntaxOnly": 6
   },

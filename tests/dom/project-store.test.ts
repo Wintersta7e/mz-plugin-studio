@@ -55,7 +55,7 @@ describe('projectStore', () => {
       })
     }
     if (!window.api.plugin) {
-      ;(window.api as Record<string, unknown>).plugin = {}
+      Object.assign(window.api, { plugin: {} })
     }
   })
 

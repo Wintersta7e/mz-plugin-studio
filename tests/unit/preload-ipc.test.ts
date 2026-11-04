@@ -30,11 +30,13 @@ async function loadPreload(): Promise<Map<string, unknown>> {
 }
 
 describe('preload ipc', () => {
-  it('invoke forwards the channel and arguments and returns the reply', () => {
-    const reply = Promise.resolve(['Synthetic_Plugin.js'])
-    electron.ipcRenderer.invoke.mockReturnValueOnce(reply)
+  it('invoke forwards the channel and arguments and resolves to the reply', async () => {
+    expect.assertions(2)
 
-    expect(invoke('plugin:list', '/p')).toBe(reply)
+    const files = ['Synthetic_Plugin.js']
+    electron.ipcRenderer.invoke.mockResolvedValueOnce(files)
+
+    await expect(invoke('plugin:list', '/p')).resolves.toBe(files)
     expect(electron.ipcRenderer.invoke).toHaveBeenCalledWith('plugin:list', '/p')
   })
 
