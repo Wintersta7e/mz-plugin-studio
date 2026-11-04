@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
+    "src/renderer/index.html!",
     "tests/**/*.{ts,tsx}",
     "tools/*.ts",
     "scripts/**/*.mjs",
@@ -10,7 +11,7 @@
     "!e2e/__screenshots__/**"
   ],
   "project": [
-    "src/**/*.{ts,tsx,css}",
+    "src/**/*.{ts,tsx,css}!",
     "tests/**/*.{ts,tsx}",
     "tools/**/*.ts",
     "scripts/**/*.mjs",

@@ -4,10 +4,11 @@
 //                     errors each pending flag still has. Fails a rise unless the change under
 //                     test changes the lint config or a lint package version, and fails a
 //                     pending flag with no error left (it must move to its program).
-//   --report knip:    the dead-code findings by type; exits 0 on findings.
+//   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
+//                     of the production code alone (fails unless at its ceiling).
 //   --report typecov: the type coverage of each program; exits 0 below 100%.
-// The reports fail only when a run printed no summary or scanned nothing, and then print how
-// the run ended and its last lines.
+// The reports otherwise fail only when a run printed no summary or scanned nothing, and then
+// print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -198,8 +199,13 @@ function printFailedRun(label, reason, { out, ending }) {
   for (const line of tail) print(`${label} | ${line}`)
 }
 
-function reportKnip() {
-  const run = npmRun('knip')
+// A knip run's findings by type; whether it printed a usable summary, its total and its output.
+/**
+@param {string} script
+@param {string} label
+*/
+function reportKnipRun(script, label) {
+  const run = npmRun(script)
   const { status, out } = run
   const types = Array.from(
     out.matchAll(/^(?<type>[A-Z][\w ]+) \((?<count>\d+)\)$/gmv),
@@ -207,17 +213,59 @@ function reportKnip() {
   )
   const hints = types.filter(({ type }) => type === 'Configuration hints')
   const issues = types.filter(({ type }) => type !== 'Configuration hints')
-  for (const { type, count } of types) print(`knip ${type.toLowerCase()}: ${count}`)
+  for (const { type, count } of types) print(`${label} ${type.toLowerCase()}: ${count}`)
   const total = issues.reduce((sum, { count }) => sum + count, 0)
-  print(`knip issues: ${total}`)
+  print(`${label} issues: ${total}`)
   const isClean = out.includes('Knip found no issues')
   const isEmpty = issues.length === 0 && !isClean
   const isHintOnly = total === 0 && status !== 0
-  if (isEmpty || isHintOnly || hints.length > 0) {
-    printFailedRun('knip', 'config hints or no parsable summary', run)
+  const isOk = !isEmpty && !isHintOnly && hints.length === 0
+  if (!isOk) printFailedRun(label, 'config hints or no parsable summary', run)
+  return { isOk, total, out }
+}
+
+// The parsed package.json; null when it is not JSON.
+/**
+@returns {{ scripts?: Partial<Record<string, string>> } | null}
+*/
+function readManifest() {
+  return parseJson(readFileSync('package.json', 'utf8'))
+}
+
+// The production run holds its ceiling in its own `--max-issues`, above which knip fails. A
+// count below it fails here too, so the ceiling only moves down with the findings it counts.
+const KNIP_PRODUCTION = 'knip:production'
+const KNIP_CEILING = /--max-issues (?<ceiling>\d+)/v
+const KNIP_SCANNED = /^knip scanned: files (?<files>\d+)/mv
+function reportKnipProduction() {
+  const { isOk, total, out } = reportKnipRun(KNIP_PRODUCTION, 'knip production')
+  if (!isOk) return false
+  const ceiling = KNIP_CEILING.exec(readManifest()?.scripts?.[KNIP_PRODUCTION] ?? '')?.groups
+    .ceiling
+  const files = Number(KNIP_SCANNED.exec(out)?.groups.files ?? 0)
+  print(`knip production: files scanned ${files}, issues ${total}, ceiling ${ceiling ?? 'none'}`)
+  if (files === 0) {
+    print('knip production: the run scanned no file')
+    return false
+  }
+  if (ceiling === undefined) {
+    print(`knip production: the ${KNIP_PRODUCTION} script names no --max-issues ceiling`)
+    return false
+  }
+  if (total > Number(ceiling)) {
+    print(`knip production: the count rose above the ceiling ${ceiling}`)
+    return false
+  }
+  if (total < Number(ceiling)) {
+    print(`knip production: the count fell; lower --max-issues to ${total}`)
     return false
   }
   return true
+}
+
+function reportKnip() {
+  const isAllOk = reportKnipRun('knip', 'knip').isOk
+  return reportKnipProduction() && isAllOk
 }
 
 function reportTypecov() {

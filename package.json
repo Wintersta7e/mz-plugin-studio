@@ -28,6 +28,7 @@
     "typecov": "npm run typecov:node && npm run typecov:web && npm run typecov:test && npm run typecov:tools && npm run typecov:scripts && npm run typecov:e2e",
     "deps": "node node_modules/dependency-cruiser/bin/dependency-cruiser.mjs src tests tools scripts e2e --config .dependency-cruiser.mjs --ignore-known",
     "knip": "node node_modules/knip/bin/knip.js --treat-config-hints-as-errors",
+    "knip:production": "node node_modules/knip/bin/knip.js --production --treat-config-hints-as-errors --max-issues 143 --reporter symbols --reporter ./scripts/knip-scanned.mjs",
     "strictness:status": "node scripts/strictness-status.mjs",
     "typecov:report": "node scripts/strictness-status.mjs --report typecov",
     "knip:report": "node scripts/strictness-status.mjs --report knip",

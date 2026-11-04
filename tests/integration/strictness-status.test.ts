@@ -81,6 +81,20 @@ const run = (
 }
 const status = (dir: string): { status: number | null; out: string } => run(dir, SCRIPT, [])
 
+// A production knip run printing one summary line and its scanned files, under the ceiling 2.
+const knipProduction = ({ issues, files }: { issues: number; files: number }): string =>
+  `node -e "console.log('Unused exports (${String(issues)})'); ` +
+  `console.log('knip scanned: files ${String(files)} of ${String(files)}')" -- --max-issues 2`
+const reportKnip = (production: string): { status: number | null; out: string } => {
+  const directory = tempDir()
+  const scripts = {
+    knip: 'node -e "console.log(\'Unused exports (1)\')"',
+    'knip:production': production
+  }
+  write(directory, { 'package.json': JSON.stringify({ scripts }) })
+  return run(directory, SCRIPT, ['--report', 'knip'])
+}
+
 describe('strictness status', () => {
   beforeEach(() => {
     counter.cases += 1
@@ -212,6 +226,31 @@ describe('strictness status', () => {
     expect(result.out).toContain('typecov web: (1 / 1) 100.00%')
     expect(result.out).toContain('typecov test: no summary or nothing scanned (exit 3)')
     expect(result.out).toContain('typecov test | first\ntypecov test | last\n')
+    expect(result.status).toBe(1)
+  })
+
+  it('(m) passes the production knip count at its ceiling', () => {
+    const result = reportKnip(knipProduction({ issues: 2, files: 3 }))
+
+    expect(result.out).toContain('knip issues: 1')
+    expect(result.out).toContain('knip production: files scanned 3, issues 2, ceiling 2')
+    expect(result.status).toBe(0)
+  })
+
+  it('(n) fails the production knip count above its ceiling and below it', () => {
+    const above = reportKnip(knipProduction({ issues: 3, files: 3 }))
+    const below = reportKnip(knipProduction({ issues: 1, files: 3 }))
+
+    expect(above.out).toContain('knip production: the count rose above the ceiling 2')
+    expect(above.status).toBe(1)
+    expect(below.out).toContain('knip production: the count fell; lower --max-issues to 1')
+    expect(below.status).toBe(1)
+  })
+
+  it('(o) fails a production knip run that scanned no file', () => {
+    const result = reportKnip(knipProduction({ issues: 2, files: 0 }))
+
+    expect(result.out).toContain('knip production: the run scanned no file')
     expect(result.status).toBe(1)
   })
 })
