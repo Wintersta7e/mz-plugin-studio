@@ -626,12 +626,8 @@ const isNode = (value: unknown): value is AnyNode =>
   typeof (value as { type?: unknown }).type === 'string'
 
 function childNodes(node: AnyNode): AnyNode[] {
-  const children: AnyNode[] = []
-  for (const value of Object.values(node)) {
-    if (Array.isArray(value)) children.push(...value.filter(isNode))
-    else if (isNode(value)) children.push(value)
-  }
-  return children
+  const values: unknown[] = Object.values(node)
+  return values.flat().filter(isNode)
 }
 
 /**
