@@ -167,7 +167,10 @@ export function ParameterBuilder() {
   }
 
   const handleDuplicate = () => {
-    const duped = duplicateParams(selectedParams)
+    const duped = duplicateParams(
+      selectedParams,
+      parameters.map((p) => p.name)
+    )
     for (const p of duped) {
       addParameter(p)
     }

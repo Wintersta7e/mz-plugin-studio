@@ -241,7 +241,7 @@ export function createEmptyCommand(): PluginCommand {
 /**
 `base`, or else `base2`, `base3`…: the first of them `taken` does not hold.
 */
-function firstFreeName(base: string, taken: ReadonlySet<string>): string {
+export function firstFreeName(base: string, taken: ReadonlySet<string>): string {
   if (!taken.has(base)) return base
   let suffix = 2
   while (taken.has(base + String(suffix))) suffix += 1

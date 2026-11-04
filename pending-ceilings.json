@@ -17,7 +17,7 @@
   "test": {
     "exactOptionalPropertyTypes": 40,
     "noPropertyAccessFromIndexSignature": 178,
-    "noUncheckedIndexedAccess": 660,
+    "noUncheckedIndexedAccess": 658,
     "erasableSyntaxOnly": 5
   },
   "tools": {

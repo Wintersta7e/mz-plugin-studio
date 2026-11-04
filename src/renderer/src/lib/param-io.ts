@@ -1,5 +1,5 @@
 import type { ParamType, PluginParameter, SelectOption } from '../types/plugin'
-import { ALL_PARAM_TYPES } from '../types/plugin'
+import { ALL_PARAM_TYPES, firstFreeName } from '../types/plugin'
 import { pathText } from '../stores/persist'
 import type { FieldLabels, FieldPath } from '../stores/persist'
 
@@ -192,11 +192,18 @@ export function deserializeParams(content: string): ParamImportResult {
   return { success: true, parameters, source, skipped, dropped }
 }
 
-/** Duplicate parameters with new IDs and "_copy" suffix */
-export function duplicateParams(params: PluginParameter[]): PluginParameter[] {
-  return params.map((p) => ({
-    ...p,
-    id: crypto.randomUUID(),
-    name: p.name.replace(/_copy\d*$/, '') + '_copy'
-  }))
+/**
+Copies of `params` with new IDs, each named `<name>_copy`, `<name>_copy2`…: the first name
+neither `existing` nor an earlier copy holds. A copy of a copy keeps one suffix.
+*/
+export function duplicateParams(
+  params: readonly PluginParameter[],
+  existing: readonly string[]
+): PluginParameter[] {
+  const taken = new Set(existing)
+  return params.map((param) => {
+    const name = firstFreeName(`${param.name.replace(/_copy\d*$/, '')}_copy`, taken)
+    taken.add(name)
+    return { ...param, id: crypto.randomUUID(), name }
+  })
 }

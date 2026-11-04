@@ -424,7 +424,7 @@ describe('duplicateParams', () => {
       makeParam({ id: 'id-1', name: 'speed', default: 5 }),
       makeParam({ id: 'id-2', name: 'volume', default: 100 })
     ]
-    const duped = duplicateParams(params)
+    const duped = duplicateParams(params, ['speed', 'volume'])
 
     expect(duped).toHaveLength(2)
     expect(duped[0].id).not.toBe('id-1')
@@ -435,18 +435,42 @@ describe('duplicateParams', () => {
   })
 
   it('handles empty array', () => {
-    expect(duplicateParams([])).toEqual([])
+    expect(duplicateParams([], [])).toEqual([])
   })
 
-  it('does not accumulate _copy suffixes on re-duplication', () => {
-    const params = [makeParam({ name: 'speed_copy' })]
-    const duped = duplicateParams(params)
+  it('names each copy apart from the parameters already there, without stacking suffixes', () => {
+    const speed = makeParam({ name: 'speed' })
+    const once = [speed, ...duplicateParams([speed], ['speed'])]
+    const twice = [
+      ...once,
+      ...duplicateParams(
+        [speed],
+        once.map((p) => p.name)
+      )
+    ]
+    const ofCopy = [
+      ...twice,
+      ...duplicateParams(
+        twice.filter((p) => p.name === 'speed_copy'),
+        twice.map((p) => p.name)
+      )
+    ]
 
-    expect(duped[0].name).toBe('speed_copy')
+    expect(ofCopy.map((p) => p.name)).toStrictEqual([
+      'speed',
+      'speed_copy',
+      'speed_copy2',
+      'speed_copy3'
+    ])
+  })
 
-    const duped2 = duplicateParams(duped)
+  it('names the copies made in one press apart from each other', () => {
+    const params = [makeParam({ name: 'speed' }), makeParam({ name: 'speed_copy' })]
 
-    expect(duped2[0].name).toBe('speed_copy')
+    expect(duplicateParams(params, ['speed', 'speed_copy']).map((p) => p.name)).toStrictEqual([
+      'speed_copy2',
+      'speed_copy3'
+    ])
   })
 
   it('preserves all other properties', () => {
@@ -461,7 +485,7 @@ describe('duplicateParams', () => {
         default: 5
       })
     ]
-    const duped = duplicateParams(params)
+    const duped = duplicateParams(params, ['test'])
 
     expect(duped[0].text).toBe('Test')
     expect(duped[0].desc).toBe('A description')

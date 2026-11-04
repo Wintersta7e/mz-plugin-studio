@@ -17,5 +17,6 @@ export {
   createEmptyPlugin,
   createEmptyParameter,
   createEmptyCommand,
-  createEmptyStruct
+  createEmptyStruct,
+  firstFreeName
 } from '../../../shared/types/plugin'
