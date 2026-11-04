@@ -9,7 +9,7 @@ import {
 import { parameterConstant } from '../helpers/generated-names'
 import type { PluginDefinition, PluginParameter } from '../../src/renderer/src/types/plugin'
 import { PluginParser } from '../../src/main/services/pluginParser'
-import { toBaseline } from '../../src/shared/types/plugin'
+import { createEmptyCommand, createEmptyParameter, toBaseline } from '../../src/shared/types/plugin'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
@@ -1193,6 +1193,17 @@ describe('generatePlugin - localized headers', () => {
 
 // COV-14: generateCommandBlock arg attributes
 describe('generatePlugin - command arg attributes', () => {
+  it('declares a constant of its own for each argument whose name makes the same identifier', () => {
+    const args = ['foo-bar', 'fooBar'].map((name) => ({ ...createEmptyParameter(), name }))
+    const plugin = createTestPlugin({ commands: [{ ...createEmptyCommand(), name: 'DoIt', args }] })
+    const code = generatePlugin(plugin)
+
+    expect(code).toContain("        const fooBar = args['foo-bar'] ?? '';\n")
+    expect(code).toContain("        const fooBar_ = args['fooBar'] ?? '';\n")
+    expect(code).toContain('        // Parsed args available as: fooBar, fooBar_\n')
+    expect(compileCheck(code, 'plugin.js')).toBeNull()
+  })
+
   it('generates boolean arg with @on/@off labels', () => {
     const plugin = createTestPlugin({
       commands: [

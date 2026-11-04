@@ -511,24 +511,7 @@ function generateBody(plugin: PluginDefinition): string {
     lines.push('    // Register plugin commands')
 
     for (const command of commandsToGenerate) {
-      lines.push('')
-      lines.push(
-        `    PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`
-      )
-
-      // Parse command arguments
-      for (const arg of command.args) {
-        lines.push(`        const ${camelCase(arg.name)} = ${generateArgParser(arg)};`)
-      }
-
-      lines.push('')
-      lines.push('        // TODO: Implement command logic')
-      if (command.args.length > 0) {
-        lines.push(
-          `        // Parsed args available as: ${command.args.map((a) => camelCase(a.name)).join(', ')}`
-        )
-      }
-      lines.push('    });')
+      lines.push('', ...registrationLines(command, 'PLUGIN_NAME'))
     }
 
     lines.push('')
@@ -1566,8 +1549,32 @@ function checkGeneratedIdentifier(
 }
 
 /**
+Two arguments of one command with one name, or whose names make one identifier, which the
+registration code declares a constant for each.
+*/
+function checkArguments(command: PluginCommand, errors: string[]): void {
+  const argNames = new Set<string>()
+  const identifierOrigins = new Map<string, string>()
+  for (const arg of command.args) {
+    if (argNames.has(arg.name)) {
+      errors.push(`Duplicate argument name in command ${command.name}: ${arg.name}`)
+    }
+    argNames.add(arg.name)
+    const identifier = camelCase(arg.name)
+    const origin = identifierOrigins.get(identifier)
+    if (origin === undefined) {
+      identifierOrigins.set(identifier, arg.name)
+    } else if (origin !== arg.name) {
+      errors.push(
+        `Arguments "${origin}" and "${arg.name}" of command ${command.name} both generate identifier "${identifier}" — rename one to avoid a duplicate declaration`
+      )
+    }
+  }
+}
+
+/**
 Command names must be valid identifiers (used in PluginManager.registerCommand()); duplicate
-commands and arguments, and commands that shadow a built-in one.
+commands, arguments that clash, and commands that shadow a built-in one.
 */
 function checkCommands(
   commands: readonly PluginCommand[],
@@ -1584,14 +1591,7 @@ function checkCommands(
       errors.push(`Invalid command name: ${command.name} (must be valid identifier)`)
     }
 
-    // Check command arguments
-    const argNames = new Set<string>()
-    for (const arg of command.args) {
-      if (argNames.has(arg.name)) {
-        errors.push(`Duplicate argument name in command ${command.name}: ${arg.name}`)
-      }
-      argNames.add(arg.name)
-    }
+    checkArguments(command, errors)
 
     if (MZ_BUILTIN_COMMANDS.has(command.name)) {
       warnings.push(`Command "${command.name}" shadows a built-in RPG Maker MZ command`)

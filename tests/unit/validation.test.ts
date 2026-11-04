@@ -1,6 +1,7 @@
 // Tests for validation — extended checks
 import { describe, it, expect } from 'vitest'
 import { validatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { createEmptyCommand, createEmptyParameter } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
@@ -415,6 +416,32 @@ describe('validation - new checks', () => {
 
     expect(result.warnings.filter((w) => w.includes('JSON'))).toHaveLength(0)
   })
+})
+
+describe('validation - command argument identifiers', () => {
+  it.each([
+    [
+      'foo-bar',
+      'fooBar',
+      'Arguments "foo-bar" and "fooBar" of command DoIt both generate identifier "fooBar" — rename one to avoid a duplicate declaration'
+    ],
+    [
+      '',
+      'unnamed',
+      'Arguments "" and "unnamed" of command DoIt both generate identifier "unnamed" — rename one to avoid a duplicate declaration'
+    ],
+    ['', '', 'Duplicate argument name in command DoIt: ']
+  ])(
+    'errors when arguments "%s" and "%s" of one command make one identifier',
+    (first, second, error) => {
+      const args = [first, second].map((name) => ({ ...createEmptyParameter(), name }))
+      const command = { ...createEmptyCommand(), name: 'DoIt', args }
+
+      expect(validatePlugin(createTestPlugin({ commands: [command] })).errors).toStrictEqual([
+        error
+      ])
+    }
+  )
 })
 
 describe('validation - identifier sanitization', () => {
