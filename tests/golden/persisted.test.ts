@@ -1,6 +1,6 @@
 // The exact saved form of each store, empty and populated, pinned before schema versioning
 // changes it.
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { normaliseIds } from './corpus/normalise'
 import { POPULATED, persistedStores } from './corpus/persisted'
 
@@ -41,6 +41,12 @@ async function freshStore(modulePath: string, exportName: string): Promise<Store
 }
 
 describe('persisted store goldens', () => {
+  // The ui store's load defers a prune of raw-mode entries to the next tick, and the prune saves.
+  // Let one queued by an earlier case run now, not after this case has cleared storage.
+  beforeEach(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+
   it('finds every persisted store and a populated state for each', () => {
     const keys = stores.map((s) => s.key)
     console.log(`persisted keys ${keys.filter((k) => k in POPULATED).length}/${keys.length}`)
