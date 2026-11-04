@@ -2,11 +2,12 @@
 // changes, which is what makes Electron ask before the window closes.
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { usePluginStore, useProjectStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { resetStores } from './support/reset-stores'
 
 /** Opens a tab and makes it active; a `name` typed into it leaves it unsaved. */
@@ -28,6 +29,8 @@ function unloadHeldBack(): boolean {
 
 // Each case renders the whole app, which takes seconds on a cold start
 describe('closing the window', { timeout: 30_000 }, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
   beforeEach(() => {
     resetStores()
     // The build defines this; the status bar shows it.

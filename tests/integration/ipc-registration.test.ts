@@ -3,7 +3,7 @@
 import { join, resolve } from 'path'
 import { pathToFileURL } from 'url'
 import log from 'electron-log/main'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
 import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
 import {
@@ -17,6 +17,7 @@ import {
   type SenderEvent
 } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS } from '../../src/shared/ipc-types'
+import { afterAllTests } from '../helpers/after-all-tests'
 import { createFakeRegistrar, createFakeWindow, type FakeFrame } from '../helpers/fake-ipc'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
@@ -126,6 +127,14 @@ function admits(target: RendererEntry, url: string, platform?: NodeJS.Platform):
 }
 
 describe('ipc registration', () => {
+  // How many sender cases the tests below ran, counted once all of them have.
+  afterAll(
+    afterAllTests(() => {
+      console.log(`sender cases ${cases}`)
+      return cases > 0 ? [] : ['no sender case ran']
+    })
+  )
+
   it('registers one handler per invoke channel and one listener per send channel', () => {
     console.log(
       `handle registrations ${ipc.handled.length}/${INVOKE_CHANNELS.length}, ` +
@@ -262,12 +271,6 @@ describe('ipc registration', () => {
     ])
 
     cases += 4
-  })
-
-  it('counts its sender cases', () => {
-    console.log(`sender cases ${cases}`)
-
-    expect(cases).toBeGreaterThan(0)
   })
 })
 

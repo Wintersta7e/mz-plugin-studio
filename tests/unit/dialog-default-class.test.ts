@@ -1,13 +1,14 @@
 // Which default paths a file dialog may open with, decided from the text alone: a default path
 // is looked up before the user acts, so no row may touch the filesystem.
 import path from 'path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
   checkSaveDefaultPath,
   classifyDialogDefault,
   type DialogDefaultClass
 } from '../../src/main/ipc/dialog'
 import type { PlatformPath } from '../../src/shared/path-safety'
+import { afterAllTests } from '../helpers/after-all-tests'
 
 const { fsSpies, spyOnFunctions } = vi.hoisted(() => {
   const fsSpies: { name: string; calls: () => number }[] = []
@@ -109,6 +110,19 @@ const SAVE_ROWS: SaveRow[] = [
 let rows = 0
 
 describe('dialog default path', () => {
+  // How many rows the tests below ran, and that none of them touched a file.
+  afterAll(
+    afterAllTests(() => {
+      console.log(`dialog default rows ${rows}`)
+      const touched = fsSpies.filter((spy) => spy.calls() > 0).map((spy) => spy.name)
+      return [
+        ...(rows === 0 ? ['no row ran'] : []),
+        ...(fsSpies.length === 0 ? ['no file function is watched'] : []),
+        ...touched.map((name) => `${name} was called`)
+      ]
+    })
+  )
+
   for (const row of CLASS_ROWS) {
     for (const platform of row.platforms) {
       it(`classifies ${JSON.stringify(row.input)} as ${row.expected} (${platform})`, () => {
@@ -131,12 +145,4 @@ describe('dialog default path', () => {
       })
     }
   }
-
-  it('counts its rows and touched no file', () => {
-    console.log(`dialog default rows ${rows}`)
-
-    expect(rows).toBeGreaterThan(0)
-    expect(fsSpies.length).toBeGreaterThan(0)
-    expect(fsSpies.filter((spy) => spy.calls() > 0).map((spy) => spy.name)).toEqual([])
-  })
 })

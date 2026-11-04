@@ -21,6 +21,9 @@ export default defineConfig({
     update: 'none',
     // A focused test fails the run locally as well as in CI.
     allowOnly: false,
+    // Files and tests run in a new random order each run, in every project, so a test that only
+    // passes after another one fails; the run prints its seed to replay that order.
+    sequence: { shuffle: true },
     // Gate logs are read by the count lines tests print.
     silent: false,
     reporters: ['default', noSkips],

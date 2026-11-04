@@ -4,11 +4,12 @@ import { mkdtempSync, rmSync } from 'fs'
 import { tmpdir } from 'os'
 import path, { join } from 'path'
 import log from 'electron-log/main'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
 import type { DialogPort, MainDeps, WindowPort } from '../../src/main/ipc/handlers'
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, type InvokeChannel, type SendChannel } from '../../src/shared/ipc-types'
+import { afterAllTests } from '../helpers/after-all-tests'
 import { createAppPage, createFakeRegistrar } from '../helpers/fake-ipc'
 
 vi.mock('electron', () => ({ ipcMain: {} }))
@@ -68,6 +69,14 @@ function listens(channel: SendChannel, args: unknown[], expected: unknown[]): vo
 const base = { path: '/p/js/plugins/a.js', sha256: null }
 
 describe('ipc arguments', () => {
+  // How many argument cases the tests below ran, counted once all of them have.
+  afterAll(
+    afterAllTests(() => {
+      console.log(`argument cases ${cases}`)
+      return cases > 0 ? [] : ['no argument case ran']
+    })
+  )
+
   it('takes one string on the project, list, scan, read-by-path and parse channels', async () => {
     for (const channel of [
       'project:validate',
@@ -263,11 +272,5 @@ describe('ipc arguments', () => {
       expect(deps.setLogLevel).toHaveBeenCalledExactlyOnceWith(level)
     }
     listens('log:set-level', ['yes'], [false])
-  })
-
-  it('counts its cases', () => {
-    console.log(`argument cases ${cases}`)
-
-    expect(cases).toBeGreaterThan(0)
   })
 })

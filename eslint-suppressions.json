@@ -4350,9 +4350,6 @@
     "unicorn/no-array-callback-reference": {
       "count": 2
     },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
     "unicorn/no-global-object-property-assignment": {
       "count": 33
     },
@@ -4367,9 +4364,6 @@
     },
     "unicorn/prefer-string-raw": {
       "count": 2
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
     },
     "unicorn/single-line-block-comment-style": {
       "count": 7
@@ -4387,7 +4381,7 @@
       "count": 14
     },
     "vitest/prefer-strict-equal": {
-      "count": 49
+      "count": 48
     },
     "vitest/require-hook": {
       "count": 1
@@ -8410,9 +8404,6 @@
     },
     "vitest/prefer-import-in-mock": {
       "count": 3
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
     },
     "vitest/require-hook": {
       "count": 1

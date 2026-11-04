@@ -5,7 +5,7 @@ import { readFileSync } from 'fs'
 import { basename } from 'path'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import * as generator from '../../src/renderer/src/lib/generator'
@@ -16,6 +16,7 @@ import { IPC_CHANNELS, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/sh
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import type { FakeApiOverrides } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
+import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
@@ -35,6 +36,8 @@ async function openFolder(project: FakeApiOverrides['project']): Promise<void> {
 
 // Each case renders the whole app, which takes seconds on a cold start
 describe('opening a project', { timeout: 30_000 }, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
   beforeEach(() => {
     resetStores()
     // The build defines this; the status bar shows it.
@@ -153,6 +156,8 @@ describe(
   'opening a project with imported tabs whose file text is not loaded',
   { timeout: 30_000 },
   () => {
+    beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
     const PROJECT = fixturePath()
     const FILES = ['Fixture_HandWritten.js', 'Fixture_Structs.js']
     const textOf = (file: string): string =>
@@ -302,6 +307,8 @@ describe(
 )
 
 describe('app shell', { timeout: 30_000 }, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
   beforeEach(() => {
     resetStores()
     window.api = createFakeApi()

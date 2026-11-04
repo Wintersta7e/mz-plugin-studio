@@ -1,7 +1,7 @@
 // Every editing control of an imported plugin in raw mode: each field either changes what is
 // saved (the plugin file or one of the export formats), or its control is read-only and says
 // why, or no control edits it. A field added to a type fails the typecheck here until listed.
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { afterAll, describe, it, expect, beforeEach, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
@@ -31,6 +31,7 @@ import type {
   PluginStruct
 } from '../../src/shared/types/plugin'
 import { loadFixture } from '../golden/corpus/raw-mode'
+import { afterAllTests } from '../helpers/after-all-tests'
 import { createFakeApi } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
@@ -189,6 +190,14 @@ beforeEach(() => {
 })
 
 describe('raw mode controls of an imported plugin', () => {
+  // How many controls the tests below checked, counted once all of them have.
+  afterAll(
+    afterAllTests(() => {
+      console.log(`controls checked ${checked}`)
+      return checked > 0 ? [] : ['no control was checked']
+    })
+  )
+
   it('every field edit with a control changes what is saved', () => {
     const results = {
       meta: unchangedOutputs(META, PLACES.meta),
@@ -342,12 +351,6 @@ describe('raw mode controls of an imported plugin', () => {
       unmount()
     }
     checked++
-  })
-
-  it('counts the controls it checked', () => {
-    console.log(`controls checked ${checked}`)
-
-    expect(checked).toBeGreaterThan(0)
   })
 })
 

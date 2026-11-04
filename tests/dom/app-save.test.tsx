@@ -7,7 +7,7 @@ import { tmpdir } from 'os'
 import { dirname, join } from 'path'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { createDialogHandlers, type DialogPort } from '../../src/main/ipc/dialog'
 import { savePluginFile } from '../../src/main/ipc/plugin'
@@ -28,7 +28,9 @@ import {
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { MessageDialogOptions, SaveConflict } from '../../src/shared/ipc-types'
+import { afterAllTests } from '../helpers/after-all-tests'
 import { copyFixtureProject } from '../helpers/fixture-project'
+import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
@@ -157,6 +159,8 @@ const escaped = (text: string): string => text.replace(/[\\^$.*+?()[\]{}|/]/g, '
 
 // Each case renders the whole app, which takes seconds on a cold start
 describe('saving from the keyboard', { timeout: 30_000 }, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
   beforeEach(async () => {
     resetStores()
     // The build defines this; the status bar shows it.
@@ -170,6 +174,19 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await rm(root, { recursive: true, force: true })
     for (const dir of cleanups.splice(0)) await rm(dir, { recursive: true, force: true })
   })
+
+  // Each kind of save conflict had its dialog checked by one of the tests below.
+  afterAll(
+    afterAllTests(() => {
+      console.log(`save conflict dialogs checked ${dialogsChecked}`)
+      const kinds: SaveConflict[] = ['changed-on-disk', 'exists-unrelated', 'would-break']
+      const unchecked = kinds.filter((kind) => !checkedKinds.has(kind))
+      return [
+        ...(dialogsChecked === 0 ? ['no save conflict dialog was checked'] : []),
+        ...unchecked.map((kind) => `the ${kind} dialog was not checked`)
+      ]
+    })
+  )
 
   it("a second new plugin with the default name asks before replacing the first one's file", async () => {
     window.api = createMainApi()
@@ -924,12 +941,5 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     pressRedo()
 
     expect(plugin().meta.name).toBe('Alpha')
-  })
-
-  it('checked the dialog of every save conflict', () => {
-    console.log(`save conflict dialogs checked ${dialogsChecked}`)
-
-    expect(dialogsChecked).toBeGreaterThan(0)
-    expect([...checkedKinds].sort()).toEqual(['changed-on-disk', 'exists-unrelated', 'would-break'])
   })
 })

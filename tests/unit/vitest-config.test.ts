@@ -15,6 +15,22 @@ describe('vitest config', () => {
     expect(config.test?.reporters).toEqual(['default', './tests/setup/no-skips-reporter.ts'])
   })
 
+  it('shuffles the tests of every project', () => {
+    const projects = config.test?.projects ?? []
+
+    expect(config.test?.sequence?.shuffle).toBe(true)
+    expect(projects.length).toBeGreaterThan(0)
+
+    for (const project of projects) {
+      const isInherited =
+        typeof project === 'object' && 'extends' in project && project.extends === true
+      const own = typeof project === 'object' && 'test' in project ? project.test : undefined
+
+      expect(isInherited).toBe(true)
+      expect(own?.sequence).toBeUndefined()
+    }
+  })
+
   it('every project fails a test on unexpected console output', () => {
     const projects = config.test?.projects ?? []
     console.log(`projects ${projects.length}`)

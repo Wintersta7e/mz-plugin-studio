@@ -45,6 +45,13 @@ export default class NoSkipsReporter implements Reporter {
         (filtered ? '; not failed: the run is filtered by test name' : '')
     )
     for (const line of found) vitest.logger.log(`  ${line}`)
+    // How each project ordered its tests, and the seed that replays a shuffled run.
+    const orders = vitest.projects.map(
+      (project) =>
+        `${project.name} ${project.config.sequence.shuffle === true ? 'shuffled' : 'in order'}`
+    )
+    const seed = String(vitest.config.sequence.seed)
+    vitest.logger.log(`test order: ${orders.join(', ')}; seed ${seed}`)
     if (found.length > 0 && !filtered) process.exitCode = 1
   }
 }
