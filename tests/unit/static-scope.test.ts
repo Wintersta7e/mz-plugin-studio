@@ -249,10 +249,9 @@ describe('static scope: TypeScript programs', () => {
       const { undeclared, perEntry } = overlapProblems(holders)
       for (const [glob, count] of perEntry) report(`overlap ${glob}: files ${String(count)}`)
 
-      expect(undeclared).toStrictEqual([])
-      expect([...perEntry].filter(([, count]) => count === 0).map(([glob]) => glob)).toStrictEqual(
-        []
-      )
+      const unusedOverlaps = [...perEntry].filter(([, count]) => count === 0).map(([glob]) => glob)
+
+      expect({ undeclared, unusedOverlaps }).toStrictEqual({ undeclared: [], unusedOverlaps: [] })
 
       const dataCounts = scope.dataGlobs.map((glob) => ({
         glob,
@@ -663,7 +662,7 @@ const loadConfigs = async (): Promise<Map<string, Resolved>> =>
   (resolvedConfigs.pending ??= resolveAll(eslint, codeFiles))
 
 describe('static scope: ESLint and Prettier', () => {
-  let configs = new Map<string, Resolved>()
+  let configs: Map<string, Resolved>
 
   beforeAll(async () => {
     configs = await loadConfigs()
@@ -679,14 +678,16 @@ describe('static scope: ESLint and Prettier', () => {
     )
 
     expect(dataFiles.length).toBeGreaterThan(0)
-    expect(lintIgnoredCode).toStrictEqual([])
-    expect(formatIgnoredCode).toStrictEqual([])
+    expect({ lintIgnoredCode, formatIgnoredCode }).toStrictEqual({
+      lintIgnoredCode: [],
+      formatIgnoredCode: []
+    })
     expect(lintedData).toStrictEqual([])
     expect(formattedData).toStrictEqual([])
 
     const probes = ['tools/reference-repos/probe.js', 'tools/output/probe.js']
 
-    expect(await filterAsync(probes, isLintIgnored)).toStrictEqual(probes)
+    await expect(filterAsync(probes, isLintIgnored)).resolves.toStrictEqual(probes)
   })
 
   it('scopes every block to tracked files and resolves no rule to warn', async () => {
@@ -728,7 +729,7 @@ describe('static scope: ESLint and Prettier', () => {
 })
 
 describe('static scope: ESLint departures from the presets', () => {
-  let configs = new Map<string, Resolved>()
+  let configs: Map<string, Resolved>
 
   beforeAll(async () => {
     configs = await loadConfigs()
@@ -756,8 +757,8 @@ describe('static scope: ESLint departures from the presets', () => {
         `exclusions ${String(scope.exclusions.length)} (S ${String(safe)}, D ${String(duplicate)}, X/D ${String(falsePositive)})`
       )
 
-      expect(scope.exclusions).toHaveLength(22)
-      expect(byCode).toStrictEqual({ S: 9, D: 12, 'X/D': 1 })
+      expect(scope.exclusions).toHaveLength(30)
+      expect(byCode).toStrictEqual({ S: 9, D: 20, 'X/D': 1 })
 
       // Negative control: a preset rule switched off outside the tables is reported.
       const control = new ESLint({
@@ -818,7 +819,7 @@ describe('static scope: ESLint departures from the presets', () => {
 })
 
 describe('static scope: ESLint directives, test rules and suppressions', () => {
-  let configs = new Map<string, Resolved>()
+  let configs: Map<string, Resolved>
 
   beforeAll(async () => {
     configs = await loadConfigs()

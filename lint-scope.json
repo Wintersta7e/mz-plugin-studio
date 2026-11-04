@@ -63,7 +63,7 @@
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"]
     },
     {
-      "id": "@vitest/eslint-plugin recommended",
+      "id": "@vitest/eslint-plugin all",
       "files": ["tests/**"]
     },
     {
@@ -160,7 +160,13 @@
         "vitest/prefer-to-contain": "error",
         "vitest/prefer-strict-boolean-matchers": "error",
         "vitest/prefer-spy-on": "error",
-        "vitest/prefer-vi-mocked": "error"
+        "vitest/prefer-vi-mocked": "error",
+        "vitest/valid-title": [
+          "error",
+          {
+            "allowArguments": true
+          }
+        ]
       }
     }
   ],
@@ -440,6 +446,54 @@
       "files": ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
       "code": "D",
       "reason": "The type-check of each program owns default-export checks"
+    },
+    {
+      "rule": "vitest/padding-around-after-all-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-after-each-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-before-all-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-before-each-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-describe-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-expect-groups",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/padding-around-test-blocks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "vitest/padding-around-all owns the same check"
+    },
+    {
+      "rule": "vitest/no-hooks",
+      "files": ["tests/**"],
+      "code": "D",
+      "reason": "Inverse of vitest/require-hook, which owns where setup goes: the suites set up in hooks"
     },
     {
       "rule": "sonarjs/no-os-command-from-path",

@@ -4224,6 +4224,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 1
     },
@@ -4258,6 +4261,9 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
+    },
+    "vitest/max-expects": {
+      "count": 3
     },
     "vitest/prefer-expect-assertions": {
       "count": 4
@@ -4368,11 +4374,23 @@
     "unicorn/single-line-block-comment-style": {
       "count": 7
     },
+    "vitest/max-expects": {
+      "count": 26
+    },
     "vitest/prefer-expect-assertions": {
       "count": 33
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 20
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 14
+    },
     "vitest/prefer-strict-equal": {
       "count": 49
+    },
+    "vitest/require-hook": {
+      "count": 1
     },
     "vitest/require-mock-type-parameters": {
       "count": 4
@@ -4448,8 +4466,20 @@
     "unicorn/text-encoding-identifier-case": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 2
+    },
+    "vitest/prefer-called-with": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 19
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 10
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 6
     },
     "vitest/prefer-strict-boolean-matchers": {
       "count": 5
@@ -4482,6 +4512,9 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/dom/code-preview.test.tsx": {
@@ -4563,14 +4596,32 @@
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
+    "vitest/max-expects": {
+      "count": 12
+    },
+    "vitest/prefer-called-times": {
+      "count": 2
+    },
+    "vitest/prefer-called-with": {
+      "count": 2
+    },
     "vitest/prefer-expect-assertions": {
       "count": 36
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 20
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 7
     },
     "vitest/prefer-strict-equal": {
       "count": 14
     },
     "vitest/require-mock-type-parameters": {
       "count": 12
+    },
+    "vitest/require-top-level-describe": {
+      "count": 2
     }
   },
   "tests/dom/command-builder.test.tsx": {
@@ -4604,8 +4655,14 @@
     "unicorn/single-line-block-comment-style": {
       "count": 4
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
     "vitest/prefer-expect-assertions": {
       "count": 7
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/dom/diff-view.test.tsx": {
@@ -4636,6 +4693,9 @@
       "count": 2
     },
     "unicorn/single-line-block-comment-style": {
+      "count": 2
+    },
+    "vitest/max-expects": {
       "count": 2
     },
     "vitest/prefer-to-have-length": {
@@ -4765,14 +4825,23 @@
     "unicorn/single-line-block-comment-style": {
       "count": 12
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
     "vitest/prefer-expect-assertions": {
       "count": 32
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 3
     },
     "vitest/prefer-strict-equal": {
       "count": 13
     },
     "vitest/require-mock-type-parameters": {
       "count": 25
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/dom/persisted-damage.test.ts": {
@@ -4815,6 +4884,12 @@
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
+    "vitest/prefer-called-with": {
+      "count": 2
+    },
     "vitest/prefer-expect-assertions": {
       "count": 14
     },
@@ -4852,6 +4927,9 @@
     },
     "unicorn/text-encoding-identifier-case": {
       "count": 1
+    },
+    "vitest/max-expects": {
+      "count": 10
     },
     "vitest/prefer-expect-assertions": {
       "count": 2
@@ -4910,6 +4988,9 @@
       "count": 5
     },
     "unicorn/text-encoding-identifier-case": {
+      "count": 1
+    },
+    "vitest/max-expects": {
       "count": 1
     },
     "vitest/prefer-expect-assertions": {
@@ -4988,8 +5069,17 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 10
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 2
     },
     "vitest/prefer-strict-equal": {
       "count": 4
@@ -5050,6 +5140,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 16
+    },
     "vitest/no-conditional-expect": {
       "count": 1
     },
@@ -5082,8 +5175,17 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 3
+    },
     "vitest/prefer-expect-assertions": {
       "count": 4
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
     },
     "vitest/require-mock-type-parameters": {
       "count": 2
@@ -5125,6 +5227,9 @@
     },
     "unicorn/prefer-promise-with-resolvers": {
       "count": 1
+    },
+    "vitest/max-expects": {
+      "count": 2
     },
     "vitest/prefer-expect-assertions": {
       "count": 4
@@ -5206,14 +5311,29 @@
     "unicorn/single-line-block-comment-style": {
       "count": 6
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 3
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
     },
     "vitest/prefer-strict-equal": {
       "count": 2
     },
+    "vitest/require-hook": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 8
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     },
     "vitest/valid-expect": {
       "count": 5
@@ -5289,8 +5409,14 @@
     "unicorn/text-encoding-identifier-case": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 11
+    },
     "vitest/prefer-expect-assertions": {
       "count": 7
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 5
     },
     "vitest/prefer-strict-equal": {
       "count": 4
@@ -5363,8 +5489,17 @@
     "unicorn/text-encoding-identifier-case": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 26
+    },
     "vitest/prefer-expect-assertions": {
       "count": 5
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 2
     },
     "vitest/prefer-strict-equal": {
       "count": 14
@@ -5422,8 +5557,17 @@
     "unicorn/single-line-block-comment-style": {
       "count": 4
     },
+    "vitest/max-expects": {
+      "count": 9
+    },
     "vitest/prefer-expect-assertions": {
       "count": 12
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 3
     },
     "vitest/prefer-strict-equal": {
       "count": 2
@@ -5440,6 +5584,9 @@
       "count": 1
     },
     "unicorn/prefer-string-repeat": {
+      "count": 1
+    },
+    "vitest/max-expects": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -5499,6 +5646,9 @@
     },
     "unicorn/prefer-dom-node-remove": {
       "count": 2
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 3
     }
   },
   "tests/dom/sidebar.test.tsx": {
@@ -5525,6 +5675,9 @@
     },
     "vitest/prefer-expect-assertions": {
       "count": 5
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
     },
     "vitest/prefer-strict-equal": {
       "count": 2
@@ -5598,6 +5751,9 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/dom/struct-default-editor.test.tsx": {
@@ -5686,11 +5842,23 @@
     "unicorn/prefer-scoped-selector": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 11
+    },
     "vitest/prefer-expect-assertions": {
       "count": 13
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 3
+    },
     "vitest/require-mock-type-parameters": {
       "count": 14
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/dom/title-bar.test.tsx": {
@@ -5767,6 +5935,9 @@
     "unicorn/numeric-separators-style": {
       "count": 2
     },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 1
     }
@@ -5779,6 +5950,9 @@
       "count": 4
     },
     "unicorn/consistent-function-scoping": {
+      "count": 1
+    },
+    "vitest/max-expects": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -5927,6 +6101,9 @@
     },
     "unicorn/switch-case-braces": {
       "count": 12
+    },
+    "vitest/require-hook": {
+      "count": 1
     }
   },
   "tests/golden/generator.test.ts": {
@@ -5944,6 +6121,9 @@
     },
     "unicorn/name-replacements": {
       "count": 3
+    },
+    "vitest/prefer-each": {
+      "count": 2
     },
     "vitest/prefer-expect-assertions": {
       "count": 2
@@ -6004,6 +6184,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 8
+    },
     "vitest/prefer-strict-equal": {
       "count": 3
     }
@@ -6024,6 +6207,9 @@
   },
   "tests/golden/parser.test.ts": {
     "unicorn/max-nested-calls": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
       "count": 1
     },
     "vitest/prefer-expect-assertions": {
@@ -6052,6 +6238,9 @@
     "unicorn/require-array-sort-compare": {
       "count": 2
     },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 1
     },
@@ -6072,6 +6261,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 2
     }
@@ -6090,6 +6282,9 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
       "count": 1
     },
     "vitest/prefer-expect-assertions": {
@@ -6150,6 +6345,9 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 10
+    },
+    "vitest/no-conditional-tests": {
+      "count": 1
     }
   },
   "tests/helpers/console-guard.ts": {
@@ -6530,6 +6728,9 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 3
+    },
+    "vitest/no-conditional-tests": {
+      "count": 2
     }
   },
   "tests/integration/check-coverage.test.ts": {
@@ -6569,6 +6770,9 @@
     "vitest/no-conditional-expect": {
       "count": 1
     },
+    "vitest/require-top-level-describe": {
+      "count": 1
+    },
     "vitest/valid-expect": {
       "count": 2
     }
@@ -6597,6 +6801,9 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 23
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/ci-policy-fuses.test.ts": {
@@ -6654,7 +6861,13 @@
     "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
+      "count": 1
+    },
+    "vitest/require-top-level-describe": {
       "count": 1
     }
   },
@@ -6678,6 +6891,9 @@
     },
     "unicorn/prefer-node-protocol": {
       "count": 5
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/ci-policy-toolchain.test.ts": {
@@ -6694,6 +6910,9 @@
       "count": 5
     },
     "unicorn/prefer-split-limit": {
+      "count": 1
+    },
+    "vitest/require-top-level-describe": {
       "count": 1
     }
   },
@@ -6718,6 +6937,9 @@
     },
     "unicorn/prefer-node-protocol": {
       "count": 4
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/dialog-memory.test.ts": {
@@ -6793,11 +7015,17 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 2
+    },
     "vitest/no-standalone-expect": {
       "count": 1
     },
     "vitest/prefer-expect-assertions": {
       "count": 14
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 10
     },
     "vitest/prefer-import-in-mock": {
       "count": 3
@@ -6808,8 +7036,14 @@
     "vitest/prefer-to-have-length": {
       "count": 1
     },
+    "vitest/require-hook": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     }
   },
   "tests/integration/e2e-prepare.test.ts": {
@@ -6843,11 +7077,20 @@
     "unicorn/prefer-node-protocol": {
       "count": 3
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 4
+    },
     "vitest/prefer-expect-assertions": {
       "count": 3
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 4
+    },
+    "vitest/require-top-level-describe": {
+      "count": 2
     }
   },
   "tests/integration/fixture-project.test.ts": {
@@ -6872,12 +7115,18 @@
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 2
     }
   },
   "tests/integration/ignore-rules.test.ts": {
     "unicorn/prefer-node-protocol": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
       "count": 1
     }
   },
@@ -6942,8 +7191,14 @@
     "vitest/prefer-strict-equal": {
       "count": 4
     },
+    "vitest/require-hook": {
+      "count": 3
+    },
     "vitest/require-mock-type-parameters": {
       "count": 5
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/ipc-channels.test.ts": {
@@ -7004,8 +7259,26 @@
     "unicorn/single-line-block-comment-style": {
       "count": 4
     },
+    "vitest/max-expects": {
+      "count": 21
+    },
+    "vitest/prefer-called-times": {
+      "count": 4
+    },
+    "vitest/prefer-called-with": {
+      "count": 4
+    },
     "vitest/prefer-expect-assertions": {
       "count": 2
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
+    "vitest/prefer-expect-type-of": {
+      "count": 1
+    },
+    "vitest/prefer-hooks-in-order": {
+      "count": 1
     },
     "vitest/prefer-import-in-mock": {
       "count": 1
@@ -7013,8 +7286,14 @@
     "vitest/prefer-strict-equal": {
       "count": 9
     },
+    "vitest/require-hook": {
+      "count": 2
+    },
     "vitest/require-mock-type-parameters": {
       "count": 8
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     }
   },
   "tests/integration/ipc-registration.test.ts": {
@@ -7084,6 +7363,15 @@
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
+    "vitest/prefer-called-times": {
+      "count": 1
+    },
+    "vitest/prefer-called-with": {
+      "count": 1
+    },
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
@@ -7093,8 +7381,14 @@
     "vitest/prefer-strict-equal": {
       "count": 15
     },
+    "vitest/require-hook": {
+      "count": 2
+    },
     "vitest/require-mock-type-parameters": {
       "count": 8
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/message-dialog.test.ts": {
@@ -7186,6 +7480,9 @@
     "vitest/no-conditional-expect": {
       "count": 2
     },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 10
     },
@@ -7212,8 +7509,14 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 4
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/integration/plugin-load.test.ts": {
@@ -7243,6 +7546,9 @@
     },
     "vitest/prefer-import-in-mock": {
       "count": 1
+    },
+    "vitest/require-top-level-describe": {
+      "count": 2
     }
   },
   "tests/integration/project-load-errors.test.ts": {
@@ -7258,7 +7564,13 @@
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
+      "count": 2
+    },
+    "vitest/require-top-level-describe": {
       "count": 2
     }
   },
@@ -7326,11 +7638,23 @@
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
     "vitest/no-standalone-expect": {
       "count": 1
     },
+    "vitest/prefer-called-times": {
+      "count": 3
+    },
+    "vitest/prefer-called-with": {
+      "count": 3
+    },
     "vitest/prefer-expect-assertions": {
       "count": 14
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 5
     },
     "vitest/prefer-import-in-mock": {
       "count": 2
@@ -7341,8 +7665,14 @@
     "vitest/prefer-strict-equal": {
       "count": 6
     },
+    "vitest/require-hook": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     }
   },
   "tests/integration/read-scope.test.ts": {
@@ -7379,6 +7709,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/max-expects": {
+      "count": 6
+    },
     "vitest/no-conditional-expect": {
       "count": 1
     },
@@ -7391,8 +7724,14 @@
     "vitest/prefer-import-in-mock": {
       "count": 1
     },
+    "vitest/require-hook": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     }
   },
   "tests/integration/refusal-text.test.ts": {
@@ -7453,6 +7792,12 @@
       "count": 5
     },
     "vitest/prefer-strict-equal": {
+      "count": 2
+    },
+    "vitest/require-hook": {
+      "count": 1
+    },
+    "vitest/require-top-level-describe": {
       "count": 2
     }
   },
@@ -7517,14 +7862,23 @@
     "vitest/prefer-expect-assertions": {
       "count": 24
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 10
+    },
     "vitest/prefer-import-in-mock": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
       "count": 6
     },
+    "vitest/require-hook": {
+      "count": 1
+    },
     "vitest/require-mock-type-parameters": {
       "count": 1
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     }
   },
   "tests/integration/scan-headers.test.ts": {
@@ -7558,6 +7912,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/consistent-test-it": {
+      "count": 2
+    },
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
@@ -7566,6 +7923,9 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 4
     }
   },
   "tests/integration/strictness-status.test.ts": {
@@ -7616,6 +7976,9 @@
     "vitest/prefer-expect-assertions": {
       "count": 7
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 7
+    },
     "vitest/prefer-import-in-mock": {
       "count": 1
     },
@@ -7624,6 +7987,14 @@
     },
     "vitest/require-mock-type-parameters": {
       "count": 1
+    },
+    "vitest/require-top-level-describe": {
+      "count": 2
+    }
+  },
+  "tests/setup/console.ts": {
+    "vitest/require-top-level-describe": {
+      "count": 2
     }
   },
   "tests/setup/dom.ts": {
@@ -7641,6 +8012,9 @@
     },
     "vitest/prefer-import-in-mock": {
       "count": 2
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     },
     "vitest/unbound-method": {
       "count": 3
@@ -7713,6 +8087,9 @@
     }
   },
   "tests/unit/analyze-plugins.test.ts": {
+    "vitest/prefer-describe-function-title": {
+      "count": 9
+    },
     "vitest/prefer-strict-equal": {
       "count": 12
     }
@@ -7733,11 +8110,14 @@
     "unicorn/prefer-string-replace-all": {
       "count": 2
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 3
-    },
-    "vitest/valid-title": {
-      "count": 1
     }
   },
   "tests/unit/annotation-conformance.test.ts": {
@@ -7771,6 +8151,9 @@
     "vitest/no-conditional-expect": {
       "count": 2
     },
+    "vitest/prefer-each": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 5
     },
@@ -7783,6 +8166,12 @@
       "count": 1
     },
     "unicorn/name-replacements": {
+      "count": 1
+    },
+    "vitest/max-expects": {
+      "count": 1
+    },
+    "vitest/prefer-describe-function-title": {
       "count": 1
     }
   },
@@ -7853,6 +8242,9 @@
     "max-lines-per-function": {
       "count": 2
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 25
     }
@@ -7917,7 +8309,13 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 3
+    },
     "vitest/no-conditional-expect": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -7958,6 +8356,9 @@
     "unicorn/prefer-ternary": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 1
     }
@@ -7974,6 +8375,9 @@
     },
     "unicorn/prefer-array-find": {
       "count": 1
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 2
     },
     "vitest/prefer-strict-equal": {
       "count": 2
@@ -7998,10 +8402,19 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/no-conditional-tests": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
+      "count": 2
+    },
     "vitest/prefer-import-in-mock": {
       "count": 3
     },
     "vitest/prefer-strict-equal": {
+      "count": 1
+    },
+    "vitest/require-hook": {
       "count": 1
     },
     "vitest/require-mock-type-parameters": {
@@ -8053,6 +8466,15 @@
     },
     "vitest/prefer-expect-assertions": {
       "count": 5
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 7
+    },
+    "vitest/require-hook": {
+      "count": 1
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/unit/docs-sync.test.ts": {
@@ -8122,6 +8544,9 @@
     "vitest/no-conditional-in-test": {
       "count": 2
     },
+    "vitest/prefer-lowercase-title": {
+      "count": 5
+    },
     "vitest/prefer-strict-equal": {
       "count": 9
     },
@@ -8140,6 +8565,9 @@
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
+      "count": 1
+    },
+    "vitest/prefer-describe-function-title": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -8201,8 +8629,14 @@
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
+    "vitest/max-expects": {
+      "count": 8
+    },
     "vitest/prefer-expect-assertions": {
       "count": 3
+    },
+    "vitest/prefer-expect-resolves": {
+      "count": 9
     },
     "vitest/prefer-strict-equal": {
       "count": 11
@@ -8223,6 +8657,12 @@
     },
     "unicorn/prefer-unicode-code-point-escapes": {
       "count": 5
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 4
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
     },
     "vitest/valid-expect": {
       "count": 7
@@ -8262,6 +8702,9 @@
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 3
     }
@@ -8279,8 +8722,17 @@
     "no-console": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 1
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 3
+    },
     "vitest/prefer-strict-equal": {
       "count": 3
+    },
+    "vitest/require-top-level-describe": {
+      "count": 1
     }
   },
   "tests/unit/export-formats.test.ts": {
@@ -8333,6 +8785,12 @@
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
+      "count": 3
+    },
+    "vitest/max-expects": {
+      "count": 16
+    },
+    "vitest/prefer-describe-function-title": {
       "count": 3
     },
     "vitest/prefer-strict-equal": {
@@ -8467,9 +8925,21 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
+    },
+    "vitest/max-expects": {
+      "count": 5
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 6
+    },
+    "vitest/prefer-each": {
+      "count": 1
     }
   },
   "tests/unit/golden-range.test.ts": {
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 7
     }
@@ -8510,6 +8980,9 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 6
+    },
+    "vitest/max-expects": {
+      "count": 4
     },
     "vitest/prefer-strict-equal": {
       "count": 18
@@ -8686,6 +9159,12 @@
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 1
+    },
+    "vitest/prefer-hooks-in-order": {
+      "count": 1
+    },
     "vitest/prefer-import-in-mock": {
       "count": 7
     },
@@ -8694,6 +9173,9 @@
     },
     "vitest/require-mock-type-parameters": {
       "count": 1
+    },
+    "vitest/require-top-level-describe": {
+      "count": 3
     },
     "vitest/valid-expect": {
       "count": 2
@@ -8714,6 +9196,12 @@
     },
     "max-lines-per-function": {
       "count": 3
+    },
+    "vitest/max-expects": {
+      "count": 12
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 9
     },
     "vitest/prefer-strict-equal": {
       "count": 7
@@ -8762,6 +9250,9 @@
     "unicorn/prefer-set-has": {
       "count": 1
     },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 5
     },
@@ -8803,8 +9294,14 @@
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 5
+    },
     "vitest/no-conditional-expect": {
       "count": 2
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 3
     },
     "vitest/prefer-strict-boolean-matchers": {
       "count": 1
@@ -8890,6 +9387,9 @@
     },
     "vitest/no-conditional-in-test": {
       "count": 1
+    },
+    "vitest/prefer-each": {
+      "count": 2
     }
   },
   "tests/unit/plugin-output.test.ts": {
@@ -8911,6 +9411,12 @@
     "unicorn/name-replacements": {
       "count": 2
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 2
+    },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 12
     }
@@ -8928,6 +9434,15 @@
     "unicorn/numeric-separators-style": {
       "count": 1
     },
+    "vitest/max-expects": {
+      "count": 17
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 19
     }
@@ -8943,6 +9458,15 @@
       "count": 4
     },
     "unicorn/filename-case": {
+      "count": 1
+    },
+    "vitest/max-expects": {
+      "count": 7
+    },
+    "vitest/prefer-describe-function-title": {
+      "count": 1
+    },
+    "vitest/prefer-lowercase-title": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -9070,6 +9594,9 @@
     "vitest/no-conditional-in-test": {
       "count": 2
     },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 5
     }
@@ -9147,6 +9674,12 @@
     "vitest/no-conditional-in-test": {
       "count": 1
     },
+    "vitest/no-conditional-tests": {
+      "count": 1
+    },
+    "vitest/prefer-each": {
+      "count": 1
+    },
     "vitest/prefer-strict-equal": {
       "count": 3
     }
@@ -9156,6 +9689,9 @@
       "count": 3
     },
     "unicorn/single-line-block-comment-style": {
+      "count": 1
+    },
+    "vitest/max-expects": {
       "count": 1
     },
     "vitest/prefer-strict-equal": {
@@ -9181,6 +9717,9 @@
     "unicorn/name-replacements": {
       "count": 1
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 4
+    },
     "vitest/prefer-strict-equal": {
       "count": 8
     }
@@ -9190,6 +9729,9 @@
       "count": 1
     },
     "unicorn/prefer-escaped-irregular-whitespace": {
+      "count": 1
+    },
+    "vitest/prefer-describe-function-title": {
       "count": 1
     }
   },
@@ -9315,6 +9857,9 @@
     "unicorn/no-negated-condition": {
       "count": 1
     },
+    "vitest/prefer-describe-function-title": {
+      "count": 7
+    },
     "vitest/prefer-import-in-mock": {
       "count": 1
     },
@@ -9388,8 +9933,16 @@
     "unicorn/require-array-sort-compare": {
       "count": 2
     },
+    "vitest/prefer-expect-resolves": {
+      "count": 2
+    },
     "vitest/prefer-strict-equal": {
       "count": 7
+    }
+  },
+  "tests/unit/user-message.test.ts": {
+    "vitest/prefer-describe-function-title": {
+      "count": 1
     }
   },
   "tests/unit/validation.test.ts": {
@@ -9473,6 +10026,12 @@
     },
     "unicorn/require-array-sort-compare": {
       "count": 3
+    },
+    "vitest/max-expects": {
+      "count": 11
+    },
+    "vitest/prefer-lowercase-title": {
+      "count": 2
     },
     "vitest/prefer-strict-equal": {
       "count": 12

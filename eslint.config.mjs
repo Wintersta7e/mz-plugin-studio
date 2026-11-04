@@ -43,7 +43,7 @@ const PRESETS = {
   'eslint-plugin-import-x flatConfigs.typescript': importXConfigs.typescript,
   'eslint-plugin-n flat/recommended-module': n.configs['flat/recommended-module'],
   '@eslint-community/eslint-plugin-eslint-comments recommended': eslintCommentsRecommended,
-  '@vitest/eslint-plugin recommended': vitest.configs.recommended,
+  '@vitest/eslint-plugin all': vitest.configs.all,
   'eslint-plugin-testing-library flat/react': testingLibrary.configs['flat/react'],
   'eslint-plugin-jest-dom flat/recommended': jestDom.configs['flat/recommended'],
   'eslint-plugin-playwright flat/recommended': playwright.configs['flat/recommended'],
