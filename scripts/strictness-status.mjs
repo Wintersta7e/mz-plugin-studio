@@ -53,6 +53,18 @@ const baseFile = (base, file) => {
   const result = spawnSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' })
   return result.status === 0 ? result.stdout : null
 }
+// Whether a revision resolves to a commit (`^0` peels a tag and fails on anything else).
+/**
+@param {string} revision
+*/
+const isCommit = (revision) =>
+  spawnSync('git', ['rev-parse', '--verify', '--quiet', `${revision}^0`]).status === 0
+/**
+@param {string} commit
+@param {string} file
+*/
+const hasFile = (commit, file) =>
+  spawnSync('git', ['cat-file', '-e', `${commit}:${file}`]).status === 0
 // Parsed JSON; null when the text is absent or not JSON.
 const parseJson = (text) => {
   try {
@@ -122,7 +134,16 @@ function checkSuppressions(tracked) {
     print('eslint-suppressions: no base commit; HEAD and origin/main have no merge-base')
     return false
   }
-  const parent = suppressionEntries(baseFile(base, SUPPRESSIONS))
+  if (!isCommit(base)) {
+    print(`eslint-suppressions: base ${base} is not a commit`)
+    return false
+  }
+  // A base older than the suppressions file froze nothing, so each entry now counts from zero.
+  const isAbsent = !hasFile(base, SUPPRESSIONS)
+  if (isAbsent) {
+    print(`eslint-suppressions: ${base} has no ${SUPPRESSIONS}; its entries count as zero`)
+  }
+  const parent = isAbsent ? [] : suppressionEntries(baseFile(base, SUPPRESSIONS))
   if (parent === null) {
     print(`eslint-suppressions: ${base} has no readable ${SUPPRESSIONS}`)
     return false

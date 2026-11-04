@@ -99,6 +99,18 @@ const status = (
   variables: Record<string, string> = {}
 ): { status: number | null; out: string } => run(directory, SCRIPT, [], variables)
 
+const ALL_RULES_CONFIG = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
+// The status measured against a base commit holding PARENT without its suppressions file, the
+// commit after it adding that file back unchanged along with `head`.
+const sinceBaseWithoutSuppressions = (
+  head: Record<string, string>
+): { status: number | null; out: string } => {
+  const directory = makeRepo({}, ['eslint-suppressions.json'])
+  const base = revParse(directory, 'HEAD')
+  commit(directory, { 'eslint-suppressions.json': suppressions(2), ...head })
+  return status(directory, { STRICTNESS_BASE: base })
+}
+
 // The script copied into a repository whose `typescript` package is a fake tsc running `tsc`.
 const statusWithTsc = (directory: string, tsc: string): { status: number | null; out: string } => {
   mkdirSync(path.join(directory, 'scripts'))
@@ -409,6 +421,39 @@ describe('strictness status', () => {
     expect(result.out).toContain('(parent 2, delta 0)')
     expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
     expect(result.status).toBe(1)
+  })
+
+  it('(ak) counts a base without a suppressions file as zero entries, passing a lint change', () => {
+    const result = sinceBaseWithoutSuppressions({ 'eslint.config.mjs': ALL_RULES_CONFIG })
+
+    expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
+    expect(result.out).toContain('(parent 0, delta +2)')
+    expect(result.status).toBe(0)
+  })
+
+  it('(al) fails the rises over a base without a suppressions file and no lint change', () => {
+    const result = sinceBaseWithoutSuppressions({})
+
+    expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
+    expect(result.out).toContain('eslint-suppressions: index.ts no-var: 2 (parent 0)')
+    expect(result.status).toBe(1)
+  })
+
+  it('(am) fails a base whose suppressions file is not JSON, or that is not a commit', () => {
+    const directory = makeRepo({ 'eslint-suppressions.json': '{ not json' })
+    const base = revParse(directory, 'HEAD')
+    commit(directory, {
+      'eslint-suppressions.json': suppressions(2),
+      'eslint.config.mjs': ALL_RULES_CONFIG
+    })
+    const unparseable = status(directory, { STRICTNESS_BASE: base })
+    const absent = 'f'.repeat(40)
+    const missing = status(directory, { STRICTNESS_BASE: absent })
+
+    expect(unparseable.out).toContain(`${base} has no readable eslint-suppressions.json`)
+    expect(unparseable.status).toBe(1)
+    expect(missing.out).toContain(`eslint-suppressions: base ${absent} is not a commit`)
+    expect(missing.status).toBe(1)
   })
 
   it('(ac) fails a pending check whose tsc was killed, with how it ended and what it printed', () => {
