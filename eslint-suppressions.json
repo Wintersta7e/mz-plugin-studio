@@ -2473,11 +2473,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/env.d.ts": {
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
   "src/renderer/src/lib/conflict-detector.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 1
