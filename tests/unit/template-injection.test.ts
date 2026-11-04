@@ -355,7 +355,16 @@ describe('accepted template field text', () => {
       .map((f) => [id, f.id] as const)
   )
 
-  it.each(fields)('stays in place with a payload or line break added (%s.%s)', (id, fieldId) => {
-    expect(acceptedTextFailures(id, fieldId)).toEqual([])
-  })
+  // Measured per case: 435 ms run alone, 1.5-2.2 s inside the full check with coverage, 5.6 s on
+  // a loaded host. Each variant changes the generated plugin, so each one is generated and
+  // evaluated afresh: a shared evaluation would let one variant's globals hide another's leak.
+  const ACCEPTED_TEXT_TIMEOUT_MS = 20_000
+
+  it.each(fields)(
+    'stays in place with a payload or line break added (%s.%s)',
+    (id, fieldId) => {
+      expect(acceptedTextFailures(id, fieldId)).toEqual([])
+    },
+    ACCEPTED_TEXT_TIMEOUT_MS
+  )
 })
