@@ -375,8 +375,14 @@ function runMatrix(payloads: readonly Payload[] = ALL_PAYLOADS): MatrixCase[] {
   return cases
 }
 
+// The matrix is CPU-bound by design: each of its 980 cases generates a plugin, then compiles and runs
+// it in a fresh vm context. The context is never shared, so text one case injects cannot leak into the
+// next case's containment check. Measured 957 ms alone, 1292 ms alone under coverage, 2.1-3.0 s inside
+// the full check and over 5 s on a loaded host; 20 s is about six times the in-check cost.
+const MATRIX_TIMEOUT_MS = 20_000
+
 describe('generated plugin annotations', () => {
-  it('field text stays inside the annotation comment', () => {
+  it('field text stays inside the annotation comment', { timeout: MATRIX_TIMEOUT_MS }, () => {
     expect(FIELD_ROWS.length).toBeGreaterThan(0)
 
     const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
@@ -384,27 +390,32 @@ describe('generated plugin annotations', () => {
     expect(notClean.map((c) => c.label)).toEqual([])
   })
 
-  it('field text that starts like a valid value stays inside the annotation comment', () => {
-    const notClean: string[] = []
-    for (const payload of PREFIX_PAYLOADS) {
-      const cases = runMatrix([payload])
-      const count = (outcome: Outcome): number => cases.filter((c) => c.outcome === outcome).length
-      console.log(
-        `prefix payload ${payload.name}: cases ${cases.length}, contained ` +
-          `${cases.filter((c) => c.outcome === 'clean' && c.contained).length}, ` +
-          `does not compile ${count('does not compile')}, throws ${count('throws')}, ` +
-          `ran ${count('runs the text')}`
-      )
+  it(
+    'field text that starts like a valid value stays inside the annotation comment',
+    { timeout: MATRIX_TIMEOUT_MS },
+    () => {
+      const notClean: string[] = []
+      for (const payload of PREFIX_PAYLOADS) {
+        const cases = runMatrix([payload])
+        const count = (outcome: Outcome): number =>
+          cases.filter((c) => c.outcome === outcome).length
+        console.log(
+          `prefix payload ${payload.name}: cases ${cases.length}, contained ` +
+            `${cases.filter((c) => c.outcome === 'clean' && c.contained).length}, ` +
+            `does not compile ${count('does not compile')}, throws ${count('throws')}, ` +
+            `ran ${count('runs the text')}`
+        )
 
-      expect(cases.length).toBeGreaterThan(0)
+        expect(cases.length).toBeGreaterThan(0)
 
-      notClean.push(
-        ...cases.filter((c) => c.outcome !== 'clean' || !c.contained).map((c) => c.label)
-      )
+        notClean.push(
+          ...cases.filter((c) => c.outcome !== 'clean' || !c.contained).map((c) => c.label)
+        )
+      }
+
+      expect(notClean).toEqual([])
     }
-
-    expect(notClean).toEqual([])
-  })
+  )
 })
 
 const LINE_BREAKS: [string, string][] = [
