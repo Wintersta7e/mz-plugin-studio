@@ -1,7 +1,8 @@
 // Every tracked code file is type-checked by a program on the one strict flag set, linted and
 // formatted; data files are in no program and read by neither tool.
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { cruise, type ICruiseOptions, type ICruiseResult } from 'dependency-cruiser'
@@ -946,6 +947,38 @@ const knipNegatedGlobs = (): string[] => {
   return globs.filter((glob) => glob.startsWith('!')).map((glob) => glob.slice(1))
 }
 
+// How many files jscpd analyses under `.jscpd.json` once no file is too short to hold a clone.
+const jscpdSources = (): number => {
+  const output = mkdtempSync(path.join(tmpdir(), 'jscpd-'))
+  try {
+    execFileSync(
+      process.execPath,
+      // The smallest clone size counts every file; the threshold no longer applies to it.
+      [
+        'node_modules/jscpd/run-jscpd.js',
+        '--min-tokens',
+        '1',
+        '--min-lines',
+        '1',
+        '--threshold',
+        '100',
+        '--reporters',
+        'json',
+        '--output',
+        output
+      ],
+      { cwd: ROOT, stdio: 'ignore' }
+    )
+    const result: unknown = JSON.parse(readFileSync(path.join(output, 'jscpd-report.json'), 'utf8'))
+    const { statistics } = isRecord(result) ? result : {}
+    const { total } = isRecord(statistics) ? statistics : {}
+    const { sources } = isRecord(total) ? total : {}
+    return typeof sources === 'number' ? sources : 0
+  } finally {
+    rmSync(output, { recursive: true, force: true })
+  }
+}
+
 // The cruise options' `exclude.path` patterns, as dependency-cruiser's own extractor resolves them.
 const excludePatterns = (options: ICruiseOptions): RegExp[] => {
   const { exclude } = options
@@ -999,6 +1032,22 @@ describe('static scope: dependency, dead-code, type-coverage and format gates', 
     expect(keys.filter((key) => key.startsWith('ignore'))).toStrictEqual([])
     expect(dataFiles.length).toBeGreaterThan(0)
     expect(kept).toStrictEqual([])
+  })
+
+  it('lets jscpd scan every code file and no data file', { timeout: 60_000 }, () => {
+    const config = readJson('.jscpd.json')
+    const { path: roots, ignore } = isRecord(config) ? config : {}
+    const ignored = isStringArray(ignore) ? ignore : []
+    const kept = dataFiles.filter((file) => ignored.every((glob) => !path.matchesGlob(file, glob)))
+    const scanned = jscpdSources()
+    report(
+      `.jscpd.json: ignore ${String(ignored.length)}, data files not ignored ${String(kept.length)}; files scanned ${String(scanned)} of ${String(codeFiles.length)}`
+    )
+
+    expect(roots).toStrictEqual(['.'])
+    expect(ignored).toStrictEqual(scope.dataGlobs)
+    expect(kept).toStrictEqual([])
+    expect(scanned).toBe(codeFiles.length)
   })
 
   it(
