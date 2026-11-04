@@ -480,19 +480,7 @@ function generateBody(plugin: PluginDefinition): string {
   lines.push('')
 
   // Parse parameters if any exist
-  if (plugin.parameters.length > 0) {
-    lines.push('    // Parse plugin parameters')
-    lines.push('    const params = PluginManager.parameters(PLUGIN_NAME);')
-    lines.push('')
-
-    for (const param of plugin.parameters) {
-      // Skip section divider parameters (they're just for organization in MZ editor)
-      if (param.name.includes('---') || param.name.includes('===')) continue
-      lines.push(`    const ${camelCase(param.name)} = ${generateParamParser(param)};`)
-    }
-
-    lines.push('')
-  }
+  lines.push(...parameterParsingLines(plugin.parameters))
 
   // Register commands if any exist (skip commands already handled in customCode).
   // Strip comments first so `// registerCommand(PLUGIN_NAME, 'Foo')` doesn't
@@ -534,10 +522,44 @@ function generateBody(plugin: PluginDefinition): string {
   }
 
   // Add preserved custom code or placeholder
-  if (plugin.customCode?.trim()) {
+  lines.push(...customCodeLines(plugin.customCode))
+  lines.push('')
+
+  lines.push('})();')
+
+  return lines.join('\n')
+}
+
+/**
+The body's parameter parsing: the parameters read once, then one constant per parameter.
+*/
+function parameterParsingLines(parameters: readonly PluginParameter[]): string[] {
+  const lines: string[] = []
+  if (parameters.length > 0) {
+    lines.push('    // Parse plugin parameters')
+    lines.push('    const params = PluginManager.parameters(PLUGIN_NAME);')
+    lines.push('')
+
+    for (const param of parameters) {
+      // Skip section divider parameters (they're just for organization in MZ editor)
+      if (param.name.includes('---') || param.name.includes('===')) continue
+      lines.push(`    const ${camelCase(param.name)} = ${generateParamParser(param)};`)
+    }
+
+    lines.push('')
+  }
+  return lines
+}
+
+/**
+The user's code indented into the IIFE, or a placeholder comment when there is none.
+*/
+function customCodeLines(customCode: string | undefined): string[] {
+  const lines: string[] = []
+  if (customCode?.trim()) {
     lines.push('    // ========== Custom Plugin Code ==========')
     // Indent the custom code properly — always add 4-space base indent for IIFE nesting
-    const customLines = plugin.customCode.split('\n')
+    const customLines = customCode.split('\n')
     for (const customLine of customLines) {
       if (customLine.trim() === '') {
         lines.push('')
@@ -548,11 +570,7 @@ function generateBody(plugin: PluginDefinition): string {
   } else {
     lines.push('    // Custom plugin code goes here')
   }
-  lines.push('')
-
-  lines.push('})();')
-
-  return lines.join('\n')
+  return lines
 }
 
 /**

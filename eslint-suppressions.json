@@ -2578,13 +2578,13 @@
       "count": 1
     },
     "complexity": {
-      "count": 4
+      "count": 3
     },
     "max-lines-per-function": {
       "count": 2
     },
     "sonarjs/cognitive-complexity": {
-      "count": 4
+      "count": 3
     },
     "sonarjs/different-types-comparison": {
       "count": 1
