@@ -2617,9 +2617,6 @@
     }
   },
   "src/renderer/src/lib/generator/index.ts": {
-    "@typescript-eslint/no-inferrable-types": {
-      "count": 2
-    },
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 2
     },
@@ -2639,7 +2636,7 @@
       "count": 5
     },
     "@typescript-eslint/prefer-optional-chain": {
-      "count": 2
+      "count": 1
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 31
@@ -3028,9 +3025,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/index.ts": {
-    "@typescript-eslint/consistent-generic-constructors": {
-      "count": 1
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     },

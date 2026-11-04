@@ -186,8 +186,8 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
  */
 function generateParameterBlock(
   param: PluginParameter,
-  prefix: string = ' * ',
-  owner: string = `Parameter "${param.name}"`,
+  prefix = ' * ',
+  owner = `Parameter "${param.name}"`,
   sink?: BlockSink,
   keepRequire = false
 ): string[] {
@@ -514,7 +514,7 @@ function generateBody(plugin: PluginDefinition): string {
   }
 
   // Add preserved custom code or placeholder
-  if (plugin.customCode && plugin.customCode.trim()) {
+  if (plugin.customCode?.trim()) {
     lines.push('    // ========== Custom Plugin Code ==========')
     // Indent the custom code properly — always add 4-space base indent for IIFE nesting
     const customLines = plugin.customCode.split('\n')

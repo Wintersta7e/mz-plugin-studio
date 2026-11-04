@@ -10,7 +10,7 @@ import type { CodeTemplate, TemplateCategory } from './types'
 export * from './types'
 
 // Template storage
-const templates: Map<string, CodeTemplate> = new Map()
+const templates = new Map<string, CodeTemplate>()
 
 /**
  * Register a template with the registry
