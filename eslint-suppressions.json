@@ -2572,19 +2572,19 @@
       "count": 5
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 31
+      "count": 27
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
     "complexity": {
-      "count": 7
+      "count": 4
     },
     "max-lines-per-function": {
       "count": 2
     },
     "sonarjs/cognitive-complexity": {
-      "count": 7
+      "count": 4
     },
     "sonarjs/different-types-comparison": {
       "count": 1
@@ -2593,10 +2593,10 @@
       "count": 2
     },
     "sonarjs/no-nested-template-literals": {
-      "count": 34
+      "count": 22
     },
     "unicorn/consistent-boolean-name": {
-      "count": 6
+      "count": 2
     },
     "unicorn/name-replacements": {
       "count": 2
@@ -2608,16 +2608,16 @@
       "count": 1
     },
     "unicorn/no-immediate-mutation": {
-      "count": 5
+      "count": 4
     },
     "unicorn/no-lonely-if": {
       "count": 1
     },
     "unicorn/no-unnecessary-parameters": {
-      "count": 2
+      "count": 1
     },
     "unicorn/no-unreadable-for-of-expression": {
-      "count": 5
+      "count": 4
     },
     "unicorn/no-unsafe-string-replacement": {
       "count": 1
@@ -2626,7 +2626,7 @@
       "count": 1
     },
     "unicorn/prefer-else-if": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-simple-condition-first": {
       "count": 1

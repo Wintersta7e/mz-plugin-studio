@@ -5,6 +5,8 @@ import {
   type PluginParameter,
   type PluginCommand,
   type PluginStruct,
+  type PluginMeta,
+  type NoteParam,
   type ParamType
 } from '../../types/plugin'
 import {
@@ -101,77 +103,27 @@ export function generatePlugin(plugin: PluginDefinition): string {
 
 /**
 Generate the plugin header comment block with all metadata, parameters, and commands.
-`keepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
+`shouldKeepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
 raw mode keeps when it rewrites the file's blocks.
 */
-function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire = false): string {
-  const lines: string[] = ['/*:']
-
-  // Target
-  if (plugin.meta.target) {
-    lines.push(` * @target ${blockValue(sink, 'Plugin @target', plugin.meta.target)}`)
-  }
-
-  // Plugin description
-  if (plugin.meta.description) {
-    lines.push(` * @plugindesc ${blockValue(sink, 'Plugin @plugindesc', plugin.meta.description)}`)
-  }
-
-  // Author
-  if (plugin.meta.author) {
-    lines.push(` * @author ${blockValue(sink, 'Plugin @author', plugin.meta.author)}`)
-  }
-
-  // URL
-  if (plugin.meta.url) {
-    lines.push(` * @url ${blockValue(sink, 'Plugin @url', plugin.meta.url)}`)
-  }
-
-  // Dependencies
-  for (const dependency of plugin.meta.dependencies) {
-    lines.push(` * @base ${blockValue(sink, 'Plugin @base', dependency)}`)
-  }
-
-  // Order After
-  for (const order of plugin.meta.orderAfter || []) {
-    lines.push(` * @orderAfter ${blockValue(sink, 'Plugin @orderAfter', order)}`)
-  }
-
-  // Order Before
-  for (const order of plugin.meta.orderBefore || []) {
-    lines.push(` * @orderBefore ${blockValue(sink, 'Plugin @orderBefore', order)}`)
-  }
-
-  // Note Parameters (deployment notetag groups)
-  // The official MZ annotation reference documents only four note-asset tags:
-  // @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
-  // of the spec and is dropped, except where raw mode keeps an imported file's lines.
-  for (const np of plugin.meta.noteParams || []) {
-    lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
-    lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
-    if (np.dir) lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
-    if (np.data) lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
-    if (keepRequire && np.require) lines.push(' * @noteRequire 1')
-  }
-
-  // Required assets — preserved during "Exclude unused files" deployment.
-  for (const asset of plugin.meta.requiredAssets || []) {
-    lines.push(` * @requiredAssets ${blockValue(sink, 'Plugin @requiredAssets', asset)}`)
-  }
-
-  lines.push(' *')
+function generateHeader(
+  plugin: PluginDefinition,
+  sink?: BlockSink,
+  shouldKeepRequire = false
+): string {
+  const lines: string[] = ['/*:', ...headerMetaLines(plugin.meta, sink, shouldKeepRequire), ' *']
 
   // Parameters
   for (const param of plugin.parameters) {
     lines.push(
-      ...generateParameterBlock(param, ' * ', `Parameter "${param.name}"`, sink, keepRequire)
+      ...generateParameterBlock(param, `Parameter "${param.name}"`, sink, shouldKeepRequire)
     )
     lines.push(' *')
   }
 
   // Commands
   for (const command of plugin.commands) {
-    lines.push(...generateCommandBlock(command, sink, keepRequire))
+    lines.push(...generateCommandBlock(command, sink, shouldKeepRequire))
     lines.push(' *')
   }
 
@@ -189,84 +141,194 @@ function generateHeader(plugin: PluginDefinition, sink?: BlockSink, keepRequire 
 }
 
 /**
+The header's plugin-level tags, from `@target` to `@requiredAssets`.
+*/
+function headerMetaLines(
+  meta: PluginMeta,
+  sink: BlockSink | undefined,
+  shouldKeepRequire: boolean
+): string[] {
+  const lines: string[] = []
+
+  // Target
+  if (meta.target) {
+    lines.push(` * @target ${blockValue(sink, 'Plugin @target', meta.target)}`)
+  }
+
+  // Plugin description
+  if (meta.description) {
+    lines.push(` * @plugindesc ${blockValue(sink, 'Plugin @plugindesc', meta.description)}`)
+  }
+
+  // Author
+  if (meta.author) {
+    lines.push(` * @author ${blockValue(sink, 'Plugin @author', meta.author)}`)
+  }
+
+  // URL
+  if (meta.url) {
+    lines.push(` * @url ${blockValue(sink, 'Plugin @url', meta.url)}`)
+  }
+
+  // Dependencies
+  for (const dependency of meta.dependencies) {
+    lines.push(` * @base ${blockValue(sink, 'Plugin @base', dependency)}`)
+  }
+
+  // Order After
+  for (const order of meta.orderAfter || []) {
+    lines.push(` * @orderAfter ${blockValue(sink, 'Plugin @orderAfter', order)}`)
+  }
+
+  // Order Before
+  for (const order of meta.orderBefore || []) {
+    lines.push(` * @orderBefore ${blockValue(sink, 'Plugin @orderBefore', order)}`)
+  }
+
+  lines.push(...noteParamLines(meta.noteParams || [], sink, shouldKeepRequire))
+
+  // Required assets — preserved during "Exclude unused files" deployment.
+  for (const asset of meta.requiredAssets || []) {
+    lines.push(` * @requiredAssets ${blockValue(sink, 'Plugin @requiredAssets', asset)}`)
+  }
+
+  return lines
+}
+
+/**
+The tags of each deployment notetag group. The official MZ annotation reference documents only
+four note-asset tags: @noteParam / @noteType / @noteDir / @noteData. @noteRequire is not part
+of the spec and is dropped, except where raw mode keeps an imported file's lines.
+*/
+function noteParamLines(
+  noteParams: readonly NoteParam[],
+  sink: BlockSink | undefined,
+  shouldKeepRequire: boolean
+): string[] {
+  const lines: string[] = []
+  for (const np of noteParams) {
+    lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
+    lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
+    if (np.dir) lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
+    if (np.data) lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
+    if (shouldKeepRequire && np.require) lines.push(' * @noteRequire 1')
+  }
+  return lines
+}
+
+/**
 Generate a parameter block for the header
 */
 function generateParameterBlock(
   param: PluginParameter,
-  prefix = ' * ',
-  owner = `Parameter "${param.name}"`,
-  sink?: BlockSink,
-  keepRequire = false
+  owner: string,
+  sink: BlockSink | undefined,
+  shouldKeepRequire: boolean
+): string[] {
+  const lines = [
+    ` * @param ${blockValue(sink, `${owner} @param`, param.name)}`,
+    ...fieldLines(param, owner, sink, shouldKeepRequire)
+  ]
+
+  // Parent (for nested parameters)
+  if (param.parent) {
+    lines.push(` * @parent ${blockValue(sink, `${owner} @parent`, param.parent)}`)
+  }
+
+  return lines
+}
+
+/**
+The tags a parameter and a command argument share, from `@text` to `@default`.
+*/
+function fieldLines(
+  param: PluginParameter,
+  owner: string,
+  sink: BlockSink | undefined,
+  shouldKeepRequire: boolean
 ): string[] {
   const lines: string[] = []
 
-  lines.push(`${prefix}@param ${blockValue(sink, `${owner} @param`, param.name)}`)
-
   if (param.text && param.text !== param.name) {
-    lines.push(`${prefix}@text ${blockValue(sink, `${owner} @text`, param.text)}`)
+    lines.push(` * @text ${blockValue(sink, `${owner} @text`, param.text)}`)
   }
 
   if (param.desc) {
-    lines.push(`${prefix}@desc ${blockValue(sink, `${owner} @desc`, param.desc)}`)
+    lines.push(` * @desc ${blockValue(sink, `${owner} @desc`, param.desc)}`)
   }
 
   // Type
-  lines.push(`${prefix}@type ${blockValue(sink, `${owner} @type`, formatParamType(param))}`)
+  lines.push(` * @type ${blockValue(sink, `${owner} @type`, formatParamType(param))}`)
+  lines.push(...typeSettingLines(param, owner, sink))
+
+  if ((param.type === 'file' || param.type === 'animation') && param.dir) {
+    lines.push(` * @dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
+  }
+  // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
+  // Use @requiredAssets at the plugin level instead. Raw mode keeps an imported file's line.
+  if (shouldKeepRequire && param.require) lines.push(' * @require 1')
+
+  lines.push(...optionLines(param, owner, sink))
+
+  // Default value
+  if (param.default !== '') {
+    lines.push(
+      ` * @default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default))}`
+    )
+  }
+
+  return lines
+}
+
+/**
+A boolean's `@on`/`@off` labels and a number's `@min`/`@max`/`@decimals`.
+*/
+function typeSettingLines(
+  param: PluginParameter,
+  owner: string,
+  sink: BlockSink | undefined
+): string[] {
+  const lines: string[] = []
 
   // Boolean-specific @on/@off labels
   if (param.type === 'boolean') {
     if (param.onLabel) {
-      lines.push(`${prefix}@on ${blockValue(sink, `${owner} @on`, param.onLabel)}`)
+      lines.push(` * @on ${blockValue(sink, `${owner} @on`, param.onLabel)}`)
     }
     if (param.offLabel) {
-      lines.push(`${prefix}@off ${blockValue(sink, `${owner} @off`, param.offLabel)}`)
+      lines.push(` * @off ${blockValue(sink, `${owner} @off`, param.offLabel)}`)
     }
   }
 
   // Type-specific attributes
   if (param.type === 'number') {
     if (param.min !== undefined) {
-      lines.push(`${prefix}@min ${blockValue(sink, `${owner} @min`, String(param.min))}`)
+      lines.push(` * @min ${blockValue(sink, `${owner} @min`, String(param.min))}`)
     }
     if (param.max !== undefined) {
-      lines.push(`${prefix}@max ${blockValue(sink, `${owner} @max`, String(param.max))}`)
+      lines.push(` * @max ${blockValue(sink, `${owner} @max`, String(param.max))}`)
     }
     if (param.decimals !== undefined) {
-      lines.push(
-        `${prefix}@decimals ${blockValue(sink, `${owner} @decimals`, String(param.decimals))}`
-      )
+      lines.push(` * @decimals ${blockValue(sink, `${owner} @decimals`, String(param.decimals))}`)
     }
   }
 
-  if ((param.type === 'file' || param.type === 'animation') && param.dir) {
-    lines.push(`${prefix}@dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
-  }
-  // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
-  // Use @requiredAssets at the plugin level instead. Raw mode keeps an imported file's line.
-  if (keepRequire && param.require) lines.push(`${prefix}@require 1`)
+  return lines
+}
 
-  // Options for select/combo type
+/**
+The `@option`/`@value` pairs of a select or combo.
+*/
+function optionLines(param: PluginParameter, owner: string, sink: BlockSink | undefined): string[] {
+  const lines: string[] = []
   if ((param.type === 'select' || param.type === 'combo') && param.options) {
     for (const opt of param.options) {
-      lines.push(`${prefix}@option ${blockValue(sink, `${owner} @option`, opt.text)}`)
+      lines.push(` * @option ${blockValue(sink, `${owner} @option`, opt.text)}`)
       if (opt.value !== opt.text) {
-        lines.push(`${prefix}@value ${blockValue(sink, `${owner} @value`, opt.value)}`)
+        lines.push(` * @value ${blockValue(sink, `${owner} @value`, opt.value)}`)
       }
     }
   }
-
-  // Default value
-  if (param.default !== '') {
-    lines.push(
-      `${prefix}@default ${blockValue(sink, `${owner} @default`, formatDefaultValue(param.default))}`
-    )
-  }
-
-  // Parent (for nested parameters)
-  if (param.parent) {
-    lines.push(`${prefix}@parent ${blockValue(sink, `${owner} @parent`, param.parent)}`)
-  }
-
   return lines
 }
 
@@ -317,7 +379,7 @@ Generate a command block for the header
 function generateCommandBlock(
   command: PluginCommand,
   sink?: BlockSink,
-  keepRequire = false
+  shouldKeepRequire = false
 ): string[] {
   const lines: string[] = []
   const owner = `Command "${command.name}"`
@@ -337,54 +399,7 @@ function generateCommandBlock(
     const argOwner = `${owner} argument "${arg.name}"`
     lines.push(' *')
     lines.push(` * @arg ${blockValue(sink, `${argOwner} @arg`, arg.name)}`)
-
-    if (arg.text && arg.text !== arg.name) {
-      lines.push(` * @text ${blockValue(sink, `${argOwner} @text`, arg.text)}`)
-    }
-
-    if (arg.desc) {
-      lines.push(` * @desc ${blockValue(sink, `${argOwner} @desc`, arg.desc)}`)
-    }
-
-    lines.push(` * @type ${blockValue(sink, `${argOwner} @type`, formatParamType(arg))}`)
-
-    // Boolean-specific @on/@off labels
-    if (arg.type === 'boolean') {
-      if (arg.onLabel) lines.push(` * @on ${blockValue(sink, `${argOwner} @on`, arg.onLabel)}`)
-      if (arg.offLabel) lines.push(` * @off ${blockValue(sink, `${argOwner} @off`, arg.offLabel)}`)
-    }
-
-    if (arg.type === 'number') {
-      if (arg.min !== undefined)
-        lines.push(` * @min ${blockValue(sink, `${argOwner} @min`, String(arg.min))}`)
-      if (arg.max !== undefined)
-        lines.push(` * @max ${blockValue(sink, `${argOwner} @max`, String(arg.max))}`)
-      if (arg.decimals !== undefined)
-        lines.push(
-          ` * @decimals ${blockValue(sink, `${argOwner} @decimals`, String(arg.decimals))}`
-        )
-    }
-
-    if ((arg.type === 'file' || arg.type === 'animation') && arg.dir) {
-      lines.push(` * @dir ${blockValue(sink, `${argOwner} @dir`, arg.dir)}`)
-    }
-    // @require dropped (MV-era, discontinued in MZ), except where raw mode keeps the file's line
-    if (keepRequire && arg.require) lines.push(' * @require 1')
-
-    if ((arg.type === 'select' || arg.type === 'combo') && arg.options) {
-      for (const opt of arg.options) {
-        lines.push(` * @option ${blockValue(sink, `${argOwner} @option`, opt.text)}`)
-        if (opt.value !== opt.text) {
-          lines.push(` * @value ${blockValue(sink, `${argOwner} @value`, opt.value)}`)
-        }
-      }
-    }
-
-    if (arg.default !== '') {
-      lines.push(
-        ` * @default ${blockValue(sink, `${argOwner} @default`, formatDefaultValue(arg.default))}`
-      )
-    }
+    lines.push(...fieldLines(arg, argOwner, sink, shouldKeepRequire))
   }
 
   return lines
@@ -434,7 +449,7 @@ Generate struct definition comment block
 function generateStructDefinition(
   struct: PluginStruct,
   sink?: BlockSink,
-  keepRequire = false
+  shouldKeepRequire = false
 ): string {
   const lines: string[] = []
 
@@ -442,7 +457,7 @@ function generateStructDefinition(
 
   for (const param of struct.parameters) {
     const owner = `Struct "${struct.name}" field "${param.name}"`
-    lines.push(...generateParameterBlock(param, ' * ', owner, sink, keepRequire))
+    lines.push(...generateParameterBlock(param, owner, sink, shouldKeepRequire))
     lines.push(' *')
   }
 
