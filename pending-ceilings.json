@@ -1,31 +1,245 @@
 {
   "e2e": {
-    "exactOptionalPropertyTypes": 3,
-    "noPropertyAccessFromIndexSignature": 8,
-    "noUncheckedIndexedAccess": 9
+    "exactOptionalPropertyTypes": {
+      "e2e/fixtures/app.ts": 2,
+      "src/renderer/src/stores/persist.ts": 1
+    },
+    "noPropertyAccessFromIndexSignature": {
+      "e2e/flows/dialog-default-path.e2e.ts": 4,
+      "e2e/playwright.config.ts": 1,
+      "src/renderer/src/stores/persist.ts": 3
+    },
+    "noUncheckedIndexedAccess": {
+      "e2e/flows/dialog-default-path.e2e.ts": 4,
+      "e2e/release-smoke.e2e.ts": 2,
+      "src/main/services/syntax-check.ts": 2,
+      "src/renderer/src/stores/persist.ts": 1
+    }
   },
   "node": {
-    "exactOptionalPropertyTypes": 5,
-    "noUncheckedIndexedAccess": 66
+    "exactOptionalPropertyTypes": {
+      "src/main/ipc/dialog.ts": 3,
+      "src/main/services/pluginParser.ts": 2
+    },
+    "noUncheckedIndexedAccess": {
+      "src/main/ipc/dialog.ts": 4,
+      "src/main/ipc/plugin.ts": 8,
+      "src/main/ipc/project.ts": 2,
+      "src/main/services/pluginParser.ts": 49,
+      "src/main/services/projectParser.ts": 1,
+      "src/main/services/syntax-check.ts": 2
+    }
   },
   "scripts": {
-    "strict": 37,
-    "noImplicitAny": 129,
-    "exactOptionalPropertyTypes": 1,
-    "noPropertyAccessFromIndexSignature": 14
+    "strict": {
+      "scripts/check-coverage.mjs": 3,
+      "scripts/check-golden-commits.mjs": 10,
+      "scripts/ci-policy.mjs": 9,
+      "scripts/e2e-prepare.mjs": 2,
+      "scripts/strictness-status.mjs": 7,
+      "scripts/third-party-licenses.mjs": 6
+    },
+    "noImplicitAny": {
+      "scripts/check-coverage.mjs": 26,
+      "scripts/check-golden-commits.mjs": 23,
+      "scripts/ci-policy.mjs": 57,
+      "scripts/e2e-prepare.mjs": 1,
+      "scripts/e2e-visual-update.mjs": 1,
+      "scripts/strictness-status.mjs": 10,
+      "scripts/third-party-licenses.mjs": 10
+    },
+    "exactOptionalPropertyTypes": {
+      "tsconfig.scripts.json": 1
+    },
+    "noPropertyAccessFromIndexSignature": {
+      "scripts/check-golden-commits.mjs": 3,
+      "scripts/ci-policy.mjs": 1,
+      "scripts/strictness-status.mjs": 10
+    }
   },
   "test": {
-    "exactOptionalPropertyTypes": 40,
-    "noPropertyAccessFromIndexSignature": 178,
-    "noUncheckedIndexedAccess": 658,
-    "erasableSyntaxOnly": 5
+    "exactOptionalPropertyTypes": {
+      "src/main/ipc/dialog.ts": 3,
+      "src/main/services/pluginParser.ts": 2,
+      "src/renderer/src/App.tsx": 2,
+      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
+      "src/renderer/src/components/plugin/MetaEditor.tsx": 2,
+      "src/renderer/src/components/plugin/ParameterBuilder.tsx": 5,
+      "src/renderer/src/components/plugin/StructBuilder.tsx": 3,
+      "src/renderer/src/components/plugin/TypeFields.tsx": 1,
+      "src/renderer/src/lib/raw-mode.ts": 1,
+      "src/renderer/src/stores/persist.ts": 1,
+      "src/renderer/src/stores/pluginStore.ts": 2,
+      "tests/dom/app-shell.test.tsx": 1,
+      "tests/dom/history-store.test.ts": 2,
+      "tests/dom/raw-mode-controls.test.tsx": 2,
+      "tests/integration/check-coverage.test.ts": 1,
+      "tests/unit/generator.test.ts": 2,
+      "tests/unit/mz-annotations.test.ts": 1,
+      "tests/unit/round-trip.test.ts": 2,
+      "tests/unit/validation.test.ts": 1
+    },
+    "noPropertyAccessFromIndexSignature": {
+      "e2e/playwright.config.ts": 1,
+      "src/renderer/src/stores/persist.ts": 3,
+      "src/renderer/src/stores/pluginStore.ts": 50,
+      "src/renderer/src/stores/templateStore.ts": 4,
+      "src/renderer/src/stores/uiStore.ts": 2,
+      "tests/dom/persisted-damage.test.ts": 4,
+      "tests/dom/persisted-downgrade.test.ts": 4,
+      "tests/dom/persisted-load.test.ts": 25,
+      "tests/dom/template-inserter.test.tsx": 1,
+      "tests/golden/corpus/templates.ts": 3,
+      "tests/helpers/mz-corescript.ts": 1,
+      "tests/helpers/mz-runtime.ts": 1,
+      "tests/integration/ci-policy-needs.test.ts": 2,
+      "tests/integration/dialog-memory.test.ts": 19,
+      "tests/integration/ipc-channels.test.ts": 1,
+      "tests/integration/ipc-registration.test.ts": 1,
+      "tests/integration/mz-parity.test.ts": 2,
+      "tests/integration/mz-runtime-conformance.test.ts": 10,
+      "tests/integration/project-scope.test.ts": 3,
+      "tests/integration/release-ci-gate.test.ts": 1,
+      "tests/setup/no-skips-reporter.ts": 1,
+      "tests/unit/docs-sync.test.ts": 1,
+      "tests/unit/e2e-harness.test.ts": 2,
+      "tests/unit/escape.test.ts": 1,
+      "tests/unit/evaluate-plugin.test.ts": 5,
+      "tests/unit/export-formats.test.ts": 2,
+      "tests/unit/injection.test.ts": 4,
+      "tests/unit/package-scripts.test.ts": 12,
+      "tests/unit/pluginParser-edge-cases.test.ts": 1,
+      "tests/unit/static-scope.test.ts": 5,
+      "tests/unit/template-store.test.ts": 5,
+      "tests/unit/workflows.test.ts": 1
+    },
+    "noUncheckedIndexedAccess": {
+      "src/main/ipc/dialog.ts": 4,
+      "src/main/ipc/plugin.ts": 8,
+      "src/main/ipc/project.ts": 2,
+      "src/main/services/pluginParser.ts": 49,
+      "src/main/services/projectParser.ts": 1,
+      "src/main/services/syntax-check.ts": 2,
+      "src/renderer/src/App.tsx": 1,
+      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
+      "src/renderer/src/components/plugin/MetaEditor.tsx": 1,
+      "src/renderer/src/components/plugin/TemplateInserter.tsx": 1,
+      "src/renderer/src/lib/conflict-detector.ts": 2,
+      "src/renderer/src/lib/dependency-analyzer.ts": 1,
+      "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
+      "src/renderer/src/lib/shortcuts.ts": 1,
+      "src/renderer/src/stores/historyStore.ts": 4,
+      "src/renderer/src/stores/persist.ts": 1,
+      "src/renderer/src/stores/pluginStore.ts": 2,
+      "tests/dom/app-close.test.tsx": 1,
+      "tests/dom/app-save.test.tsx": 6,
+      "tests/dom/app-shell.test.tsx": 11,
+      "tests/dom/code-preview.test.tsx": 4,
+      "tests/dom/command-builder.test.tsx": 1,
+      "tests/dom/history-store.test.ts": 11,
+      "tests/dom/parameter-builder.test.tsx": 15,
+      "tests/dom/persisted-damage.test.ts": 11,
+      "tests/dom/persisted-load.test.ts": 14,
+      "tests/dom/persisted-restore.test.ts": 6,
+      "tests/dom/plugin-browser.test.tsx": 3,
+      "tests/dom/plugin-store.test.ts": 49,
+      "tests/dom/raw-mode-controls.test.tsx": 18,
+      "tests/dom/raw-mode-save-paths.test.tsx": 3,
+      "tests/dom/settings-dialog.test.tsx": 2,
+      "tests/dom/settings-store.test.ts": 10,
+      "tests/dom/sidebar.test.tsx": 1,
+      "tests/dom/struct-builder.test.tsx": 4,
+      "tests/dom/template-inserter.test.tsx": 7,
+      "tests/dom/title-bar.test.tsx": 5,
+      "tests/dom/toast-store.test.ts": 10,
+      "tests/golden/corpus/generator.ts": 8,
+      "tests/golden/corpus/templates.ts": 5,
+      "tests/golden/generator.test.ts": 2,
+      "tests/golden/persisted.test.ts": 2,
+      "tests/helpers/annotation-rules.ts": 5,
+      "tests/helpers/mz-conformance.ts": 1,
+      "tests/helpers/mz-corescript.ts": 2,
+      "tests/helpers/workflow-reader.ts": 16,
+      "tests/integration/ci-policy-fuses.test.ts": 2,
+      "tests/integration/dialog-memory.test.ts": 1,
+      "tests/integration/ipc-arguments.test.ts": 1,
+      "tests/integration/ipc-channels.test.ts": 1,
+      "tests/integration/ipc-registration.test.ts": 1,
+      "tests/integration/message-dialog.test.ts": 4,
+      "tests/integration/mz-runtime-conformance.test.ts": 1,
+      "tests/integration/plugin-load.test.ts": 1,
+      "tests/integration/project-load-errors.test.ts": 3,
+      "tests/integration/project-scope.test.ts": 2,
+      "tests/setup/monaco-stub.tsx": 3,
+      "tests/unit/annotation-blocks.test.ts": 2,
+      "tests/unit/button-cursor.test.ts": 2,
+      "tests/unit/conflict-detector.test.ts": 13,
+      "tests/unit/csp.test.ts": 1,
+      "tests/unit/dependency-analyzer.test.ts": 8,
+      "tests/unit/dialog-default-path.test.ts": 2,
+      "tests/unit/docs-sync.test.ts": 5,
+      "tests/unit/e2e-harness.test.ts": 13,
+      "tests/unit/eslint-ipc-ban.test.ts": 1,
+      "tests/unit/export-formats.test.ts": 5,
+      "tests/unit/fixture-set.test.ts": 5,
+      "tests/unit/generator.test.ts": 7,
+      "tests/unit/injection.test.ts": 32,
+      "tests/unit/ipc-callers.test.ts": 3,
+      "tests/unit/mz-annotations.test.ts": 30,
+      "tests/unit/package-scripts.test.ts": 19,
+      "tests/unit/param-io.test.ts": 21,
+      "tests/unit/pluginParser-edge-cases.test.ts": 11,
+      "tests/unit/pluginParser.test.ts": 96,
+      "tests/unit/preload-ipc.test.ts": 1,
+      "tests/unit/raw-mode-insertion.test.ts": 2,
+      "tests/unit/round-trip.test.ts": 5,
+      "tests/unit/static-scope.test.ts": 1,
+      "tests/unit/template-injection.test.ts": 3,
+      "tests/unit/test-layout.test.ts": 5,
+      "tests/unit/workflows.test.ts": 4,
+      "tools/analyze-plugins.ts": 14
+    },
+    "erasableSyntaxOnly": {
+      "tests/helpers/mz-conformance.ts": 3,
+      "tests/unit/monaco-setup.test.ts": 2
+    }
   },
   "tools": {
-    "noUncheckedIndexedAccess": 17
+    "noUncheckedIndexedAccess": {
+      "tools/analyze-plugins.ts": 14,
+      "tools/apply-enrichment.ts": 3
+    }
   },
   "web": {
-    "exactOptionalPropertyTypes": 23,
-    "noPropertyAccessFromIndexSignature": 59,
-    "noUncheckedIndexedAccess": 28
+    "exactOptionalPropertyTypes": {
+      "src/renderer/src/App.tsx": 2,
+      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
+      "src/renderer/src/components/plugin/MetaEditor.tsx": 2,
+      "src/renderer/src/components/plugin/ParameterBuilder.tsx": 5,
+      "src/renderer/src/components/plugin/StructBuilder.tsx": 3,
+      "src/renderer/src/components/plugin/TypeFields.tsx": 1,
+      "src/renderer/src/lib/raw-mode.ts": 1,
+      "src/renderer/src/stores/persist.ts": 1,
+      "src/renderer/src/stores/pluginStore.ts": 2
+    },
+    "noPropertyAccessFromIndexSignature": {
+      "src/renderer/src/stores/persist.ts": 3,
+      "src/renderer/src/stores/pluginStore.ts": 50,
+      "src/renderer/src/stores/templateStore.ts": 4,
+      "src/renderer/src/stores/uiStore.ts": 2
+    },
+    "noUncheckedIndexedAccess": {
+      "src/renderer/src/App.tsx": 1,
+      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
+      "src/renderer/src/components/plugin/MetaEditor.tsx": 1,
+      "src/renderer/src/components/plugin/TemplateInserter.tsx": 1,
+      "src/renderer/src/lib/conflict-detector.ts": 2,
+      "src/renderer/src/lib/dependency-analyzer.ts": 1,
+      "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
+      "src/renderer/src/lib/shortcuts.ts": 1,
+      "src/renderer/src/stores/historyStore.ts": 4,
+      "src/renderer/src/stores/persist.ts": 1,
+      "src/renderer/src/stores/pluginStore.ts": 2
+    }
   }
 }

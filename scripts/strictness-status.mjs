@@ -2,8 +2,9 @@
 //   default:          the frozen lint findings in eslint-suppressions.json against the base
 //                     commit's (baseCommit), and the type-check errors each pending flag still
 //                     has. Fails a rise in any (file, rule) entry unless the change under test
-//                     changes the lint config or a lint package version; fails a pending count
-//                     off the exact ceiling pending-ceilings.json holds for it, a pending flag
+//                     changes the lint config or a lint package version; fails a file's pending
+//                     count off the exact ceiling pending-ceilings.json holds for it (printing
+//                     the errors of a file above it and the tsc command), a pending flag
 //                     without a ceiling or a ceiling without a pending flag, a pending flag
 //                     with no error left (it must move to its program), and a pending check
 //                     whose tsc did not finish (printing how it ended and its last lines).
@@ -165,60 +166,101 @@ const TSC = path.join(
   path.dirname(createRequire(import.meta.url).resolve('typescript/package.json')),
   'bin/tsc'
 )
-const ERROR_AT = /^.+\(\d+,\d+\): error TS\d+:/gmv
+const ERROR_AT = /^(?<file>.+?)\(\d+,\d+\): error TS\d+:.*$/gmv
 const ERROR_ANYWHERE = /^error TS\d+:/mv
+// The tsc arguments of a pending check, after the tsc path.
+/**
+@param {{ config: string, flag: string }} pair
+*/
+const pendingArgs = ({ config, flag }) => [
+  '--noEmit',
+  '-p',
+  config,
+  '--composite',
+  'false',
+  '--pretty',
+  'false',
+  `--${flag}`
+]
 
-// The type-check errors the program has with the flag on, and how the tsc run ended. The count is
-// undefined when tsc did not finish a check: killed, stopped on an error without a location, or
-// an exit status that does not match the errors it printed.
-function pendingErrors({ config, flag }) {
+// The type-check error lines the program has with the flag on, by file, and how the tsc run
+// ended. The errors are undefined when tsc did not finish a check: killed, stopped on an error
+// without a location, or an exit status that does not match the errors it printed.
+/**
+@param {{ config: string, flag: string }} pair
+@returns {Promise<{ errors: Map<string, string[]> | undefined, run: { out: string, bytes: number, ending: string } }>}
+*/
+function pendingErrors(pair) {
   return new Promise((resolve) => {
-    const args = [
-      TSC,
-      '--noEmit',
-      '-p',
-      config,
-      '--composite',
-      'false',
-      '--pretty',
-      'false',
-      `--${flag}`
-    ]
-    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    const child = spawn(process.execPath, [TSC, ...pendingArgs(pair)], {
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
     let out = ''
     child.stdout.on('data', (chunk) => (out += chunk))
     child.stderr.on('data', (chunk) => (out += chunk))
     child.on('close', (code, signal) => {
-      const located = (out.match(ERROR_AT) ?? []).length
+      /**
+      @type {Map<string, string[]>}
+      */
+      const errors = new Map()
+      for (const match of out.matchAll(ERROR_AT)) {
+        const file = match.groups?.['file'] ?? ''
+        errors.set(file, [...(errors.get(file) ?? []), match[0]])
+      }
       const isChecked =
         signal === null &&
         !ERROR_ANYWHERE.test(out) &&
-        (code === 0 ? located === 0 : code === 2 && located > 0)
+        (code === 0 ? errors.size === 0 : code === 2 && errors.size > 0)
       const ending = signal ?? `exit ${code}`
       resolve({
-        count: isChecked ? located : undefined,
+        errors: isChecked ? errors : undefined,
         run: { out, bytes: Buffer.byteLength(out), ending }
       })
     })
   })
 }
 
-// Why a pending count fails against its ceiling; undefined when it holds the ceiling. Each count
-// is held exactly, so a rise fails and so does a fall: the commit that fixes errors lowers the
-// ceiling with them.
+// A pending flag's ceilings, one positive error count per file; undefined when malformed.
 /**
-@param {number} count
-@param {unknown} ceiling
+@param {unknown} value
+@returns {Map<string, number> | undefined}
 */
-function pendingProblem(count, ceiling) {
-  if (count === 0) return 'no error left; move the flag to its program'
-  if (typeof ceiling !== 'number' || !Number.isSafeInteger(ceiling) || ceiling < 0) {
-    return `${PENDING_CEILINGS} names no ceiling`
+function fileCeilings(value) {
+  const isRecord = typeof value === 'object' && value !== null && !Array.isArray(value)
+  const entries = isRecord ? Object.entries(value) : []
+  const isValid = isRecord && entries.every(([, count]) => Number.isSafeInteger(count) && count > 0)
+  return isValid ? new Map(entries) : undefined
+}
+
+// Why a pending flag's errors fail against its ceilings, one line each; empty when every file
+// holds its ceiling. Each file's count is held exactly, so a rise fails, an error moved to another
+// file fails, and so does a fall: the commit that fixes errors lowers the ceiling with them. A
+// rise prints that file's error lines.
+/**
+@param {Map<string, string[]>} errors
+@param {Map<string, number> | undefined} ceilings
+*/
+function pendingProblems(errors, ceilings) {
+  if (errors.size === 0) return ['no error left; move the flag to its program']
+  if (ceilings === undefined) return [`${PENDING_CEILINGS} names no ceiling`]
+  const files = [...new Set([...errors.keys(), ...ceilings.keys()])].toSorted((left, right) =>
+    left.localeCompare(right)
+  )
+  const problems = []
+  for (const file of files) {
+    const lines = errors.get(file) ?? []
+    const ceiling = ceilings.get(file) ?? 0
+    if (lines.length > ceiling) {
+      problems.push(`${file}: ${lines.length} errors, above its ceiling ${ceiling}`, ...lines)
+    } else if (lines.length === 0) {
+      problems.push(`${file}: no error left; remove its ceiling from ${PENDING_CEILINGS}`)
+    } else if (lines.length < ceiling) {
+      problems.push(
+        `${file}: the count fell; lower its ceiling in ${PENDING_CEILINGS} to ${lines.length}`
+      )
+    }
   }
-  if (count > ceiling) return `the count rose above the ceiling ${ceiling}`
-  return count < ceiling
-    ? `the count fell; lower its ceiling in ${PENDING_CEILINGS} to ${count}`
-    : undefined
+  return problems
 }
 
 // Ceilings named for a (program, flag) that no pending file holds.
@@ -233,6 +275,33 @@ function staleCeilings(ceilings, pairs) {
       .map((flag) => `${program} ${flag}`)
       .filter((name) => !pending.has(name))
   )
+}
+
+// Whether a pending flag's tsc run finished and its errors hold their ceilings; prints both.
+/**
+@param {{ program: string, config: string, flag: string }} pair
+@param {{ errors: Map<string, string[]> | undefined, run: { out: string, bytes: number, ending: string } }} result
+@param {unknown} value the flag's entry in the ceilings file
+*/
+function checkPendingFlag(pair, { errors, run }, value) {
+  const label = `pending ${pair.program} ${pair.flag}`
+  if (errors === undefined) {
+    printFailedRun(label, 'tsc failed', run)
+    return false
+  }
+  const held = fileCeilings(value)
+  let count = 0
+  for (const lines of errors.values()) count += lines.length
+  const limits = held?.values() ?? []
+  let ceiling = 0
+  for (const each of limits) ceiling += each
+  print(`${label}: ${count} errors in ${errors.size} files, ceiling ${held ? ceiling : 'none'}`)
+  const problems = pendingProblems(errors, held)
+  for (const problem of problems) print(`${label}: ${problem}`)
+  if (problems.some((problem) => problem.includes(', above its ceiling '))) {
+    print(`${label}: reproduce with npx tsc ${pendingArgs(pair).join(' ')}`)
+  }
+  return problems.length === 0
 }
 
 async function checkPending(tracked) {
@@ -255,19 +324,8 @@ async function checkPending(tracked) {
     return false
   }
   let isOk = true
-  for (const [index, { program, flag }] of pairs.entries()) {
-    const { count, run } = results[index]
-    if (count === undefined) {
-      printFailedRun(`pending ${program} ${flag}`, 'tsc failed', run)
-      isOk = false
-      continue
-    }
-    const ceiling = ceilings[program]?.[flag]
-    print(`pending ${program} ${flag}: ${count} errors, ceiling ${ceiling ?? 'none'}`)
-    const problem = pendingProblem(count, ceiling)
-    if (problem === undefined) continue
-    print(`pending ${program} ${flag}: ${problem}`)
-    isOk = false
+  for (const [index, pair] of pairs.entries()) {
+    if (!checkPendingFlag(pair, results[index], ceilings[pair.program]?.[pair.flag])) isOk = false
   }
   for (const name of staleCeilings(ceilings, pairs)) {
     print(`pending ${name}: ${PENDING_CEILINGS} holds a ceiling for a flag no pending file holds`)

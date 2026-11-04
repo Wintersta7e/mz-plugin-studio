@@ -191,9 +191,9 @@ npm run build:win      # portable Windows build into dist/
 
 `npm run check` runs, in order: `ci:runtime-deps`, `lint`, `typecheck`, `typecov:report`, `deps`,
 `knip:report`, `jscpd:report`, `format:check`, `strictness:status`, `licenses`, `test:coverage` and
-`test:golden:coverage`. Lint findings, pending type-check errors, unused exports and duplicated code
-each hold an exact ceiling that fails when the count rises or falls, so a change that lowers a count
-lowers its ceiling in the same commit. The ceilings live in `eslint-suppressions.json`,
+`test:golden:coverage`. Lint findings, pending type-check errors (per file), unused exports and
+duplicated code each hold an exact ceiling that fails when the count rises or falls, so a change
+that lowers a count lowers its ceiling in the same commit. The ceilings live in `eslint-suppressions.json`,
 `pending-ceilings.json` and the `knip:production` and `jscpd:report` scripts in `package.json`.
 
 The end-to-end suite drives the packaged app, and CI requires it:
