@@ -2568,12 +2568,6 @@
     }
   },
   "src/renderer/src/lib/generator/index.ts": {
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 5
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 27
-    },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 1
     },
@@ -2608,7 +2602,7 @@
       "count": 1
     },
     "unicorn/no-unreadable-for-of-expression": {
-      "count": 4
+      "count": 1
     },
     "unicorn/no-unsafe-string-replacement": {
       "count": 1
@@ -2620,7 +2614,7 @@
       "count": 1
     },
     "unicorn/prefer-ternary": {
-      "count": 3
+      "count": 2
     }
   },
   "src/renderer/src/lib/generator/templates/actor-party.ts": {

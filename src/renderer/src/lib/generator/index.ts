@@ -86,7 +86,7 @@ export function generatePlugin(plugin: PluginDefinition): string {
 
   // Generate localized headers
   const localizedHeaders = generateLocalizedHeaders(plugin)
-  if (localizedHeaders) {
+  if (localizedHeaders !== undefined) {
     parts.push(localizedHeaders)
   }
 
@@ -176,19 +176,22 @@ function headerMetaLines(
   }
 
   // Order After
-  for (const order of meta.orderAfter || []) {
+  const orderAfter = meta.orderAfter ?? []
+  for (const order of orderAfter) {
     lines.push(` * @orderAfter ${blockValue(sink, 'Plugin @orderAfter', order)}`)
   }
 
   // Order Before
-  for (const order of meta.orderBefore || []) {
+  const orderBefore = meta.orderBefore ?? []
+  for (const order of orderBefore) {
     lines.push(` * @orderBefore ${blockValue(sink, 'Plugin @orderBefore', order)}`)
   }
 
-  lines.push(...noteParamLines(meta.noteParams || [], sink, shouldKeepRequire))
+  lines.push(...noteParamLines(meta.noteParams ?? [], sink, shouldKeepRequire))
 
   // Required assets — preserved during "Exclude unused files" deployment.
-  for (const asset of meta.requiredAssets || []) {
+  const requiredAssets = meta.requiredAssets ?? []
+  for (const asset of requiredAssets) {
     lines.push(` * @requiredAssets ${blockValue(sink, 'Plugin @requiredAssets', asset)}`)
   }
 
@@ -206,12 +209,18 @@ function noteParamLines(
   shouldKeepRequire: boolean
 ): string[] {
   const lines: string[] = []
+  // A saved note group is checked for its name and type only, so its other fields can hold a
+  // value of any type: one JavaScript reads as false is left out.
   for (const np of noteParams) {
     lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
     lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
-    if (np.dir) lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
-    if (np.data) lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
-    if (shouldKeepRequire && np.require) lines.push(' * @noteRequire 1')
+    if (np.dir !== undefined && Boolean(np.dir)) {
+      lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
+    }
+    if (np.data !== undefined && Boolean(np.data)) {
+      lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
+    }
+    if (shouldKeepRequire && Boolean(np.require)) lines.push(' * @noteRequire 1')
   }
   return lines
 }
@@ -231,7 +240,7 @@ function generateParameterBlock(
   ]
 
   // Parent (for nested parameters)
-  if (param.parent) {
+  if (param.parent !== undefined && param.parent !== '') {
     lines.push(` * @parent ${blockValue(sink, `${owner} @parent`, param.parent)}`)
   }
 
@@ -261,12 +270,16 @@ function fieldLines(
   lines.push(` * @type ${blockValue(sink, `${owner} @type`, formatParamType(param))}`)
   lines.push(...typeSettingLines(param, owner, sink))
 
-  if ((param.type === 'file' || param.type === 'animation') && param.dir) {
+  if (
+    (param.type === 'file' || param.type === 'animation') &&
+    param.dir !== undefined &&
+    param.dir !== ''
+  ) {
     lines.push(` * @dir ${blockValue(sink, `${owner} @dir`, param.dir)}`)
   }
   // @require is MV-era — discontinued in MZ per the official MZ annotation reference.
   // Use @requiredAssets at the plugin level instead. Raw mode keeps an imported file's line.
-  if (shouldKeepRequire && param.require) lines.push(' * @require 1')
+  if (shouldKeepRequire && param.require === true) lines.push(' * @require 1')
 
   lines.push(...optionLines(param, owner, sink))
 
@@ -292,10 +305,10 @@ function typeSettingLines(
 
   // Boolean-specific @on/@off labels
   if (param.type === 'boolean') {
-    if (param.onLabel) {
+    if (param.onLabel !== undefined && param.onLabel !== '') {
       lines.push(` * @on ${blockValue(sink, `${owner} @on`, param.onLabel)}`)
     }
-    if (param.offLabel) {
+    if (param.offLabel !== undefined && param.offLabel !== '') {
       lines.push(` * @off ${blockValue(sink, `${owner} @off`, param.offLabel)}`)
     }
   }
@@ -337,22 +350,20 @@ Format the @type value based on parameter type
 */
 function formatParamType(param: PluginParameter): string {
   // Use rawType for round-trip fidelity when available
-  if (param.rawType) {
+  if (param.rawType !== undefined && param.rawType !== '') {
     return param.rawType
   }
 
-  if (param.type === 'struct' && param.structType) {
+  if (param.type === 'struct' && param.structType !== undefined && param.structType !== '') {
     return `struct<${param.structType}>`
   }
 
   if (param.type === 'array') {
-    if (param.structType) {
+    if (param.structType !== undefined && param.structType !== '') {
       return `struct<${param.structType}>[]`
     }
-    if (param.arrayType) {
-      return param.arrayType === 'struct' && param.structType
-        ? `struct<${param.structType}>[]`
-        : `${param.arrayType}[]`
+    if (param.arrayType !== undefined) {
+      return `${param.arrayType}[]`
     }
     return 'string[]'
   }
@@ -418,20 +429,22 @@ function generateLocalizedHeaders(plugin: PluginDefinition, sink?: BlockSink): s
 
   for (const [lang, content] of Object.entries(localizations)) {
     if (!LOCALIZATION_KEY.test(lang)) continue
-    if (!content.description && !content.help) continue
+    const description = content.description ?? ''
+    const help = content.help ?? ''
+    if (description === '' && help === '') continue
 
     const lines: string[] = []
     lines.push(`/*:${blockValue(sink, `Localization "${lang}"`, lang)}`)
 
-    if (content.description) {
+    if (description !== '') {
       lines.push(
-        ` * @plugindesc ${blockValue(sink, `Localization "${lang}" @plugindesc`, content.description)}`
+        ` * @plugindesc ${blockValue(sink, `Localization "${lang}" @plugindesc`, description)}`
       )
     }
 
-    if (content.help) {
+    if (help !== '') {
       lines.push(' * @help')
-      for (const helpLine of content.help.split(/\r\n|\r|\n/)) {
+      for (const helpLine of help.split(/\r\n|\r|\n/)) {
         lines.push(` * ${helpText(blockValue(sink, `Localization "${lang}" @help`, helpLine))}`)
       }
     }
@@ -486,7 +499,7 @@ function generateBody(plugin: PluginDefinition): string {
   // Strip comments first so `// registerCommand(PLUGIN_NAME, 'Foo')` doesn't
   // suppress generation of Foo. String literals are preserved so real calls
   // (with the command name in quotes) still match.
-  const customCode = plugin.customCode || ''
+  const customCode = plugin.customCode ?? ''
   const alreadyRegistered = customCode
     ? findRegisteredCommandNames(stripCommentsOnly(customCode), pluginName)
     : new Set<string>()
@@ -554,23 +567,13 @@ function parameterParsingLines(parameters: readonly PluginParameter[]): string[]
 /**
 The user's code indented into the IIFE, or a placeholder comment when there is none.
 */
-function customCodeLines(customCode: string | undefined): string[] {
-  const lines: string[] = []
-  if (customCode?.trim()) {
-    lines.push('    // ========== Custom Plugin Code ==========')
-    // Indent the custom code properly — always add 4-space base indent for IIFE nesting
-    const customLines = customCode.split('\n')
-    for (const customLine of customLines) {
-      if (customLine.trim() === '') {
-        lines.push('')
-      } else {
-        lines.push(`    ${customLine}`)
-      }
-    }
-  } else {
-    lines.push('    // Custom plugin code goes here')
-  }
-  return lines
+function customCodeLines(customCode = ''): string[] {
+  if (customCode.trim() === '') return ['    // Custom plugin code goes here']
+  // Indent the custom code properly — always add 4-space base indent for IIFE nesting
+  const customLines = customCode
+    .split('\n')
+    .map((customLine) => (customLine.trim() === '' ? '' : `    ${customLine}`))
+  return ['    // ========== Custom Plugin Code ==========', ...customLines]
 }
 
 /**
@@ -924,7 +927,7 @@ file's line endings are kept, and an unedited plugin is written back byte for by
 */
 export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseline): string {
   const source = plugin.rawSource
-  if (!source) {
+  if (source === undefined || source === '') {
     throw new Error('generateRawMode needs rawSource')
   }
   const blocks = findAnnotationBlocks(source)
@@ -1209,7 +1212,7 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       // Without the inner parse each element remains a string literal.
       const parsed = `JSON.parse(${accessor} || '${jsonFallback(param, '[]')}')`
       const inner = param.arrayType
-      if (inner === 'struct' && param.structType) {
+      if (inner === 'struct' && param.structType !== undefined && param.structType !== '') {
         return `${parsed}.map(s => JSON.parse(s))`
       }
       if (inner === 'number' || (inner && ID_BASED_PARAM_TYPES.has(inner))) {
@@ -1512,12 +1515,12 @@ function checkGeneratedIdentifier(
 ): void {
   const identifier = camelCase(name)
   const previousOrigin = identifierOrigins.get(identifier)
-  if (previousOrigin && previousOrigin !== name) {
+  if (previousOrigin === undefined || previousOrigin === name) {
+    identifierOrigins.set(identifier, name)
+  } else {
     errors.push(
       `Parameters "${previousOrigin}" and "${name}" both generate identifier "${identifier}" — rename one to avoid a duplicate declaration`
     )
-  } else {
-    identifierOrigins.set(identifier, name)
   }
 
   // Warn about reserved-word and digit-start transforms so users know the
@@ -1575,7 +1578,12 @@ Struct parameters that name a struct the plugin does not define (warning).
 function checkStructReferences(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
   const structNames = new Set(plugin.structs.map((s) => s.name))
   for (const param of plugin.parameters) {
-    if (param.type === 'struct' && param.structType && !structNames.has(param.structType)) {
+    if (
+      param.type === 'struct' &&
+      param.structType !== undefined &&
+      param.structType !== '' &&
+      !structNames.has(param.structType)
+    ) {
       warnings.push(
         `Parameter "${param.name}" references struct "${param.structType}" which is not defined in this plugin`
       )
@@ -1615,11 +1623,13 @@ Struct definitions no parameter or command argument references (warning).
 function checkUnusedStructs(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
   const referencedStructs = new Set<string>()
   for (const param of plugin.parameters) {
-    if (param.structType) referencedStructs.add(param.structType)
+    if (param.structType !== undefined && param.structType !== '')
+      referencedStructs.add(param.structType)
   }
   for (const command of plugin.commands) {
     for (const arg of command.args) {
-      if (arg.structType) referencedStructs.add(arg.structType)
+      if (arg.structType !== undefined && arg.structType !== '')
+        referencedStructs.add(arg.structType)
     }
   }
   for (const struct of plugin.structs) {
@@ -1640,7 +1650,7 @@ function checkParents(
 ): void {
   const paramNames = new Set(parameters.map((p) => p.name))
   for (const param of parameters) {
-    if (param.parent && !paramNames.has(param.parent)) {
+    if (param.parent !== undefined && param.parent !== '' && !paramNames.has(param.parent)) {
       errors.push(`Parameter "${param.name}" references nonexistent parent "${param.parent}"`)
     }
   }
@@ -1650,7 +1660,7 @@ function checkParents(
 Commands with no implementation in custom code (warning).
 */
 function checkImplementations(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
-  if (!plugin.customCode) return
+  if (plugin.customCode === undefined || plugin.customCode === '') return
   // Ignore comments to avoid false positives (e.g., a `// 'Heal'` note counting as impl)
   const strippedImpl = stripCommentsOnly(plugin.customCode)
   for (const command of plugin.commands) {
