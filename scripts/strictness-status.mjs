@@ -14,7 +14,7 @@
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
 // print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -230,8 +230,9 @@ async function checkPending(tracked) {
   return isOk
 }
 
-// Runs an npm script with extra arguments and returns its output, its exit status and how it
-// ended.
+// Runs an npm script with extra arguments and returns its output, its size in bytes, its exit
+// status and how it ended. The child writes into regular files rather than pipes: a file write
+// completes before the child can exit, so no output depends on a reader keeping up.
 /**
 @param {string} script
 @param {string[]} [extra]
@@ -240,21 +241,37 @@ function npmRun(script, extra = []) {
   const npm = process.env.npm_execpath
   const [command, args] = npm === undefined ? ['npm', []] : [process.execPath, [npm]]
   const tail = extra.length === 0 ? [] : ['--', ...extra]
-  const result = spawnSync(command, [...args, 'run', '-s', script, ...tail], { encoding: 'utf8' })
-  const ending =
-    result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
-  return {
-    status: result.status,
-    out: `${result.stdout ?? ''}${result.stderr ?? ''}`,
-    ending
+  const directory = mkdtempSync(path.join(tmpdir(), 'strictness-run-'))
+  const files = [path.join(directory, 'stdout'), path.join(directory, 'stderr')]
+  try {
+    const fds = files.map((file) => openSync(file, 'w'))
+    let result
+    try {
+      result = spawnSync(command, [...args, 'run', '-s', script, ...tail], {
+        stdio: ['ignore', ...fds]
+      })
+    } finally {
+      for (const fd of fds) closeSync(fd)
+    }
+    const output = Buffer.concat(files.map((file) => readFileSync(file)))
+    const ending =
+      result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
+    return { status: result.status, out: output.toString('utf8'), bytes: output.length, ending }
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
   }
 }
 
-// A run with no usable summary prints how it ended and its last lines, so a failure that does
-// not recur still leaves its cause in the log.
+// A run with no usable summary prints how it ended, how many bytes it printed and its last lines,
+// so a failure that does not recur still leaves its cause in the log.
 const OUTPUT_TAIL = 20
-function printFailedRun(label, reason, { out, ending }) {
-  print(`${label}: ${reason} (${ending})`)
+/**
+@param {string} label
+@param {string} reason
+@param {{ out: string, bytes: number, ending: string }} run
+*/
+function printFailedRun(label, reason, { out, bytes, ending }) {
+  print(`${label}: ${reason} (${ending}, ${bytes} bytes received)`)
   const tail = out
     .split('\n')
     .filter((line) => line.trim() !== '')

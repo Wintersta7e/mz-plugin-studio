@@ -85,6 +85,22 @@ const run = (
 }
 const status = (dir: string): { status: number | null; out: string } => run(dir, SCRIPT, [])
 
+// A type coverage report whose test program runs `test`, with `files` beside it, and whose other
+// programs each print a full summary.
+const reportTypecov = (
+  test: string,
+  files: Record<string, string> = {}
+): { status: number | null; out: string } => {
+  const directory = tempDir()
+  const summary = 'node -e "console.log(\'(1 / 1) 100.00%\')"'
+  const scripts = Object.fromEntries(
+    ['node', 'web', 'tools', 'scripts', 'e2e'].map((name) => [`typecov:${name}`, summary])
+  )
+  scripts['typecov:test'] = test
+  write(directory, { ...files, 'package.json': JSON.stringify({ scripts }) })
+  return run(directory, SCRIPT, ['--report', 'typecov'])
+}
+
 // A production knip run printing one summary line and its scanned files, under the ceiling 2.
 const knipProduction = ({ issues, files }: { issues: number; files: number }): string =>
   `node -e "console.log('Unused exports (${String(issues)})'); ` +
@@ -290,20 +306,29 @@ describe('strictness status', () => {
   })
 
   it('(l) names how a report run without a summary ended and what it printed', () => {
-    const directory = tempDir()
-    const summary = 'node -e "console.log(\'(1 / 1) 100.00%\')"'
-    const scripts = Object.fromEntries(
-      ['node', 'web', 'tools', 'scripts', 'e2e'].map((name) => [`typecov:${name}`, summary])
-    )
-    scripts['typecov:test'] =
+    const result = reportTypecov(
       "node -e \"console.log('first'); console.log('last'); process.exit(3)\""
-    write(directory, { 'package.json': JSON.stringify({ scripts }) })
-    const result = run(directory, SCRIPT, ['--report', 'typecov'])
+    )
 
     expect(result.out).toContain('typecov web: (1 / 1) 100.00%')
-    expect(result.out).toContain('typecov test: no summary or nothing scanned (exit 3)')
+    expect(result.out).toContain(
+      'typecov test: no summary or nothing scanned (exit 3, 11 bytes received)'
+    )
     expect(result.out).toContain('typecov test | first\ntypecov test | last\n')
     expect(result.status).toBe(1)
+  })
+
+  it('(y) reads the summary a report run prints after a large output and a failing exit', () => {
+    const fake = [
+      "const line = 'uncovered '.repeat(10)",
+      'for (let i = 0; i < 5000; i++) console.log(line + String(i))',
+      "console.log('(10 / 12) 83.33%')",
+      'process.exit(1)'
+    ].join('\n')
+    const result = reportTypecov('node fake-typecov.mjs', { 'fake-typecov.mjs': fake })
+
+    expect(result.out).toContain('typecov test: (10 / 12) 83.33%')
+    expect(result.status).toBe(0)
   })
 
   it('(m) passes the production knip count at its ceiling', () => {
@@ -371,7 +396,7 @@ describe('strictness status', () => {
     const missing = reportJscpd(undefined)
     const unnamed = reportJscpd(AT_CEILINGS, [])
 
-    expect(missing.out).toContain('jscpd: the run wrote no report (exit 0)')
+    expect(missing.out).toContain('jscpd: the run wrote no report (exit 0, 0 bytes received)')
     expect(missing.status).toBe(1)
     expect(unnamed.out).toContain('jscpd: the jscpd:report script names no --clones ceiling')
     expect(unnamed.out).toContain('jscpd: the jscpd:report script names no --duplicated-lines')

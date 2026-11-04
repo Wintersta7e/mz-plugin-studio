@@ -10,7 +10,7 @@
   },
   "scripts": {
     "strict": 37,
-    "noImplicitAny": 135,
+    "noImplicitAny": 130,
     "exactOptionalPropertyTypes": 1,
     "noPropertyAccessFromIndexSignature": 14
   },
