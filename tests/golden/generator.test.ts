@@ -2,7 +2,9 @@
 // definitions before the escaping work changes them; and the plugins generated from parameter
 // files whose defaults are not the declared type.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { generatePlugin, validatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { getAllClassNames } from '../../src/renderer/src/lib/generator/class-registry'
+import type { PluginParameter } from '../../src/shared/types/plugin'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { COMMENT_PAYLOADS } from '../helpers/hostile'
@@ -84,5 +86,51 @@ describe('generator goldens', () => {
     for (const name of BENIGN) {
       expect(compileCheck(generatePlugin(entry(name).def), `${name}.js`), name).toBeNull()
     }
+  })
+})
+
+const customCodeRows = (): GeneratorEntry['def'] => structuredClone(entry('custom-code').def)
+
+describe('generator rules no file golden reaches', () => {
+  it('registers no command the custom code already registers', () => {
+    const definition = customCodeRows()
+    definition.customCode = "PluginManager.registerCommand(PLUGIN_NAME, 'Show', function () {})"
+
+    expect(generatePlugin(definition).match(/registerCommand\(PLUGIN_NAME, 'Show'/g)).toStrictEqual(
+      ["registerCommand(PLUGIN_NAME, 'Show'"]
+    )
+  })
+
+  it('names duplicate commands, duplicate arguments and built-in command names', () => {
+    const definition = customCodeRows()
+    const arg: PluginParameter = {
+      id: 'n',
+      name: 'n',
+      text: 'N',
+      desc: '',
+      type: 'number',
+      default: 0
+    }
+    definition.customCode = ''
+    definition.commands = [
+      { id: 'a', name: 'Show', text: 'Show', desc: '', args: [arg, { ...arg, id: 'n2' }] },
+      { id: 'b', name: 'Show', text: 'Show', desc: '', args: [] },
+      { id: 'c', name: 'Wait', text: 'Wait', desc: '', args: [] }
+    ]
+
+    expect(validatePlugin(definition)).toStrictEqual({
+      valid: false,
+      errors: ['Duplicate argument name in command Show: n', 'Duplicate command name: Show'],
+      warnings: ['Command "Wait" shadows a built-in RPG Maker MZ command']
+    })
+  })
+
+  it('lists the class registry in code-unit order', () => {
+    const names = getAllClassNames()
+
+    expect(names.length).toBeGreaterThan(1)
+    expect(names.every((name, index) => index === 0 || (names.at(index - 1) ?? name) < name)).toBe(
+      true
+    )
   })
 })
