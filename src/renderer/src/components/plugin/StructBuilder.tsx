@@ -62,7 +62,7 @@ export function StructBuilder() {
   const headerReadOnly = useHeaderReadOnly()
 
   const handleAddStruct = () => {
-    const struct = createEmptyStruct()
+    const struct = createEmptyStruct(structs.map((s) => s.name))
     addStruct(struct)
     setExpandedId(struct.id)
   }

@@ -25,6 +25,7 @@ const NOT_SAVED: Record<NotSavedKind, string> = {
   'header-without-main-block': 'header changes in a file with no main annotation block',
   'unparsable-source': 'raw mode cannot add to a file that is not valid JavaScript',
   'invalid-output': 'raw mode built code that is not valid JavaScript',
+  'duplicate-struct': 'two structs share a name (rename one)',
   'needs-confirmation': 'saving regenerates the whole file (save it with Ctrl+S to confirm)',
   'exists-unrelated': 'the file there is not the one this tab last opened or saved',
   'changed-on-disk': 'changed on disk',

@@ -7,8 +7,8 @@ import { Script, createContext } from 'vm'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import type { PluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import { toBaseline } from '../../src/shared/types/plugin'
-import type { PluginDefinition } from '../../src/shared/types/plugin'
+import { createEmptyParameter, createEmptyStruct, toBaseline } from '../../src/shared/types/plugin'
+import type { PluginDefinition, PluginParameter } from '../../src/shared/types/plugin'
 import { EDITS, loadFixture } from '../golden/corpus/raw-mode'
 
 const HEADER =
@@ -31,6 +31,8 @@ const addCommand = (def: PluginDefinition, name: string): PluginDefinition => ({
   ...def,
   commands: [...def.commands, { id: `c-${name}`, name, text: name, desc: '', args: [] }]
 })
+
+const field = (name: string): PluginParameter => ({ ...createEmptyParameter(), name })
 
 const output = (edited: PluginDefinition, opened: PluginDefinition): PluginOutput =>
   generatePluginOutput(edited, true, toBaseline(opened))
@@ -241,5 +243,39 @@ describe('raw mode refuses what it cannot place or would not load', () => {
 
     expect(out.refusal).toBe('invalid-output')
     expect(out.message).toContain('P.js')
+  })
+
+  describe('two structs of one name', () => {
+    // Raw mode finds a struct's block in the file by name, so a second struct of that name
+    // would be written over the first one's block
+    const withStruct =
+      HEADER.replace(' * @param A', ' * @param Points\n * @type struct<NewStruct>[]\n * @param A') +
+      '\n/*~struct~NewStruct:\n * @param x\n * @type number\n * @default 3\n *\n' +
+      ' * @param y\n * @type number\n * @default 4\n */\n\n' +
+      "(() => {\n    const params = PluginManager.parameters('P');\n    window.demoLoaded = true;\n})();\n"
+
+    it.each([
+      ['an added struct', (loaded: PluginDefinition) => loaded.structs],
+      [
+        'an added struct beside an edited original',
+        (loaded: PluginDefinition) =>
+          loaded.structs.map((struct) => ({
+            ...struct,
+            parameters: [...struct.parameters, field('z')]
+          }))
+      ]
+    ])('refuses %s named like a struct of the file', (_label, kept) => {
+      const opened = open(withStruct)
+
+      expect(opened.structs.map((s) => s.name)).toStrictEqual(['NewStruct'])
+
+      const out = output({ ...opened, structs: [...kept(opened), createEmptyStruct()] }, opened)
+
+      expect(out).toStrictEqual({
+        ok: false,
+        refusal: 'duplicate-struct',
+        message: expect.stringContaining('two structs are named NewStruct') as unknown
+      })
+    })
   })
 })

@@ -238,10 +238,23 @@ export function createEmptyCommand(): PluginCommand {
   }
 }
 
-export function createEmptyStruct(): PluginStruct {
+/**
+`base`, or else `base2`, `base3`…: the first of them `taken` does not hold.
+*/
+function firstFreeName(base: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(base)) return base
+  let suffix = 2
+  while (taken.has(base + String(suffix))) suffix += 1
+  return base + String(suffix)
+}
+
+/**
+A struct with no fields, named apart from the structs `taken` names.
+*/
+export function createEmptyStruct(taken: readonly string[] = []): PluginStruct {
   return {
     id: crypto.randomUUID(),
-    name: 'NewStruct',
+    name: firstFreeName('NewStruct', new Set(taken)),
     parameters: []
   }
 }

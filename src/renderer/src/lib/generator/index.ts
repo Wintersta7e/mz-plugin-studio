@@ -1600,9 +1600,29 @@ function checkCommands(
 }
 
 /**
-Struct parameters that name a struct the plugin does not define (warning).
+Each struct name more than one struct of the plugin holds, once, in the order structs repeat it.
 */
-function checkStructReferences(plugin: PluginDefinition, { warnings }: ValidationProblems): void {
+export function duplicateStructNames(structs: readonly PluginStruct[]): string[] {
+  const seen = new Set<string>()
+  const repeated = new Set<string>()
+  for (const { name } of structs) {
+    if (seen.has(name)) repeated.add(name)
+    seen.add(name)
+  }
+  return [...repeated]
+}
+
+/**
+Two structs of one name, which a file cannot tell apart (error), and struct parameters that name
+a struct the plugin does not define (warning).
+*/
+function checkStructReferences(
+  plugin: PluginDefinition,
+  { errors, warnings }: ValidationProblems
+): void {
+  for (const name of duplicateStructNames(plugin.structs)) {
+    errors.push(`Duplicate struct name: ${name}`)
+  }
   const structNames = new Set(plugin.structs.map((s) => s.name))
   for (const param of plugin.parameters) {
     if (

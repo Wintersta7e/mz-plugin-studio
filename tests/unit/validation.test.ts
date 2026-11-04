@@ -126,6 +126,19 @@ describe('validation - existing checks', () => {
 
     expect(result.warnings.every((w) => !w.includes('Position'))).toBe(true)
   })
+
+  it('errors on two structs of one name', () => {
+    const plugin = createTestPlugin({
+      structs: [
+        { id: 's1', name: 'Position', parameters: [] },
+        { id: 's2', name: 'Position', parameters: [] },
+        { id: 's3', name: 'Area', parameters: [] }
+      ]
+    })
+    const result = validatePlugin(plugin)
+
+    expect(result.errors).toStrictEqual(['Duplicate struct name: Position'])
+  })
 })
 
 describe('validation - parameter name warnings', () => {

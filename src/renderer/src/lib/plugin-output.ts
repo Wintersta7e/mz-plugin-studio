@@ -1,6 +1,7 @@
 import type { PluginBaseline, PluginDefinition } from '../types/plugin'
 import {
   RawModeParseError,
+  duplicateStructNames,
   generateHeaderOnly,
   generatePlugin,
   generateRawMode,
@@ -14,6 +15,7 @@ export type OutputRefusal =
   | 'header-without-main-block'
   | 'unparsable-source'
   | 'invalid-output'
+  | 'duplicate-struct'
 
 export type PluginOutput =
   | { ok: true; code: string }
@@ -95,6 +97,16 @@ export function generatePluginOutput(
       ok: false,
       refusal: 'header-without-main-block',
       message: `Header changes cannot be saved: ${saveFileName(plugin)} has no main annotation block (/*: or /*:en). Undo the header changes, or turn raw mode off to save regenerated code.`
+    }
+  }
+  // Raw mode finds a struct's block in the file by its name, so two structs of one name would
+  // both be written into the first one's block
+  const duplicates = duplicateStructNames(plugin.structs)
+  if (duplicates.length > 0) {
+    return {
+      ok: false,
+      refusal: 'duplicate-struct',
+      message: `Not saved: two structs are named ${duplicates[0]}, so raw mode cannot tell which block of ${saveFileName(plugin)} each one is. Rename one of them, then save again.`
     }
   }
   let code: string

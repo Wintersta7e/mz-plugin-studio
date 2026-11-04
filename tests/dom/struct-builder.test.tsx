@@ -73,6 +73,21 @@ describe('struct blocks', () => {
     await waitFor(() => expect(structBlock('Point')).toContain(' * @param x\n'))
   })
 
+  it('names each added struct apart from the structs already there', async () => {
+    expect.hasAssertions()
+
+    const view = renderTab([{ ...createEmptyStruct(), name: 'NewStruct' }])
+
+    await view.click(screen.getByRole('button', { name: 'Add Struct' }))
+    await view.click(screen.getByRole('button', { name: 'Add Struct' }))
+
+    expect(usePluginStore.getState().plugin.structs.map((s) => s.name)).toStrictEqual([
+      'NewStruct',
+      'NewStruct2',
+      'NewStruct3'
+    ])
+  })
+
   it('writes the options of a select field', async () => {
     const user = renderTab([
       { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
