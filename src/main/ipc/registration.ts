@@ -2,7 +2,7 @@
 // request must come from the app's own page and pass its channel's argument check (for a contract
 // channel, also its access class) before its handler runs, and every refusal is logged once
 // without the request's content.
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
 import { authorize, type AccessClass } from '../file-access'
@@ -26,22 +26,32 @@ import { invalidArguments } from './arguments'
 export { invalidArguments } from './arguments'
 export { LOG_CHANNEL } from '../../shared/ipc-types'
 
-/** Longest logger name or scope a log line may carry; a scope pads every later line to its length */
+/**
+Longest logger name or scope a log line may carry; a scope pads every later line to its length
+*/
 const MAX_LOG_NAME = 64
-/** Most values one log line may carry */
+/**
+Most values one log line may carry
+*/
 const MAX_LOG_VALUES = 100
-/** Longest log line, measured as JSON */
+/**
+Longest log line, measured as JSON
+*/
 const MAX_LOG_LENGTH = 256 * 1024
 
 export interface Handler<C extends InvokeChannel> {
   access: AccessClass
-  /** The arguments as the handler takes them; throws `invalidArguments(channel)` */
+  /**
+  The arguments as the handler takes them; throws `invalidArguments(channel)`
+  */
   check(raw: readonly unknown[]): InvokeArgs<C>
   run(...args: InvokeArgs<C>): InvokeResult<C> | Promise<InvokeResult<C>>
 }
 
 export interface Listener<C extends SendChannel> {
-  /** Never throws: maps any input to a safe value */
+  /**
+  Never throws: maps any input to a safe value
+  */
   check(raw: readonly unknown[]): SendArgs<C>
   run(...args: SendArgs<C>): void
 }
@@ -53,20 +63,26 @@ export interface SenderEvent {
   readonly senderFrame: unknown
 }
 
-/** The page the window loads: the packaged renderer file, or the dev server in development */
+/**
+The page the window loads: the packaged renderer file, or the dev server in development
+*/
 export type RendererEntry = { kind: 'file'; path: string } | { kind: 'dev-server'; origin: string }
 
-/** Whether a request comes from the app's own page */
+/**
+Whether a request comes from the app's own page
+*/
 export type SenderCheck = (event: SenderEvent) => boolean
 
-/** How many distinct refused senders a check logs; a page cycling addresses cannot flood the log */
+/**
+How many distinct refused senders a check logs; a page cycling addresses cannot flood the log
+*/
 const MAX_LOGGED_SENDERS = 20
 
 /**
- * Trusts only the main frame of the window `getWindow` returns, showing `entry`. A file entry is
- * compared by its decoded path, so any percent-encoding of the same file matches. Each refused
- * sender is logged once with the page expected, so the log shows why the app answers nothing.
- */
+Trusts only the main frame of the window `getWindow` returns, showing `entry`. A file entry is
+compared by its decoded path, so any percent-encoding of the same file matches. Each refused
+sender is logged once with the page expected, so the log shows why the app answers nothing.
+*/
 export function createSenderCheck(
   getWindow: () => { webContents: { mainFrame: unknown } } | null,
   entry: RendererEntry,
@@ -107,7 +123,9 @@ export interface Registrar {
   on(channel: string, listener: (event: SenderEvent, ...args: unknown[]) => void): void
 }
 
-/** Runs `step`; a throw is logged as the channel's refusal and rethrown */
+/**
+Runs `step`; a throw is logged as the channel's refusal and rethrown
+*/
 function admit<T>(channel: string, step: () => T): T {
   try {
     return step()
@@ -151,7 +169,9 @@ export function on<C extends SendChannel>(
   })
 }
 
-/** Registers a handler for every invoke channel; returns how many were registered */
+/**
+Registers a handler for every invoke channel; returns how many were registered
+*/
 export function handleAll(
   handlers: InvokeHandlers,
   isTrustedSender: SenderCheck,
@@ -166,7 +186,9 @@ export function handleAll(
   return count
 }
 
-/** Registers a listener for every send channel; returns how many were registered */
+/**
+Registers a listener for every send channel; returns how many were registered
+*/
 export function onAll(
   listeners: SendListeners,
   isTrustedSender: SenderCheck,
@@ -181,7 +203,9 @@ export function onAll(
   return count
 }
 
-/** The part of `ipcMain` that holds electron-log's own registration on its channel */
+/**
+The part of `ipcMain` that holds electron-log's own registration on its channel
+*/
 export interface LogChannelHost extends Registrar {
   listeners(channel: string): unknown[]
   removeAllListeners(channel: string): unknown
@@ -190,7 +214,9 @@ export interface LogChannelHost extends Registrar {
 
 type LogListener = (event: SenderEvent, message: unknown) => void
 
-/** The fields of a log line the checks read */
+/**
+The fields of a log line the checks read
+*/
 interface LogFields {
   logId?: unknown
   scope?: unknown
@@ -199,15 +225,15 @@ interface LogFields {
 
 function isPlainObject(value: unknown): value is LogFields {
   if (typeof value !== 'object' || value === null) return false
-  const proto: unknown = Object.getPrototypeOf(value)
-  return proto === Object.prototype || proto === null
+  const prototype: unknown = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
 }
 
 /**
- * A logger name or scope: absent, or a short string naming no property every object has.
- * electron-log looks loggers up by name in a plain object, so `__proto__` or `toString` would
- * reach an object's own machinery and throw in main.
- */
+A logger name or scope: absent, or a short string naming no property every object has.
+electron-log looks loggers up by name in a plain object, so `__proto__` or `toString` would
+reach an object's own machinery and throw in main.
+*/
 function isLogName(value: unknown): boolean {
   return (
     value === undefined ||
@@ -218,7 +244,9 @@ function isLogName(value: unknown): boolean {
   )
 }
 
-/** The length of `value` as JSON, or Infinity when it has none (a cycle, a BigInt) */
+/**
+The length of `value` as JSON, or Infinity when it has none (a cycle, a BigInt)
+*/
 function jsonLength(value: unknown): number {
   try {
     return JSON.stringify(value).length
@@ -227,7 +255,9 @@ function jsonLength(value: unknown): number {
   }
 }
 
-/** Throws `invalidArguments` unless `raw` is one log line as electron-log's page logger sends it */
+/**
+Throws `invalidArguments` unless `raw` is one log line as electron-log's page logger sends it
+*/
 function checkLogLine(raw: readonly unknown[]): void {
   const [line] = raw
   if (
@@ -246,12 +276,12 @@ function checkLogLine(raw: readonly unknown[]): void {
 }
 
 /**
- * Puts electron-log's channel behind the sender check: takes off the listener and handler
- * electron-log registers when it loads and registers a checked listener in their place. An
- * admitted log line goes on to electron-log's own listener, which writes it as before. No handler
- * takes the old one's place: only the script electron-log loads into pages asked it anything, and
- * main does not load that script.
- */
+Puts electron-log's channel behind the sender check: takes off the listener and handler
+electron-log registers when it loads and registers a checked listener in their place. An
+admitted log line goes on to electron-log's own listener, which writes it as before. No handler
+takes the old one's place: only the script electron-log loads into pages asked it anything, and
+main does not load that script.
+*/
 export function routeLogChannel(
   isTrustedSender: SenderCheck,
   host: LogChannelHost = ipcMain
@@ -276,7 +306,9 @@ export function routeLogChannel(
   })
 }
 
-/** Sends an event to a window */
+/**
+Sends an event to a window
+*/
 export function emit<C extends EventChannel>(
   target: Pick<WebContents, 'send'>,
   channel: C,

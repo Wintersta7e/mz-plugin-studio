@@ -921,16 +921,7 @@
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
-    "unicorn/catch-error-name": {
-      "count": 1
-    },
     "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
     },
     "unicorn/no-await-expression-member": {
@@ -941,34 +932,14 @@
     },
     "unicorn/prefer-await": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "src/main/close-prompt.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
     }
   },
   "src/main/csp.ts": {
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
     }
   },
   "src/main/file-access.ts": {
@@ -978,14 +949,8 @@
     "promise/always-return": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
       "count": 6
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
     },
     "unicorn/no-null": {
       "count": 3
@@ -995,18 +960,6 @@
     },
     "unicorn/prefer-await": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-type-error": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 19
-    },
-    "unicorn/switch-case-braces": {
-      "count": 4
     }
   },
   "src/main/index.ts": {
@@ -1031,14 +984,11 @@
     "promise/no-callback-in-promise": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 5
+      "count": 1
     },
     "unicorn/no-null": {
       "count": 1
@@ -1049,9 +999,6 @@
     "unicorn/prefer-await": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
     "unicorn/prefer-top-level-await": {
       "count": 1
     }
@@ -1060,17 +1007,8 @@
     "regexp/use-ignore-case": {
       "count": 1
     },
-    "unicorn/explicit-length-check": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
     }
   },
   "src/main/ipc/dialog.ts": {
@@ -1102,49 +1040,25 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/consistent-existence-index-check": {
-      "count": 2
+      "count": 1
     },
     "unicorn/consistent-function-scoping": {
       "count": 2
     },
-    "unicorn/explicit-length-check": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
-      "count": 5
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 12
+      "count": 4
     },
     "unicorn/no-await-expression-member": {
       "count": 2
     },
-    "unicorn/no-negated-condition": {
-      "count": 2
-    },
     "unicorn/prefer-await": {
       "count": 1
-    },
-    "unicorn/prefer-combined-guards": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
     },
     "unicorn/prefer-number-is-safe-integer": {
       "count": 1
     },
     "unicorn/prefer-ternary": {
       "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 16
-    },
-    "unicorn/switch-case-braces": {
-      "count": 3
     }
   },
   "src/main/ipc/handlers.ts": {
@@ -1152,9 +1066,6 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/prefer-export-from": {
       "count": 1
     }
   },
@@ -1180,20 +1091,8 @@
     "unicorn/name-replacements": {
       "count": 2
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
-    },
     "unicorn/no-await-expression-member": {
       "count": 1
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 11
     },
     "unicorn/text-encoding-identifier-case": {
       "count": 3
@@ -1207,13 +1106,7 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 4
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
+      "count": 2
     }
   },
   "src/main/ipc/registration.ts": {
@@ -1226,14 +1119,8 @@
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
     "unicorn/no-array-callback-reference": {
       "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
     },
     "unicorn/no-computed-property-existence-check": {
       "count": 1
@@ -1241,14 +1128,8 @@
     "unicorn/no-for-each": {
       "count": 2
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
     "unicorn/prefer-smaller-scope": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 16
     }
   },
   "src/main/services/pluginParser.ts": {
@@ -1407,31 +1288,12 @@
     "unicorn/import-style": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
     "unicorn/text-encoding-identifier-case": {
       "count": 6
     }
   },
-  "src/main/services/syntax-check.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    }
-  },
   "src/main/window-open.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/prefer-await": {
-      "count": 1
-    }
-  },
-  "src/main/window-size.ts": {
-    "unicorn/single-line-block-comment-style": {
       "count": 1
     }
   },

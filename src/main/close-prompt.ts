@@ -14,9 +14,9 @@ export function closePromptOptions(): MessageBoxSyncOptions {
 }
 
 /**
- * Lets the unload go ahead, and so the window close, only when the user chooses to discard.
- * Electron decides synchronously, hence a synchronous message box.
- */
+Lets the unload go ahead, and so the window close, only when the user chooses to discard.
+Electron decides synchronously, hence a synchronous message box.
+*/
 export function handleWillPreventUnload(
   event: { preventDefault(): void },
   showBox: (options: MessageBoxSyncOptions) => number

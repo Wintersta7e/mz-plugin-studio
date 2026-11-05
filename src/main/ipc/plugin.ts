@@ -1,6 +1,6 @@
-import { createHash } from 'crypto'
-import { mkdir, readFile, readdir } from 'fs/promises'
-import path, { join, dirname } from 'path'
+import { createHash } from 'node:crypto'
+import { mkdir, readFile, readdir } from 'node:fs/promises'
+import path, { join, dirname } from 'node:path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
 import { compileCheck } from '../services/syntax-check'
@@ -25,12 +25,16 @@ import { assertWriteGranted, grantKey } from '../file-access'
 import { checkSaveGuard, strings } from './arguments'
 import type { InvokeHandlers } from './registration'
 
-/** Lowercase hex sha256 of `bytes` */
+/**
+Lowercase hex sha256 of `bytes`
+*/
 export function sha256Hex(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex')
 }
 
-/** Whether two paths name one file: case-insensitive on win32, as the write grants compare */
+/**
+Whether two paths name one file: case-insensitive on win32, as the write grants compare
+*/
 export function samePath(
   a: string,
   b: string,
@@ -40,7 +44,9 @@ export function samePath(
   return grantKey(a, impl) === grantKey(b, impl)
 }
 
-/** The file's bytes, or null when it does not exist; any other read error is thrown */
+/**
+The file's bytes, or null when it does not exist; any other read error is thrown
+*/
 async function readExisting(target: string): Promise<Buffer | null> {
   try {
     return await readFile(target)
@@ -51,11 +57,11 @@ async function readExisting(target: string): Promise<Buffer | null> {
 }
 
 /**
- * Writes `content` to `target` unless `guard` finds a reason to ask first; then nothing is
- * written and the result names the conflict and the sha256 of the bytes on disk. Without a
- * guard the file is written unchecked. Another program writing between the read and the write
- * is not detected.
- */
+Writes `content` to `target` unless `guard` finds a reason to ask first; then nothing is
+written and the result names the conflict and the sha256 of the bytes on disk. Without a
+guard the file is written unchecked. Another program writing between the read and the write
+is not detected.
+*/
 async function writeGuarded(
   target: string,
   content: string,
@@ -64,7 +70,7 @@ async function writeGuarded(
 ): Promise<SaveResult> {
   const disk = await readExisting(target)
   const filename = path.basename(target)
-  const problem = guard !== undefined ? compileCheck(content, filename) : null
+  const problem = guard === undefined ? null : compileCheck(content, filename)
   if (disk !== null && guard !== undefined) {
     const diskSha256 = sha256Hex(disk)
     const refuse = (conflict: SaveConflict, syntaxError?: SyntaxProblem): SaveResult => ({
@@ -102,9 +108,9 @@ async function writeGuarded(
 }
 
 /**
- * Writes `content` to `filePath`, a path chosen in a save dialog; creates its folder when missing.
- * The dialog already asked about replacing the file, so a guard checks only the base and syntax.
- */
+Writes `content` to `filePath`, a path chosen in a save dialog; creates its folder when missing.
+The dialog already asked about replacing the file, so a guard checks only the base and syntax.
+*/
 export async function savePluginToPath(
   filePath: string,
   content: string,
@@ -118,13 +124,17 @@ export async function savePluginToPath(
   return result
 }
 
-/** A file whose bytes are not UTF-8, so its text could not be saved back unchanged */
+/**
+A file whose bytes are not UTF-8, so its text could not be saved back unchanged
+*/
 class NotUtf8Error extends Error {}
 
 // Keeps a byte order mark in the text, so a save writes it back
 const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
 
-/** Reads a file's bytes as UTF-8 text with their sha256; bytes that are not UTF-8 are refused */
+/**
+Reads a file's bytes as UTF-8 text with their sha256; bytes that are not UTF-8 are refused
+*/
 async function readWithSha(filePath: string): Promise<{ content: string; sha256: string }> {
   const bytes = await readFile(filePath)
   let content: string
@@ -140,7 +150,9 @@ async function readWithSha(filePath: string): Promise<{ content: string; sha256:
   return { content, sha256: sha256Hex(bytes) }
 }
 
-/** Parses `js/plugins/<filename>` of a project, recording the file it came from */
+/**
+Parses `js/plugins/<filename>` of a project, recording the file it came from
+*/
 export async function loadPluginFile(projectPath: string, filename: string): Promise<LoadedPlugin> {
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
@@ -162,9 +174,9 @@ export async function loadPluginFile(projectPath: string, filename: string): Pro
 }
 
 /**
- * Writes `content` to `js/plugins/<filename>` of a project; creates the folder when missing.
- * An existing file is replaced only when it is the guard's base, unchanged.
- */
+Writes `content` to `js/plugins/<filename>` of a project; creates the folder when missing.
+An existing file is replaced only when it is the guard's base, unchanged.
+*/
 export async function savePluginFile(
   projectPath: string,
   filename: string,
@@ -180,7 +192,9 @@ export async function savePluginFile(
   return result
 }
 
-/** Reads the text of `js/plugins/<filename>` of a project with the sha256 of its bytes */
+/**
+Reads the text of `js/plugins/<filename>` of a project with the sha256 of its bytes
+*/
 export async function readRawPlugin(projectPath: string, filename: string): Promise<RawPluginFile> {
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
@@ -189,14 +203,18 @@ export async function readRawPlugin(projectPath: string, filename: string): Prom
   return { ...(await readWithSha(pluginPath)), path: pluginPath }
 }
 
-/** Reads the text of a file the user picked, or a tab's saved file */
+/**
+Reads the text of a file the user picked, or a tab's saved file
+*/
 export async function readFileByPath(filePath: string): Promise<string> {
   assertSafeFilePath(filePath)
   log.debug(`[plugin:read-by-path] ${filePath}`)
   return (await readWithSha(filePath)).content
 }
 
-/** Parses plugin text the window holds; nothing is read from disk */
+/**
+Parses plugin text the window holds; nothing is read from disk
+*/
 export async function parsePluginText(content: string): Promise<PluginDefinition> {
   log.debug('[plugin:parse] Parsing plugin content')
   try {
@@ -209,7 +227,9 @@ export async function parsePluginText(content: string): Promise<PluginDefinition
   }
 }
 
-/** The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none when it is missing */
+/**
+The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none when it is missing
+*/
 export async function listPluginFiles(projectPath: string): Promise<string[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDir = join(projectPath, 'js', 'plugins')
@@ -224,7 +244,9 @@ export async function listPluginFiles(projectPath: string): Promise<string[]> {
   }
 }
 
-/** The load-order tags and prototype overrides of every plugin file in a project */
+/**
+The load-order tags and prototype overrides of every plugin file in a project
+*/
 export async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDir = join(projectPath, 'js', 'plugins')

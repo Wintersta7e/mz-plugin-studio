@@ -1,5 +1,5 @@
-import { readFile, access } from 'fs/promises'
-import { join } from 'path'
+import { readFile, access } from 'node:fs/promises'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import type {
   MZProject,
@@ -158,12 +158,12 @@ export class ProjectParser {
       const items = JSON.parse(content)
 
       return items
-        .filter((i: MZItem | null) => i !== null)
-        .map((i: MZItem) => ({
-          id: i.id,
-          name: i.name,
-          note: i.note || '',
-          noteTags: this.parseNoteTags(i.note || '')
+        .filter((index: MZItem | null) => index !== null)
+        .map((index: MZItem) => ({
+          id: index.id,
+          name: index.name,
+          note: index.note || '',
+          noteTags: this.parseNoteTags(index.note || '')
         }))
     } catch {
       return []

@@ -3,10 +3,10 @@ import log from 'electron-log/main'
 import type { SyntaxProblem } from '../../shared/ipc-types'
 
 /**
- * Compiles `content` as a script without running any of it; null when it compiles, and when it
- * nests too deeply for the compiler to finish, so such a file can still be saved.
- * The line is read from the first stack line, `<filename>:<line>`, when it names one.
- */
+Compiles `content` as a script without running any of it; null when it compiles, and when it
+nests too deeply for the compiler to finish, so such a file can still be saved.
+The line is read from the first stack line, `<filename>:<line>`, when it names one.
+*/
 export function compileCheck(content: string, filename: string): SyntaxProblem | null {
   try {
     // eslint-disable-next-line sonarjs/code-eval -- compile-only syntax check of generated plugin text; the script never runs

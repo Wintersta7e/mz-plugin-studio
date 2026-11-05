@@ -6,9 +6,13 @@ import log from 'electron-log/main'
 log.initialize({ preload: false })
 
 import { app, shell, BrowserWindow, dialog, session } from 'electron'
-import { join, dirname } from 'path'
+import { join, dirname } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { createInvokeHandlers, createSendListeners, type MainDeps } from './ipc/handlers'
+import {
+  createInvokeHandlers,
+  createSendListeners,
+  type MainDeps as MainDependencies
+} from './ipc/handlers'
 import { createSenderCheck, emit, handleAll, onAll, routeLogChannel } from './ipc/registration'
 import { setProjectRootsDir } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
@@ -21,10 +25,10 @@ let mainWindow: BrowserWindow | null = null
 
 const RENDERER_ROOT = join(__dirname, '../renderer')
 const RENDERER_HTML = join(RENDERER_ROOT, 'index.html')
-const devServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined
+const developmentServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined
 // Served by the dev server: its policy, its navigations and its URL. Every other load is the
 // built page from disk, under the production policy and the file request filter.
-const devServer = Boolean(devServerUrl)
+const isDevelopmentServer = Boolean(developmentServerUrl)
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -55,7 +59,7 @@ function createWindow(): void {
     // The app is a single-page app — it should never navigate away from its initial URL.
     // Under the dev server, Vite HMR may trigger same-origin navigations which are safe.
     // Otherwise, block ALL navigation unconditionally.
-    if (!devServer) {
+    if (!isDevelopmentServer) {
       event.preventDefault()
     }
   })
@@ -70,8 +74,8 @@ function createWindow(): void {
     createWindowOpenHandler(async (url) => shell.openExternal(url))
   )
 
-  if (devServerUrl) {
-    mainWindow.loadURL(devServerUrl)
+  if (developmentServerUrl) {
+    mainWindow.loadURL(developmentServerUrl)
   } else {
     mainWindow.loadFile(RENDERER_HTML)
   }
@@ -96,7 +100,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  const csp = devServer ? DEV_SERVER_CSP : PRODUCTION_CSP
+  const csp = isDevelopmentServer ? DEV_SERVER_CSP : PRODUCTION_CSP
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
@@ -106,9 +110,9 @@ app.whenReady().then(() => {
     })
   })
   // The built page and its workers may read only the files the app ships with
-  if (!devServer) installFileRequestFilter(session.defaultSession, RENDERER_ROOT)
+  if (!isDevelopmentServer) installFileRequestFilter(session.defaultSession, RENDERER_ROOT)
 
-  const deps: MainDeps = {
+  const dependencies: MainDependencies = {
     dialog,
     getWindow: () => mainWindow,
     openLogFolder: async () => {
@@ -123,15 +127,15 @@ app.whenReady().then(() => {
   // Only the app's own page, in the main window, may call main
   const isTrustedSender = createSenderCheck(
     () => mainWindow,
-    devServerUrl
-      ? { kind: 'dev-server', origin: new URL(devServerUrl).origin }
+    developmentServerUrl
+      ? { kind: 'dev-server', origin: new URL(developmentServerUrl).origin }
       : { kind: 'file', path: RENDERER_HTML }
   )
   // Project folders the user opened stay granted, and dialogs open where they last chose, across
   // restarts
   setProjectRootsDir(app.getPath('userData'))
-  handleAll(createInvokeHandlers(deps), isTrustedSender)
-  onAll(createSendListeners(deps), isTrustedSender)
+  handleAll(createInvokeHandlers(dependencies), isTrustedSender)
+  onAll(createSendListeners(dependencies), isTrustedSender)
   // electron-log's own channel, which it registered unchecked on import, takes the same check
   routeLogChannel(isTrustedSender)
 
