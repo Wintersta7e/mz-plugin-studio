@@ -27,7 +27,7 @@ function createMinimalPlugin(
   }
 }
 
-describe('generateHelpText', () => {
+describe(generateHelpText, () => {
   it('generates title block with name, version, author', () => {
     const plugin = createMinimalPlugin({
       name: 'TestPlugin',
@@ -53,7 +53,7 @@ describe('generateHelpText', () => {
     // After the title block's closing === line, the next non-empty section should be changelog
     // (since there are no params/commands/structs/deps)
     const lines = help.split('\n')
-    const titleEnd = lines.findIndex((l, i) => i > 0 && l.startsWith('===='))
+    const titleEnd = lines.findIndex((l, index) => index > 0 && l.startsWith('===='))
 
     // Next line after title block should be empty (spacing before changelog)
     expect(lines[titleEnd + 1]).toBe('')
@@ -87,7 +87,9 @@ describe('generateHelpText', () => {
 
     expect(help).not.toContain('Parameters')
   })
+})
 
+describe(generateHelpText, () => {
   it('skips nested (child) parameters', () => {
     const plugin = createMinimalPlugin()
     plugin.parameters = [
@@ -134,7 +136,9 @@ describe('generateHelpText', () => {
     expect(help).toContain('Set Speed')
     expect(help).toContain('Speed Value (number) - The new speed')
   })
+})
 
+describe(generateHelpText, () => {
   it('includes structs section with field list', () => {
     const plugin = createMinimalPlugin()
     plugin.structs = [
@@ -181,7 +185,9 @@ describe('generateHelpText', () => {
     expect(help).toContain('Changelog')
     expect(help).toContain('v3.0.0 - Initial release')
   })
+})
 
+describe(generateHelpText, () => {
   it('handles empty plugin gracefully (only title + changelog)', () => {
     const plugin = createMinimalPlugin()
     plugin.parameters = []
@@ -194,10 +200,11 @@ describe('generateHelpText', () => {
 
     expect(help).toContain('NewPlugin v1.0.0')
     expect(help).toContain('Changelog')
-    expect(help).not.toContain('Parameters')
-    expect(help).not.toContain('Plugin Commands')
-    expect(help).not.toContain('Structs')
-    expect(help).not.toContain('Dependencies')
+    expect(
+      ['Parameters', 'Plugin Commands', 'Structs', 'Dependencies'].filter((section) =>
+        help.includes(section)
+      )
+    ).toStrictEqual([])
   })
 
   it('skips section divider parameters', () => {

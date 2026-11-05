@@ -4,10 +4,12 @@ import type { MessageBoxSyncOptions } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import { closePromptOptions, handleWillPreventUnload } from '../../src/main/close-prompt'
 
-/** The options the prompt was shown with and whether the unload went ahead, for `answer`. */
+/**
+The options the prompt was shown with and whether the unload went ahead, for `answer`.
+*/
 function closeAnswering(answer: (options: MessageBoxSyncOptions) => number) {
   const shown: MessageBoxSyncOptions[] = []
-  const event = { preventDefault: vi.fn() }
+  const event = { preventDefault: vi.fn<() => void>() }
   handleWillPreventUnload(event, (options) => {
     shown.push(options)
     return answer(options)
@@ -21,8 +23,8 @@ describe('close prompt', () => {
 
     expect(options.defaultId).toBe(0)
     expect(options.cancelId).toBe(options.defaultId)
-    expect(options.buttons?.[options.defaultId as number]).toBe('Cancel')
-    expect(options).toEqual({
+    expect(options.buttons?.[options.defaultId ?? -1]).toBe('Cancel')
+    expect(options).toStrictEqual({
       type: 'warning',
       title: 'Unsaved changes',
       message: 'Some open plugins have unsaved changes. Close without saving them?',
@@ -31,13 +33,13 @@ describe('close prompt', () => {
       cancelId: 0
     })
 
-    console.log('unload prompt checked 1')
+    process.stdout.write('unload prompt checked 1\n')
   })
 
   it('keeps the window open when the prompt is cancelled', () => {
-    const { shown, closed } = closeAnswering((options) => options.cancelId as number)
+    const { shown, closed } = closeAnswering((options) => options.cancelId ?? -1)
 
-    expect(shown).toEqual([closePromptOptions()])
+    expect(shown).toStrictEqual([closePromptOptions()])
     expect(closed).toBe(0)
   })
 

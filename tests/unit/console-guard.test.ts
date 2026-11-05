@@ -1,10 +1,10 @@
 // The guard that fails a test on console.error/console.warn output it did not state it expects.
 // Each case drives its own fake console, never the real one.
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createConsoleGuard } from '../helpers/console-guard'
 
 function fakeConsole(): Pick<Console, 'error' | 'warn'> {
-  return { error: () => undefined, warn: () => undefined }
+  return { error: vi.fn<Console['error']>(), warn: vi.fn<Console['warn']>() }
 }
 
 describe('console guard', () => {
@@ -13,7 +13,7 @@ describe('console guard', () => {
     const guard = createConsoleGuard(target)
     target.error('failed %d times:', 2, 'boom')
 
-    expect(guard.finish()).toEqual(['unexpected console.error: failed 2 times: boom'])
+    expect(guard.finish()).toStrictEqual(['unexpected console.error: failed 2 times: boom'])
   })
 
   it('accepts a call that matches an expectation', () => {
@@ -22,14 +22,14 @@ describe('console guard', () => {
     guard.expect('warn', /deprecated/)
     target.warn('this option is deprecated')
 
-    expect(guard.finish()).toEqual([])
+    expect(guard.finish()).toStrictEqual([])
   })
 
   it('reports an expectation that no call met', () => {
     const guard = createConsoleGuard(fakeConsole())
     guard.expect('warn', /deprecated/)
 
-    expect(guard.finish()).toEqual(['expected console.warn matching /deprecated/, none came'])
+    expect(guard.finish()).toStrictEqual(['expected console.warn matching /deprecated/, none came'])
   })
 
   it('does not let an expected warning excuse an error with the same text', () => {
@@ -38,7 +38,7 @@ describe('console guard', () => {
     guard.expect('warn', /boom/)
     target.error('boom')
 
-    expect(guard.finish()).toEqual([
+    expect(guard.finish()).toStrictEqual([
       'unexpected console.error: boom',
       'expected console.warn matching /boom/, none came'
     ])
@@ -47,9 +47,9 @@ describe('console guard', () => {
   it('reports a console method replaced during the test', () => {
     const target = fakeConsole()
     const guard = createConsoleGuard(target)
-    target.error = () => {}
+    vi.spyOn(target, 'error')
 
-    expect(guard.finish()).toEqual([
+    expect(guard.finish()).toStrictEqual([
       'console.error was replaced during the test; use expectConsole'
     ])
   })

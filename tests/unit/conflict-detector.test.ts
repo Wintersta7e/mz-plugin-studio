@@ -2,37 +2,37 @@
 import { describe, it, expect } from 'vitest'
 import { extractOverrides, detectConflicts } from '../../src/renderer/src/lib/conflict-detector'
 
-describe('extractOverrides', () => {
+describe(extractOverrides, () => {
   // --- Basic extraction ---
 
   it('extracts standard prototype assignment', () => {
     const code = `Game_Actor.prototype.setup = function(actorId) { /* ... */ };`
 
-    expect(extractOverrides(code)).toEqual(['Game_Actor.prototype.setup'])
+    expect(extractOverrides(code)).toStrictEqual(['Game_Actor.prototype.setup'])
   })
 
   it('extracts alias pattern with const', () => {
     const code = `const _alias = Game_Map.prototype.update;`
 
-    expect(extractOverrides(code)).toEqual(['Game_Map.prototype.update'])
+    expect(extractOverrides(code)).toStrictEqual(['Game_Map.prototype.update'])
   })
 
   it('extracts arrow function assignment', () => {
     const code = `Scene_Map.prototype.update = () => { /* ... */ };`
 
-    expect(extractOverrides(code)).toEqual(['Scene_Map.prototype.update'])
+    expect(extractOverrides(code)).toStrictEqual(['Scene_Map.prototype.update'])
   })
 
   it('extracts alias pattern with var', () => {
     const code = `var _old_update = Game_Map.prototype.update;`
 
-    expect(extractOverrides(code)).toEqual(['Game_Map.prototype.update'])
+    expect(extractOverrides(code)).toStrictEqual(['Game_Map.prototype.update'])
   })
 
   it('extracts alias pattern with let', () => {
     const code = `let _old = Scene_Battle.prototype.start;`
 
-    expect(extractOverrides(code)).toEqual(['Scene_Battle.prototype.start'])
+    expect(extractOverrides(code)).toStrictEqual(['Scene_Battle.prototype.start'])
   })
 
   // --- Multiple overrides ---
@@ -56,13 +56,13 @@ describe('extractOverrides', () => {
     `
     const result = extractOverrides(code)
 
-    expect(result).toEqual(['Game_Map.prototype.update'])
+    expect(result).toStrictEqual(['Game_Map.prototype.update'])
   })
 
   // --- Empty / no matches ---
 
   it('returns empty array for empty string', () => {
-    expect(extractOverrides('')).toEqual([])
+    expect(extractOverrides('')).toStrictEqual([])
   })
 
   it('returns empty array for code with no overrides', () => {
@@ -72,9 +72,11 @@ describe('extractOverrides', () => {
       console.log("hello");
     `
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
+})
 
+describe(extractOverrides, () => {
   // --- Comment/string filtering ---
 
   it('ignores prototype refs in single-line comments', () => {
@@ -83,7 +85,7 @@ describe('extractOverrides', () => {
       var x = 1;
     `
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
 
   it('ignores prototype refs in block comments', () => {
@@ -92,7 +94,7 @@ describe('extractOverrides', () => {
       var x = 1;
     `
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
 
   it('ignores prototype refs in double-quoted strings', () => {
@@ -101,7 +103,7 @@ describe('extractOverrides', () => {
       var x = 1;
     `
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
 
   it('ignores prototype refs in template literals', () => {
@@ -109,27 +111,29 @@ describe('extractOverrides', () => {
       '\n'
     )
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
 
   it('ignores prototype refs in single-quoted strings', () => {
     const code = `var x = 'Game_Actor.prototype.setup = function() {}';`
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
+})
 
+describe(extractOverrides, () => {
   // --- Whitespace handling ---
 
   it('handles multiple spaces around =', () => {
     const code = `Game_Actor.prototype.setup   =   function(actorId) {};`
 
-    expect(extractOverrides(code)).toEqual(['Game_Actor.prototype.setup'])
+    expect(extractOverrides(code)).toStrictEqual(['Game_Actor.prototype.setup'])
   })
 
   it('handles tab characters around =', () => {
     const code = `Game_Actor.prototype.setup\t=\tfunction(actorId) {};`
 
-    expect(extractOverrides(code)).toEqual(['Game_Actor.prototype.setup'])
+    expect(extractOverrides(code)).toStrictEqual(['Game_Actor.prototype.setup'])
   })
 
   // --- Edge cases ---
@@ -141,7 +145,7 @@ describe('extractOverrides', () => {
       'if (Sprite.prototype.init != undefined) {}'
     ].join('\n')
 
-    expect(extractOverrides(code)).toEqual([])
+    expect(extractOverrides(code)).toStrictEqual([])
   })
 
   it('captures only first two parts of nested property chain', () => {
@@ -198,14 +202,14 @@ const mockMzClasses: Record<string, { popularity?: number }> = {
   Game_Temp: { popularity: 3 }
 }
 
-describe('detectConflicts', () => {
+describe(detectConflicts, () => {
   // --- Core detection ---
 
   it('returns clean report when no plugins have overrides', () => {
     const headers = [pluginWithOverrides('PluginA', []), pluginWithOverrides('PluginB', [])]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts).toEqual([])
+    expect(report.conflicts).toStrictEqual([])
     expect(report.totalOverrides).toBe(0)
     expect(report.health).toBe('clean')
   })
@@ -213,7 +217,7 @@ describe('detectConflicts', () => {
   it('returns clean report for empty headers array', () => {
     const report = detectConflicts([], mockMzClasses)
 
-    expect(report.conflicts).toEqual([])
+    expect(report.conflicts).toStrictEqual([])
     expect(report.totalOverrides).toBe(0)
     expect(report.health).toBe('clean')
   })
@@ -225,7 +229,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts).toEqual([])
+    expect(report.conflicts).toStrictEqual([])
     expect(report.totalOverrides).toBe(2)
     expect(report.health).toBe('clean')
   })
@@ -240,7 +244,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts).toEqual([])
+    expect(report.conflicts).toStrictEqual([])
     expect(report.totalOverrides).toBe(3)
     expect(report.health).toBe('clean')
   })
@@ -253,12 +257,14 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     expect(report.conflicts).toHaveLength(1)
-    expect(report.conflicts[0].method).toBe('Game_Map.prototype.update')
-    expect(report.conflicts[0].plugins).toEqual(['PluginA', 'PluginB'])
-    expect(report.conflicts[0].className).toBe('Game_Map')
-    expect(report.conflicts[0].methodName).toBe('update')
+    expect(report.conflicts.at(0)?.method).toBe('Game_Map.prototype.update')
+    expect(report.conflicts.at(0)?.plugins).toStrictEqual(['PluginA', 'PluginB'])
+    expect(report.conflicts.at(0)?.className).toBe('Game_Map')
+    expect(report.conflicts.at(0)?.methodName).toBe('update')
   })
+})
 
+describe(detectConflicts, () => {
   it('detects three-plugin conflict on same method', () => {
     const headers = [
       pluginWithOverrides('Alpha', ['Scene_Map.prototype.update']),
@@ -268,7 +274,7 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     expect(report.conflicts).toHaveLength(1)
-    expect(report.conflicts[0].plugins).toEqual(['Alpha', 'Beta', 'Gamma'])
+    expect(report.conflicts.at(0)?.plugins).toStrictEqual(['Alpha', 'Beta', 'Gamma'])
   })
 
   it('detects multiple independent conflicts', () => {
@@ -288,7 +294,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts[0].plugins).toEqual(['Zebra', 'Alpha'])
+    expect(report.conflicts.at(0)?.plugins).toStrictEqual(['Zebra', 'Alpha'])
   })
 
   it('counts totalOverrides accurately across all plugins', () => {
@@ -305,7 +311,9 @@ describe('detectConflicts', () => {
 
     expect(report.totalOverrides).toBe(6)
   })
+})
 
+describe(detectConflicts, () => {
   // --- Severity ---
 
   it('assigns warning severity for popular class (popularity >= 10)', () => {
@@ -315,7 +323,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts[0].severity).toBe('warning')
+    expect(report.conflicts.at(0)?.severity).toBe('warning')
   })
 
   it('assigns info severity for unpopular class (popularity < 10)', () => {
@@ -325,7 +333,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts[0].severity).toBe('info')
+    expect(report.conflicts.at(0)?.severity).toBe('info')
   })
 
   it('assigns info severity for unknown class (not in mzClasses)', () => {
@@ -335,7 +343,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, mockMzClasses)
 
-    expect(report.conflicts[0].severity).toBe('info')
+    expect(report.conflicts.at(0)?.severity).toBe('info')
   })
 
   it('assigns all info severity when mzClasses is empty', () => {
@@ -345,7 +353,7 @@ describe('detectConflicts', () => {
     ]
     const report = detectConflicts(headers, {})
 
-    expect(report.conflicts[0].severity).toBe('info')
+    expect(report.conflicts.at(0)?.severity).toBe('info')
   })
 
   it('sorts warnings before info', () => {
@@ -356,8 +364,8 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     expect(report.conflicts).toHaveLength(2)
-    expect(report.conflicts[0].severity).toBe('warning')
-    expect(report.conflicts[1].severity).toBe('info')
+    expect(report.conflicts.at(0)?.severity).toBe('warning')
+    expect(report.conflicts.at(1)?.severity).toBe('info')
   })
 
   it('sorts alphabetically within same severity', () => {
@@ -376,13 +384,15 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     // All three are warning (popularity >= 10)
-    expect(report.conflicts.map((c: { method: string }) => c.method)).toEqual([
+    expect(report.conflicts.map((c: { method: string }) => c.method)).toStrictEqual([
       'Game_Actor.prototype.setup',
       'Game_Map.prototype.update',
       'Scene_Battle.prototype.start'
     ])
   })
+})
 
+describe(detectConflicts, () => {
   // --- Edge cases ---
 
   it('handles plugin with empty name string', () => {
@@ -393,7 +403,7 @@ describe('detectConflicts', () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     expect(report.conflicts).toHaveLength(1)
-    expect(report.conflicts[0].plugins).toEqual(['', 'PluginB'])
+    expect(report.conflicts.at(0)?.plugins).toStrictEqual(['', 'PluginB'])
   })
 
   it('health is conflicts when any conflicts exist', () => {
