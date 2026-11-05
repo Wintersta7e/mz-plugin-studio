@@ -104,7 +104,6 @@
       "src/renderer/src/stores/historyStore.ts": 4,
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 2,
-      "tests/dom/code-preview.test.tsx": 4,
       "tests/dom/history-store.test.ts": 11,
       "tests/dom/parameter-builder.test.tsx": 15,
       "tests/dom/persisted-damage.test.ts": 11,
