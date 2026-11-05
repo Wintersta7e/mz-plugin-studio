@@ -69,7 +69,7 @@ function crossfadeBgm() {
 
     // Define the BGM settings
     const bgm = {
-        name: 'Theme2',
+        name: 'BGM_NAME',
         volume: 90,
         pitch: 100,
         pan: 0

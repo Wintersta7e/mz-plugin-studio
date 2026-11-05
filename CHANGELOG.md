@@ -10,6 +10,7 @@
 - In the Basic Plugin Command template, two arguments with one name, or an argument named like a JavaScript reserved word (such as `class`) or like a name the command's own code uses (`args`, `String`, `Number`, `JSON`, `console`), are listed as an error. Before, the template wrote code that RPG Maker MZ fails to load, or a command that fails when it runs.
 - In the BGM Control template, Save Current BGM now saves the playing music and Restore Saved BGM plays it again where it stopped. Before, saving kept nothing and restoring stopped the game with an error.
 - In the Audio Fade/Crossfade template, the crossfade and fade from silence now fade the new music in to its New BGM Volume. Before, it started at volume 0 and the fade kept it silent.
+- In the Audio Fade/Crossfade template, Fade from Silence now plays the music named in its own BGM Filename field. Before, a New BGM Filename entered earlier for a crossfade took its place.
 
 ## [1.8.1] - 2026-11-05
 

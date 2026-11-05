@@ -320,3 +320,19 @@ describe('audio crossfade volume', () => {
     expect(audioCalls(code)).toStrictEqual(calls)
   })
 })
+
+// Each crossfade type shows its own filename field; the other keeps what was entered before
+describe('audio crossfade BGM file', () => {
+  it.each([
+    ['crossfade', 'Battle1'],
+    ['fadeFromSilence', 'Field1']
+  ])('%s plays the BGM entered in its own field', (crossfadeType, name) => {
+    const code = audioCode('audio-crossfade', {
+      crossfadeType,
+      newBgmFilename: 'Battle1',
+      fadeFromSilenceBgm: 'Field1'
+    })
+
+    expect(audioCalls(code)).toContainEqual(['playBgm', expect.objectContaining({ name })])
+  })
+})

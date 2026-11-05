@@ -482,8 +482,8 @@ const audioCrossfadeTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const crossfadeType = (values['crossfadeType'] as string) || 'crossfade'
-    const newBgmFilename =
-      (values['newBgmFilename'] as string) || (values['fadeFromSilenceBgm'] as string)
+    const newBgmFilename = values['newBgmFilename'] as string
+    const fadeFromSilenceBgm = values['fadeFromSilenceBgm'] as string
     const fadeOutDuration =
       values['fadeOutDuration'] !== undefined ? (values['fadeOutDuration'] as number) : 2
     const fadeInDuration =
@@ -538,7 +538,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         coreCode.push('')
         coreCode.push('// Define the BGM settings')
         coreCode.push('const bgm = {')
-        coreCode.push(`    name: '${escapeJSString(newBgmFilename || 'BGM_NAME')}',`)
+        coreCode.push(`    name: '${escapeJSString(fadeFromSilenceBgm || 'BGM_NAME')}',`)
         coreCode.push(`    volume: ${newBgmVolume},`)
         coreCode.push(`    pitch: ${newBgmPitch},`)
         coreCode.push('    pan: 0')
