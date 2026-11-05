@@ -1,4 +1,4 @@
-import type { ParamType } from '../../types/plugin'
+import type { ParamType, PluginParameter } from '../../types/plugin'
 
 export interface ParamTypeOption {
   value: ParamType
@@ -11,7 +11,9 @@ interface ParamTypeGroup {
   types: ParamTypeOption[]
 }
 
-/** The types a parameter can have, grouped as its type picker lists them */
+/**
+The types a parameter can have, grouped as its type picker lists them
+*/
 export const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
   {
     group: 'Basic',
@@ -77,7 +79,21 @@ export const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
 ]
 
 /**
- * The types a command argument can have: RPG Maker MZ gives `@arg` the same types as `@param`,
- * so these are the parameter types, without their groups.
- */
+The types a command argument can have: RPG Maker MZ gives `@arg` the same types as `@param`,
+so these are the parameter types, without their groups.
+*/
 export const ARG_TYPES: ParamTypeOption[] = PARAM_TYPE_GROUPS.flatMap((g) => g.types)
+
+/**
+The text a default shows in its plain input: none for an empty, zero or false default
+*/
+export function defaultText(value: PluginParameter['default']): string {
+  if (value === '' || value === 0 || value === false) return ''
+  if (typeof value === 'number' && Number.isNaN(value)) return ''
+  return String(value)
+}
+
+/**
+The number a limit field holds: none while the field is empty
+*/
+export const toLimit = (text: string): number | undefined => (text ? Number(text) : undefined)

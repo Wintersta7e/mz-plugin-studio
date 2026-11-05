@@ -6,9 +6,12 @@ import { TemplateInserter } from '../../src/renderer/src/components/plugin/Templ
 import {
   getAllTemplates,
   getTemplate,
-  getTemplateDefaults
+  getTemplateDefaults,
+  validateTemplateValues,
+  type CodeTemplate
 } from '../../src/renderer/src/lib/generator/templates'
 import { getClassMethods } from '../../src/renderer/src/lib/generator/class-registry'
+import { useUIStore } from '../../src/renderer/src/stores'
 import { resetStores } from './support/reset-stores'
 
 const HOSTILE_NAME = 'x = 0; globalThis.__pwn = 1; this.y'
@@ -318,6 +321,49 @@ describe('template dialog actions', () => {
     TYPED_NAMES_TIMEOUT_MS
   )
 
+  it('opens on the first category when the saved one is a category it does not have', async () => {
+    expect.hasAssertions()
+
+    useUIStore.setState({ lastTemplateCategory: 'no-such-category' })
+    renderInserter()
+
+    expect(screen.getByPlaceholderText('Search method aliasing templates...')).toBeInTheDocument()
+    expect(listedTemplate('Alias Method')).toBeInTheDocument()
+
+    await searchBox()
+
+    expect(useUIStore.getState().lastTemplateCategory).toBe('method-alias')
+  })
+
+  it('another category drops the picked template and the search', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    renderInserter()
+    await pickSoundEffect(user)
+
+    expect(screen.getByLabelText(/SE Filename/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Scene Hooks/ }))
+
+    expect(screen.getByText('Select a template')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search scene hooks templates...')).toHaveValue('')
+  })
+
+  it('the category already shown keeps the picked template and the search', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    renderInserter()
+    await pickSoundEffect(user)
+    await user.click(screen.getByRole('button', { name: /^Method Aliasing/ }))
+
+    expect(screen.getByLabelText(/SE Filename/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search method aliasing templates...')).toHaveValue(
+      'Sound Effect'
+    )
+  })
+
   it('announces the field errors and gives them as the disabled Insert button’s description', async () => {
     const user = userEvent.setup()
     renderInserter()
@@ -350,6 +396,45 @@ describe('template dialog actions', () => {
     expect(errors).toBeEmptyDOMElement()
     expect(insertButton()).toBeEnabled()
     expect(insertButton()).not.toHaveAccessibleDescription()
+  })
+})
+
+// A line holding code and then a comment
+const hasTrailingComment = (line: string): boolean => {
+  const start = line.indexOf('//')
+  return start > 0 && line.slice(0, start).trim() !== ''
+}
+
+const defaultCode = (id: string): string => getTemplate(id)?.generate(getTemplateDefaults(id)) ?? ''
+
+// The first template whose code from its defaults has a comment after the code on one line
+function trailingCommentTemplate(): CodeTemplate {
+  const found = getAllTemplates().find(
+    (template) =>
+      validateTemplateValues(template.id, getTemplateDefaults(template.id)).valid &&
+      defaultCode(template.id)
+        .split('\n')
+        .some((line) => hasTrailingComment(line))
+  )
+  if (found === undefined) throw new Error('no template writes a comment after code')
+  return found
+}
+
+// The preview shows each line of code in a row of its own, an empty line as a space
+const shownCode = (code: string): string =>
+  code
+    .split('\n')
+    .map((line) => (line === '' ? ' ' : line))
+    .join('')
+
+describe('template dialog preview', () => {
+  it('shows each line of the code in the order it is written', () => {
+    const template = trailingCommentTemplate()
+    renderInserter()
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: template.name } })
+    fireEvent.click(screen.getByText(template.name))
+
+    expect(preview()).toBe(shownCode(defaultCode(template.id)))
   })
 })
 

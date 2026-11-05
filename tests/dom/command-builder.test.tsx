@@ -116,9 +116,9 @@ describe('command annotations', () => {
 
     expect(preview()).toContain(' * @command showBanner\n')
 
-    // The command header holds one button, which deletes the command
-    const header = screen.getByText('(0 args)').closest<HTMLElement>('.cursor-pointer')!
-    await user.click(header.querySelector('button')!)
+    // In the command header, the delete button follows the button that opens the card
+    const expand = screen.getByText('(0 args)').closest('button')!
+    await user.click(expand.nextElementSibling!)
     await waitFor(() => expect(preview()).not.toContain('@command showBanner'))
 
     expect(screen.getByText('No commands defined')).toBeInTheDocument()

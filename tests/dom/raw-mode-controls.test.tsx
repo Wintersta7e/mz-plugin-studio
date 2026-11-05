@@ -491,8 +491,11 @@ describe('header editors of an imported file with no main annotation block', () 
     render(<ParameterBuilder />)
     const message = screen.getByText('メッセージ').closest<HTMLElement>('[draggable]')!
 
-    // The delete button has no name; it is the only button in the row header
-    expect(within(message).getByRole('button')).toBeDisabled()
+    // The row header holds three buttons: move, open, and the nameless last one deletes the row
+    const [, expand, remove] = within(message).getAllByRole('button')
+
+    expect(expand).toBeEnabled()
+    expect(remove).toBeDisabled()
 
     await user.click(within(message).getByRole('checkbox'))
 

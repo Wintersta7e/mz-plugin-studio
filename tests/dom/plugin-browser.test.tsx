@@ -8,6 +8,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PluginBrowser } from '../../src/renderer/src/components/plugin/PluginBrowser'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
+import type { MZProject } from '../../src/renderer/src/types/mz'
 import { copyFixtureProject } from '../helpers/fixture-project'
 import { createMainApi } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -15,6 +16,13 @@ import { resetStores } from './support/reset-stores'
 const FILE = 'Fixture_HandWritten.js'
 
 let project: string
+
+// The project the store holds open
+function openedProject(): MZProject {
+  const opened = useProjectStore.getState().project
+  if (opened === null) throw new Error('no project open')
+  return opened
+}
 
 describe('plugin browser', () => {
   beforeEach(async () => {
@@ -189,6 +197,24 @@ describe('plugin browser', () => {
 
     expect(within(row('Beta')).getByLabelText('has errors')).toBeInTheDocument()
     expect(screen.getAllByLabelText('has errors')).toHaveLength(1)
+  })
+
+  it("lists none of the previous project's plugins while the next project's list loads", async () => {
+    expect.hasAssertions()
+
+    render(<PluginBrowser onClose={vi.fn<() => void>()} />)
+    await screen.findByTitle(FILE)
+    // A list that never arrives
+    vi.mocked(globalThis.api.plugin.list).mockReturnValue(
+      new Promise<string[]>(vi.fn<() => void>())
+    )
+    act(() => {
+      useProjectStore.getState().setProject({ ...openedProject(), path: `${project}-next` })
+    })
+
+    expect(screen.queryByTitle(FILE)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh plugin list' })).toBeDisabled()
+    expect(globalThis.api.plugin.list).toHaveBeenLastCalledWith(`${project}-next`)
   })
 
   it('Close plugin browser asks the panel to close', async () => {

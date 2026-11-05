@@ -581,8 +581,8 @@ describe('parameter rows', () => {
     expect(within(row('New Parameter')).getByText('hidden in MZ')).toBeInTheDocument()
 
     await waitFor(() => expect(preview()).toContain('@param NewParameter'))
-    // The delete button has no name; it is the first button in the row, inside its header
-    await user.click(within(row('New Parameter')).getAllByRole('button')[0])
+    // The delete button has no name; in the row's header it follows the move and open buttons
+    await user.click(within(row('New Parameter')).getAllByRole('button')[2])
 
     expect(screen.queryByText('New Parameter')).not.toBeInTheDocument()
 
@@ -855,5 +855,41 @@ describe('parameter toolbar', () => {
     expect(message).toHaveBeenCalledTimes(2)
 
     await presetListed(1)
+  })
+
+  it.each(['constructor', 'toString'])(
+    'saves a first preset named %s without asking to overwrite',
+    async (name) => {
+      expect.hasAssertions()
+
+      const message = answering('Cancel')
+      vi.stubGlobal('api', createFakeApi({ dialog: { message } }))
+      const view = renderToolbar([param('speed', 'Speed')])
+      await view.click(screen.getByRole('button', { name: 'Select All' }))
+      await chooseMenuItem(view, 'Presets', 'Save Selection as Preset...')
+      await view.type(await screen.findByLabelText('Preset Name'), name)
+      await view.keyboard('{Enter}')
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      })
+
+      expect(message).not.toHaveBeenCalled()
+      expect(Object.keys(useSettingsStore.getState().parameterPresets)).toStrictEqual([name])
+    }
+  )
+
+  it('clears the selection when another plugin opens', async () => {
+    expect.hasAssertions()
+
+    const parameters = [param('speed', 'Speed'), param('power', 'Power')]
+    const view = renderToolbar(parameters)
+    await view.click(screen.getByRole('button', { name: 'Select All' }))
+    act(() => {
+      usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), parameters })
+    })
+
+    for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
+
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeDisabled()
   })
 })

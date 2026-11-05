@@ -92,6 +92,9 @@ const fakeDeps = {
   setLogLevel: () => {}
 } as unknown as MainDependencies
 
+// The renderer reaches the preload's `api` through either name of the global object
+const GLOBALS = new Set(['window', 'globalThis'])
+
 /** `window.api.<namespace>.<key>` uses, keyed by member, with each site as file:line */
 function rendererCallers(files: string[]): Map<string, string[]> {
   const callers = new Map<string, string[]>()
@@ -110,7 +113,7 @@ function rendererCallers(files: string[]): Map<string, string[]> {
         ts.isPropertyAccessExpression(node.expression) &&
         ts.isPropertyAccessExpression(node.expression.expression) &&
         ts.isIdentifier(node.expression.expression.expression) &&
-        node.expression.expression.expression.text === 'window' &&
+        GLOBALS.has(node.expression.expression.expression.text) &&
         node.expression.expression.name.text === 'api'
       ) {
         const member = `${node.expression.name.text}.${node.name.text}`

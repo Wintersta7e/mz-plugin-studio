@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Switch } from '../ui/switch'
@@ -16,7 +16,7 @@ import type { PluginStruct, PluginParameter } from '../../types/plugin'
 interface StructDefaultEditorProps {
   struct: PluginStruct
   value: string
-  onChange: (jsonStr: string) => void
+  onChange: (jsonString: string) => void
 }
 
 const NUMERIC_TYPES = new Set([
@@ -39,17 +39,32 @@ const NUMERIC_TYPES = new Set([
   'map'
 ])
 
-export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEditorProps) {
-  const [fields, setFields] = useState<Record<string, string>>(() =>
-    parseStructDefault(typeof value === 'string' ? value : '')
-  )
+/**
+The field values parsed from `value`, parsed again whenever the value or the struct changes
+*/
+function useStructFields(
+  value: string,
+  structId: string
+): [Record<string, string>, (fields: Record<string, string>) => void] {
+  const [fields, setFields] = useState<Record<string, string>>(() => parseStructDefault(value))
+  const [parsedFrom, setParsedFrom] = useState({ value, structId })
+  if (parsedFrom.value !== value || parsedFrom.structId !== structId) {
+    setParsedFrom({ value, structId })
+    setFields(parseStructDefault(value))
+  }
+  return [fields, setFields]
+}
 
-  useEffect(() => {
-    setFields(parseStructDefault(typeof value === 'string' ? value : ''))
-  }, [value, struct.id])
+export function StructDefaultEditor({
+  struct,
+  value,
+  onChange
+}: Readonly<StructDefaultEditorProps>) {
+  const text = typeof value === 'string' ? value : ''
+  const [fields, setFields] = useStructFields(text, struct.id)
 
-  const updateField = (name: string, val: string) => {
-    const next = { ...fields, [name]: val }
+  const updateField = (name: string, value_: string) => {
+    const next = { ...fields, [name]: value_ }
     setFields(next)
     onChange(buildStructDefault(struct, next))
   }
@@ -64,8 +79,6 @@ export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEd
     setFields({})
     onChange('')
   }
-
-  const validation = validateStructDefault(typeof value === 'string' ? value : '', struct)
 
   const visibleFields = struct.parameters.filter((f) => f.type !== 'hidden')
 
@@ -84,34 +97,15 @@ export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEd
               key={field.id}
               field={field}
               value={fields[field.name] ?? ''}
-              onChange={(val) => updateField(field.name, val)}
+              onChange={(value_) => {
+                updateField(field.name, value_)
+              }}
             />
           ))}
         </div>
       )}
 
-      {value && typeof value === 'string' && value.trim() !== '' && (
-        <div className="flex items-center gap-1.5 text-xs">
-          {validation.status === 'valid' && (
-            <>
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-green-600">Valid JSON</span>
-            </>
-          )}
-          {validation.status === 'warning' && (
-            <>
-              <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
-              <span className="text-yellow-600">{validation.errors[0]}</span>
-            </>
-          )}
-          {validation.status === 'error' && (
-            <>
-              <XCircle className="h-3.5 w-3.5 text-red-500" />
-              <span className="text-red-600">{validation.errors[0]}</span>
-            </>
-          )}
-        </div>
-      )}
+      {text.trim() !== '' && <ValidationNote value={text} struct={struct} />}
 
       <div className="flex gap-2">
         <Button variant="outline" size="sm" className="text-xs" onClick={handleFillDefaults}>
@@ -131,83 +125,128 @@ export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEd
   )
 }
 
-function StructFieldInput({
-  field,
+function ValidationNote({
   value,
-  onChange
-}: {
+  struct
+}: Readonly<Pick<StructDefaultEditorProps, 'value' | 'struct'>>) {
+  const validation = validateStructDefault(value, struct)
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      {validation.status === 'valid' && (
+        <>
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+          <span className="text-green-600">Valid JSON</span>
+        </>
+      )}
+      {validation.status === 'warning' && (
+        <>
+          <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />
+          <span className="text-yellow-600">{validation.errors[0]}</span>
+        </>
+      )}
+      {validation.status === 'error' && (
+        <>
+          <XCircle className="h-3.5 w-3.5 text-red-500" />
+          <span className="text-red-600">{validation.errors[0]}</span>
+        </>
+      )}
+    </div>
+  )
+}
+
+type StructFieldInputProps = Readonly<{
   field: PluginParameter
   value: string
-  onChange: (val: string) => void
-}) {
+  onChange: (value_: string) => void
+}>
+
+function StructFieldInput({ field, value, onChange }: StructFieldInputProps) {
   if (field.type === 'boolean') {
     return (
       <div className="flex items-center justify-between">
         <Label className="text-xs">{field.text || field.name}</Label>
         <Switch
           checked={value === 'true'}
-          onCheckedChange={(checked) => onChange(checked ? 'true' : 'false')}
-        />
-      </div>
-    )
-  }
-
-  if (field.type === 'select' && field.options && field.options.length > 0) {
-    // Radix Select crashes on value="" — use sentinel for empty state (BUG-14)
-    const EMPTY_SENTINEL = '__empty__'
-    const selectValue = value || EMPTY_SENTINEL
-    const synthBySentinel = new Map<string, string>()
-    const sentinelFor = (opt: { value: string; text: string }): string => {
-      if (opt.value) return opt.value
-      const sentinel = `__val_${opt.text}`
-      synthBySentinel.set(sentinel, '')
-      return sentinel
-    }
-    return (
-      <div className="flex items-center gap-2">
-        <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
-        <Select
-          value={selectValue}
-          onValueChange={(v) => {
-            if (v === EMPTY_SENTINEL || synthBySentinel.has(v)) onChange('')
-            else onChange(v)
+          onCheckedChange={(checked) => {
+            onChange(checked ? 'true' : 'false')
           }}
-        >
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Select..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={EMPTY_SENTINEL}>(none)</SelectItem>
-            {field.options.map((opt) => (
-              <SelectItem key={opt.value || `opt-${opt.text}`} value={sentinelFor(opt)}>
-                {opt.text}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    )
-  }
-
-  if (NUMERIC_TYPES.has(field.type)) {
-    return (
-      <div className="flex items-center gap-2">
-        <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
-        <Input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={
-            field.default !== undefined && field.default !== '' ? String(field.default) : '0'
-          }
-          className="h-8 text-xs"
-          min={field.min}
-          max={field.max}
         />
       </div>
     )
   }
+  if (field.type === 'select' && field.options && field.options.length > 0) {
+    return (
+      <SelectFieldInput field={field} options={field.options} value={value} onChange={onChange} />
+    )
+  }
+  if (NUMERIC_TYPES.has(field.type)) {
+    return <NumericFieldInput field={field} value={value} onChange={onChange} />
+  }
+  return <TextFieldInput field={field} value={value} onChange={onChange} />
+}
 
+// Radix Select crashes on value="" — use sentinel for empty state (BUG-14)
+const EMPTY_SENTINEL = '__empty__'
+
+function SelectFieldInput({
+  field,
+  options,
+  value,
+  onChange
+}: StructFieldInputProps & Readonly<{ options: NonNullable<PluginParameter['options']> }>) {
+  const selectValue = value || EMPTY_SENTINEL
+  const synthBySentinel = new Map<string, string>()
+  const sentinelFor = (opt: { value: string; text: string }): string => {
+    if (opt.value) return opt.value
+    const sentinel = `__val_${opt.text}`
+    synthBySentinel.set(sentinel, '')
+    return sentinel
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
+      <Select
+        value={selectValue}
+        onValueChange={(v) => {
+          onChange(v === EMPTY_SENTINEL || synthBySentinel.has(v) ? '' : v)
+        }}
+      >
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue placeholder="Select..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={EMPTY_SENTINEL}>(none)</SelectItem>
+          {options.map((opt) => (
+            <SelectItem key={opt.value || `opt-${opt.text}`} value={sentinelFor(opt)}>
+              {opt.text}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+function NumericFieldInput({ field, value, onChange }: StructFieldInputProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="min-w-[80px] text-xs">{field.text || field.name}</Label>
+      <Input
+        type="number"
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value)
+        }}
+        placeholder={field.default === '' ? '0' : String(field.default)}
+        className="h-8 text-xs"
+        min={field.min}
+        max={field.max}
+      />
+    </div>
+  )
+}
+
+function TextFieldInput({ field, value, onChange }: StructFieldInputProps) {
   const isMultiline = field.type === 'note' || field.type === 'text'
   return (
     <div className="flex items-center gap-2">
@@ -215,16 +254,20 @@ function StructFieldInput({
       {isMultiline ? (
         <textarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={String(field.default ?? '')}
+          onChange={(event) => {
+            onChange(event.target.value)
+          }}
+          placeholder={String(field.default)}
           className="h-16 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
           rows={2}
         />
       ) : (
         <Input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.type === 'struct' ? '{"key":"value"}' : String(field.default ?? '')}
+          onChange={(event) => {
+            onChange(event.target.value)
+          }}
+          placeholder={field.type === 'struct' ? '{"key":"value"}' : String(field.default)}
           className="h-8 text-xs"
         />
       )}
