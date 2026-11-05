@@ -3,6 +3,7 @@
 
 
 // ==== case: type-violating: null {"modType":null,"choicePosition":null,"numColumns":null,"choiceWidth":null,"highlightColor":null,"normalColor":null,"disabledColor":null,"windowOpacity":null,"wrapAround":null,"rememberChoice":null}
+// rejects: Field "Modification Type" is required
 // Choice Window Position Modification
 // Changes where the choice window appears on screen
 

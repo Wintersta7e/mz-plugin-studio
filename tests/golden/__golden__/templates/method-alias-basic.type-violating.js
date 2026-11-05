@@ -11,6 +11,7 @@ const _42_42 = 42.prototype.42;
 };
 
 // ==== case: type-violating: null {"className":null,"methodName":null,"timing":null,"callOriginal":null}
+// rejects: Field "Class" is required | Field "Method" is required
 // Alias: null.null
 const _null_null = null.prototype.null;
 null.prototype.null = function() {

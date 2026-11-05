@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"commandName":null,"pluginName":null,"arg1Name":null,"arg1Type":null,"arg2Name":null,"arg2Type":null}
+// rejects: Field "Command Name" is required | Field "Plugin Name" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"commandName":["a","b"],"pluginName":["a","b"],"arg1Name":["a","b"],"arg1Type":["a","b"],"arg2Name":["a","b"],"arg2Type":["a","b"]}
@@ -29,7 +30,7 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 // throws: TypeError
 
 // ==== case: type-violating: commandName=" ",pluginName=null {"arg1Type":"string","arg2Type":"number","commandName":" ","pluginName":null}
-// rejects: Command name is required
+// rejects: Field "Plugin Name" is required | Command name is required
 // throws: TypeError
 
 // ==== case: type-violating: commandName="1st",arg1Type=null {"arg1Type":null,"arg2Type":"number","commandName":"1st","pluginName":"Sample"}

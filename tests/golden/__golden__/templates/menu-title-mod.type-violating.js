@@ -3,6 +3,7 @@
 
 
 // ==== case: type-violating: null {"modType":null,"commandName":null,"commandSymbol":null,"hideTarget":null}
+// rejects: Field "Modification Type" is required
 // Title Screen Mod: Add "Custom" Command
 
 // Add command to title command window

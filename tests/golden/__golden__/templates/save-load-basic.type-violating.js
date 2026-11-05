@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"dataName":null,"storageLocation":null,"dataType":null,"defaultValue":null}
+// rejects: Field "Data Property Name" is required | Field "Storage Location" is required | Field "Data Type" is required
 // Custom Save Data: null
 // Storage: $gamesystem
 // Type: object

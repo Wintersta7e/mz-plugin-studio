@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"commandName":null,"pluginName":null,"waitType":null,"waitDuration":null}
+// rejects: Field "Command Name" is required | Field "Plugin Name" is required | Field "Wait Implementation" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"commandName":["a","b"],"pluginName":["a","b"],"waitType":["a","b"],"waitDuration":["a","b"]}
@@ -46,6 +47,7 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 });
 
 // ==== case: type-violating: waitType="waitCount",commandName=null {"waitType":"waitCount","waitDuration":60,"commandName":null,"pluginName":"Sample"}
+// rejects: Field "Command Name" is required
 // Async Plugin Command: 
 // This command pauses event execution until the async operation completes
 

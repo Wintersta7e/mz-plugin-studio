@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"commandName":null,"pluginName":null,"validateActorId":null,"validateNumberRange":null,"minValue":null,"maxValue":null,"errorHandling":null}
+// rejects: Field "Command Name" is required | Field "Plugin Name" is required | Field "Error Handling" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"commandName":["a","b"],"pluginName":["a","b"],"validateActorId":["a","b"],"validateNumberRange":["a","b"],"minValue":["a","b"],"maxValue":["a","b"],"errorHandling":["a","b"]}
@@ -14,6 +15,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: errorHandling="throw",pluginName=null {"validateActorId":true,"validateNumberRange":true,"minValue":0,"maxValue":9999,"errorHandling":"throw","commandName":"Sample","pluginName":null}
+// rejects: Field "Plugin Name" is required
 // throws: TypeError
 
 // ==== case: type-violating: minValue=null,maxValue="abc" {"validateActorId":true,"validateNumberRange":true,"minValue":null,"maxValue":"abc","errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}

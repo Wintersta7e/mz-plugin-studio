@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"databaseType":null,"tagName":null,"tagFormat":null,"valueType":null,"propertyName":null,"defaultValue":null}
+// rejects: Field "Database" is required | Field "Tag Name" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"databaseType":["a","b"],"tagName":["a","b"],"tagFormat":["a","b"],"valueType":["a","b"],"propertyName":["a","b"],"defaultValue":["a","b"]}

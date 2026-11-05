@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"eventType":null,"timing":null,"slotFilter":null}
+// rejects: Field "Event Type" is required | Field "Timing" is required
 // Equipment Hook: Equip/Unequip - After
 
 // Hook for equipment being put on

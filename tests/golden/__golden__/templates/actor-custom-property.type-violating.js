@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"propertyName":null,"dataType":null,"defaultValue":null,"minValue":null,"maxValue":null,"includeChange":null}
+// rejects: Field "Property Name" is required | Field "Data Type" is required
 // Custom Actor Property: null
 // Type: number, Default: 0
 

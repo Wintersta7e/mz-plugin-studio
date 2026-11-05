@@ -3,6 +3,7 @@
 
 
 // ==== case: type-violating: null {"hookType":null,"stateId":null}
+// rejects: Field "Hook Type" is required
 // State Added Hook
 const _Game_Battler_addState = Game_Battler.prototype.addState;
 Game_Battler.prototype.addState = function(stateId) {

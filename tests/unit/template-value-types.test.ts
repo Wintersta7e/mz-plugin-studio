@@ -150,4 +150,25 @@ describe('template values of the wrong type', () => {
 
     expect(rejected).toStrictEqual([])
   })
+
+  it('lists a required field whose saved number came back from JSON as null as required', () => {
+    // JSON writes a number that is not a number as null
+    const lost: unknown = JSON.parse('null')
+    const unnamed: string[] = []
+    let checked = 0
+    for (const id of templateIds()) {
+      for (const field of fieldsOf(id)) {
+        if (field.required !== true) continue
+        checked++
+        const values = { ...baseValues(id), [field.id]: lost }
+        const errors = validateTemplateValues(id, values).errors
+        if (!errors.includes(`Field "${field.label}" is required`))
+          unnamed.push(`${id}.${field.id}`)
+      }
+    }
+    process.stdout.write(`required fields checked with a lost value ${String(checked)}\n`)
+
+    expect(checked).toBeGreaterThan(0)
+    expect(unnamed).toStrictEqual([])
+  })
 })

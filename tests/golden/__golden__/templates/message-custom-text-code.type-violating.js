@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"escapeChar":null,"hasParameter":null,"codeType":null,"replacementText":null,"effectType":null}
+// rejects: Field "Escape Character" is required | Field "Code Type" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"escapeChar":["a","b"],"hasParameter":["a","b"],"codeType":["a","b"],"replacementText":["a","b"],"effectType":["a","b"]}
@@ -26,6 +27,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 };
 
 // ==== case: type-violating: codeType=null,replacementText=null {"hasParameter":true,"codeType":null,"effectType":"color","replacementText":null,"escapeChar":"Sample"}
+// rejects: Field "Code Type" is required
 // Custom Text Code: \SAMPLE[n]
 // Replaces the escape code with dynamic text during message processing
 

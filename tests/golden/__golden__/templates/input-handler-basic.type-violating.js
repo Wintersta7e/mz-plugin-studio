@@ -20,6 +20,7 @@ const _7_update = 7.prototype.update;
 };
 
 // ==== case: type-violating: null {"keyName":null,"triggerType":null,"activeScene":null}
+// rejects: Field "Key" is required
 // Input Handler: undefined key on Scene_Map
 // Triggers once when pressed
 

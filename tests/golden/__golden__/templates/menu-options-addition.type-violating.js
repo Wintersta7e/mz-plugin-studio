@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"optionName":null,"optionSymbol":null,"optionType":null,"defaultValue":null,"choices":null,"persistToConfig":null}
+// rejects: Field "Option Name" is required | Field "Option Symbol" is required | Field "Option Type" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"optionName":["a","b"],"optionSymbol":["a","b"],"optionType":["a","b"],"defaultValue":["a","b"],"choices":["a","b"],"persistToConfig":["a","b"]}

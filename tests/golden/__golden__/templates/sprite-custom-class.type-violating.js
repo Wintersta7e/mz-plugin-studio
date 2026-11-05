@@ -3,7 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"spriteName":null,"parentClass":null,"width":null,"height":null,"useBitmap":null,"fillColor":null,"includeUpdate":null}
-// rejects: Width must be a positive number | Height must be a positive number
+// rejects: Field "Sprite Name" is required | Field "Parent Class" is required | Width must be a positive number | Height must be a positive number
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"spriteName":["a","b"],"parentClass":["a","b"],"width":["a","b"],"height":["a","b"],"useBitmap":["a","b"],"fillColor":["a","b"],"includeUpdate":["a","b"]}

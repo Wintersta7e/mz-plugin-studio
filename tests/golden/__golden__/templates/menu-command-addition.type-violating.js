@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"commandName":null,"commandSymbol":null,"insertPosition":null,"requiresActor":null,"enableCondition":null,"switchId":null}
+// rejects: Field "Command Name" is required | Field "Command Symbol" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"commandName":["a","b"],"commandSymbol":["a","b"],"insertPosition":["a","b"],"requiresActor":["a","b"],"enableCondition":["a","b"],"switchId":["a","b"]}

@@ -3,6 +3,7 @@
 
 
 // ==== case: type-violating: null {"modType":null,"positionType":null,"customX":null,"customY":null,"windowWidth":null,"windowHeight":null,"numLines":null,"bgType":null,"bgColor":null,"opacityValue":null,"nameBoxPosition":null}
+// rejects: Field "Modification Type" is required
 // Message Window Position Modification
 // Changes the default position of the message window
 

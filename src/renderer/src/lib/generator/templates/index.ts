@@ -78,10 +78,10 @@ export function validateTemplateValues(
     return { valid: false, errors: [`Template "${templateId}" not found`] }
   }
 
-  // Check required fields
+  // Check required fields; null is how JSON saves a number that is not a number
   const errors: string[] = []
   for (const field of template.fields) {
-    if (field.required === true && (values[field.id] === undefined || values[field.id] === '')) {
+    if (field.required === true && (values[field.id] ?? '') === '') {
       errors.push(`Field "${field.label}" is required`)
     }
   }

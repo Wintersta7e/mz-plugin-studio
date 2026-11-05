@@ -5,7 +5,7 @@ function 42() {
 }
 
 // ==== case: type-violating: null {"crossfadeType":null,"newBgmFilename":null,"fadeFromSilenceBgm":null,"fadeOutDuration":null,"fadeInDuration":null,"newBgmVolume":null,"newBgmPitch":null,"wrapInFunction":null,"functionName":null}
-// rejects: Pitch must be between 50 and 150
+// rejects: Field "Crossfade Type" is required | Pitch must be between 50 and 150
 // Crossfade Function
 function crossfadeBgm() {
     // Crossfade: Fade out current BGM, then play and fade in new BGM

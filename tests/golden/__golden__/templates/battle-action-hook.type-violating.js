@@ -10,6 +10,7 @@ BattleManager.invokeAction = function(subject, target) {
 };
 
 // ==== case: type-violating: null {"timing":null,"actionType":null}
+// rejects: Field "Timing" is required
 // Action Execution Hook: After all actions
 const _BattleManager_invokeAction = BattleManager.invokeAction;
 BattleManager.invokeAction = function(subject, target) {

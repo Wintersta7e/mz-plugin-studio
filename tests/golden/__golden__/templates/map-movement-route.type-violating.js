@@ -161,6 +161,7 @@
 })();
 
 // ==== case: type-violating: null {"functionName":null,"includeHelpers":null,"waitForCompletion":null}
+// rejects: Field "Function Name" is required
 // Custom Movement Route System
 // Create and apply movement routes to events programmatically
 

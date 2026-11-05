@@ -13,6 +13,7 @@ Game_Action.prototype.makeDamageValue = function(target, critical) {
 };
 
 // ==== case: type-violating: null {"modifyType":null,"modifyValue":null,"condition":null}
+// rejects: Field "Modification Type" is required | Field "Value" is required
 // Damage Modifier: Multiply by  (always)
 const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
 Game_Action.prototype.makeDamageValue = function(target, critical) {

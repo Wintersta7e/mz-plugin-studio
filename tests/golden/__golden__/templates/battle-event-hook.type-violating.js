@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"eventType":null}
+// rejects: Field "Event" is required
 // Victory Hook
 const _BattleManager_processVictory = BattleManager.processVictory;
 BattleManager.processVictory = function() {

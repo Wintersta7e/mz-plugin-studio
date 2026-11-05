@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"windowName":null,"hudType":null,"positionX":null,"positionY":null,"width":null,"height":null,"opacity":null,"showFrame":null}
+// rejects: Field "Window Name" is required | Field "HUD Type" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"windowName":["a","b"],"hudType":["a","b"],"positionX":["a","b"],"positionY":["a","b"],"width":["a","b"],"height":["a","b"],"opacity":["a","b"],"showFrame":["a","b"]}
