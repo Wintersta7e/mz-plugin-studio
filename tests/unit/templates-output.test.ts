@@ -260,15 +260,11 @@ var $gameSystem = {
 var setTimeout = function (callback) { callback(); };
 `
 
-// The BGM control template's code, not wrapped in a function, from its defaults with the given values
-function bgmControlCode(values: Record<string, unknown>): string {
-  const template = getTemplate('audio-bgm-control')
-  if (template === undefined) throw new Error('audio-bgm-control is not registered')
-  return template.generate({
-    ...getTemplateDefaults('audio-bgm-control'),
-    wrapInFunction: false,
-    ...values
-  })
+// An audio template's code, not wrapped in a function, from its defaults with the given values
+function audioCode(id: string, values: Record<string, unknown>): string {
+  const template = getTemplate(id)
+  if (template === undefined) throw new Error(`${id} is not registered`)
+  return template.generate({ ...getTemplateDefaults(id), wrapInFunction: false, ...values })
 }
 
 // The engine calls the code makes when it runs against the engine stand-ins, in order; an error
@@ -283,13 +279,44 @@ function audioCalls(code: string): unknown {
 
 describe('audio BGM control save and restore', () => {
   it('replays the BGM the save operation saved', () => {
-    const save = bgmControlCode({ operation: 'save' })
-    const restore = bgmControlCode({ operation: 'restore' })
+    const save = audioCode('audio-bgm-control', { operation: 'save' })
+    const restore = audioCode('audio-bgm-control', { operation: 'restore' })
 
     expect(audioCalls(`${save}\n${restore}`)).toStrictEqual([['replayBgm', 'Theme1']])
   })
 
   it('replays nothing when no BGM was saved', () => {
-    expect(audioCalls(bgmControlCode({ operation: 'restore' }))).toStrictEqual([])
+    expect(audioCalls(audioCode('audio-bgm-control', { operation: 'restore' }))).toStrictEqual([])
+  })
+})
+
+// The engine's fade-in raises the volume from silence to the playing BGM's own volume
+describe('audio crossfade volume', () => {
+  const played = { name: 'Field1', volume: 90, pitch: 100, pan: 0 }
+
+  it.each([
+    [
+      'crossfade',
+      [
+        ['fadeOutBgm', 2],
+        ['playBgm', played],
+        ['fadeInBgm', 2]
+      ]
+    ],
+    [
+      'fadeFromSilence',
+      [
+        ['playBgm', played],
+        ['fadeInBgm', 2]
+      ]
+    ]
+  ])('%s plays the new BGM at its set volume, then fades it in', (crossfadeType, calls) => {
+    const code = audioCode('audio-crossfade', {
+      crossfadeType,
+      newBgmFilename: 'Field1',
+      fadeFromSilenceBgm: 'Field1'
+    })
+
+    expect(audioCalls(code)).toStrictEqual(calls)
   })
 })
