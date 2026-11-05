@@ -1,0 +1,38 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {
+      "ja": {
+        "description": "Only language",
+        "help": ""
+      }
+    }
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "p",
+      "text": "p",
+      "desc": "",
+      "type": "string",
+      "default": ""
+    }
+  ],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:ja\n * @plugindesc Only language\n * @param p\n */\n"
+}

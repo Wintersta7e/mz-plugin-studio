@@ -53,4 +53,18 @@ describe('parseNoteTags', () => {
 
     expect(result).toEqual({ x: '2' })
   })
+
+  // Each way a note tag can be written, read as the pattern reads it today.
+  it.each<[string, string, Record<string, string>]>([
+    ['a name alone', '<a>', { a: 'true' }],
+    ['a name and an empty value', '<a:>', { a: 'true' }],
+    ['a name and a value', '<a:b>', { a: 'b' }],
+    ['a value holding a colon', '<a:b:c>', { a: 'b:c' }],
+    ['the same tag twice in a row', '<a:b><a:b>', { a: 'b' }],
+    ['a tag never closed', '<a:b', {}],
+    ['a value without a name', '<:b>', {}],
+    ['a space as the name', '< >', { ' ': 'true' }]
+  ])('reads %s', (_shape, note, tags) => {
+    expect(ProjectParser.parseNoteTags(note)).toStrictEqual(tags)
+  })
 })

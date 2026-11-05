@@ -1,0 +1,48 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [
+    {
+      "id": "<id:2>",
+      "name": "run",
+      "text": "run",
+      "desc": "",
+      "args": [
+        {
+          "id": "<id:3>",
+          "name": "only",
+          "text": "Only",
+          "desc": "",
+          "type": "string",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "<id:4>",
+      "name": "next",
+      "text": "Next",
+      "desc": "",
+      "args": []
+    }
+  ],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @command run\n * @arg only\n * @text Only\n * @command next\n * @text Next\n */\n"
+}

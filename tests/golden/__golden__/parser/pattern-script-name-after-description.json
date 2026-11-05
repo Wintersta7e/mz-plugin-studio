@@ -1,0 +1,24 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Synthetic_Named",
+    "version": "1.0.0",
+    "author": "",
+    "description": "Synthetic_Named.js shows its name",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @plugindesc Synthetic_Named.js shows its name\n */\n"
+}

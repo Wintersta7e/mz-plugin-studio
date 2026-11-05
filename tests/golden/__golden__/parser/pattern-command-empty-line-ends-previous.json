@@ -1,0 +1,39 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [
+    {
+      "id": "<id:2>",
+      "name": "first",
+      "text": "first",
+      "desc": "First",
+      "args": []
+    },
+    {
+      "id": "<id:3>",
+      "name": "second",
+      "text": "second",
+      "desc": "",
+      "args": []
+    }
+  ],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @command first\n * @desc First\n * @command\n * @text Lost\n * @command second\n */\n"
+}

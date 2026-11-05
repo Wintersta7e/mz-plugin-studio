@@ -1,0 +1,29 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "Main description",
+    "help": "Main help",
+    "url": "",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {
+      "ja": {
+        "description": "Synthetic language description",
+        "help": "Language help last"
+      }
+    }
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @plugindesc Main description\n * @help\n * Main help\n * @target MZ\n */\n/*:ja\n * @plugindesc Synthetic language\n * description\n * @help\n * Language help last */\n"
+}

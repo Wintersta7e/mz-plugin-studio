@@ -1,0 +1,24 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "",
+    "version": "1.0.0",
+    "author": "",
+    "description": "No file name",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @plugindesc No file name\n */\n"
+}

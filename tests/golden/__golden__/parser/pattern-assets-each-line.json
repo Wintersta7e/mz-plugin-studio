@@ -1,0 +1,27 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [
+      "img/pictures/Fixture_One",
+      "img/faces/Fixture_Two"
+    ],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @requiredAssets img/pictures/Fixture_One\n * @requiredAssets\n * @requiredAssets img/faces/Fixture_Two\n */\n"
+}
