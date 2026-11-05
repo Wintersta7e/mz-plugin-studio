@@ -1,6 +1,6 @@
 // The analysis view counts the open project's plugins, their method overrides and the methods
 // two plugins override, and rescans on request.
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AnalysisView } from '../../src/renderer/src/components/analysis/AnalysisView'
@@ -18,19 +18,28 @@ const header = (name: string, overrides: string[]): ScannedPluginHeader => ({
   overrides
 })
 
-/** The number shown under a label of the overview card, the card holding `Plugins`. */
-const counter = (label: string): string | null | undefined => {
-  const overview = screen.getByText('Plugins').closest('.rounded-lg') as HTMLElement
-  return within(overview).getByText(label).nextElementSibling?.textContent
+// The number shown under a label of the overview card: the digits that follow the label in the
+// block holding both
+const counter = (label: string): string => {
+  const block = screen.getByText(
+    (_content, element) => {
+      const text = element?.textContent ?? ''
+      return text.startsWith(label) && /^\d+$/.test(text.slice(label.length))
+    },
+    { selector: 'div' }
+  )
+  return block.textContent.slice(label.length)
 }
 
 describe('analysis view', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
   })
 
-  afterEach(cleanup)
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
   it('with no project open it says so', () => {
     render(<AnalysisView />)
@@ -40,18 +49,24 @@ describe('analysis view', () => {
   })
 
   it('counts plugins, overrides and a method two plugins override, and Rescan scans again', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    const scanHeaders = vi.fn(async () => [
-      header('Alpha', ['Scene_Map.prototype.update']),
-      header('Beta', ['Scene_Map.prototype.update'])
-    ])
-    window.api = createFakeApi({ plugin: { scanHeaders } })
-    act(() => useProjectStore.getState().setProject(sampleProject()))
-    await act(() => useProjectStore.getState().scanDependencies())
+    const scanHeaders = vi
+      .fn<Window['api']['plugin']['scanHeaders']>()
+      .mockResolvedValue([
+        header('Alpha', ['Scene_Map.prototype.update']),
+        header('Beta', ['Scene_Map.prototype.update'])
+      ])
+    vi.stubGlobal('api', createFakeApi({ plugin: { scanHeaders } }))
+    act(() => {
+      useProjectStore.getState().setProject(sampleProject())
+    })
+    await act(async () => useProjectStore.getState().scanDependencies())
     render(<AnalysisView />)
 
     expect(screen.getByRole('heading', { name: 'Plugin Analysis' })).toBeInTheDocument()
-    expect([counter('Plugins'), counter('Overrides'), counter('Conflicts')]).toEqual([
+    expect([counter('Plugins'), counter('Overrides'), counter('Conflicts')]).toStrictEqual([
       '2',
       '2',
       '1'
@@ -60,9 +75,11 @@ describe('analysis view', () => {
 
     const rescan = screen.getByRole('button', { name: 'Rescan' })
     await user.click(rescan)
-    await waitFor(() => expect(rescan).toBeEnabled())
+    await waitFor(() => {
+      expect(rescan).toBeEnabled()
+    })
 
-    expect(scanHeaders).toHaveBeenCalledTimes(2)
-    expect(scanHeaders).toHaveBeenLastCalledWith('/project')
+    // Both scans read the open project's folder
+    expect(scanHeaders.mock.calls).toStrictEqual([['/project'], ['/project']])
   })
 })
