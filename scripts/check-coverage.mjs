@@ -24,10 +24,10 @@ const FLOORS = {
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 88 },
     'src/renderer/src/lib': { lines: 96, branches: 88 },
-    [GENERATOR]: { lines: 95, branches: 90 },
+    [GENERATOR]: { lines: 98, branches: 93 },
     'src/renderer/src/components': { lines: 90, branches: 83 },
     'src/renderer/src': { lines: 82, branches: 79 },
-    global: { lines: 94, branches: 88 }
+    global: { lines: 95, branches: 89 }
   },
   golden: {
     // Every generator file, the category modules under templates/ included: a new one needs its
@@ -38,20 +38,21 @@ const FLOORS = {
       [`${GENERATOR}/class-registry.ts`]: 100,
       [`${GENERATOR}/templates/index.ts`]: 88,
       [`${GENERATOR}/templates/types.ts`]: 100,
-      [`${GENERATOR}/templates/actor-party.ts`]: 80,
+      [`${GENERATOR}/templates/actor-party.ts`]: 100,
       [`${GENERATOR}/templates/audio-system.ts`]: 96,
       [`${GENERATOR}/templates/battle-system.ts`]: 94,
-      [`${GENERATOR}/templates/custom-window.ts`]: 94,
+      [`${GENERATOR}/templates/custom-window.ts`]: 100,
       [`${GENERATOR}/templates/database-ext.ts`]: 93,
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
-      [`${GENERATOR}/templates/map-events.ts`]: 94,
-      [`${GENERATOR}/templates/menu-system.ts`]: 97,
+      [`${GENERATOR}/templates/map-events.ts`]: 100,
+      [`${GENERATOR}/templates/menu-system.ts`]: 100,
       [`${GENERATOR}/templates/message-system.ts`]: 95,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,
       [`${GENERATOR}/templates/plugin-commands.ts`]: 94,
       [`${GENERATOR}/templates/save-load.ts`]: 90,
       [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
-      [`${GENERATOR}/templates/sprite-system.ts`]: 99
+      [`${GENERATOR}/templates/sprite-system.ts`]: 100,
+      [`${GENERATOR}/templates/values.ts`]: 100
     }
   }
 }

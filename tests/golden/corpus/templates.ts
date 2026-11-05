@@ -95,6 +95,22 @@ const COMBINED_CASES: Record<string, Record<string, unknown>[]> = {
   'method-alias-basic': [{ timing: 'replace', callOriginal: false }]
 }
 
+// A number at the edge of a comparison the template makes, or just past it: a comparison off by
+// one (`>` for `>=`, `<` for `<=`) changes the output or the verdict of one of these cases.
+const BOUNDARY_CASES: Record<string, Record<string, unknown>[]> = {
+  'actor-custom-property': [{ minValue: '5', maxValue: '5' }],
+  'map-event-spawn': [{ templateEventId: 1 }, { maxSpawnedEvents: 1 }],
+  'map-parallel-process': [{ updateInterval: 2 }, { activeCondition: 'switch', conditionId: 1 }],
+  'party-management': [
+    { minSize: 2 },
+    { maxSize: 1 },
+    { featureType: 'reserveParty', maxReserve: 1 }
+  ],
+  'sprite-frame-animation': [
+    { animationType: 'mixin', targetClass: 'Sprite_Character', columns: 1 }
+  ]
+}
+
 const BASE_CLASS = 'Scene_Map'
 const BASE_METHOD = 'start'
 
@@ -192,6 +208,11 @@ export function templateCases(id: string): TemplateCase[] {
         })
       }
     }
+  }
+  // Last, after the hostile text, so that adding one only adds to the end of a golden file.
+  const boundaryCases = BOUNDARY_CASES[id] ?? []
+  for (const changes of boundaryCases) {
+    cases.push({ name: caseName(changes), values: { ...base, ...changes }, hostile: null })
   }
   return cases
 }

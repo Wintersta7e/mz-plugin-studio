@@ -190,9 +190,13 @@
         "src/renderer/src/lib/generator/templates/**"
       ],
       "ignores": [
+        "src/renderer/src/lib/generator/templates/actor-party.ts",
         "src/renderer/src/lib/generator/templates/index.ts",
+        "src/renderer/src/lib/generator/templates/map-events.ts",
         "src/renderer/src/lib/generator/templates/scene-hooks.ts",
-        "src/renderer/src/lib/generator/templates/types.ts"
+        "src/renderer/src/lib/generator/templates/sprite-system.ts",
+        "src/renderer/src/lib/generator/templates/types.ts",
+        "src/renderer/src/lib/generator/templates/values.ts"
       ],
       "code": "S",
       "reason": "One lines.push per emitted line is the contract of the generator and of the templates that build output line by line (docs/CONTRIBUTING_TEMPLATES.md)"
@@ -218,11 +222,9 @@
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
       "files": [
-        "src/renderer/src/lib/generator/templates/actor-party.ts",
         "src/renderer/src/lib/generator/templates/audio-system.ts",
         "src/renderer/src/lib/generator/templates/custom-window.ts",
         "src/renderer/src/lib/generator/templates/input-handler.ts",
-        "src/renderer/src/lib/generator/templates/map-events.ts",
         "src/renderer/src/lib/generator/templates/menu-system.ts",
         "src/renderer/src/lib/generator/templates/message-system.ts",
         "src/renderer/src/lib/generator/templates/plugin-commands.ts",

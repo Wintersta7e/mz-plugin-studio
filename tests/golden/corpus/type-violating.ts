@@ -5,7 +5,7 @@ import {
   getTemplate,
   type TemplateField
 } from '../../../src/renderer/src/lib/generator/templates/index'
-import type { TemplateCase } from './templates'
+import { baseValues, type TemplateCase } from './templates'
 
 // A value of another JavaScript type than each field type holds.
 const WRONG_TYPE: Record<TemplateField['type'], unknown> = {
@@ -24,6 +24,141 @@ function everyField(id: string, value: (field: TemplateField) => unknown): Recor
   return Object.fromEntries(fields.map((field) => [field.id, value(field)]))
 }
 
+// A wrong-typed or null value in some fields, the base values in the rest. The three cases of
+// every template stop at the first field read, so these reach the branches and checks after it.
+const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
+  'actor-custom-property': [
+    { minValue: null },
+    { propertyName: 'level', maxValue: null },
+    { dataType: 'boolean', defaultValue: 7 },
+    { dataType: 'array', defaultValue: null },
+    { dataType: 'boolean', minValue: null },
+    { minValue: '9', maxValue: '1', includeChange: null }
+  ],
+  'actor-equipment-hook': [
+    { slotFilter: 7 },
+    { eventType: 'change', slotFilter: 7 },
+    { eventType: 'unequip', slotFilter: 7 }
+  ],
+  'custom-window-basic': [
+    { width: null },
+    { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
+    { parentClass: 'Window_Command', width: ['a', 'b'], addToScene: 'Scene_Menu' },
+    {
+      windowName: 'listWindow',
+      parentClass: 'Window_Selectable',
+      addToScene: 'Scene_Map',
+      width: null
+    }
+  ],
+  'gauge-window': [
+    { gaugeCount: '3', dataSource: 'variable', width: null, gaugeHeight: null },
+    { gaugeCount: 3, positionX: 'abc', gaugeHeight: ['a', 'b'] },
+    { gaugeCount: '3', gauge3Color2: 7 },
+    { dataSource: 'custom', showLabels: 'false', positionY: null }
+  ],
+  'hud-overlay-window': [
+    { positionY: null, opacity: null },
+    { positionX: 'abc', width: ['a', 'b'], opacity: 'x' },
+    { hudType: 'status', opacity: null },
+    { hudType: 'minimap', positionY: null },
+    { hudType: 'custom', width: null },
+    { opacity: 300, positionY: null }
+  ],
+  'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
+  'map-parallel-process': [
+    { updateInterval: '2' },
+    { activeCondition: 'switch', conditionId: '3' },
+    { activeCondition: 'variable', conditionValue: 'abc' },
+    { activeCondition: 'custom', conditionId: null }
+  ],
+  'map-transfer-hook': [
+    { filterMapId: '12', includeDirection: null },
+    { timing: 'both', includeFadeInfo: 'yes', filterMapId: null }
+  ],
+  'menu-command-addition': [
+    { enableCondition: 'switch', switchId: null },
+    { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' },
+    { insertPosition: 'afterItem', enableCondition: 'custom', switchId: null },
+    { insertPosition: 'afterSkill', switchId: null },
+    { insertPosition: 'afterEquip', switchId: null },
+    { insertPosition: 'afterStatus', switchId: null },
+    { insertPosition: 'beforeSave', switchId: null },
+    { insertPosition: 'beforeGameEnd', switchId: null },
+    { insertPosition: 'end', switchId: null }
+  ],
+  'menu-custom-scene': [
+    { includeHelp: null },
+    { windowType: 'command', includeHelp: true, includeGold: null },
+    { windowType: 'base', includeHelp: null, includeGold: true }
+  ],
+  'menu-options-addition': [
+    { persistToConfig: null },
+    { optionType: 'volume', defaultValue: 42 },
+    { optionType: 'volume', defaultValue: '50', persistToConfig: null },
+    { optionType: 'select', defaultValue: 42, choices: null },
+    { optionType: 'select', choices: 'Low, High', persistToConfig: null },
+    { optionType: 'select', choices: 42 },
+    { optionType: 'slider', defaultValue: null }
+  ],
+  'menu-title-mod': [
+    { modType: 'hideCommand', hideTarget: 7 },
+    { commandName: null },
+    { modType: 'replaceBackground', commandName: null },
+    { modType: 'hideCommand', hideTarget: 'newGame', commandName: null },
+    { modType: 'hideCommand', hideTarget: 'continue', commandName: null },
+    { modType: 'customCreate', commandName: null },
+    { modType: 'hideCommand', hideTarget: null }
+  ],
+  'party-management': [
+    { minSize: '2' },
+    { maxSize: null },
+    { featureType: 'addRemoveHook', hookTiming: 7 },
+    { featureType: 'reserveParty', maxReserve: 'abc' },
+    { featureType: 'reserveParty', maxReserve: null },
+    { featureType: 'addRemoveHook', maxSize: null },
+    { minSize: 0, maxReserve: null }
+  ],
+  'popup-notification-window': [
+    { defaultDuration: null, height: null },
+    { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
+    { height: 'abc', position: 'bottom' },
+    { textColor: 7 },
+    { fadeEffect: 'slide', height: null },
+    { fadeEffect: 'none', width: null }
+  ],
+  'sprite-custom-class': [
+    { width: null },
+    { parentClass: 7, width: 'abc', height: null, useBitmap: 'empty' },
+    { width: ['a', 'b'], useBitmap: 'filled', fillColor: 7 },
+    { parentClass: 'Sprite_Clickable', width: null },
+    { spriteName: 'effect', width: null }
+  ],
+  'sprite-frame-animation': [
+    { frameCount: null, frameWidth: null },
+    { frameDelay: 'abc', frameHeight: ['a', 'b'] },
+    { animationType: 'grid', columns: ['a', 'b'] },
+    { animationType: 'mixin', targetClass: 7, frameCount: 'abc', columns: ['a', 'b'] },
+    { animationType: 'mixin', columns: '3', frameWidth: null },
+    { animationType: 'mixin', targetClass: null },
+    { animationType: 'vertical', frameCount: null },
+    { animationType: 7 }
+  ],
+  'sprite-picture-manipulation': [
+    { operation: 'move', pictureId: 'abc', x: null, duration: ['a', 'b'] },
+    { operation: 'rotate', rotationSpeed: 'abc' },
+    { operation: 'tint', tintRed: null, tintGray: 'abc' },
+    { operation: 'erase', pictureId: null },
+    { operation: 'utility', pictureId: null },
+    { opacity: 300, x: null }
+  ]
+}
+
+const partialCaseName = (changes: Record<string, unknown>): string =>
+  Object.entries(changes)
+    .map(([field, value]) => `${field}=${JSON.stringify(value)}`)
+    .join(',')
+
 // The type-violating cases of one template, pinned in a golden file of their own.
 export function typeViolatingTemplateCases(id: string): TemplateCase[] {
   return [
@@ -33,7 +168,12 @@ export function typeViolatingTemplateCases(id: string): TemplateCase[] {
       hostile: null
     },
     { name: 'type-violating: null', values: everyField(id, () => null), hostile: null },
-    { name: 'type-violating: arrays', values: everyField(id, () => ['a', 'b']), hostile: null }
+    { name: 'type-violating: arrays', values: everyField(id, () => ['a', 'b']), hostile: null },
+    ...(PARTIAL_CASES[id] ?? []).map((changes) => ({
+      name: `type-violating: ${partialCaseName(changes)}`,
+      values: { ...baseValues(id), ...changes },
+      hostile: null
+    }))
   ]
 }
 

@@ -1,60 +1,71 @@
 /**
- * Custom Window Template
- *
- * Generates code for creating custom window classes in RPG Maker MZ
- * and optionally integrating them into existing scenes.
- */
+Custom Window Template
+
+Generates code for creating custom window classes in RPG Maker MZ
+and optionally integrating them into existing scenes.
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
+import { decimalIntegerOf, expectText, valueOr } from './values'
 
 /**
- * Converts a window name to a valid identifier
- * Strips spaces and ensures PascalCase
- */
+Converts a window name to a valid identifier
+Strips spaces and ensures PascalCase
+*/
 function sanitizeWindowName(name: string): string {
   return name
     .trim()
-    .replace(/[^a-zA-Z0-9]/g, '')
+    .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 }
 
 /**
- * Converts a name to camelCase for method and variable names
- */
+Converts a name to camelCase for method and variable names
+*/
 function toCamelCase(name: string): string {
   const sanitized = sanitizeWindowName(name)
   return sanitized.charAt(0).toLowerCase() + sanitized.slice(1)
 }
 
 /**
- * Generates the window class definition code
- */
-function generateWindowClass(windowName: string, parentClass: string): string {
+The error for a window name that is set but is not a letter followed by letters and digits.
+*/
+function windowNameErrors(value: unknown): string[] {
+  const hasName = Boolean(value)
+  if (!hasName) return []
+  const name = expectText(value)
+  const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
+  return isValid
+    ? []
+    : ['Window Name must start with a letter and contain only letters and numbers']
+}
+
+/**
+Generates the window class definition code
+*/
+function generateWindowClass(windowName: string, parentClass: unknown): string {
   const fullClassName = `Window_${windowName}`
-  const lines: string[] = []
-
-  // Header comment
-  lines.push('//-----------------------------------------------------------------------------')
-  lines.push(`// ${fullClassName}`)
-  lines.push('//-----------------------------------------------------------------------------')
-  lines.push('')
-
-  // Constructor function
-  lines.push(`function ${fullClassName}() {`)
-  lines.push('    this.initialize(...arguments);')
-  lines.push('}')
-  lines.push('')
-
-  // Prototype chain setup
-  lines.push(`${fullClassName}.prototype = Object.create(${parentClass}.prototype);`)
-  lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
-  lines.push('')
-
-  // Initialize method
-  lines.push(`${fullClassName}.prototype.initialize = function(rect) {`)
-  lines.push(`    ${parentClass}.prototype.initialize.call(this, rect);`)
+  const lines: string[] = [
+    // Header comment
+    '//-----------------------------------------------------------------------------',
+    `// ${fullClassName}`,
+    '//-----------------------------------------------------------------------------',
+    '',
+    // Constructor function
+    `function ${fullClassName}() {`,
+    '    this.initialize(...arguments);',
+    '}',
+    '',
+    // Prototype chain setup
+    `${fullClassName}.prototype = Object.create(${String(parentClass)}.prototype);`,
+    `${fullClassName}.prototype.constructor = ${fullClassName};`,
+    '',
+    // Initialize method
+    `${fullClassName}.prototype.initialize = function(rect) {`,
+    `    ${String(parentClass)}.prototype.initialize.call(this, rect);`
+  ]
 
   // Add parent-specific initialization
   if (parentClass === 'Window_Selectable') {
@@ -71,92 +82,101 @@ function generateWindowClass(windowName: string, parentClass: string): string {
   lines.push('')
 
   // Add parent-specific methods
-  if (parentClass === 'Window_Base') {
-    // Simple refresh for Window_Base
-    lines.push(`${fullClassName}.prototype.refresh = function() {`)
-    lines.push('    this.contents.clear();')
-    lines.push('    // Draw your content here')
-    lines.push("    this.drawText('Content', 0, 0, this.contentsWidth());")
-    lines.push('};')
-  } else if (parentClass === 'Window_Selectable') {
-    // Window_Selectable requires item-related methods
-    lines.push(`${fullClassName}.prototype.maxItems = function() {`)
-    lines.push('    return this._data ? this._data.length : 0;')
-    lines.push('};')
-    lines.push('')
+  switch (parentClass) {
+    case 'Window_Base': {
+      // Simple refresh for Window_Base
+      lines.push(`${fullClassName}.prototype.refresh = function() {`)
+      lines.push('    this.contents.clear();')
+      lines.push('    // Draw your content here')
+      lines.push("    this.drawText('Content', 0, 0, this.contentsWidth());")
+      lines.push('};')
 
-    lines.push(`${fullClassName}.prototype.item = function() {`)
-    lines.push('    return this.itemAt(this.index());')
-    lines.push('};')
-    lines.push('')
+      break
+    }
+    case 'Window_Selectable': {
+      // Window_Selectable requires item-related methods
+      lines.push(`${fullClassName}.prototype.maxItems = function() {`)
+      lines.push('    return this._data ? this._data.length : 0;')
+      lines.push('};')
+      lines.push('')
 
-    lines.push(`${fullClassName}.prototype.itemAt = function(index) {`)
-    lines.push('    return this._data && index >= 0 ? this._data[index] : null;')
-    lines.push('};')
-    lines.push('')
+      lines.push(`${fullClassName}.prototype.item = function() {`)
+      lines.push('    return this.itemAt(this.index());')
+      lines.push('};')
+      lines.push('')
 
-    lines.push(`${fullClassName}.prototype.makeItemList = function() {`)
-    lines.push('    // Populate this._data with your items')
-    lines.push("    this._data = ['Item 1', 'Item 2', 'Item 3'];")
-    lines.push('};')
-    lines.push('')
+      lines.push(`${fullClassName}.prototype.itemAt = function(index) {`)
+      lines.push('    return this._data && index >= 0 ? this._data[index] : null;')
+      lines.push('};')
+      lines.push('')
 
-    lines.push(`${fullClassName}.prototype.refresh = function() {`)
-    lines.push('    this.makeItemList();')
-    lines.push(`    ${parentClass}.prototype.refresh.call(this);`)
-    lines.push('};')
-    lines.push('')
+      lines.push(`${fullClassName}.prototype.makeItemList = function() {`)
+      lines.push('    // Populate this._data with your items')
+      lines.push("    this._data = ['Item 1', 'Item 2', 'Item 3'];")
+      lines.push('};')
+      lines.push('')
 
-    lines.push(`${fullClassName}.prototype.drawItem = function(index) {`)
-    lines.push('    const item = this.itemAt(index);')
-    lines.push('    if (item) {')
-    lines.push('        const rect = this.itemLineRect(index);')
-    lines.push('        this.drawText(item, rect.x, rect.y, rect.width);')
-    lines.push('    }')
-    lines.push('};')
-  } else if (parentClass === 'Window_Command') {
-    // Window_Command needs makeCommandList
-    lines.push(`${fullClassName}.prototype.makeCommandList = function() {`)
-    lines.push("    this.addCommand('Command 1', 'command1');")
-    lines.push("    this.addCommand('Command 2', 'command2');")
-    lines.push("    this.addCommand('Command 3', 'command3');")
-    lines.push('};')
+      lines.push(`${fullClassName}.prototype.refresh = function() {`)
+      lines.push('    this.makeItemList();')
+      lines.push(`    ${parentClass}.prototype.refresh.call(this);`)
+      lines.push('};')
+      lines.push('')
+
+      lines.push(`${fullClassName}.prototype.drawItem = function(index) {`)
+      lines.push('    const item = this.itemAt(index);')
+      lines.push('    if (item) {')
+      lines.push('        const rect = this.itemLineRect(index);')
+      lines.push('        this.drawText(item, rect.x, rect.y, rect.width);')
+      lines.push('    }')
+      lines.push('};')
+
+      break
+    }
+    case 'Window_Command': {
+      // Window_Command needs makeCommandList
+      lines.push(`${fullClassName}.prototype.makeCommandList = function() {`)
+      lines.push("    this.addCommand('Command 1', 'command1');")
+      lines.push("    this.addCommand('Command 2', 'command2');")
+      lines.push("    this.addCommand('Command 3', 'command3');")
+      lines.push('};')
+
+      break
+    }
+    // No default
   }
 
   return lines.join('\n')
 }
 
 /**
- * Generates the scene integration code
- */
+Generates the scene integration code
+*/
 function generateSceneIntegration(
   windowName: string,
   sceneName: string,
-  width: number,
-  height: number,
-  parentClass: string
+  width: string,
+  height: string,
+  parentClass: unknown
 ): string {
   const fullClassName = `Window_${windowName}`
   const camelName = toCamelCase(windowName)
-  const createMethodName = `create${windowName}Window`
+  const creatorMethod = `create${windowName}Window`
   const windowPropertyName = `_${camelName}Window`
-  const lines: string[] = []
-
-  lines.push('')
-  lines.push(`// Add to ${sceneName}`)
-
-  // Alias createAllWindows
-  lines.push(`const _${sceneName}_createAllWindows = ${sceneName}.prototype.createAllWindows;`)
-  lines.push(`${sceneName}.prototype.createAllWindows = function() {`)
-  lines.push(`    _${sceneName}_createAllWindows.call(this);`)
-  lines.push(`    this.${createMethodName}();`)
-  lines.push('};')
-  lines.push('')
-
-  // Create window method
-  lines.push(`${sceneName}.prototype.${createMethodName} = function() {`)
-  lines.push(`    const rect = new Rectangle(0, 0, ${width}, ${height});`)
-  lines.push(`    this.${windowPropertyName} = new ${fullClassName}(rect);`)
+  const lines: string[] = [
+    '',
+    // Alias createAllWindows
+    `// Add to ${sceneName}`,
+    `const _${sceneName}_createAllWindows = ${sceneName}.prototype.createAllWindows;`,
+    `${sceneName}.prototype.createAllWindows = function() {`,
+    `    _${sceneName}_createAllWindows.call(this);`,
+    `    this.${creatorMethod}();`,
+    '};',
+    '',
+    // Create window method
+    `${sceneName}.prototype.${creatorMethod} = function() {`,
+    `    const rect = new Rectangle(0, 0, ${width}, ${height});`,
+    `    this.${windowPropertyName} = new ${fullClassName}(rect);`
+  ]
 
   // Add handler setup for command windows
   if (parentClass === 'Window_Command') {
@@ -268,40 +288,38 @@ const customWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const parentClass = (values['parentClass'] as string) || 'Window_Base'
-    const width = (values['width'] as number) || 300
-    const height = (values['height'] as number) || 200
-    const addToScene = (values['addToScene'] as string) || 'none'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const parentClass = valueOr(values['parentClass'], 'Window_Base')
+    const width = valueOr(values['width'], 300)
+    const height = valueOr(values['height'], 200)
+    const addToScene = valueOr(values['addToScene'], 'none')
 
     // Generate window class
     let code = generateWindowClass(windowName, parentClass)
 
     // Generate scene integration if requested
-    if (addToScene && addToScene !== 'none') {
-      code += generateSceneIntegration(windowName, addToScene, width, height, parentClass)
+    if (addToScene !== 'none') {
+      code += generateSceneIntegration(
+        windowName,
+        String(addToScene),
+        String(width),
+        String(height),
+        parentClass
+      )
     }
 
     return code
   },
   validate: (values) => {
-    const errors: string[] = []
-
-    if (values['windowName']) {
-      const name = values['windowName'] as string
-      // Check for valid identifier
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Window Name must start with a letter and contain only letters and numbers')
-      }
-    }
+    // Check for valid identifier
+    const errors = windowNameErrors(values['windowName'])
 
     // Validate width and height are positive
-    if (values['width'] !== undefined && (values['width'] as number) <= 0) {
+    if (values['width'] !== undefined && Number(values['width']) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values['height'] !== undefined && (values['height'] as number) <= 0) {
+    if (values['height'] !== undefined && Number(values['height']) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -313,11 +331,114 @@ const customWindowTemplate: CodeTemplate = {
 }
 
 /**
- * HUD Overlay Window Template
- *
- * Creates a window that displays on the map screen as a HUD element
- * (health bars, status indicators, mini-map placeholders, etc.)
- */
+The `needsRefresh` method of a HUD window: whether the content of its type changed.
+*/
+function hudNeedsRefreshLines(fullClassName: string, hudType: unknown): string[] {
+  const lines = [`${fullClassName}.prototype.needsRefresh = function() {`]
+  if (hudType === 'health') {
+    lines.push('    // Check if HP/MP values have changed')
+    lines.push('    const actor = $gameParty.leader();')
+    lines.push('    if (!actor) return false;')
+    lines.push('    if (this._lastHp !== actor.hp || this._lastMp !== actor.mp) {')
+    lines.push('        this._lastHp = actor.hp;')
+    lines.push('        this._lastMp = actor.mp;')
+    lines.push('        return true;')
+    lines.push('    }')
+  } else if (hudType === 'status') {
+    lines.push('    // Refresh periodically for status updates')
+    lines.push('    this._refreshCounter = (this._refreshCounter || 0) + 1;')
+    lines.push('    if (this._refreshCounter >= 30) { // Every 0.5 seconds')
+    lines.push('        this._refreshCounter = 0;')
+    lines.push('        return true;')
+    lines.push('    }')
+  } else {
+    lines.push('    // Override this method to control when the HUD refreshes')
+  }
+  lines.push('    return false;')
+  lines.push('};')
+  lines.push('')
+  return lines
+}
+
+/**
+The `refresh` method of a HUD window, drawing the content of its type.
+*/
+function hudRefreshLines(fullClassName: string, hudType: unknown): string[] {
+  const lines = [`${fullClassName}.prototype.refresh = function() {`, '    this.contents.clear();']
+
+  switch (hudType) {
+    case 'health': {
+      lines.push('    const actor = $gameParty.leader();')
+      lines.push('    if (!actor) return;')
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw actor name')
+      lines.push('    this.drawText(actor.name(), 0, 0, this.contentsWidth());')
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw HP gauge')
+      lines.push('    const gaugeY = this.lineHeight();')
+      lines.push('    this.drawText("HP:", 0, gaugeY, 40);')
+      lines.push('    this.changeTextColor(ColorManager.hpColor(actor));')
+      lines.push(
+        '    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);'
+      )
+      lines.push('    this.resetTextColor();')
+
+      break
+    }
+    case 'status': {
+      lines.push('    const actor = $gameParty.leader();')
+      lines.push('    if (!actor) return;')
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw status icons')
+      lines.push('    const icons = actor.allIcons();')
+      lines.push('    const iconWidth = ImageManager.iconWidth;')
+      lines.push('    for (let i = 0; i < icons.length && i < 8; i++) {')
+      lines.push('        this.drawIcon(icons[i], i * iconWidth, 0);')
+      lines.push('    }')
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw status text if no icons')
+      lines.push('    if (icons.length === 0) {')
+      lines.push("        this.drawText('Normal', 0, 0, this.contentsWidth(), 'center');")
+      lines.push('    }')
+
+      break
+    }
+    case 'minimap': {
+      lines.push('    // Mini-map placeholder - customize with your own implementation')
+      lines.push('    const cx = this.contentsWidth() / 2;')
+      lines.push('    const cy = this.contentsHeight() / 2;')
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw border')
+      lines.push(
+        "    this.contents.strokeRect(2, 2, this.contentsWidth() - 4, this.contentsHeight() - 4, '#ffffff');"
+      )
+      lines.push(' '.repeat(4))
+      lines.push('    // Draw player position indicator')
+      lines.push("    this.contents.fillRect(cx - 2, cy - 2, 4, 4, '#00ff00');")
+      lines.push(' '.repeat(4))
+      lines.push(
+        "    this.drawText('Mini-Map', 0, cy - this.lineHeight()/2, this.contentsWidth(), 'center');"
+      )
+
+      break
+    }
+    default: {
+      lines.push('    // Custom HUD content - add your drawing code here')
+      lines.push("    this.drawText('Custom HUD', 0, 0, this.contentsWidth(), 'center');")
+    }
+  }
+
+  lines.push('};')
+  lines.push('')
+  return lines
+}
+
+/**
+HUD Overlay Window Template
+
+Creates a window that displays on the map screen as a HUD element
+(health bars, status indicators, mini-map placeholders, etc.)
+*/
 const hudOverlayWindowTemplate: CodeTemplate = {
   id: 'hud-overlay-window',
   category: 'custom-window',
@@ -395,47 +516,44 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const hudType = (values['hudType'] as string) || 'health'
-    const posX = (values['positionX'] as number) || 10
-    const posY = (values['positionY'] as number) || 10
-    const width = (values['width'] as number) || 200
-    const height = (values['height'] as number) || 80
-    const opacity = (values['opacity'] as number) ?? 255
-    const showFrame = values['showFrame'] !== 'false'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const hudType = valueOr(values['hudType'], 'health')
+    const posX = valueOr(values['positionX'], 10)
+    const posY = valueOr(values['positionY'], 10)
+    const width = valueOr(values['width'], 200)
+    const height = valueOr(values['height'], 80)
+    const opacity: unknown = values['opacity'] ?? 255
+    const isShowFrame = values['showFrame'] !== 'false'
 
     const fullClassName = `Window_${windowName}`
-    const lines: string[] = []
+    const lines: string[] = [
+      // Header comment
+      '//-----------------------------------------------------------------------------',
+      `// ${fullClassName}`,
+      '//',
+      '// HUD overlay window that displays on the map screen.',
+      '// This window automatically updates every frame to reflect current game state.',
+      '//-----------------------------------------------------------------------------',
+      '',
+      // Constructor function
+      `function ${fullClassName}() {`,
+      '    this.initialize(...arguments);',
+      '}',
+      '',
+      // Prototype chain setup
+      `${fullClassName}.prototype = Object.create(Window_Base.prototype);`,
+      `${fullClassName}.prototype.constructor = ${fullClassName};`,
+      '',
+      // Initialize method
+      `${fullClassName}.prototype.initialize = function(rect) {`,
+      '    Window_Base.prototype.initialize.call(this, rect);'
+    ]
 
-    // Header comment
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push(`// ${fullClassName}`)
-    lines.push('//')
-    lines.push('// HUD overlay window that displays on the map screen.')
-    lines.push('// This window automatically updates every frame to reflect current game state.')
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push('')
-
-    // Constructor function
-    lines.push(`function ${fullClassName}() {`)
-    lines.push('    this.initialize(...arguments);')
-    lines.push('}')
-    lines.push('')
-
-    // Prototype chain setup
-    lines.push(`${fullClassName}.prototype = Object.create(Window_Base.prototype);`)
-    lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
-    lines.push('')
-
-    // Initialize method
-    lines.push(`${fullClassName}.prototype.initialize = function(rect) {`)
-    lines.push('    Window_Base.prototype.initialize.call(this, rect);')
-    if (!showFrame) {
+    if (!isShowFrame) {
       lines.push('    // Remove window frame for a cleaner HUD look')
       lines.push('    this.frameVisible = false;')
     }
-    lines.push(`    this.backOpacity = ${opacity};`)
+    lines.push(`    this.backOpacity = ${String(opacity)};`)
     lines.push('    this.refresh();')
     lines.push('};')
     lines.push('')
@@ -450,90 +568,11 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     lines.push('};')
     lines.push('')
 
-    // Needs refresh check
-    lines.push(`${fullClassName}.prototype.needsRefresh = function() {`)
-    if (hudType === 'health') {
-      lines.push('    // Check if HP/MP values have changed')
-      lines.push('    const actor = $gameParty.leader();')
-      lines.push('    if (!actor) return false;')
-      lines.push('    if (this._lastHp !== actor.hp || this._lastMp !== actor.mp) {')
-      lines.push('        this._lastHp = actor.hp;')
-      lines.push('        this._lastMp = actor.mp;')
-      lines.push('        return true;')
-      lines.push('    }')
-      lines.push('    return false;')
-    } else if (hudType === 'status') {
-      lines.push('    // Refresh periodically for status updates')
-      lines.push('    this._refreshCounter = (this._refreshCounter || 0) + 1;')
-      lines.push('    if (this._refreshCounter >= 30) { // Every 0.5 seconds')
-      lines.push('        this._refreshCounter = 0;')
-      lines.push('        return true;')
-      lines.push('    }')
-      lines.push('    return false;')
-    } else {
-      lines.push('    // Override this method to control when the HUD refreshes')
-      lines.push('    return false;')
-    }
-    lines.push('};')
-    lines.push('')
-
-    // Refresh method based on HUD type
-    lines.push(`${fullClassName}.prototype.refresh = function() {`)
-    lines.push('    this.contents.clear();')
-
-    if (hudType === 'health') {
-      lines.push('    const actor = $gameParty.leader();')
-      lines.push('    if (!actor) return;')
-      lines.push('    ')
-      lines.push('    // Draw actor name')
-      lines.push('    this.drawText(actor.name(), 0, 0, this.contentsWidth());')
-      lines.push('    ')
-      lines.push('    // Draw HP gauge')
-      lines.push('    const gaugeY = this.lineHeight();')
-      lines.push('    this.drawText("HP:", 0, gaugeY, 40);')
-      lines.push('    this.changeTextColor(ColorManager.hpColor(actor));')
-      lines.push(
-        '    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);'
-      )
-      lines.push('    this.resetTextColor();')
-    } else if (hudType === 'status') {
-      lines.push('    const actor = $gameParty.leader();')
-      lines.push('    if (!actor) return;')
-      lines.push('    ')
-      lines.push('    // Draw status icons')
-      lines.push('    const icons = actor.allIcons();')
-      lines.push('    const iconWidth = ImageManager.iconWidth;')
-      lines.push('    for (let i = 0; i < icons.length && i < 8; i++) {')
-      lines.push('        this.drawIcon(icons[i], i * iconWidth, 0);')
-      lines.push('    }')
-      lines.push('    ')
-      lines.push('    // Draw status text if no icons')
-      lines.push('    if (icons.length === 0) {')
-      lines.push("        this.drawText('Normal', 0, 0, this.contentsWidth(), 'center');")
-      lines.push('    }')
-    } else if (hudType === 'minimap') {
-      lines.push('    // Mini-map placeholder - customize with your own implementation')
-      lines.push('    const cx = this.contentsWidth() / 2;')
-      lines.push('    const cy = this.contentsHeight() / 2;')
-      lines.push('    ')
-      lines.push('    // Draw border')
-      lines.push(
-        "    this.contents.strokeRect(2, 2, this.contentsWidth() - 4, this.contentsHeight() - 4, '#ffffff');"
-      )
-      lines.push('    ')
-      lines.push('    // Draw player position indicator')
-      lines.push("    this.contents.fillRect(cx - 2, cy - 2, 4, 4, '#00ff00');")
-      lines.push('    ')
-      lines.push(
-        "    this.drawText('Mini-Map', 0, cy - this.lineHeight()/2, this.contentsWidth(), 'center');"
-      )
-    } else {
-      lines.push('    // Custom HUD content - add your drawing code here')
-      lines.push("    this.drawText('Custom HUD', 0, 0, this.contentsWidth(), 'center');")
-    }
-
-    lines.push('};')
-    lines.push('')
+    // Needs refresh check, then the refresh method based on HUD type
+    lines.push(
+      ...hudNeedsRefreshLines(fullClassName, hudType),
+      ...hudRefreshLines(fullClassName, hudType)
+    )
 
     // Scene_Map integration
     lines.push('// Add HUD to Scene_Map')
@@ -547,7 +586,9 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     lines.push('')
 
     lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
-    lines.push(`    const rect = new Rectangle(${posX}, ${posY}, ${width}, ${height});`)
+    lines.push(
+      `    const rect = new Rectangle(${String(posX)}, ${String(posY)}, ${String(width)}, ${String(height)});`
+    )
     lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
     lines.push(`    this.addWindow(this._${toCamelCase(windowName)}Window);`)
     lines.push('};')
@@ -555,17 +596,10 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors: string[] = []
+    const errors = windowNameErrors(values['windowName'])
 
-    if (values['windowName']) {
-      const name = values['windowName'] as string
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Window Name must start with a letter and contain only letters and numbers')
-      }
-    }
-
-    const opacity = values['opacity'] as number
-    if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
+    const opacity = values['opacity']
+    if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
 
@@ -577,10 +611,140 @@ const hudOverlayWindowTemplate: CodeTemplate = {
 }
 
 /**
- * Popup Notification Window Template
- *
- * Creates a temporary popup window that displays a message and auto-closes
- */
+The popup window class up to its custom background: header, constructor, the static `show`
+shortcut and the initialize method.
+*/
+function popupClassLines(
+  fullClassName: string,
+  windowName: string,
+  duration: unknown,
+  bgColor: unknown
+): string[] {
+  return [
+    // Header comment
+    '//-----------------------------------------------------------------------------',
+    `// ${fullClassName}`,
+    '//',
+    '// A popup notification window that displays temporarily and auto-closes.',
+    `// Default duration: ${String(duration)} frames (${(Number(duration) / 60).toFixed(1)} seconds)`,
+    '//-----------------------------------------------------------------------------',
+    '',
+    // Constructor function
+    `function ${fullClassName}() {`,
+    '    this.initialize(...arguments);',
+    '}',
+    '',
+    // Prototype chain setup
+    `${fullClassName}.prototype = Object.create(Window_Base.prototype);`,
+    `${fullClassName}.prototype.constructor = ${fullClassName};`,
+    '',
+    // Static method to show notification easily
+    `// Static method for easy notification display`,
+    `${fullClassName}.show = function(message, duration) {`,
+    '    const scene = SceneManager._scene;',
+    `    if (scene && scene._${toCamelCase(windowName)}Window) {`,
+    `        scene._${toCamelCase(windowName)}Window.showNotification(message, duration);`,
+    '    }',
+    '};',
+    '',
+    // Initialize method
+    `${fullClassName}.prototype.initialize = function(rect) {`,
+    '    Window_Base.prototype.initialize.call(this, rect);',
+    '    this._message = "";',
+    `    this._duration = 0;`,
+    '    this._fadePhase = "none"; // "in", "out", "none"',
+    '    this._fadeCounter = 0;',
+    '    this.frameVisible = false; // Hide frame for cleaner look',
+    '    this.openness = 0; // Start hidden',
+    '    this.createCustomBackground();',
+    '};',
+    '',
+    // Create custom background
+    `${fullClassName}.prototype.createCustomBackground = function() {`,
+    '    // Create a custom colored background',
+    '    this._customBg = new Sprite(new Bitmap(this.width, this.height));',
+    `    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(expectText(bgColor))}');`,
+    '    this._customBg.opacity = 200;',
+    '    this.addChildToBack(this._customBg);',
+    '};',
+    ''
+  ]
+}
+
+/**
+The popup window's per-frame methods: `update`, the open and close effect in `updateFade`, and
+the countdown in `updateDuration`.
+*/
+function popupUpdateLines(fullClassName: string, fadeEffect: unknown): string[] {
+  const lines = [
+    // Update method
+    `${fullClassName}.prototype.update = function() {`,
+    '    Window_Base.prototype.update.call(this);',
+    '    this.updateFade();',
+    '    this.updateDuration();',
+    '};',
+    '',
+    // Update fade
+    `${fullClassName}.prototype.updateFade = function() {`,
+    '    const fadeSpeed = 16;'
+  ]
+  if (fadeEffect === 'fade') {
+    lines.push('    if (this._fadePhase === "in") {')
+    lines.push('        this.openness = Math.min(255, this.openness + fadeSpeed);')
+    lines.push('        if (this.openness >= 255) this._fadePhase = "none";')
+    lines.push('    } else if (this._fadePhase === "out") {')
+    lines.push('        this.openness = Math.max(0, this.openness - fadeSpeed);')
+    lines.push('        if (this.openness <= 0) this._fadePhase = "none";')
+  } else if (fadeEffect === 'slide') {
+    lines.push('    if (this._fadePhase === "in") {')
+    lines.push('        this._slideOffset = Math.min(0, (this._slideOffset || -this.height) + 8);')
+    lines.push('        this.y = this._baseY + this._slideOffset;')
+    lines.push('        if (this._slideOffset >= 0) this._fadePhase = "none";')
+    lines.push('    } else if (this._fadePhase === "out") {')
+    lines.push('        this._slideOffset = Math.max(-this.height, (this._slideOffset || 0) - 8);')
+    lines.push('        this.y = this._baseY + this._slideOffset;')
+    lines.push('        if (this._slideOffset <= -this.height) {')
+    lines.push('            this._fadePhase = "none";')
+    lines.push('            this.openness = 0;')
+    lines.push('        }')
+  } else {
+    lines.push('    // No fade effect')
+    lines.push('    if (this._fadePhase === "in") this._fadePhase = "none";')
+    lines.push('    if (this._fadePhase === "out") {')
+    lines.push('        this.openness = 0;')
+    lines.push('        this._fadePhase = "none";')
+  }
+  lines.push('    }')
+  lines.push('};')
+  lines.push('')
+
+  // Update duration
+  lines.push(`${fullClassName}.prototype.updateDuration = function() {`)
+  lines.push('    if (this._duration > 0 && this._fadePhase === "none" && this.openness > 0) {')
+  lines.push('        this._duration--;')
+  lines.push('        if (this._duration <= 0) {')
+  lines.push('            this._fadePhase = "out";')
+  lines.push('        }')
+  lines.push('    }')
+  lines.push('};')
+  lines.push('')
+  return lines
+}
+
+/**
+The y coordinate the popup window is placed at, as code, for its position setting.
+*/
+function popupYCode(position: unknown, height: unknown): string {
+  if (position === 'top') return '10'
+  if (position === 'center') return `(Graphics.boxHeight - ${String(height)}) / 2`
+  return `Graphics.boxHeight - ${String(height)} - 10`
+}
+
+/**
+Popup Notification Window Template
+
+Creates a temporary popup window that displays a message and auto-closes
+*/
 const popupNotificationTemplate: CodeTemplate = {
   id: 'popup-notification-window',
   category: 'custom-window',
@@ -657,80 +821,22 @@ const popupNotificationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const duration = (values['defaultDuration'] as number) || 120
-    const width = (values['width'] as number) || 400
-    const height = (values['height'] as number) || 60
-    const position = (values['position'] as string) || 'top'
-    const fadeEffect = (values['fadeEffect'] as string) || 'fade'
-    const bgColor = (values['bgColor'] as string) || '#000000'
-    const textColor = (values['textColor'] as string) || '#ffffff'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const duration = valueOr(values['defaultDuration'], 120)
+    const width = valueOr(values['width'], 400)
+    const height = valueOr(values['height'], 60)
+    const position = valueOr(values['position'], 'top')
+    const fadeEffect = valueOr(values['fadeEffect'], 'fade')
+    const bgColor = valueOr(values['bgColor'], '#000000')
+    const textColor = valueOr(values['textColor'], '#ffffff')
 
     const fullClassName = `Window_${windowName}`
-    const lines: string[] = []
-
-    // Header comment
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push(`// ${fullClassName}`)
-    lines.push('//')
-    lines.push('// A popup notification window that displays temporarily and auto-closes.')
-    lines.push(`// Default duration: ${duration} frames (${(duration / 60).toFixed(1)} seconds)`)
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push('')
-
-    // Constructor function
-    lines.push(`function ${fullClassName}() {`)
-    lines.push('    this.initialize(...arguments);')
-    lines.push('}')
-    lines.push('')
-
-    // Prototype chain setup
-    lines.push(`${fullClassName}.prototype = Object.create(Window_Base.prototype);`)
-    lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
-    lines.push('')
-
-    // Static method to show notification easily
-    lines.push(`// Static method for easy notification display`)
-    lines.push(`${fullClassName}.show = function(message, duration) {`)
-    lines.push('    const scene = SceneManager._scene;')
-    lines.push(`    if (scene && scene._${toCamelCase(windowName)}Window) {`)
-    lines.push(
-      `        scene._${toCamelCase(windowName)}Window.showNotification(message, duration);`
-    )
-    lines.push('    }')
-    lines.push('};')
-    lines.push('')
-
-    // Initialize method
-    lines.push(`${fullClassName}.prototype.initialize = function(rect) {`)
-    lines.push('    Window_Base.prototype.initialize.call(this, rect);')
-    lines.push('    this._message = "";')
-    lines.push(`    this._duration = 0;`)
-    lines.push('    this._fadePhase = "none"; // "in", "out", "none"')
-    lines.push('    this._fadeCounter = 0;')
-    lines.push('    this.frameVisible = false; // Hide frame for cleaner look')
-    lines.push('    this.openness = 0; // Start hidden')
-    lines.push('    this.createCustomBackground();')
-    lines.push('};')
-    lines.push('')
-
-    // Create custom background
-    lines.push(`${fullClassName}.prototype.createCustomBackground = function() {`)
-    lines.push('    // Create a custom colored background')
-    lines.push('    this._customBg = new Sprite(new Bitmap(this.width, this.height));')
-    lines.push(
-      `    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`
-    )
-    lines.push('    this._customBg.opacity = 200;')
-    lines.push('    this.addChildToBack(this._customBg);')
-    lines.push('};')
-    lines.push('')
+    const lines = popupClassLines(fullClassName, windowName, duration, bgColor)
 
     // Show notification method
     lines.push(`${fullClassName}.prototype.showNotification = function(message, duration) {`)
     lines.push('    this._message = message;')
-    lines.push(`    this._duration = duration || ${duration};`)
+    lines.push(`    this._duration = duration || ${String(duration)};`)
     lines.push('    this._fadePhase = "in";')
     lines.push('    this._fadeCounter = 0;')
     lines.push('    this.refresh();')
@@ -743,85 +849,19 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push('};')
     lines.push('')
 
-    // Update method
-    lines.push(`${fullClassName}.prototype.update = function() {`)
-    lines.push('    Window_Base.prototype.update.call(this);')
-    lines.push('    this.updateFade();')
-    lines.push('    this.updateDuration();')
-    lines.push('};')
-    lines.push('')
-
-    // Update fade
-    lines.push(`${fullClassName}.prototype.updateFade = function() {`)
-    lines.push('    const fadeSpeed = 16;')
-    if (fadeEffect === 'fade') {
-      lines.push('    if (this._fadePhase === "in") {')
-      lines.push('        this.openness = Math.min(255, this.openness + fadeSpeed);')
-      lines.push('        if (this.openness >= 255) this._fadePhase = "none";')
-      lines.push('    } else if (this._fadePhase === "out") {')
-      lines.push('        this.openness = Math.max(0, this.openness - fadeSpeed);')
-      lines.push('        if (this.openness <= 0) this._fadePhase = "none";')
-      lines.push('    }')
-    } else if (fadeEffect === 'slide') {
-      lines.push('    if (this._fadePhase === "in") {')
-      lines.push(
-        '        this._slideOffset = Math.min(0, (this._slideOffset || -this.height) + 8);'
-      )
-      lines.push('        this.y = this._baseY + this._slideOffset;')
-      lines.push('        if (this._slideOffset >= 0) this._fadePhase = "none";')
-      lines.push('    } else if (this._fadePhase === "out") {')
-      lines.push(
-        '        this._slideOffset = Math.max(-this.height, (this._slideOffset || 0) - 8);'
-      )
-      lines.push('        this.y = this._baseY + this._slideOffset;')
-      lines.push('        if (this._slideOffset <= -this.height) {')
-      lines.push('            this._fadePhase = "none";')
-      lines.push('            this.openness = 0;')
-      lines.push('        }')
-      lines.push('    }')
-    } else {
-      lines.push('    // No fade effect')
-      lines.push('    if (this._fadePhase === "in") this._fadePhase = "none";')
-      lines.push('    if (this._fadePhase === "out") {')
-      lines.push('        this.openness = 0;')
-      lines.push('        this._fadePhase = "none";')
-      lines.push('    }')
-    }
-    lines.push('};')
-    lines.push('')
-
-    // Update duration
-    lines.push(`${fullClassName}.prototype.updateDuration = function() {`)
-    lines.push('    if (this._duration > 0 && this._fadePhase === "none" && this.openness > 0) {')
-    lines.push('        this._duration--;')
-    lines.push('        if (this._duration <= 0) {')
-    lines.push('            this._fadePhase = "out";')
-    lines.push('        }')
-    lines.push('    }')
-    lines.push('};')
-    lines.push('')
+    lines.push(...popupUpdateLines(fullClassName, fadeEffect))
 
     // Refresh method
     lines.push(`${fullClassName}.prototype.refresh = function() {`)
     lines.push('    this.contents.clear();')
-    lines.push(`    this.contents.textColor = '${escapeJSString(textColor)}';`)
+    lines.push(`    this.contents.textColor = '${escapeJSString(expectText(textColor))}';`)
     lines.push("    this.drawText(this._message, 0, 0, this.contentsWidth(), 'center');")
     lines.push('};')
     lines.push('')
 
     // Calculate position based on setting
-    let posX: string
-    let posY: string
-    if (position === 'top') {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
-      posY = '10'
-    } else if (position === 'center') {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
-      posY = `(Graphics.boxHeight - ${height}) / 2`
-    } else {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
-      posY = `Graphics.boxHeight - ${height} - 10`
-    }
+    const posX = `(Graphics.boxWidth - ${String(width)}) / 2`
+    const posY = popupYCode(position, height)
 
     // Scene_Map integration
     lines.push('// Add notification window to Scene_Map')
@@ -835,7 +875,7 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
     lines.push(`    const x = ${posX};`)
     lines.push(`    const y = ${posY};`)
-    lines.push(`    const rect = new Rectangle(x, y, ${width}, ${height});`)
+    lines.push(`    const rect = new Rectangle(x, y, ${String(width)}, ${String(height)});`)
     lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
     if (fadeEffect === 'slide') {
       lines.push(`    this._${toCamelCase(windowName)}Window._baseY = y;`)
@@ -856,17 +896,10 @@ const popupNotificationTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors: string[] = []
+    const errors = windowNameErrors(values['windowName'])
 
-    if (values['windowName']) {
-      const name = values['windowName'] as string
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Window Name must start with a letter and contain only letters and numbers')
-      }
-    }
-
-    const duration = values['defaultDuration'] as number
-    if (duration !== undefined && duration <= 0) {
+    const duration = values['defaultDuration']
+    if (duration !== undefined && Number(duration) <= 0) {
       errors.push('Duration must be a positive number')
     }
 
@@ -878,10 +911,237 @@ const popupNotificationTemplate: CodeTemplate = {
 }
 
 /**
- * Gauge Window Template
- *
- * Creates a window with HP/MP style gauge bars
- */
+A gauge's label and gradient colors as the template values give them.
+*/
+interface GaugeSetting {
+  label: unknown
+  color1: unknown
+  color2: unknown
+}
+
+type GaugeSettings = readonly [GaugeSetting, GaugeSetting, GaugeSetting]
+
+/**
+The code for the current and maximum value of each of the three gauges.
+*/
+type GaugeValueCodes = readonly [string, string, string]
+
+const INITIAL_GAUGE_VALUE = 'current: 0, max: 100'
+
+/**
+One entry of the gauge data array.
+*/
+function gaugeEntryLine(gauge: GaugeSetting, valueCode: string): string {
+  return `        { label: '${escapeJSString(expectText(gauge.label))}', color1: '${escapeJSString(expectText(gauge.color1))}', color2: '${escapeJSString(expectText(gauge.color2))}', ${valueCode} },`
+}
+
+/**
+The gauge data entries for the gauge count: the first always, the second from 2, the third from 3.
+*/
+function gaugeEntryLines(
+  gauges: GaugeSettings,
+  gaugeCount: number,
+  valueCodes: GaugeValueCodes
+): string[] {
+  const [first, second, third] = gauges
+  const [firstValue, secondValue, thirdValue] = valueCodes
+  return [
+    gaugeEntryLine(first, firstValue),
+    ...(gaugeCount >= 2 ? [gaugeEntryLine(second, secondValue)] : []),
+    ...(gaugeCount >= 3 ? [gaugeEntryLine(third, thirdValue)] : [])
+  ]
+}
+
+/**
+The gauge window class up to `needsRefresh`: header, constructor, initialize with the initial
+gauge data for the gauge count, and the per-frame update.
+*/
+function gaugeClassLines(
+  fullClassName: string,
+  gaugeCount: number,
+  gauges: GaugeSettings
+): string[] {
+  return [
+    // Header comment
+    '//-----------------------------------------------------------------------------',
+    `// ${fullClassName}`,
+    '//',
+    '// A window that displays gauge bars (HP/MP style).',
+    `// Contains ${gaugeCount} gauge(s) that update automatically.`,
+    '//-----------------------------------------------------------------------------',
+    '',
+    // Constructor function
+    `function ${fullClassName}() {`,
+    '    this.initialize(...arguments);',
+    '}',
+    '',
+    // Prototype chain setup
+    `${fullClassName}.prototype = Object.create(Window_Base.prototype);`,
+    `${fullClassName}.prototype.constructor = ${fullClassName};`,
+    '',
+    // Initialize method
+    `${fullClassName}.prototype.initialize = function(rect) {`,
+    '    Window_Base.prototype.initialize.call(this, rect);',
+    '    this._gaugeData = [];',
+    '    this.initializeGauges();',
+    '    this.refresh();',
+    '};',
+    '',
+    // Initialize gauge data
+    `${fullClassName}.prototype.initializeGauges = function() {`,
+    '    // Initialize gauge configurations',
+    '    this._gaugeData = [',
+    ...gaugeEntryLines(gauges, gaugeCount, [
+      INITIAL_GAUGE_VALUE,
+      INITIAL_GAUGE_VALUE,
+      INITIAL_GAUGE_VALUE
+    ]),
+    '    ];',
+    '};',
+    '',
+    // Update method
+    `${fullClassName}.prototype.update = function() {`,
+    '    Window_Base.prototype.update.call(this);',
+    '    if (this.needsRefresh()) {',
+    '        this.refresh();',
+    '    }',
+    '};',
+    '',
+    // Needs refresh check
+    `${fullClassName}.prototype.needsRefresh = function() {`,
+    '    const newData = this.getCurrentValues();',
+    '    for (let i = 0; i < this._gaugeData.length; i++) {',
+    '        if (this._gaugeData[i].current !== newData[i].current ||',
+    '            this._gaugeData[i].max !== newData[i].max) {',
+    '            return true;',
+    '        }',
+    '    }',
+    '    return false;',
+    '};',
+    ''
+  ]
+}
+
+/**
+The body of `getCurrentValues` for the data source: the party leader, game variables, or the
+values set by hand.
+*/
+function gaugeCurrentValueLines(
+  dataSource: unknown,
+  gauges: GaugeSettings,
+  gaugeCount: number
+): string[] {
+  if (dataSource === 'actor') {
+    return [
+      '    const actor = $gameParty.leader();',
+      '    if (!actor) return this._gaugeData;',
+      ' '.repeat(4),
+      '    return [',
+      ...gaugeEntryLines(gauges, gaugeCount, [
+        'current: actor.hp, max: actor.mhp',
+        'current: actor.mp, max: actor.mmp',
+        'current: actor.tp, max: actor.maxTp()'
+      ]),
+      '    ];'
+    ]
+  }
+  if (dataSource === 'variable') {
+    return [
+      '    // Using game variables for gauge values',
+      '    // Customize variable IDs as needed',
+      '    return [',
+      ...gaugeEntryLines(gauges, gaugeCount, [
+        'current: $gameVariables.value(1), max: $gameVariables.value(2)',
+        'current: $gameVariables.value(3), max: $gameVariables.value(4)',
+        'current: $gameVariables.value(5), max: $gameVariables.value(6)'
+      ]),
+      '    ];'
+    ]
+  }
+  return [
+    '    // Custom data source - override this method or call setGaugeValue()',
+    '    return this._gaugeData;'
+  ]
+}
+
+/**
+The gauge window's `setGaugeValue` and `refresh` methods, and `drawGauge` with the label and value
+columns its settings show.
+*/
+function gaugeDrawLines(
+  fullClassName: string,
+  lineHeight: number,
+  gaugeHeight: unknown,
+  isShowLabels: boolean,
+  isShowValues: boolean
+): string[] {
+  const lines = [
+    // Set gauge value method (for custom use)
+    `${fullClassName}.prototype.setGaugeValue = function(index, current, max) {`,
+    '    if (this._gaugeData[index]) {',
+    '        this._gaugeData[index].current = current;',
+    '        this._gaugeData[index].max = max;',
+    '        this.refresh();',
+    '    }',
+    '};',
+    '',
+    // Refresh method
+    `${fullClassName}.prototype.refresh = function() {`,
+    '    this.contents.clear();',
+    '    this._gaugeData = this.getCurrentValues();',
+    ' '.repeat(4),
+    '    for (let i = 0; i < this._gaugeData.length; i++) {',
+    `        this.drawGauge(i, i * ${lineHeight});`,
+    '    }',
+    '};',
+    '',
+    // Draw gauge method
+    `${fullClassName}.prototype.drawGauge = function(index, y) {`,
+    '    const gauge = this._gaugeData[index];',
+    '    const rate = gauge.max > 0 ? gauge.current / gauge.max : 0;',
+    `    const gaugeHeight = ${String(gaugeHeight)};`,
+    ' '.repeat(4)
+  ]
+  if (isShowLabels) {
+    lines.push('    // Draw label')
+    lines.push('    const labelWidth = 48;')
+    lines.push('    this.drawText(gauge.label, 0, y, labelWidth);')
+    lines.push(' '.repeat(4))
+    lines.push('    // Calculate gauge position')
+    lines.push('    const gaugeX = labelWidth + 4;')
+  } else {
+    lines.push('    const gaugeX = 0;')
+  }
+  lines.push(isShowValues ? '    const valueWidth = 80;' : '    const valueWidth = 0;')
+  lines.push('    const gaugeWidth = this.contentsWidth() - gaugeX - valueWidth;')
+  lines.push('    const gaugeY = y + (this.lineHeight() - gaugeHeight) / 2;')
+  lines.push(' '.repeat(4))
+  lines.push('    // Draw gauge background')
+  lines.push("    this.contents.fillRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight, '#202040');")
+  lines.push(' '.repeat(4))
+  lines.push('    // Draw gauge fill with gradient')
+  lines.push('    const fillWidth = Math.floor(gaugeWidth * rate);')
+  lines.push('    if (fillWidth > 0) {')
+  lines.push(
+    '        this.contents.gradientFillRect(gaugeX, gaugeY, fillWidth, gaugeHeight, gauge.color1, gauge.color2);'
+  )
+  lines.push('    }')
+  if (isShowValues) {
+    lines.push(' '.repeat(4))
+    lines.push('    // Draw values')
+    lines.push('    const valueText = gauge.current + "/" + gauge.max;')
+    lines.push("    this.drawText(valueText, gaugeX + gaugeWidth + 4, y, valueWidth - 4, 'left');")
+  }
+  lines.push('};')
+  lines.push('')
+  return lines
+}
+
+/**
+Gauge Window Template
+
+Creates a window with HP/MP style gauge bars
+*/
 const gaugeWindowTemplate: CodeTemplate = {
   id: 'gauge-window',
   category: 'custom-window',
@@ -1036,25 +1296,31 @@ const gaugeWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const gaugeCount = parseInt((values['gaugeCount'] as string) || '2', 10)
-    const gauge1Label = (values['gauge1Label'] as string) || 'HP'
-    const gauge1Color1 = (values['gauge1Color1'] as string) || '#e08040'
-    const gauge1Color2 = (values['gauge1Color2'] as string) || '#f0c040'
-    const gauge2Label = (values['gauge2Label'] as string) || 'MP'
-    const gauge2Color1 = (values['gauge2Color1'] as string) || '#4080c0'
-    const gauge2Color2 = (values['gauge2Color2'] as string) || '#40c0f0'
-    const gauge3Label = (values['gauge3Label'] as string) || 'TP'
-    const gauge3Color1 = (values['gauge3Color1'] as string) || '#40c040'
-    const gauge3Color2 = (values['gauge3Color2'] as string) || '#80f080'
-    const posX = (values['positionX'] as number) || 10
-    const posY = (values['positionY'] as number) || 10
-    const width = (values['width'] as number) || 300
-    const gaugeHeight = (values['gaugeHeight'] as number) || 12
-    const showLabels = values['showLabels'] !== 'false'
-    const showValues = values['showValues'] !== 'false'
-    const dataSource = (values['dataSource'] as string) || 'actor'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const gaugeCountText = String(valueOr(values['gaugeCount'], '2'))
+    const gaugeCount = decimalIntegerOf(gaugeCountText)
+    const gauge1Label = valueOr(values['gauge1Label'], 'HP')
+    const gauge1Color1 = valueOr(values['gauge1Color1'], '#e08040')
+    const gauge1Color2 = valueOr(values['gauge1Color2'], '#f0c040')
+    const gauge2Label = valueOr(values['gauge2Label'], 'MP')
+    const gauge2Color1 = valueOr(values['gauge2Color1'], '#4080c0')
+    const gauge2Color2 = valueOr(values['gauge2Color2'], '#40c0f0')
+    const gauge3Label = valueOr(values['gauge3Label'], 'TP')
+    const gauge3Color1 = valueOr(values['gauge3Color1'], '#40c040')
+    const gauge3Color2 = valueOr(values['gauge3Color2'], '#80f080')
+    const posX = valueOr(values['positionX'], 10)
+    const posY = valueOr(values['positionY'], 10)
+    const width = valueOr(values['width'], 300)
+    const gaugeHeight = valueOr(values['gaugeHeight'], 12)
+    const isShowLabels = values['showLabels'] !== 'false'
+    const isShowValues = values['showValues'] !== 'false'
+    const dataSource = valueOr(values['dataSource'], 'actor')
+
+    const gauges: GaugeSettings = [
+      { label: gauge1Label, color1: gauge1Color1, color2: gauge1Color2 },
+      { label: gauge2Label, color1: gauge2Color1, color2: gauge2Color2 },
+      { label: gauge3Label, color1: gauge3Color1, color2: gauge3Color2 }
+    ]
 
     // Calculate window height based on gauge count
     const lineHeight = 36
@@ -1062,239 +1328,53 @@ const gaugeWindowTemplate: CodeTemplate = {
     const windowHeight = lineHeight * gaugeCount + padding * 2
 
     const fullClassName = `Window_${windowName}`
-    const lines: string[] = []
-
-    // Header comment
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push(`// ${fullClassName}`)
-    lines.push('//')
-    lines.push('// A window that displays gauge bars (HP/MP style).')
-    lines.push(`// Contains ${gaugeCount} gauge(s) that update automatically.`)
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push('')
-
-    // Constructor function
-    lines.push(`function ${fullClassName}() {`)
-    lines.push('    this.initialize(...arguments);')
-    lines.push('}')
-    lines.push('')
-
-    // Prototype chain setup
-    lines.push(`${fullClassName}.prototype = Object.create(Window_Base.prototype);`)
-    lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
-    lines.push('')
-
-    // Initialize method
-    lines.push(`${fullClassName}.prototype.initialize = function(rect) {`)
-    lines.push('    Window_Base.prototype.initialize.call(this, rect);')
-    lines.push('    this._gaugeData = [];')
-    lines.push('    this.initializeGauges();')
-    lines.push('    this.refresh();')
-    lines.push('};')
-    lines.push('')
-
-    // Initialize gauge data
-    lines.push(`${fullClassName}.prototype.initializeGauges = function() {`)
-    lines.push('    // Initialize gauge configurations')
-    lines.push('    this._gaugeData = [')
-    lines.push(
-      `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: 0, max: 100 },`
-    )
-    if (gaugeCount >= 2) {
-      lines.push(
-        `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: 0, max: 100 },`
-      )
-    }
-    if (gaugeCount >= 3) {
-      lines.push(
-        `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: 0, max: 100 },`
-      )
-    }
-    lines.push('    ];')
-    lines.push('};')
-    lines.push('')
-
-    // Update method
-    lines.push(`${fullClassName}.prototype.update = function() {`)
-    lines.push('    Window_Base.prototype.update.call(this);')
-    lines.push('    if (this.needsRefresh()) {')
-    lines.push('        this.refresh();')
-    lines.push('    }')
-    lines.push('};')
-    lines.push('')
-
-    // Needs refresh check
-    lines.push(`${fullClassName}.prototype.needsRefresh = function() {`)
-    lines.push('    const newData = this.getCurrentValues();')
-    lines.push('    for (let i = 0; i < this._gaugeData.length; i++) {')
-    lines.push('        if (this._gaugeData[i].current !== newData[i].current ||')
-    lines.push('            this._gaugeData[i].max !== newData[i].max) {')
-    lines.push('            return true;')
-    lines.push('        }')
-    lines.push('    }')
-    lines.push('    return false;')
-    lines.push('};')
-    lines.push('')
-
-    // Get current values based on data source
-    lines.push(`${fullClassName}.prototype.getCurrentValues = function() {`)
-    if (dataSource === 'actor') {
-      lines.push('    const actor = $gameParty.leader();')
-      lines.push('    if (!actor) return this._gaugeData;')
-      lines.push('    ')
-      lines.push('    return [')
-      lines.push(
-        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: actor.hp, max: actor.mhp },`
-      )
-      if (gaugeCount >= 2) {
-        lines.push(
-          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: actor.mp, max: actor.mmp },`
-        )
-      }
-      if (gaugeCount >= 3) {
-        lines.push(
-          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: actor.tp, max: actor.maxTp() },`
-        )
-      }
-      lines.push('    ];')
-    } else if (dataSource === 'variable') {
-      lines.push('    // Using game variables for gauge values')
-      lines.push('    // Customize variable IDs as needed')
-      lines.push('    return [')
-      lines.push(
-        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
-      )
-      if (gaugeCount >= 2) {
-        lines.push(
-          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
-        )
-      }
-      if (gaugeCount >= 3) {
-        lines.push(
-          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
-        )
-      }
-      lines.push('    ];')
-    } else {
-      lines.push('    // Custom data source - override this method or call setGaugeValue()')
-      lines.push('    return this._gaugeData;')
-    }
-    lines.push('};')
-    lines.push('')
-
-    // Set gauge value method (for custom use)
-    lines.push(`${fullClassName}.prototype.setGaugeValue = function(index, current, max) {`)
-    lines.push('    if (this._gaugeData[index]) {')
-    lines.push('        this._gaugeData[index].current = current;')
-    lines.push('        this._gaugeData[index].max = max;')
-    lines.push('        this.refresh();')
-    lines.push('    }')
-    lines.push('};')
-    lines.push('')
-
-    // Refresh method
-    lines.push(`${fullClassName}.prototype.refresh = function() {`)
-    lines.push('    this.contents.clear();')
-    lines.push('    this._gaugeData = this.getCurrentValues();')
-    lines.push('    ')
-    lines.push('    for (let i = 0; i < this._gaugeData.length; i++) {')
-    lines.push(`        this.drawGauge(i, i * ${lineHeight});`)
-    lines.push('    }')
-    lines.push('};')
-    lines.push('')
-
-    // Draw gauge method
-    lines.push(`${fullClassName}.prototype.drawGauge = function(index, y) {`)
-    lines.push('    const gauge = this._gaugeData[index];')
-    lines.push('    const rate = gauge.max > 0 ? gauge.current / gauge.max : 0;')
-    lines.push(`    const gaugeHeight = ${gaugeHeight};`)
-    lines.push('    ')
-    if (showLabels) {
-      lines.push('    // Draw label')
-      lines.push('    const labelWidth = 48;')
-      lines.push('    this.drawText(gauge.label, 0, y, labelWidth);')
-      lines.push('    ')
-      lines.push('    // Calculate gauge position')
-      lines.push('    const gaugeX = labelWidth + 4;')
-    } else {
-      lines.push('    const gaugeX = 0;')
-    }
-    if (showValues) {
-      lines.push('    const valueWidth = 80;')
-    } else {
-      lines.push('    const valueWidth = 0;')
-    }
-    lines.push('    const gaugeWidth = this.contentsWidth() - gaugeX - valueWidth;')
-    lines.push('    const gaugeY = y + (this.lineHeight() - gaugeHeight) / 2;')
-    lines.push('    ')
-    lines.push('    // Draw gauge background')
-    lines.push("    this.contents.fillRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight, '#202040');")
-    lines.push('    ')
-    lines.push('    // Draw gauge fill with gradient')
-    lines.push('    const fillWidth = Math.floor(gaugeWidth * rate);')
-    lines.push('    if (fillWidth > 0) {')
-    lines.push(
-      '        this.contents.gradientFillRect(gaugeX, gaugeY, fillWidth, gaugeHeight, gauge.color1, gauge.color2);'
-    )
-    lines.push('    }')
-    if (showValues) {
-      lines.push('    ')
-      lines.push('    // Draw values')
-      lines.push('    const valueText = gauge.current + "/" + gauge.max;')
-      lines.push(
-        "    this.drawText(valueText, gaugeX + gaugeWidth + 4, y, valueWidth - 4, 'left');"
-      )
-    }
-    lines.push('};')
-    lines.push('')
-
-    // Scene_Map integration
-    lines.push('// Add gauge window to Scene_Map')
-    lines.push('const _Scene_Map_createAllWindows_Gauge = Scene_Map.prototype.createAllWindows;')
-    lines.push('Scene_Map.prototype.createAllWindows = function() {')
-    lines.push('    _Scene_Map_createAllWindows_Gauge.call(this);')
-    lines.push(`    this.create${windowName}Window();`)
-    lines.push('};')
-    lines.push('')
-
-    lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
-    lines.push(`    const rect = new Rectangle(${posX}, ${posY}, ${width}, ${windowHeight});`)
-    lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
-    lines.push(`    this.addWindow(this._${toCamelCase(windowName)}Window);`)
-    lines.push('};')
-    lines.push('')
-
-    // Usage example comment
-    lines.push('// ============================================')
-    lines.push('// USAGE EXAMPLE:')
-    lines.push('// ============================================')
-    lines.push('// Access the gauge window from events:')
-    lines.push(`// const gaugeWindow = SceneManager._scene._${toCamelCase(windowName)}Window;`)
-    lines.push('//')
-    lines.push('// For custom data source, set values manually:')
-    lines.push('// gaugeWindow.setGaugeValue(0, 75, 100); // First gauge at 75%')
-    lines.push('// gaugeWindow.setGaugeValue(1, 50, 100); // Second gauge at 50%')
-    lines.push('// ============================================')
+    const lines = [
+      ...gaugeClassLines(fullClassName, gaugeCount, gauges),
+      // Get current values based on data source
+      `${fullClassName}.prototype.getCurrentValues = function() {`,
+      ...gaugeCurrentValueLines(dataSource, gauges, gaugeCount),
+      '};',
+      '',
+      ...gaugeDrawLines(fullClassName, lineHeight, gaugeHeight, isShowLabels, isShowValues),
+      // Scene_Map integration
+      '// Add gauge window to Scene_Map',
+      'const _Scene_Map_createAllWindows_Gauge = Scene_Map.prototype.createAllWindows;',
+      'Scene_Map.prototype.createAllWindows = function() {',
+      '    _Scene_Map_createAllWindows_Gauge.call(this);',
+      `    this.create${windowName}Window();`,
+      '};',
+      '',
+      `Scene_Map.prototype.create${windowName}Window = function() {`,
+      `    const rect = new Rectangle(${String(posX)}, ${String(posY)}, ${String(width)}, ${windowHeight});`,
+      `    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`,
+      `    this.addWindow(this._${toCamelCase(windowName)}Window);`,
+      '};',
+      '',
+      // Usage example comment
+      '// ============================================',
+      '// USAGE EXAMPLE:',
+      '// ============================================',
+      '// Access the gauge window from events:',
+      `// const gaugeWindow = SceneManager._scene._${toCamelCase(windowName)}Window;`,
+      '//',
+      '// For custom data source, set values manually:',
+      '// gaugeWindow.setGaugeValue(0, 75, 100); // First gauge at 75%',
+      '// gaugeWindow.setGaugeValue(1, 50, 100); // Second gauge at 50%',
+      '// ============================================'
+    ]
 
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors: string[] = []
+    const errors = windowNameErrors(values['windowName'])
 
-    if (values['windowName']) {
-      const name = values['windowName'] as string
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Window Name must start with a letter and contain only letters and numbers')
-      }
-    }
-
-    const width = values['width'] as number
-    if (width !== undefined && width <= 0) {
+    const width = values['width']
+    if (width !== undefined && Number(width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    const gaugeHeight = values['gaugeHeight'] as number
-    if (gaugeHeight !== undefined && gaugeHeight <= 0) {
+    const gaugeHeight = values['gaugeHeight']
+    if (gaugeHeight !== undefined && Number(gaugeHeight) <= 0) {
       errors.push('Gauge Height must be a positive number')
     }
 
@@ -1310,10 +1390,3 @@ registerTemplate(customWindowTemplate)
 registerTemplate(hudOverlayWindowTemplate)
 registerTemplate(popupNotificationTemplate)
 registerTemplate(gaugeWindowTemplate)
-
-export {
-  customWindowTemplate,
-  hudOverlayWindowTemplate,
-  popupNotificationTemplate,
-  gaugeWindowTemplate
-}
