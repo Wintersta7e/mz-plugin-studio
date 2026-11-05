@@ -145,7 +145,7 @@ describe('message-system custom escape code', () => {
     })
 
     // Word boundary prevents \X from matching \XY, \XX, etc.
-    expect(out).toMatch(/\/\\\\X\(\?!\[A-Za-z\]\)\/gi/)
+    expect(out).toMatch(/\/\\x1bX\(\?!\[A-Za-z\]\)\/gi/)
   })
 })
 
@@ -334,5 +334,46 @@ describe('audio crossfade BGM file', () => {
     })
 
     expect(audioCalls(code)).toContainEqual(['playBgm', expect.objectContaining({ name })])
+  })
+})
+
+// The start of the engine's message text conversion, as RPG Maker MZ defines it: every backslash
+// becomes the escape character, and a doubled one becomes one backslash again, before any code is
+// replaced. The party holds 250 gold.
+const MESSAGE_ENGINE = `
+var Window_Base = function () {};
+Window_Base.prototype.convertEscapeCharacters = function (text) {
+  text = text.replace(/\\\\/g, '\\x1b');
+  text = text.replace(/\\x1b\\x1b/g, '\\\\');
+  return text;
+};
+var $gameParty = { gold: function () { return 250; } };
+`
+
+// The message text after the engine's conversion with the code of a custom text code from its
+// defaults with the given values; an error the code throws is thrown here
+function convertedText(values: Record<string, unknown>, text: string): unknown {
+  const id = 'message-custom-text-code'
+  const template = getTemplate(id)
+  if (template === undefined) throw new Error(`${id} is not registered`)
+  const code = template.generate({ ...getTemplateDefaults(id), ...values })
+  const result = evaluatePlugin(
+    `${MESSAGE_ENGINE}${code}\nvar converted = Window_Base.prototype.convertEscapeCharacters.call({}, ${JSON.stringify(text)});`,
+    { mode: 'generator' }
+  )
+  const error = result.compileProblem?.message ?? result.threw
+  if (error !== null) throw new Error(error)
+  const context: { converted?: unknown } | null = result.context
+  return context?.converted
+}
+
+describe('custom text code replacement', () => {
+  it.each([
+    [true, 'Gold: \\GOLDX[5]!'],
+    [false, 'Gold: \\GOLDX!']
+  ])('replaces the code in message text (parameter %s)', (hasParameter, text) => {
+    const values = { escapeChar: 'GoldX', hasParameter, replacementText: '$gameParty.gold()' }
+
+    expect(convertedText(values, text)).toBe('Gold: 250!')
   })
 })

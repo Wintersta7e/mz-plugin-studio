@@ -96,7 +96,9 @@ const customTextCodeTemplate: CodeTemplate = {
 
       if (hasParameter) {
         lines.push(`    // Process \\${escapeChar}[n] codes`)
-        lines.push(`    text = text.replace(/\\\\${escapeChar}\\[(\\d+)\\]/gi, (_, param) => {`)
+        lines.push(
+          String.raw`    text = text.replace(/\x1b${escapeChar}\[(\d+)\]/gi, (_, param) => {`
+        )
         lines.push('        param = parseInt(param);')
         lines.push(`        // Return the replacement text based on the parameter`)
         lines.push(`        return ${replacementText};`)
@@ -106,7 +108,7 @@ const customTextCodeTemplate: CodeTemplate = {
         // Negative lookahead (?![A-Za-z]) prevents \X from matching \XY, \XX, etc.
         // — MZ escape codes are case-sensitive single letters, so a longer
         // identifier should not be hijacked by a shorter prefix code.
-        lines.push(`    text = text.replace(/\\\\${escapeChar}(?![A-Za-z])/gi, () => {`)
+        lines.push(String.raw`    text = text.replace(/\x1b${escapeChar}(?![A-Za-z])/gi, () => {`)
         lines.push(`        return ${replacementText};`)
         lines.push('    });')
       }

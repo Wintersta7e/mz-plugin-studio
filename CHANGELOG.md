@@ -11,6 +11,7 @@
 - In the BGM Control template, Save Current BGM now saves the playing music and Restore Saved BGM plays it again where it stopped. Before, saving kept nothing and restoring stopped the game with an error.
 - In the Audio Fade/Crossfade template, the crossfade and fade from silence now fade the new music in to its New BGM Volume. Before, it started at volume 0 and the fade kept it silent.
 - In the Audio Fade/Crossfade template, Fade from Silence now plays the music named in its own BGM Filename field. Before, a New BGM Filename entered earlier for a crossfade took its place.
+- In the Custom Text Code template, a code set to replace itself with text now does so in message text. Before, the code was never found, so its replacement never showed.
 
 ## [1.8.1] - 2026-11-05
 
