@@ -114,6 +114,25 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'customCreate', commandName: null },
     { modType: 'hideCommand', hideTarget: null }
   ],
+  'message-choice-handler': [
+    { modType: 'columns', numColumns: null, choiceWidth: null },
+    { modType: 'style', highlightColor: null, windowOpacity: null },
+    { modType: 'behavior', wrapAround: null, rememberChoice: null }
+  ],
+  'message-custom-text-code': [
+    { hasParameter: null, effectType: null },
+    { codeType: null, replacementText: null },
+    { codeType: 'effect', hasParameter: null, effectType: null }
+  ],
+  'message-window-mod': [
+    { positionType: 'custom', customX: null, customY: 'abc' },
+    { modType: 'size', windowWidth: null, numLines: null },
+    { modType: 'background', bgType: null },
+    { modType: 'background', bgType: 'custom', bgColor: null },
+    { modType: 'background', bgType: 'custom', bgColor: 42 },
+    { modType: 'opacity', opacityValue: null },
+    { modType: 'nameBox', nameBoxPosition: null }
+  ],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },

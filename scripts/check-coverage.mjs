@@ -46,7 +46,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
       [`${GENERATOR}/templates/map-events.ts`]: 98,
       [`${GENERATOR}/templates/menu-system.ts`]: 100,
-      [`${GENERATOR}/templates/message-system.ts`]: 95,
+      [`${GENERATOR}/templates/message-system.ts`]: 97,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,
       [`${GENERATOR}/templates/plugin-commands.ts`]: 94,
       [`${GENERATOR}/templates/save-load.ts`]: 90,
