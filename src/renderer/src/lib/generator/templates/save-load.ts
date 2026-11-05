@@ -209,7 +209,7 @@ const saveLoadTemplate: CodeTemplate = {
       const dataName: unknown = values['dataName']
 
       // Check for valid JavaScript identifier
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(dataName))) {
+      if (!/^[a-z_$][\w$]*$/i.test(String(dataName))) {
         errors.push(
           'Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
         )

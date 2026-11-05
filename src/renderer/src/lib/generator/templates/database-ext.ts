@@ -318,7 +318,7 @@ const databaseExtensionTemplate: CodeTemplate = {
       const tagName: unknown = values['tagName']
 
       // Check for valid tag name (letters, numbers, underscores)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(String(tagName))) {
+      if (!/^[a-z_]\w*$/i.test(String(tagName))) {
         errors.push(
           'Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores'
         )
@@ -336,7 +336,7 @@ const databaseExtensionTemplate: CodeTemplate = {
     // Validate property name if provided
     if (values['propertyName']) {
       const propertyName: unknown = values['propertyName']
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(propertyName))) {
+      if (!/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
         errors.push('Property Name must be a valid JavaScript identifier')
       }
     }

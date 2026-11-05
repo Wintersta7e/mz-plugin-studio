@@ -185,7 +185,7 @@ const customTextCodeTemplate: CodeTemplate = {
     if (values['escapeChar']) {
       const escapeChar = expectText(values['escapeChar'])
       // Validate escape character format
-      if (!/^[A-Za-z]+$/.test(escapeChar)) {
+      if (!/^[A-Z]+$/i.test(escapeChar)) {
         errors.push('Escape character must contain only letters (A-Z)')
       }
       // Check for reserved codes

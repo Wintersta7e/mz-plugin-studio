@@ -25,7 +25,7 @@ The error for a function name the code is wrapped in that is not a JavaScript id
 function functionNameErrors(values: Record<string, unknown>): string[] {
   const hasFunctionName = Boolean(values['wrapInFunction']) && Boolean(values['functionName'])
   if (!hasFunctionName) return []
-  const isIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(values['functionName']))
+  const isIdentifier = /^[a-z_$][\w$]*$/i.test(String(values['functionName']))
   return isIdentifier ? [] : ['Function name must be a valid JavaScript identifier']
 }
 

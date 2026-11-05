@@ -89,7 +89,7 @@ function commandNameErrors(values: Record<string, unknown>, identifierError: str
   const hasCommandName = Boolean(commandName)
   if (hasCommandName && !expectText(commandName).trim()) {
     errors.push('Command name is required')
-  } else if (hasCommandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(commandName).trim())) {
+  } else if (hasCommandName && !/^[a-z_]\w*$/i.test(expectText(commandName).trim())) {
     errors.push(identifierError)
   }
 
@@ -238,7 +238,7 @@ const basicCommandTemplate: CodeTemplate = {
     if (
       hasArg1Name &&
       expectText(arg1Name).trim() &&
-      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(arg1Name).trim())
+      !/^[a-z_]\w*$/i.test(expectText(arg1Name).trim())
     ) {
       errors.push('Argument 1 name must be a valid identifier')
     }
@@ -247,7 +247,7 @@ const basicCommandTemplate: CodeTemplate = {
     if (
       hasArg2Name &&
       expectText(arg2Name).trim() &&
-      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(arg2Name).trim())
+      !/^[a-z_]\w*$/i.test(expectText(arg2Name).trim())
     ) {
       errors.push('Argument 2 name must be a valid identifier')
     }

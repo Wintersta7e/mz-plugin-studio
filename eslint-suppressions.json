@@ -1524,12 +1524,6 @@
     "complexity": {
       "count": 1
     },
-    "regexp/prefer-w": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
@@ -1579,12 +1573,6 @@
     "max-lines-per-function": {
       "count": 1
     },
-    "regexp/prefer-w": {
-      "count": 2
-    },
-    "regexp/use-ignore-case": {
-      "count": 2
-    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
@@ -1631,9 +1619,6 @@
     "max-lines-per-function": {
       "count": 3
     },
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 4
     },
@@ -1674,12 +1659,6 @@
     "max-lines-per-function": {
       "count": 2
     },
-    "regexp/prefer-w": {
-      "count": 3
-    },
-    "regexp/use-ignore-case": {
-      "count": 3
-    },
     "unicorn/no-break-in-nested-loop": {
       "count": 4
     },
@@ -1698,12 +1677,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    },
-    "regexp/prefer-w": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
