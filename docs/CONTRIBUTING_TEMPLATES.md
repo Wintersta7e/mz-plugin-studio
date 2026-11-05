@@ -106,12 +106,13 @@ const myTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const propertyName = values.propertyName as string
+    const propertyName = String(values['propertyName'])
     return `// Generated code for ${propertyName}\n// Add your implementation here`
   },
   validate: (values) => {
     const errors: string[] = []
-    if (!values.propertyName) {
+    const hasPropertyName = Boolean(values['propertyName'])
+    if (!hasPropertyName) {
       errors.push('Property Name is required')
     }
     return { valid: errors.length === 0, errors }
@@ -376,9 +377,11 @@ Always provide fallbacks when reading field values in the `generate` function:
 
 ```typescript
 generate: (values): string => {
-  const dataName = values.dataName as string        // Required field, validated separately
-  const dataType = (values.dataType as string) || 'object'  // Fallback to default
-  const width = (values.width as number) || 300     // Fallback for numbers
+  const dataName = expectText(values['dataName'])   // Text for string methods; another type throws TypeError
+  const hasDataType = Boolean(values['dataType'])
+  const dataType = hasDataType ? values['dataType'] : 'object'  // Fallback to default
+  const hasWidth = Boolean(values['width'])
+  const width = hasWidth ? Number(values['width']) : 300     // Fallback for numbers
   const showFrame = values.showFrame !== 'false'    // Boolean from string select
 }
 ```
@@ -415,7 +418,8 @@ Check that all required fields have values:
 validate: (values) => {
   const errors: string[] = []
 
-  if (!values.propertyName) {
+  const hasPropertyName = Boolean(values['propertyName'])
+  if (!hasPropertyName) {
     errors.push('Property Name is required')
   }
 
@@ -430,7 +434,7 @@ Note: The registry's `validateTemplateValues()` function already checks `require
 When a field becomes a variable or property name in generated code, validate it:
 
 ```typescript
-const name = values.propertyName as string
+const name = String(values['propertyName'])
 if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
   errors.push('Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
 }
@@ -452,12 +456,12 @@ if (reservedWords.includes(name.toLowerCase())) {
 For number fields that represent pixel dimensions, opacity, or frame counts:
 
 ```typescript
-if (values.width !== undefined && (values.width as number) <= 0) {
+if (values['width'] !== undefined && Number(values['width']) <= 0) {
   errors.push('Width must be a positive number')
 }
 
-const opacity = values.opacity as number
-if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
+const opacity = values['opacity']
+if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
   errors.push('Opacity must be between 0 and 255')
 }
 ```
@@ -467,9 +471,11 @@ if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
 When a field has contextual meaning depending on another field:
 
 ```typescript
-if (values.defaultValue && values.dataType) {
-  const defaultValue = values.defaultValue as string
-  const dataType = values.dataType as string
+const hasDefaultValue = Boolean(values['defaultValue'])
+const hasDataType = Boolean(values['dataType'])
+if (hasDefaultValue && hasDataType) {
+  const defaultValue = expectText(values['defaultValue'])
+  const dataType = values['dataType']
 
   switch (dataType) {
     case 'number':
@@ -520,6 +526,7 @@ Below is a complete, annotated template that adds a "Custom Game Variable" patte
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
+import { expectText } from './values'
 
 // --------------------------------------------------------------------------
 // Helper functions
@@ -682,12 +689,14 @@ const customGameVariableTemplate: CodeTemplate = {
   // a string of JavaScript code. This is called every time a field changes
   // to update the live preview.
   generate: (values): string => {
-    const variableName = values.variableName as string
-    const variableId = (values.variableId as number) || 1
-    const enableClamping = (values.enableClamping as boolean) || false
-    const minValue = (values.minValue as number) ?? 0
-    const maxValue = (values.maxValue as number) ?? 100
-    const enableNotify = (values.enableNotify as boolean) || false
+    // Each value is `unknown`: read it in the form its use needs
+    const variableName = expectText(values['variableName'])
+    const hasVariableId = Boolean(values['variableId'])
+    const variableId = hasVariableId ? Number(values['variableId']) : 1
+    const enableClamping = Boolean(values['enableClamping'])
+    const minValue = Number(values['minValue'] ?? 0)
+    const maxValue = Number(values['maxValue'] ?? 100)
+    const enableNotify = Boolean(values['enableNotify'])
 
     return generateManagedVariable(
       variableName,
@@ -706,10 +715,12 @@ const customGameVariableTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // -- Validate variable name --
-    if (!values.variableName) {
+    const variableName = values['variableName']
+    const hasVariableName = Boolean(variableName)
+    if (!hasVariableName) {
       errors.push('Variable Name is required')
     } else {
-      const name = values.variableName as string
+      const name = String(variableName)
 
       // Must be a valid JavaScript identifier
       if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
@@ -726,18 +737,19 @@ const customGameVariableTemplate: CodeTemplate = {
     }
 
     // -- Validate variable ID --
-    if (values.variableId !== undefined) {
-      const id = values.variableId as number
-      if (!Number.isInteger(id) || id < 1) {
+    if (values['variableId'] !== undefined) {
+      const id = values['variableId']
+      if (!Number.isInteger(id) || Number(id) < 1) {
         errors.push('Variable ID must be a positive integer')
       }
     }
 
     // -- Validate clamping range --
-    if (values.enableClamping) {
-      const min = values.minValue as number
-      const max = values.maxValue as number
-      if (min !== undefined && max !== undefined && min >= max) {
+    const enableClamping = Boolean(values['enableClamping'])
+    if (enableClamping) {
+      const min = values['minValue']
+      const max = values['maxValue']
+      if (min !== undefined && max !== undefined && Number(min) >= Number(max)) {
         errors.push('Minimum Value must be less than Maximum Value')
       }
     }

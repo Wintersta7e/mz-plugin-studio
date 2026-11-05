@@ -11,6 +11,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
+import { expectText } from './values'
 
 /**
  * Helper to convert a name to a valid JavaScript identifier
@@ -76,11 +77,12 @@ const customMenuSceneTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const sceneName = toValidIdentifier(values['sceneName'] as string)
-    const windowName = toValidIdentifier(values['windowName'] as string)
-    const windowType = (values['windowType'] as string) || 'selectable'
-    const includeHelp = values['includeHelp'] as boolean
-    const includeGold = values['includeGold'] as boolean
+    const sceneName = toValidIdentifier(expectText(values['sceneName']))
+    const windowName = toValidIdentifier(expectText(values['windowName']))
+    const hasWindowType = Boolean(values['windowType'])
+    const windowType = hasWindowType ? values['windowType'] : 'selectable'
+    const includeHelp = Boolean(values['includeHelp'])
+    const includeGold = Boolean(values['includeGold'])
 
     const sceneClass = `Scene_${sceneName}`
     const windowClass = `Window_${windowName}`
@@ -279,18 +281,22 @@ const customMenuSceneTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values['sceneName']) {
-      const sceneName = values['sceneName'] as string
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(sceneName)) {
+    const sceneName = values['sceneName']
+    const hasSceneName = Boolean(sceneName)
+    if (hasSceneName) {
+      const text = String(sceneName)
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(text)) {
         errors.push(
           'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
         )
       }
     }
 
-    if (values['windowName']) {
-      const windowName = values['windowName'] as string
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(windowName)) {
+    const windowName = values['windowName']
+    const hasWindowName = Boolean(windowName)
+    if (hasWindowName) {
+      const text = String(windowName)
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(text)) {
         errors.push('Window name must be a valid JavaScript identifier')
       }
     }
@@ -357,15 +363,20 @@ const titleScreenModTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = (values['modType'] as string) || 'addCommand'
+    const hasChosenType = Boolean(values['modType'])
+    const modType = hasChosenType ? values['modType'] : 'addCommand'
     const lines: string[] = []
 
     switch (modType) {
       case 'addCommand': {
-        const commandName = (values['commandName'] as string) || 'Custom'
-        const commandSymbol = (values['commandSymbol'] as string) || 'custom'
+        const hasCommandName = Boolean(values['commandName'])
+        const commandName = hasCommandName ? values['commandName'] : 'Custom'
+        const hasCommandSymbol = Boolean(values['commandSymbol'])
+        const commandSymbol = hasCommandSymbol ? values['commandSymbol'] : 'custom'
 
-        lines.push(`// Title Screen Mod: Add "${escapeLineComment(commandName)}" Command`)
+        lines.push(
+          `// Title Screen Mod: Add "${escapeLineComment(expectText(commandName))}" Command`
+        )
         lines.push('')
         lines.push('// Add command to title command window')
         lines.push(
@@ -374,7 +385,7 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('Window_TitleCommand.prototype.makeCommandList = function() {')
         lines.push('    _Window_TitleCommand_makeCommandList.call(this);')
         lines.push(
-          `    this.addCommand("${escapeJSDoubleQuote(commandName)}", "${escapeJSDoubleQuote(commandSymbol)}");`
+          `    this.addCommand("${escapeJSDoubleQuote(expectText(commandName))}", "${escapeJSDoubleQuote(expectText(commandSymbol))}");`
         )
         lines.push('};')
         lines.push('')
@@ -385,15 +396,19 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('Scene_Title.prototype.createCommandWindow = function() {')
         lines.push('    _Scene_Title_createCommandWindow.call(this);')
         lines.push(
-          `    this._commandWindow.setHandler("${escapeJSDoubleQuote(commandSymbol)}", this.command${toValidIdentifier(commandSymbol)}.bind(this));`
+          `    this._commandWindow.setHandler("${escapeJSDoubleQuote(expectText(commandSymbol))}", this.command${toValidIdentifier(expectText(commandSymbol))}.bind(this));`
         )
         lines.push('};')
         lines.push('')
         lines.push(
-          `Scene_Title.prototype.command${toValidIdentifier(commandSymbol)} = function() {`
+          `Scene_Title.prototype.command${toValidIdentifier(expectText(commandSymbol))} = function() {`
         )
-        lines.push(`    // Your code here when "${escapeJSDoubleQuote(commandName)}" is selected`)
-        lines.push(`    console.log("${escapeJSDoubleQuote(commandName)} command selected");`)
+        lines.push(
+          `    // Your code here when "${escapeJSDoubleQuote(expectText(commandName))}" is selected`
+        )
+        lines.push(
+          `    console.log("${escapeJSDoubleQuote(expectText(commandName))} command selected");`
+        )
         lines.push('    this._commandWindow.activate();')
         lines.push('    ')
         lines.push('    // Example: Push a custom scene')
@@ -434,7 +449,8 @@ const titleScreenModTemplate: CodeTemplate = {
       }
 
       case 'hideCommand': {
-        const hideTarget = (values['hideTarget'] as string) || 'options'
+        const hasHideTarget = Boolean(values['hideTarget'])
+        const hideTarget = hasHideTarget ? values['hideTarget'] : 'options'
 
         let methodName: string
         let description: string
@@ -508,16 +524,18 @@ const titleScreenModTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values['modType'] as string
+    const modType = values['modType']
 
     if (modType === 'addCommand') {
       if (!values['commandName']) {
         errors.push('Command name is required')
       }
-      if (!values['commandSymbol']) {
+      const commandSymbol = values['commandSymbol']
+      const hasCommandSymbol = Boolean(commandSymbol)
+      if (!hasCommandSymbol) {
         errors.push('Command symbol is required')
       } else {
-        const symbol = values['commandSymbol'] as string
+        const symbol = String(commandSymbol)
         if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
           errors.push('Command symbol must be a valid JavaScript identifier')
         }
@@ -604,17 +622,20 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values['commandName'] as string
-    const commandSymbol = values['commandSymbol'] as string
-    const insertPosition = (values['insertPosition'] as string) || 'beforeOptions'
-    const requiresActor = values['requiresActor'] as boolean
-    const enableCondition = (values['enableCondition'] as string) || 'always'
-    const switchId = (values['switchId'] as number) || 1
+    const commandName = values['commandName']
+    const commandSymbol = values['commandSymbol']
+    const hasInsertPosition = Boolean(values['insertPosition'])
+    const insertPosition = hasInsertPosition ? values['insertPosition'] : 'beforeOptions'
+    const requiresActor = Boolean(values['requiresActor'])
+    const hasEnableCondition = Boolean(values['enableCondition'])
+    const enableCondition = hasEnableCondition ? values['enableCondition'] : 'always'
+    const hasSwitchId = Boolean(values['switchId'])
+    const switchId = hasSwitchId ? values['switchId'] : 1
 
-    const symbolId = toValidIdentifier(commandSymbol)
+    const symbolId = toValidIdentifier(expectText(commandSymbol))
     const lines: string[] = []
 
-    lines.push(`// Menu Command Addition: ${escapeLineComment(commandName)}`)
+    lines.push(`// Menu Command Addition: ${escapeLineComment(expectText(commandName))}`)
     lines.push('')
 
     // Determine insertion logic
@@ -654,18 +675,18 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push('Window_MenuCommand.prototype.addOriginalCommands = function() {')
     lines.push('    _Window_MenuCommand_addOriginalCommands.call(this);')
     lines.push(
-      `    this.addCommand("${escapeJSDoubleQuote(commandName)}", "${escapeJSDoubleQuote(commandSymbol)}", this.is${symbolId}Enabled());`
+      `    this.addCommand("${escapeJSDoubleQuote(expectText(commandName))}", "${escapeJSDoubleQuote(expectText(commandSymbol))}", this.is${symbolId}Enabled());`
     )
     lines.push('};')
     lines.push('')
 
     // Enable check method
-    lines.push(`// Enable condition for ${escapeLineComment(commandName)}`)
+    lines.push(`// Enable condition for ${escapeLineComment(expectText(commandName))}`)
     lines.push(`Window_MenuCommand.prototype.is${symbolId}Enabled = function() {`)
 
     switch (enableCondition) {
       case 'switch':
-        lines.push(`    return $gameSwitches.value(${switchId});`)
+        lines.push(`    return $gameSwitches.value(${String(switchId)});`)
         break
       case 'custom':
         lines.push('    // Add your custom condition here')
@@ -680,7 +701,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push('')
 
     // If we need to control insertion position precisely, we override makeCommandList
-    if (insertCode && insertPosition.startsWith('before')) {
+    if (insertCode && expectText(insertPosition).startsWith('before')) {
       lines.push('// Override makeCommandList to control command position')
       lines.push(
         'const _Window_MenuCommand_makeCommandList = Window_MenuCommand.prototype.makeCommandList;'
@@ -706,7 +727,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push('Scene_Menu.prototype.createCommandWindow = function() {')
     lines.push('    _Scene_Menu_createCommandWindow.call(this);')
     lines.push(
-      `    this._commandWindow.setHandler("${escapeJSDoubleQuote(commandSymbol)}", this.command${symbolId}.bind(this));`
+      `    this._commandWindow.setHandler("${escapeJSDoubleQuote(expectText(commandSymbol))}", this.command${symbolId}.bind(this));`
     )
     lines.push('};')
     lines.push('')
@@ -724,8 +745,12 @@ const menuCommandAdditionTemplate: CodeTemplate = {
         '    this._statusWindow.setHandler("cancel", this.on' + symbolId + 'Cancel.bind(this));'
       )
     } else {
-      lines.push(`    // Your code here when "${escapeJSDoubleQuote(commandName)}" is selected`)
-      lines.push(`    console.log("${escapeJSDoubleQuote(commandName)} command selected");`)
+      lines.push(
+        `    // Your code here when "${escapeJSDoubleQuote(expectText(commandName))}" is selected`
+      )
+      lines.push(
+        `    console.log("${escapeJSDoubleQuote(expectText(commandName))} command selected");`
+      )
       lines.push('    ')
       lines.push('    // Example: Push a custom scene')
       lines.push(`    // SceneManager.push(Scene_${symbolId});`)
@@ -740,7 +765,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push('    const actor = $gameParty.members()[this._statusWindow.index()];')
       lines.push(`    // Your code here with the selected actor`)
       lines.push(
-        `    console.log("${escapeJSDoubleQuote(commandName)} - selected actor:", actor.name());`
+        `    console.log("${escapeJSDoubleQuote(expectText(commandName))} - selected actor:", actor.name());`
       )
       lines.push('    ')
       lines.push('    // Example: Push scene with actor data')
@@ -759,17 +784,20 @@ const menuCommandAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values['commandSymbol']) {
-      const symbol = values['commandSymbol'] as string
+    const commandSymbol = values['commandSymbol']
+    const hasCommandSymbol = Boolean(commandSymbol)
+    if (hasCommandSymbol) {
+      const symbol = String(commandSymbol)
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
       }
     }
 
-    const enableCondition = values['enableCondition'] as string
+    const enableCondition = values['enableCondition']
     if (enableCondition === 'switch') {
-      const switchId = values['switchId'] as number
-      if (!switchId || switchId < 1) {
+      const switchId = values['switchId']
+      const hasSwitchId = Boolean(switchId)
+      if (!hasSwitchId || Number(switchId) < 1) {
         errors.push('Switch ID must be a positive number')
       }
     }
@@ -845,16 +873,21 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const optionName = values['optionName'] as string
-    const optionSymbol = values['optionSymbol'] as string
-    const optionType = (values['optionType'] as string) || 'boolean'
-    const defaultValue = values['defaultValue'] as string
-    const choices = values['choices'] as string
+    const optionName = values['optionName']
+    const optionSymbolValue = values['optionSymbol']
+    // The symbol as written into code; the escapes below take the value itself
+    const optionSymbol = String(optionSymbolValue)
+    const hasOptionType = Boolean(values['optionType'])
+    const optionType = hasOptionType ? values['optionType'] : 'boolean'
+    const defaultValue = values['defaultValue']
+    const hasDefaultValue = Boolean(defaultValue)
+    const choices = values['choices']
+    const hasChoices = Boolean(choices)
     const persistToConfig = values['persistToConfig'] !== false
 
     const lines: string[] = []
 
-    lines.push(`// Options Menu Addition: ${escapeLineComment(optionName)}`)
+    lines.push(`// Options Menu Addition: ${escapeLineComment(expectText(optionName))}`)
     lines.push('')
 
     // Determine default value
@@ -864,10 +897,10 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         defaultCode = defaultValue === 'false' ? 'false' : 'true'
         break
       case 'volume':
-        defaultCode = defaultValue || '100'
+        defaultCode = hasDefaultValue ? String(defaultValue) : '100'
         break
       case 'select':
-        defaultCode = defaultValue || '0'
+        defaultCode = hasDefaultValue ? String(defaultValue) : '0'
         break
       default:
         defaultCode = 'true'
@@ -898,12 +931,12 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
       switch (optionType) {
         case 'boolean':
           lines.push(
-            `    this.${optionSymbol} = this.readFlag(config, "${escapeJSDoubleQuote(optionSymbol)}", ${defaultCode});`
+            `    this.${optionSymbol} = this.readFlag(config, "${escapeJSDoubleQuote(expectText(optionSymbolValue))}", ${defaultCode});`
           )
           break
         case 'volume':
           lines.push(
-            `    this.${optionSymbol} = this.readVolume(config, "${escapeJSDoubleQuote(optionSymbol)}");`
+            `    this.${optionSymbol} = this.readVolume(config, "${escapeJSDoubleQuote(expectText(optionSymbolValue))}");`
           )
           break
         case 'select':
@@ -925,7 +958,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     lines.push('Window_Options.prototype.addGeneralOptions = function() {')
     lines.push('    _Window_Options_addGeneralOptions.call(this);')
     lines.push(
-      `    this.addCommand("${escapeJSDoubleQuote(optionName)}", "${escapeJSDoubleQuote(optionSymbol)}");`
+      `    this.addCommand("${escapeJSDoubleQuote(expectText(optionName))}", "${escapeJSDoubleQuote(expectText(optionSymbolValue))}");`
     )
     lines.push('};')
     lines.push('')
@@ -946,21 +979,25 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
           'const _Window_Options_isVolumeSymbol = Window_Options.prototype.isVolumeSymbol;'
         )
         lines.push('Window_Options.prototype.isVolumeSymbol = function(symbol) {')
-        lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") return true;`)
+        lines.push(
+          `    if (symbol === "${escapeJSDoubleQuote(expectText(optionSymbolValue))}") return true;`
+        )
         lines.push('    return _Window_Options_isVolumeSymbol.call(this, symbol);')
         lines.push('};')
         break
 
       case 'select': {
-        const choiceList = choices
-          ? choices.split(',').map((c) => c.trim())
+        const choiceList = hasChoices
+          ? expectText(choices)
+              .split(',')
+              .map((c) => c.trim())
           : ['Option 1', 'Option 2', 'Option 3']
 
         lines.push('// Status text for select option')
         lines.push('const _Window_Options_statusText = Window_Options.prototype.statusText;')
         lines.push('Window_Options.prototype.statusText = function(index) {')
         lines.push('    const symbol = this.commandSymbol(index);')
-        lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
+        lines.push(`    if (symbol === "${escapeJSDoubleQuote(expectText(optionSymbolValue))}") {`)
         lines.push(
           `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
         )
@@ -974,7 +1011,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('const _Window_Options_processOk = Window_Options.prototype.processOk;')
         lines.push('Window_Options.prototype.processOk = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
-        lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
+        lines.push(`    if (symbol === "${escapeJSDoubleQuote(expectText(optionSymbolValue))}") {`)
         lines.push(
           `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
         )
@@ -991,7 +1028,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('const _Window_Options_cursorRight = Window_Options.prototype.cursorRight;')
         lines.push('Window_Options.prototype.cursorRight = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
-        lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
+        lines.push(`    if (symbol === "${escapeJSDoubleQuote(expectText(optionSymbolValue))}") {`)
         lines.push(
           `        const choices = [${choiceList.map((c) => `"${escapeJSDoubleQuote(c)}"`).join(', ')}];`
         )
@@ -1007,7 +1044,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('const _Window_Options_cursorLeft = Window_Options.prototype.cursorLeft;')
         lines.push('Window_Options.prototype.cursorLeft = function() {')
         lines.push('    const symbol = this.commandSymbol(this.index());')
-        lines.push(`    if (symbol === "${escapeJSDoubleQuote(optionSymbol)}") {`)
+        lines.push(`    if (symbol === "${escapeJSDoubleQuote(expectText(optionSymbolValue))}") {`)
         lines.push('        let value = this.getConfigValue(symbol);')
         lines.push('        value = Math.max(value - 1, 0);')
         lines.push('        this.changeValue(symbol, value);')
@@ -1030,22 +1067,25 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values['optionSymbol']) {
-      const symbol = values['optionSymbol'] as string
+    const optionSymbol = values['optionSymbol']
+    const hasOptionSymbol = Boolean(optionSymbol)
+    if (hasOptionSymbol) {
+      const symbol = String(optionSymbol)
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
       }
     }
 
-    const optionType = values['optionType'] as string
+    const optionType = values['optionType']
     if (optionType === 'select' && !values['choices']) {
       errors.push('Choices are required for select-type options')
     }
 
     // Written as code for these two types: a volume, or the index of the chosen choice.
-    const defaultValue = values['defaultValue'] as string
-    if ((optionType === 'volume' || optionType === 'select') && defaultValue) {
-      if (!/^\d+$/.test(defaultValue)) {
+    const defaultValue = values['defaultValue']
+    const hasDefaultValue = Boolean(defaultValue)
+    if ((optionType === 'volume' || optionType === 'select') && hasDefaultValue) {
+      if (!/^\d+$/.test(String(defaultValue))) {
         errors.push(`Default Value must be a whole number for a ${optionType} option`)
       }
     }

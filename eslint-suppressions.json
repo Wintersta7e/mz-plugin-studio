@@ -2915,11 +2915,8 @@
     }
   },
   "src/renderer/src/lib/generator/templates/menu-system.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 30
-    },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 7
+      "count": 2
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 3

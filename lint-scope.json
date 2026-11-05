@@ -192,7 +192,8 @@
       "ignores": [
         "src/renderer/src/lib/generator/templates/index.ts",
         "src/renderer/src/lib/generator/templates/scene-hooks.ts",
-        "src/renderer/src/lib/generator/templates/types.ts"
+        "src/renderer/src/lib/generator/templates/types.ts",
+        "src/renderer/src/lib/generator/templates/values.ts"
       ],
       "code": "S",
       "reason": "One lines.push per emitted line is the contract of the generator and of the templates that build output line by line (docs/CONTRIBUTING_TEMPLATES.md)"
