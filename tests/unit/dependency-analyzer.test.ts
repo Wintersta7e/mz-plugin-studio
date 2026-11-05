@@ -2,9 +2,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildDependencyGraph,
+  type ScannedPluginHeader,
   validateDependencies
 } from '../../src/renderer/src/lib/dependency-analyzer'
-import type { ScannedPluginHeader } from '../../src/renderer/src/lib/dependency-analyzer'
 
 function header(
   name: string,
@@ -15,7 +15,7 @@ function header(
   return { filename: name + '.js', name, base, orderAfter, orderBefore, overrides: [] }
 }
 
-describe('buildDependencyGraph', () => {
+describe(buildDependencyGraph, () => {
   it('builds graph from scanned headers', () => {
     const headers = [header('A', ['B']), header('B')]
     const graph = buildDependencyGraph(headers)
@@ -28,7 +28,7 @@ describe('buildDependencyGraph', () => {
     const headers = [header('A'), header('B')]
     const graph = buildDependencyGraph(headers)
 
-    expect(graph.edges.get('A')).toEqual([])
+    expect(graph.edges.get('A')).toStrictEqual([])
   })
 
   it('handles empty plugin list', () => {
@@ -38,7 +38,7 @@ describe('buildDependencyGraph', () => {
   })
 })
 
-describe('validateDependencies', () => {
+describe(validateDependencies, () => {
   it('detects missing @base dependency', () => {
     const headers = [header('A', ['NonExistent'])]
     const report = validateDependencies(headers)
@@ -55,7 +55,7 @@ describe('validateDependencies', () => {
   it('does not flag present dependencies as missing', () => {
     const headers = [header('A', ['B']), header('B')]
     const report = validateDependencies(headers)
-    const missing = report.issues.filter((i) => i.type === 'missing')
+    const missing = report.issues.filter((issue) => issue.type === 'missing')
 
     expect(missing).toHaveLength(0)
   })
@@ -63,7 +63,7 @@ describe('validateDependencies', () => {
   it('detects simple circular dependency (A->B->A)', () => {
     const headers = [header('A', ['B']), header('B', ['A'])]
     const report = validateDependencies(headers)
-    const circular = report.issues.filter((i) => i.type === 'circular')
+    const circular = report.issues.filter((issue) => issue.type === 'circular')
 
     expect(circular.length).toBeGreaterThan(0)
     expect(report.health).toBe('errors')
@@ -72,7 +72,7 @@ describe('validateDependencies', () => {
   it('detects indirect circular dependency (A->B->C->A)', () => {
     const headers = [header('A', ['B']), header('B', ['C']), header('C', ['A'])]
     const report = validateDependencies(headers)
-    const circular = report.issues.filter((i) => i.type === 'circular')
+    const circular = report.issues.filter((issue) => issue.type === 'circular')
 
     expect(circular.length).toBeGreaterThan(0)
   })
@@ -80,7 +80,7 @@ describe('validateDependencies', () => {
   it('handles no cycles gracefully', () => {
     const headers = [header('A', ['B']), header('B', ['C']), header('C')]
     const report = validateDependencies(headers)
-    const circular = report.issues.filter((i) => i.type === 'circular')
+    const circular = report.issues.filter((issue) => issue.type === 'circular')
 
     expect(circular).toHaveLength(0)
   })
@@ -89,17 +89,17 @@ describe('validateDependencies', () => {
     // A depends on B, but A comes first in file list
     const headers = [header('A', ['B']), header('B')]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+    const orderIssues = report.issues.filter((issue) => issue.type === 'load-order')
 
     expect(orderIssues.length).toBeGreaterThan(0)
-    expect(orderIssues[0].severity).toBe('warning')
+    expect(orderIssues.at(0)?.severity).toBe('warning')
   })
 
   it('accepts correct load order', () => {
     // B first, then A depends on B
     const headers = [header('B'), header('A', ['B'])]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+    const orderIssues = report.issues.filter((issue) => issue.type === 'load-order')
 
     expect(orderIssues).toHaveLength(0)
   })
@@ -110,11 +110,13 @@ describe('validateDependencies', () => {
       { filename: 'A_copy.js', name: 'A', base: [], orderAfter: [], orderBefore: [], overrides: [] }
     ]
     const report = validateDependencies(headers)
-    const dupes = report.issues.filter((i) => i.type === 'duplicate')
+    const dupes = report.issues.filter((issue) => issue.type === 'duplicate')
 
     expect(dupes.length).toBeGreaterThan(0)
   })
+})
 
+describe(validateDependencies, () => {
   it('reports healthy when no issues', () => {
     const headers = [header('B'), header('A', ['B'])]
     const report = validateDependencies(headers)
@@ -126,8 +128,8 @@ describe('validateDependencies', () => {
     // Load order issue is a warning, no missing deps
     const headers = [header('A', ['B']), header('B')]
     const report = validateDependencies(headers)
-    const errors = report.issues.filter((i) => i.severity === 'error')
-    const warnings = report.issues.filter((i) => i.severity === 'warning')
+    const errors = report.issues.filter((issue) => issue.severity === 'error')
+    const warnings = report.issues.filter((issue) => issue.severity === 'warning')
 
     expect(errors).toHaveLength(0)
     expect(warnings.length).toBeGreaterThan(0)
@@ -138,7 +140,7 @@ describe('validateDependencies', () => {
     const headers = [header('Alpha'), header('Beta'), header('Gamma')]
     const report = validateDependencies(headers)
 
-    expect(report.pluginNames).toEqual(['Alpha', 'Beta', 'Gamma'])
+    expect(report.pluginNames).toStrictEqual(['Alpha', 'Beta', 'Gamma'])
   })
 
   it('includes orderAfter in dependency edges', () => {
@@ -146,7 +148,7 @@ describe('validateDependencies', () => {
     const headers = [header('A', [], ['B']), header('B')]
     const report = validateDependencies(headers)
     // A before B with orderAfter should trigger load-order warning
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+    const orderIssues = report.issues.filter((issue) => issue.type === 'load-order')
 
     expect(orderIssues.length).toBeGreaterThan(0)
   })
@@ -154,27 +156,31 @@ describe('validateDependencies', () => {
   it('treats missing orderAfter as warning not error', () => {
     const headers = [header('A', [], ['NonExistent'])]
     const report = validateDependencies(headers)
-    const missing = report.issues.filter((i) => i.type === 'missing')
+    const missing = report.issues.filter((issue) => issue.type === 'missing')
 
     expect(missing.length).toBeGreaterThan(0)
-    expect(missing[0].severity).toBe('warning')
-    expect(missing[0].message).toContain('should load after')
+    expect(missing.at(0)?.severity).toBe('warning')
+    expect(missing.at(0)?.message).toContain('should load after')
   })
 
   it('treats missing @base as error', () => {
     const headers = [header('A', ['NonExistent'])]
     const report = validateDependencies(headers)
-    const missing = report.issues.filter((i) => i.type === 'missing')
+    const missing = report.issues.find((issue) => issue.type === 'missing')
 
-    expect(missing[0].severity).toBe('error')
-    expect(missing[0].message).toContain('requires')
+    expect(missing?.severity).toBe('error')
+    expect(missing?.message).toContain('requires')
   })
+})
 
+describe(validateDependencies, () => {
   it('deduplicates load-order warnings when dep in both base and orderAfter', () => {
     // A has both @base B and @orderAfter B, but A loads before B
     const headers = [header('A', ['B'], ['B']), header('B')]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'A')
+    const orderIssues = report.issues.filter(
+      (issue) => issue.type === 'load-order' && issue.pluginName === 'A'
+    )
 
     expect(orderIssues).toHaveLength(1)
   })
@@ -192,27 +198,29 @@ describe('validateDependencies', () => {
     // A must load before B, so B at position 0 is wrong
     const headers = [header('B'), header('A', [], [], ['B'])]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order' && i.pluginName === 'B')
+    const orderIssues = report.issues.filter(
+      (issue) => issue.type === 'load-order' && issue.pluginName === 'B'
+    )
 
     expect(orderIssues.length).toBeGreaterThan(0)
-    expect(orderIssues[0].message).toContain('B')
+    expect(orderIssues.at(0)?.message).toContain('B')
   })
 
   it('treats missing @orderBefore target as warning', () => {
     const headers = [header('A', [], [], ['NonExistent'])]
     const report = validateDependencies(headers)
-    const missing = report.issues.filter((i) => i.type === 'missing')
+    const missing = report.issues.filter((issue) => issue.type === 'missing')
 
     expect(missing.length).toBeGreaterThan(0)
-    expect(missing[0].severity).toBe('warning')
-    expect(missing[0].message).toContain('should load before')
+    expect(missing.at(0)?.severity).toBe('warning')
+    expect(missing.at(0)?.message).toContain('should load before')
   })
 
   it('accepts correct @orderBefore load order', () => {
     // A loads first with orderBefore: ['B'], B loads second — correct
     const headers = [header('A', [], [], ['B']), header('B')]
     const report = validateDependencies(headers)
-    const orderIssues = report.issues.filter((i) => i.type === 'load-order')
+    const orderIssues = report.issues.filter((issue) => issue.type === 'load-order')
 
     expect(orderIssues).toHaveLength(0)
   })

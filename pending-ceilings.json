@@ -126,8 +126,6 @@
       "tests/integration/plugin-load.test.ts": 1,
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
-      "tests/unit/csp.test.ts": 1,
-      "tests/unit/dependency-analyzer.test.ts": 8,
       "tests/unit/dialog-default-path.test.ts": 2,
       "tests/unit/docs-sync.test.ts": 5,
       "tests/unit/e2e-harness.test.ts": 13,
