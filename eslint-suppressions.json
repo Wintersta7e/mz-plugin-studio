@@ -1696,35 +1696,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/components/plugin/CommandBuilder.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 22
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 5
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 6
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 14
-    },
-    "unicorn/no-array-reduce": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
-      "count": 1
-    }
-  },
   "src/renderer/src/components/plugin/MetaEditor.tsx": {
     "@eslint-react/no-array-index-key": {
       "count": 1
@@ -1837,55 +1808,6 @@
       "count": 1
     },
     "unicorn/prefer-then-catch": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/components/plugin/StructBuilder.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 19
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 10
-    }
-  },
-  "src/renderer/src/components/plugin/StructDefaultEditor.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/prefer-ternary": {
       "count": 1
     }
   },

@@ -68,4 +68,21 @@ describe('struct default editor', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('')
     expect(screen.getByRole('spinbutton')).toHaveValue(null)
   })
+
+  it('reads its fields from the value again for another struct', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    const onChange = vi.fn<(jsonString: string) => void>()
+    const { rerender } = render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+    await user.type(screen.getByRole('spinbutton'), '5')
+
+    expect(screen.getByRole('spinbutton')).toHaveValue(5)
+
+    rerender(
+      <StructDefaultEditor struct={{ ...POINT, id: 'other' }} value="" onChange={onChange} />
+    )
+
+    expect(screen.getByRole('spinbutton')).toHaveValue(null)
+  })
 })

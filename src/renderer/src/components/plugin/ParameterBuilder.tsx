@@ -42,7 +42,7 @@ import {
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
 import { cn, userMessage } from '../../lib/utils'
-import { PARAM_TYPE_GROUPS } from './param-types'
+import { PARAM_TYPE_GROUPS, defaultText, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
@@ -1395,15 +1395,6 @@ function ParamTypeSelect({ param, onUpdate }: CardFieldProps) {
   )
 }
 
-/**
-The text a default shows in its plain input: none for an empty, zero or false default
-*/
-function defaultText(value: PluginParameter['default']): string {
-  if (value === '' || value === 0 || value === false) return ''
-  if (typeof value === 'number' && Number.isNaN(value)) return ''
-  return String(value)
-}
-
 function ParamDefaultInput({
   param,
   onUpdate,
@@ -1494,8 +1485,6 @@ function GameDataDefault({
 /**
 An emptied number field clears its value
 */
-const toLimit = (text: string): number | undefined => (text ? Number(text) : undefined)
-
 function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
   return (
     <>
