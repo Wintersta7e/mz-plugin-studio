@@ -106,6 +106,7 @@ const BOUNDARY_CASES: Record<string, Record<string, unknown>[]> = {
     { maxSize: 1 },
     { featureType: 'reserveParty', maxReserve: 1 }
   ],
+  'plugin-command-basic': [{ arg1Name: 'console' }, { arg1Name: 'my-arg', arg2Name: 'my-arg' }],
   'sprite-frame-animation': [
     { animationType: 'mixin', targetClass: 'Sprite_Character', columns: 1 }
   ]

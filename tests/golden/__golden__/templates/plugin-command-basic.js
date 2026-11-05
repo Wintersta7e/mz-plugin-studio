@@ -370,3 +370,30 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
     // Your command logic here
     console.log('Sample called with:', X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y);
 });
+
+// ==== case: arg1Name=console {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"console"}
+// Plugin Command: Sample
+// Arguments:
+//   console (string) - First argument
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Parse arguments
+    const console = String(args.console);
+
+    // Your command logic here
+    console.log('Sample called with:', console);
+});
+
+// ==== case: arg1Name=my-arg,arg2Name=my-arg {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"my-arg","arg2Name":"my-arg"}
+// rejects: Argument 1 name must be a valid identifier | Argument 2 name must be a valid identifier
+// Plugin Command: Sample
+// Arguments:
+//   my-arg (string) - First argument
+//   my-arg (number) - Second argument
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Parse arguments
+    const my-arg = String(args.my-arg);
+    const my-arg = Number(args.my-arg);
+
+    // Your command logic here
+    console.log('Sample called with:', my-arg, my-arg);
+});
