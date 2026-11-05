@@ -913,8 +913,9 @@ const ParameterCard = memo(function ParameterCard({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      {/* Header */}
-      <div className="flex cursor-pointer items-center gap-2 p-3" onClick={onToggle}>
+      {/* Header: the expand button's ::after covers the whole row, so a click anywhere on it
+          toggles the card; the checkbox and the delete button sit above that layer */}
+      <div className="relative flex cursor-pointer items-center gap-2 p-3">
         <input
           type="checkbox"
           checked={isSelected}
@@ -923,24 +924,32 @@ const ParameterCard = memo(function ParameterCard({
             onToggleSelect()
           }}
           onClick={(e) => e.stopPropagation()}
-          className="h-4 w-4 rounded border-muted-foreground"
+          className="relative z-10 h-4 w-4 rounded border-muted-foreground"
         />
-        <GripVertical className="h-5 w-5 cursor-grab text-muted-foreground transition-colors hover:text-foreground" />
-        {expanded ? (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        )}
-        <div className="flex-1">
-          <span className="font-medium">{param.text || param.name}</span>
-          <span className="ml-2 text-sm text-muted-foreground">({param.type})</span>
-          {param.type === 'hidden' && (
-            <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-              hidden in MZ
-            </span>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={param.text || param.name}
+          onClick={onToggle}
+          className="flex flex-1 items-center gap-2 text-left after:absolute after:inset-0"
+        >
+          <GripVertical className="relative z-10 h-5 w-5 cursor-grab text-muted-foreground transition-colors hover:text-foreground" />
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
-        </div>
-        <fieldset {...lock}>
+          <span className="flex-1">
+            <span className="font-medium">{param.text || param.name}</span>
+            <span className="ml-2 text-sm text-muted-foreground">({param.type})</span>
+            {param.type === 'hidden' && (
+              <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                hidden in MZ
+              </span>
+            )}
+          </span>
+        </button>
+        <fieldset {...lock} className="relative z-10">
           <Button
             variant="ghost"
             size="icon"

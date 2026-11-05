@@ -6,6 +6,7 @@
 
 - In the template dialog, a field that holds a value of the wrong kind, such as a number in a text field or a list, is listed as an error on that field, instead of the template's check failing without a message.
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
+- Parameter, command and struct cards open and close from the keyboard: press Tab to reach a card, then Enter or Space. Screen readers announce whether a card is open. Clicking anywhere on a card's header still opens and closes it as before.
 
 ## [1.8.1] - 2026-11-05
 

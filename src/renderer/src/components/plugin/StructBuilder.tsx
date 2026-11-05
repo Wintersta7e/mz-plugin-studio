@@ -140,24 +140,33 @@ function StructCard({
 }: StructCardProps) {
   return (
     <div className="rounded-lg border border-border bg-card">
-      {/* Header */}
-      <div className="flex cursor-pointer items-center gap-2 p-3" onClick={onToggle}>
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
-        {expanded ? (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        )}
-        <div className="flex-1">
-          <span className="font-medium">{struct.name}</span>
-          <span className="ml-2 text-sm text-muted-foreground">
-            ({struct.parameters.length} field{struct.parameters.length === 1 ? '' : 's'})
+      {/* Header: the expand button's ::after covers the whole row, so a click anywhere on it
+          toggles the card; the delete button sits above that layer */}
+      <div className="relative flex cursor-pointer items-center gap-2 p-3">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={struct.name}
+          onClick={onToggle}
+          className="flex flex-1 items-center gap-2 text-left after:absolute after:inset-0"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="flex-1">
+            <span className="font-medium">{struct.name}</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              ({struct.parameters.length} field{struct.parameters.length === 1 ? '' : 's'})
+            </span>
           </span>
-        </div>
+        </button>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-destructive hover:text-destructive"
+          className="relative z-10 h-8 w-8 text-destructive hover:text-destructive"
           onClick={(e) => {
             e.stopPropagation()
             onDelete()

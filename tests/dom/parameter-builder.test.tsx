@@ -581,8 +581,8 @@ describe('parameter rows', () => {
     expect(within(row('New Parameter')).getByText('hidden in MZ')).toBeInTheDocument()
 
     await waitFor(() => expect(preview()).toContain('@param NewParameter'))
-    // The delete button has no name; it is the first button in the row, inside its header
-    await user.click(within(row('New Parameter')).getAllByRole('button')[0])
+    // The delete button has no name; in the row's header it follows the button that opens the row
+    await user.click(within(row('New Parameter')).getAllByRole('button')[1])
 
     expect(screen.queryByText('New Parameter')).not.toBeInTheDocument()
 
