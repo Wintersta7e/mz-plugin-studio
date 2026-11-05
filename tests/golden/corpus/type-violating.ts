@@ -44,7 +44,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'audio-crossfade': [
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: null },
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: 7 },
-    { newBgmPitch: null, functionName: 'crossfadeTheme' }
+    { newBgmPitch: null, functionName: 'crossfadeTheme' },
+    { crossfadeType: 'fadeToSilence', fadeOutDuration: null }
   ],
   'audio-se-player': [
     { randomizePitch: true, pitchVariation: null },
