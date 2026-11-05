@@ -6,3 +6,11 @@ export function expectText(value: unknown): string {
   if (typeof value !== 'string') throw new TypeError(`Expected text, got ${typeof value}`)
   return value
 }
+
+/**
+A template value, or the fallback when the value is falsy (empty text, 0, false, null, unset).
+*/
+export function valueOr(value: unknown, fallback: unknown): unknown {
+  const hasValue = Boolean(value)
+  return hasValue ? value : fallback
+}

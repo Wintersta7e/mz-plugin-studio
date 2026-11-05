@@ -8,7 +8,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
-import { expectText } from './values'
+import { expectText, valueOr } from './values'
 
 /**
  * Converts a window name to a valid identifier
@@ -27,14 +27,6 @@ function sanitizeWindowName(name: string): string {
 function toCamelCase(name: string): string {
   const sanitized = sanitizeWindowName(name)
   return sanitized.charAt(0).toLowerCase() + sanitized.slice(1)
-}
-
-/**
-A template value, or the fallback when the value is falsy (empty text, 0, false, null, unset).
-*/
-function valueOr(value: unknown, fallback: unknown): unknown {
-  const hasValue = Boolean(value)
-  return hasValue ? value : fallback
 }
 
 /**
