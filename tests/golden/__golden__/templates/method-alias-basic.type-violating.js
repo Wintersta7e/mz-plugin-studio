@@ -33,3 +33,14 @@ a,b.prototype.a,b = function() {
     
     return result;
 };
+
+// ==== case: type-violating: timing=null {"timing":null,"callOriginal":true,"className":"Scene_Map","methodName":"start"}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};

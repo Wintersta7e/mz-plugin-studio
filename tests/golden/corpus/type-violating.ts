@@ -48,6 +48,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { randomizePitch: true, pitchVariation: null },
     { pan: null, functionName: 'playCursor' }
   ],
+  'battle-damage-modifier': [
+    { condition: null },
+    { modifyType: 'custom', condition: null },
+    { modifyType: 'add', modifyValue: '2;x', condition: null }
+  ],
+  'battle-event-hook': [{ eventType: 'start' }],
+  'battle-state-hook': [{ hookType: null, stateId: '3' }],
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
@@ -72,6 +79,19 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { hudType: 'minimap', positionY: null },
     { hudType: 'custom', width: null },
     { opacity: 300, positionY: null }
+  ],
+  'database-ext-notetag': [
+    { propertyName: null },
+    { tagName: null, defaultValue: null },
+    { tagName: 'note', tagFormat: 'boolean', propertyName: null },
+    { tagFormat: 'keyValue', propertyName: 'bonus', defaultValue: null },
+    { tagFormat: 'multiline', valueType: 'boolean', defaultValue: 'yes' },
+    { valueType: 'array', defaultValue: '1, 2', propertyName: null },
+    { tagFormat: 7 }
+  ],
+  'input-handler-basic': [
+    { activeScene: 'all', triggerType: null },
+    { activeScene: 'all', keyName: null }
   ],
   'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
   'map-parallel-process': [
@@ -133,6 +153,7 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'opacity', opacityValue: null },
     { modType: 'nameBox', nameBoxPosition: null }
   ],
+  'method-alias-basic': [{ timing: null }],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },
@@ -166,6 +187,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { textColor: 7 },
     { fadeEffect: 'slide', height: null },
     { fadeEffect: 'none', width: null }
+  ],
+  'save-load-basic': [
+    { dataName: 'save', defaultValue: null },
+    { dataType: 'object', defaultValue: '[]' },
+    { dataType: 'array', defaultValue: '{}' },
+    { dataType: 'number', defaultValue: 'abc' },
+    { dataType: 'boolean', defaultValue: 'yes' }
   ],
   'sprite-custom-class': [
     { width: null },
