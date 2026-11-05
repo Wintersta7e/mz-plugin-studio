@@ -2730,17 +2730,8 @@
     }
   },
   "src/renderer/src/lib/generator/templates/custom-window.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 46
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
-    },
-    "complexity": {
-      "count": 1
     },
     "max-lines-per-function": {
       "count": 3
@@ -2750,9 +2741,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 1
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 4
     },
     "unicorn/consistent-boolean-name": {
       "count": 3
@@ -2764,7 +2752,7 @@
       "count": 5
     },
     "unicorn/no-non-function-verb-prefix": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-hoisting-branch-code": {
       "count": 3

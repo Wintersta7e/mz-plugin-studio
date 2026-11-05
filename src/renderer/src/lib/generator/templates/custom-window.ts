@@ -8,6 +8,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
+import { expectText } from './values'
 
 /**
  * Converts a window name to a valid identifier
@@ -29,9 +30,17 @@ function toCamelCase(name: string): string {
 }
 
 /**
+A template value, or the fallback when the value is falsy (empty text, 0, false, null, unset).
+*/
+function valueOr(value: unknown, fallback: unknown): unknown {
+  const hasValue = Boolean(value)
+  return hasValue ? value : fallback
+}
+
+/**
  * Generates the window class definition code
  */
-function generateWindowClass(windowName: string, parentClass: string): string {
+function generateWindowClass(windowName: string, parentClass: unknown): string {
   const fullClassName = `Window_${windowName}`
   const lines: string[] = []
 
@@ -48,13 +57,13 @@ function generateWindowClass(windowName: string, parentClass: string): string {
   lines.push('')
 
   // Prototype chain setup
-  lines.push(`${fullClassName}.prototype = Object.create(${parentClass}.prototype);`)
+  lines.push(`${fullClassName}.prototype = Object.create(${String(parentClass)}.prototype);`)
   lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
   lines.push('')
 
   // Initialize method
   lines.push(`${fullClassName}.prototype.initialize = function(rect) {`)
-  lines.push(`    ${parentClass}.prototype.initialize.call(this, rect);`)
+  lines.push(`    ${String(parentClass)}.prototype.initialize.call(this, rect);`)
 
   // Add parent-specific initialization
   if (parentClass === 'Window_Selectable') {
@@ -132,9 +141,9 @@ function generateWindowClass(windowName: string, parentClass: string): string {
 function generateSceneIntegration(
   windowName: string,
   sceneName: string,
-  width: number,
-  height: number,
-  parentClass: string
+  width: string,
+  height: string,
+  parentClass: unknown
 ): string {
   const fullClassName = `Window_${windowName}`
   const camelName = toCamelCase(windowName)
@@ -268,19 +277,24 @@ const customWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const parentClass = (values['parentClass'] as string) || 'Window_Base'
-    const width = (values['width'] as number) || 300
-    const height = (values['height'] as number) || 200
-    const addToScene = (values['addToScene'] as string) || 'none'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const parentClass = valueOr(values['parentClass'], 'Window_Base')
+    const width = valueOr(values['width'], 300)
+    const height = valueOr(values['height'], 200)
+    const addToScene = valueOr(values['addToScene'], 'none')
 
     // Generate window class
     let code = generateWindowClass(windowName, parentClass)
 
     // Generate scene integration if requested
-    if (addToScene && addToScene !== 'none') {
-      code += generateSceneIntegration(windowName, addToScene, width, height, parentClass)
+    if (addToScene !== 'none') {
+      code += generateSceneIntegration(
+        windowName,
+        String(addToScene),
+        String(width),
+        String(height),
+        parentClass
+      )
     }
 
     return code
@@ -289,7 +303,7 @@ const customWindowTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['windowName']) {
-      const name = values['windowName'] as string
+      const name = expectText(values['windowName'])
       // Check for valid identifier
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
@@ -297,11 +311,11 @@ const customWindowTemplate: CodeTemplate = {
     }
 
     // Validate width and height are positive
-    if (values['width'] !== undefined && (values['width'] as number) <= 0) {
+    if (values['width'] !== undefined && Number(values['width']) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values['height'] !== undefined && (values['height'] as number) <= 0) {
+    if (values['height'] !== undefined && Number(values['height']) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -395,14 +409,13 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const hudType = (values['hudType'] as string) || 'health'
-    const posX = (values['positionX'] as number) || 10
-    const posY = (values['positionY'] as number) || 10
-    const width = (values['width'] as number) || 200
-    const height = (values['height'] as number) || 80
-    const opacity = (values['opacity'] as number) ?? 255
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const hudType = valueOr(values['hudType'], 'health')
+    const posX = valueOr(values['positionX'], 10)
+    const posY = valueOr(values['positionY'], 10)
+    const width = valueOr(values['width'], 200)
+    const height = valueOr(values['height'], 80)
+    const opacity: unknown = values['opacity'] ?? 255
     const showFrame = values['showFrame'] !== 'false'
 
     const fullClassName = `Window_${windowName}`
@@ -435,7 +448,7 @@ const hudOverlayWindowTemplate: CodeTemplate = {
       lines.push('    // Remove window frame for a cleaner HUD look')
       lines.push('    this.frameVisible = false;')
     }
-    lines.push(`    this.backOpacity = ${opacity};`)
+    lines.push(`    this.backOpacity = ${String(opacity)};`)
     lines.push('    this.refresh();')
     lines.push('};')
     lines.push('')
@@ -547,7 +560,9 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     lines.push('')
 
     lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
-    lines.push(`    const rect = new Rectangle(${posX}, ${posY}, ${width}, ${height});`)
+    lines.push(
+      `    const rect = new Rectangle(${String(posX)}, ${String(posY)}, ${String(width)}, ${String(height)});`
+    )
     lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
     lines.push(`    this.addWindow(this._${toCamelCase(windowName)}Window);`)
     lines.push('};')
@@ -558,14 +573,14 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['windowName']) {
-      const name = values['windowName'] as string
+      const name = expectText(values['windowName'])
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const opacity = values['opacity'] as number
-    if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
+    const opacity = values['opacity']
+    if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
 
@@ -657,15 +672,14 @@ const popupNotificationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const duration = (values['defaultDuration'] as number) || 120
-    const width = (values['width'] as number) || 400
-    const height = (values['height'] as number) || 60
-    const position = (values['position'] as string) || 'top'
-    const fadeEffect = (values['fadeEffect'] as string) || 'fade'
-    const bgColor = (values['bgColor'] as string) || '#000000'
-    const textColor = (values['textColor'] as string) || '#ffffff'
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const duration = valueOr(values['defaultDuration'], 120)
+    const width = valueOr(values['width'], 400)
+    const height = valueOr(values['height'], 60)
+    const position = valueOr(values['position'], 'top')
+    const fadeEffect = valueOr(values['fadeEffect'], 'fade')
+    const bgColor = valueOr(values['bgColor'], '#000000')
+    const textColor = valueOr(values['textColor'], '#ffffff')
 
     const fullClassName = `Window_${windowName}`
     const lines: string[] = []
@@ -675,7 +689,9 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`// ${fullClassName}`)
     lines.push('//')
     lines.push('// A popup notification window that displays temporarily and auto-closes.')
-    lines.push(`// Default duration: ${duration} frames (${(duration / 60).toFixed(1)} seconds)`)
+    lines.push(
+      `// Default duration: ${String(duration)} frames (${(Number(duration) / 60).toFixed(1)} seconds)`
+    )
     lines.push('//-----------------------------------------------------------------------------')
     lines.push('')
 
@@ -720,7 +736,7 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push('    // Create a custom colored background')
     lines.push('    this._customBg = new Sprite(new Bitmap(this.width, this.height));')
     lines.push(
-      `    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(bgColor)}');`
+      `    this._customBg.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(expectText(bgColor))}');`
     )
     lines.push('    this._customBg.opacity = 200;')
     lines.push('    this.addChildToBack(this._customBg);')
@@ -730,7 +746,7 @@ const popupNotificationTemplate: CodeTemplate = {
     // Show notification method
     lines.push(`${fullClassName}.prototype.showNotification = function(message, duration) {`)
     lines.push('    this._message = message;')
-    lines.push(`    this._duration = duration || ${duration};`)
+    lines.push(`    this._duration = duration || ${String(duration)};`)
     lines.push('    this._fadePhase = "in";')
     lines.push('    this._fadeCounter = 0;')
     lines.push('    this.refresh();')
@@ -804,7 +820,7 @@ const popupNotificationTemplate: CodeTemplate = {
     // Refresh method
     lines.push(`${fullClassName}.prototype.refresh = function() {`)
     lines.push('    this.contents.clear();')
-    lines.push(`    this.contents.textColor = '${escapeJSString(textColor)}';`)
+    lines.push(`    this.contents.textColor = '${escapeJSString(expectText(textColor))}';`)
     lines.push("    this.drawText(this._message, 0, 0, this.contentsWidth(), 'center');")
     lines.push('};')
     lines.push('')
@@ -813,14 +829,14 @@ const popupNotificationTemplate: CodeTemplate = {
     let posX: string
     let posY: string
     if (position === 'top') {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
+      posX = `(Graphics.boxWidth - ${String(width)}) / 2`
       posY = '10'
     } else if (position === 'center') {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
-      posY = `(Graphics.boxHeight - ${height}) / 2`
+      posX = `(Graphics.boxWidth - ${String(width)}) / 2`
+      posY = `(Graphics.boxHeight - ${String(height)}) / 2`
     } else {
-      posX = `(Graphics.boxWidth - ${width}) / 2`
-      posY = `Graphics.boxHeight - ${height} - 10`
+      posX = `(Graphics.boxWidth - ${String(width)}) / 2`
+      posY = `Graphics.boxHeight - ${String(height)} - 10`
     }
 
     // Scene_Map integration
@@ -835,7 +851,7 @@ const popupNotificationTemplate: CodeTemplate = {
     lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
     lines.push(`    const x = ${posX};`)
     lines.push(`    const y = ${posY};`)
-    lines.push(`    const rect = new Rectangle(x, y, ${width}, ${height});`)
+    lines.push(`    const rect = new Rectangle(x, y, ${String(width)}, ${String(height)});`)
     lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
     if (fadeEffect === 'slide') {
       lines.push(`    this._${toCamelCase(windowName)}Window._baseY = y;`)
@@ -859,14 +875,14 @@ const popupNotificationTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['windowName']) {
-      const name = values['windowName'] as string
+      const name = expectText(values['windowName'])
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const duration = values['defaultDuration'] as number
-    if (duration !== undefined && duration <= 0) {
+    const duration = values['defaultDuration']
+    if (duration !== undefined && Number(duration) <= 0) {
       errors.push('Duration must be a positive number')
     }
 
@@ -1036,25 +1052,25 @@ const gaugeWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['windowName'] as string
-    const windowName = sanitizeWindowName(rawName)
-    const gaugeCount = parseInt((values['gaugeCount'] as string) || '2', 10)
-    const gauge1Label = (values['gauge1Label'] as string) || 'HP'
-    const gauge1Color1 = (values['gauge1Color1'] as string) || '#e08040'
-    const gauge1Color2 = (values['gauge1Color2'] as string) || '#f0c040'
-    const gauge2Label = (values['gauge2Label'] as string) || 'MP'
-    const gauge2Color1 = (values['gauge2Color1'] as string) || '#4080c0'
-    const gauge2Color2 = (values['gauge2Color2'] as string) || '#40c0f0'
-    const gauge3Label = (values['gauge3Label'] as string) || 'TP'
-    const gauge3Color1 = (values['gauge3Color1'] as string) || '#40c040'
-    const gauge3Color2 = (values['gauge3Color2'] as string) || '#80f080'
-    const posX = (values['positionX'] as number) || 10
-    const posY = (values['positionY'] as number) || 10
-    const width = (values['width'] as number) || 300
-    const gaugeHeight = (values['gaugeHeight'] as number) || 12
+    const windowName = sanitizeWindowName(expectText(values['windowName']))
+    const gaugeCountText = String(valueOr(values['gaugeCount'], '2'))
+    const gaugeCount = parseInt(gaugeCountText, 10)
+    const gauge1Label = valueOr(values['gauge1Label'], 'HP')
+    const gauge1Color1 = valueOr(values['gauge1Color1'], '#e08040')
+    const gauge1Color2 = valueOr(values['gauge1Color2'], '#f0c040')
+    const gauge2Label = valueOr(values['gauge2Label'], 'MP')
+    const gauge2Color1 = valueOr(values['gauge2Color1'], '#4080c0')
+    const gauge2Color2 = valueOr(values['gauge2Color2'], '#40c0f0')
+    const gauge3Label = valueOr(values['gauge3Label'], 'TP')
+    const gauge3Color1 = valueOr(values['gauge3Color1'], '#40c040')
+    const gauge3Color2 = valueOr(values['gauge3Color2'], '#80f080')
+    const posX = valueOr(values['positionX'], 10)
+    const posY = valueOr(values['positionY'], 10)
+    const width = valueOr(values['width'], 300)
+    const gaugeHeight = valueOr(values['gaugeHeight'], 12)
     const showLabels = values['showLabels'] !== 'false'
     const showValues = values['showValues'] !== 'false'
-    const dataSource = (values['dataSource'] as string) || 'actor'
+    const dataSource = valueOr(values['dataSource'], 'actor')
 
     // Calculate window height based on gauge count
     const lineHeight = 36
@@ -1098,16 +1114,16 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push('    // Initialize gauge configurations')
     lines.push('    this._gaugeData = [')
     lines.push(
-      `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: 0, max: 100 },`
+      `        { label: '${escapeJSString(expectText(gauge1Label))}', color1: '${escapeJSString(expectText(gauge1Color1))}', color2: '${escapeJSString(expectText(gauge1Color2))}', current: 0, max: 100 },`
     )
     if (gaugeCount >= 2) {
       lines.push(
-        `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: 0, max: 100 },`
+        `        { label: '${escapeJSString(expectText(gauge2Label))}', color1: '${escapeJSString(expectText(gauge2Color1))}', color2: '${escapeJSString(expectText(gauge2Color2))}', current: 0, max: 100 },`
       )
     }
     if (gaugeCount >= 3) {
       lines.push(
-        `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: 0, max: 100 },`
+        `        { label: '${escapeJSString(expectText(gauge3Label))}', color1: '${escapeJSString(expectText(gauge3Color1))}', color2: '${escapeJSString(expectText(gauge3Color2))}', current: 0, max: 100 },`
       )
     }
     lines.push('    ];')
@@ -1144,16 +1160,16 @@ const gaugeWindowTemplate: CodeTemplate = {
       lines.push('    ')
       lines.push('    return [')
       lines.push(
-        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: actor.hp, max: actor.mhp },`
+        `        { label: '${escapeJSString(expectText(gauge1Label))}', color1: '${escapeJSString(expectText(gauge1Color1))}', color2: '${escapeJSString(expectText(gauge1Color2))}', current: actor.hp, max: actor.mhp },`
       )
       if (gaugeCount >= 2) {
         lines.push(
-          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: actor.mp, max: actor.mmp },`
+          `        { label: '${escapeJSString(expectText(gauge2Label))}', color1: '${escapeJSString(expectText(gauge2Color1))}', color2: '${escapeJSString(expectText(gauge2Color2))}', current: actor.mp, max: actor.mmp },`
         )
       }
       if (gaugeCount >= 3) {
         lines.push(
-          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: actor.tp, max: actor.maxTp() },`
+          `        { label: '${escapeJSString(expectText(gauge3Label))}', color1: '${escapeJSString(expectText(gauge3Color1))}', color2: '${escapeJSString(expectText(gauge3Color2))}', current: actor.tp, max: actor.maxTp() },`
         )
       }
       lines.push('    ];')
@@ -1162,16 +1178,16 @@ const gaugeWindowTemplate: CodeTemplate = {
       lines.push('    // Customize variable IDs as needed')
       lines.push('    return [')
       lines.push(
-        `        { label: '${escapeJSString(gauge1Label)}', color1: '${escapeJSString(gauge1Color1)}', color2: '${escapeJSString(gauge1Color2)}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
+        `        { label: '${escapeJSString(expectText(gauge1Label))}', color1: '${escapeJSString(expectText(gauge1Color1))}', color2: '${escapeJSString(expectText(gauge1Color2))}', current: $gameVariables.value(1), max: $gameVariables.value(2) },`
       )
       if (gaugeCount >= 2) {
         lines.push(
-          `        { label: '${escapeJSString(gauge2Label)}', color1: '${escapeJSString(gauge2Color1)}', color2: '${escapeJSString(gauge2Color2)}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
+          `        { label: '${escapeJSString(expectText(gauge2Label))}', color1: '${escapeJSString(expectText(gauge2Color1))}', color2: '${escapeJSString(expectText(gauge2Color2))}', current: $gameVariables.value(3), max: $gameVariables.value(4) },`
         )
       }
       if (gaugeCount >= 3) {
         lines.push(
-          `        { label: '${escapeJSString(gauge3Label)}', color1: '${escapeJSString(gauge3Color1)}', color2: '${escapeJSString(gauge3Color2)}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
+          `        { label: '${escapeJSString(expectText(gauge3Label))}', color1: '${escapeJSString(expectText(gauge3Color1))}', color2: '${escapeJSString(expectText(gauge3Color2))}', current: $gameVariables.value(5), max: $gameVariables.value(6) },`
         )
       }
       lines.push('    ];')
@@ -1207,7 +1223,7 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push(`${fullClassName}.prototype.drawGauge = function(index, y) {`)
     lines.push('    const gauge = this._gaugeData[index];')
     lines.push('    const rate = gauge.max > 0 ? gauge.current / gauge.max : 0;')
-    lines.push(`    const gaugeHeight = ${gaugeHeight};`)
+    lines.push(`    const gaugeHeight = ${String(gaugeHeight)};`)
     lines.push('    ')
     if (showLabels) {
       lines.push('    // Draw label')
@@ -1258,7 +1274,9 @@ const gaugeWindowTemplate: CodeTemplate = {
     lines.push('')
 
     lines.push(`Scene_Map.prototype.create${windowName}Window = function() {`)
-    lines.push(`    const rect = new Rectangle(${posX}, ${posY}, ${width}, ${windowHeight});`)
+    lines.push(
+      `    const rect = new Rectangle(${String(posX)}, ${String(posY)}, ${String(width)}, ${windowHeight});`
+    )
     lines.push(`    this._${toCamelCase(windowName)}Window = new ${fullClassName}(rect);`)
     lines.push(`    this.addWindow(this._${toCamelCase(windowName)}Window);`)
     lines.push('};')
@@ -1282,19 +1300,19 @@ const gaugeWindowTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['windowName']) {
-      const name = values['windowName'] as string
+      const name = expectText(values['windowName'])
       if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
 
-    const width = values['width'] as number
-    if (width !== undefined && width <= 0) {
+    const width = values['width']
+    if (width !== undefined && Number(width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    const gaugeHeight = values['gaugeHeight'] as number
-    if (gaugeHeight !== undefined && gaugeHeight <= 0) {
+    const gaugeHeight = values['gaugeHeight']
+    if (gaugeHeight !== undefined && Number(gaugeHeight) <= 0) {
       errors.push('Gauge Height must be a positive number')
     }
 
