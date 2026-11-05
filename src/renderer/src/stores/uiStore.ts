@@ -65,11 +65,11 @@ const UI_MIGRATIONS: readonly MigrationStep[] = [
   // Raw mode is on for imported plugins unless the user turns it off; v1.6.0 stored false
   // for plugins it had restored without their file text, so those entries are dropped.
   (state) =>
-    isRecord(state.rawModeByPluginId)
+    isRecord(state['rawModeByPluginId'])
       ? {
           ...state,
           rawModeByPluginId: Object.fromEntries(
-            Object.entries(state.rawModeByPluginId).filter(([, on]) => on !== false)
+            Object.entries(state['rawModeByPluginId']).filter(([, on]) => on !== false)
           )
         }
       : state

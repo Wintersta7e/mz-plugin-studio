@@ -6,8 +6,7 @@
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/flows/dialog-default-path.e2e.ts": 4,
-      "e2e/playwright.config.ts": 1,
-      "src/renderer/src/stores/persist.ts": 3
+      "e2e/playwright.config.ts": 1
     },
     "noUncheckedIndexedAccess": {
       "e2e/flows/dialog-default-path.e2e.ts": 4,
@@ -71,10 +70,6 @@
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
-      "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 48,
-      "src/renderer/src/stores/templateStore.ts": 4,
-      "src/renderer/src/stores/uiStore.ts": 2,
       "tests/dom/persisted-damage.test.ts": 4,
       "tests/dom/persisted-downgrade.test.ts": 4,
       "tests/dom/persisted-load.test.ts": 25,
@@ -207,12 +202,6 @@
       "src/renderer/src/lib/raw-mode.ts": 1,
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 1
-    },
-    "noPropertyAccessFromIndexSignature": {
-      "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 48,
-      "src/renderer/src/stores/templateStore.ts": 4,
-      "src/renderer/src/stores/uiStore.ts": 2
     },
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,

@@ -234,15 +234,15 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
 The schema a payload was written at: a non-negative integer, else 0 (written before schemas).
 */
 function schemaOf(state: Record<string, unknown>): number {
-  const schema = state.schemaVersion
+  const schema = state['schemaVersion']
   return typeof schema === 'number' && Number.isInteger(schema) && schema >= 0 ? schema : 0
 }
 
 function isEnvelope(value: unknown): value is { state: Record<string, unknown>; version?: 0 } {
   return (
     isRecord(value) &&
-    isRecord(value.state) &&
-    (!Object.hasOwn(value, 'version') || value.version === 0)
+    isRecord(value['state']) &&
+    (!Object.hasOwn(value, 'version') || value['version'] === 0)
   )
 }
 

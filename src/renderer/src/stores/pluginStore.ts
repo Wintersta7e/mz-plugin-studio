@@ -124,10 +124,10 @@ function migrateImported(def: unknown): unknown {
   if (
     typeof codeBody === 'string' &&
     !Object.hasOwn(rest, 'importedFrom') &&
-    isRecord(rest.meta) &&
-    typeof rest.meta.name === 'string'
+    isRecord(rest['meta']) &&
+    typeof rest['meta']['name'] === 'string'
   ) {
-    rest.importedFrom = `${rest.meta.name}.js`
+    rest['importedFrom'] = `${rest['meta']['name']}.js`
   }
   return rest
 }
@@ -136,15 +136,15 @@ const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
   (state) => state,
   (state) => ({
     ...state,
-    plugin: migrateImported(state.plugin),
-    openPlugins: Array.isArray(state.openPlugins)
-      ? state.openPlugins.map(migrateImported)
-      : state.openPlugins
+    plugin: migrateImported(state['plugin']),
+    openPlugins: Array.isArray(state['openPlugins'])
+      ? state['openPlugins'].map(migrateImported)
+      : state['openPlugins']
   }),
   // A tab's saved path is the file it last saved, its contents then unknown
   (state) => {
-    const saved = isRecord(state.savedPathsByPluginId) ? state.savedPathsByPluginId : {}
-    const bases = isRecord(state.baseByPluginId) ? state.baseByPluginId : {}
+    const saved = isRecord(state['savedPathsByPluginId']) ? state['savedPathsByPluginId'] : {}
+    const bases = isRecord(state['baseByPluginId']) ? state['baseByPluginId'] : {}
     const added = Object.entries(saved)
       .filter(([id]) => !Object.hasOwn(bases, id))
       .map(([id, path]) => [id, { path, sha256: null }])
@@ -241,30 +241,30 @@ function checkMeta(meta: Record<string, unknown>, drop: (path: FieldPath) => voi
 }
 
 const idOf = (value: Record<string, unknown>): string =>
-  typeof value.id === 'string' ? value.id : crypto.randomUUID()
+  typeof value['id'] === 'string' ? value['id'] : crypto.randomUUID()
 
 const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
-  if (!isRecord(value) || typeof value.name !== 'string') return
-  const args = checkParameters(value.args, (path) => {
+  if (!isRecord(value) || typeof value['name'] !== 'string') return
+  const args = checkParameters(value['args'], (path) => {
     drop([{ key: 'args' }, ...path])
   })
   if (args === undefined) return
   for (const field of ['text', 'desc']) if (typeof value[field] !== 'string') drop([{ key: field }])
   return {
     id: idOf(value),
-    name: value.name,
-    text: typeof value.text === 'string' ? value.text : value.name,
-    desc: typeof value.desc === 'string' ? value.desc : '',
+    name: value['name'],
+    text: typeof value['text'] === 'string' ? value['text'] : value['name'],
+    desc: typeof value['desc'] === 'string' ? value['desc'] : '',
     args
   }
 }
 
 const checkStruct: FieldCheck<PluginStruct> = (value, drop) => {
-  if (!isRecord(value) || typeof value.name !== 'string') return
-  const parameters = checkParameters(value.parameters, (path) => {
+  if (!isRecord(value) || typeof value['name'] !== 'string') return
+  const parameters = checkParameters(value['parameters'], (path) => {
     drop([{ key: 'parameters' }, ...path])
   })
-  return parameters === undefined ? undefined : { id: idOf(value), name: value.name, parameters }
+  return parameters === undefined ? undefined : { id: idOf(value), name: value['name'], parameters }
 }
 
 /**
@@ -273,12 +273,12 @@ A saved plugin definition: rejected unless every editor can read it, elements on
 const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   if (
     !isRecord(value) ||
-    typeof value.id !== 'string' ||
-    !isRecord(value.meta) ||
-    typeof value.meta.name !== 'string' ||
-    !Array.isArray(value.parameters) ||
-    !Array.isArray(value.commands) ||
-    !Array.isArray(value.structs)
+    typeof value['id'] !== 'string' ||
+    !isRecord(value['meta']) ||
+    typeof value['meta']['name'] !== 'string' ||
+    !Array.isArray(value['parameters']) ||
+    !Array.isArray(value['commands']) ||
+    !Array.isArray(value['structs'])
   ) {
     return
   }
@@ -287,10 +287,10 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   }
   const plugin: Record<string, unknown> = {
     ...value,
-    meta: checkMeta(value.meta, within('meta')),
-    parameters: checkParameters(value.parameters, within('parameters')),
-    commands: checkArrayOf(checkCommand)(value.commands, within('commands')),
-    structs: checkArrayOf(checkStruct)(value.structs, within('structs'))
+    meta: checkMeta(value['meta'], within('meta')),
+    parameters: checkParameters(value['parameters'], within('parameters')),
+    commands: checkArrayOf(checkCommand)(value['commands'], within('commands')),
+    structs: checkArrayOf(checkStruct)(value['structs'], within('structs'))
   }
   for (const field of OPTIONAL_STRING_FIELDS) {
     if (!Object.hasOwn(plugin, field) || typeof plugin[field] === 'string') {
@@ -307,8 +307,8 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
 The plugin name a saved tab shows, if it has one, to name it when it cannot be loaded.
 */
 const tabName = (value: unknown): string | undefined =>
-  isRecord(value) && isRecord(value.meta) && typeof value.meta.name === 'string'
-    ? value.meta.name
+  isRecord(value) && isRecord(value['meta']) && typeof value['meta']['name'] === 'string'
+    ? value['meta']['name']
     : undefined
 
 const checkBaseline: FieldCheck<PluginBaseline> = (value, drop) => {
@@ -318,9 +318,9 @@ const checkBaseline: FieldCheck<PluginBaseline> = (value, drop) => {
 
 const checkFileBase: FieldCheck<FileBase> = (value) =>
   isRecord(value) &&
-  typeof value.path === 'string' &&
-  (typeof value.sha256 === 'string' || value.sha256 === null)
-    ? { path: value.path, sha256: value.sha256 }
+  typeof value['path'] === 'string' &&
+  (typeof value['sha256'] === 'string' || value['sha256'] === null)
+    ? { path: value['path'], sha256: value['sha256'] }
     : undefined
 
 /**

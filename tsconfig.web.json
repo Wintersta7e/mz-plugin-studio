@@ -15,7 +15,6 @@
   "compilerOptions": {
     "composite": true,
     "exactOptionalPropertyTypes": false,
-    "noPropertyAccessFromIndexSignature": false,
     "noUncheckedIndexedAccess": false,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],

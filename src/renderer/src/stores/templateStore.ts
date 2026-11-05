@@ -16,8 +16,8 @@ interface TemplateStoreState {
 type RecentTemplate = TemplateStoreState['recentlyUsed'][number]
 
 const checkRecent: FieldCheck<RecentTemplate> = (value) =>
-  isRecord(value) && typeof value.id === 'string' && typeof value.timestamp === 'number'
-    ? { id: value.id, timestamp: value.timestamp }
+  isRecord(value) && typeof value['id'] === 'string' && typeof value['timestamp'] === 'number'
+    ? { id: value['id'], timestamp: value['timestamp'] }
     : undefined
 
 const TEMPLATE_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
