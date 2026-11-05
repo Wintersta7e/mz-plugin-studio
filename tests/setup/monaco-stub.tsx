@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from 'react'
 import { vi } from 'vitest'
 
 /**
- * Every completion provider registered since the last reset, and whether it was disposed; every
- * editor mounted since the last reset, in mount order.
- */
+Every completion provider registered since the last reset, and whether it was disposed; every
+editor mounted since the last reset, in mount order.
+*/
 export const monacoStub: {
   providers: { language: string; disposed: boolean }[]
   editors: FakeEditor[]

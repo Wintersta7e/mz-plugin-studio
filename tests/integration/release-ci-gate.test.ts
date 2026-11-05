@@ -1,7 +1,7 @@
 // Runs the release workflow's CI wait step with fake `gh` and `sleep`: a release publishes
 // only a commit whose own CI run exists and succeeded.
 import { afterAll, afterEach, describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
+import { spawnSync } from 'node:child_process'
 import {
   chmodSync,
   existsSync,
@@ -10,10 +10,10 @@ import {
   readFileSync,
   rmSync,
   writeFileSync
-} from 'fs'
-import { tmpdir } from 'os'
-import { delimiter, join } from 'path'
-import { fileURLToPath } from 'url'
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { delimiter, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const RELEASE = fileURLToPath(new URL('../../.github/workflows/release.yml', import.meta.url))
 const STEP_NAME = "      - name: Wait for this commit's CI run"
@@ -23,9 +23,9 @@ const SHA = '0123abc'
 function stepScript(): string {
   const lines = readFileSync(RELEASE, 'utf8').split(/\r?\n/)
   const step = lines.indexOf(STEP_NAME)
-  if (step < 0) throw new Error(`release.yml has no step: ${STEP_NAME.trim()}`)
+  if (step === -1) throw new Error(`release.yml has no step: ${STEP_NAME.trim()}`)
   const run = lines.findIndex((line, index) => index > step && line === '        run: |')
-  if (run < 0) throw new Error('the CI wait step has no run: | block')
+  if (run === -1) throw new Error('the CI wait step has no run: | block')
   const body: string[] = []
   for (const line of lines.slice(run + 1)) {
     if (line.trim() !== '' && !line.startsWith(' '.repeat(10))) break

@@ -1,10 +1,10 @@
 // Saving from the keyboard: Ctrl+S saves the active tab into the open project, Save All
 // (Ctrl+Shift+S) every unsaved tab. Behind `window.api` sit the main-process save and load
 // functions, writing to a fresh temporary project, so every conflict is the file check's own.
-import { createHash } from 'crypto'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { dirname, join } from 'path'
+import { createHash } from 'node:crypto'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -508,12 +508,12 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     window.api = createMainApi()
     await openProject(project)
     const id = await openFromProject(project, FILE)
-    let reloaded = false
+    let isReloaded = false
     const writes = await pluginWrites(async () => {
-      reloaded = await act(() => reloadFromProject(id))
+      isReloaded = await act(() => reloadFromProject(id))
     })
 
-    expect(reloaded).toBe(true)
+    expect(isReloaded).toBe(true)
     expect(writes).toBe(1)
   })
 
@@ -809,7 +809,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
 
     expect(options.message).toMatch(
       new RegExp(
-        `^Saving would stop "${escaped(fileIn('Alpha.js'))}" from compiling \\(line \\d+: .+\\)\\. Overwrite it anyway\\?$`
+        String.raw`^Saving would stop "${escaped(fileIn('Alpha.js'))}" from compiling \(line \d+: .+\)\. Overwrite it anyway\?$`
       )
     )
 
@@ -829,7 +829,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
 
     expect(options.message).toContain(`(line ${brokenLine}: `)
     expect(
-      screen.getByText(new RegExp(`does not compile \\(line ${brokenLine}\\)`))
+      screen.getByText(new RegExp(String.raw`does not compile \(line ${brokenLine}\)`))
     ).toBeInTheDocument()
   })
 

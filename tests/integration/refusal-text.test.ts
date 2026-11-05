@@ -1,8 +1,8 @@
 // Main refuses a request with one message shape that the window recognises: every refusal is
 // built from the shared prefix, and the window reads its reason back in plain words.
-import { readdirSync, readFileSync } from 'fs'
-import { join, relative } from 'path'
-import { fileURLToPath } from 'url'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { refusalReason } from '../../src/renderer/src/lib/utils'
 import { ACCESS_DENIED, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
@@ -31,7 +31,7 @@ describe('refusal text', () => {
 
     const writers = files
       .filter((file) => readFileSync(file, 'utf8').includes(ACCESS_DENIED.trim()))
-      .map((file) => relative(SRC, file).split('\\').join('/'))
+      .map((file) => relative(SRC, file).replaceAll('\\', '/'))
 
     expect(writers).toEqual(['shared/ipc-types.ts'])
   })

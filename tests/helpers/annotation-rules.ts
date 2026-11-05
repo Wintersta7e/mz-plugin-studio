@@ -48,13 +48,14 @@ export interface RuleScope {
 }
 
 /**
- * The rules each case is held to. A hostile entry's types, parents and defaults carry the
- * payload by design, and raw mode writes back whatever the imported file declared, so both are
- * held to the text rules only.
- */
+The rules each case is held to. A hostile entry's types, parents and defaults carry the
+payload by design, and raw mode writes back whatever the imported file declared, so both are
+held to the text rules only.
+*/
 export function scopeFor(c: ConformanceCase): RuleScope {
-  if (c.kind === 'raw-mode' || c.hostile === true) return { rules: TEXT_RULES }
-  return { rules: ANNOTATION_RULES, definition: c.definition }
+  return c.kind === 'raw-mode' || c.hostile === true
+    ? { rules: TEXT_RULES }
+    : { rules: ANNOTATION_RULES, definition: c.definition }
 }
 
 export interface AnnotationBlockText {
@@ -79,11 +80,11 @@ export function annotationBlocks(code: string): AnnotationBlockText[] {
   while ((match = opener.exec(code)) !== null) {
     const close = code.indexOf('*/', match.index + match[0].length)
     if (close === -1) break
-    const struct = match[2] !== undefined
+    const isStruct = match[2] !== undefined
     blocks.push({
       opener: match[0],
-      structName: struct ? match[2] : null,
-      lang: (struct ? match[3] : match[1]) ?? '',
+      structName: isStruct ? match[2] : null,
+      lang: (isStruct ? match[3] : match[1]) ?? '',
       line: code.slice(0, match.index).split(LINE_BREAK).length,
       lines: code
         .slice(match.index + match[0].length, close + 2)
@@ -133,17 +134,17 @@ function parseJson(text: string): unknown {
 function defaultProblem(item: Item, type: string, text: string): string | null {
   if (type.endsWith('[]')) {
     const value = parseJson(text)
-    const ok = Array.isArray(value) && value.every((e) => typeof e === 'string')
-    return ok ? null : 'is not a JSON array of strings'
+    const isOk = Array.isArray(value) && value.every((e) => typeof e === 'string')
+    return isOk ? null : 'is not a JSON array of strings'
   }
   if (STRUCT_TYPE.test(type)) {
     const value = parseJson(text)
-    const ok =
+    const isOk =
       typeof value === 'object' &&
       value !== null &&
       !Array.isArray(value) &&
       Object.values(value).every((v) => typeof v === 'string')
-    return ok ? null : 'is not a JSON object of strings'
+    return isOk ? null : 'is not a JSON object of strings'
   }
   if (type === 'number' || ID_BASED_PARAM_TYPES.has(type as ParamType)) {
     return Number.isFinite(Number(text)) ? null : 'is not a finite number'
@@ -203,9 +204,9 @@ function helpRoundTrip(code: string, def: PluginDefinition): string[] {
   // is not known to share, so only the accepted names are compared
   const refused = refusedCommandNames(def)
   const accepted = def.commands.filter((cmd) => !refused.has(cmd.name))
-  const acceptedNames = accepted.map((cmd) => cmd.name)
+  const acceptedNames = new Set(accepted.map((cmd) => cmd.name))
   const readBack = parsed.commands.filter(
-    (cmd) => refused.size === 0 || acceptedNames.includes(cmd.name)
+    (cmd) => refused.size === 0 || acceptedNames.has(cmd.name)
   )
   if (names(readBack) !== written(accepted)) {
     problems.push(`commands ${names(accepted)} read back as ${names(readBack)}`)

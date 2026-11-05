@@ -14,8 +14,8 @@ const ASSIGN = `globalThis.${SENTINEL} = 1`
 /** Close a block comment, run code, reopen one; the separator before the code varies. */
 export const COMMENT_PAYLOADS: readonly Payload[] = [
   { name: 'comment-space', text: `X */ ${ASSIGN}; /* Y` },
-  { name: 'comment-u2028', text: `X */\u2028${ASSIGN}; /* Y` },
-  { name: 'comment-u2029', text: `X */\u2029${ASSIGN}; /* Y` },
+  { name: 'comment-u2028', text: `X */\u{2028}${ASSIGN}; /* Y` },
+  { name: 'comment-u2029', text: `X */\u{2029}${ASSIGN}; /* Y` },
   { name: 'comment-lf', text: `X */\n${ASSIGN}; /* Y` }
 ]
 
@@ -29,11 +29,11 @@ export const QUOTE_PAYLOADS: readonly Payload[] = [
 export const ALL_PAYLOADS: readonly Payload[] = [...COMMENT_PAYLOADS, ...QUOTE_PAYLOADS]
 
 /**
- * Text whose start a field's check may accept (a word, a number), then a line break and code.
- * Kept out of `ALL_PAYLOADS`, whose cases the golden files record.
- */
+Text whose start a field's check may accept (a word, a number), then a line break and code.
+Kept out of `ALL_PAYLOADS`, whose cases the golden files record.
+*/
 export const PREFIX_PAYLOADS: readonly Payload[] = [
   { name: 'prefix-lf', text: `Sample\n${ASSIGN};` },
-  { name: 'prefix-u2028', text: `Sample\u2028${ASSIGN};` },
+  { name: 'prefix-u2028', text: `Sample\u{2028}${ASSIGN};` },
   { name: 'number-comment-lf', text: `1 */\n${ASSIGN}; /* 2` }
 ]

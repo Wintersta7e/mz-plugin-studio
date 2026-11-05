@@ -43,11 +43,11 @@ function spansOf(code: string): Span[] {
     for (const range of ranges ?? []) {
       if (seen.has(range.pos)) continue
       seen.add(range.pos)
-      const line = range.kind === ts.SyntaxKind.SingleLineCommentTrivia
+      const isLine = range.kind === ts.SyntaxKind.SingleLineCommentTrivia
       spans.push({
         start: range.pos,
         end: range.end,
-        context: line ? 'line-comment' : 'block-comment'
+        context: isLine ? 'line-comment' : 'block-comment'
       })
     }
   }

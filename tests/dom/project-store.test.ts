@@ -128,7 +128,7 @@ describe('projectStore', () => {
       const recents = useProjectStore.getState().recentProjects
 
       expect(recents[0]).toBe('/tmp/project/10')
-      expect(recents.includes('/tmp/project/0')).toBe(false)
+      expect(recents).not.toContain('/tmp/project/0')
     })
   })
 

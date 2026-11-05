@@ -1,7 +1,7 @@
 // Tests for `ci-policy needs`: the aggregate job passes only when every needed job succeeded
 import { describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
-import { fileURLToPath } from 'url'
+import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
 

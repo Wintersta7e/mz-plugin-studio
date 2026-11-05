@@ -1,8 +1,8 @@
 // Every member the preload exposes on `window.api` must be called somewhere in the renderer:
 // an uncalled member is a channel the page can use that the app itself never needs.
 import { describe, it, expect, vi } from 'vitest'
-import { readdirSync, readFileSync } from 'fs'
-import { join, relative } from 'path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import ts from 'typescript'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
 import type { MainDeps } from '../../src/main/ipc/handlers'

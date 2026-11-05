@@ -534,24 +534,24 @@ describe('pluginStore file text of an imported plugin', () => {
     }
 
     it('keeping or replacing the tab records the file it was read from', () => {
-      for (const keepTab of [false, true]) {
-        reattach(true, keepTab)
+      for (const isKeepTab of [false, true]) {
+        reattach(true, isKeepTab)
 
         expect(usePluginStore.getState().baseByPluginId).toEqual({ [missing.id]: base })
       }
     })
 
     it('keeping the tab gives it its file text and that file as the baseline', () => {
-      for (const active of [false, true]) {
-        reattach(active, true)
+      for (const isActive of [false, true]) {
+        reattach(isActive, true)
         const state = usePluginStore.getState()
         const tab = state.openPlugins.find((p) => p.id === missing.id)
 
         expect(tab?.rawSource).toBe(text)
         expect(tab?.meta.description).toBe('Edited')
-        expect(state.plugin.id).toBe(active ? missing.id : other.id)
+        expect(state.plugin.id).toBe(isActive ? missing.id : other.id)
 
-        if (active) expect(state.plugin.rawSource).toBe(text)
+        if (isActive) expect(state.plugin.rawSource).toBe(text)
 
         expect(state.dirtyByPluginId[missing.id]).toBe(true)
         expect(state.baselineByPluginId[missing.id]).toEqual(toBaseline(fromFile))
@@ -559,12 +559,12 @@ describe('pluginStore file text of an imported plugin', () => {
     })
 
     it('replacing the tab makes it the file, keeping its id and file name, not dirty', () => {
-      for (const active of [false, true]) {
-        reattach(active, false)
+      for (const isActive of [false, true]) {
+        reattach(isActive, false)
         const state = usePluginStore.getState()
 
         expect(state.openPlugins.find((p) => p.id === missing.id)).toEqual(fromFile)
-        expect(state.plugin).toEqual(active ? fromFile : other)
+        expect(state.plugin).toEqual(isActive ? fromFile : other)
         expect(state.isDirty).toBe(false)
         expect(state.dirtyByPluginId[missing.id]).toBeUndefined()
         expect(state.baselineByPluginId[missing.id]).toEqual(toBaseline(fromFile))

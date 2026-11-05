@@ -39,7 +39,7 @@ describe('settingsStore', () => {
     it('no-ops when name is empty or whitespace-only', () => {
       const params = [makeParam()]
       useSettingsStore.getState().savePreset('', params)
-      useSettingsStore.getState().savePreset('   ', params)
+      useSettingsStore.getState().savePreset(' '.repeat(3), params)
 
       expect(useSettingsStore.getState().parameterPresets).toEqual({})
     })

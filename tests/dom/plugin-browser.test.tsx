@@ -1,8 +1,8 @@
 // The plugin browser lists the open project's plugins; clicking one opens it as a tab. Behind
 // `window.api` sit the main-process load functions, reading a copy of the fixture project.
-import { createHash } from 'crypto'
-import { readFile, rm, writeFile } from 'fs/promises'
-import { dirname, join } from 'path'
+import { createHash } from 'node:crypto'
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

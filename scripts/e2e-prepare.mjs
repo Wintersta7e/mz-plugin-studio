@@ -36,9 +36,9 @@ export const REUSE_FLAG = '--reuse'
 const print = (line) => process.stdout.write(`${line}\n`)
 
 /**
- * @typedef {Record<string, unknown>} Wire fuse index -> state char code, plus `version`
- * @typedef {{ release: string; twin: string; releaseWire: Wire; twinWire: Wire }} Artifacts
- */
+@typedef {Record<string, unknown>} Wire fuse index -> state char code, plus `version`
+@typedef {{ release: string; twin: string; releaseWire: Wire; twinWire: Wire }} Artifacts
+*/
 
 /** @param {Wire} wire @returns {[number, number][]} fuse index and state byte, in wire order */
 function fuses(wire) {
@@ -65,12 +65,12 @@ export function formatWire(wire) {
 }
 
 /**
- * Fails unless the twin differs from the release in the inspect fuse only, off in the release
- * and on in the twin.
- * @param {Wire} releaseWire
- * @param {Wire} twinWire
- * @returns {{ diff: string[] }}
- */
+Fails unless the twin differs from the release in the inspect fuse only, off in the release
+and on in the twin.
+@param {Wire} releaseWire
+@param {Wire} twinWire
+@returns {{ diff: string[] }}
+*/
 export function compareWires(releaseWire, twinWire) {
   const release = new Map(fuses(releaseWire))
   const twin = new Map(fuses(twinWire))
@@ -109,12 +109,12 @@ function entries(dir) {
 const sha256 = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 
 /**
- * Compares every file of the two trees but the executable by sha256.
- * @param {string} releaseDir
- * @param {string} twinDir
- * @param {string} exeRelPath the executable, relative to each directory
- * @returns {Promise<{ compared: number; differing: string[] }>}
- */
+Compares every file of the two trees but the executable by sha256.
+@param {string} releaseDir
+@param {string} twinDir
+@param {string} exeRelPath the executable, relative to each directory
+@returns {Promise<{ compared: number; differing: string[] }>}
+*/
 export async function diffTrees(releaseDir, twinDir, exeRelPath) {
   const release = new Set(entries(releaseDir))
   const twin = new Set(entries(twinDir))
@@ -123,10 +123,11 @@ export async function diffTrees(releaseDir, twinDir, exeRelPath) {
   for (const path of [...new Set([...release, ...twin])].sort()) {
     if (path === exeRelPath) continue
     if (!twin.has(path)) differing.push(`${path} (release only)`)
-    else if (!release.has(path)) differing.push(`${path} (twin only)`)
-    else {
+    else if (release.has(path)) {
       compared++
       if (sha256(join(releaseDir, path)) !== sha256(join(twinDir, path))) differing.push(path)
+    } else {
+      differing.push(`${path} (twin only)`)
     }
   }
   if (compared === 0) throw new Error(`no file compared between ${releaseDir} and ${twinDir}`)
@@ -138,11 +139,11 @@ const MODULE_MARKER = /^\/\/ (node_modules\/|src\/|\\0)/
 const EDITOR_MODULE = '// node_modules/monaco-editor/'
 
 /**
- * Fails if a script the renderer page loads at start holds the code editor, which loads with the
- * first editor shown, or if a script holds no module comment to attribute its bytes by.
- * @param {string} rendererDir the built renderer, holding index.html
- * @returns {{ file: string; bytes: number; editorBytes: number }[]} each script the page loads
- */
+Fails if a script the renderer page loads at start holds the code editor, which loads with the
+first editor shown, or if a script holds no module comment to attribute its bytes by.
+@param {string} rendererDir the built renderer, holding index.html
+@returns {{ file: string; bytes: number; editorBytes: number }[]} each script the page loads
+*/
 export function checkStartScripts(rendererDir) {
   const html = readFileSync(join(rendererDir, 'index.html'), 'utf8')
   const files = [...html.matchAll(/\b(?:src|href)="([^"]+\.js)"/g)].map((match) => match[1])
@@ -152,14 +153,14 @@ export function checkStartScripts(rendererDir) {
     const bytes = Buffer.byteLength(text)
     let editorBytes = 0
     let modules = 0
-    let inEditor = false
+    let isInEditor = false
     for (const line of text.split('\n')) {
       if (MODULE_MARKER.test(line)) {
         modules++
-        inEditor = line.startsWith(EDITOR_MODULE)
+        isInEditor = line.startsWith(EDITOR_MODULE)
       }
       // The line and its newline; the last line's missing newline overcounts by one at most
-      if (inEditor) editorBytes += Buffer.byteLength(line) + 1
+      if (isInEditor) editorBytes += Buffer.byteLength(line) + 1
     }
     if (modules === 0) throw new Error(`${file}: no module comment to attribute its bytes by`)
     const share = ((100 * editorBytes) / bytes).toFixed(1)

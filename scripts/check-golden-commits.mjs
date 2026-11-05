@@ -28,8 +28,8 @@ const RULES =
   `in any paragraph: ${CO_AUTHORS.map((name) => `${CO_AUTHOR_KEY}: ${name}`).join(' or ')} ` +
   '(exact case)'
 // A prose line such as `Goldens: a.js` has a one-word key, so only these count everywhere.
-const HYPHENATED_KEY = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+[ \t]*:/
-const KEY_LINE = /^([A-Za-z0-9][A-Za-z0-9-]*)[ \t]*:[ \t]*([\s\S]*)$/
+const HYPHENATED_KEY = /^[A-Z0-9]+(?:-[A-Z0-9]+)+[ \t]*:/i
+const KEY_LINE = /^([A-Z0-9][A-Z0-9-]*)[ \t]*:[ \t]*([\s\S]*)$/i
 // The bot always signs off and writes long subjects; its pull requests would otherwise be red.
 // Its author email is settable by anyone, so it never decides alone. In a pull request the
 // opener's login decides, which only the hosting service sets. A push or a local run has no such
@@ -40,10 +40,10 @@ const BOT_EMAIL = '49699333+dependabot[bot]@users.noreply.github.com'
 const HOST_COMMITTER_EMAIL = 'noreply@github.com'
 
 /**
- * The commit range a CI event pushed, or why there is none.
- * @param {{ name: string; payload: object; sha: string }} event
- * @returns {{ range: string; openedBy?: string } | { skip: string }}
- */
+The commit range a CI event pushed, or why there is none.
+@param {{ name: string; payload: object; sha: string }} event
+@returns {{ range: string; openedBy?: string } | { skip: string }}
+*/
 export function resolveRange({ name, payload, sha }) {
   if (name === 'push') {
     if (String(payload.ref ?? '').startsWith('refs/tags/')) return { skip: 'push (tag ref)' }
@@ -60,10 +60,10 @@ export function resolveRange({ name, payload, sha }) {
 }
 
 /**
- * The trailer-shaped lines of a commit body (everything after the subject paragraph).
- * @param {string} body
- * @returns {string[]}
- */
+The trailer-shaped lines of a commit body (everything after the subject paragraph).
+@param {string} body
+@returns {string[]}
+*/
 export function trailerLines(body) {
   const paragraphs = body
     .trim()
@@ -79,10 +79,10 @@ export function trailerLines(body) {
 }
 
 /**
- * What breaks the commit-message rules in one commit's subject and body.
- * @param {{ subject: string; body: string }} message
- * @returns {string[]}
- */
+What breaks the commit-message rules in one commit's subject and body.
+@param {{ subject: string; body: string }} message
+@returns {string[]}
+*/
 export function messageProblems({ subject, body }) {
   const problems = []
   const length = [...subject].length
@@ -104,7 +104,7 @@ function changedPaths(sha) {
     .split('\n')
     .filter((line) => line !== '')
     .map((line) => {
-      const [status, path] = line.split('\t')
+      const [status, path] = line.split('\t', 2)
       return { status, path }
     })
 }
@@ -114,16 +114,16 @@ function goldenLines(sha) {
   const out = git(['show', '--format=', '--unified=0', '--no-renames', sha, '--', GOLDEN])
   const files = new Map()
   let path = null
-  let inHunk = false
+  let isInHunk = false
   for (const line of out.split('\n')) {
     if (line.startsWith('diff --git ')) {
       path = null
-      inHunk = false
-    } else if (!inHunk) {
+      isInHunk = false
+    } else if (!isInHunk) {
       if (line.startsWith('--- a/') || line.startsWith('+++ b/')) {
         path = line.slice(6).replace(/\t$/, '')
       } else if (line.startsWith('@@')) {
-        inHunk = true
+        isInHunk = true
         if (!files.has(path)) files.set(path, { headers: 0, deleted: 0 })
       }
     } else if (line.startsWith(CASE_HEADER)) {
@@ -136,9 +136,9 @@ function goldenLines(sha) {
 }
 
 /**
- * A golden split into the units a case adds: one line per entry of a JSON index, else the text
- * before the first case header and then each case block.
- */
+A golden split into the units a case adds: one line per entry of a JSON index, else the text
+before the first case header and then each case block.
+*/
 const caseUnits = (path, text) =>
   path.endsWith('.json') ? text.split('\n') : ('\n' + text).split(/\n(?=\/\/ ==== case:)/)
 
@@ -156,24 +156,25 @@ function onlyAddsCases(sha, path) {
 function commitMessage(sha) {
   const format = '%s%x00%ae%x00%ce%x00%b'
   const [subject, email, committer, body] = git(['show', '-s', `--format=${format}`, sha]).split(
-    '\0'
+    '\0',
+    4
   )
   return { subject, email, committer, body }
 }
 
 /**
- * True for a dependency-update bot commit: in a pull request the bot must have opened it, else
- * the hosting service must have committed it.
- */
+True for a dependency-update bot commit: in a pull request the bot must have opened it, else
+the hosting service must have committed it.
+*/
 const isBotCommit = ({ email, committer }, openedBy) =>
   email === BOT_EMAIL &&
   (openedBy === undefined ? committer === HOST_COMMITTER_EMAIL : openedBy === BOT_LOGIN)
 
 /**
- * Counts every rule over the range; returns the exit code.
- * @param {string} range
- * @param {string} [openedBy] who opened the pull request the range belongs to
- */
+Counts every rule over the range; returns the exit code.
+@param {string} range
+@param {string} [openedBy] who opened the pull request the range belongs to
+*/
 function checkRange(range, openedBy) {
   const commits = git(['rev-list', '--no-merges', '--reverse', range])
     .split('\n')
@@ -213,9 +214,9 @@ function checkRange(range, openedBy) {
         counts.y += headers
         fail(sha, 'case header added in src commit', path)
       }
-      const existing = status === 'M' || status === 'D'
+      const isExisting = status === 'M' || status === 'D'
       if (
-        existing &&
+        isExisting &&
         !touchesChangelog &&
         USER_VISIBLE.some((dir) => path.startsWith(dir)) &&
         !(!touchesSrc && status === 'M' && onlyAddsCases(sha, path))
@@ -223,10 +224,12 @@ function checkRange(range, openedBy) {
         counts.z++
         fail(sha, 'user-visible golden changed without CHANGELOG', path)
       }
-      if (existing && !touchesSrc && deleted > 0) {
-        counts.w += deleted
-        fail(sha, 'golden lines deleted in test-only commit', path)
+      if (!(isExisting && !touchesSrc && deleted > 0)) {
+        continue
       }
+
+      counts.w += deleted
+      fail(sha, 'golden lines deleted in test-only commit', path)
     }
   }
   print(

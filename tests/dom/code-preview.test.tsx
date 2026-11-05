@@ -1,8 +1,8 @@
 // Export from the code preview, and the banner above the code. Behind `window.api` sit the
 // main-process save dialog and save functions, writing to a fresh temporary folder.
-import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -46,9 +46,9 @@ afterEach(async () => {
 })
 
 /**
- * Wires `window.api` to the main-process save functions, rejecting as `ipcRenderer.invoke` does;
- * `saveFile` answers `chosen`, an export waits for `gate` when given.
- */
+Wires `window.api` to the main-process save functions, rejecting as `ipcRenderer.invoke` does;
+`saveFile` answers `chosen`, an export waits for `gate` when given.
+*/
 function wireMainSave(
   chosen: string,
   { throughDialog = true, gate }: { throughDialog?: boolean; gate?: Promise<void> } = {}
@@ -429,7 +429,7 @@ describe('code preview diff', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
 
     expect(await screen.findByText(NOTICE)).toBeInTheDocument()
-    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+    expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose file' }))
     await waitFor(() => expect(screen.getByTestId('monaco-diff-original')).toHaveValue('// chosen'))
@@ -438,8 +438,8 @@ describe('code preview diff', () => {
       filters: [{ name: 'JavaScript', extensions: ['js'] }]
     })
     expect(window.api.plugin.readByPath).toHaveBeenLastCalledWith(CHOSEN)
-    expect(screen.queryByText(NOTICE)).toBeNull()
-    expect(screen.queryByText(LAST_COPY)).toBeNull()
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+    expect(screen.queryByText(LAST_COPY)).not.toBeInTheDocument()
     expect(errorToasts()).toEqual([])
   })
 
@@ -448,10 +448,10 @@ describe('code preview diff', () => {
     render(<CodePreview />)
     fireEvent.click(screen.getByRole('button', { name: 'Diff' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Choose file' }))
-    await waitFor(() => expect(window.api.dialog.openFile).toHaveBeenCalledOnce())
+    await waitFor(() => expect(window.api.dialog.openFile).toHaveBeenCalledTimes(1))
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
-    expect(window.api.plugin.readByPath).toHaveBeenCalledOnce()
+    expect(window.api.plugin.readByPath).toHaveBeenCalledTimes(1)
     expect(errorToasts()).toEqual([])
   })
 
@@ -467,7 +467,7 @@ describe('code preview diff', () => {
     )
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
-    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+    expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
   })
 
   /** Makes another plugin, Beta, the active tab */
@@ -488,8 +488,8 @@ describe('code preview diff', () => {
 
     switchToBeta()
 
-    expect(screen.queryByText(LAST_COPY)).toBeNull()
-    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+    expect(screen.queryByText(LAST_COPY)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
   })
 
   it("does not show one plugin's Choose file panel on another plugin's tab", async () => {
@@ -501,7 +501,7 @@ describe('code preview diff', () => {
 
     switchToBeta()
 
-    expect(screen.queryByText(NOTICE)).toBeNull()
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
   })
 
   it('does not show a saved file read for one plugin after another plugin became active', async () => {
@@ -516,7 +516,7 @@ describe('code preview diff', () => {
     switchToBeta()
     await act(async () => finish('// Alpha on disk'))
 
-    expect(screen.queryByTestId('monaco-diff-original')).toBeNull()
+    expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
   })
 })
 
@@ -580,7 +580,7 @@ describe('code preview banner', () => {
     const hinted = button.parentElement?.closest('[title]')
 
     expect(hinted).not.toBeNull()
-    expect(hinted).not.toBeDisabled()
+    expect(hinted).toBeEnabled()
     expect(hinted).toHaveAttribute('title', 'Open the project first.')
   })
 
@@ -607,8 +607,8 @@ describe('code preview banner', () => {
     render(<CodePreview />)
     await screen.findByText('Generated Code')
 
-    expect(screen.queryByText(missingText)).toBeNull()
-    expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
+    expect(screen.queryByText(missingText)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: RELOAD })).not.toBeInTheDocument()
   })
 
   it('shows a save that raw mode refuses as an error', async () => {
@@ -623,7 +623,7 @@ describe('code preview banner', () => {
     expect(banner).toHaveAttribute('role', 'alert')
     expect(banner).toHaveClass('bg-destructive/10', 'text-destructive-text')
     expect(banner).not.toHaveClass('text-warning-text')
-    expect(screen.queryByRole('button', { name: RELOAD })).toBeNull()
+    expect(screen.queryByRole('button', { name: RELOAD })).not.toBeInTheDocument()
   })
 })
 
@@ -675,7 +675,7 @@ describe('code preview panel', () => {
     const hinted = button.parentElement?.closest('[title]')
 
     expect(hinted).not.toBeNull()
-    expect(hinted).not.toBeDisabled()
+    expect(hinted).toBeEnabled()
     expect(hinted).toHaveAttribute('title', hint)
   })
 

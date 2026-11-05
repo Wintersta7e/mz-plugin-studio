@@ -571,7 +571,7 @@ var Legacy = {};
 
   it('writes the file line endings and keeps blocks that did not change', () => {
     const raw = [
-      '﻿/*:',
+      '\u{FEFF}/*:',
       ' * @plugindesc Old',
       ' */',
       '',
@@ -593,7 +593,7 @@ var Legacy = {};
     plugin.parameters.push(param('added'))
     const result = save(plugin, opened)
 
-    expect(result.startsWith('﻿/*:\r\n')).toBe(true)
+    expect(result.startsWith('\u{FEFF}/*:\r\n')).toBe(true)
     expect(result).not.toMatch(/[^\r]\n/)
     expect(result).toContain('/*:ja\r\n * @plugindesc 古い\r\n */')
     expect(result).toContain('/*~struct~Pos:\r\n * @param x\r\n */')
@@ -746,7 +746,7 @@ describe('camelCase', () => {
 
 // COV-02: generateAccessorParser for all 26 param types
 describe('generatePlugin - accessor parser for all param types', () => {
-  const cases: Array<{ type: string; expectContains: string; default?: unknown }> = [
+  const cases: { type: string; expectContains: string; default?: unknown }[] = [
     { type: 'string', expectContains: "params['greeting'] ?? ''", default: '' },
     { type: 'number', expectContains: "Number(params['speed'] || 0)", default: 0 },
     { type: 'boolean', expectContains: "(params['flag'] ?? 'false') === 'true'", default: false },

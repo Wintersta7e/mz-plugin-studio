@@ -1,9 +1,9 @@
 // The parameter tab's Import menu (what a .mzparams file does once it is read in) and its Export
 // button (where the selected parameters are written).
-import { readFileSync } from 'fs'
-import { access, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { join, resolve } from 'path'
+import { readFileSync } from 'node:fs'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act, render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
@@ -200,10 +200,10 @@ describe('parameter export to a file', () => {
   })
 
   /**
-   * Exports every parameter through the main-process save functions, rejecting as
-   * `ipcRenderer.invoke` does; `saveFile` answers `target`, through the save dialog or not.
-   * Returns the message dialog mock.
-   */
+  Exports every parameter through the main-process save functions, rejecting as
+  `ipcRenderer.invoke` does; `saveFile` answers `target`, through the save dialog or not.
+  Returns the message dialog mock.
+  */
   function exportTo(target: string, { throughDialog = true } = {}): ReturnType<typeof vi.fn> {
     const dialog = {
       showSaveDialog: vi.fn(async (_options: SaveDialogOptions) => ({
@@ -338,9 +338,9 @@ const param = (name: string, text: string): PluginParameter => ({
 })
 
 /**
- * Opens a plugin named Alpha holding `parameters` and `structs`; renders the tab, beside the
- * code preview unless `withPreview` is false (the preview has an Export button of its own).
- */
+Opens a plugin named Alpha holding `parameters` and `structs`; renders the tab, beside the
+code preview unless `withPreview` is false (the preview has an Export button of its own).
+*/
 function renderTab(
   parameters: PluginParameter[] = [],
   structs: PluginStruct[] = [],

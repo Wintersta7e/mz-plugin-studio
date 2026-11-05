@@ -14,7 +14,7 @@ const GENERATED_INTO_APP = ['tailwindcss', 'tw-animate-css']
 const ALIASES = ['@/', '@renderer/']
 const BUILTINS = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]))
 const IMPORT_RE =
-  /(?:^|[\s;])(?:import\s+(?!type\b)(?:[\w*{}\s,$]+\s+from\s+)?|export\s+(?!type\b)[\w*{}\s,$]*\s+from\s+|import\s*\(\s*)['"]([^'"]+)['"]|@import\s+(?:url\()?['"]([^'"]+)['"]/g
+  /(?:^|[\s;])(?:import\s+(?!type\b)(?:[\w*{}\s,$]+\sfrom\s+)?|export\s+(?!type\b)[\w*{}\s,$]*\sfrom\s+|import\s*\(\s*)['"]([^'"]+)['"]|@import\s+(?:url\()?['"]([^'"]+)['"]/g
 const LICENSE_FILE_RE = /^(licen[cs]e|copying)/i
 // The notices a package publishes for the code it vendors, reproduced after its own license
 const NOTICES_FILE = 'ThirdPartyNotices.txt'
@@ -34,7 +34,7 @@ function importedPackages() {
   const names = new Set()
   for (const file of sourceFiles(join(ROOT, 'src'))) {
     for (const match of readFileSync(file, 'utf8').matchAll(IMPORT_RE)) {
-      const spec = (match[1] ?? match[2]).split('?')[0]
+      const spec = (match[1] ?? match[2]).split('?', 1)[0]
       if (/^[./]/.test(spec) || BUILTINS.has(spec) || ALIASES.some((a) => spec.startsWith(a)))
         continue
       const name = spec
@@ -121,10 +121,10 @@ for (const key of [
     for (const file of readdirSync(dir)
       .filter((f) => LICENSE_FILE_RE.test(f))
       .sort()) {
-      row.texts.add(readFileSync(join(dir, file), 'utf8').replace(/\r\n?/g, '\n').trim())
+      row.texts.add(readFileSync(join(dir, file), 'utf8').replaceAll(/\r\n?/g, '\n').trim())
     }
     if (existsSync(join(dir, NOTICES_FILE))) {
-      row.texts.add(readFileSync(join(dir, NOTICES_FILE), 'utf8').replace(/\r\n?/g, '\n').trim())
+      row.texts.add(readFileSync(join(dir, NOTICES_FILE), 'utf8').replaceAll(/\r\n?/g, '\n').trim())
     }
   }
   packages.set(name, row)
@@ -170,10 +170,10 @@ process.stdout.write(
 )
 if (names.length === 0) process.exit(1)
 
-if (!process.argv.includes('--check')) {
-  writeFileSync(OUTPUT, generated)
-} else {
-  const committed = existsSync(OUTPUT) ? readFileSync(OUTPUT, 'utf8').replace(/\r\n?/g, '\n') : ''
+if (process.argv.includes('--check')) {
+  const committed = existsSync(OUTPUT)
+    ? readFileSync(OUTPUT, 'utf8').replaceAll(/\r\n?/g, '\n')
+    : ''
   if (committed !== generated) {
     const a = committed.split('\n')
     const b = generated.split('\n')
@@ -185,4 +185,6 @@ if (!process.argv.includes('--check')) {
     )
     process.exit(1)
   }
+} else {
+  writeFileSync(OUTPUT, generated)
 }

@@ -249,7 +249,7 @@ describe('raw mode controls of an imported plugin', () => {
 
     expect(screen.getByTestId('monaco-editor')).not.toHaveAttribute('readonly')
     expect(screen.getByRole('button', { name: /Insert Template/ })).toBeEnabled()
-    expect(screen.queryByText(NOTICE)).toBeNull()
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
   })
 
   it('the template dialog inserts nothing while read-only', () => {
@@ -288,7 +288,7 @@ describe('raw mode controls of an imported plugin', () => {
 
     expect(template).toBeDisabled()
     expect(template).toHaveAccessibleDescription(NOTICE)
-    expect(hintedAncestor(template)).not.toBeDisabled()
+    expect(hintedAncestor(template)).toBeEnabled()
     expect(hintedAncestor(template)).toHaveAttribute('title', NOTICE)
 
     unmount()
@@ -304,7 +304,7 @@ describe('raw mode controls of an imported plugin', () => {
 
     expect(insert).toBeDisabled()
     expect(insert).toHaveAccessibleDescription(NOTICE)
-    expect(hintedAncestor(insert)).not.toBeDisabled()
+    expect(hintedAncestor(insert)).toBeEnabled()
     expect(hintedAncestor(insert)).toHaveAttribute('title', NOTICE)
   })
 
@@ -339,14 +339,14 @@ describe('raw mode controls of an imported plugin', () => {
       require: true
     }))
     usePluginStore.getState().setPlugin({ ...plugin, parameters: params })
-    for (const raw of [true, false]) {
-      useUIStore.getState().setRawModeForPlugin(plugin.id, raw)
+    for (const isRaw of [true, false]) {
+      useUIStore.getState().setRawModeForPlugin(plugin.id, isRaw)
       const { unmount } = render(<ParameterBuilder />)
       for (const p of params) {
         fireEvent.click(screen.getByText(p.text))
 
         expect(screen.getAllByText('Directory (relative to project)').length).toBeGreaterThan(0)
-        expect(screen.queryByText(/Required for deployment/)).toBeNull()
+        expect(screen.queryByText(/Required for deployment/)).not.toBeInTheDocument()
       }
       unmount()
     }
@@ -523,7 +523,7 @@ describe('header editors of an imported file with no main annotation block', () 
     for (const Editor of [MetaEditor, ParameterBuilder, CommandBuilder, StructBuilder]) {
       const { unmount } = render(<Editor />)
 
-      expect(screen.queryByText(HEADER_NOTICE), Editor.name).toBeNull()
+      expect(screen.queryByText(HEADER_NOTICE), Editor.name).not.toBeInTheDocument()
 
       unmount()
     }

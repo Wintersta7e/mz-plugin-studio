@@ -1,8 +1,8 @@
 // The save dialog and the save-to-path write, called directly and through their IPC registrations,
 // each test on a fresh temporary folder. A path is written only after a save dialog returned it.
-import { access, mkdtemp, readFile, rm } from 'fs/promises'
-import { tmpdir } from 'os'
-import path, { join } from 'path'
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path, { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Dialog, SaveDialogOptions } from 'electron'
 import { assertWriteGranted, recordWriteGrant } from '../../src/main/file-access'

@@ -83,7 +83,7 @@ describe('toastStore', () => {
 
   it('does not auto-dismiss when duration is 0 (persistent)', () => {
     useToastStore.getState().addToast({ type: 'error', message: 'Sticky', duration: 0 })
-    vi.advanceTimersByTime(10000)
+    vi.advanceTimersByTime(10_000)
 
     expect(useToastStore.getState().toasts).toHaveLength(1)
   })
@@ -122,7 +122,7 @@ describe('toastStore', () => {
 
   it('negative duration creates persistent toast', () => {
     useToastStore.getState().addToast({ type: 'warning', message: 'Persist', duration: -1 })
-    vi.advanceTimersByTime(60000)
+    vi.advanceTimersByTime(60_000)
 
     expect(useToastStore.getState().toasts).toHaveLength(1)
   })

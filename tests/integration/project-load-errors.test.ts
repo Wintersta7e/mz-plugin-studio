@@ -1,8 +1,8 @@
 // A project's optional data files: one that is missing or unreadable loads as an empty list.
 // A missing file is normal for a project and logged at debug; any other failure at error.
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProjectParser } from '../../src/main/services/projectParser'

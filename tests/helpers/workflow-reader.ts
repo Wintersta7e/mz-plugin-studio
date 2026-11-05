@@ -30,11 +30,11 @@ export function readJobs(path: string): Job[] {
   const file = basename(path)
   const lines = readFileSync(path, 'utf8').split(/\r?\n/)
   const start = lines.indexOf('jobs:')
-  if (start < 0) throw new Error(`${file}: no jobs: line`)
+  if (start === -1) throw new Error(`${file}: no jobs: line`)
   const jobs: Job[] = []
   let job: Job | undefined
   let step: Step | undefined
-  let inSteps = false
+  let isInSteps = false
   let lastStepKey = ''
   const fail = (n: number, why: string): never => {
     throw new Error(`${file}:${n + 1}: ${why}: ${lines[n]}`)
@@ -55,14 +55,14 @@ export function readJobs(path: string): Job[] {
       job = { id: match[1], keys: new Map(), nested: new Map(), steps: [] }
       jobs.push(job)
       step = undefined
-      inSteps = false
+      isInSteps = false
     } else if (!job) {
       fail(n, 'line before the first job')
     } else if ((match = JOB_KEY.exec(line))) {
       job.keys.set(match[1], match[2] ?? '')
-      inSteps = match[1] === 'steps'
+      isInSteps = match[1] === 'steps'
       step = undefined
-    } else if (inSteps && (match = STEP.exec(line))) {
+    } else if (isInSteps && (match = STEP.exec(line))) {
       step = { keys: new Map(), nested: [], run: [] }
       job.steps.push(step)
       addStepKey(match[1], match[2])
@@ -71,7 +71,7 @@ export function readJobs(path: string): Job[] {
     } else if (step && /^ {10}/.test(line)) {
       step.nested.push(line.trim())
       if (lastStepKey === 'run') step.run.push(line.trim())
-    } else if (!inSteps && /^ {6}/.test(line)) {
+    } else if (!isInSteps && /^ {6}/.test(line)) {
       const key = [...job.keys.keys()].at(-1) ?? ''
       job.nested.set(key, [...(job.nested.get(key) ?? []), line.trim()])
     } else {

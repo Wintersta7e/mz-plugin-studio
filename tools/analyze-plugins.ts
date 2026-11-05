@@ -1,18 +1,18 @@
 /**
- * MZ Plugin Dictionary - Analysis Script
- *
- * Reads example RPG Maker MZ plugins and extracts ecosystem patterns,
- * conventions, and popularity data. Outputs enrichment data for
- * mz-classes.json and a conventions reference for AI-assisted development.
- *
- * Usage: npx tsx tools/analyze-plugins.ts
- *
- * Input:  examples/plugins/**\/*.js (gitignored, local only)
- * Output: tools/output/enrichment.json, conventions.md, full-report.json
- */
+MZ Plugin Dictionary - Analysis Script
 
-import * as fs from 'fs'
-import * as path from 'path'
+Reads example RPG Maker MZ plugins and extracts ecosystem patterns,
+conventions, and popularity data. Outputs enrichment data for
+mz-classes.json and a conventions reference for AI-assisted development.
+
+Usage: npx tsx tools/analyze-plugins.ts
+
+Input:  examples/plugins/**\/*.js (gitignored, local only)
+Output: tools/output/enrichment.json, conventions.md, full-report.json
+*/
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -94,11 +94,11 @@ export interface EnrichmentData {
 // ── Pattern Detection Functions ────────────────────────────────────────────
 
 /**
- * Detect the IIFE wrapper style used by the plugin.
- * Arrow: `(() => { ... })();`
- * Function: `(function() { ... })();`
- * None: no IIFE wrapper detected
- */
+Detect the IIFE wrapper style used by the plugin.
+Arrow: `(() => { ... })();`
+Function: `(function() { ... })();`
+None: no IIFE wrapper detected
+*/
 export function detectIIFEStyle(content: string): IIFEStyle {
   // Arrow IIFE: (() => {
   if (/\(\(\)\s*=>\s*\{/.test(content)) return 'arrow'
@@ -108,24 +108,24 @@ export function detectIIFEStyle(content: string): IIFEStyle {
 }
 
 /**
- * Detect how the plugin loads its parameters.
- */
+Detect how the plugin loads its parameters.
+*/
 export function detectParamLoading(content: string): ParamLoadingStyle {
-  if (/PluginManagerEx\.createParameter/.test(content)) return 'pluginmanagerex'
+  if (content.includes('PluginManagerEx.createParameter')) return 'pluginmanagerex'
   if (/PluginManager\.parameters\s*\(/.test(content)) return 'standard'
   return 'none'
 }
 
 /**
- * Detect whether the plugin uses 'use strict'.
- */
+Detect whether the plugin uses 'use strict'.
+*/
 export function detectUseStrict(content: string): boolean {
   return /['"]use strict['"]/.test(content)
 }
 
 /**
- * Extract prototype method aliases (const/var/let _Class_method = Class.prototype.method).
- */
+Extract prototype method aliases (const/var/let _Class_method = Class.prototype.method).
+*/
 export function extractAliases(content: string): AliasInfo[] {
   const results: AliasInfo[] = []
   // Match: const/var/let _Something = ClassName.prototype.methodName;
@@ -142,9 +142,9 @@ export function extractAliases(content: string): AliasInfo[] {
 }
 
 /**
- * Extract all prototype method overrides (ClassName.prototype.methodName = function).
- * This catches both aliased and non-aliased overrides.
- */
+Extract all prototype method overrides (ClassName.prototype.methodName = function).
+This catches both aliased and non-aliased overrides.
+*/
 export function extractMethodOverrides(content: string): MethodOverride[] {
   const results: MethodOverride[] = []
   const overrideRegex = /([A-Z]\w+)\.prototype\.(\w+)\s*=\s*function/g
@@ -159,8 +159,8 @@ export function extractMethodOverrides(content: string): MethodOverride[] {
 }
 
 /**
- * Extract PluginManager.registerCommand call names.
- */
+Extract PluginManager.registerCommand call names.
+*/
 export function extractRegisterCommands(content: string): string[] {
   const results: string[] = []
   // PluginManager.registerCommand(pluginName, 'commandName', ...) or
@@ -179,8 +179,8 @@ export function extractRegisterCommands(content: string): string[] {
 }
 
 /**
- * Extract @type declarations from plugin header comments.
- */
+Extract @type declarations from plugin header comments.
+*/
 export function extractParamTypes(content: string): string[] {
   const results: string[] = []
   const typeRegex = /@type\s+(\w+)/g
@@ -192,8 +192,8 @@ export function extractParamTypes(content: string): string[] {
 }
 
 /**
- * Detect note tag access patterns used in the plugin.
- */
+Detect note tag access patterns used in the plugin.
+*/
 export function detectNoteTagPattern(content: string): NoteTagPattern[] {
   const patterns: NoteTagPattern[] = []
   // meta['...'] or meta["..."]
@@ -206,8 +206,8 @@ export function detectNoteTagPattern(content: string): NoteTagPattern[] {
 }
 
 /**
- * Detect new class definitions (both function constructor and ES6 class extends).
- */
+Detect new class definitions (both function constructor and ES6 class extends).
+*/
 export function detectNewClasses(content: string): ClassDef[] {
   const results: ClassDef[] = []
   const seen = new Set<string>()
@@ -217,19 +217,23 @@ export function detectNewClasses(content: string): ClassDef[] {
   const funcRegex = /\bfunction\s+((?:Game|Window|Scene|Sprite|Spriteset)_\w+)\s*\(/g
   let match: RegExpExecArray | null
   while ((match = funcRegex.exec(content)) !== null) {
-    if (!seen.has(match[1])) {
-      seen.add(match[1])
-      results.push({ name: match[1], style: 'function' })
+    if (seen.has(match[1])) {
+      continue
     }
+
+    seen.add(match[1])
+    results.push({ name: match[1], style: 'function' })
   }
 
   // ES6 class extends: class ClassName extends ParentClass
   const classRegex = /\bclass\s+(\w+)\s+extends\s+(\w+)/g
   while ((match = classRegex.exec(content)) !== null) {
-    if (!seen.has(match[1])) {
-      seen.add(match[1])
-      results.push({ name: match[1], style: 'es6_extends' })
+    if (seen.has(match[1])) {
+      continue
     }
+
+    seen.add(match[1])
+    results.push({ name: match[1], style: 'es6_extends' })
   }
 
   return results
@@ -379,7 +383,7 @@ function generateConventions(report: AggregatedReport): string {
   const pct = (n: number) => `${Math.round((n / total) * 100)}%`
 
   return `# RPG Maker MZ Plugin Conventions Reference
-## Generated from analysis of ${total} plugins (${r.generatedAt.split('T')[0]})
+## Generated from analysis of ${total} plugins (${r.generatedAt.split('T', 1)[0]})
 
 > This document describes how MZ plugins are structured and written, based on
 > statistical analysis of ${total} real-world plugins. All code examples are
@@ -722,7 +726,7 @@ function analyzeFile(filePath: string, category: string): PluginAnalysis | null 
   const stat = fs.statSync(filePath)
   if (stat.size < 200) return null // Skip separator/placeholder files
 
-  const content = fs.readFileSync(filePath, 'utf-8')
+  const content = fs.readFileSync(filePath, 'utf8')
   const fileName = path.basename(filePath)
 
   return {
@@ -738,7 +742,7 @@ function analyzeFile(filePath: string, category: string): PluginAnalysis | null 
     paramTypes: extractParamTypes(content),
     noteTagPatterns: detectNoteTagPattern(content),
     newClasses: detectNewClasses(content),
-    usesStructs: /struct</.test(content),
+    usesStructs: content.includes('struct<'),
     usesArrays: /\[\]\s*$/m.test(content) || /@type\s+\w+\[\]/.test(content)
   }
 }

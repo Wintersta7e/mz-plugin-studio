@@ -1,8 +1,8 @@
 // Reload from project: an imported tab whose file text did not come back after a restart gets it
 // again from the project. A tab with no unsaved edits takes the file as it is now; a tab with
 // edits asks whether to replace them with the file or keep them.
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { createElement } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -76,14 +76,14 @@ const apiReading = (text: string, answer = 1): Window['api'] =>
   })
 
 /**
- * The tab v1.6.1 kept for `name`: that version's parser output (copied from its golden), with
- * ids and without the file text, saved with no unsaved edits.
- */
+The tab v1.6.1 kept for `name`: that version's parser output (copied from its golden), with
+ids and without the file text, saved with no unsaved edits.
+*/
 function seedOlderTab(name: string): string {
   const json = readFileSync(
     join(process.cwd(), 'tests/fixtures/persisted/older-parser', `${name}.json`),
     'utf8'
-  ).replace(/<id:(\d+)>/g, (_, n: string) => `00000000-0000-4000-8000-1${n.padStart(11, '0')}`)
+  ).replaceAll(/<id:(\d+)>/g, (_, n: string) => `00000000-0000-4000-8000-1${n.padStart(11, '0')}`)
   const { rawSource: _rawSource, ...tab } = JSON.parse(json) as PluginDefinition
   const stored = JSON.parse(payloads['mz-plugin-studio-plugin'] as string)
   stored.state = {
@@ -157,7 +157,9 @@ describe('reloading an imported plugin from the project', () => {
       TEXT
     )
 
-    await waitFor(() => expect(screen.queryByRole('button', { name: RELOAD })).toBeNull())
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: RELOAD })).not.toBeInTheDocument()
+    )
   }, 60_000)
 
   it('replacing the tab with the file drops its edits and saves the file as it is', async () => {

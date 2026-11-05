@@ -52,9 +52,9 @@ interface PolicyProbe {
   /** The directive whose violation the probe raises; none when the request filter refuses it */
   directive?: string
   /**
-   * Runs in the page: resolves 'blocked' when the page sees the content refused, 'sent' when only
-   * the policy's violation can tell
-   */
+  Runs in the page: resolves 'blocked' when the page sees the content refused, 'sent' when only
+  the policy's violation can tell
+  */
   run: (targets: ProbeTargets) => Promise<string>
 }
 
@@ -71,7 +71,7 @@ const POLICY_PROBES: PolicyProbe[] = [
           } catch {
             done('blocked')
           }
-        })
+        }, 0)
       )
   },
   {
@@ -160,7 +160,7 @@ const POLICY_PROBES: PolicyProbe[] = [
     run: () =>
       new Promise((done) => {
         const image = new Image()
-        image.onload = () => done('loaded')
+        image.addEventListener('load', () => done('loaded'))
         image.onerror = () => done('blocked')
         image.src = 'https://example.invalid/x.png'
       })
@@ -184,7 +184,7 @@ const POLICY_PROBES: PolicyProbe[] = [
     run: ({ script, sentinel }) =>
       new Promise((done) => {
         const element = document.createElement('script')
-        element.onload = () => done('loaded')
+        element.addEventListener('load', () => done('loaded'))
         element.onerror = () =>
           done(Reflect.get(globalThis, sentinel) === undefined ? 'blocked' : 'ran')
         element.src = script
@@ -266,11 +266,11 @@ async function attachNetworkRecorder(cdp: Cdp, targets: TargetTree) {
 }
 
 /**
- * Policy refusals: the page's violation events, plus every console line the policy writes. The
- * engine of this Electron version words a refusal "... violates the following Content Security
- * Policy directive" as a security log entry; older ones began it `Refused to`. Both are counted,
- * from every target.
- */
+Policy refusals: the page's violation events, plus every console line the policy writes. The
+engine of this Electron version words a refusal "... violates the following Content Security
+Policy directive" as a security log entry; older ones began it `Refused to`. Both are counted,
+from every target.
+*/
 async function recordViolations(cdp: Cdp, targets: TargetTree) {
   const refused: string[] = []
   // Every console line from every target, and the ones logged as errors

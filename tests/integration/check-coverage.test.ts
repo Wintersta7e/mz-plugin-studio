@@ -2,10 +2,10 @@
 // directory's line and branch coverage is held to its floor, and a file with lines needs a
 // floor directory.
 import { describe, it, expect, afterEach } from 'vitest'
-import { execFileSync, spawnSync } from 'child_process'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 
 const SCRIPT = resolve(process.cwd(), 'scripts/check-coverage.mjs')
 // No user or system git configuration reaches the throwaway repositories.
@@ -54,9 +54,9 @@ function makeRepo(dirs: string[] = DIRS, extra: string[] = []): string {
 }
 
 /**
- * Writes a summary with one entry per directory (`full` unless overridden) plus one per path in
- * `extra`, and runs the check.
- */
+Writes a summary with one entry per directory (`full` unless overridden) plus one per path in
+`extra`, and runs the check.
+*/
 function check(
   dir: string,
   entries: Record<string, Entry> = {},
@@ -90,7 +90,7 @@ function check(
 /** The line or branch floor the check prints for `dir`. */
 function printedFloor(run: Run, dir: string, kind: 'lines' | 'branches'): number {
   const line = run.lines.find((l) => l.startsWith(`coverage floor ${dir}:`))
-  const match = new RegExp(`${kind} [\\d.]+% \\(floor (\\d+)%\\)`).exec(line ?? '')
+  const match = new RegExp(String.raw`${kind} [\d.]+% \(floor (\d+)%\)`).exec(line ?? '')
   if (match === null) throw new Error(`no ${kind} floor for ${dir}`)
   return Number(match[1])
 }
@@ -165,8 +165,8 @@ describe('check-coverage suite', () => {
       expect(run.lines).toContainEqual(
         expect.stringMatching(
           new RegExp(
-            `^coverage floor ${dir}: lines [\\d.]+% \\(floor \\d+%\\), ` +
-              `branches [\\d.]+% \\(floor \\d+%\\), files ${files}$`
+            String.raw`^coverage floor ${dir}: lines [\d.]+% \(floor \d+%\), ` +
+              String.raw`branches [\d.]+% \(floor \d+%\), files ${files}$`
           )
         )
       )
@@ -223,7 +223,7 @@ describe('check-coverage suite', () => {
       expect.stringMatching(
         new RegExp(
           `^coverage floor src/main: lines [\\d.]+% \\(floor \\d+%\\), ` +
-            `branches ${floor - 1}\\.00% \\(floor ${floor}%\\), files 1$`
+            String.raw`branches ${floor - 1}\.00% \(floor ${floor}%\), files 1$`
         )
       )
     )

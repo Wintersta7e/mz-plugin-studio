@@ -13,7 +13,7 @@ import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 const BLOCK_INPUTS = ['*/', '**/', '*/*/', 'a*/b', '*\\/', '', '/*', '*']
-const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u2028b', 'a\u2029b', '\r\n\r\n', '']
+const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u{2028}b', 'a\u{2029}b', '\r\n\r\n', '']
 
 describe('escapeBlockComment', () => {
   it('leaves no comment end and gives the same text when applied twice', () => {
@@ -56,8 +56,8 @@ describe('annotationText', () => {
   })
 
   it('keeps the line separators, which end no annotation line', () => {
-    expect(annotationText('a b')).toBe('a b')
-    expect(annotationText('a b')).toBe('a b')
+    expect(annotationText('a\u{2028}b')).toBe('a\u{2028}b')
+    expect(annotationText('a\u{2029}b')).toBe('a\u{2029}b')
   })
 })
 
@@ -103,7 +103,7 @@ const NOT_EXPRESSIONS = [
   "x' + y + 'z",
   "'a' 'b'",
   'a\nb',
-  'a\u2028b'
+  'a\u{2028}b'
 ]
 
 describe('isOneLineExpression', () => {

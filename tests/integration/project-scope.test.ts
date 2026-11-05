@@ -2,10 +2,10 @@
 // only a folder the user chose in the folder dialog or confirmed opening in a native message box.
 // Each case starts from fresh main modules, as a new app session does; a user data folder kept
 // between two sessions stands for a restart.
-import { existsSync } from 'fs'
-import { mkdtemp, readFile, readdir, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import path, { dirname, join } from 'path'
+import { existsSync } from 'node:fs'
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path, { dirname, join } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
 import type { DialogPort } from '../../src/main/ipc/handlers'
@@ -20,9 +20,9 @@ import { copyFixtureProject } from '../helpers/fixture-project'
 vi.mock('electron', () => ({ ipcMain: {} }))
 
 /**
- * Every filesystem call under a synthetic network host: on Windows looking one up sends the
- * user's credentials. Matched by the host name, as a posix join folds the leading `//`.
- */
+Every filesystem call under a synthetic network host: on Windows looking one up sends the
+user's credentials. Matched by the host name, as a posix join folds the leading `//`.
+*/
 const { NETWORK_HOST, networkCalls, renameFailures } = vi.hoisted(() => ({
   NETWORK_HOST: 'synthetic-host',
   networkCalls: [] as string[],
@@ -41,8 +41,7 @@ vi.mock('fs/promises', async (importOriginal) => {
           networkCalls.push(`${name} ${args[0]}`)
         }
         const failure = name === 'rename' ? renameFailures.shift() : undefined
-        if (failure !== undefined) return Promise.reject(failure)
-        return fn(...args)
+        return failure === undefined ? fn(...args) : Promise.reject(failure)
       }
     ]
   })
@@ -208,7 +207,7 @@ describe('project scope', () => {
     await expect(ipc.invoke('project:load', a)).rejects.toThrow(
       `${ACCESS_DENIED}${PROJECT_OPEN_CANCELLED}`
     )
-    expect(dialog.showMessageBox).toHaveBeenCalledOnce()
+    expect(dialog.showMessageBox).toHaveBeenCalledTimes(1)
 
     const options = dialog.showMessageBox.mock.calls[0][0]
 
@@ -241,7 +240,7 @@ describe('project scope', () => {
 
     await ipc.invoke('project:load', a)
 
-    expect(dialog.showMessageBox).toHaveBeenCalledOnce()
+    expect(dialog.showMessageBox).toHaveBeenCalledTimes(1)
 
     checked++
 
@@ -283,7 +282,7 @@ describe('project scope', () => {
       s.answer(CANCEL)
 
       await expect(s.ipc.invoke('project:load', a)).rejects.toThrow(/^Access denied: /)
-      expect(s.dialog.showMessageBox).toHaveBeenCalledOnce()
+      expect(s.dialog.showMessageBox).toHaveBeenCalledTimes(1)
       expect(s.log.warn).toHaveBeenCalledWith(expect.stringMatching(/^\[file-access\] Ignoring /))
     }
   })

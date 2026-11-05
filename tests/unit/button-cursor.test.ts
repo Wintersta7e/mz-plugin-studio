@@ -1,7 +1,7 @@
 // The app stylesheet as Tailwind builds it: enabled buttons show the hand cursor, which
 // Tailwind's own base styles no longer give them.
-import { readFile } from 'fs/promises'
-import { dirname, join, resolve } from 'path'
+import { readFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import { compile } from 'tailwindcss'
 import { describe, expect, it } from 'vitest'
 
@@ -30,7 +30,7 @@ describe('button cursor', () => {
     const css = compiler.build([])
     const base = [...css.matchAll(/@layer base \{[\s\S]*?\n\}/g)].map((m) => m[0]).join('\n')
     const rules = [...base.matchAll(/([^{}]+)\{\s*cursor: pointer;\s*\}/g)].map((m) =>
-      m[1].trim().replace(/\s+/g, ' ').replace(/'/g, '"')
+      m[1].trim().replaceAll(/\s+/g, ' ').replaceAll("'", '"')
     )
     console.log(`button cursor: base layer ${base.length} chars, pointer rules ${rules.length}`)
 

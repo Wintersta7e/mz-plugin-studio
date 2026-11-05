@@ -1,6 +1,6 @@
 // Opening saved state in v1.6.0 again: its own persist options read each captured value and
 // write it back unchanged, and what it writes back over this version's state loads again here.
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { isImported } from '../../src/renderer/src/lib/plugin-output'

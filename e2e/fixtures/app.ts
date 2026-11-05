@@ -17,10 +17,10 @@ import {
 import type { API } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../../tests/helpers/fixture-project'
 
-export { expect }
-
 // The renderer's window as the preload script exposes it
-export type AppWindow = { api: API }
+export interface AppWindow {
+  api: API
+}
 
 export interface Artifacts {
   release: string
@@ -183,9 +183,9 @@ export async function launchTwin(
 }
 
 /**
- * Replaces the main process's native dialogs with stubs answering from per-method queues. The
- * app calls `dialog.<method>` at call time, so replacing the module's properties reaches it.
- */
+Replaces the main process's native dialogs with stubs answering from per-method queues. The
+app calls `dialog.<method>` at call time, so replacing the module's properties reaches it.
+*/
 export async function stubDialogs(app: ElectronApplication): Promise<void> {
   await app.evaluate(({ dialog }, key) => {
     interface Entry {
@@ -262,7 +262,7 @@ export async function queueDialog<M extends DialogMethod>(
   answer: DialogAnswers[M],
   writeBefore?: WriteBefore
 ): Promise<void> {
-  const queued = await app.evaluate(
+  const isQueued = await app.evaluate(
     (_electron, { key, method, entry }) => {
       const state = Reflect.get(globalThis, key) as
         | { queues: Record<string, unknown[]> }
@@ -273,7 +273,7 @@ export async function queueDialog<M extends DialogMethod>(
     },
     { key: DIALOG_STATE, method, entry: { answer, writeBefore } }
   )
-  if (!queued) throw new Error('e2e dialog stub: queueDialog before stubDialogs')
+  if (!isQueued) throw new Error('e2e dialog stub: queueDialog before stubDialogs')
 }
 
 export async function dialogCalls(app: ElectronApplication): Promise<DialogCall[]> {
@@ -285,10 +285,10 @@ export async function dialogCalls(app: ElectronApplication): Promise<DialogCall[
 }
 
 /**
- * Fails naming every dialog method that was called on an empty queue, failed to answer or kept
- * unused answers, and every uncaught main-process error; then clears them, so each is reported
- * once.
- */
+Fails naming every dialog method that was called on an empty queue, failed to answer or kept
+unused answers, and every uncaught main-process error; then clears them, so each is reported
+once.
+*/
 export async function assertDialogsDrained(app: ElectronApplication): Promise<void> {
   const problems = await app.evaluate((_electron, key) => {
     const state = Reflect.get(globalThis, key) as
@@ -360,10 +360,10 @@ export const pluginsDir = (project: string): string => join(project, 'js', 'plug
 export const mtimeNs = (path: string): bigint => statSync(path, { bigint: true }).mtimeNs
 
 /**
- * Waits until the renderer has handled every reply main sent before now: replies travel in
- * order, so the answer to a later round trip arrives after them. The app drops a save shortcut
- * pressed while an earlier save is still running.
- */
+Waits until the renderer has handled every reply main sent before now: replies travel in
+order, so the answer to a later round trip arrives after them. The app drops a save shortcut
+pressed while an earlier save is still running.
+*/
 export async function settle(page: Page): Promise<void> {
   await page.evaluate(() => (window as unknown as AppWindow).api.window.isMaximized())
 }
@@ -381,10 +381,10 @@ export async function saveAndWaitForWrite(page: Page, path: string): Promise<voi
 }
 
 /**
- * Opens a new plugin and waits until the previous tab's editor has left the page. That editor
- * fades out before the new one mounts, the only one on the page meanwhile: text filled into it
- * is lost when it goes.
- */
+Opens a new plugin and waits until the previous tab's editor has left the page. That editor
+fades out before the new one mounts, the only one on the page meanwhile: text filled into it
+is lost when it goes.
+*/
 export async function newPlugin(page: Page): Promise<void> {
   // The main area holds one view at a time: the active tab's editor or the screen without one
   const leaving = await page.getByRole('main').locator(':scope > *').elementHandles()
@@ -400,7 +400,7 @@ export async function openFromBrowser(page: Page, file: string): Promise<void> {
   // A row reads the file name without `.js` first; fixture names are plain word characters
   const row = panel
     .getByTestId('plugin-browser-row')
-    .filter({ hasText: new RegExp(`^${file.replace(/\.js$/, '')}(?!\\w)`) })
+    .filter({ hasText: new RegExp(String.raw`^${file.replace(/\.js$/, '')}(?!\w)`) })
   await row.click()
   await expect(row).toHaveAttribute('aria-current', 'page')
 }
@@ -448,10 +448,10 @@ export async function killTree(pid: number): Promise<void> {
 }
 
 /**
- * Asserts the dialogs drained, lets the app close with its unload prompts answered "leave",
- * bounded, then kills the tree, waits for it and only then deletes the launch's directories.
- * Stopping the trace with `tracePath` keeps it there.
- */
+Asserts the dialogs drained, lets the app close with its unload prompts answered "leave",
+bounded, then kills the tree, waits for it and only then deletes the launch's directories.
+Stopping the trace with `tracePath` keeps it there.
+*/
 export async function teardown(
   app: ElectronApplication,
   { tracePath }: { tracePath?: string } = {}
@@ -537,7 +537,7 @@ export async function connectCdp(endpoint: string): Promise<Cdp> {
   return {
     send<T>(method: string, params: object = {}, sessionId?: string): Promise<T> {
       const id = ++next
-      socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }))
+      socket.send(JSON.stringify({ id, method, params, ...(sessionId && { sessionId }) }))
       return new Promise<T>((resolve, reject) => pending.set(id, { method, resolve, reject }))
     },
     on: (listener) => void listeners.push(listener),
@@ -573,9 +573,9 @@ function devToolsEndpoint(child: ChildProcess): Promise<string> {
 }
 
 /**
- * Spawns the release executable itself, with the DevTools port production keeps allowed, and
- * attaches over it: no inspector fuse, no launch helper, the bytes that ship.
- */
+Spawns the release executable itself, with the DevTools port production keeps allowed, and
+attaches over it: no inspector fuse, no launch helper, the bytes that ship.
+*/
 export async function launchRelease(
   options: { userDataDir?: string } = {}
 ): Promise<LaunchedRelease> {
@@ -594,10 +594,10 @@ export async function launchRelease(
   })
   let browser: Browser | undefined
   let cdp: Cdp | undefined
-  let closed = false
+  let isClosed = false
   const close = async (): Promise<void> => {
-    if (closed) return
-    closed = true
+    if (isClosed) return
+    isClosed = true
     try {
       cdp?.close()
       await browser?.close().catch(() => undefined)
@@ -643,13 +643,13 @@ export const test = base.extend<{ twin: LaunchedApp; release: LaunchedRelease }>
     await stubDialogs(twin.app)
     await provide(twin)
     const mode = typeof trace === 'string' ? trace : trace.mode
-    const failed = testInfo.status !== testInfo.expectedStatus
-    const keep = mode === 'on' || (failed && mode !== 'off')
+    const isFailed = testInfo.status !== testInfo.expectedStatus
+    const isKeep = mode === 'on' || (isFailed && mode !== 'off')
     const errors: unknown[] = []
     let n = 0
     // Also every app the test launched itself
     for (const app of [...launches.keys()]) {
-      const tracePath = keep ? testInfo.outputPath(`trace-${++n}.zip`) : undefined
+      const tracePath = isKeep ? testInfo.outputPath(`trace-${++n}.zip`) : undefined
       await teardown(app, { tracePath }).catch((error: unknown) => errors.push(error))
       if (tracePath && existsSync(tracePath)) {
         testInfo.attachments.push({
@@ -671,3 +671,5 @@ export const test = base.extend<{ twin: LaunchedApp; release: LaunchedRelease }>
     }
   }
 })
+
+export { expect } from '@playwright/test'

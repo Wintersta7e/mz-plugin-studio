@@ -2,10 +2,10 @@
 // that context: a constructor walk from any of them ends at the context's own Function, never
 // the test process's. Paths resolve from the working directory so CommonJS and ESM loaders
 // both accept this module.
-import { existsSync, readdirSync, readFileSync } from 'fs'
-import { join, resolve } from 'path'
-import { Script, createContext } from 'vm'
-import type { Context } from 'vm'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { Script, createContext } from 'node:vm'
+import type { Context } from 'node:vm'
 import { SENTINEL } from './hostile'
 
 /** A syntax error: its message and 1-based line, null when the stack names no line. */
@@ -67,7 +67,7 @@ function compile(code: string, filename: string): Compiled {
   } catch (error) {
     if (!(error instanceof Error) || error.name !== 'SyntaxError') throw error
     const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const line = String(error.stack).match(new RegExp(`^${escaped}:(\\d+)`, 'm'))?.[1]
+    const line = new RegExp(String.raw`^${escaped}:(\d+)`, 'm').exec(String(error.stack))?.[1]
     return {
       script: null,
       problem: { message: error.message, line: line === undefined ? null : Number(line) }
@@ -83,10 +83,10 @@ export function compilePlugin(code: string, filename = 'plugin.js'): CompileProb
 let templateGlobals: ReturnType<typeof listTemplateGlobals> | null = null
 
 /**
- * Global names a template may touch at the top level: every class of the MZ dictionary, every
- * `$game*`/`$data*` and other MZ global named in the template sources, and `window` and
- * `setTimeout`.
- */
+Global names a template may touch at the top level: every class of the MZ dictionary, every
+`$game*`/`$data*` and other MZ global named in the template sources, and `window` and
+`setTimeout`.
+*/
 export function listTemplateGlobals(): {
   names: string[]
   dictionary: number
@@ -127,8 +127,7 @@ export function installStandIns(context: Context): void {
 }
 
 function bootstrap(mode: 'generator' | 'template'): string {
-  if (mode === 'generator') return STUB_SOURCE
-  return `${standInSource()}${STUB_SOURCE}`
+  return mode === 'generator' ? STUB_SOURCE : `${standInSource()}${STUB_SOURCE}`
 }
 
 function describeThrown(error: unknown): string {
@@ -140,11 +139,11 @@ function describeThrown(error: unknown): string {
 }
 
 /**
- * Compiles `code`; on a syntax error returns it having run nothing. Otherwise runs it in a new
- * plain-object context holding the `PluginManager` stub (template mode adds a stand-in for every
- * name of `listTemplateGlobals()`), with a time limit. `sentinel` tells whether the code set
- * `__pwn` on the context's global; `context` is that global, holding only values created inside.
- */
+Compiles `code`; on a syntax error returns it having run nothing. Otherwise runs it in a new
+plain-object context holding the `PluginManager` stub (template mode adds a stand-in for every
+name of `listTemplateGlobals()`), with a time limit. `sentinel` tells whether the code set
+`__pwn` on the context's global; `context` is that global, holding only values created inside.
+*/
 export function evaluatePlugin(
   code: string,
   options: { mode: 'generator' | 'template'; filename?: string }

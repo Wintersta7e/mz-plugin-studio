@@ -1,8 +1,8 @@
 // Opening a project from the keyboard (Ctrl+O): a folder that cannot be opened shows a message
 // naming the folder and the reason, and leaves the project store's error set; Cancel in the
 // confirm before a project opens shows nothing. A project that opens offers to reload the imported tabs whose file text is not loaded in one action.
-import { readFileSync } from 'fs'
-import { basename } from 'path'
+import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -61,7 +61,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
       'Could not open "/fixture/not-a-project": not an RPG Maker MZ project ' +
       '(Missing required file: data/System.json).'
 
-    expect(await screen.findByText(message)).toBeTruthy()
+    expect(await screen.findByText(message)).toBeInTheDocument()
     expect(screen.getByRole('status').textContent).toContain(message)
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
@@ -79,7 +79,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
     })
     const message = 'Could not open "/fixture/not-a-project": Unexpected end of JSON input'
 
-    expect(await screen.findByText(message)).toBeTruthy()
+    expect(await screen.findByText(message)).toBeInTheDocument()
     expect(screen.getByRole('status').textContent).toContain(message)
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
@@ -100,7 +100,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
     })
     const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
 
-    expect(await screen.findByText(message)).toBeTruthy()
+    expect(await screen.findByText(message)).toBeInTheDocument()
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
     ])
@@ -133,7 +133,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
     })
     const message = `Could not open "/fixture/not-a-project": ${reason}.`
 
-    expect(await screen.findByText(message)).toBeTruthy()
+    expect(await screen.findByText(message)).toBeInTheDocument()
     expect(useToastStore.getState().toasts).toMatchObject([
       { type: 'error', message, duration: 10_000 }
     ])
@@ -148,7 +148,7 @@ describe('opening a project', { timeout: 30_000 }, () => {
     })
     const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
 
-    expect(await screen.findByText(message)).toBeTruthy()
+    expect(await screen.findByText(message)).toBeInTheDocument()
   })
 })
 

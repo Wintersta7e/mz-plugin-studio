@@ -1,21 +1,21 @@
 /**
- * Apply Enrichment Data to mz-classes.json
- *
- * Reads tools/output/enrichment.json and merges popularity data
- * into src/renderer/src/data/mz-classes.json.
- *
- * Rules:
- * - Adds "popularity": N to each class entry (top-level)
- * - Adds "popularity": N to each method in methods[]
- * - Classes/methods NOT found in enrichment get popularity: 0
- * - Only matches classes already present in mz-classes.json
- * - Methods matched by "ClassName.prototype.methodName" key
- *
- * Usage: npx tsx tools/apply-enrichment.ts
- */
+Apply Enrichment Data to mz-classes.json
 
-import * as fs from 'fs'
-import * as path from 'path'
+Reads tools/output/enrichment.json and merges popularity data
+into src/renderer/src/data/mz-classes.json.
+
+Rules:
+- Adds "popularity": N to each class entry (top-level)
+- Adds "popularity": N to each method in methods[]
+- Classes/methods NOT found in enrichment get popularity: 0
+- Only matches classes already present in mz-classes.json
+- Methods matched by "ClassName.prototype.methodName" key
+
+Usage: npx tsx tools/apply-enrichment.ts
+*/
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 // ── Paths ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ function main(): void {
     process.exit(1)
   }
 
-  const enrichment: EnrichmentData = JSON.parse(fs.readFileSync(ENRICHMENT_PATH, 'utf-8'))
+  const enrichment: EnrichmentData = JSON.parse(fs.readFileSync(ENRICHMENT_PATH, 'utf8'))
   console.log(`Loaded enrichment data (${enrichment.pluginCount} plugins analyzed)`)
   console.log(`  Class entries: ${Object.keys(enrichment.classPopularity).length}`)
   console.log(`  Method entries: ${Object.keys(enrichment.methodPopularity).length}`)
@@ -72,7 +72,7 @@ function main(): void {
     process.exit(1)
   }
 
-  const mzClasses: Record<string, MZClass> = JSON.parse(fs.readFileSync(MZ_CLASSES_PATH, 'utf-8'))
+  const mzClasses: Record<string, MZClass> = JSON.parse(fs.readFileSync(MZ_CLASSES_PATH, 'utf8'))
   const classNames = Object.keys(mzClasses)
   console.log(`\nLoaded mz-classes.json (${classNames.length} classes)`)
 
@@ -99,12 +99,12 @@ function main(): void {
     for (const method of classEntry.methods) {
       const methodKey = `${className}.prototype.${method.name}`
       const methodPop = enrichment.methodPopularity[methodKey]
-      if (methodPop !== undefined) {
-        method.popularity = methodPop
-        methodsMatched++
-      } else {
+      if (methodPop === undefined) {
         method.popularity = 0
         methodsUnmatched++
+      } else {
+        method.popularity = methodPop
+        methodsMatched++
       }
     }
   }

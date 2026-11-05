@@ -115,7 +115,7 @@ test('keeps the window sandboxed and blocks navigation and new windows', async (
   })
   const url = page.url()
   await page.evaluate(() => {
-    location.href = 'https://example.invalid/'
+    location.assign('https://example.invalid/')
   })
   await expect
     .poll(() => app.evaluate(() => Reflect.get(globalThis, 'e2eNavigations')))

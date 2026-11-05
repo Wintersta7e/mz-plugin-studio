@@ -50,14 +50,14 @@ describe('ToastContainer UI', () => {
   it('a toast under the pointer stays until the pointer leaves, then for the time it had left', () => {
     useToastStore.getState().addToast({ type: 'error', message: 'Read me', duration: NOTICE_MS })
     render(<ToastContainer />)
-    act(() => vi.advanceTimersByTime(4_000))
+    act(() => vi.advanceTimersByTime(4000))
     fireEvent.pointerEnter(screen.getByText('Read me'))
     act(() => vi.advanceTimersByTime(11_000))
 
     expect(screen.getByText('Read me')).toBeInTheDocument()
 
     fireEvent.pointerLeave(screen.getByText('Read me'))
-    act(() => vi.advanceTimersByTime(5_900))
+    act(() => vi.advanceTimersByTime(5900))
 
     expect(useToastStore.getState().toasts).toHaveLength(1)
 

@@ -48,7 +48,7 @@ describe('published docs match the code', () => {
 
   it(`README parameter-type table lists all ${ALL_PARAM_TYPES.size} types`, () => {
     const listed = tableAfter(readme, '### Parameter Types').flatMap((row) =>
-      row[row.length - 1].split(',').map((type) => type.replace(/`/g, '').trim())
+      row[row.length - 1].split(',').map((type) => type.replaceAll('`', '').trim())
     )
     console.log(
       `README parameter types: listed ${listed.length}, in the code ${ALL_PARAM_TYPES.size}`
@@ -60,7 +60,7 @@ describe('published docs match the code', () => {
 
   it('README category table names every template category', () => {
     const listed = tableAfter(readme, '### Code Template Library').map((row) =>
-      row[0].replace(/\*\*/g, '')
+      row[0].replaceAll('**', '')
     )
     const names = CATEGORIES.map((category) => category.name)
     const differing = listed.filter((name) => !names.includes(name))
@@ -98,13 +98,13 @@ describe('published docs match the code', () => {
   it('CHANGELOG writes annotation tags in code spans, so release notes mention no one', () => {
     // The release notes are copied from CHANGELOG.md, and GitHub turns a bare @word there into a
     // mention of the account of that name, notifying it and listing it as a contributor
-    let fenced = false
+    let isFenced = false
     const lines = read('CHANGELOG.md').split(/\r?\n/)
     const mentions = lines.flatMap((line, i) => {
-      if (line.trimStart().startsWith('```')) fenced = !fenced
-      if (fenced) return []
-      const prose = line.replace(/`[^`]*`/g, '')
-      return /(^|[^\w`/.])@[A-Za-z]/.test(prose) ? [`CHANGELOG.md:${i + 1}: ${line.trim()}`] : []
+      if (line.trimStart().startsWith('```')) isFenced = !isFenced
+      if (isFenced) return []
+      const prose = line.replaceAll(/`[^`]*`/g, '')
+      return /(^|[^\w`/.])@[A-Z]/i.test(prose) ? [`CHANGELOG.md:${i + 1}: ${line.trim()}`] : []
     })
     console.log(`changelog mentions: lines scanned ${lines.length}, bare @words ${mentions.length}`)
 
@@ -157,7 +157,7 @@ describe('published docs match the code', () => {
   })
 
   it('README screenshots and tracked screenshots are the same files', () => {
-    const referenced = [...new Set(readme.match(/screenshots\/[\w.-]+\.png/g) ?? [])].sort()
+    const referenced = [...new Set(readme.match(/screenshots\/[\w.-]+\.png/g))].sort()
     const tracked = execFileSync('git', ['ls-files', '--', 'screenshots/*.png'], {
       cwd: ROOT,
       encoding: 'utf8'

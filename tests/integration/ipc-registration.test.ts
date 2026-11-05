@@ -1,7 +1,7 @@
 // Main registers one handler per invoke channel and one listener per send channel, and each of
 // them answers only the app's own page: the window's main frame showing the renderer entry.
-import { join, resolve } from 'path'
-import { pathToFileURL } from 'url'
+import { join, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import log from 'electron-log/main'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
@@ -201,7 +201,7 @@ describe('ipc registration', () => {
 
   it('answers the app page', async () => {
     await expect(ipc.invoke('window-is-maximized')).resolves.toBe(false)
-    expect(handlers['window-is-maximized'].run).toHaveBeenCalledOnce()
+    expect(handlers['window-is-maximized'].run).toHaveBeenCalledTimes(1)
 
     ipc.send('log:set-level', true)
 

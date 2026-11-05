@@ -219,8 +219,8 @@ describe('shouldHandleShortcut', () => {
     const editorDiv = document.createElement('div')
     editorDiv.className = 'monaco-editor'
     const inputEl = document.createElement('textarea')
-    editorDiv.appendChild(inputEl)
-    document.body.appendChild(editorDiv)
+    editorDiv.append(inputEl)
+    document.body.append(editorDiv)
 
     vi.spyOn(document, 'activeElement', 'get').mockReturnValue(inputEl)
 
@@ -231,7 +231,7 @@ describe('shouldHandleShortcut', () => {
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
 
-    document.body.removeChild(editorDiv)
+    editorDiv.remove()
   })
 
   it('returns null for non-global shortcuts when Monaco is focused', () => {
@@ -239,8 +239,8 @@ describe('shouldHandleShortcut', () => {
     const editorDiv = document.createElement('div')
     editorDiv.className = 'monaco-editor'
     const inputEl = document.createElement('textarea')
-    editorDiv.appendChild(inputEl)
-    document.body.appendChild(editorDiv)
+    editorDiv.append(inputEl)
+    document.body.append(editorDiv)
 
     vi.spyOn(document, 'activeElement', 'get').mockReturnValue(inputEl)
 
@@ -250,6 +250,6 @@ describe('shouldHandleShortcut', () => {
 
     expect(result).toBeNull()
 
-    document.body.removeChild(editorDiv)
+    editorDiv.remove()
   })
 })

@@ -1,13 +1,15 @@
 // Tests for scripts/ci-policy.mjs, run as a child process against synthetic inputs
 import { afterEach, describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 
 const SCRIPT = resolve('scripts/ci-policy.mjs')
 
-type AsarTree = { [name: string]: number | AsarTree }
+interface AsarTree {
+  [name: string]: number | AsarTree
+}
 
 function runPolicy(args: string[], cwd?: string): { status: number | null; out: string } {
   const result = spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' })
@@ -111,11 +113,11 @@ describe('ci-policy package', () => {
   })
 
   it('accepts node_modules at the budget and rejects one byte over', () => {
-    const atBudget = checkAsar({ ...ALLOWED, node_modules: { x: { 'index.js': 2097152 } } })
+    const atBudget = checkAsar({ ...ALLOWED, node_modules: { x: { 'index.js': 2_097_152 } } })
 
     expect(atBudget.status).toBe(0)
 
-    const over = checkAsar({ ...ALLOWED, node_modules: { x: { 'index.js': 2097153 } } })
+    const over = checkAsar({ ...ALLOWED, node_modules: { x: { 'index.js': 2_097_153 } } })
 
     expect(lines(over.out)).toContain('FAIL node_modules/ 2097153 bytes > budget 2097152')
     expect(over.status).toBe(1)

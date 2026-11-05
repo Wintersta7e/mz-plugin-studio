@@ -1,10 +1,10 @@
 // Tests for `ci-policy osv-ignores`: every advisory ignore is explained and expires within 90 days
 import { afterEach, describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
-import { mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { fileURLToPath } from 'url'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))

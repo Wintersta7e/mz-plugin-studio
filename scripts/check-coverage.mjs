@@ -126,11 +126,11 @@ function trackedSources(dir) {
 }
 
 function checkSuite({ files, total }) {
-  let failed = false
+  let isFailed = false
   const tracked = trackedSources('src')
   const reported = tracked.filter((path) => files.has(path)).length
   print(`coverage scope: ${reported} reported / ${tracked.length} tracked`)
-  if (tracked.length === 0 || reported !== tracked.length) failed = true
+  if (tracked.length === 0 || reported !== tracked.length) isFailed = true
 
   for (const [path, entry] of [...files, ['total', total]]) {
     if (entry.branches === undefined) {
@@ -149,7 +149,7 @@ function checkSuite({ files, total }) {
     if (owner === undefined) {
       if (entry.lines.total > 0) {
         print(`coverage file without a floor directory: ${path}`)
-        failed = true
+        isFailed = true
       }
       continue
     }
@@ -163,11 +163,11 @@ function checkSuite({ files, total }) {
   for (const [dir, sum] of sums) {
     const floors = FLOORS.suite[dir]
     print(`coverage floor ${dir}: ${bothAtFloor(sum, floors)}, files ${sum.files}`)
-    if (scopeFails(dir, sum, floors, sum.files)) failed = true
+    if (scopeFails(dir, sum, floors, sum.files)) isFailed = true
   }
   print(`coverage floor global: ${bothAtFloor(total, FLOORS.suite.global)}, files ${files.size}`)
-  if (scopeFails('global', total, FLOORS.suite.global, files.size)) failed = true
-  return failed
+  if (scopeFails('global', total, FLOORS.suite.global, files.size)) isFailed = true
+  return isFailed
 }
 
 function goldenFloor(path) {

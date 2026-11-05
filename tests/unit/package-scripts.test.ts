@@ -13,7 +13,7 @@ const readJson = (file: string): Record<string, unknown> =>
 const scripts = readJson('package.json').scripts as Record<string, string>
 
 // Packages whose bin file a script must name exactly
-const PINNED_BINS = [
+const PINNED_BINS = new Set([
   'eslint',
   'typescript',
   'prettier',
@@ -25,12 +25,12 @@ const PINNED_BINS = [
   'knip',
   'type-coverage',
   'jscpd'
-]
+])
 
 const NPM_RUN = /^npm run ([\w:-]+)(?: -- .+)?$/
 const NPM_TEST = /^npm test(?: -- .+)?$/
-const NODE_SCRIPT = /^node (scripts\/[^\s]+)(?: .+)?$/
-const NODE_MODULE = /^node node_modules\/((?:@[^/\s]+\/)?[^/\s]+)\/([^\s]+)(?: .+)?$/
+const NODE_SCRIPT = /^node (scripts\/\S+)(?: .+)?$/
+const NODE_MODULE = /^node node_modules\/((?:@[^/\s]+\/)?[^/\s]+)\/(\S+)(?: .+)?$/
 
 const commandsOf = (script: string): string[] => script.split('&&').map((c) => c.trim())
 
@@ -74,7 +74,7 @@ function problem(command: string): string | null {
     const [, pkg, path] = tool
     if (path.startsWith('.bin/')) return 'calls a .bin shim'
     if (!existsSync(join(ROOT, 'node_modules', pkg, path))) return `calls a missing file ${path}`
-    if (PINNED_BINS.includes(pkg) && !binPaths(pkg).includes(path))
+    if (PINNED_BINS.has(pkg) && !binPaths(pkg).includes(path))
       return `calls ${pkg}/${path}, not its package bin`
     return null
   }
@@ -160,7 +160,7 @@ describe('package.json scripts', () => {
       expect(start, heading).toBeGreaterThanOrEqual(0)
 
       const end = readme.indexOf('\n## ', start + 1)
-      return readme.slice(start, end < 0 ? undefined : end)
+      return readme.slice(start, end === -1 ? undefined : end)
     }
     console.log(`golden commit rules: scripts running them ${runners.length}`)
 
@@ -226,7 +226,7 @@ describe('package.json scripts', () => {
       expect(start, `${file} ${job}`).toBeGreaterThanOrEqual(0)
 
       const end = lines.findIndex((line, index) => index > start && /^ {0,2}\S/.test(line))
-      const body = lines.slice(start + 1, end < 0 ? undefined : end)
+      const body = lines.slice(start + 1, end === -1 ? undefined : end)
 
       expect(body, `${file} ${job}`).toContain('      - run: npm run package:win')
     }

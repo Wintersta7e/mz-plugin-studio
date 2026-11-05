@@ -2,8 +2,8 @@
 // src/renderer/src/stores/{pluginStore,uiStore,settingsStore,projectStore,templateStore}.ts at
 // that tag, each around v1.6.0's initial values of the persisted fields. The stores stand in
 // for v1.6.0 reading and writing back what a newer build saved (downgrade checks).
-import { readdirSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { create } from 'zustand'
 import type { StoreApi, UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -105,26 +105,30 @@ export function createV160Stores(): Record<PersistedKey, AnyStore> {
         onRehydrateStorage: () => (state) => {
           if (!state) return
           const liveIds = new Set(state.openPlugins.map((p) => p.id))
-          let dirtyChanged = false
-          let pathsChanged = false
+          let isDirtyChanged = false
+          let isPathsChanged = false
           const nextDirty = { ...state.dirtyByPluginId }
           const nextPaths = { ...state.savedPathsByPluginId }
           for (const key of Object.keys(nextDirty)) {
-            if (!liveIds.has(key)) {
-              delete nextDirty[key]
-              dirtyChanged = true
+            if (liveIds.has(key)) {
+              continue
             }
+
+            delete nextDirty[key]
+            isDirtyChanged = true
           }
           for (const key of Object.keys(nextPaths)) {
-            if (!liveIds.has(key)) {
-              delete nextPaths[key]
-              pathsChanged = true
+            if (liveIds.has(key)) {
+              continue
             }
+
+            delete nextPaths[key]
+            isPathsChanged = true
           }
-          if (dirtyChanged || pathsChanged) {
+          if (isDirtyChanged || isPathsChanged) {
             usePluginStore.setState({
-              ...(dirtyChanged ? { dirtyByPluginId: nextDirty } : {}),
-              ...(pathsChanged ? { savedPathsByPluginId: nextPaths } : {})
+              ...(isDirtyChanged && { dirtyByPluginId: nextDirty }),
+              ...(isPathsChanged && { savedPathsByPluginId: nextPaths })
             })
           }
         }

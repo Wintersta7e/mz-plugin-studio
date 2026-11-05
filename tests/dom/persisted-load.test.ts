@@ -1,6 +1,6 @@
 // What the app loads from the values v1.6.0 saved: each store is imported afresh over the
 // captured localStorage, so the real persist middleware hydrates it.
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePluginOutput, isRawMode } from '../../src/renderer/src/lib/plugin-output'

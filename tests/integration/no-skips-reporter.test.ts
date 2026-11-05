@@ -1,10 +1,10 @@
 // The run's skip counter on throwaway test trees: every way a test can be skipped, left as a todo
 // or marked to pass by failing fails the run; the named parity rule and a name-filtered run do not.
 import { describe, it, expect, afterEach } from 'vitest'
-import { spawnSync } from 'child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 
 const VITEST = resolve(process.cwd(), 'node_modules/vitest/vitest.mjs')
 const REPORTER = resolve(process.cwd(), 'tests/setup/no-skips-reporter.ts')

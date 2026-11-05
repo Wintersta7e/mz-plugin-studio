@@ -1,9 +1,9 @@
 // The Content Security Policy module: its two policies, its purity, its single holder, and the
 // filter that keeps the page's `file:` requests inside the renderer folder
 import { describe, expect, it } from 'vitest'
-import { readdirSync, readFileSync } from 'fs'
-import { join, relative } from 'path'
-import { fileURLToPath } from 'url'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import type { Session } from 'electron'
 import {
@@ -118,7 +118,7 @@ describe('Content Security Policy module', () => {
     const files = sourceFiles(SRC)
     const holders = files
       .filter((file) => readFileSync(file, 'utf8').includes(POLICY_MARK))
-      .map((file) => relative(ROOT, file).split('\\').join('/'))
+      .map((file) => relative(ROOT, file).replaceAll('\\', '/'))
     console.log(`csp: files scanned ${files.length}, holders ${holders.length}`)
 
     expect(files.length).toBeGreaterThan(0)

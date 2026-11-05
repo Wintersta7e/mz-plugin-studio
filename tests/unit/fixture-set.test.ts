@@ -1,8 +1,8 @@
 // Every fixture file exists for a property: line endings, BOM, block order, code shape. Each row
 // asserts one property in the file's bytes, so a checkout that rewrites them fails here.
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync, statSync } from 'fs'
-import { join, relative } from 'path'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { fixturePath } from '../helpers/fixture-project'
 
 type Read = (file: string) => string
@@ -70,7 +70,7 @@ const ALL_FILES = [
 
 const BOM = Buffer.from([0xef, 0xbb, 0xbf])
 const LONE_LF = /(?:^|[^\r])\n/
-const NON_ASCII = /[\u0080-\uffff]/
+const NON_ASCII = /[\u0080-\uFFFF]/
 const BARE_HEADER = /\/\*:\r?\n/
 const IIFE_OPEN = /\((?:\(\)\s*=>|function\s*\(\))\s*\{/
 
@@ -117,7 +117,7 @@ function code(text: string): string {
 
 /** Sections of an annotation block, each from `@tag` up to the next tag in `until`. */
 function sections(block: string, tag: string, until: string): string[] {
-  return block.match(new RegExp(`@${tag}\\s[\\s\\S]*?(?=@(?:${until})\\s|$)`, 'g')) ?? []
+  return block.match(new RegExp(String.raw`@${tag}\s[\s\S]*?(?=@(?:${until})\s|$)`, 'g')) ?? []
 }
 
 const params = (block: string): string[] => sections(block, 'param', 'param|command|arg')
@@ -144,7 +144,7 @@ function overrides(source: string): string[] {
 }
 
 /** The edit targets every plugin's main block carries: header tags, a number and a string
- *  param, a command with an argument, and a struct referenced by a param. */
+param, a command with an argument, and a struct referenced by a param. */
 function carriesEditTargets(text: string): boolean {
   const main = mainBlock(text)
   const list = params(main)
@@ -210,8 +210,8 @@ const ROWS: Row[] = [
     file: 'js/plugins.js',
     property: '$plugins lists every fixture plugin but the underscore one',
     holds: (t) =>
-      /^var \$plugins =/.test(t) &&
-      /\];\n$/.test(t) &&
+      t.startsWith('var $plugins =') &&
+      t.endsWith('];\n') &&
       JSON.stringify(
         pluginEntries(t)
           .map((e) => e.name)
@@ -266,7 +266,7 @@ const ROWS: Row[] = [
     holds: (t) => {
       const first = t.indexOf('/*')
       return (
-        first >= 0 &&
+        first !== -1 &&
         first < t.indexOf('/*:') &&
         /licen[cs]e/i.test(t.slice(first, t.indexOf('*/', first)))
       )
@@ -285,7 +285,8 @@ const ROWS: Row[] = [
   {
     file: plugin(HAND_WRITTEN),
     property: 'IIFE',
-    holds: (t) => new RegExp(`^\\s*${IIFE_OPEN.source}`).test(code(t)) && /\}\)\(\);\s*$/.test(t)
+    holds: (t) =>
+      new RegExp(String.raw`^\s*${IIFE_OPEN.source}`).test(code(t)) && /\}\)\(\);\s*$/.test(t)
   },
   {
     file: plugin(HAND_WRITTEN),
@@ -298,11 +299,11 @@ const ROWS: Row[] = [
     property: 'registerCommand body calls the helper',
     holds: (t) => {
       const body = code(t)
-      const helper = body.match(/\bfunction\s+(\w+)\s*\(/)?.[1]
+      const helper = /\bfunction\s+(\w+)\s*\(/.exec(body)?.[1]
       const at = body.indexOf('PluginManager.registerCommand(')
       return (
         helper !== undefined &&
-        at >= 0 &&
+        at !== -1 &&
         body.slice(at, body.indexOf('});', at)).includes(`${helper}(`)
       )
     }
@@ -325,12 +326,12 @@ const ROWS: Row[] = [
   {
     file: plugin(CRLF_TWIN),
     property: `byte twin of ${HAND_WRITTEN} with CRLF line endings`,
-    holds: (t, _b, read) => t.replace(/\r\n/g, '\n') === read(plugin(HAND_WRITTEN))
+    holds: (t, _b, read) => t.replaceAll('\r\n', '\n') === read(plugin(HAND_WRITTEN))
   },
   {
     file: plugin('Fixture_JaFirst.js'),
     property: '/*:ja before the bare /*:',
-    holds: (t) => t.indexOf('/*:ja') >= 0 && t.indexOf('/*:ja') < offsetOf(t, BARE_HEADER)
+    holds: (t) => t.includes('/*:ja') && t.indexOf('/*:ja') < offsetOf(t, BARE_HEADER)
   },
   {
     file: plugin('Fixture_JaFirst.js'),
@@ -405,7 +406,7 @@ const ROWS: Row[] = [
       const main = mainBlock(t)
       const group = main.indexOf('@noteParam ')
       return (
-        group >= 0 &&
+        group !== -1 &&
         ['@noteDir ', '@noteType ', '@noteData '].every((tag) => main.indexOf(tag, group) > group)
       )
     }
@@ -413,7 +414,7 @@ const ROWS: Row[] = [
   {
     file: plugin('Fixture_NonAscii.js'),
     property: 'non-ASCII description',
-    holds: (t) => NON_ASCII.test(mainBlock(t).match(/@plugindesc (.*)/)?.[1] ?? '')
+    holds: (t) => NON_ASCII.test(/@plugindesc (.*)/.exec(mainBlock(t))?.[1] ?? '')
   },
   {
     file: plugin('Fixture_NonAscii.js'),
@@ -429,7 +430,7 @@ const ROWS: Row[] = [
     file: plugin('Fixture_Dependent.js'),
     property: '@base names another fixture',
     holds: (t) => {
-      const base = mainBlock(t).match(/@base (\w+)/)?.[1]
+      const base = /@base (\w+)/.exec(mainBlock(t))?.[1]
       return base !== undefined && base !== 'Fixture_Dependent' && PLUGIN_STEMS.includes(base)
     }
   },
@@ -437,7 +438,7 @@ const ROWS: Row[] = [
     file: plugin('Fixture_Dependent.js'),
     property: '@orderAfter names another fixture',
     holds: (t) => {
-      const after = mainBlock(t).match(/@orderAfter (\w+)/)?.[1]
+      const after = /@orderAfter (\w+)/.exec(mainBlock(t))?.[1]
       return after !== undefined && after !== 'Fixture_Dependent' && PLUGIN_STEMS.includes(after)
     }
   },
@@ -470,7 +471,7 @@ const ROWS: Row[] = [
     file: plugin(JA_ONLY),
     property: 'IIFE reading PluginManager.parameters',
     holds: (t) =>
-      new RegExp(`^\\s*${IIFE_OPEN.source}`).test(code(t)) &&
+      new RegExp(String.raw`^\s*${IIFE_OPEN.source}`).test(code(t)) &&
       code(t).includes('PluginManager.parameters(')
   },
   {
@@ -482,7 +483,7 @@ const ROWS: Row[] = [
     file: plugin(NO_BLOCK),
     property: 'IIFE with one registerCommand',
     holds: (t) =>
-      new RegExp(`^\\s*${IIFE_OPEN.source}`).test(code(t).replace(/^(?:\/\/.*\n)+/, '')) &&
+      new RegExp(String.raw`^\s*${IIFE_OPEN.source}`).test(code(t).replace(/^(?:\/\/.*\n)+/, '')) &&
       t.split('PluginManager.registerCommand(').length === 2
   },
   {
@@ -497,7 +498,7 @@ function filesOnDisk(): string[] {
   return (readdirSync(root, { recursive: true }) as string[])
     .map((p) => join(root, p))
     .filter((p) => statSync(p).isFile())
-    .map((p) => relative(root, p).split('\\').join('/'))
+    .map((p) => relative(root, p).replaceAll('\\', '/'))
     .sort()
 }
 
@@ -525,15 +526,16 @@ describe('fixture project', () => {
     const failing: string[] = []
     for (const row of ROWS) {
       const bytes = load(row.file)
-      let holds = false
+      let isHolds = false
       if (bytes !== null) {
         try {
-          holds = row.holds(bytes.toString('utf8'), bytes, read)
+          isHolds = row.holds(bytes.toString('utf8'), bytes, read)
         } catch {
-          holds = false
+          isHolds = false
         }
       }
-      if (!holds) failing.push(`${row.file}: ${row.property}${bytes === null ? ' (missing)' : ''}`)
+      if (!isHolds)
+        failing.push(`${row.file}: ${row.property}${bytes === null ? ' (missing)' : ''}`)
     }
     const listed = [...new Set(ROWS.map((r) => r.file))].sort()
     const present = listed.filter((f) => load(f) !== null)

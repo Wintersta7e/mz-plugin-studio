@@ -23,7 +23,7 @@ describe('compileCheck', () => {
   })
 
   it('counts CRLF lines after a byte order mark', () => {
-    expect(compileCheck('﻿var a = 1;\r\nvar b = 2;\r\nfoo(', 'Probe.js')).toMatchObject({
+    expect(compileCheck('\u{FEFF}var a = 1;\r\nvar b = 2;\r\nfoo(', 'Probe.js')).toMatchObject({
       line: 3
     })
   })

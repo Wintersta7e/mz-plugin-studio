@@ -22,9 +22,9 @@ export interface MainApiOptions {
 }
 
 /**
- * `fn` as the renderer reaches it over `channel`: Electron sends a thrown error back as its
- * string and rejects with "Error invoking remote method '<channel>': <Name>Error: <message>".
- */
+`fn` as the renderer reaches it over `channel`: Electron sends a thrown error back as its
+string and rejects with "Error invoking remote method '<channel>': <Name>Error: <message>".
+*/
 export function viaIpc<A extends unknown[], R>(
   channel: string,
   fn: (...args: A) => Promise<R>

@@ -2,7 +2,7 @@
 // save does to a file that already exists at its target. With a guard, the file is replaced only
 // when it is the tab's own file, unchanged since the tab read or saved it, and still compiles
 // unless the user chose to break it; otherwise nothing is written and the result says why.
-import { createHash } from 'crypto'
+import { createHash } from 'node:crypto'
 import {
   chmod,
   lstat,
@@ -15,9 +15,9 @@ import {
   stat,
   symlink,
   writeFile
-} from 'fs/promises'
-import { tmpdir } from 'os'
-import { join } from 'path'
+} from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { recordWriteGrant } from '../../src/main/file-access'
 import {
@@ -28,7 +28,7 @@ import {
   savePluginToPath
 } from '../../src/main/ipc/plugin'
 import type { SaveConflict, SaveGuard, SaveResult } from '../../src/shared/ipc-types'
-import type * as FsPromises from 'fs/promises'
+import type * as FsPromises from 'node:fs/promises'
 
 // A full disk: while set, every write of a file's bytes stores only the first half, then fails
 const disk = vi.hoisted(() => ({ full: false }))
@@ -403,7 +403,7 @@ describe('naming one file', () => {
 })
 
 describe('reading a plugin file', () => {
-  const TEXT = '\uFEFF/*:\r\n * @plugindesc Bom\r\n */\r\nvar a = 1;\r\n'
+  const TEXT = '\u{FEFF}/*:\r\n * @plugindesc Bom\r\n */\r\nvar a = 1;\r\n'
 
   it('load and read-raw return the path and the sha256 of the bytes', async () => {
     const target = join(tmp, 'js', 'plugins', 'Bom.js')

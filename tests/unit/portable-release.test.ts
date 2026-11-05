@@ -17,7 +17,7 @@ const REMOVED_LINE =
 function sourceFiles(): string[] {
   return (readdirSync(join(ROOT, 'src'), { recursive: true }) as string[])
     .filter((file) => /\.(ts|tsx)$/.test(file))
-    .map((file) => join('src', file).split('\\').join('/'))
+    .map((file) => join('src', file).replaceAll('\\', '/'))
     .sort()
 }
 
@@ -72,7 +72,7 @@ describe('portable release without an updater', () => {
     expect(start).toBeGreaterThanOrEqual(0)
 
     const end = changelog.findIndex((line, index) => index > start && line.startsWith('## ['))
-    const release = changelog.slice(start, end < 0 ? undefined : end)
+    const release = changelog.slice(start, end === -1 ? undefined : end)
     const removed = release.indexOf('### Removed')
 
     expect(removed).toBeGreaterThan(0)

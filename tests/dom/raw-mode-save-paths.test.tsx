@@ -1,10 +1,10 @@
 // Saving an imported plugin through every save path of the app: Ctrl+S, Save All and the
 // preview's Export button. The app starts over the state v1.6.0 saved, whose second tab was
 // imported and comes back without its file text.
-import { readFileSync } from 'fs'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { dirname, join } from 'path'
+import { readFileSync } from 'node:fs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { createElement } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

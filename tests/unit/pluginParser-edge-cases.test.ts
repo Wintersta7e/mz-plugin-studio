@@ -501,7 +501,7 @@ describe('tags count only at the start of a line', () => {
     '@command injectedCommand',
     '@arg injectedArg',
     '@base Other'
-  ].map((line) => String.fromCodePoint(0x200b) + line)
+  ].map((line) => String.fromCodePoint(0x20_0b) + line)
   const guardedHelp = [' * @help Usage', ...guarded.map((line) => ` * ${line}`), ' * End'].join(
     '\n'
   )

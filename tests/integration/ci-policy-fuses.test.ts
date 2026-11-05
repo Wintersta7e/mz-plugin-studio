@@ -1,10 +1,10 @@
 // Tests for `ci-policy fuses`: the packaged executable's fuse wire holds the required states
 import { afterEach, describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
-import { fileURLToPath } from 'url'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { FuseV1Options } from '@electron/fuses'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
@@ -61,10 +61,10 @@ function builderFuses(): Map<string, boolean> {
   const lines = readFileSync(BUILDER_CONFIG, 'utf8').split(/\r?\n/)
   const start = lines.indexOf('electronFuses:')
   const fuses = new Map<string, boolean>()
-  if (start < 0) return fuses
+  if (start === -1) return fuses
   for (const line of lines.slice(start + 1)) {
     if (!line.startsWith('  ')) break
-    if (line.trim().startsWith('#')) continue
+    if (line.trimStart().startsWith('#')) continue
     const match = /^ {2}(\w+): (true|false)$/.exec(line)
     if (!match || !BUILDER_KEYS.has(match[1]))
       throw new Error(`unknown electronFuses line: ${line}`)
@@ -120,7 +120,7 @@ describe('ci-policy fuses', () => {
   })
 
   it('fails a removed or inherited required fuse', () => {
-    const { status, out } = fuses(binary(wire(`r1${'\x90'}011011`)))
+    const { status, out } = fuses(binary(wire(`r1\u{90}011011`)))
 
     expect(out).toContain('FAIL fuse RunAsNode: removed, required disabled\n')
     expect(out).toContain(

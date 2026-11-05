@@ -88,7 +88,7 @@ function copyTree(copy) {
 
 /** @param {string[]} argv @returns {number} the container's exit status */
 export function main(argv) {
-  const check = argv.includes('--check')
+  const isCheck = argv.includes('--check')
   const copy = mkdtempSync(join(tmpdir(), 'mz-visual-'))
   try {
     mkdirSync(join(copy, BASELINES), { recursive: true })
@@ -113,14 +113,14 @@ export function main(argv) {
         IMAGE,
         'bash',
         '-c',
-        imageCommand(check)
+        imageCommand(isCheck)
       ],
       { stdio: 'inherit' }
     )
     const status = docker.status ?? 1
     if (docker.error) print(`visual-update: docker failed to start: ${docker.error.message}`)
 
-    const changed = check
+    const changed = isCheck
       ? []
       : pngs(join(copy, BASELINES)).filter((name) => {
           const host = join(ROOT, BASELINES, name)

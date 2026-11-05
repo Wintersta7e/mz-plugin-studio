@@ -30,9 +30,9 @@ import {
 } from '../fixtures/app'
 
 /**
- * Closes the window the way a user does, so the app quits, failing when it is not gone within the
- * bound. Unlike `app.close()`, this keeps the app reachable while a prompt holds the close back.
- */
+Closes the window the way a user does, so the app quits, failing when it is not gone within the
+bound. Unlike `app.close()`, this keeps the app reachable while a prompt holds the close back.
+*/
 async function closeWithin(app: ElectronApplication): Promise<void> {
   const closed = app.waitForEvent('close', { timeout: TEARDOWN_BOUND_MS }).then(
     () => true,
@@ -41,11 +41,13 @@ async function closeWithin(app: ElectronApplication): Promise<void> {
   await app.evaluate(({ BrowserWindow }) => {
     for (const window of BrowserWindow.getAllWindows()) window.close()
   })
-  if (!(await closed)) {
-    // A prompt nobody expected holds the close back: name it
-    await assertDialogsDrained(app)
-    throw new Error(`the app did not close within ${TEARDOWN_BOUND_MS} ms`)
+  if (await closed) {
+    return
   }
+
+  // A prompt nobody expected holds the close back: name it
+  await assertDialogsDrained(app)
+  throw new Error(`the app did not close within ${TEARDOWN_BOUND_MS} ms`)
 }
 
 interface Box {

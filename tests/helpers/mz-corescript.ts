@@ -2,10 +2,10 @@
 // directory a developer names: the real plugin loader, parameter store and plugin command, so
 // the suite's stand-in can be compared with what MZ does. Nothing of the install is kept here;
 // this file holds only what a browser would give those scripts, written for the test.
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
-import { Script, createContext } from 'vm'
-import type { Context } from 'vm'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { Script, createContext } from 'node:vm'
+import type { Context } from 'node:vm'
 import { installStandIns, listTemplateGlobals } from './evaluate-plugin'
 import { describeThrown, intoContext } from './mz-runtime'
 import type { MzLoadReport, MzRuntime } from './mz-runtime'
@@ -99,9 +99,9 @@ const OBSERVE_SOURCE = `
 `
 
 /**
- * A fresh context with the install's core scripts loaded from `dir`, a stand-in for every MZ
- * global they leave undefined, and a plugin command interpreter of MZ's own.
- */
+A fresh context with the install's core scripts loaded from `dir`, a stand-in for every MZ
+global they leave undefined, and a plugin command interpreter of MZ's own.
+*/
 export function createMzCorescript(dir: string): MzRuntime {
   const scripts = coreScripts(dir)
   const context: Context = createContext({})

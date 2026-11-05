@@ -2,9 +2,9 @@
 // in the inspect fuse only, every other file of the two trees is identical, and the renderer
 // page loads no code editor at start
 import { afterAll, afterEach, describe, expect, it } from 'vitest'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join } from 'path'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import {
   checkStartScripts,
   compareWires,

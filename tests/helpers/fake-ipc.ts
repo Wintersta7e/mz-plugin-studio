@@ -1,7 +1,7 @@
 // A stand-in for `ipcMain`: records what main registers and calls it as a window's request would.
 // A test importing this file mocks `electron` (the registration module imports `ipcMain`).
-import { resolve } from 'path'
-import { pathToFileURL } from 'url'
+import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
 import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
 import { createSenderCheck, handleAll, onAll } from '../../src/main/ipc/registration'

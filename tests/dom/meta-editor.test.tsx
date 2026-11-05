@@ -102,7 +102,7 @@ describe('meta editor plugin name', () => {
     act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
     render(<MetaEditor />)
 
-    expect(screen.queryByText(NAME_NOTICE)).toBeNull()
+    expect(screen.queryByText(NAME_NOTICE)).not.toBeInTheDocument()
 
     const name = screen.getByLabelText('Plugin Name')
 

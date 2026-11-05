@@ -421,8 +421,8 @@ describe('generated plugin annotations', () => {
 const LINE_BREAKS: [string, string][] = [
   ['lf', '\n'],
   ['crlf', '\r\n'],
-  ['u2028', '\u2028'],
-  ['u2029', '\u2029']
+  ['u2028', '\u{2028}'],
+  ['u2029', '\u{2029}']
 ]
 
 const SNIPPET_NAMES: { name: string; text: string }[] = [
@@ -538,7 +538,7 @@ function addedWarnings(change: (def: PluginDefinition) => void): string[] {
 }
 
 const escapedWarning = (field: string): string =>
-  `${field}: "*/" is written as "*\\/" so it cannot end the comment.`
+  String.raw`${field}: "*/" is written as "*\/" so it cannot end the comment.`
 
 describe('validatePlugin warnings', () => {
   it('names the field whose "*/" is written escaped', () => {

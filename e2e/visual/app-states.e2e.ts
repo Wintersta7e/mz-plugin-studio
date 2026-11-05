@@ -59,44 +59,51 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
   const project = await loadFixtureProject(app, page, 'Fixture Game')
   const shown = [dirname(project)]
   switch (state) {
-    case 'metadata':
+    case 'metadata': {
       await newPlugin(page)
       await page.getByTestId('editor-tab-meta').click()
       await expect(page.getByTestId('code-preview')).toBeVisible()
       break
-    case 'parameters':
+    }
+    case 'parameters': {
       await newPlugin(page)
       await page.getByTestId('editor-tab-parameters').click()
       // A new parameter's card opens expanded
       await page.getByTestId('param-add').click()
       break
-    case 'commands':
+    }
+    case 'commands': {
       await newPlugin(page)
       await page.getByTestId('editor-tab-commands').click()
       await page.getByTestId('command-add').click()
       await page.getByTestId('command-arg-add').click()
       break
-    case 'code':
+    }
+    case 'code': {
       await newPlugin(page)
       await page.getByTestId('editor-tab-code').click()
       await expect(
         page.getByRole('tabpanel').locator('.monaco-editor .view-line').first()
       ).toBeVisible()
       break
-    case 'project-data':
+    }
+    case 'project-data': {
       await page.getByTestId('project-data-toggle').click()
       await expect(page.getByTestId('project-data-panel')).toBeVisible()
       break
-    case 'plugin-browser':
+    }
+    case 'plugin-browser': {
       await page.getByTestId('plugin-browser-toggle').click()
       await expect(page.getByTestId('plugin-browser-row').first()).toBeVisible()
       break
-    case 'analysis':
+    }
+    case 'analysis': {
       // The view switch shows only while a plugin is open
       await newPlugin(page)
       await page.getByTestId('main-view-analysis').click()
       await expect(page.getByTestId('analysis-view')).toBeVisible()
       break
+    }
   }
   if (PREVIEW_STATES.has(state)) {
     // The generated code declares a name it never reads, and the editor's language worker fades
@@ -110,9 +117,9 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
 }
 
 /**
- * Marks every element whose own text or value contains one of `paths`, then lists the elements
- * holding one that no mask covers.
- */
+Marks every element whose own text or value contains one of `paths`, then lists the elements
+holding one that no mask covers.
+*/
 async function markTempPaths(
   page: Page,
   paths: string[]

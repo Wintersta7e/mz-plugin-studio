@@ -2,8 +2,8 @@
 // `$plugins` list, hand each plugin its stored parameters, and run a plugin command as an event
 // does. `createMzShim` is the stand-in the suite runs on; a second implementation over a local
 // MZ install compares against it.
-import { Script, createContext } from 'vm'
-import type { Context } from 'vm'
+import { Script, createContext } from 'node:vm'
+import type { Context } from 'node:vm'
 import { installStandIns } from './evaluate-plugin'
 
 /** One entry of a game's plugin list; every stored value is a string. */
@@ -29,9 +29,9 @@ export interface MzRuntime {
   /** The parameters stored for the plugin `name`, `{}` when none. */
   parameters(name: string): Record<string, string>
   /**
-   * Runs a plugin command as an event does, from its `[plugin, command, label, args]`; false
-   * when no plugin registered that command.
-   */
+  Runs a plugin command as an event does, from its `[plugin, command, label, args]`; false
+  when no plugin registered that command.
+  */
   runCommand(params: [string, string, string, Record<string, string>]): boolean
 }
 
