@@ -547,73 +547,6 @@
       "count": 1
     }
   },
-  "scripts/check-coverage.mjs": {
-    "n/no-process-exit": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/no-array-sort": {
-      "count": 2
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
-  "scripts/check-golden-commits.mjs": {
-    "complexity": {
-      "count": 1
-    },
-    "n/no-process-exit": {
-      "count": 1
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-null": {
-      "count": 2
-    },
-    "unicorn/no-return-array-push": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    }
-  },
   "scripts/ci-policy.mjs": {
     "complexity": {
       "count": 3
@@ -731,11 +664,6 @@
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
-  "scripts/strictness-status.mjs": {
-    "unicorn/no-null": {
       "count": 5
     }
   },

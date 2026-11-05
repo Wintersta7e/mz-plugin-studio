@@ -28,29 +28,21 @@
   },
   "scripts": {
     "strict": {
-      "scripts/check-coverage.mjs": 3,
-      "scripts/check-golden-commits.mjs": 10,
       "scripts/ci-policy.mjs": 9,
       "scripts/e2e-prepare.mjs": 2,
-      "scripts/strictness-status.mjs": 7,
       "scripts/third-party-licenses.mjs": 6
     },
     "noImplicitAny": {
-      "scripts/check-coverage.mjs": 26,
-      "scripts/check-golden-commits.mjs": 23,
       "scripts/ci-policy.mjs": 57,
       "scripts/e2e-prepare.mjs": 1,
       "scripts/e2e-visual-update.mjs": 1,
-      "scripts/strictness-status.mjs": 10,
       "scripts/third-party-licenses.mjs": 10
     },
     "exactOptionalPropertyTypes": {
       "tsconfig.scripts.json": 1
     },
     "noPropertyAccessFromIndexSignature": {
-      "scripts/check-golden-commits.mjs": 3,
-      "scripts/ci-policy.mjs": 1,
-      "scripts/strictness-status.mjs": 6
+      "scripts/ci-policy.mjs": 1
     }
   },
   "test": {
