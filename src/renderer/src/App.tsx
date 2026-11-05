@@ -306,7 +306,7 @@ function App() {
           setPluginBrowserOpen((prev) => !prev)
           break
         case 'ctrl+n': {
-          const newPlugin = createEmptyPlugin()
+          const newPlugin = createEmptyPlugin(useSettingsStore.getState().defaultAuthor)
           usePluginStore.getState().openPlugin(newPlugin)
           break
         }
@@ -358,7 +358,11 @@ function App() {
             {openPlugins.length === 0 && !project ? (
               <WelcomeScreen
                 onOpenProject={handleOpenProject}
-                onNewPlugin={() => usePluginStore.getState().openPlugin(createEmptyPlugin())}
+                onNewPlugin={() =>
+                  usePluginStore
+                    .getState()
+                    .openPlugin(createEmptyPlugin(useSettingsStore.getState().defaultAuthor))
+                }
                 recentProjects={recentProjects}
                 onOpenRecentProject={handleOpenRecentProject}
               />

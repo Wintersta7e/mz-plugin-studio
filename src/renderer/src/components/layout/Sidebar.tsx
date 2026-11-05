@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button'
 import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
-import { usePluginStore, useProjectStore } from '../../stores'
+import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
 import { createEmptyPlugin } from '../../types/plugin'
 import { cn } from '../../lib/utils'
 
@@ -44,7 +44,7 @@ export function Sidebar({
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
 
   const handleNewPlugin = () => {
-    const plugin = createEmptyPlugin()
+    const plugin = createEmptyPlugin(useSettingsStore.getState().defaultAuthor)
     openPlugin(plugin)
   }
 

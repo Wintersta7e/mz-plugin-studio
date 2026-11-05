@@ -277,7 +277,6 @@
         "src/renderer/src/stores/toastStore.ts",
         "src/renderer/src/stores/uiStore.ts",
         "src/shared/annotation-blocks.ts",
-        "src/shared/types/plugin.ts",
         "tests/dom/app-save.test.tsx",
         "tests/dom/code-preview.test.tsx",
         "tests/dom/history-store.test.ts",

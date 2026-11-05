@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { checkSavedParameter, PARAMETER_LABELS } from '../lib/param-io'
-import { setSettingsGetter } from '../types/plugin'
 import type { PluginParameter } from '../types/plugin'
 import {
   checkArrayOf,
@@ -161,9 +160,3 @@ if (typeof window !== 'undefined' && window.api?.log?.setLevel) {
     window.api.log.setLevel(true)
   }
 }
-
-// Wire up settings getter so createEmptyPlugin() can use defaults
-setSettingsGetter(() => {
-  const state = useSettingsStore.getState()
-  return { defaultAuthor: state.defaultAuthor }
-})

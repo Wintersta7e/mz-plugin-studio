@@ -30,6 +30,7 @@ import type { FieldCheck, FieldPath, MigrationStep } from './persist'
 // by the time any user interaction triggers these actions.
 import { useUIStore } from './uiStore'
 import { useHistoryStore } from './historyStore'
+import { useSettingsStore } from './settingsStore'
 
 interface PluginState {
   plugin: PluginDefinition
@@ -632,10 +633,11 @@ export const usePluginStore = create<PluginState>()(
                 ? newOpenPlugins[newOpenPlugins.length - 1].id
                 : null
               : state.activePluginId
+          const { defaultAuthor } = useSettingsStore.getState()
           const newPlugin =
             newActive && newOpenPlugins.length > 0
-              ? newOpenPlugins.find((p) => p.id === newActive) || createEmptyPlugin()
-              : createEmptyPlugin()
+              ? newOpenPlugins.find((p) => p.id === newActive) || createEmptyPlugin(defaultAuthor)
+              : createEmptyPlugin(defaultAuthor)
           return {
             openPlugins: newOpenPlugins,
             activePluginId: newActive,

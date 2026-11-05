@@ -127,14 +127,6 @@ export function toBaseline(definition: PluginDefinition): PluginBaseline {
   return baseline
 }
 
-// Default empty plugin
-// Lazy import to avoid circular dependency - settings store may not exist yet
-const settingsSource: { getter: (() => { defaultAuthor: string }) | null } = { getter: null }
-
-export function setSettingsGetter(getter: () => { defaultAuthor: string }): void {
-  settingsSource.getter = getter
-}
-
 /**
 Parameter types that represent numeric database IDs in RPG Maker MZ.
 Used by the generator (accessor parser, formatJSDefault) and export formats (paramTypeToTS).
@@ -193,14 +185,14 @@ export const ALL_PARAM_TYPES: ReadonlySet<string> = new Set<string>([
   'array'
 ])
 
-export function createEmptyPlugin(): PluginDefinition {
-  const settings = settingsSource.getter?.()
+// A new plugin; the app's callers pass the default author set in Settings
+export function createEmptyPlugin(defaultAuthor = ''): PluginDefinition {
   return {
     id: crypto.randomUUID(),
     meta: {
       name: 'NewPlugin',
       version: '1.0.0',
-      author: settings?.defaultAuthor ?? '',
+      author: defaultAuthor,
       description: '',
       help: '',
       url: '',

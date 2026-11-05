@@ -13,7 +13,6 @@ export {
   toBaseline,
   ID_BASED_PARAM_TYPES,
   ALL_PARAM_TYPES,
-  setSettingsGetter,
   createEmptyPlugin,
   createEmptyParameter,
   createEmptyCommand,
