@@ -60,6 +60,25 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
     { height: 'abc', position: 'bottom' },
     { textColor: 7 }
+  ],
+  'sprite-custom-class': [
+    { width: null },
+    { parentClass: 7, width: 'abc', height: null, useBitmap: 'empty' },
+    { width: ['a', 'b'], useBitmap: 'filled', fillColor: 7 }
+  ],
+  'sprite-frame-animation': [
+    { frameCount: null, frameWidth: null },
+    { frameDelay: 'abc', frameHeight: ['a', 'b'] },
+    { animationType: 'grid', columns: ['a', 'b'] },
+    { animationType: 'mixin', targetClass: 7, frameCount: 'abc', columns: ['a', 'b'] },
+    { animationType: 'mixin', columns: '3', frameWidth: null },
+    { animationType: 'mixin', targetClass: null }
+  ],
+  'sprite-picture-manipulation': [
+    { operation: 'move', pictureId: 'abc', x: null, duration: ['a', 'b'] },
+    { operation: 'rotate', rotationSpeed: 'abc' },
+    { operation: 'tint', tintRed: null, tintGray: 'abc' },
+    { operation: 'erase', pictureId: null }
   ]
 }
 
