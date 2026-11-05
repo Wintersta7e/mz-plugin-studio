@@ -87,7 +87,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { tagFormat: 'keyValue', propertyName: 'bonus', defaultValue: null },
     { tagFormat: 'multiline', valueType: 'boolean', defaultValue: 'yes' },
     { valueType: 'array', defaultValue: '1, 2', propertyName: null },
-    { tagFormat: 7 }
+    { tagFormat: 7 },
+    { valueType: 7 },
+    { valueType: 'number', defaultValue: 'abc' }
   ],
   'input-handler-basic': [
     { activeScene: 'all', triggerType: null },

@@ -207,3 +207,63 @@ DataManager.onLoad = function(object) {
 
 DataManager.processSampleNotetags = function(database) {
 };
+
+// ==== case: type-violating: valueType=7 {"tagFormat":"simple","valueType":7,"databaseType":"$dataActors","tagName":"Sample"}
+// rejects: Field "Value Type" must be text
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = null;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = match[1];
+            }
+        }
+    }
+};
+
+// ==== case: type-violating: valueType="number",defaultValue="abc" {"tagFormat":"simple","valueType":"number","databaseType":"$dataActors","tagName":"Sample","defaultValue":"abc"}
+// rejects: Default value for number type must be a valid number
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = NaN;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = Number(match[1]);
+            }
+        }
+    }
+};

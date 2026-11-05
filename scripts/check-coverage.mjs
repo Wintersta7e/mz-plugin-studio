@@ -42,7 +42,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/audio-system.ts`]: 96,
       [`${GENERATOR}/templates/battle-system.ts`]: 94,
       [`${GENERATOR}/templates/custom-window.ts`]: 100,
-      [`${GENERATOR}/templates/database-ext.ts`]: 98,
+      [`${GENERATOR}/templates/database-ext.ts`]: 99,
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
       [`${GENERATOR}/templates/map-events.ts`]: 98,
       [`${GENERATOR}/templates/menu-system.ts`]: 100,
