@@ -1,9 +1,11 @@
 // Plugin editor controls a keyboard user can reach and operate: a parameter card moves up and
 // down with Alt+ArrowUp and Alt+ArrowDown from its move control, as dragging it does; the Save
-// Preset dialog takes focus in its name field and gives it back to the Presets menu button.
+// Preset dialog takes focus in its name field and gives it back to the Presets menu button; the
+// template inserter is a named modal dialog that takes focus and gives it back when it closes.
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
+import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import {
@@ -89,6 +91,20 @@ describe('parameter move control', () => {
     expect(screen.getByRole('button', { name: 'a', expanded: true })).toBeInTheDocument()
   })
 
+  it('leaves the card closed on Enter or Space on the move control', async () => {
+    expect.hasAssertions()
+
+    const user = openParameterTab()
+    screen.getByRole('button', { name: 'Move a' }).focus()
+    await user.keyboard('{Enter}')
+
+    expect(screen.getByRole('button', { name: 'a', expanded: false })).toBeInTheDocument()
+
+    await user.keyboard(' ')
+
+    expect(screen.getByRole('button', { name: 'a', expanded: false })).toBeInTheDocument()
+  })
+
   it('lists the parameter cards', () => {
     expect.hasAssertions()
 
@@ -155,5 +171,38 @@ describe('save preset dialog focus', () => {
         .flat()
         .map((p) => p.name)
     ).toStrictEqual(['a', 'b'])
+  })
+})
+
+describe('template inserter dialog', () => {
+  beforeEach(resetStores)
+
+  it('opens as a named modal dialog holding focus, and Escape gives focus back', async () => {
+    expect.hasAssertions()
+
+    usePluginStore.getState().openPlugin(createEmptyPlugin())
+    render(<CodeEditor />)
+    const user = userEvent.setup()
+    const opener = screen.getByRole('button', { name: /Insert Template/ })
+    opener.focus()
+    await user.keyboard('{Enter}')
+
+    const dialog = screen.getByRole('dialog', { name: 'Code Templates' })
+
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+
+    // Focus moves into the dialog, to its search box
+    await waitFor(() => {
+      expect(within(dialog).getByPlaceholderText(/search/i)).toHaveFocus()
+    })
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // The dialog hands focus back in a task after it unmounts
+    await waitFor(() => {
+      expect(opener).toHaveFocus()
+    })
   })
 })

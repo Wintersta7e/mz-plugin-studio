@@ -25,6 +25,7 @@ import {
   Clock,
   HelpCircle
 } from 'lucide-react'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { Input } from '../ui/input'
@@ -240,6 +241,9 @@ export function TemplateInserter({
   const [viewMode, setViewMode] = useState<'category' | 'favorites' | 'recent' | 'all'>('category')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const insertButtonRef = useRef<HTMLButtonElement>(null)
+  // What held focus when the dialog opened, to hand focus back to on close: the dialog has no
+  // trigger of its own for Radix to return it to
+  const openerRef = useRef<HTMLElement | null>(null)
 
   // Cleanup copy timer on unmount (LEAK-01)
   useEffect(
@@ -399,15 +403,6 @@ export function TemplateInserter({
     }
   }, [selectedClassName])
 
-  // Focus search on open
-  useEffect(() => {
-    if (open) {
-      const focusTimer = setTimeout(() => searchInputRef.current?.focus(), 100)
-      return () => clearTimeout(focusTimer)
-    }
-    return undefined
-  }, [open])
-
   const handleInsert = useCallback(() => {
     if (readOnly || validationErrors.length > 0) return
     if (previewCode && !previewCode.startsWith('// Error')) {
@@ -419,16 +414,15 @@ export function TemplateInserter({
     }
   }, [readOnly, validationErrors, previewCode, selectedTemplateId, addToRecent, onInsert, onClose])
 
+  // Escape and a press outside the panel close the dialog through its onOpenChange
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         // Cmd/Ctrl+Enter to insert
         handleInsert()
       }
     },
-    [onClose, handleInsert]
+    [handleInsert]
   )
 
   useEffect(() => {
@@ -438,12 +432,6 @@ export function TemplateInserter({
     }
     return undefined
   }, [open, handleKeyDown])
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose()
-    }
-  }
 
   const handleCopyCode = async () => {
     if (validationErrors.length > 0) return
@@ -752,421 +740,446 @@ export function TemplateInserter({
   const canInsert =
     validationErrors.length === 0 && previewCode && !previewCode.startsWith('// Error')
 
+  // A modal dialog: named by its title, focus held inside while open and handed back to the
+  // control that opened it on close; Escape or a press on the backdrop closes it. Held open, the
+  // dialog only ever asks to close, so onOpenChange is onClose
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-200"
-      onClick={handleOverlayClick}
-    >
-      <div className="flex h-[85vh] w-full max-w-5xl flex-col rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary" />
+    <DialogPrimitive.Root open onOpenChange={onClose}>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-200">
+        <DialogPrimitive.Content
+          aria-modal="true"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault()
+            const opener = document.activeElement
+            openerRef.current = opener instanceof HTMLElement ? opener : null
+            searchInputRef.current?.focus()
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            openerRef.current?.focus()
+          }}
+          className="flex h-[85vh] w-full max-w-5xl flex-col rounded-xl border border-border bg-background shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <DialogPrimitive.Title className="text-lg font-semibold">
+                  Code Templates
+                </DialogPrimitive.Title>
+                <DialogPrimitive.Description className="text-sm text-muted-foreground">
+                  {allTemplates.length} templates available
+                </DialogPrimitive.Description>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Code Templates</h2>
-              <p className="text-sm text-muted-foreground">
-                {allTemplates.length} templates available
-              </p>
+            <div className="flex items-center gap-2">
+              <kbd className="hidden rounded bg-muted px-2 py-1 text-xs text-muted-foreground sm:inline-block">
+                {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to insert
+              </kbd>
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <kbd className="hidden rounded bg-muted px-2 py-1 text-xs text-muted-foreground sm:inline-block">
-              {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to insert
-            </kbd>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
 
-        {/* Body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Category Sidebar */}
-          <div className="w-52 shrink-0 border-r border-border bg-card/50">
-            <div className="p-3 pb-2">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                Categories
-              </span>
-            </div>
-            {/* Quick Access */}
-            <div className="px-2 pb-1">
-              <button
-                onClick={() => {
-                  setViewMode('favorites')
-                  setSelectedTemplateId(null)
-                  setSearchQuery('')
-                }}
-                className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
-                  viewMode === 'favorites'
-                    ? 'bg-amber-500 text-white shadow-xs'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Star className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate">Favorites</span>
-                <span
+          {/* Body */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* Category Sidebar */}
+            <div className="w-52 shrink-0 border-r border-border bg-card/50">
+              <div className="p-3 pb-2">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Categories
+                </span>
+              </div>
+              {/* Quick Access */}
+              <div className="px-2 pb-1">
+                <button
+                  onClick={() => {
+                    setViewMode('favorites')
+                    setSelectedTemplateId(null)
+                    setSearchQuery('')
+                  }}
                   className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                    'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                     viewMode === 'favorites'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   )}
                 >
-                  {favorites.length}
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('recent')
-                  setSelectedTemplateId(null)
-                  setSearchQuery('')
-                }}
-                className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
-                  viewMode === 'recent'
-                    ? 'bg-blue-500 text-white shadow-xs'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Clock className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate">Recent</span>
-                <span
-                  className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                    viewMode === 'recent'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  {recentlyUsed.length}
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  setViewMode('all')
-                  setSelectedTemplateId(null)
-                  setSearchQuery('')
-                }}
-                className={cn(
-                  'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
-                  viewMode === 'all'
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                )}
-              >
-                <Search className="h-4 w-4 shrink-0" />
-                <span className="flex-1 truncate">All</span>
-                <span
-                  className={cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
-                    viewMode === 'all'
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  {allTemplates.length}
-                </span>
-              </button>
-            </div>
-            <div className="mx-3 my-1 border-t border-border" />
-            <div className="space-y-0.5 px-2 pb-2">
-              {CATEGORIES.map((category) => {
-                const IconComponent = ICON_MAP[category.icon] || Play
-                const count = templateCounts[category.id] || 0
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      setSelectedCategory(category.id)
-                      setViewMode('category')
-                    }}
+                  <Star className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">Favorites</span>
+                  <span
                     className={cn(
-                      'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
-                      selectedCategory === category.id && viewMode === 'category'
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                      viewMode === 'favorites'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-muted text-muted-foreground'
                     )}
                   >
-                    <IconComponent className="h-4 w-4 shrink-0" />
-                    <span className="flex-1 truncate">{category.name}</span>
-                    <span
+                    {favorites.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('recent')
+                    setSelectedTemplateId(null)
+                    setSearchQuery('')
+                  }}
+                  className={cn(
+                    'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
+                    viewMode === 'recent'
+                      ? 'bg-blue-500 text-white shadow-xs'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">Recent</span>
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                      viewMode === 'recent'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {recentlyUsed.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setViewMode('all')
+                    setSelectedTemplateId(null)
+                    setSearchQuery('')
+                  }}
+                  className={cn(
+                    'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all mt-0.5',
+                    viewMode === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  <Search className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">All</span>
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                      viewMode === 'all'
+                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {allTemplates.length}
+                  </span>
+                </button>
+              </div>
+              <div className="mx-3 my-1 border-t border-border" />
+              <div className="space-y-0.5 px-2 pb-2">
+                {CATEGORIES.map((category) => {
+                  const IconComponent = ICON_MAP[category.icon] || Play
+                  const count = templateCounts[category.id] || 0
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategory(category.id)
+                        setViewMode('category')
+                      }}
                       className={cn(
-                        'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                        'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
                         selectedCategory === category.id && viewMode === 'category'
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                       )}
                     >
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Search and Category Header */}
-            <div className="border-b border-border bg-card/30 px-6 py-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      ref={searchInputRef}
-                      value={searchQuery}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setSearchQuery(value)
-                        if (value.trim() && viewMode === 'category') {
-                          setViewMode('all')
-                          setSelectedTemplateId(null)
-                        } else if (!value.trim() && viewMode === 'all') {
-                          setViewMode('category')
-                        }
-                      }}
-                      placeholder={
-                        viewMode === 'favorites'
-                          ? 'Search favorites...'
-                          : viewMode === 'recent'
-                            ? 'Search recent...'
-                            : viewMode === 'all'
-                              ? 'Search all templates...'
-                              : `Search ${selectedCategoryInfo?.name.toLowerCase()} templates...`
-                      }
-                      className="h-9 pl-9"
-                    />
-                  </div>
-                </div>
-                {viewMode === 'category' && selectedCategoryInfo && (
-                  <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
-                    <ChevronRight className="h-4 w-4" />
-                    <span>{selectedCategoryInfo.name}</span>
-                  </div>
-                )}
-                {viewMode === 'favorites' && (
-                  <div className="hidden items-center gap-2 text-sm text-amber-500 sm:flex">
-                    <Star className="h-4 w-4" />
-                    <span>Favorites</span>
-                  </div>
-                )}
-                {viewMode === 'recent' && (
-                  <div className="hidden items-center gap-2 text-sm text-blue-500 sm:flex">
-                    <Clock className="h-4 w-4" />
-                    <span>Recent</span>
-                  </div>
-                )}
-                {viewMode === 'all' && (
-                  <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
-                    <Search className="h-4 w-4" />
-                    <span>All Templates</span>
-                  </div>
-                )}
+                      <IconComponent className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 truncate">{category.name}</span>
+                      <span
+                        className={cn(
+                          'rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                          selectedCategory === category.id && viewMode === 'category'
+                            ? 'bg-primary-foreground/20 text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
-            {/* Template Selection and Configuration */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Templates List */}
-              <div className="w-72 shrink-0 overflow-y-auto border-r border-border p-4">
-                {filteredTemplates.length > 0 ? (
-                  <div className="space-y-2">
-                    {filteredTemplates.map((template) => (
-                      <div key={template.id} className="group relative">
-                        <button
-                          onClick={() => setSelectedTemplateId(template.id)}
-                          data-testid="template-card"
-                          className={cn(
-                            'w-full rounded-lg border p-3 text-left transition-all',
-                            selectedTemplateId === template.id
-                              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                              : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                          )}
-                        >
-                          <div className="flex items-start gap-2">
-                            <Code2
+            {/* Main Content */}
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {/* Search and Category Header */}
+              <div className="border-b border-border bg-card/30 px-6 py-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        ref={searchInputRef}
+                        value={searchQuery}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          setSearchQuery(value)
+                          if (value.trim() && viewMode === 'category') {
+                            setViewMode('all')
+                            setSelectedTemplateId(null)
+                          } else if (!value.trim() && viewMode === 'all') {
+                            setViewMode('category')
+                          }
+                        }}
+                        placeholder={
+                          viewMode === 'favorites'
+                            ? 'Search favorites...'
+                            : viewMode === 'recent'
+                              ? 'Search recent...'
+                              : viewMode === 'all'
+                                ? 'Search all templates...'
+                                : `Search ${selectedCategoryInfo?.name.toLowerCase()} templates...`
+                        }
+                        className="h-9 pl-9"
+                      />
+                    </div>
+                  </div>
+                  {viewMode === 'category' && selectedCategoryInfo && (
+                    <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+                      <ChevronRight className="h-4 w-4" />
+                      <span>{selectedCategoryInfo.name}</span>
+                    </div>
+                  )}
+                  {viewMode === 'favorites' && (
+                    <div className="hidden items-center gap-2 text-sm text-amber-500 sm:flex">
+                      <Star className="h-4 w-4" />
+                      <span>Favorites</span>
+                    </div>
+                  )}
+                  {viewMode === 'recent' && (
+                    <div className="hidden items-center gap-2 text-sm text-blue-500 sm:flex">
+                      <Clock className="h-4 w-4" />
+                      <span>Recent</span>
+                    </div>
+                  )}
+                  {viewMode === 'all' && (
+                    <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+                      <Search className="h-4 w-4" />
+                      <span>All Templates</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Template Selection and Configuration */}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Templates List */}
+                <div className="w-72 shrink-0 overflow-y-auto border-r border-border p-4">
+                  {filteredTemplates.length > 0 ? (
+                    <div className="space-y-2">
+                      {filteredTemplates.map((template) => (
+                        <div key={template.id} className="group relative">
+                          <button
+                            onClick={() => setSelectedTemplateId(template.id)}
+                            data-testid="template-card"
+                            className={cn(
+                              'w-full rounded-lg border p-3 text-left transition-all',
+                              selectedTemplateId === template.id
+                                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                            )}
+                          >
+                            <div className="flex items-start gap-2">
+                              <Code2
+                                className={cn(
+                                  'mt-0.5 h-4 w-4 shrink-0',
+                                  selectedTemplateId === template.id
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground'
+                                )}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-sm truncate">{template.name}</div>
+                                <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                  {template.description}
+                                </div>
+                                {viewMode === 'all' && (
+                                  <span className="mt-1 inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                    {categoryNameMap[template.category] || template.category}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => toggleFavorite(template.id)}
+                            className={cn(
+                              'absolute top-2 right-2 p-1 rounded-md transition-colors',
+                              isFavorite(template.id)
+                                ? 'text-amber-400 hover:text-amber-500'
+                                : 'text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100'
+                            )}
+                            aria-label={
+                              isFavorite(template.id)
+                                ? `Remove ${template.name} from favorites`
+                                : `Add ${template.name} to favorites`
+                            }
+                          >
+                            <Star
                               className={cn(
-                                'mt-0.5 h-4 w-4 shrink-0',
-                                selectedTemplateId === template.id
-                                  ? 'text-primary'
-                                  : 'text-muted-foreground'
+                                'h-3.5 w-3.5',
+                                isFavorite(template.id) && 'fill-current'
                               )}
                             />
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-sm truncate">{template.name}</div>
-                              <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                {template.description}
-                              </div>
-                              {viewMode === 'all' && (
-                                <span className="mt-1 inline-block rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                  {categoryNameMap[template.category] || template.category}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => toggleFavorite(template.id)}
-                          className={cn(
-                            'absolute top-2 right-2 p-1 rounded-md transition-colors',
-                            isFavorite(template.id)
-                              ? 'text-amber-400 hover:text-amber-500'
-                              : 'text-muted-foreground/30 hover:text-muted-foreground opacity-0 group-hover:opacity-100'
-                          )}
-                          aria-label={
-                            isFavorite(template.id)
-                              ? `Remove ${template.name} from favorites`
-                              : `Add ${template.name} to favorites`
-                          }
-                        >
-                          <Star
-                            className={cn('h-3.5 w-3.5', isFavorite(template.id) && 'fill-current')}
-                          />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-                    <Search className="mb-2 h-8 w-8 opacity-50" />
-                    <p className="text-sm font-medium">No templates found</p>
-                    <p className="text-xs">Try a different search term</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Configuration Panel */}
-              <div className="flex flex-1 flex-col overflow-hidden">
-                {selectedTemplate ? (
-                  <div className="flex-1 overflow-y-auto p-6">
-                    <div className="mb-6">
-                      <h3 className="text-base font-semibold">{selectedTemplate.name}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedTemplate.description}
-                      </p>
-                    </div>
-
-                    {selectedTemplate.fields.length > 0 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                          <span className="h-px flex-1 bg-border" />
-                          <span>Configuration</span>
-                          <span className="h-px flex-1 bg-border" />
+                          </button>
                         </div>
-                        <TooltipProvider delayDuration={300}>
-                          <div className="grid gap-4">
-                            {selectedTemplate.fields.map((field) => renderField(field))}
-                          </div>
-                        </TooltipProvider>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
-                        No configuration required for this template
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground p-6">
-                    <div className="mb-4 rounded-full bg-muted/50 p-4">
-                      <Code2 className="h-8 w-8 opacity-50" />
+                      ))}
                     </div>
-                    <p className="text-sm font-medium">Select a template</p>
-                    <p className="text-xs mt-1">Choose a template from the list to configure it</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Preview Area */}
-            <div className="border-t border-border bg-card/50">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Preview
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyCode}
-                  disabled={!previewCode || validationErrors.length > 0}
-                  className="h-7 gap-1.5 text-xs"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-3 w-3" />
-                      Copied
-                    </>
                   ) : (
-                    <>
-                      <Copy className="h-3 w-3" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-              <div className="h-44 overflow-auto bg-[#1e1e2e] p-4">
-                {/* Always rendered, so a screen reader announces errors as they appear */}
-                <div id={errorsId} role="status" className="space-y-1.5 text-sm">
-                  {validationErrors.length > 0 && (
-                    <>
-                      <p className="text-gray-300">Fix these fields to see the code:</p>
-                      <ul className="list-disc space-y-0.5 pl-5 text-red-300">
-                        {validationErrors.map((error, index) => (
-                          <li key={index}>{error}</li>
-                        ))}
-                      </ul>
-                    </>
+                    <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
+                      <Search className="mb-2 h-8 w-8 opacity-50" />
+                      <p className="text-sm font-medium">No templates found</p>
+                      <p className="text-xs">Try a different search term</p>
+                    </div>
                   )}
                 </div>
-                {validationErrors.length > 0 ? null : previewCode ? (
-                  <code className="font-mono text-[13px] leading-relaxed text-gray-300">
-                    {highlightedPreview}
-                  </code>
-                ) : (
-                  <p className="font-mono text-sm text-gray-500">
-                    {selectedTemplate
-                      ? '// Configure the fields above to generate code'
-                      : '// Select a template to preview the generated code'}
-                  </p>
-                )}
+
+                {/* Configuration Panel */}
+                <div className="flex flex-1 flex-col overflow-hidden">
+                  {selectedTemplate ? (
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="mb-6">
+                        <h3 className="text-base font-semibold">{selectedTemplate.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {selectedTemplate.description}
+                        </p>
+                      </div>
+
+                      {selectedTemplate.fields.length > 0 ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <span className="h-px flex-1 bg-border" />
+                            <span>Configuration</span>
+                            <span className="h-px flex-1 bg-border" />
+                          </div>
+                          <TooltipProvider delayDuration={300}>
+                            <div className="grid gap-4">
+                              {selectedTemplate.fields.map((field) => renderField(field))}
+                            </div>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
+                          No configuration required for this template
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground p-6">
+                      <div className="mb-4 rounded-full bg-muted/50 p-4">
+                        <Code2 className="h-8 w-8 opacity-50" />
+                      </div>
+                      <p className="text-sm font-medium">Select a template</p>
+                      <p className="text-xs mt-1">
+                        Choose a template from the list to configure it
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Preview Area */}
+              <div className="border-t border-border bg-card/50">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Preview
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyCode}
+                    disabled={!previewCode || validationErrors.length > 0}
+                    className="h-7 gap-1.5 text-xs"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="h-44 overflow-auto bg-[#1e1e2e] p-4">
+                  {/* Always rendered, so a screen reader announces errors as they appear */}
+                  <div id={errorsId} role="status" className="space-y-1.5 text-sm">
+                    {validationErrors.length > 0 && (
+                      <>
+                        <p className="text-gray-300">Fix these fields to see the code:</p>
+                        <ul className="list-disc space-y-0.5 pl-5 text-red-300">
+                          {validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                  {validationErrors.length > 0 ? null : previewCode ? (
+                    <code className="font-mono text-[13px] leading-relaxed text-gray-300">
+                      {highlightedPreview}
+                    </code>
+                  ) : (
+                    <p className="font-mono text-sm text-gray-500">
+                      {selectedTemplate
+                        ? '// Configure the fields above to generate code'
+                        : '// Select a template to preview the generated code'}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
-          <p className="text-xs text-muted-foreground">
-            {selectedTemplate
-              ? `Template: ${selectedTemplate.name}`
-              : 'Select a template to get started'}
-          </p>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
-            <span title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined} className="inline-flex">
-              <Button
-                ref={insertButtonRef}
-                onClick={handleInsert}
-                data-testid="template-insert"
-                disabled={readOnly || !canInsert}
-                title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
-                // Read-only, the notice is why it stays disabled, not the field errors
-                aria-describedby={!readOnly && validationErrors.length > 0 ? errorsId : undefined}
-                className="gap-2"
-              >
-                <Sparkles className="h-4 w-4" />
-                Insert Code
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t border-border px-6 py-4">
+            <p className="text-xs text-muted-foreground">
+              {selectedTemplate
+                ? `Template: ${selectedTemplate.name}`
+                : 'Select a template to get started'}
+            </p>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
               </Button>
-            </span>
+              {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
+              <span
+                title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+                className="inline-flex"
+              >
+                <Button
+                  ref={insertButtonRef}
+                  onClick={handleInsert}
+                  data-testid="template-insert"
+                  disabled={readOnly || !canInsert}
+                  title={readOnly ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+                  // Read-only, the notice is why it stays disabled, not the field errors
+                  aria-describedby={!readOnly && validationErrors.length > 0 ? errorsId : undefined}
+                  className="gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Insert Code
+                </Button>
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Overlay>
+    </DialogPrimitive.Root>
   )
 }

@@ -1968,7 +1968,7 @@
       "count": 7
     },
     "@typescript-eslint/no-confusing-void-expression": {
-      "count": 12
+      "count": 11
     },
     "@typescript-eslint/no-misused-promises": {
       "count": 1
@@ -1993,12 +1993,6 @@
     },
     "complexity": {
       "count": 3
-    },
-    "jsx-a11y/click-events-have-key-events": {
-      "count": 1
-    },
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
     },
     "max-lines-per-function": {
       "count": 4
@@ -2028,7 +2022,7 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 5
+      "count": 4
     },
     "unicorn/no-array-sort": {
       "count": 2
@@ -2040,7 +2034,7 @@
       "count": 1
     },
     "unicorn/no-useless-undefined": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-early-return": {
       "count": 2
