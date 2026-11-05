@@ -3556,68 +3556,6 @@
       "count": 1
     }
   },
-  "tests/dom/plugin-store.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "sonarjs/publicly-writable-directories": {
-      "count": 13
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 4
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 16
-    },
-    "vitest/no-conditional-expect": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 35
-    }
-  },
   "tests/dom/raw-mode-controls.test.tsx": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 3
