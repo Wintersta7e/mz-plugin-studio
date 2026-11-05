@@ -36,8 +36,7 @@
       "tests/dom/app-shell.test.tsx": 1,
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
-      "tests/integration/check-coverage.test.ts": 1,
-      "tests/unit/validation.test.ts": 1
+      "tests/integration/check-coverage.test.ts": 1
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
@@ -58,9 +57,7 @@
       "tests/integration/mz-runtime-conformance.test.ts": 10,
       "tests/integration/project-scope.test.ts": 3,
       "tests/integration/release-ci-gate.test.ts": 1,
-      "tests/unit/static-scope.test.ts": 5,
-      "tests/unit/template-store.test.ts": 5,
-      "tests/unit/workflows.test.ts": 1
+      "tests/unit/static-scope.test.ts": 5
     },
     "noUncheckedIndexedAccess": {
       "src/main/ipc/dialog.ts": 4,
@@ -116,9 +113,7 @@
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
       "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/static-scope.test.ts": 1,
-      "tests/unit/test-layout.test.ts": 5,
-      "tests/unit/workflows.test.ts": 4
+      "tests/unit/static-scope.test.ts": 1
     }
   },
   "web": {

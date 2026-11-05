@@ -4,11 +4,19 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // Mock electron-log/renderer before any imports that transitively use it
-vi.mock('electron-log/renderer', () => ({
-  default: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+vi.mock<Record<'default', unknown>>(import('electron-log/renderer'), () => ({
+  default: {
+    warn: vi.fn<() => void>(),
+    info: vi.fn<() => void>(),
+    error: vi.fn<() => void>(),
+    debug: vi.fn<() => void>()
+  }
 }))
 import type * as Registry from '../../src/renderer/src/lib/generator/templates/index'
 import type { CodeTemplate } from '../../src/renderer/src/lib/generator/templates/types'
+
+const textOr = (value: unknown, fallback: string): string =>
+  typeof value === 'string' ? value : fallback
 
 function makeTemplate(overrides: Partial<CodeTemplate> = {}): CodeTemplate {
   return {
@@ -44,14 +52,24 @@ function makeTemplate(overrides: Partial<CodeTemplate> = {}): CodeTemplate {
       }
     ],
     generate: (values) => {
-      const cls = String(values.className ?? 'Game_Actor')
-      const method = String(values.methodName ?? 'initialize')
-      const timing = String(values.timing ?? 'after')
+      const cls = textOr(Reflect.get(values, 'className'), 'Game_Actor')
+      const method = textOr(Reflect.get(values, 'methodName'), 'initialize')
+      const timing = textOr(Reflect.get(values, 'timing'), 'after')
       return `// ${timing}: ${cls}.prototype.${method}`
     },
     ...overrides
   }
 }
+
+const customValidated = (): CodeTemplate =>
+  makeTemplate({
+    id: 'custom-validated',
+    validate: (values) => ({
+      valid: Reflect.get(values, 'className') === 'Game_Actor',
+      errors:
+        Reflect.get(values, 'className') === 'Game_Actor' ? [] : ['Only Game_Actor is allowed']
+    })
+  })
 
 /**
 Imports the registry afresh, with the given templates registered: it is module state, so no case
@@ -64,7 +82,7 @@ async function freshRegistry(...registered: CodeTemplate[]): Promise<typeof Regi
   return registry
 }
 
-describe('template registry', () => {
+describe('template registry: registration and listing', () => {
   describe('registerTemplate', () => {
     it('registers a template and makes it retrievable by id', async () => {
       expect.assertions(1)
@@ -73,7 +91,7 @@ describe('template registry', () => {
       const tmpl = makeTemplate()
       registry.registerTemplate(tmpl)
 
-      expect(registry.getTemplate('test-template')).toEqual(tmpl)
+      expect(registry.getTemplate('test-template')).toStrictEqual(tmpl)
     })
 
     it('overwrites an existing template with the same id', async () => {
@@ -85,7 +103,7 @@ describe('template registry', () => {
       registry.registerTemplate(tmpl1)
       registry.registerTemplate(tmpl2)
 
-      expect(registry.getTemplate('test-template')!.name).toBe('Second')
+      expect(registry.getTemplate('test-template')?.name).toBe('Second')
     })
   })
 
@@ -133,7 +151,9 @@ describe('template registry', () => {
       expect(registry.getAllTemplates()).toHaveLength(0)
     })
   })
+})
 
+describe('template registry: validation', () => {
   describe('validateTemplateValues', () => {
     it('returns valid when all required fields are provided', async () => {
       expect.assertions(2)
@@ -158,7 +178,7 @@ describe('template registry', () => {
       })
 
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.includes('Method Name'))).toBe(true)
+      expect(result.errors.some((error) => error.includes('Method Name'))).toBe(true)
     })
 
     it('returns invalid when a required field is empty string', async () => {
@@ -180,22 +200,14 @@ describe('template registry', () => {
       const result = registry.validateTemplateValues('nonexistent', {})
 
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.includes('nonexistent'))).toBe(true)
+      expect(result.errors.some((error) => error.includes('nonexistent'))).toBe(true)
     })
 
     it('runs custom validator when provided', async () => {
       expect.assertions(3)
 
       const registry = await freshRegistry(makeTemplate())
-      registry.registerTemplate(
-        makeTemplate({
-          id: 'custom-validated',
-          validate: (values) => ({
-            valid: values.className === 'Game_Actor',
-            errors: values.className === 'Game_Actor' ? [] : ['Only Game_Actor is allowed']
-          })
-        })
-      )
+      registry.registerTemplate(customValidated())
 
       const invalid = registry.validateTemplateValues('custom-validated', {
         className: 'Game_Battler',
@@ -203,7 +215,7 @@ describe('template registry', () => {
       })
 
       expect(invalid.valid).toBe(false)
-      expect(invalid.errors.some((e) => e.includes('Only Game_Actor'))).toBe(true)
+      expect(invalid.errors.some((error) => error.includes('Only Game_Actor'))).toBe(true)
 
       const valid = registry.validateTemplateValues('custom-validated', {
         className: 'Game_Actor',
@@ -213,7 +225,9 @@ describe('template registry', () => {
       expect(valid.valid).toBe(true)
     })
   })
+})
 
+describe('template registry: defaults', () => {
   describe('getTemplateDefaults', () => {
     it('returns default values for all fields that have defaults', async () => {
       expect.assertions(1)
@@ -222,7 +236,7 @@ describe('template registry', () => {
       registry.registerTemplate(makeTemplate())
       const defaults = registry.getTemplateDefaults('test-template')
 
-      expect(defaults).toEqual({
+      expect(defaults).toStrictEqual({
         className: 'Game_Actor',
         methodName: 'initialize',
         timing: 'after'
@@ -235,7 +249,7 @@ describe('template registry', () => {
       const registry = await freshRegistry()
       const defaults = registry.getTemplateDefaults('nonexistent')
 
-      expect(defaults).toEqual({})
+      expect(defaults).toStrictEqual({})
     })
 
     it('excludes fields with no default value', async () => {
@@ -253,7 +267,7 @@ describe('template registry', () => {
       )
       const defaults = registry.getTemplateDefaults('no-defaults')
 
-      expect(defaults).toEqual({})
+      expect(defaults).toStrictEqual({})
     })
   })
 })

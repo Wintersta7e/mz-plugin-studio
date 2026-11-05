@@ -23,12 +23,12 @@ function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefi
     parameters: overrides.parameters ?? [],
     commands: overrides.commands ?? [],
     structs: overrides.structs ?? [],
-    customCode: overrides.customCode,
-    codeBody: overrides.codeBody
+    ...(overrides.customCode !== undefined && { customCode: overrides.customCode }),
+    ...(overrides.codeBody !== undefined && { codeBody: overrides.codeBody })
   }
 }
 
-describe('validation - existing checks', () => {
+describe('validation: basic checks', () => {
   it('valid plugin returns no errors', () => {
     const plugin = createTestPlugin({
       parameters: [
@@ -73,7 +73,9 @@ describe('validation - existing checks', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Duplicate parameter name: alpha'))).toBe(true)
+    expect(result.errors.some((error) => error.includes('Duplicate parameter name: alpha'))).toBe(
+      true
+    )
   })
 
   it('duplicate command names return error', () => {
@@ -86,9 +88,13 @@ describe('validation - existing checks', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Duplicate command name: Action'))).toBe(true)
+    expect(result.errors.some((error) => error.includes('Duplicate command name: Action'))).toBe(
+      true
+    )
   })
+})
 
+describe('validation: struct references', () => {
   it('undefined struct reference returns warning', () => {
     const plugin = createTestPlugin({
       parameters: [
@@ -174,7 +180,7 @@ describe('validation - empty parameter name', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('empty'))).toBe(true)
+    expect(result.errors.some((error) => error.includes('empty'))).toBe(true)
   })
 })
 
@@ -232,7 +238,7 @@ describe('validation - COV-04 gaps', () => {
   })
 })
 
-describe('validation - new checks', () => {
+describe('validation: struct usage', () => {
   it('warns about unused struct definitions', () => {
     const plugin = createTestPlugin({
       structs: [{ id: 's1', name: 'Orphan', parameters: [] }]
@@ -291,7 +297,9 @@ describe('validation - new checks', () => {
 
     expect(result.warnings.every((w) => !w.includes('CmdStruct'))).toBe(true)
   })
+})
 
+describe('validation: parent and command checks', () => {
   it('errors on parameter referencing nonexistent parent', () => {
     const plugin = createTestPlugin({
       parameters: [
@@ -310,7 +318,9 @@ describe('validation - new checks', () => {
 
     expect(result.valid).toBe(false)
     expect(
-      result.errors.some((e) => e.includes('nonexistent parent') && e.includes('nonExistentParent'))
+      result.errors.some(
+        (error) => error.includes('nonexistent parent') && error.includes('nonExistentParent')
+      )
     ).toBe(true)
   })
 
@@ -331,7 +341,7 @@ describe('validation - new checks', () => {
     })
     const result = validatePlugin(plugin)
 
-    expect(result.errors.every((e) => !e.includes('nonexistent parent'))).toBe(true)
+    expect(result.errors.every((error) => !error.includes('nonexistent parent'))).toBe(true)
   })
 
   it('warns about commands with no implementation in custom code', () => {
@@ -364,7 +374,9 @@ describe('validation - new checks', () => {
 
     expect(result.warnings.every((w) => !w.includes('no implementation'))).toBe(true)
   })
+})
 
+describe('validation: struct JSON defaults', () => {
   it('warns when struct param has invalid JSON default', () => {
     const plugin = createTestPlugin({
       parameters: [
@@ -455,7 +467,7 @@ describe('validation - identifier sanitization', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('fooBar'))).toBe(true)
+    expect(result.errors.some((error) => error.includes('fooBar'))).toBe(true)
   })
 
   it('warns when a parameter name is a JS reserved word', () => {
@@ -503,7 +515,7 @@ describe('validation - identifier sanitization', () => {
     const result = validatePlugin(plugin)
 
     // Section dividers are skipped by the collision detector
-    expect(result.errors.filter((e) => e.includes('generate identifier'))).toHaveLength(0)
+    expect(result.errors.filter((error) => error.includes('generate identifier'))).toHaveLength(0)
   })
 })
 
@@ -531,6 +543,8 @@ describe('validation - line breaks in annotation text', () => {
     const plugin = createTestPlugin()
     plugin.meta.help = 'line one\r\nline two'
 
-    expect(validatePlugin(plugin).warnings.filter((w) => w.includes('line break'))).toEqual([])
+    expect(
+      validatePlugin(plugin).warnings.filter((warning) => warning.includes('line break'))
+    ).toStrictEqual([])
   })
 })
