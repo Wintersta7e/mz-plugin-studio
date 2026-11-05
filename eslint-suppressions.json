@@ -6669,71 +6669,6 @@
       "count": 8
     }
   },
-  "tests/unit/fixture-set.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "no-console": {
-      "count": 1
-    },
-    "no-useless-assignment": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 5
-    },
-    "unicorn/no-array-sort": {
-      "count": 4
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 3
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    }
-  },
   "tests/unit/generator.test.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
@@ -6764,44 +6699,6 @@
     },
     "vitest/prefer-each": {
       "count": 1
-    }
-  },
-  "tests/unit/injection.test.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 9
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 3
-    },
-    "unicorn/name-replacements": {
-      "count": 38
-    },
-    "unicorn/no-unnecessary-array-flat-map": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 6
-    },
-    "vitest/max-expects": {
-      "count": 4
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 18
     }
   },
   "tests/unit/ipc-contract.test.ts": {
