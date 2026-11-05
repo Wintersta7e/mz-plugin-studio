@@ -1193,29 +1193,11 @@
     "sonarjs/updated-loop-counter": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/filename-case": {
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 21
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 15
-    },
-    "unicorn/no-negated-condition": {
-      "count": 5
-    },
-    "unicorn/no-unreadable-array-destructuring": {
-      "count": 1
-    },
-    "unicorn/prefer-continue": {
-      "count": 2
-    },
-    "unicorn/prefer-else-if": {
-      "count": 1
+      "count": 4
     },
     "unicorn/prefer-includes-over-repeated-comparisons": {
       "count": 1
@@ -1232,13 +1214,7 @@
     "unicorn/prefer-simple-condition-first": {
       "count": 1
     },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
-    },
     "unicorn/prefer-ternary": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
       "count": 4
     }
   },

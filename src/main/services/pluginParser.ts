@@ -28,36 +28,41 @@ interface ParsedMeta {
 }
 
 /**
- * A tag counts only at the start of a line (optional whitespace, an optional `*`, optional
- * whitespace), so an `@` inside a value or after a zero-width space in help text is not a tag.
- */
+A tag counts only at the start of a line (optional whitespace, an optional `*`, optional
+whitespace), so an `@` inside a value or after a zero-width space in help text is not a tag.
+*/
 const LINE_START = String.raw`(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?`
 
-/** `@` followed by `rest`, where a tag can start. */
+/**
+`@` followed by `rest`, where a tag can start.
+*/
 function tagRegex(rest: string, flags = ''): RegExp {
   return new RegExp(`${LINE_START}@${rest}`, flags)
 }
 
-/** nextNonWs[i]: first index >= i of `text` that is not whitespace (the length if none). */
+/**
+nextNonWs[i]: first index >= i of `text` that is not whitespace (the length if none).
+*/
 function nextNonWsTable(text: string): Int32Array {
   const n = text.length
   const nextNonWs = new Int32Array(n + 1)
   nextNonWs[n] = n
-  for (let i = n - 1; i >= 0; i--) nextNonWs[i] = /\s/.test(text[i]) ? nextNonWs[i + 1] : i
+  for (let index = n - 1; index >= 0; index--)
+    nextNonWs[index] = /\s/.test(text[index]) ? nextNonWs[index + 1] : index
   return nextNonWs
 }
 
 /**
- * A help body ends at a line break before a line that starts a tag (`@` and a letter, the same
- * line start as every tag) or the end of the comment; a description at any `@` there.
- */
+A help body ends at a line break before a line that starts a tag (`@` and a letter, the same
+line start as every tag) or the end of the comment; a description at any `@` there.
+*/
 const HELP_END = new RegExp(String.raw`\n(?:${LINE_START}@[a-z]|[^\S\r\n]*\*\/)`, 'iy')
 const DESC_END = new RegExp(String.raw`\n(?:${LINE_START}@|[^\S\r\n]*\*\/)`, 'y')
 
 /**
- * First line break at or after `from` where `end` matches (-1 if none). Each test reads only the
- * start of the line after the break, so the whole search is linear.
- */
+First line break at or after `from` where `end` matches (-1 if none). Each test reads only the
+start of the line after the break, so the whole search is linear.
+*/
 function firstEnd(text: string, end: RegExp, from: number): number {
   for (let p = text.indexOf('\n', from); p !== -1; p = text.indexOf('\n', p + 1)) {
     end.lastIndex = p
@@ -67,10 +72,10 @@ function firstEnd(text: string, end: RegExp, from: number): number {
 }
 
 /**
- * Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=<HELP_END>)/i)?.[1], in linear
- * time, except that a body with no end after it runs to the end of the header (help written last
- * in a block).
- */
+Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=<HELP_END>)/i)?.[1], in linear
+time, except that a body with no end after it runs to the end of the header (help written last
+in a block).
+*/
 export function matchHelp(header: string): string | undefined {
   const m = tagRegex('help', 'i').exec(header)
   if (m === null) return undefined
@@ -86,9 +91,9 @@ export function matchHelp(header: string): string | undefined {
 }
 
 /**
- * Same result as header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=<DESC_END>|$)/s)?.[1],
- * in linear time.
- */
+Same result as header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=<DESC_END>|$)/s)?.[1],
+in linear time.
+*/
 export function matchPlugindesc(header: string): string | undefined {
   const m = tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*`).exec(header)
   if (m === null) return undefined
@@ -99,10 +104,10 @@ export function matchPlugindesc(header: string): string | undefined {
 }
 
 /**
- * Same result as content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1], in linear time: a
- * name is tried right after the tag and then only where a word starts, since a name tried inside
- * a long word would re-read the rest of the word at every character.
- */
+Same result as content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1], in linear time: a
+name is tried right after the tag and then only where a word starts, since a name tried inside
+a long word would re-read the rest of the word at every character.
+*/
 export function matchScriptName(content: string): string | undefined {
   return /\*\s+@plugindesc(?:|[\s\S]*?\b)(\w+)\.js/i.exec(content)?.[1]
 }
@@ -112,18 +117,20 @@ export function joinStarLines(text: string): string {
   const nextNonWs = nextNonWsTable(text)
   let out = ''
   let copied = 0
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] !== '\n') continue
-    const star = nextNonWs[i + 1]
+  for (let index = 0; index < text.length; index++) {
+    if (text[index] !== '\n') continue
+    const star = nextNonWs[index + 1]
     if (text[star] !== '*') continue
-    out += text.slice(copied, i) + ' '
+    out += text.slice(copied, index) + ' '
     copied = nextNonWs[star + 1]
-    i = copied - 1
+    index = copied - 1
   }
   return out + text.slice(copied)
 }
 
-/** Same result as value.replace(/\s*\*?\s*$/, ''), in linear time. */
+/**
+Same result as value.replace(/\s*\*?\s*$/, ''), in linear time.
+*/
 export function stripTrailingStar(value: string): string {
   const trimmed = value.trimEnd()
   return trimmed.endsWith('*') ? trimmed.slice(0, -1).trimEnd() : trimmed
@@ -132,7 +139,7 @@ export function stripTrailingStar(value: string): string {
 export class PluginParser {
   static parsePlugin(content: string, filename?: string): PluginDefinition {
     // Values are read from an LF copy, so a CRLF file parses the same as its LF twin
-    const text = content.replace(/\r\n/g, '\n')
+    const text = content.replaceAll('\r\n', '\n')
     const blocks = findAnnotationBlocks(text)
     const inner = (b: AnnotationBlock): string => text.slice(b.start + b.opener.length, b.end - 2)
     const headers = blocks.filter((b) => b.kind !== 'struct')
@@ -190,9 +197,9 @@ export class PluginParser {
   }
 
   /**
-   * Extract the code body (implementation) from the plugin content: the text outside every
-   * annotation block, as written.
-   */
+  Extract the code body (implementation) from the plugin content: the text outside every
+  annotation block, as written.
+  */
   private static extractCodeBody(content: string): string {
     let codeBody = ''
     let at = 0
@@ -204,17 +211,17 @@ export class PluginParser {
   }
 
   /**
-   * Extract custom code from the code body.
-   * This attempts to find user-written code after the boilerplate sections
-   * (parameter parsing and command registration).
-   *
-   * Heuristics used:
-   * 1. Unwrap IIFE wrapper if present, so heuristics work on inner content
-   * 2. Look for common markers like "// Custom", "// Plugin code", etc.
-   * 3. Look for code after the last PluginManager.registerCommand block
-   * 4. Look for code after PluginManager.parameters parsing
-   * 5. If no boilerplate detected, return the entire (unwrapped) body
-   */
+  Extract custom code from the code body.
+  This attempts to find user-written code after the boilerplate sections
+  (parameter parsing and command registration).
+  
+  Heuristics used:
+  1. Unwrap IIFE wrapper if present, so heuristics work on inner content
+  2. Look for common markers like "// Custom", "// Plugin code", etc.
+  3. Look for code after the last PluginManager.registerCommand block
+  4. Look for code after PluginManager.parameters parsing
+  5. If no boilerplate detected, return the entire (unwrapped) body
+  */
   private static extractCustomCode(codeBody: string): string {
     if (!codeBody) return ''
 
@@ -283,10 +290,10 @@ export class PluginParser {
   }
 
   /**
-   * Unwrap an IIFE wrapper, returning the inner content.
-   * Handles: (() => { ... })(); and (function() { ... })();
-   * Returns null if the code is not wrapped in an IIFE.
-   */
+  Unwrap an IIFE wrapper, returning the inner content.
+  Handles: (() => { ... })(); and (function() { ... })();
+  Returns null if the code is not wrapped in an IIFE.
+  */
   private static unwrapIIFE(code: string): string | null {
     // Check for IIFE opening pattern
     const iifeOpen = /^\s*\(\s*(?:\(\s*\)\s*=>|function\s*\(\s*\))\s*\{/.exec(code)
@@ -321,47 +328,49 @@ export class PluginParser {
   }
 
   /**
-   * Find the end of a code block (matching closing brace and parenthesis for registerCommand)
-   */
+  Find the end of a code block (matching closing brace and parenthesis for registerCommand)
+  */
   private static findBlockEnd(code: string): number {
     let braceCount = 0
-    let inString = false
+    let isInString = false
     let stringChar = ''
 
-    for (let i = 0; i < code.length; i++) {
-      const char = code[i]
+    for (let index = 0; index < code.length; index++) {
+      const char = code[index]
 
       // Count consecutive backslashes before this character
       let backslashes = 0
-      for (let j = i - 1; j >= 0 && code[j] === '\\'; j--) backslashes++
+      for (let index_ = index - 1; index_ >= 0 && code[index_] === '\\'; index_--) backslashes++
       const isEscaped = backslashes % 2 !== 0
 
       // Handle string literals
       if ((char === '"' || char === "'" || char === '`') && !isEscaped) {
-        if (!inString) {
-          inString = true
+        if (!isInString) {
+          isInString = true
           stringChar = char
         } else if (char === stringChar) {
-          inString = false
+          isInString = false
         }
         continue
       }
 
-      if (inString) continue
+      if (isInString) continue
 
       if (char === '{') braceCount++
-      if (char === '}') {
-        braceCount--
-        // Found the closing of registerCommand's function block
-        if (braceCount === 0) {
-          // Look for the closing );
-          const rest = code.slice(i + 1)
-          const closeMatch = /^\s*\)\s*;?/.exec(rest)
-          if (closeMatch) {
-            return i + 1 + closeMatch[0].length
-          }
-          return i
+      if (char !== '}') {
+        continue
+      }
+
+      braceCount--
+      // Found the closing of registerCommand's function block
+      if (braceCount === 0) {
+        // Look for the closing );
+        const rest = code.slice(index + 1)
+        const closeMatch = /^\s*\)\s*;?/.exec(rest)
+        if (closeMatch) {
+          return index + 1 + closeMatch[0].length
         }
+        return index
       }
     }
 
@@ -466,12 +475,13 @@ export class PluginParser {
     const noteParamMatches = [
       ...header.matchAll(tagRegex(String.raw`noteParam(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi'))
     ]
-    for (let i = 0; i < noteParamMatches.length; i++) {
-      const npMatch = noteParamMatches[i]
+    for (let index = 0; index < noteParamMatches.length; index++) {
+      const npMatch = noteParamMatches[index]
       // Get the text between this @noteParam and the next one (or end of header)
-      const startIdx = npMatch.index + npMatch[0].length
-      const endIdx = i + 1 < noteParamMatches.length ? noteParamMatches[i + 1].index : header.length
-      const groupBlock = header.slice(startIdx, endIdx)
+      const startIndex = npMatch.index + npMatch[0].length
+      const endIndex =
+        index + 1 < noteParamMatches.length ? noteParamMatches[index + 1].index : header.length
+      const groupBlock = header.slice(startIndex, endIndex)
 
       const noteParam: NoteParam = {
         name: npMatch[1].trim(),
@@ -508,21 +518,23 @@ export class PluginParser {
   ): Record<string, LocalizedContent> {
     const localizations: Record<string, LocalizedContent> = {}
     for (const [lang, langHeader] of languages) {
-      if (lang) {
-        const locDesc = matchPlugindesc(langHeader)
-        const locHelp = matchHelp(langHeader)
+      if (!lang) {
+        continue
+      }
 
-        localizations[lang] = {
-          description: locDesc !== undefined ? joinStarLines(locDesc).trim() : '',
-          help:
-            locHelp !== undefined
-              ? locHelp
-                  .split('\n')
-                  .map((line) => line.replace(/^\s*\*\s?/, ''))
-                  .join('\n')
-                  .trim()
-              : ''
-        }
+      const locDesc = matchPlugindesc(langHeader)
+      const locHelp = matchHelp(langHeader)
+
+      localizations[lang] = {
+        description: locDesc === undefined ? '' : joinStarLines(locDesc).trim(),
+        help:
+          locHelp === undefined
+            ? ''
+            : locHelp
+                .split('\n')
+                .map((line) => line.replace(/^\s*\*\s?/, ''))
+                .join('\n')
+                .trim()
       }
     }
     return localizations
@@ -560,8 +572,8 @@ export class PluginParser {
         effectiveBlock = paramBlock
       }
 
-      const rawTypeStr = this.extractTag(effectiveBlock, 'type') || 'string'
-      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeStr)
+      const rawTypeString = this.extractTag(effectiveBlock, 'type') || 'string'
+      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeString)
 
       const param: PluginParameter = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
@@ -570,7 +582,7 @@ export class PluginParser {
         desc: this.extractTag(effectiveBlock, 'desc') || '',
         type,
         default: this.parseDefault(effectiveBlock),
-        rawType: rawTypeStr !== type ? rawTypeStr : undefined
+        rawType: rawTypeString === type ? undefined : rawTypeString
       }
 
       // Set array-specific fields
@@ -635,26 +647,26 @@ export class PluginParser {
     const commands: PluginCommand[] = []
 
     // Match @command blocks
-    const cmdRegex = tagRegex(
+    const commandRegex = tagRegex(
       String.raw`command(?!\S)[^\S\r\n]*(\S*)([\s\S]*?)(?=${LINE_START}@command\s+\S|\*\/|$)`,
       'g'
     )
     let match
 
-    while ((match = cmdRegex.exec(header)) !== null) {
-      const cmdName = match[1]
-      if (!cmdName) continue
-      const cmdBlock = match[2]
+    while ((match = commandRegex.exec(header)) !== null) {
+      const commandName = match[1]
+      if (!commandName) continue
+      const commandBlock = match[2]
       // The command's own tags come before its first @arg
-      const firstArg = cmdBlock.search(tagRegex(String.raw`arg\s`))
-      const cmdHead = firstArg === -1 ? cmdBlock : cmdBlock.slice(0, firstArg)
+      const firstArg = commandBlock.search(tagRegex(String.raw`arg\s`))
+      const commandHead = firstArg === -1 ? commandBlock : commandBlock.slice(0, firstArg)
 
       const command: PluginCommand = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
-        name: cmdName,
-        text: this.extractTag(cmdHead, 'text') || cmdName,
-        desc: this.extractTag(cmdHead, 'desc') || '',
-        args: this.parseArgs(cmdBlock)
+        name: commandName,
+        text: this.extractTag(commandHead, 'text') || commandName,
+        desc: this.extractTag(commandHead, 'desc') || '',
+        args: this.parseArgs(commandBlock)
       }
 
       commands.push(command)
@@ -678,8 +690,8 @@ export class PluginParser {
       if (!argName) continue
       const argBlock = match[2]
 
-      const rawTypeStr = this.extractTag(argBlock, 'type') || 'string'
-      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeStr)
+      const rawTypeString = this.extractTag(argBlock, 'type') || 'string'
+      const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeString)
 
       const arg: PluginParameter = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
@@ -688,7 +700,7 @@ export class PluginParser {
         desc: this.extractTag(argBlock, 'desc') || '',
         type,
         default: this.parseDefault(argBlock),
-        rawType: rawTypeStr !== type ? rawTypeStr : undefined
+        rawType: rawTypeString === type ? undefined : rawTypeString
       }
 
       // Set array-specific fields
@@ -740,15 +752,16 @@ export class PluginParser {
   }
 
   /**
-   * One struct per name from `[name, lang, block text]` entries: its bare block, else its `:en`
-   * block, else its first block. `/*~struct~Name:ja` and the like are translations of `Name`.
-   */
+  One struct per name from `[name, lang, block text]` entries: its bare block, else its `:en`
+  block, else its first block. `/*~struct~Name:ja` and the like are translations of `Name`.
+  */
   private static parseStructs(blocks: [string, string, string][]): PluginStruct[] {
     const names = [...new Set(blocks.map(([name]) => name))]
     return names.map((name) => {
       const own = blocks.filter(([n]) => n === name)
-      const [, , structBlock] =
-        own.find(([, lang]) => lang === '') ?? own.find(([, lang]) => lang === 'en') ?? own[0]
+      const structBlock = (own.find(([, lang]) => lang === '') ??
+        own.find(([, lang]) => lang === 'en') ??
+        own[0])[2]
       return {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
         name,
@@ -762,42 +775,44 @@ export class PluginParser {
     return value === null ? null : stripTrailingStar(value).trim()
   }
 
-  /** The rest of the line after the first `@tag`: '' when the tag has no value, null without the tag. */
+  /**
+  The rest of the line after the first `@tag`: '' when the tag has no value, null without the tag.
+  */
   private static tagValue(block: string, tag: string): string | null {
     const match = block.match(tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i'))
     return match ? match[1].trim() : null
   }
 
   /**
-   * Detect whether a raw param name line uses compact single-line format.
-   * e.g. "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
-   */
+  Detect whether a raw param name line uses compact single-line format.
+  e.g. "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
+  */
   private static isCompactFormat(rawName: string): boolean {
     // If the "name" contains @text, @type, @desc, etc., it's compact format
     return COMPACT_PARAM_TAG.test(rawName)
   }
 
   /**
-   * Parse a compact single-line parameter definition into name + pseudo-block.
-   * Input: "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
-   * Output: { name: "disableLoggingSwitch", block: "@text ログ...\n@type switch\n@default 0" }
-   */
+  Parse a compact single-line parameter definition into name + pseudo-block.
+  Input: "disableLoggingSwitch @text ログ記録無効スイッチ @type switch @default 0"
+  Output: { name: "disableLoggingSwitch", block: "@text ログ...\n@type switch\n@default 0" }
+  */
   private static parseCompactParam(rawLine: string): { name: string; block: string } {
     // Find the first @ tag to split name from attributes
-    const firstTagIdx = rawLine.search(
+    const firstTagIndex = rawLine.search(
       /@(?:text|type|desc|default|min|max|dir|parent|on|off|option|value|decimals)\s/i
     )
-    if (firstTagIdx === -1) {
+    if (firstTagIndex === -1) {
       return { name: rawLine.trim(), block: '' }
     }
 
-    const name = rawLine.slice(0, firstTagIdx).trim()
-    const attrsPart = rawLine.slice(firstTagIdx)
+    const name = rawLine.slice(0, firstTagIndex).trim()
+    const attributesPart = rawLine.slice(firstTagIndex)
 
     // Split inline attributes into separate lines for standard parsing.
     // Matches @tag followed by value up to next @tag or end.
-    const block = attrsPart
-      .replace(
+    const block = attributesPart
+      .replaceAll(
         /@(?=text\s|type\s|desc\s|default\s|min\s|max\s|dir\s|parent\s|on\s|off\s|option\s|value\s|decimals\s|require\s)/gi,
         '\n@'
       )
@@ -807,24 +822,24 @@ export class PluginParser {
   }
 
   /**
-   * Extended type parser that also handles arrays and returns structured info.
-   * Returns the ParamType, plus arrayType and structType for arrays.
-   */
-  private static parseParamTypeEx(typeStr: string): {
+  Extended type parser that also handles arrays and returns structured info.
+  Returns the ParamType, plus arrayType and structType for arrays.
+  */
+  private static parseParamTypeEx(typeString: string): {
     type: ParamType
     arrayType?: ParamType
     structType?: string
   } {
-    const trimmed = typeStr.trim()
+    const trimmed = typeString.trim()
     const normalized = trimmed.toLowerCase()
 
     // Check for array types first (e.g., "struct<Gauge>[]", "select[]", "String[]")
     if (normalized.includes('[]')) {
-      const baseStr = trimmed.replace(/\[\]$/, '')
-      const baseNormalized = baseStr.toLowerCase()
+      const baseString = trimmed.replace(/\[\]$/, '')
+      const baseNormalized = baseString.toLowerCase()
 
       // Array of structs: struct<Name>[]
-      const structArrayMatch = /^struct<(\w+)>$/i.exec(baseStr)
+      const structArrayMatch = /^struct<(\w+)>$/i.exec(baseString)
       if (structArrayMatch) {
         return { type: 'array', arrayType: 'struct', structType: structArrayMatch[1] }
       }
@@ -844,8 +859,8 @@ export class PluginParser {
   }
 
   /**
-   * Parse a single (non-array, non-struct) type string into a ParamType.
-   */
+  Parse a single (non-array, non-struct) type string into a ParamType.
+  */
   private static parseSingleType(normalizedType: string): ParamType {
     if (normalizedType === 'number' || normalizedType === 'num') return 'number'
     if (normalizedType === 'boolean' || normalizedType === 'bool') return 'boolean'
@@ -904,7 +919,7 @@ export class PluginParser {
       // Only look for @value between this @option and the next @option (or end of block)
       const afterOption = match.index + match[0].length
       const nextOptionMatch = block.slice(afterOption).search(tagRegex(String.raw`option\s`, 'i'))
-      const searchEnd = nextOptionMatch !== -1 ? afterOption + nextOptionMatch : block.length
+      const searchEnd = nextOptionMatch === -1 ? block.length : afterOption + nextOptionMatch
       const searchSlice = block.slice(afterOption, searchEnd)
       const value = this.tagValue(searchSlice, 'value') ?? optText
 
