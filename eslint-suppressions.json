@@ -3814,16 +3814,13 @@
   },
   "src/renderer/src/stores/uiStore.ts": {
     "@typescript-eslint/no-dynamic-delete": {
-      "count": 2
+      "count": 1
     },
     "no-duplicate-imports": {
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
       "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
     },
     "unicorn/filename-case": {
       "count": 1

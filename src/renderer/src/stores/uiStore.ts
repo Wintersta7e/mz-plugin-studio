@@ -9,7 +9,6 @@ import {
   isRecord
 } from './persist'
 import type { MigrationStep } from './persist'
-import { usePluginStore } from './pluginStore'
 
 interface UIState {
   sidebarWidth: number
@@ -167,25 +166,7 @@ export const useUIStore = create<UIState>()(
         previewCollapsed: state.previewCollapsed,
         lastTemplateCategory: state.lastTemplateCategory,
         rawModeByPluginId: state.rawModeByPluginId
-      }),
-      // Prune rawModeByPluginId entries for plugins no longer open (LEAK-05)
-      onRehydrateStorage: () => (state) => {
-        if (!state) return
-        // Defer to next tick so pluginStore is fully hydrated first
-        setTimeout(() => {
-          try {
-            const liveIds = new Set(usePluginStore.getState().openPlugins.map((p) => p.id))
-            const raw = useUIStore.getState().rawModeByPluginId
-            const stale = Object.keys(raw).filter((k) => !liveIds.has(k))
-            if (stale.length === 0) return
-            const next = { ...raw }
-            for (const key of stale) delete next[key]
-            useUIStore.setState({ rawModeByPluginId: next })
-          } catch {
-            // pluginStore not available (e.g. in tests) — skip pruning
-          }
-        }, 0)
-      }
+      })
     })
   )
 )

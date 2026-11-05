@@ -25,9 +25,7 @@ import {
   isRecord
 } from './persist'
 import type { FieldCheck, FieldPath, MigrationStep } from './persist'
-// Cross-store imports — safe because getState() is only called at runtime (inside
-// store actions), never during module initialization. ESM circular bindings resolve
-// by the time any user interaction triggers these actions.
+// None of these stores imports this one, so each is fully set up before this module runs.
 import { useUIStore } from './uiStore'
 import { useHistoryStore } from './historyStore'
 import { useSettingsStore } from './settingsStore'
@@ -810,3 +808,16 @@ export const usePluginStore = create<PluginState>()(
     })
   )
 )
+
+// The ui store keeps a raw-mode switch per tab; once the open tabs have loaded, drop the
+// switches of tabs no longer open. Nothing is saved when every switch belongs to an open tab.
+function pruneRawMode(): void {
+  const open = new Set(usePluginStore.getState().openPlugins.map((p) => p.id))
+  const raw = useUIStore.getState().rawModeByPluginId
+  const kept = Object.entries(raw).filter(([id]) => open.has(id))
+  if (kept.length === Object.keys(raw).length) return
+  useUIStore.setState({ rawModeByPluginId: Object.fromEntries(kept) })
+}
+
+if (usePluginStore.persist.hasHydrated()) pruneRawMode()
+else usePluginStore.persist.onFinishHydration(pruneRawMode)
