@@ -8,6 +8,7 @@
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
 - Parameter, command and struct cards open and close from the keyboard: press Tab to reach a card, then Enter or Space. Screen readers announce whether a card is open. Clicking anywhere on a card's header still opens and closes it as before.
 - Parameters can be moved up and down from the keyboard, not only by dragging: press Tab to reach a parameter's grip, then Alt+Up or Alt+Down moves the parameter one place, and the grip keeps the focus. Screen readers announce the parameters as a list.
+- When the Save Preset dialog closes, whether you save, cancel or press Escape, the focus goes back to the **Presets** button instead of being lost, so you can carry on from the keyboard.
 
 ## [1.8.1] - 2026-11-05
 

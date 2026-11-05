@@ -1800,9 +1800,6 @@
     "complexity": {
       "count": 1
     },
-    "jsx-a11y/no-autofocus": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 3
     },

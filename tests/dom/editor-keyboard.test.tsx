@@ -1,10 +1,11 @@
 // Plugin editor controls a keyboard user can reach and operate: a parameter card moves up and
-// down with Alt+ArrowUp and Alt+ArrowDown from its move control, as dragging it does.
+// down with Alt+ArrowUp and Alt+ArrowDown from its move control, as dragging it does; the Save
+// Preset dialog takes focus in its name field and gives it back to the Presets menu button.
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { ParameterBuilder } from '../../src/renderer/src/components/plugin/ParameterBuilder'
-import { usePluginStore } from '../../src/renderer/src/stores'
+import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import {
   createEmptyParameter,
   createEmptyPlugin,
@@ -94,5 +95,65 @@ describe('parameter move control', () => {
     openParameterTab()
 
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
+  })
+})
+
+// Selects every parameter, then opens Save Preset from the Presets menu with the keyboard
+async function openSavePreset(user: UserEvent): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Select All' }))
+  screen.getByRole('button', { name: 'Presets' }).focus()
+  await user.keyboard('{Enter}')
+  await screen.findByRole('menuitem', { name: 'Save Selection as Preset...' })
+  await user.keyboard('{Enter}')
+}
+
+describe('save preset dialog focus', () => {
+  beforeEach(resetStores)
+
+  it('puts focus in the name field when it opens', async () => {
+    expect.hasAssertions()
+
+    const user = openParameterTab()
+    await openSavePreset(user)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Preset Name')).toHaveFocus()
+    })
+  })
+
+  it('gives focus back to the Presets button when Escape closes it', async () => {
+    expect.hasAssertions()
+
+    const user = openParameterTab()
+    await openSavePreset(user)
+    await screen.findByLabelText('Preset Name')
+    await user.keyboard('{Escape}')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    expect(screen.getByRole('button', { name: 'Presets' })).toHaveFocus()
+  })
+
+  it('saves the preset on Enter in the name field', async () => {
+    expect.hasAssertions()
+
+    const user = openParameterTab()
+    await openSavePreset(user)
+    await user.type(await screen.findByLabelText('Preset Name'), 'Mine{Enter}')
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    const presets = useSettingsStore.getState().parameterPresets
+
+    expect(Object.keys(presets)).toStrictEqual(['Mine'])
+    expect(
+      Object.values(presets)
+        .flat()
+        .map((p) => p.name)
+    ).toStrictEqual(['a', 'b'])
   })
 })

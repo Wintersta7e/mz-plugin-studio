@@ -141,6 +141,10 @@ export function ParameterBuilder() {
   const [presetNameOpen, setPresetNameOpen] = useState(false)
   const [presetNameValue, setPresetNameValue] = useState('')
   const presetSavingRef = useRef(false)
+  // The dialog opens from a menu item that is gone once it closes, so focus moves by hand: into
+  // the name field on open, back to the Presets menu button on close
+  const presetNameInputRef = useRef<HTMLInputElement>(null)
+  const presetsButtonRef = useRef<HTMLButtonElement>(null)
 
   // Clear selection when plugin changes (e.g. open different file, undo/redo)
   useEffect(() => {
@@ -493,7 +497,7 @@ export function ParameterBuilder() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-xs">
+                <Button ref={presetsButtonRef} variant="ghost" size="sm" className="text-xs">
                   <Bookmark className="mr-1 h-3.5 w-3.5" /> Presets
                   <ChevronDown className="ml-1 h-3 w-3" />
                 </Button>
@@ -577,7 +581,17 @@ export function ParameterBuilder() {
           setPresetNameOpen(open)
         }}
       >
-        <DialogContent className="max-w-sm">
+        <DialogContent
+          className="max-w-sm"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault()
+            presetNameInputRef.current?.focus()
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            presetsButtonRef.current?.focus()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Save Preset</DialogTitle>
             <DialogDescription>
@@ -588,11 +602,11 @@ export function ParameterBuilder() {
           <div className="space-y-2 py-2">
             <Label htmlFor="preset-name">Preset Name</Label>
             <Input
+              ref={presetNameInputRef}
               id="preset-name"
               value={presetNameValue}
               onChange={(e) => setPresetNameValue(e.target.value)}
               placeholder="My Preset"
-              autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
