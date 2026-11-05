@@ -26,6 +26,7 @@ import { shouldHandleShortcut } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { saveAllPlugins, savePlugin } from './lib/save-plugin'
 import { NOTICE_MS } from './stores/toastStore'
+import { PREVIEW_WIDTH_MAX, PREVIEW_WIDTH_MIN } from './stores/uiStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
@@ -43,6 +44,8 @@ const CodePreview = lazy(() =>
 const pluginFade = { duration: 0.12 }
 const viewFade = { duration: 0.1 }
 const tabTransition = { duration: 0.1, ease: [0.25, 0.46, 0.45, 0.94] as const }
+// How far one arrow key moves the divider between the editor and the code preview
+const PREVIEW_RESIZE_STEP = 20
 
 function App() {
   const project = useProjectStore((s) => s.project)
@@ -136,6 +139,14 @@ function App() {
     e.preventDefault()
     setIsResizing(true)
     resizeRef.current = { startX: e.clientX, startWidth: previewWidth }
+  }
+
+  // The preview sits right of the divider, so moving the divider left widens it
+  const handleResizeKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'ArrowLeft') setPreviewWidth(previewWidth + PREVIEW_RESIZE_STEP)
+    else if (event.key === 'ArrowRight') setPreviewWidth(previewWidth - PREVIEW_RESIZE_STEP)
+    else return
+    event.preventDefault()
   }
 
   // Save plugin state to history on changes (debounced).
@@ -478,11 +489,21 @@ function App() {
                           </Tabs>
                         </div>
 
-                        {/* Resize handle */}
+                        {/* Resize handle: its value is how far the divider sits right of its
+                            leftmost position, so the arrow keys move it the way they point */}
                         {!isPreviewCollapsed && (
                           <div
-                            className="w-1.5 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
+                            role="slider"
+                            tabIndex={0}
+                            aria-label="Divider between editor and code preview"
+                            aria-orientation="horizontal"
+                            aria-valuenow={PREVIEW_WIDTH_MAX - previewWidth}
+                            aria-valuemin={0}
+                            aria-valuemax={PREVIEW_WIDTH_MAX - PREVIEW_WIDTH_MIN}
+                            aria-valuetext={`Code preview ${String(previewWidth)} pixels wide`}
+                            className="w-1.5 cursor-col-resize bg-border hover:bg-primary/50 focus-visible:bg-primary focus-visible:outline-none active:bg-primary"
                             onMouseDown={handleResizeStart}
+                            onKeyDown={handleResizeKeyDown}
                           />
                         )}
 

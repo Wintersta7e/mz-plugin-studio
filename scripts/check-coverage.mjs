@@ -26,8 +26,8 @@ const FLOORS = {
     'src/renderer/src/lib': { lines: 96, branches: 88 },
     [GENERATOR]: { lines: 98, branches: 95 },
     'src/renderer/src/components': { lines: 92, branches: 85 },
-    'src/renderer/src': { lines: 82, branches: 79 },
-    global: { lines: 95, branches: 90 }
+    'src/renderer/src': { lines: 89, branches: 83 },
+    global: { lines: 96, branches: 90 }
   },
   golden: {
     // Every generator file, the category modules under templates/ included: a new one needs its

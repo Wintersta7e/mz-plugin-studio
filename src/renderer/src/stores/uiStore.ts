@@ -101,6 +101,10 @@ const UI_PERSIST = definePersist<UIState, Pick<UIState, PersistedField>>({
   })
 })
 
+// The narrowest and widest the code preview can be made, by drag or keyboard
+export const PREVIEW_WIDTH_MIN = 300
+export const PREVIEW_WIDTH_MAX = 1200
+
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
@@ -119,7 +123,9 @@ export const useUIStore = create<UIState>()(
 
       setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
       setPreviewWidth: (previewWidth) =>
-        set({ previewWidth: Math.max(300, Math.min(1200, previewWidth)) }),
+        set({
+          previewWidth: Math.max(PREVIEW_WIDTH_MIN, Math.min(PREVIEW_WIDTH_MAX, previewWidth))
+        }),
       setActiveTab: (activeTab) => set({ activeTab }),
       setSelectedParameterId: (selectedParameterId) => set({ selectedParameterId }),
       setSelectedCommandId: (selectedCommandId) => set({ selectedCommandId }),
