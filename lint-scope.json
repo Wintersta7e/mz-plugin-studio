@@ -219,11 +219,9 @@
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
       "files": [
-        "src/renderer/src/lib/generator/templates/actor-party.ts",
         "src/renderer/src/lib/generator/templates/audio-system.ts",
         "src/renderer/src/lib/generator/templates/custom-window.ts",
         "src/renderer/src/lib/generator/templates/input-handler.ts",
-        "src/renderer/src/lib/generator/templates/map-events.ts",
         "src/renderer/src/lib/generator/templates/menu-system.ts",
         "src/renderer/src/lib/generator/templates/message-system.ts",
         "src/renderer/src/lib/generator/templates/plugin-commands.ts",

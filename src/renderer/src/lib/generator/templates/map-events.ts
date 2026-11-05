@@ -10,6 +10,18 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
+import { expectText, valueOr } from './values'
+
+/**
+The error for a name that is set but blank, or that is not a JavaScript identifier.
+*/
+function identifierErrors(value: unknown, label: string): string[] {
+  const hasName = Boolean(value)
+  if (!hasName) return []
+  if (expectText(value).trim() === '') return [`${label} is required`]
+  const isIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(String(value))
+  return isIdentifier ? [] : [`${label} must be a valid JavaScript identifier`]
+}
 
 /**
  * Template 1: Event Spawn
@@ -55,10 +67,11 @@ const eventSpawnTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = (values['functionName'] as string) || 'spawnEvent'
-    const templateEventId = values['templateEventId'] as number
-    const persistAcrossTransfer = values['persistAcrossTransfer'] as boolean
-    const maxSpawnedEvents = (values['maxSpawnedEvents'] as number) || 100
+    const functionName = String(valueOr(values['functionName'], 'spawnEvent'))
+    const templateEventId = values['templateEventId']
+    const hasTemplateEvent = Boolean(templateEventId)
+    const persistAcrossTransfer = Boolean(values['persistAcrossTransfer'])
+    const maxSpawnedEvents = String(valueOr(values['maxSpawnedEvents'], 100))
 
     const lines: string[] = []
 
@@ -107,11 +120,13 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push('        }')
     lines.push('')
 
-    if (templateEventId && templateEventId > 0) {
-      lines.push(`        // Clone template event (ID: ${templateEventId})`)
-      lines.push(`        const templateData = $dataMap.events[${templateEventId}];`)
+    if (hasTemplateEvent && Number(templateEventId) > 0) {
+      lines.push(`        // Clone template event (ID: ${String(templateEventId)})`)
+      lines.push(`        const templateData = $dataMap.events[${String(templateEventId)}];`)
       lines.push('        if (!templateData) {')
-      lines.push(`            console.error('Template event ${templateEventId} not found');`)
+      lines.push(
+        `            console.error('Template event ${String(templateEventId)} not found');`
+      )
       lines.push('            return null;')
       lines.push('        }')
       lines.push('')
@@ -258,17 +273,10 @@ const eventSpawnTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = identifierErrors(values['functionName'], 'Function name')
 
-    const functionName = values['functionName'] as string
-    if (functionName && functionName.trim() === '') {
-      errors.push('Function name is required')
-    } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
-      errors.push('Function name must be a valid JavaScript identifier')
-    }
-
-    const maxSpawned = values['maxSpawnedEvents'] as number
-    if (maxSpawned !== undefined && maxSpawned < 1) {
+    const maxSpawned = values['maxSpawnedEvents']
+    if (maxSpawned !== undefined && Number(maxSpawned) < 1) {
       errors.push('Max spawned events must be at least 1')
     }
 
@@ -315,9 +323,9 @@ const movementRouteTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = (values['functionName'] as string) || 'setCustomRoute'
-    const includeHelpers = values['includeHelpers'] as boolean
-    const waitForCompletion = values['waitForCompletion'] as boolean
+    const functionName = String(valueOr(values['functionName'], 'setCustomRoute'))
+    const includeHelpers = Boolean(values['includeHelpers'])
+    const waitForCompletion = Boolean(values['waitForCompletion'])
 
     const lines: string[] = []
 
@@ -517,14 +525,7 @@ const movementRouteTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    const functionName = values['functionName'] as string
-    if (functionName && functionName.trim() === '') {
-      errors.push('Function name is required')
-    } else if (functionName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(functionName)) {
-      errors.push('Function name must be a valid JavaScript identifier')
-    }
+    const errors = identifierErrors(values['functionName'], 'Function name')
 
     return {
       valid: errors.length === 0,
@@ -580,10 +581,10 @@ const mapTransferHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = (values['timing'] as string) || 'after'
+    const timing = valueOr(values['timing'], 'after')
     const filterMapId = String(values['filterMapId'] ?? '').trim()
-    const includeFadeInfo = values['includeFadeInfo'] as boolean
-    const includeDirection = values['includeDirection'] as boolean
+    const includeFadeInfo = Boolean(values['includeFadeInfo'])
+    const includeDirection = Boolean(values['includeDirection'])
 
     const hasMapFilter = filterMapId && filterMapId.trim() !== ''
 
@@ -693,12 +694,13 @@ const mapTransferHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const filterMapId = values['filterMapId'] as string
+    const filterMapId = values['filterMapId']
+    const hasFilterMapId = Boolean(filterMapId)
 
     // Validate map ID if provided
-    if (filterMapId && filterMapId.trim() !== '') {
+    if (hasFilterMapId && expectText(filterMapId).trim() !== '') {
       // The whole text is written as code: parseInt would pass anything after the digits.
-      if (!/^[1-9]\d*$/.test(filterMapId.trim())) {
+      if (!/^[1-9]\d*$/.test(expectText(filterMapId).trim())) {
         errors.push('Map ID must be a positive integer')
       }
     }
@@ -783,17 +785,17 @@ const parallelProcessTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const processName = (values['processName'] as string) || 'myParallelProcess'
-    const updateInterval = (values['updateInterval'] as number) || 1
-    const activeCondition = (values['activeCondition'] as string) || 'always'
-    const conditionId = (values['conditionId'] as number) || 1
-    const conditionValue = (values['conditionValue'] as number) || 1
-    const pauseInMenu = values['pauseInMenu'] as boolean
-    const pauseInBattle = values['pauseInBattle'] as boolean
+    const processName = valueOr(values['processName'], 'myParallelProcess')
+    const updateInterval = valueOr(values['updateInterval'], 1)
+    const activeCondition = valueOr(values['activeCondition'], 'always')
+    const conditionId = String(valueOr(values['conditionId'], 1))
+    const conditionValue = String(valueOr(values['conditionValue'], 1))
+    const pauseInMenu = Boolean(values['pauseInMenu'])
+    const pauseInBattle = Boolean(values['pauseInBattle'])
 
     const lines: string[] = []
 
-    lines.push(`// Parallel Process: ${processName}`)
+    lines.push(`// Parallel Process: ${String(processName)}`)
     lines.push('// Runs custom logic every frame (or at specified interval) on the map')
     lines.push('')
     lines.push('(() => {')
@@ -802,13 +804,14 @@ const parallelProcessTemplate: CodeTemplate = {
     // Frame counter for interval
     lines.push('    // Internal state')
     lines.push(`    let _frameCount = 0;`)
-    lines.push(`    const UPDATE_INTERVAL = ${updateInterval};`)
+    lines.push(`    const UPDATE_INTERVAL = ${String(updateInterval)};`)
     lines.push('')
 
     // Active condition check
     lines.push('    // Check if the parallel process should be active')
+    const processText = expectText(processName)
     lines.push(
-      `    function is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active() {`
+      `    function is${processText.charAt(0).toUpperCase() + processText.slice(1)}Active() {`
     )
 
     switch (activeCondition) {
@@ -865,7 +868,7 @@ const parallelProcessTemplate: CodeTemplate = {
 
     // The main process function
     lines.push(`    // Main parallel process logic - customize this!`)
-    lines.push(`    function ${processName}() {`)
+    lines.push(`    function ${processText}() {`)
     lines.push('        // Your parallel process code here')
     lines.push('        // This runs every frame (or at your specified interval) while active')
     lines.push('')
@@ -892,19 +895,19 @@ const parallelProcessTemplate: CodeTemplate = {
     lines.push('        // Skip if paused or inactive')
     lines.push('        if (shouldPauseProcess()) return;')
     lines.push(
-      `        if (!is${processName.charAt(0).toUpperCase() + processName.slice(1)}Active()) return;`
+      `        if (!is${processText.charAt(0).toUpperCase() + processText.slice(1)}Active()) return;`
     )
     lines.push('')
 
-    if (updateInterval > 1) {
+    if (Number(updateInterval) > 1) {
       lines.push('        // Check interval')
       lines.push('        _frameCount++;')
       lines.push('        if (_frameCount >= UPDATE_INTERVAL) {')
       lines.push('            _frameCount = 0;')
-      lines.push(`            ${processName}();`)
+      lines.push(`            ${processText}();`)
       lines.push('        }')
     } else {
-      lines.push(`        ${processName}();`)
+      lines.push(`        ${processText}();`)
     }
 
     lines.push('    };')
@@ -917,25 +920,25 @@ const parallelProcessTemplate: CodeTemplate = {
 
     if (activeCondition === 'switch') {
       lines.push(
-        `    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+        `    window.enable${processText.charAt(0).toUpperCase() + processText.slice(1)} = function() {`
       )
       lines.push(`        $gameSwitches.setValue(${conditionId}, true);`)
       lines.push('    };')
       lines.push('')
       lines.push(
-        `    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+        `    window.disable${processText.charAt(0).toUpperCase() + processText.slice(1)} = function() {`
       )
       lines.push(`        $gameSwitches.setValue(${conditionId}, false);`)
       lines.push('    };')
     } else if (activeCondition === 'variable') {
       lines.push(
-        `    window.enable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function(value) {`
+        `    window.enable${processText.charAt(0).toUpperCase() + processText.slice(1)} = function(value) {`
       )
       lines.push(`        $gameVariables.setValue(${conditionId}, value || ${conditionValue});`)
       lines.push('    };')
       lines.push('')
       lines.push(
-        `    window.disable${processName.charAt(0).toUpperCase() + processName.slice(1)} = function() {`
+        `    window.disable${processText.charAt(0).toUpperCase() + processText.slice(1)} = function() {`
       )
       lines.push(`        $gameVariables.setValue(${conditionId}, 0);`)
       lines.push('    };')
@@ -949,26 +952,19 @@ const parallelProcessTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = identifierErrors(values['processName'], 'Process name')
 
-    const processName = values['processName'] as string
-    if (processName && processName.trim() === '') {
-      errors.push('Process name is required')
-    } else if (processName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(processName)) {
-      errors.push('Process name must be a valid JavaScript identifier')
-    }
-
-    const updateInterval = values['updateInterval'] as number
-    if (updateInterval !== undefined && updateInterval < 1) {
+    const updateInterval = values['updateInterval']
+    if (updateInterval !== undefined && Number(updateInterval) < 1) {
       errors.push('Update interval must be at least 1 frame')
     }
 
-    const activeCondition = values['activeCondition'] as string
-    const conditionId = values['conditionId'] as number
+    const activeCondition = values['activeCondition']
+    const conditionId = values['conditionId']
 
     if (
       (activeCondition === 'switch' || activeCondition === 'variable') &&
-      (conditionId === undefined || conditionId < 1)
+      (conditionId === undefined || Number(conditionId) < 1)
     ) {
       errors.push('Switch/Variable ID must be a positive integer')
     }

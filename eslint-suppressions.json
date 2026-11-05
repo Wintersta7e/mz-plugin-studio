@@ -2571,17 +2571,8 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 2
     },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 19
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
     "complexity": {
-      "count": 2
+      "count": 1
     },
     "max-lines-per-function": {
       "count": 2
@@ -2595,9 +2586,6 @@
     "sonarjs/cognitive-complexity": {
       "count": 2
     },
-    "sonarjs/different-types-comparison": {
-      "count": 5
-    },
     "sonarjs/no-nested-conditional": {
       "count": 2
     },
@@ -2605,7 +2593,7 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 4
+      "count": 3
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 5
@@ -2623,9 +2611,6 @@
       "count": 2
     },
     "unicorn/prefer-switch": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
       "count": 1
     }
   },
@@ -2853,32 +2838,17 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 1
     },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 25
-    },
-    "@typescript-eslint/prefer-optional-chain": {
-      "count": 3
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
-    },
-    "complexity": {
-      "count": 1
     },
     "max-lines-per-function": {
       "count": 4
     },
     "regexp/prefer-w": {
-      "count": 3
+      "count": 1
     },
     "regexp/use-ignore-case": {
-      "count": 3
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 3
+      "count": 1
     },
     "unicorn/consistent-boolean-name": {
       "count": 8
