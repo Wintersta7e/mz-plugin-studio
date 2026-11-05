@@ -63,6 +63,17 @@ const FIELD_KINDS: Record<TemplateField['type'], { type: string; name: string }>
   boolean: { type: 'boolean', name: 'true or false' }
 }
 
+// Whether a value is one a field can hold by its choices: always, unless the field is a select
+// given text that none of its options offers. An unset value is the required check's.
+function isOfferedChoice(field: TemplateField, value: unknown): boolean {
+  return (
+    typeof value !== 'string' ||
+    value === '' ||
+    field.type !== 'select' ||
+    field.options?.some((option) => option.value === value) === true
+  )
+}
+
 /**
 Validate template values without generating code
 @param templateId - The ID of the template
@@ -95,6 +106,13 @@ export function validateTemplateValues(
     if (value === undefined || value === null || typeof value === kind.type) continue
     hasWrongType = true
     errors.push(`Field "${field.label}" must be ${kind.name}`)
+  }
+
+  // A saved choice the select no longer offers would be read as one of its choices
+  for (const field of template.fields) {
+    if (!isOfferedChoice(field, values[field.id])) {
+      errors.push(`Field "${field.label}" must be one of its choices`)
+    }
   }
 
   // Run custom validator if present

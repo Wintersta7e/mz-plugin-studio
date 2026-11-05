@@ -288,6 +288,7 @@ Window_Options.prototype.cursorLeft = function() {
 // throws: TypeError
 
 // ==== case: type-violating: optionType="slider",defaultValue=null {"optionType":"slider","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":null}
+// rejects: Field "Option Type" must be one of its choices
 // Options Menu Addition: Sample
 
 // Add to ConfigManager

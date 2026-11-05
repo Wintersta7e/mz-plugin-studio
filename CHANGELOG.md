@@ -16,6 +16,7 @@
 - In the Message Window Mod template's background mode, the Custom color now fills the message window's background for every message. Before, it showed only on messages set to a Dim background.
 - In the Message Window Mod template's background mode, the Custom color now covers the whole message window, as the Dim background does. Before, it stopped 4 pixels short of the window's right edge.
 - In the template dialog, a required field whose saved value came back empty, such as a number that was saved as not a number, is listed as required. Before, the template's code failed without naming the field.
+- In the template dialog, a drop-down field whose saved choice the template no longer offers is listed as an error on that field. Before, the template read it as one of its choices, and the Battle Event Hook template failed without a message.
 
 ## [1.8.1] - 2026-11-05
 

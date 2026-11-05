@@ -360,7 +360,7 @@ Scene_Base.prototype.updateGlobalKeyInput_Q = function() {
 };
 
 // ==== case: keyName=unknownKey {"triggerType":"isTriggered","activeScene":"Scene_Map","keyName":"unknownKey"}
-// rejects: Unknown key: unknownKey
+// rejects: Field "Key" must be one of its choices | Unknown key: unknownKey
 // Input Handler: undefined key on Scene_Map
 // Triggers once when pressed
 
@@ -381,7 +381,7 @@ Scene_Map.prototype.updateCustomKeyInput = function() {
 };
 
 // ==== case: triggerType=unknownTrigger {"triggerType":"unknownTrigger","activeScene":"Scene_Map","keyName":"q"}
-// rejects: Invalid trigger type: unknownTrigger
+// rejects: Field "Trigger Type" must be one of its choices | Invalid trigger type: unknownTrigger
 // Input Handler: Q key on Scene_Map
 // Triggers undefined
 
@@ -402,7 +402,7 @@ Scene_Map.prototype.updateCustomKeyInput = function() {
 };
 
 // ==== case: activeScene=unknownScene {"triggerType":"isTriggered","activeScene":"unknownScene","keyName":"q"}
-// rejects: Invalid scene: unknownScene
+// rejects: Field "Active Scene" must be one of its choices | Invalid scene: unknownScene
 // Input Handler: Q key on unknownScene
 // Triggers once when pressed
 
