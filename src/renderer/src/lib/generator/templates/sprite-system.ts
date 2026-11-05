@@ -19,7 +19,7 @@ Strips spaces and ensures PascalCase
 function sanitizeSpriteName(name: string): string {
   return name
     .trim()
-    .replaceAll(/[^a-zA-Z0-9]/g, '')
+    .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 }
 
@@ -30,7 +30,7 @@ function spriteNameErrors(value: unknown): string[] {
   const hasName = Boolean(value)
   if (!hasName) return []
   const name = expectText(value)
-  const isValid = /^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))
+  const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
   return isValid
     ? []
     : ['Sprite Name must start with a letter and contain only letters and numbers']
@@ -1055,7 +1055,7 @@ const spriteAnimationTemplate: CodeTemplate = {
       errors.push('Target Sprite Class is required for Animation Mixin')
     } else if (
       animationType === 'mixin' &&
-      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(values['targetClass']))
+      !/^[A-Z_$][\w$]*$/i.test(String(values['targetClass']))
     ) {
       errors.push('Target Sprite Class must be a class name (letters, numbers, _ or $)')
     }

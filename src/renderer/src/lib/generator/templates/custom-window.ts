@@ -17,7 +17,7 @@ Strips spaces and ensures PascalCase
 function sanitizeWindowName(name: string): string {
   return name
     .trim()
-    .replaceAll(/[^a-zA-Z0-9]/g, '')
+    .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 }
 
@@ -307,7 +307,7 @@ const customWindowTemplate: CodeTemplate = {
     if (values['windowName']) {
       const name = expectText(values['windowName'])
       // Check for valid identifier
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))) {
+      if (!/^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
@@ -584,7 +584,7 @@ const hudOverlayWindowTemplate: CodeTemplate = {
 
     if (values['windowName']) {
       const name = expectText(values['windowName'])
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))) {
+      if (!/^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
@@ -885,7 +885,7 @@ const popupNotificationTemplate: CodeTemplate = {
 
     if (values['windowName']) {
       const name = expectText(values['windowName'])
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))) {
+      if (!/^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }
@@ -1308,7 +1308,7 @@ const gaugeWindowTemplate: CodeTemplate = {
 
     if (values['windowName']) {
       const name = expectText(values['windowName'])
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))) {
+      if (!/^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))) {
         errors.push('Window Name must start with a letter and contain only letters and numbers')
       }
     }

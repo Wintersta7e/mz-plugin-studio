@@ -168,7 +168,7 @@ const customActorPropertyTemplate: CodeTemplate = {
     const hasPropertyName = Boolean(propertyName)
     if (hasPropertyName) {
       // Check for valid JavaScript identifier
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(propertyName))) {
+      if (!/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
         errors.push('Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
       }
 

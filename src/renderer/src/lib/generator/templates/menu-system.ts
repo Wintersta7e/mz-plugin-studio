@@ -18,7 +18,7 @@ Helper to convert a name to a valid JavaScript identifier
 */
 function toValidIdentifier(name: string): string {
   // Remove special characters and replace spaces with nothing
-  return name.replaceAll(/[^a-zA-Z0-9_]/g, '').replace(/^[0-9]/, '_$&')
+  return name.replaceAll(/\W/g, '').replace(/^\d/, '_$&')
 }
 
 /**
@@ -283,7 +283,7 @@ const customMenuSceneTemplate: CodeTemplate = {
     const hasSceneName = Boolean(sceneName)
     if (hasSceneName) {
       const text = String(sceneName)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(text)) {
+      if (!/^[a-z_]\w*$/i.test(text)) {
         errors.push(
           'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
         )
@@ -294,7 +294,7 @@ const customMenuSceneTemplate: CodeTemplate = {
     const hasWindowName = Boolean(windowName)
     if (hasWindowName) {
       const text = String(windowName)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(text)) {
+      if (!/^[a-z_]\w*$/i.test(text)) {
         errors.push('Window name must be a valid JavaScript identifier')
       }
     }
@@ -534,7 +534,7 @@ const titleScreenModuleTemplate: CodeTemplate = {
       const hasCommandSymbol = Boolean(commandSymbol)
       if (hasCommandSymbol) {
         const symbol = String(commandSymbol)
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
+        if (!/^[a-z_]\w*$/i.test(symbol)) {
           errors.push('Command symbol must be a valid JavaScript identifier')
         }
       } else {
@@ -799,7 +799,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     const hasCommandSymbol = Boolean(commandSymbol)
     if (hasCommandSymbol) {
       const symbol = String(commandSymbol)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
+      if (!/^[a-z_]\w*$/i.test(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
       }
     }
@@ -1091,7 +1091,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     const hasOptionSymbol = Boolean(optionSymbol)
     if (hasOptionSymbol) {
       const symbol = String(optionSymbol)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
+      if (!/^[a-z_]\w*$/i.test(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
       }
     }

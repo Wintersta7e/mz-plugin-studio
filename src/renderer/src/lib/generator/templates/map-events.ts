@@ -19,7 +19,7 @@ function identifierErrors(value: unknown, label: string): string[] {
   const hasName = Boolean(value)
   if (!hasName) return []
   if (expectText(value).trim() === '') return [`${label} is required`]
-  const isIdentifier = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(String(value))
+  const isIdentifier = /^[a-z_]\w*$/i.test(String(value))
   return isIdentifier ? [] : [`${label} must be a valid JavaScript identifier`]
 }
 
