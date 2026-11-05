@@ -16,7 +16,7 @@ import { definedOr, expectText, valueOr } from './values'
 /**
  * Helper to generate argument parsing code
  */
-function generateArgParsing(args: Array<{ name: string; type: unknown }>): string[] {
+function generateArgParsing(args: { name: string; type: unknown }[]): string[] {
   const lines: string[] = []
 
   for (const arg of args) {
@@ -43,7 +43,7 @@ function generateArgParsing(args: Array<{ name: string; type: unknown }>): strin
 /**
  * Helper to generate argument info comment
  */
-function generateArgComment(args: Array<{ name: string; type: unknown; desc: string }>): string[] {
+function generateArgComment(args: { name: string; type: unknown; desc: string }[]): string[] {
   if (args.length === 0) return []
 
   const lines: string[] = ['// Arguments:']
@@ -179,7 +179,7 @@ const basicCommandTemplate: CodeTemplate = {
     const lines: string[] = []
 
     // Build argument list
-    const args: Array<{ name: string; type: unknown; desc: string }> = []
+    const args: { name: string; type: unknown; desc: string }[] = []
     const hasArg1Name = Boolean(arg1Name)
     if (hasArg1Name && expectText(arg1Name).trim()) {
       args.push({ name: expectText(arg1Name).trim(), type: arg1Type, desc: 'First argument' })

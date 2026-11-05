@@ -2638,9 +2638,6 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 2
     },
-    "@typescript-eslint/no-inferrable-types": {
-      "count": 1
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -2848,9 +2845,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/plugin-commands.ts": {
-    "@typescript-eslint/array-type": {
-      "count": 3
-    },
     "@typescript-eslint/no-base-to-string": {
       "count": 3
     },

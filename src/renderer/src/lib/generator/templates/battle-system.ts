@@ -16,7 +16,7 @@ import { expectText, valueOr } from './values'
 /**
  * Helper to generate condition check code for damage modifiers
  */
-function generateConditionCheck(condition: unknown, varName: string = 'value'): string {
+function generateConditionCheck(condition: unknown, varName = 'value'): string {
   switch (condition) {
     case 'critical':
       return `    if (critical) {\n        ${varName} = `
