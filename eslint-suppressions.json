@@ -547,65 +547,6 @@
       "count": 1
     }
   },
-  "scripts/ci-policy.mjs": {
-    "complexity": {
-      "count": 3
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 5
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 4
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 7
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/explicit-length-check": {
-      "count": 15
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-array-sort": {
-      "count": 6
-    },
-    "unicorn/no-declarations-before-early-exit": {
-      "count": 2
-    },
-    "unicorn/no-for-each": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 2
-    },
-    "unicorn/no-useless-undefined": {
-      "count": 10
-    },
-    "unicorn/prefer-combined-guards": {
-      "count": 2
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 6
-    }
-  },
   "src/main/atomic-write.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 2

@@ -26,20 +26,6 @@
       "src/main/services/syntax-check.ts": 2
     }
   },
-  "scripts": {
-    "strict": {
-      "scripts/ci-policy.mjs": 9
-    },
-    "noImplicitAny": {
-      "scripts/ci-policy.mjs": 57
-    },
-    "exactOptionalPropertyTypes": {
-      "tsconfig.scripts.json": 1
-    },
-    "noPropertyAccessFromIndexSignature": {
-      "scripts/ci-policy.mjs": 1
-    }
-  },
   "test": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
