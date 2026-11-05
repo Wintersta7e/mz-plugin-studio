@@ -552,7 +552,7 @@
       "count": 3
     },
     "regexp/no-super-linear-backtracking": {
-      "count": 8
+      "count": 5
     },
     "regexp/no-unused-capturing-group": {
       "count": 2

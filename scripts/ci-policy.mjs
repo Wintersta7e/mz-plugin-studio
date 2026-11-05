@@ -31,7 +31,8 @@ const DECLARATION_FILE = /\.d\.(ts|mts|cts)$/
 // the `import`/`export` of a following statement, so a misread clause can only add a package
 // to the value set; a `from '<package>'` that no pattern reads fails the check with its
 // file:line. `import(…)`, `require(…)` and `import '…'` are read in their one-line form only.
-const COMMENT = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g
+// A line comment runs to its line end whole, so no clause reading starts inside it.
+const COMMENT = /\/\/[^\n]*(?![^\n])|\/\*[\s\S]*?\*\//g
 const FROM_IMPORT = new RegExp(
   String.raw`^[ \t]*(import|export)[ \t]+(type[ \t]+)?` +
     String.raw`((?:${COMMENT.source}|(?!\b(?:import|export)\b)[\w$\s{},*])*?)` +
