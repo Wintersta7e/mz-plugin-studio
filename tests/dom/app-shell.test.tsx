@@ -2,249 +2,286 @@
 // naming the folder and the reason, and leaves the project store's error set; Cancel in the
 // confirm before a project opens shows nothing. A project that opens offers to reload the imported tabs whose file text is not loaded in one action.
 import { readFileSync } from 'node:fs'
-import { basename } from 'node:path'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import path from 'node:path'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import App from '../../src/renderer/src/App'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import * as generator from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
-import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
-import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
+import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { IPC_CHANNELS, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
-import { createFakeApi, sampleProject } from '../helpers/fake-api'
-import type { FakeApiOverrides } from '../helpers/fake-api'
+import { createFakeApi, sampleProject, type FakeApiOverrides } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
-const FOLDER = '/fixture/not-a-project'
-
-/** Renders the app with `project` behind the fake api and opens `FOLDER` with Ctrl+O. */
-async function openFolder(project: FakeApiOverrides['project']): Promise<void> {
-  window.api = createFakeApi({ dialog: { openFolder: vi.fn(async () => FOLDER) }, project })
-  render(<App />)
-  act(() => {
-    fireEvent.keyDown(window, { key: 'o', code: 'KeyO', ctrlKey: true })
-  })
-  // Validation starts after the loading flag is set, so the flag falls only when the open ends
-  await waitFor(() => expect(window.api.project.validate).toHaveBeenCalled())
-  await waitFor(() => expect(useProjectStore.getState().isLoading).toBe(false))
-}
+type ProjectApi = Window['api']['project']
+type OpenFolder = Window['api']['dialog']['openFolder']
 
 // Each case renders the whole app, which takes seconds on a cold start
-describe('opening a project', { timeout: 30_000 }, () => {
+const APP_TIMEOUT = { timeout: 30_000 }
+
+const FOLDER = '/fixture/not-a-project'
+
+const setUp = (): void => {
+  resetStores()
+  // The build defines this; the status bar shows it.
+  vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
+}
+
+// The app stays mounted until the automatic cleanup after this hook, so the toasts it shows
+// are dismissed inside act
+const tearDown = (): void => {
+  act(() => {
+    useToastStore.getState().dismissAll()
+  })
+  vi.unstubAllGlobals()
+}
+
+const validatesAs = (
+  result: Awaited<ReturnType<ProjectApi['validate']>>
+): Mock<ProjectApi['validate']> => vi.fn<ProjectApi['validate']>().mockResolvedValue(result)
+
+// The project calls as the renderer reaches them when the main-process handler refuses
+const loadRefused = (reason: string): Mock<ProjectApi['load']> => {
+  const handler = vi.fn<ProjectApi['load']>().mockRejectedValue(accessDenied(reason))
+  return vi.fn<ProjectApi['load']>(viaIpc(IPC_CHANNELS.PROJECT_LOAD, handler))
+}
+const validateRefused = (reason: string): Mock<ProjectApi['validate']> => {
+  const handler = vi.fn<ProjectApi['validate']>().mockRejectedValue(accessDenied(reason))
+  return vi.fn<ProjectApi['validate']>(viaIpc(IPC_CHANNELS.PROJECT_VALIDATE, handler))
+}
+
+// Renders the app with `project` behind the fake api and opens `FOLDER` with Ctrl+O
+const openFolder = async (project: NonNullable<FakeApiOverrides['project']>): Promise<void> => {
+  const openFolderDialog = vi.fn<OpenFolder>().mockResolvedValue(FOLDER)
+  vi.stubGlobal('api', createFakeApi({ dialog: { openFolder: openFolderDialog }, project }))
+  render(<App />)
+  fireEvent.keyDown(globalThis.window, { key: 'o', code: 'KeyO', ctrlKey: true })
+  // Validation starts after the loading flag is set, so the flag falls only when the open ends
+  await waitFor(() => {
+    expect(globalThis.api.project.validate).toHaveBeenCalledWith(FOLDER)
+  })
+  await waitFor(() => {
+    expect(useProjectStore.getState().isLoading).toBe(false)
+  })
+}
+
+// The app shows `message` and raises it as its one error toast
+const failureShown = async (message: string): Promise<void> => {
+  const shown = await screen.findByText(message)
+
+  expect(shown).toBeInTheDocument()
+  expect(useToastStore.getState().toasts).toMatchObject([
+    { type: 'error', message, duration: 10_000 }
+  ])
+}
+
+describe('opening a project: error messages', APP_TIMEOUT, () => {
   beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-  beforeEach(() => {
-    resetStores()
-    // The build defines this; the status bar shows it.
-    vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
-  })
+  beforeEach(setUp)
 
-  afterEach(() => {
-    cleanup()
-    useToastStore.getState().dismissAll()
-    vi.unstubAllGlobals()
-  })
+  afterEach(tearDown)
 
   it('a folder that is not a project shows the folder and the reason', async () => {
+    expect.hasAssertions()
+
     await openFolder({
-      validate: vi.fn(async () => ({
-        valid: false,
-        error: 'Missing required file: data/System.json'
-      }))
+      validate: validatesAs({ valid: false, error: 'Missing required file: data/System.json' })
     })
     const message =
       'Could not open "/fixture/not-a-project": not an RPG Maker MZ project ' +
       '(Missing required file: data/System.json).'
+    await failureShown(message)
 
-    expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(screen.getByRole('status').textContent).toContain(message)
-    expect(useToastStore.getState().toasts).toMatchObject([
-      { type: 'error', message, duration: 10_000 }
-    ])
+    expect(screen.getByRole('status')).toHaveTextContent(message)
     expect(useProjectStore.getState().error).toBe('Missing required file: data/System.json')
     expect(useProjectStore.getState().project).toBeNull()
   })
 
   it('a project that fails to load shows the folder and the reason', async () => {
+    expect.hasAssertions()
+
     await openFolder({
-      validate: vi.fn(async () => ({ valid: true })),
-      load: vi.fn(async () => {
-        throw new Error('Unexpected end of JSON input')
-      })
+      validate: validatesAs({ valid: true }),
+      load: vi.fn<ProjectApi['load']>().mockRejectedValue(new Error('Unexpected end of JSON input'))
     })
     const message = 'Could not open "/fixture/not-a-project": Unexpected end of JSON input'
+    await failureShown(message)
 
-    expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(screen.getByRole('status').textContent).toContain(message)
-    expect(useToastStore.getState().toasts).toMatchObject([
-      { type: 'error', message, duration: 10_000 }
-    ])
+    expect(screen.getByRole('status')).toHaveTextContent(message)
     expect(useProjectStore.getState().error).toBe('Error: Unexpected end of JSON input')
     expect(useProjectStore.getState().project).toBeNull()
   })
 
   it('a load refused by main shows its reason without the prefix Electron adds', async () => {
+    expect.hasAssertions()
+
     await openFolder({
-      validate: vi.fn(async () => ({ valid: true })),
+      validate: validatesAs({ valid: true }),
       // The shape ipcRenderer.invoke rejects with when the main-process handler throws
-      load: vi.fn(async () => {
-        throw new Error(
-          "Error invoking remote method 'project:load': Error: data folder unreadable"
+      load: vi
+        .fn<ProjectApi['load']>()
+        .mockRejectedValue(
+          new Error("Error invoking remote method 'project:load': Error: data folder unreadable")
         )
-      })
     })
-    const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
-
-    expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(useToastStore.getState().toasts).toMatchObject([
-      { type: 'error', message, duration: 10_000 }
-    ])
+    await failureShown('Could not open "/fixture/not-a-project": data folder unreadable')
   })
+})
 
-  it('Cancel in the confirm before the project opens shows nothing and sets no error', async () => {
+describe('opening a project: cancel, refusals and other failures', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('cancel in the confirm before the project opens shows nothing and sets no error', async () => {
+    expect.hasAssertions()
+
     await openFolder({
-      validate: vi.fn(async () => ({ valid: true })),
-      load: vi.fn(
-        viaIpc(IPC_CHANNELS.PROJECT_LOAD, async () => {
-          throw accessDenied(PROJECT_OPEN_CANCELLED)
-        })
-      )
+      validate: validatesAs({ valid: true }),
+      load: loadRefused(PROJECT_OPEN_CANCELLED)
     })
 
-    expect(window.api.project.load).toHaveBeenCalledWith(FOLDER)
-    expect(useToastStore.getState().toasts).toEqual([])
+    expect(globalThis.api.project.load).toHaveBeenCalledWith(FOLDER)
+    expect(useToastStore.getState().toasts).toStrictEqual([])
     expect(useProjectStore.getState().error).toBeNull()
     expect(useProjectStore.getState().project).toBeNull()
   })
 
   it('a network folder main refuses is shown once in plain words', async () => {
-    const reason = 'a network folder opens only when chosen with Open Project'
-    await openFolder({
-      validate: vi.fn(
-        viaIpc(IPC_CHANNELS.PROJECT_VALIDATE, async () => {
-          throw accessDenied(reason)
-        })
-      )
-    })
-    const message = `Could not open "/fixture/not-a-project": ${reason}.`
+    expect.hasAssertions()
 
-    expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(useToastStore.getState().toasts).toMatchObject([
-      { type: 'error', message, duration: 10_000 }
-    ])
+    const reason = 'a network folder opens only when chosen with Open Project'
+    await openFolder({ validate: validateRefused(reason) })
+    await failureShown(`Could not open "/fixture/not-a-project": ${reason}.`)
+
     expect(useProjectStore.getState().error).not.toBeNull()
-    expect(window.api.project.load).not.toHaveBeenCalled()
+    expect(globalThis.api.project.load).not.toHaveBeenCalled()
   })
 
   it('a load that rejects with a value that is not an Error shows that value', async () => {
+    expect.hasAssertions()
+
     await openFolder({
-      validate: vi.fn(async () => ({ valid: true })),
-      load: vi.fn(() => Promise.reject('data folder unreadable'))
+      validate: validatesAs({ valid: true }),
+      load: vi.fn<ProjectApi['load']>().mockRejectedValue('data folder unreadable')
     })
     const message = 'Could not open "/fixture/not-a-project": data folder unreadable'
 
-    expect(await screen.findByText(message)).toBeInTheDocument()
+    const shown = await screen.findByText(message)
+
+    expect(shown).toBeInTheDocument()
   })
 })
 
+const PROJECT = fixturePath()
+const FILES = ['Fixture_HandWritten.js', 'Fixture_Structs.js'] as const
+const textOf = (file: string): string => readFileSync(fixturePath('js', 'plugins', file), 'utf8')
+const tab = (id: string): PluginDefinition | undefined =>
+  usePluginStore.getState().openPlugins.find((p) => p.id === id)
+
+// Opens `file` as a tab saved by an older version: imported, without its file text
+function openStaleTab(file: string, importedFrom = file): string {
+  const stale = { ...PluginParser.parsePlugin(textOf(file), file), importedFrom }
+  delete stale.rawSource
+  act(() => {
+    usePluginStore.getState().openPlugin(stale)
+  })
+  return stale.id
+}
+
+const FOLDER_NAME = path.basename(PROJECT)
+const RELOAD = `Reload ${FILES.join(', ')} from ${FOLDER_NAME}`
+
+// Renders the app over the fixture project, whose plugin folder lists `listed`, and opens it
+const openFixtureProject = async (
+  answers: number[] = [],
+  listed: string[] = [...FILES, 'Fixture_JaOnly.js']
+): Promise<void> => {
+  const project = await createFakeApi().project.load(PROJECT)
+  const overrides: FakeApiOverrides = {
+    dialog: { openFolder: vi.fn<OpenFolder>().mockResolvedValue(PROJECT) },
+    project: {
+      validate: validatesAs({ valid: true }),
+      load: vi.fn<ProjectApi['load']>().mockResolvedValue({ ...project, path: PROJECT })
+    },
+    plugin: { list: vi.fn<Window['api']['plugin']['list']>().mockResolvedValue(listed) }
+  }
+  vi.stubGlobal('api', createMainApi({ answers, overrides }))
+  render(<App />)
+  fireEvent.keyDown(globalThis.window, { key: 'o', code: 'KeyO', ctrlKey: true })
+  await waitFor(() => {
+    expect(useProjectStore.getState().project?.path).toBe(PROJECT)
+  })
+}
+
 describe(
-  'opening a project with imported tabs whose file text is not loaded',
-  { timeout: 30_000 },
+  'opening a project with imported tabs whose file text is not loaded: reload action',
+  APP_TIMEOUT,
   () => {
     beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-    const PROJECT = fixturePath()
-    const FILES = ['Fixture_HandWritten.js', 'Fixture_Structs.js']
-    const textOf = (file: string): string =>
-      readFileSync(fixturePath('js', 'plugins', file), 'utf-8')
-    const tab = (id: string): PluginDefinition | undefined =>
-      usePluginStore.getState().openPlugins.find((p) => p.id === id)
+    beforeEach(setUp)
 
-    /** Opens `file` as a tab saved by an older version: imported, without its file text. */
-    function openStaleTab(file: string, importedFrom = file): string {
-      const { rawSource: _rawSource, ...stale } = PluginParser.parsePlugin(textOf(file), file)
-      act(() => usePluginStore.getState().openPlugin({ ...stale, importedFrom }))
-      return stale.id
-    }
-
-    const FOLDER_NAME = basename(PROJECT)
-    const RELOAD = `Reload ${FILES.join(', ')} from ${FOLDER_NAME}`
-
-    /** Renders the app over the fixture project, whose plugin folder lists `listed`, and opens it. */
-    async function openFixtureProject(
-      answers: number[] = [],
-      listed = [...FILES, 'Fixture_JaOnly.js']
-    ): Promise<void> {
-      const project = await createFakeApi().project.load(PROJECT)
-      window.api = createMainApi({
-        answers,
-        overrides: {
-          dialog: { openFolder: vi.fn(async () => PROJECT) },
-          project: {
-            validate: vi.fn(async () => ({ valid: true })),
-            load: vi.fn(async () => ({ ...project, path: PROJECT }))
-          },
-          plugin: { list: vi.fn(async () => listed) }
-        }
-      })
-      render(<App />)
-      act(() => {
-        fireEvent.keyDown(window, { key: 'o', code: 'KeyO', ctrlKey: true })
-      })
-      await waitFor(() => expect(useProjectStore.getState().project?.path).toBe(PROJECT))
-    }
-
-    beforeEach(() => {
-      resetStores()
-      vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
-    })
-
-    afterEach(() => {
-      cleanup()
-      useToastStore.getState().dismissAll()
-      vi.unstubAllGlobals()
-    })
+    afterEach(tearDown)
 
     it('one action reloads every such tab whose file is in the project', async () => {
+      expect.hasAssertions()
+
       const ids = FILES.map((file) => openStaleTab(file))
       const elsewhere = openStaleTab(FILES[0], 'Fixture_Elsewhere.js')
       await openFixtureProject()
       fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
       await waitFor(() => {
-        for (const [i, id] of ids.entries()) expect(tab(id)?.rawSource).toBe(textOf(FILES[i]))
+        expect(ids.map((id) => tab(id)?.rawSource)).toStrictEqual(FILES.map((file) => textOf(file)))
       })
 
       expect(tab(elsewhere)?.rawSource).toBeUndefined()
-      expect(window.api.dialog.message).not.toHaveBeenCalled()
-      expect(window.api.plugin.readRaw).toHaveBeenCalledTimes(2)
+      expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
+      expect(globalThis.api.plugin.readRaw).toHaveBeenCalledTimes(2)
 
-      await waitFor(() =>
+      await waitFor(() => {
         expect(useToastStore.getState().toasts).toMatchObject([
           { type: 'success', message: 'Reloaded 2 of 2 plugins' }
         ])
-      )
+      })
     })
 
     it('a tab with unsaved edits asks first, and Cancel keeps it as it is', async () => {
-      const [clean, edited] = FILES.map((file) => openStaleTab(file))
-      act(() => usePluginStore.getState().updateMeta({ description: 'Edited before reload' }))
+      expect.hasAssertions()
+
+      const clean = openStaleTab(FILES[0])
+      const edited = openStaleTab(FILES[1])
+      act(() => {
+        usePluginStore.getState().updateMeta({ description: 'Edited before reload' })
+      })
       await openFixtureProject([0])
       fireEvent.click(await screen.findByRole('button', { name: RELOAD }))
-      await waitFor(() => expect(tab(clean)?.rawSource).toBe(textOf(FILES[0])))
-      await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
-      const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+      await waitFor(() => {
+        expect(tab(clean)?.rawSource).toBe(textOf(FILES[0]))
+      })
+      await waitFor(() => {
+        expect(globalThis.api.dialog.message).toHaveBeenCalledTimes(1)
+      })
+      const options = vi.mocked(globalThis.api.dialog.message).mock.lastCall?.[0]
 
-      expect(options).toMatchObject({ title: 'Reload from project?' })
-      expect(options.buttons?.[0]).toBe('Cancel')
-      expect(tab(edited)?.rawSource).toBeUndefined()
-      expect(tab(edited)?.meta.description).toBe('Edited before reload')
+      expect([options?.title, options?.buttons?.[0]]).toStrictEqual([
+        'Reload from project?',
+        'Cancel'
+      ])
+      expect([tab(edited)?.rawSource, tab(edited)?.meta.description]).toStrictEqual([
+        undefined,
+        'Edited before reload'
+      ])
 
-      await waitFor(() =>
+      await waitFor(() => {
         expect(useToastStore.getState().toasts).toMatchObject([
           {
             type: 'warning',
@@ -252,45 +289,73 @@ describe(
             duration: 10_000
           }
         ])
-      )
+      })
     })
+  }
+)
+
+describe(
+  'opening a project with imported tabs whose file text is not loaded: reload notice',
+  APP_TIMEOUT,
+  () => {
+    beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+    beforeEach(setUp)
+
+    afterEach(tearDown)
 
     it('offers nothing when no such tab has its file in the project', async () => {
+      expect.hasAssertions()
+
       openStaleTab(FILES[0], 'Fixture_Elsewhere.js')
       await openFixtureProject()
-      await waitFor(() => expect(window.api.plugin.list).toHaveBeenCalledWith(PROJECT))
-      await act(async () => {})
+      await waitFor(() => {
+        expect(globalThis.api.plugin.list).toHaveBeenCalledWith(PROJECT)
+      })
+      await act(async () => {
+        await Promise.resolve()
+      })
 
-      expect(useToastStore.getState().toasts).toEqual([])
+      expect(useToastStore.getState().toasts).toStrictEqual([])
     })
 
     it('the notice names the project folder and each tab it would reload', async () => {
+      expect.hasAssertions()
+
       for (const file of FILES) openStaleTab(file)
       await openFixtureProject()
       await screen.findByRole('button', { name: RELOAD })
 
-      expect(useToastStore.getState().toasts.map((t) => t.message)).toEqual([
+      expect(useToastStore.getState().toasts.map((t) => t.message)).toStrictEqual([
         `Raw mode cannot save ${FILES.join(', ')} until reloaded: the file text is not loaded. ` +
           `The project folder ${FOLDER_NAME} has these files.`
       ])
     })
 
     it('the notice names three tabs and counts the rest', async () => {
+      expect.hasAssertions()
+
       const files = [...FILES, 'Fixture_JaOnly.js', 'Fixture_NoIife.js', 'Fixture_Require.js']
       for (const file of files) openStaleTab(file)
       await openFixtureProject([], files)
       const named = `${files.slice(0, 3).join(', ')} and 2 more`
       await screen.findByRole('button', { name: `Reload ${named} from ${FOLDER_NAME}` })
 
-      expect(useToastStore.getState().toasts[0].message).toMatch(
+      expect(useToastStore.getState().toasts.at(0)?.message).toMatch(
         new RegExp(`^Raw mode cannot save ${named} until`)
       )
     })
 
     it('finding those tabs builds no code for a tab whose file text is loaded', async () => {
+      expect.hasAssertions()
+
       const loaded = PluginParser.parsePlugin(textOf(FILES[1]), FILES[1])
-      act(() => usePluginStore.getState().openPlugin({ ...loaded, importedFrom: FILES[1] }))
-      act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+      act(() => {
+        usePluginStore.getState().openPlugin({ ...loaded, importedFrom: FILES[1] })
+      })
+      act(() => {
+        usePluginStore.getState().updateMeta({ description: 'Edited' })
+      })
       // The active tab has no file text, so the code preview builds nothing either
       openStaleTab(FILES[0])
       const build = vi.spyOn(generator, 'generateRawMode')
@@ -306,55 +371,121 @@ describe(
   }
 )
 
-describe('app shell', { timeout: 30_000 }, () => {
+const shellSetUp = (): void => {
+  setUp()
+  vi.stubGlobal('api', createFakeApi())
+}
+
+// Renders the app and opens a new plugin from the welcome screen
+async function newPlugin(): Promise<ReturnType<typeof userEvent.setup>> {
+  const user = userEvent.setup()
+  render(<App />)
+  await user.click(screen.getByRole('button', { name: /Start with a blank plugin/ }))
+  await screen.findByRole('tab', { name: 'Metadata' })
+  return user
+}
+
+const tabNames = (list: HTMLElement): (string | null)[] =>
+  within(list)
+    .getAllByRole('tab')
+    .map((editorTab) => editorTab.textContent)
+
+describe('app shell: welcome screen and views', APP_TIMEOUT, () => {
   beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-  beforeEach(() => {
-    resetStores()
-    window.api = createFakeApi()
-    vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
-  })
+  beforeEach(shellSetUp)
 
-  afterEach(() => {
-    cleanup()
-    vi.unstubAllGlobals()
-  })
-
-  /** Renders the app and opens a new plugin from the welcome screen. */
-  async function newPlugin(): Promise<ReturnType<typeof userEvent.setup>> {
-    const user = userEvent.setup()
-    render(<App />)
-    await user.click(screen.getByRole('button', { name: /Start with a blank plugin/ }))
-    await screen.findByRole('tab', { name: 'Metadata' })
-    return user
-  }
+  afterEach(tearDown)
 
   it('the welcome screen offers Open Project, New Plugin and the five latest projects', () => {
     act(() => {
-      for (let i = 1; i <= 6; i++) useProjectStore.getState().addRecentProject(`/projects/Game${i}`)
+      for (let index = 1; index <= 6; index++) {
+        useProjectStore.getState().addRecentProject(`/projects/Game${String(index)}`)
+      }
     })
     render(<App />)
 
     expect(screen.getByRole('button', { name: /Load an existing MZ project/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Start with a blank plugin/ })).toBeInTheDocument()
 
-    const recent = screen.getAllByText(/^\/projects\/Game\d$/).map((el) => el.textContent)
+    const recent = screen.getAllByText(/^\/projects\/Game\d$/).map((element) => element.textContent)
 
-    expect(recent).toEqual([6, 5, 4, 3, 2].map((i) => `/projects/Game${i}`))
+    expect(recent).toStrictEqual([6, 5, 4, 3, 2].map((index) => `/projects/Game${String(index)}`))
   })
 
-  it('New Plugin opens the editor on its five tabs', async () => {
-    await newPlugin()
-    const tabList = screen.getByRole('tab', { name: 'Metadata' }).closest('[role="tablist"]')
-    const tabs = within(tabList as HTMLElement)
-      .getAllByRole('tab')
-      .map((tab) => tab.textContent)
+  it('new Plugin opens the editor on its five tabs', async () => {
+    expect.hasAssertions()
 
-    expect(tabs).toEqual(['Metadata', 'Parameters', 'Commands', 'Structs', 'Code'])
+    await newPlugin()
+    // The editor's tab list is the one holding the Metadata tab; the metadata tab holds its own
+    const tabs = screen
+      .getAllByRole('tablist')
+      .filter((list) => within(list).queryByRole('tab', { name: 'Metadata' }) !== null)
+      .map((list) => tabNames(list))
+
+    expect(tabs).toStrictEqual([['Metadata', 'Parameters', 'Commands', 'Structs', 'Code']])
     expect(screen.getByRole('tab', { name: 'Metadata' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('Ctrl+1 to Ctrl+5 select each editor tab', async () => {
+  it('opening a project names its game in the title bar and asks for a plugin', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    const overrides: FakeApiOverrides = {
+      dialog: { openFolder: vi.fn<OpenFolder>().mockResolvedValue('/project') },
+      project: {
+        validate: validatesAs({ valid: true }),
+        load: vi.fn<ProjectApi['load']>().mockResolvedValue(sampleProject())
+      }
+    }
+    vi.stubGlobal('api', createFakeApi(overrides))
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /Load an existing MZ project/ }))
+
+    const title = await screen.findByText('- Sample Game')
+
+    expect(title).toBeInTheDocument()
+    expect(screen.getByText('No plugin open')).toBeInTheDocument()
+    expect(globalThis.api.project.validate).toHaveBeenCalledWith('/project')
+    expect(globalThis.api.project.load).toHaveBeenCalledWith('/project')
+  })
+
+  it('with a project open, Analysis shows the plugin analysis and Editor goes back', async () => {
+    expect.hasAssertions()
+
+    const user = userEvent.setup()
+    act(() => {
+      useProjectStore.getState().setProject(sampleProject())
+      usePluginStore.getState().openPlugin(createEmptyPlugin())
+    })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'Analysis' }))
+
+    const analysis = await screen.findByRole('heading', { name: 'Plugin Analysis' })
+
+    expect(analysis).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Editor' }))
+    const editorTab = await screen.findByRole('tab', { name: 'Metadata' })
+
+    expect(editorTab).toBeInTheDocument()
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Plugin Analysis' })).not.toBeInTheDocument()
+    })
+  })
+})
+
+describe('app shell: keyboard shortcuts', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(shellSetUp)
+
+  afterEach(tearDown)
+
+  it('ctrl+1 to Ctrl+5 select each editor tab', async () => {
+    expect.hasAssertions()
+
     const user = await newPlugin()
     const order: [string, string][] = [
       ['2', 'Parameters'],
@@ -370,7 +501,9 @@ describe('app shell', { timeout: 30_000 }, () => {
     }
   })
 
-  it('Ctrl+N opens another plugin', async () => {
+  it('ctrl+N opens another plugin', async () => {
+    expect.hasAssertions()
+
     const user = await newPlugin()
 
     expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(1)
@@ -380,7 +513,9 @@ describe('app shell', { timeout: 30_000 }, () => {
     expect(screen.getAllByRole('button', { name: 'NewPlugin' })).toHaveLength(2)
   })
 
-  it('Ctrl+B hides the code preview and shows it again', async () => {
+  it('ctrl+B hides the code preview and shows it again', async () => {
+    expect.hasAssertions()
+
     const user = await newPlugin()
 
     expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
@@ -394,56 +529,24 @@ describe('app shell', { timeout: 30_000 }, () => {
     expect(screen.getByRole('heading', { name: 'Generated Code' })).toBeInTheDocument()
   })
 
-  it('F1 opens the keyboard shortcuts and Ctrl+, opens the settings', async () => {
+  it('f1 opens the keyboard shortcuts and Ctrl+, opens the settings', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     render(<App />)
     // The default key map has no F1 or comma; App matches the key's code
     await user.keyboard('[F1]')
+    const shortcuts = await screen.findByRole('dialog', { name: 'Keyboard Shortcuts' })
 
-    expect(await screen.findByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeInTheDocument()
+    expect(shortcuts).toBeInTheDocument()
 
     await user.keyboard('{Escape}')
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
     await user.keyboard('{Control>}[Comma]{/Control}')
+    const settings = await screen.findByRole('dialog', { name: 'Settings' })
 
-    expect(await screen.findByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
-  })
-
-  it('opening a project names its game in the title bar and asks for a plugin', async () => {
-    const user = userEvent.setup()
-    window.api = createFakeApi({
-      dialog: { openFolder: vi.fn(async () => '/project') },
-      project: {
-        validate: vi.fn(async () => ({ valid: true })),
-        load: vi.fn(async () => sampleProject())
-      }
-    })
-    render(<App />)
-    await user.click(screen.getByRole('button', { name: /Load an existing MZ project/ }))
-
-    expect(await screen.findByText('- Sample Game')).toBeInTheDocument()
-    expect(screen.getByText('No plugin open')).toBeInTheDocument()
-    expect(window.api.project.validate).toHaveBeenCalledWith('/project')
-    expect(window.api.project.load).toHaveBeenCalledWith('/project')
-  })
-
-  it('with a project open, Analysis shows the plugin analysis and Editor goes back', async () => {
-    const user = userEvent.setup()
-    act(() => {
-      useProjectStore.getState().setProject(sampleProject())
-      usePluginStore.getState().openPlugin(createEmptyPlugin())
-    })
-    render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Analysis' }))
-
-    expect(await screen.findByRole('heading', { name: 'Plugin Analysis' })).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Editor' }))
-
-    expect(await screen.findByRole('tab', { name: 'Metadata' })).toBeInTheDocument()
-
-    await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'Plugin Analysis' })).not.toBeInTheDocument()
-    )
+    expect(settings).toBeInTheDocument()
   })
 })
