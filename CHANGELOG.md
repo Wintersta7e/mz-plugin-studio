@@ -8,6 +8,7 @@
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
 - In the Message Window Mod template's size mode, the Window Height setting now sets the message window's height. Before, it was ignored.
 - In the Basic Plugin Command template, two arguments with one name, or an argument named like a JavaScript reserved word (such as `class`) or like a name the command's own code uses (`args`, `String`, `Number`, `JSON`, `console`), are listed as an error. Before, the template wrote code that RPG Maker MZ fails to load, or a command that fails when it runs.
+- In the BGM Control template, Save Current BGM now saves the playing music and Restore Saved BGM plays it again where it stopped. Before, saving kept nothing and restoring stopped the game with an error.
 
 ## [1.8.1] - 2026-11-05
 

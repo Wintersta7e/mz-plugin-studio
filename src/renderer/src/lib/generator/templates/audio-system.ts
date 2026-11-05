@@ -157,16 +157,16 @@ const bgmControlTemplate: CodeTemplate = {
       case 'save':
         coreCode = [
           '// Save current BGM for later restoration',
-          '// The saved BGM can be restored with AudioManager.replayBgm()',
-          'AudioManager.saveBgm();'
+          '// The saved BGM can be restored with $gameSystem.replayBgm()',
+          '$gameSystem.saveBgm();'
         ]
         break
 
       case 'restore':
         coreCode = [
           '// Restore previously saved BGM',
-          '// Make sure to call AudioManager.saveBgm() first',
-          'AudioManager.replayBgm();'
+          '// Make sure to call $gameSystem.saveBgm() first',
+          '$gameSystem.replayBgm();'
         ]
         break
     }

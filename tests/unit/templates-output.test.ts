@@ -16,6 +16,7 @@ import '../../src/renderer/src/lib/generator/templates/input-handler'
 import '../../src/renderer/src/lib/generator/templates/battle-system'
 import '../../src/renderer/src/lib/generator/templates/plugin-commands'
 import '../../src/renderer/src/lib/generator/templates/message-system'
+import '../../src/renderer/src/lib/generator/templates/audio-system'
 
 import {
   getTemplate,
@@ -23,6 +24,7 @@ import {
   validateTemplateValues
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { compileCheck } from '../../src/main/services/syntax-check'
+import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 describe('save-load template', () => {
   it('injects a warning comment when storageLocation is Game_Actors', () => {
@@ -235,5 +237,59 @@ describe('plugin-command-basic argument names', () => {
     const code = basicCommandCode({ ...base, arg1Name, arg2Name })
 
     expect(compileCheck(code, 'plugin.js')).not.toBeNull()
+  })
+})
+
+// Stand-ins for the engine's audio calls, as RPG Maker MZ defines them: each call is recorded,
+// replaying a BGM reads its name, and `$gameSystem` keeps the BGM it saves and replays that one.
+// A timer runs its callback at once.
+const AUDIO_ENGINE = `
+var calls = [];
+var AudioManager = {
+  playBgm: function (bgm) { calls.push(['playBgm', bgm]); },
+  fadeInBgm: function (duration) { calls.push(['fadeInBgm', duration]); },
+  fadeOutBgm: function (duration) { calls.push(['fadeOutBgm', duration]); },
+  saveBgm: function () { return { name: 'Theme1', volume: 90, pitch: 100, pan: 0, pos: 12 }; },
+  replayBgm: function (bgm) { calls.push(['replayBgm', bgm.name]); }
+};
+var $gameSystem = {
+  _savedBgm: null,
+  saveBgm: function () { this._savedBgm = AudioManager.saveBgm(); },
+  replayBgm: function () { if (this._savedBgm) AudioManager.replayBgm(this._savedBgm); }
+};
+var setTimeout = function (callback) { callback(); };
+`
+
+// The BGM control template's code, not wrapped in a function, from its defaults with the given values
+function bgmControlCode(values: Record<string, unknown>): string {
+  const template = getTemplate('audio-bgm-control')
+  if (template === undefined) throw new Error('audio-bgm-control is not registered')
+  return template.generate({
+    ...getTemplateDefaults('audio-bgm-control'),
+    wrapInFunction: false,
+    ...values
+  })
+}
+
+// The engine calls the code makes when it runs against the engine stand-ins, in order; an error
+// the code throws is thrown here
+function audioCalls(code: string): unknown {
+  const result = evaluatePlugin(`${AUDIO_ENGINE}${code}`, { mode: 'generator' })
+  const error = result.compileProblem?.message ?? result.threw
+  if (error !== null) throw new Error(error)
+  const context: { calls?: unknown } | null = result.context
+  return structuredClone(context?.calls)
+}
+
+describe('audio BGM control save and restore', () => {
+  it('replays the BGM the save operation saved', () => {
+    const save = bgmControlCode({ operation: 'save' })
+    const restore = bgmControlCode({ operation: 'restore' })
+
+    expect(audioCalls(`${save}\n${restore}`)).toStrictEqual([['replayBgm', 'Theme1']])
+  })
+
+  it('replays nothing when no BGM was saved', () => {
+    expect(audioCalls(bgmControlCode({ operation: 'restore' }))).toStrictEqual([])
   })
 })
