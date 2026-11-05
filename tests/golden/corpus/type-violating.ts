@@ -41,16 +41,27 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
-    { parentClass: 'Window_Command', width: ['a', 'b'], addToScene: 'Scene_Menu' }
+    { parentClass: 'Window_Command', width: ['a', 'b'], addToScene: 'Scene_Menu' },
+    {
+      windowName: 'listWindow',
+      parentClass: 'Window_Selectable',
+      addToScene: 'Scene_Map',
+      width: null
+    }
   ],
   'gauge-window': [
     { gaugeCount: '3', dataSource: 'variable', width: null, gaugeHeight: null },
     { gaugeCount: 3, positionX: 'abc', gaugeHeight: ['a', 'b'] },
-    { gaugeCount: '3', gauge3Color2: 7 }
+    { gaugeCount: '3', gauge3Color2: 7 },
+    { dataSource: 'custom', showLabels: 'false', positionY: null }
   ],
   'hud-overlay-window': [
     { positionY: null, opacity: null },
-    { positionX: 'abc', width: ['a', 'b'], opacity: 'x' }
+    { positionX: 'abc', width: ['a', 'b'], opacity: 'x' },
+    { hudType: 'status', opacity: null },
+    { hudType: 'minimap', positionY: null },
+    { hudType: 'custom', width: null },
+    { opacity: 300, positionY: null }
   ],
   'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
   'map-parallel-process': [
@@ -61,18 +72,38 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'map-transfer-hook': [{ filterMapId: '12', includeDirection: null }],
   'menu-command-addition': [
     { enableCondition: 'switch', switchId: null },
-    { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' }
+    { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' },
+    { insertPosition: 'afterItem', enableCondition: 'custom', switchId: null },
+    { insertPosition: 'afterSkill', switchId: null },
+    { insertPosition: 'afterEquip', switchId: null },
+    { insertPosition: 'afterStatus', switchId: null },
+    { insertPosition: 'beforeSave', switchId: null },
+    { insertPosition: 'beforeGameEnd', switchId: null },
+    { insertPosition: 'end', switchId: null }
   ],
-  'menu-custom-scene': [{ includeHelp: null }],
+  'menu-custom-scene': [
+    { includeHelp: null },
+    { windowType: 'command', includeHelp: true, includeGold: null },
+    { windowType: 'base', includeHelp: null, includeGold: true }
+  ],
   'menu-options-addition': [
     { persistToConfig: null },
     { optionType: 'volume', defaultValue: 42 },
     { optionType: 'volume', defaultValue: '50', persistToConfig: null },
     { optionType: 'select', defaultValue: 42, choices: null },
     { optionType: 'select', choices: 'Low, High', persistToConfig: null },
-    { optionType: 'select', choices: 42 }
+    { optionType: 'select', choices: 42 },
+    { optionType: 'slider', defaultValue: null }
   ],
-  'menu-title-mod': [{ modType: 'hideCommand', hideTarget: 7 }, { commandName: null }],
+  'menu-title-mod': [
+    { modType: 'hideCommand', hideTarget: 7 },
+    { commandName: null },
+    { modType: 'replaceBackground', commandName: null },
+    { modType: 'hideCommand', hideTarget: 'newGame', commandName: null },
+    { modType: 'hideCommand', hideTarget: 'continue', commandName: null },
+    { modType: 'customCreate', commandName: null },
+    { modType: 'hideCommand', hideTarget: null }
+  ],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },
@@ -84,7 +115,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { defaultDuration: null, height: null },
     { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
     { height: 'abc', position: 'bottom' },
-    { textColor: 7 }
+    { textColor: 7 },
+    { fadeEffect: 'slide', height: null },
+    { fadeEffect: 'none', width: null }
   ],
   'sprite-custom-class': [
     { width: null },

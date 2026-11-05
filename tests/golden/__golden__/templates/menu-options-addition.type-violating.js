@@ -285,3 +285,31 @@ Window_Options.prototype.cursorLeft = function() {
 // ==== case: type-violating: optionType="select",choices=42 {"optionType":"select","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","choices":42}
 // rejects: Field "Choices (comma-separated)" must be text
 // throws: TypeError
+
+// ==== case: type-violating: optionType="slider",defaultValue=null {"optionType":"slider","persistToConfig":true,"optionName":"Sample","optionSymbol":"Sample","defaultValue":null}
+// Options Menu Addition: Sample
+
+// Add to ConfigManager
+ConfigManager.Sample = true;
+
+// Save option to config
+const _ConfigManager_makeData = ConfigManager.makeData;
+ConfigManager.makeData = function() {
+    const config = _ConfigManager_makeData.call(this);
+    config.Sample = this.Sample;
+    return config;
+};
+
+// Load option from config
+const _ConfigManager_applyData = ConfigManager.applyData;
+ConfigManager.applyData = function(config) {
+    _ConfigManager_applyData.call(this, config);
+};
+
+// Add option to options window
+const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+Window_Options.prototype.addGeneralOptions = function() {
+    _Window_Options_addGeneralOptions.call(this);
+    this.addCommand("Sample", "Sample");
+};
+

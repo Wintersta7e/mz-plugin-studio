@@ -118,3 +118,79 @@ Scene_Menu.prototype.onCommand3 = function() {
     // Handle command 3
     this._sampleWindow.activate();
 };
+
+// ==== case: type-violating: windowName="listWindow",parentClass="Window_Selectable",addToScene="Scene_Map",width=null {"parentClass":"Window_Selectable","width":null,"height":200,"addToScene":"Scene_Map","windowName":"listWindow"}
+// rejects: Width must be a positive number
+//-----------------------------------------------------------------------------
+// Window_ListWindow
+//-----------------------------------------------------------------------------
+
+function Window_ListWindow() {
+    this.initialize(...arguments);
+}
+
+Window_ListWindow.prototype = Object.create(Window_Selectable.prototype);
+Window_ListWindow.prototype.constructor = Window_ListWindow;
+
+Window_ListWindow.prototype.initialize = function(rect) {
+    Window_Selectable.prototype.initialize.call(this, rect);
+    this._data = [];
+    this.refresh();
+    this.select(0);
+};
+
+Window_ListWindow.prototype.maxItems = function() {
+    return this._data ? this._data.length : 0;
+};
+
+Window_ListWindow.prototype.item = function() {
+    return this.itemAt(this.index());
+};
+
+Window_ListWindow.prototype.itemAt = function(index) {
+    return this._data && index >= 0 ? this._data[index] : null;
+};
+
+Window_ListWindow.prototype.makeItemList = function() {
+    // Populate this._data with your items
+    this._data = ['Item 1', 'Item 2', 'Item 3'];
+};
+
+Window_ListWindow.prototype.refresh = function() {
+    this.makeItemList();
+    Window_Selectable.prototype.refresh.call(this);
+};
+
+Window_ListWindow.prototype.drawItem = function(index) {
+    const item = this.itemAt(index);
+    if (item) {
+        const rect = this.itemLineRect(index);
+        this.drawText(item, rect.x, rect.y, rect.width);
+    }
+};
+// Add to Scene_Map
+const _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function() {
+    _Scene_Map_createAllWindows.call(this);
+    this.createListWindowWindow();
+};
+
+Scene_Map.prototype.createListWindowWindow = function() {
+    const rect = new Rectangle(0, 0, 300, 200);
+    this._listWindowWindow = new Window_ListWindow(rect);
+    this._listWindowWindow.setHandler('ok', this.onListWindowOk.bind(this));
+    this._listWindowWindow.setHandler('cancel', this.onListWindowCancel.bind(this));
+    this.addWindow(this._listWindowWindow);
+};
+
+Scene_Map.prototype.onListWindowOk = function() {
+    const item = this._listWindowWindow.item();
+    // Handle selection
+    console.log("Selected:", item);
+    this._listWindowWindow.activate();
+};
+
+Scene_Map.prototype.onListWindowCancel = function() {
+    // Handle cancel
+    this._listWindowWindow.deactivate();
+};

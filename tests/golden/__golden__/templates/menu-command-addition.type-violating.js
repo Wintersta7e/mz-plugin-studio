@@ -113,3 +113,247 @@ Scene_Menu.prototype.onSampleCancel = function() {
     this._statusWindow.deselect();
     this._commandWindow.activate();
 };
+
+// ==== case: type-violating: insertPosition="afterItem",enableCondition="custom",switchId=null {"insertPosition":"afterItem","requiresActor":false,"enableCondition":"custom","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    // Add your custom condition here
+    return true;
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="afterSkill",switchId=null {"insertPosition":"afterSkill","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="afterEquip",switchId=null {"insertPosition":"afterEquip","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="afterStatus",switchId=null {"insertPosition":"afterStatus","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="beforeSave",switchId=null {"insertPosition":"beforeSave","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Override makeCommandList to control command position
+const _Window_MenuCommand_makeCommandList = Window_MenuCommand.prototype.makeCommandList;
+Window_MenuCommand.prototype.makeCommandList = function() {
+    _Window_MenuCommand_makeCommandList.call(this);
+    
+    // Find index of "save" and insert before it
+    const index = this._list.findIndex(cmd => cmd.symbol === "save");
+    if (index >= 0) {
+        const cmd = this._list.pop(); // Remove the command we just added
+        this._list.splice(index, 0, cmd); // Insert at correct position
+    }
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="beforeGameEnd",switchId=null {"insertPosition":"beforeGameEnd","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Override makeCommandList to control command position
+const _Window_MenuCommand_makeCommandList = Window_MenuCommand.prototype.makeCommandList;
+Window_MenuCommand.prototype.makeCommandList = function() {
+    _Window_MenuCommand_makeCommandList.call(this);
+    
+    // Find index of "gameEnd" and insert before it
+    const index = this._list.findIndex(cmd => cmd.symbol === "gameEnd");
+    if (index >= 0) {
+        const cmd = this._list.pop(); // Remove the command we just added
+        this._list.splice(index, 0, cmd); // Insert at correct position
+    }
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
+
+// ==== case: type-violating: insertPosition="end",switchId=null {"insertPosition":"end","requiresActor":false,"enableCondition":"always","commandName":"Sample","commandSymbol":"Sample","switchId":null}
+// Menu Command Addition: Sample
+
+// Add command to main menu
+const _Window_MenuCommand_addOriginalCommands = Window_MenuCommand.prototype.addOriginalCommands;
+Window_MenuCommand.prototype.addOriginalCommands = function() {
+    _Window_MenuCommand_addOriginalCommands.call(this);
+    this.addCommand("Sample", "Sample", this.isSampleEnabled());
+};
+
+// Enable condition for Sample
+Window_MenuCommand.prototype.isSampleEnabled = function() {
+    return true;
+};
+
+// Create handler for the command
+const _Scene_Menu_createCommandWindow = Scene_Menu.prototype.createCommandWindow;
+Scene_Menu.prototype.createCommandWindow = function() {
+    _Scene_Menu_createCommandWindow.call(this);
+    this._commandWindow.setHandler("Sample", this.commandSample.bind(this));
+};
+
+Scene_Menu.prototype.commandSample = function() {
+    // Your code here when "Sample" is selected
+    console.log("Sample command selected");
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Sample);
+    this._commandWindow.activate();
+};
