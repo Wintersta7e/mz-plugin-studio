@@ -13,7 +13,9 @@ import {
 
 function resetterOf<T>(store: StoreApi<T>): () => void {
   const initial = store.getInitialState()
-  return () => store.setState(initial, true)
+  return () => {
+    store.setState(initial, true)
+  }
 }
 
 // Captured at module load, before any test changes a store.

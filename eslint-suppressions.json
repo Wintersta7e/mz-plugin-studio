@@ -3701,20 +3701,6 @@
       "count": 5
     }
   },
-  "tests/dom/settings-store.test.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    }
-  },
   "tests/dom/shortcuts-dialog.test.tsx": {
     "@typescript-eslint/no-empty-function": {
       "count": 1
@@ -3748,23 +3734,6 @@
     },
     "vitest/require-mock-type-parameters": {
       "count": 1
-    }
-  },
-  "tests/dom/shortcuts.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "sonarjs/parameterized-tests": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 19
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 3
     }
   },
   "tests/dom/sidebar.test.tsx": {
@@ -3880,42 +3849,6 @@
       "count": 5
     }
   },
-  "tests/dom/support/load-persisted.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 8
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/dom/support/main-api.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 3
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "preserve-caught-error": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 7
-    }
-  },
-  "tests/dom/support/reset-stores.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    }
-  },
   "tests/dom/template-inserter.test.tsx": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
@@ -4010,23 +3943,6 @@
       "count": 4
     }
   },
-  "tests/dom/toast-store.test.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 3
-    }
-  },
   "tests/dom/toast-ui.test.tsx": {
     "@typescript-eslint/no-floating-promises": {
       "count": 7
@@ -4042,23 +3958,6 @@
     },
     "vitest/require-mock-type-parameters": {
       "count": 1
-    }
-  },
-  "tests/dom/ui-store.test.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 4
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 6
     }
   },
   "tests/golden/corpus/generator.ts": {

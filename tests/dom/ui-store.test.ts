@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useUIStore } from '../../src/renderer/src/stores/uiStore'
+import { savedStateOf } from './support/persisted-state'
 
 function resetUIStore() {
   localStorage.clear()
   useUIStore.setState(useUIStore.getInitialState(), true)
 }
+
+const ui = (): ReturnType<typeof useUIStore.getState> => useUIStore.getState()
 
 describe('uiStore raw mode state', () => {
   beforeEach(() => {
@@ -15,23 +18,25 @@ describe('uiStore raw mode state', () => {
     useUIStore.getState().setRawModeForPlugin('plugin-a', true)
     useUIStore.getState().setRawModeForPlugin('plugin-b', false)
 
-    expect(useUIStore.getState().rawModeByPluginId).toEqual({
+    expect(useUIStore.getState().rawModeByPluginId).toStrictEqual({
       'plugin-a': true,
       'plugin-b': false
     })
 
     useUIStore.getState().clearRawModeForPlugin('plugin-a')
 
-    expect(useUIStore.getState().rawModeByPluginId).toEqual({ 'plugin-b': false })
+    expect(useUIStore.getState().rawModeByPluginId).toStrictEqual({ 'plugin-b': false })
   })
 
   it('keeps a confirmed save without raw mode until raw mode is turned off again or cleared', () => {
-    const ui = (): ReturnType<typeof useUIStore.getState> => useUIStore.getState()
     ui().setRawModeForPlugin('plugin-a', false)
     ui().confirmStructuralSave('plugin-a')
     ui().confirmStructuralSave('plugin-b')
 
-    expect(ui().structuralSaveConfirmedByPluginId).toEqual({ 'plugin-a': true, 'plugin-b': true })
+    expect(ui().structuralSaveConfirmedByPluginId).toStrictEqual({
+      'plugin-a': true,
+      'plugin-b': true
+    })
 
     ui().setRawModeForPlugin('plugin-a', true)
 
@@ -43,7 +48,7 @@ describe('uiStore raw mode state', () => {
 
     ui().clearRawModeForPlugin('plugin-b')
 
-    expect(ui().structuralSaveConfirmedByPluginId).toEqual({})
+    expect(ui().structuralSaveConfirmedByPluginId).toStrictEqual({})
     expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('structuralSave')
   })
 
@@ -74,9 +79,9 @@ describe('uiStore raw mode state', () => {
 
     expect(useUIStore.getState().previewWidth).toBe(1200)
 
-    const persisted = JSON.parse(localStorage.getItem('mz-plugin-studio-ui') ?? '{}')
+    const state = savedStateOf(localStorage.getItem('mz-plugin-studio-ui'), 'ui store')
 
-    expect(persisted.state).toEqual({
+    expect(state).toStrictEqual({
       sidebarWidth: 360,
       previewWidth: 1200,
       previewCollapsed: false,
@@ -84,9 +89,9 @@ describe('uiStore raw mode state', () => {
       rawModeByPluginId: { 'plugin-a': true },
       schemaVersion: 2
     })
-    expect(persisted.state).not.toHaveProperty('activeTab')
-    expect(persisted.state).not.toHaveProperty('mainView')
-    expect(persisted.state).not.toHaveProperty('selectedParameterId')
+    expect(
+      ['activeTab', 'mainView', 'selectedParameterId'].map((key) => Object.hasOwn(state, key))
+    ).toStrictEqual([false, false, false])
   })
 
   it('keeps raw mode unchanged when setting the same value or clearing an unknown plugin', () => {
@@ -94,6 +99,6 @@ describe('uiStore raw mode state', () => {
     useUIStore.getState().setRawModeForPlugin('plugin-a', true)
     useUIStore.getState().clearRawModeForPlugin('missing-plugin')
 
-    expect(useUIStore.getState().rawModeByPluginId).toEqual({ 'plugin-a': true })
+    expect(useUIStore.getState().rawModeByPluginId).toStrictEqual({ 'plugin-a': true })
   })
 })
