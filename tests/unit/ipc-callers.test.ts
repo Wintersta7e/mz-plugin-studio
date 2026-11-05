@@ -110,7 +110,8 @@ function rendererCallers(files: string[]): Map<string, string[]> {
         ts.isPropertyAccessExpression(node.expression) &&
         ts.isPropertyAccessExpression(node.expression.expression) &&
         ts.isIdentifier(node.expression.expression.expression) &&
-        node.expression.expression.expression.text === 'window' &&
+        (node.expression.expression.expression.text === 'window' ||
+          node.expression.expression.expression.text === 'globalThis') &&
         node.expression.expression.name.text === 'api'
       ) {
         const member = `${node.expression.name.text}.${node.name.text}`

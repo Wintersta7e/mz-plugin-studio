@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { checkArrayOf, checkString, definePersist, isRecord } from './persist'
-import type { FieldCheck, MigrationStep } from './persist'
+import {
+  checkArrayOf,
+  checkString,
+  definePersist,
+  isRecord,
+  type FieldCheck,
+  type MigrationStep
+} from './persist'
 
 interface TemplateStoreState {
   favorites: string[] // template IDs
@@ -21,6 +27,27 @@ const checkRecent: FieldCheck<RecentTemplate> = (value) =>
     : undefined
 
 const TEMPLATE_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+
+const TEMPLATE_PERSIST = definePersist<
+  TemplateStoreState,
+  Pick<TemplateStoreState, 'favorites' | 'recentlyUsed'>
+>({
+  name: 'mz-plugin-studio-templates',
+  area: 'Template favorites',
+  migrations: TEMPLATE_MIGRATIONS,
+  fields: {
+    favorites: checkArrayOf(checkString),
+    recentlyUsed: checkArrayOf(checkRecent)
+  },
+  labels: {
+    favorites: { all: 'favorite templates', one: 'favorite template' },
+    recentlyUsed: { all: 'recently used templates', one: 'recently used template' }
+  },
+  partialize: (state) => ({
+    favorites: state.favorites,
+    recentlyUsed: state.recentlyUsed
+  })
+})
 
 export const useTemplateStore = create<TemplateStoreState>()(
   persist(
@@ -46,22 +73,6 @@ export const useTemplateStore = create<TemplateStoreState>()(
       isFavorite: (id) => get().favorites.includes(id),
       clearRecent: () => set({ recentlyUsed: [] })
     }),
-    definePersist<TemplateStoreState, Pick<TemplateStoreState, 'favorites' | 'recentlyUsed'>>({
-      name: 'mz-plugin-studio-templates',
-      area: 'Template favorites',
-      migrations: TEMPLATE_MIGRATIONS,
-      fields: {
-        favorites: checkArrayOf(checkString),
-        recentlyUsed: checkArrayOf(checkRecent)
-      },
-      labels: {
-        favorites: { all: 'favorite templates', one: 'favorite template' },
-        recentlyUsed: { all: 'recently used templates', one: 'recently used template' }
-      },
-      partialize: (state) => ({
-        favorites: state.favorites,
-        recentlyUsed: state.recentlyUsed
-      })
-    })
+    TEMPLATE_PERSIST
   )
 )

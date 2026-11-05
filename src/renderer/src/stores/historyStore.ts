@@ -13,8 +13,10 @@ interface HistoryEntry {
 }
 
 function entryOf(plugin: PluginDefinition): HistoryEntry {
-  // Strip rawSource to avoid retaining large strings in history
-  const { rawSource: _raw, ...snapshot } = plugin
+  // Strip rawSource to avoid retaining large strings in history; the key is left out, not kept
+  // as `undefined`, so the snapshot has the plugin's other keys in their order
+  const snapshot: HistoryPluginSnapshot = { ...plugin, rawSource: undefined }
+  delete snapshot.rawSource
   return {
     plugin: snapshot,
     timestamp: Date.now(),
@@ -25,7 +27,7 @@ function entryOf(plugin: PluginDefinition): HistoryEntry {
 /**
 Whether `entry` holds exactly `plugin`, apart from the file text history never keeps.
 */
-function shows(entry: HistoryEntry, plugin: PluginDefinition): boolean {
+function doesShow(entry: HistoryEntry, plugin: PluginDefinition): boolean {
   return entry.json === entryOf(plugin).json
 }
 
@@ -72,8 +74,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
         }
       }
       // Skip a push of the state already recorded last
-      const last = state.past[state.past.length - 1]
-      if (last && last.json === entry.json) {
+      if (state.past.at(-1)?.json === entry.json) {
         return {}
       }
       return {
@@ -88,10 +89,10 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
   // shown unless an edit is still waiting to be recorded
   undo: (current) => {
     const { past, future } = get()
-    const top = past[past.length - 1]
-    const isShown = top !== undefined && shows(top, current)
+    const top = past.at(-1)
+    const isShown = top !== undefined && doesShow(top, current)
     const earlier = isShown ? past.slice(0, -1) : past
-    const previous = earlier[earlier.length - 1]
+    const previous = earlier.at(-1)
     if (previous === undefined) return null
 
     // `previous` stays the newest entry: it is the state shown from now on
@@ -101,11 +102,11 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
   redo: (current) => {
     const { past, future } = get()
-    if (future.length === 0) return null
+    const next = future.at(0)
+    if (next === undefined) return null
 
-    const next = future[0]
-    const top = past[past.length - 1]
-    const unrecorded = top !== undefined && shows(top, current) ? [] : [entryOf(current)]
+    const top = past.at(-1)
+    const unrecorded = top !== undefined && doesShow(top, current) ? [] : [entryOf(current)]
 
     set({ past: [...past, ...unrecorded, next], future: future.slice(1) })
     return next.plugin

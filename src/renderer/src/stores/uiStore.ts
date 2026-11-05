@@ -6,9 +6,9 @@ import {
   checkRecordOf,
   checkString,
   definePersist,
-  isRecord
+  isRecord,
+  type MigrationStep
 } from './persist'
-import type { MigrationStep } from './persist'
 
 interface UIState {
   sidebarWidth: number
@@ -34,9 +34,9 @@ interface UIState {
   setSelectedStructId: (id: string | null) => void
   setMainView: (view: UIState['mainView']) => void
   setLastTemplateCategory: (cat: string) => void
-  setPreviewCollapsed: (collapsed: boolean) => void
+  setPreviewCollapsed: (isCollapsed: boolean) => void
   togglePreview: () => void
-  setRawModeForPlugin: (pluginId: string, enabled: boolean) => void
+  setRawModeForPlugin: (pluginId: string, isEnabled: boolean) => void
   clearRawModeForPlugin: (pluginId: string) => void
   confirmStructuralSave: (pluginId: string) => void
   requestDiff: (pluginId: string) => void
@@ -54,10 +54,9 @@ type PersistedField =
 The record without `key`; the same record when it has no such key.
 */
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
-  if (!(key in record)) return record
-  const next = { ...record }
-  delete next[key]
-  return next
+  return Object.hasOwn(record, key)
+    ? Object.fromEntries(Object.entries(record).filter(([entry]) => entry !== key))
+    : record
 }
 
 const UI_MIGRATIONS: readonly MigrationStep[] = [
@@ -74,6 +73,33 @@ const UI_MIGRATIONS: readonly MigrationStep[] = [
         }
       : state
 ]
+
+const UI_PERSIST = definePersist<UIState, Pick<UIState, PersistedField>>({
+  name: 'mz-plugin-studio-ui',
+  area: 'Layout',
+  migrations: UI_MIGRATIONS,
+  fields: {
+    sidebarWidth: checkFiniteNumber,
+    previewWidth: checkFiniteNumber,
+    previewCollapsed: checkBoolean,
+    lastTemplateCategory: checkString,
+    rawModeByPluginId: checkRecordOf(checkBoolean)
+  },
+  labels: {
+    sidebarWidth: 'sidebar width',
+    previewWidth: 'preview width',
+    previewCollapsed: 'collapsed preview',
+    lastTemplateCategory: 'last template category',
+    rawModeByPluginId: { all: 'raw mode switches', one: 'raw mode switch of tab' }
+  },
+  partialize: (state) => ({
+    sidebarWidth: state.sidebarWidth,
+    previewWidth: state.previewWidth,
+    previewCollapsed: state.previewCollapsed,
+    lastTemplateCategory: state.lastTemplateCategory,
+    rawModeByPluginId: state.rawModeByPluginId
+  })
+})
 
 export const useUIStore = create<UIState>()(
   persist(
@@ -102,14 +128,14 @@ export const useUIStore = create<UIState>()(
       setLastTemplateCategory: (lastTemplateCategory) => set({ lastTemplateCategory }),
       setPreviewCollapsed: (previewCollapsed) => set({ previewCollapsed }),
       togglePreview: () => set((state) => ({ previewCollapsed: !state.previewCollapsed })),
-      setRawModeForPlugin: (pluginId, enabled) =>
+      setRawModeForPlugin: (pluginId, isEnabled) =>
         set((state) => {
           const next: Partial<UIState> = {}
-          if (state.rawModeByPluginId[pluginId] !== enabled) {
-            next.rawModeByPluginId = { ...state.rawModeByPluginId, [pluginId]: enabled }
+          if (state.rawModeByPluginId[pluginId] !== isEnabled) {
+            next.rawModeByPluginId = { ...state.rawModeByPluginId, [pluginId]: isEnabled }
           }
           // Turning raw mode off asks again before the next save regenerates the file
-          if (!enabled && pluginId in state.structuralSaveConfirmedByPluginId) {
+          if (!isEnabled && Object.hasOwn(state.structuralSaveConfirmedByPluginId, pluginId)) {
             next.structuralSaveConfirmedByPluginId = without(
               state.structuralSaveConfirmedByPluginId,
               pluginId
@@ -120,8 +146,8 @@ export const useUIStore = create<UIState>()(
       clearRawModeForPlugin: (pluginId) =>
         set((state) => {
           if (
-            !(pluginId in state.rawModeByPluginId) &&
-            !(pluginId in state.structuralSaveConfirmedByPluginId)
+            !Object.hasOwn(state.rawModeByPluginId, pluginId) &&
+            !Object.hasOwn(state.structuralSaveConfirmedByPluginId, pluginId)
           ) {
             return {}
           }
@@ -144,31 +170,6 @@ export const useUIStore = create<UIState>()(
       requestDiff: (pluginId) => set({ diffRequestPluginId: pluginId, previewCollapsed: false }),
       clearDiffRequest: () => set({ diffRequestPluginId: null })
     }),
-    definePersist<UIState, Pick<UIState, PersistedField>>({
-      name: 'mz-plugin-studio-ui',
-      area: 'Layout',
-      migrations: UI_MIGRATIONS,
-      fields: {
-        sidebarWidth: checkFiniteNumber,
-        previewWidth: checkFiniteNumber,
-        previewCollapsed: checkBoolean,
-        lastTemplateCategory: checkString,
-        rawModeByPluginId: checkRecordOf(checkBoolean)
-      },
-      labels: {
-        sidebarWidth: 'sidebar width',
-        previewWidth: 'preview width',
-        previewCollapsed: 'collapsed preview',
-        lastTemplateCategory: 'last template category',
-        rawModeByPluginId: { all: 'raw mode switches', one: 'raw mode switch of tab' }
-      },
-      partialize: (state) => ({
-        sidebarWidth: state.sidebarWidth,
-        previewWidth: state.previewWidth,
-        previewCollapsed: state.previewCollapsed,
-        lastTemplateCategory: state.lastTemplateCategory,
-        rawModeByPluginId: state.rawModeByPluginId
-      })
-    })
+    UI_PERSIST
   )
 )

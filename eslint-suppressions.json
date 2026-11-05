@@ -3538,232 +3538,38 @@
     }
   },
   "src/renderer/src/stores/historyStore.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-optional-chain": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 3
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/filename-case": {
-      "count": 1
-    },
-    "unicorn/prefer-at": {
-      "count": 4
-    }
-  },
-  "src/renderer/src/stores/persist.ts": {
-    "@typescript-eslint/no-deprecated": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 3
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "unicorn/no-array-reverse": {
-      "count": 1
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/prefer-number-is-safe-integer": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
       "count": 1
     }
   },
   "src/renderer/src/stores/pluginStore.ts": {
-    "@typescript-eslint/no-dynamic-delete": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "sonarjs/no-nested-functions": {
-      "count": 4
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 5
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 2
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 3
-    },
-    "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-logical-operator-over-ternary": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 2
     }
   },
   "src/renderer/src/stores/projectStore.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 3
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/filename-case": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
       "count": 1
     }
   },
   "src/renderer/src/stores/settingsStore.ts": {
-    "@typescript-eslint/no-dynamic-delete": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 6
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 4
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 4
-    },
-    "unicorn/prefer-global-this": {
-      "count": 4
     }
   },
   "src/renderer/src/stores/templateStore.ts": {
-    "no-duplicate-imports": {
-      "count": 1
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 2
     }
   },
   "src/renderer/src/stores/toastStore.ts": {
-    "@typescript-eslint/prefer-optional-chain": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "eqeqeq": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/filename-case": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/no-useless-spread": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
       "count": 1
     }
   },
   "src/renderer/src/stores/uiStore.ts": {
-    "@typescript-eslint/no-dynamic-delete": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 4
     }
   },
   "tests/dom/analysis-view.test.tsx": {
