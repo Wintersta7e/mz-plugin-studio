@@ -456,3 +456,18 @@ describe('choice window opacity', () => {
     expect(shown).toMatchObject({ opacity: 128 })
   })
 })
+
+describe('custom message background colour', () => {
+  it('fills the background with the colour before any Dim message', () => {
+    const shown = windowAfter(
+      'message-window-mod',
+      { modType: 'background', bgType: 'custom', bgColor: 'rgba(0, 0, 64, 0.8)' },
+      'var shown = new Window_Message(); shown.updateBackground();'
+    )
+
+    expect(shown).toMatchObject({
+      opacity: 0,
+      _dimmerSprite: { visible: true, bitmap: { fills: ['rgba(0, 0, 64, 0.8)'] } }
+    })
+  })
+})

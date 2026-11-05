@@ -436,6 +436,8 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('Window_Message.prototype.updateBackground = function() {')
           lines.push('    _Window_Message_updateBackground.call(this);')
           lines.push('    // Apply custom background color')
+          lines.push('    this.opacity = 0;')
+          lines.push('    this.showBackgroundDimmer();')
           lines.push('    if (this._dimmerSprite) {')
           lines.push('        this._dimmerSprite.bitmap.clear();')
           lines.push(

@@ -284,6 +284,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
@@ -299,6 +301,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
@@ -437,6 +441,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
@@ -451,6 +457,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
@@ -465,6 +473,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
@@ -479,6 +489,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\nglobalThis.__pwn = 1; /* Y');
@@ -493,6 +505,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X\' + (globalThis.__pwn = 1) + \'Y');
@@ -507,6 +521,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X" + (globalThis.__pwn = 1) + "Y');
@@ -521,6 +537,8 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
         this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y');
