@@ -5,7 +5,7 @@ import {
   getTemplate,
   type TemplateField
 } from '../../../src/renderer/src/lib/generator/templates/index'
-import type { TemplateCase } from './templates'
+import { baseValues, type TemplateCase } from './templates'
 
 // A value of another JavaScript type than each field type holds.
 const WRONG_TYPE: Record<TemplateField['type'], unknown> = {
@@ -24,6 +24,30 @@ function everyField(id: string, value: (field: TemplateField) => unknown): Recor
   return Object.fromEntries(fields.map((field) => [field.id, value(field)]))
 }
 
+// A wrong-typed or null value in some fields, the base values in the rest. The three cases of
+// every template stop at the first field read, so these reach the branches and checks after it.
+const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
+  'menu-command-addition': [
+    { enableCondition: 'switch', switchId: null },
+    { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' }
+  ],
+  'menu-custom-scene': [{ includeHelp: null }],
+  'menu-options-addition': [
+    { persistToConfig: null },
+    { optionType: 'volume', defaultValue: 42 },
+    { optionType: 'volume', defaultValue: '50', persistToConfig: null },
+    { optionType: 'select', defaultValue: 42, choices: null },
+    { optionType: 'select', choices: 'Low, High', persistToConfig: null },
+    { optionType: 'select', choices: 42 }
+  ],
+  'menu-title-mod': [{ modType: 'hideCommand', hideTarget: 7 }, { commandName: null }]
+}
+
+const partialCaseName = (changes: Record<string, unknown>): string =>
+  Object.entries(changes)
+    .map(([field, value]) => `${field}=${JSON.stringify(value)}`)
+    .join(',')
+
 // The type-violating cases of one template, pinned in a golden file of their own.
 export function typeViolatingTemplateCases(id: string): TemplateCase[] {
   return [
@@ -33,7 +57,12 @@ export function typeViolatingTemplateCases(id: string): TemplateCase[] {
       hostile: null
     },
     { name: 'type-violating: null', values: everyField(id, () => null), hostile: null },
-    { name: 'type-violating: arrays', values: everyField(id, () => ['a', 'b']), hostile: null }
+    { name: 'type-violating: arrays', values: everyField(id, () => ['a', 'b']), hostile: null },
+    ...(PARTIAL_CASES[id] ?? []).map((changes) => ({
+      name: `type-violating: ${partialCaseName(changes)}`,
+      values: { ...baseValues(id), ...changes },
+      hostile: null
+    }))
   ]
 }
 
