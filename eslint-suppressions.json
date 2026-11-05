@@ -1127,74 +1127,8 @@
     }
   },
   "src/main/services/pluginParser.ts": {
-    "@typescript-eslint/no-extraneous-class": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 8
-    },
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 4
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 28
-    },
-    "complexity": {
-      "count": 5
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "regexp/no-contradiction-with-assertion": {
-      "count": 1
-    },
-    "regexp/no-empty-alternative": {
-      "count": 1
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "regexp/no-useless-assertions": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 6
-    },
-    "sonarjs/function-return-type": {
-      "count": 1
-    },
-    "sonarjs/no-empty-alternatives": {
-      "count": 1
-    },
-    "sonarjs/pseudo-random": {
-      "count": 4
-    },
-    "sonarjs/updated-loop-counter": {
-      "count": 1
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/prefer-number-coercion": {
-      "count": 7
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 5
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 4
     }
   },
   "src/main/services/projectParser.ts": {
