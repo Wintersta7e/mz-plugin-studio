@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'fs'
 import { join, relative } from 'path'
 import ts from 'typescript'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { MainDeps } from '../../src/main/ipc/handlers'
+import type { MainDependencies } from '../../src/main/ipc/handlers'
 import {
   EVENT_CHANNELS,
   INVOKE_CHANNELS,
@@ -90,7 +90,7 @@ const fakeDeps = {
   getWindow: () => null,
   openLogFolder: async () => {},
   setLogLevel: () => {}
-} as unknown as MainDeps
+} as unknown as MainDependencies
 
 /** `window.api.<namespace>.<key>` uses, keyed by member, with each site as file:line */
 function rendererCallers(files: string[]): Map<string, string[]> {

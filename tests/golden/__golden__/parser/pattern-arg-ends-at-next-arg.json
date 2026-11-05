@@ -1,0 +1,49 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [
+    {
+      "id": "<id:2>",
+      "name": "run",
+      "text": "run",
+      "desc": "",
+      "args": [
+        {
+          "id": "<id:3>",
+          "name": "first",
+          "text": "first",
+          "desc": "",
+          "type": "number",
+          "default": ""
+        },
+        {
+          "id": "<id:4>",
+          "name": "second",
+          "text": "second",
+          "desc": "",
+          "type": "boolean",
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @command run\n * @arg first\n * @type number\n * @arg second\n * @type boolean\n */\n"
+}

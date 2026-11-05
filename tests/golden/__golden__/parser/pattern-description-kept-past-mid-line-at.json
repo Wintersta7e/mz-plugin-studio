@@ -1,0 +1,24 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "Mail me @ home still @here",
+    "help": "",
+    "url": "",
+    "target": "MZ",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @plugindesc Mail me @ home\n * still @here\n * @target MZ\n */\n"
+}

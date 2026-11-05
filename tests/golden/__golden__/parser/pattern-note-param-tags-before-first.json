@@ -1,0 +1,33 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [
+      {
+        "name": "Fixture_NoteOne",
+        "type": "file"
+      },
+      {
+        "name": "Fixture_NoteTwo",
+        "type": "animation"
+      }
+    ],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @noteDir img/faces/\n * @noteParam Fixture_NoteOne\n * @noteParam Fixture_NoteTwo\n * @noteType animation\n */\n"
+}

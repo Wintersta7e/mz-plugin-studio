@@ -1,0 +1,50 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "pair",
+      "text": "pair",
+      "desc": "",
+      "type": "struct",
+      "default": "",
+      "rawType": "struct<Fixture_Pair>",
+      "structType": "Fixture_Pair"
+    }
+  ],
+  "commands": [],
+  "structs": [
+    {
+      "id": "<id:3>",
+      "name": "Fixture_Pair",
+      "parameters": [
+        {
+          "id": "<id:4>",
+          "name": "left",
+          "text": "First label",
+          "desc": "",
+          "type": "string",
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @param pair\n * @type struct<Fixture_Pair>\n */\n/*~struct~Fixture_Pair:ja\n * @param left\n * @text First label\n */\n/*~struct~Fixture_Pair:fr\n * @param left\n * @text Second label\n */\n"
+}

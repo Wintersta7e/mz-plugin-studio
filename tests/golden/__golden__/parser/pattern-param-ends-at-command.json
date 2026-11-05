@@ -1,0 +1,41 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Only",
+      "text": "Only label",
+      "desc": "",
+      "type": "string",
+      "default": ""
+    }
+  ],
+  "commands": [
+    {
+      "id": "<id:3>",
+      "name": "run",
+      "text": "Run label",
+      "desc": "",
+      "args": []
+    }
+  ],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @param Only\n * @text Only label\n * @command run\n * @text Run label\n */\n"
+}

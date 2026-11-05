@@ -8,7 +8,7 @@ import { tmpdir } from 'os'
 import path, { dirname, join } from 'path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
-import type { DialogPort } from '../../src/main/ipc/handlers'
+import type { DialogPort, WindowPort } from '../../src/main/ipc/handlers'
 import {
   ACCESS_DENIED,
   INVOKE_CHANNELS,
@@ -79,7 +79,7 @@ async function session(userData?: string) {
   const access: typeof FileAccess = await import('../../src/main/file-access')
   const { registerMainHandlers } = await import('../helpers/fake-ipc')
   const log = (await import('electron-log/main')).default
-  if (userData !== undefined) access.setProjectRootsDir(userData)
+  if (userData !== undefined) access.setProjectRootsDirectory(userData)
   const folders: string[] = []
   const responses: number[] = []
   const dialog = {
@@ -135,7 +135,7 @@ describe('project scope', () => {
     const { createInvokeHandlers } = await import('../../src/main/ipc/handlers')
     const handlers = createInvokeHandlers({
       dialog: {} as DialogPort,
-      getWindow: () => null,
+      getWindow: (): WindowPort | undefined => undefined,
       openLogFolder: async () => {},
       setLogLevel: () => {}
     })
@@ -254,7 +254,7 @@ describe('project scope', () => {
     await first.choose(a)
     const second = await session(userData)
 
-    expect(second.access.getCurrentProjectRoot()).toBeNull()
+    expect(second.access.getCurrentProjectRoot()).toBeUndefined()
 
     await second.ipc.invoke('project:load', a)
 

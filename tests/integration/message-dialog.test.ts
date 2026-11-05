@@ -1,7 +1,11 @@
 // The options the message and save dialogs hand to Electron, recorded on stand-in dialogs.
 import { describe, expect, it, vi } from 'vitest'
-import type { Dialog, MessageBoxOptions, SaveDialogOptions } from 'electron'
-import { showMessageDialog, showSaveFileDialog } from '../../src/main/ipc/dialog'
+import type { Dialog, MessageBoxOptions, MessageBoxReturnValue, SaveDialogOptions } from 'electron'
+import {
+  createDialogHandlers,
+  showMessageDialog,
+  showSaveFileDialog
+} from '../../src/main/ipc/dialog'
 
 describe('dialog options', () => {
   it('dialog:message forwards defaultId and cancelId', async () => {
@@ -56,5 +60,35 @@ describe('dialog options', () => {
     await showSaveFileDialog(dialog, { defaultPath: 'Foo.js' })
 
     expect(dialog.showSaveDialog.mock.calls[0][0].properties).toEqual(['showOverwriteConfirmation'])
+  })
+
+  it('dialog:message shows the title given, and the app name for an empty one', async () => {
+    expect.assertions(1)
+
+    const showMessageBox = vi
+      .fn<(...args: unknown[]) => Promise<MessageBoxReturnValue>>()
+      .mockResolvedValue({ response: 0, checkboxChecked: false })
+    await showMessageDialog({ showMessageBox }, { message: 'Saved', title: 'Export' })
+    await showMessageDialog({ showMessageBox }, { message: 'Saved', title: '' })
+
+    expect(showMessageBox.mock.calls).toStrictEqual([
+      [expect.objectContaining({ title: 'Export' })],
+      [expect.objectContaining({ title: 'MZ Plugin Studio' })]
+    ])
+  })
+
+  it('dialog:message keeps the type and title the renderer sends', () => {
+    expect.assertions(1)
+
+    const unused = vi.fn<(...args: unknown[]) => Promise<never>>()
+    const handler = createDialogHandlers({
+      showOpenDialog: unused,
+      showSaveDialog: unused,
+      showMessageBox: unused
+    })['dialog:message']
+
+    expect(handler.check([{ message: 'Saved', type: 'warning', title: 'Export' }])).toStrictEqual([
+      { message: 'Saved', type: 'warning', title: 'Export' }
+    ])
   })
 })

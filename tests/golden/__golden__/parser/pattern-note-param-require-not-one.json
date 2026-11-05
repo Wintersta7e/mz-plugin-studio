@@ -1,0 +1,38 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [
+      {
+        "name": "Fixture_NoteOne",
+        "type": "file"
+      },
+      {
+        "name": "Fixture_NoteTwo",
+        "type": "file"
+      },
+      {
+        "name": "Fixture_NoteThree",
+        "type": "file",
+        "require": true
+      }
+    ],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @noteParam Fixture_NoteOne\n * @noteRequire 0\n * @noteParam Fixture_NoteTwo\n * @noteRequire\n * @noteParam Fixture_NoteThree\n * @NOTEREQUIRE\t1\n */\n"
+}

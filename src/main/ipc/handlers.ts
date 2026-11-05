@@ -7,51 +7,49 @@ import { pluginHandlers } from './plugin'
 import { createProjectHandlers } from './project'
 import type { InvokeHandlers, SendListeners } from './registration'
 
-export type { DialogPort }
-
 export type WindowPort = Pick<
   BrowserWindow,
   'minimize' | 'maximize' | 'unmaximize' | 'isMaximized' | 'close'
 >
 
-export interface MainDeps {
+export interface MainDependencies {
   dialog: DialogPort
-  getWindow: () => WindowPort | null
+  getWindow: () => WindowPort | undefined
   openLogFolder: () => Promise<void>
   setLogLevel: (level: 'debug' | 'info') => void
 }
 
-export function createInvokeHandlers(deps: MainDeps): InvokeHandlers {
+export function createInvokeHandlers(dependencies: MainDependencies): InvokeHandlers {
   return {
-    ...createProjectHandlers(deps.dialog),
+    ...createProjectHandlers(dependencies.dialog),
     ...pluginHandlers,
-    ...createDialogHandlers(deps.dialog),
+    ...createDialogHandlers(dependencies.dialog),
     'window-is-maximized': {
       access: 'none',
       check: () => [],
-      run: () => deps.getWindow()?.isMaximized() ?? false
+      run: () => dependencies.getWindow()?.isMaximized() ?? false
     },
     'log:open-folder': {
       access: 'none',
       check: () => [],
-      run: () => deps.openLogFolder()
+      run: async () => dependencies.openLogFolder()
     }
   } satisfies InvokeHandlers
 }
 
-export function createSendListeners(deps: MainDeps): SendListeners {
+export function createSendListeners(dependencies: MainDependencies): SendListeners {
   return {
     'window-minimize': {
       check: () => [],
       run: () => {
-        deps.getWindow()?.minimize()
+        dependencies.getWindow()?.minimize()
       }
     },
     'window-maximize': {
       check: () => [],
       run: () => {
-        const win = deps.getWindow()
-        if (win?.isMaximized()) {
+        const win = dependencies.getWindow()
+        if (win?.isMaximized() === true) {
           win.unmaximize()
         } else {
           win?.maximize()
@@ -61,16 +59,18 @@ export function createSendListeners(deps: MainDeps): SendListeners {
     'window-close': {
       check: () => [],
       run: () => {
-        deps.getWindow()?.close()
+        dependencies.getWindow()?.close()
       }
     },
     'log:set-level': {
       check: (raw) => [raw[0] === true],
       run: (debug) => {
         const level = debug ? 'debug' : 'info'
-        deps.setLogLevel(level)
+        dependencies.setLogLevel(level)
         log.info(`Log level changed to: ${level}`)
       }
     }
   }
 }
+
+export { type DialogPort } from './dialog'

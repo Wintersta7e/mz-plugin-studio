@@ -14,6 +14,7 @@ import type { PluginParameter } from '../../src/shared/types/plugin'
 import { ALL_PAYLOADS, COMMENT_PAYLOADS } from '../helpers/hostile'
 import { GENERATOR_ENTRIES, countHostileLeaves } from './corpus/generator'
 import { V160_FIXTURE } from './corpus/mzparams'
+import { parserPatternCases } from './corpus/parser-patterns'
 import { persistedStores } from './corpus/persisted'
 import { EDITS, fixturePlugins } from './corpus/raw-mode'
 import { templateCases, templateIds } from './corpus/templates'
@@ -61,6 +62,8 @@ const generatorGoldens = (name: string): string[] => [
   `generator/${name}.exports.txt`
 ]
 const typeViolatingGolden = (id: string): string => `templates/${id}.type-violating.js`
+const patternGolden = (name: string): string => `parser/pattern-${name}.json`
+const patternNames = parserPatternCases.map((c) => c.name)
 
 /** The golden files the corpus cases map to. */
 function expectedFiles(): string[] {
@@ -71,6 +74,7 @@ function expectedFiles(): string[] {
     ...plugins.flatMap((f) => EDITS.map((e) => `raw-mode/${stem(f)}.${e.name}.js`)),
     PARSES,
     ...plugins.map((f) => `parser/${stem(f)}.json`),
+    ...patternNames.map((name) => patternGolden(name)),
     ...storeKeys.flatMap((k) => STORE_STATES.map((s) => `persisted/${k}.${s}.json`)),
     ...mzparamsFiles.map(mzparamsGolden)
   ]
@@ -123,6 +127,7 @@ describe('golden inventory', () => {
     const rawMode = [...onDisk].filter((p) => p.startsWith('raw-mode/') && p !== PARSES).length
     const parsesFalse = Object.values(parses).filter((parsed) => !parsed).length
     const parserDone = plugins.filter((f) => onDisk.has(`parser/${stem(f)}.json`)).length
+    const patternsDone = patternNames.filter((name) => onDisk.has(patternGolden(name))).length
     const storesDone = storeKeys.filter((k) =>
       STORE_STATES.every((s) => onDisk.has(`persisted/${k}.${s}.json`))
     ).length
@@ -139,7 +144,7 @@ describe('golden inventory', () => {
       `golden: templates ${templatesDone}/${ids.length} (cases ${cases}); ` +
         `param types ${typesDone}/${ALL_PARAM_TYPES.size}; ` +
         `fixtures ${fixturesDone}/${plugins.length} (raw-mode ${rawMode}, parses-false ${parsesFalse}); ` +
-        `parser ${parserDone}/${plugins.length}; ` +
+        `parser ${parserDone}/${plugins.length} (patterns ${String(patternsDone)}/${String(patternNames.length)}); ` +
         `persisted keys ${storesDone}/${storeKeys.length} × ${STORE_STATES.length}; ` +
         `mzparams ${mzparamsDone}; hostile leaves ${leaves.holding}/${leaves.total}; ` +
         `files ${onDisk.size}, orphans ${orphans.length}`
@@ -149,6 +154,7 @@ describe('golden inventory', () => {
       ids.length,
       ALL_PARAM_TYPES.size,
       plugins.length,
+      patternNames.length,
       storeKeys.length,
       mzparamsFiles.length,
       leaves.total,

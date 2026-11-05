@@ -2,8 +2,8 @@
 // page may load only its own files; the dev server additionally needs inline scripts and eval for
 // hot reload, and its socket. Workers start from a blob so they inherit the page's policy.
 import type { Session } from 'electron'
-import { posix, win32 } from 'path'
-import { fileURLToPath } from 'url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 export function buildCsp({ devServer }: { devServer: boolean }): string {
   return [
@@ -24,26 +24,30 @@ export function buildCsp({ devServer }: { devServer: boolean }): string {
 export const PRODUCTION_CSP = buildCsp({ devServer: false })
 export const DEV_SERVER_CSP = buildCsp({ devServer: true })
 
-/** True when a `file:` URL names a path inside the renderer folder; any unreadable URL is not */
+/**
+True when a `file:` URL names a path inside the renderer folder; any unreadable URL is not
+*/
 export function isFileRequestAllowed(
   url: string,
   rendererRoot: string,
   platform: NodeJS.Platform = process.platform
 ): boolean {
   try {
-    const windows = platform === 'win32'
-    const target = fileURLToPath(url, { windows })
-    const rel = windows
-      ? win32.relative(rendererRoot.toLowerCase(), target.toLowerCase())
-      : posix.relative(rendererRoot, target)
-    const path = windows ? win32 : posix
-    return rel.split(path.sep)[0] !== '..' && !path.isAbsolute(rel)
+    const isWindows = platform === 'win32'
+    const target = fileURLToPath(url, { windows: isWindows })
+    const relative = isWindows
+      ? path.win32.relative(rendererRoot.toLowerCase(), target.toLowerCase())
+      : path.posix.relative(rendererRoot, target)
+    const platformPath = isWindows ? path.win32 : path.posix
+    return relative.split(platformPath.sep)[0] !== '..' && !platformPath.isAbsolute(relative)
   } catch {
     return false
   }
 }
 
-/** Cancels every `file:` request the page or its workers send outside the renderer folder */
+/**
+Cancels every `file:` request the page or its workers send outside the renderer folder
+*/
 export function installFileRequestFilter(session: Session, rendererRoot: string): void {
   session.webRequest.onBeforeRequest({ urls: ['file://*/*'] }, (details, callback) => {
     callback({ cancel: !isFileRequestAllowed(details.url, rendererRoot) })

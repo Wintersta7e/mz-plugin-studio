@@ -12,18 +12,7 @@
     "noUncheckedIndexedAccess": {
       "e2e/flows/dialog-default-path.e2e.ts": 4,
       "e2e/release-smoke.e2e.ts": 2,
-      "src/main/services/syntax-check.ts": 2,
       "src/renderer/src/stores/persist.ts": 1
-    }
-  },
-  "node": {
-    "noUncheckedIndexedAccess": {
-      "src/main/ipc/dialog.ts": 4,
-      "src/main/ipc/plugin.ts": 8,
-      "src/main/ipc/project.ts": 2,
-      "src/main/services/pluginParser.ts": 53,
-      "src/main/services/projectParser.ts": 1,
-      "src/main/services/syntax-check.ts": 2
     }
   },
   "scripts": {
@@ -104,12 +93,6 @@
       "tests/unit/workflows.test.ts": 1
     },
     "noUncheckedIndexedAccess": {
-      "src/main/ipc/dialog.ts": 4,
-      "src/main/ipc/plugin.ts": 8,
-      "src/main/ipc/project.ts": 2,
-      "src/main/services/pluginParser.ts": 49,
-      "src/main/services/projectParser.ts": 1,
-      "src/main/services/syntax-check.ts": 2,
       "src/renderer/src/App.tsx": 1,
       "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
       "src/renderer/src/components/plugin/MetaEditor.tsx": 1,

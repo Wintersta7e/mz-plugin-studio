@@ -1,5 +1,5 @@
-import { readFile, stat } from 'fs/promises'
-import path from 'path'
+import { readFile, stat } from 'node:fs/promises'
+import path from 'node:path'
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
 import type {
@@ -17,7 +17,8 @@ import {
 import { replaceFile } from '../atomic-write'
 import {
   getCurrentProjectRoot,
-  getProjectRootsDir,
+  getProjectRootsDirectory,
+  isFileNotFound,
   recordProjectRoot,
   recordReadGrant,
   recordWriteGrant
@@ -26,17 +27,17 @@ import { checkFilters, invalidArguments, isFilterExtension, isRecord } from './a
 import type { InvokeHandlers } from './registration'
 
 /**
- * Shows the save dialog; returns the chosen path, or null when cancelled.
- * The chosen path becomes writable by save-to-path and readable by read-by-path for the rest of
- * the session.
- */
+Shows the save dialog; returns the chosen path, or null when cancelled.
+The chosen path becomes writable by save-to-path and readable by read-by-path for the rest of
+the session.
+*/
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
   options: Omit<SaveFileOptions, 'defaultPath'> & { defaultPath?: string | undefined }
 ): Promise<string | null> {
   const result = await dialog.showSaveDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
-    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }],
+    filters: options.filters ?? [{ name: 'JavaScript', extensions: ['js'] }],
     // Windows and macOS always ask before replacing a file; Linux only with this
     properties: ['showOverwriteConfirmation']
   })
@@ -53,21 +54,23 @@ export async function showSaveFileDialog(
 }
 
 /**
- * Shows a message box; returns the index of the button the user chose. A Cancel button is both
- * the Enter and the Esc button unless the caller names others, so no key press discards work.
- */
+Shows a message box; returns the index of the button the user chose. A Cancel button is both
+the Enter and the Esc button unless the caller names others, so no key press discards work.
+*/
 export async function showMessageDialog(
   dialog: Pick<Dialog, 'showMessageBox'>,
   options: MessageDialogOptions
 ): Promise<number> {
-  log.debug(`[dialog:message] ${options.type || 'info'}: ${options.message}`)
-  const buttons = options.buttons || ['OK']
+  const type = options.type ?? 'info'
+  log.debug(`[dialog:message] ${type}: ${options.message}`)
+  const buttons = options.buttons ?? ['OK']
   const cancel = buttons.indexOf('Cancel')
-  const defaultId = options.defaultId ?? (cancel >= 0 ? cancel : undefined)
-  const cancelId = options.cancelId ?? (cancel >= 0 ? cancel : undefined)
+  const defaultId = options.defaultId ?? (cancel === -1 ? undefined : cancel)
+  const cancelId = options.cancelId ?? (cancel === -1 ? undefined : cancel)
   const result = await dialog.showMessageBox({
-    type: options.type || 'info',
-    title: options.title || 'MZ Plugin Studio',
+    type,
+    // An empty title shows the app's name too
+    title: options.title === undefined || options.title === '' ? 'MZ Plugin Studio' : options.title,
     message: options.message,
     buttons,
     ...(defaultId !== undefined && { defaultId }),
@@ -78,10 +81,10 @@ export async function showMessageDialog(
 }
 
 /**
- * Shows the folder picker; returns the chosen folder, or null when cancelled.
- * The chosen folder becomes a project folder `project:load` opens without asking.
- */
-export async function openFolderDialog(
+Shows the folder picker; returns the chosen folder, or null when cancelled.
+The chosen folder becomes a project folder `project:load` opens without asking.
+*/
+async function openFolderDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
   options: Omit<OpenFolderOptions, 'defaultPath'> & { defaultPath?: string | undefined } = {}
 ): Promise<string | null> {
@@ -91,38 +94,40 @@ export async function openFolderDialog(
     title: 'Select RPG Maker MZ Project Folder'
   })
 
-  if (result.canceled || result.filePaths.length === 0) {
+  const selected = result.canceled ? undefined : result.filePaths[0]
+  if (selected === undefined) {
     log.debug('[dialog:open-folder] Cancelled')
     return null
   }
 
-  log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
-  await recordProjectRoot(result.filePaths[0])
-  return result.filePaths[0]
+  log.info(`[dialog:open-folder] Selected: ${selected}`)
+  await recordProjectRoot(selected)
+  return selected
 }
 
 /**
- * Shows the file picker, in `defaultPath` when main chose a folder; returns the chosen file, or
- * null when cancelled. The chosen file becomes readable by read-by-path for the rest of the session.
- */
-export async function openFileDialog(
+Shows the file picker, in `defaultPath` when main chose a folder; returns the chosen file, or
+null when cancelled. The chosen file becomes readable by read-by-path for the rest of the session.
+*/
+async function openFileDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
   options: Omit<OpenFileOptions, 'defaultPath'> & { defaultPath?: string | undefined }
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
     properties: ['openFile'],
-    filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
+    filters: options.filters ?? [{ name: 'JavaScript', extensions: ['js'] }]
   })
 
-  if (result.canceled || result.filePaths.length === 0) {
+  const selected = result.canceled ? undefined : result.filePaths[0]
+  if (selected === undefined) {
     log.debug('[dialog:open-file] Cancelled')
     return null
   }
 
-  log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
-  recordReadGrant(result.filePaths[0])
-  return result.filePaths[0]
+  log.info(`[dialog:open-file] Selected: ${selected}`)
+  recordReadGrant(selected)
+  return selected
 }
 
 const MESSAGE_TYPES = ['none', 'info', 'error', 'question', 'warning'] as const
@@ -132,62 +137,82 @@ type MessageType = (typeof MESSAGE_TYPES)[number]
 const isMessageType = (value: unknown): value is MessageType =>
   MESSAGE_TYPES.some((type) => type === value)
 
-/** Message box options of the documented shape: 1-4 buttons, button ids within them */
+function failMessageOptions(): never {
+  throw invalidArguments('dialog:message')
+}
+
+/**
+The buttons of a message box: 1-4 texts, or undefined for the single OK button
+*/
+function checkMessageButtons(buttons: unknown): string[] | undefined {
+  if (buttons === undefined) return undefined
+  if (!Array.isArray(buttons)) failMessageOptions()
+  const list: readonly unknown[] = buttons
+  if (list.length === 0 || list.length > 4) failMessageOptions()
+  if (!list.every((button): button is string => typeof button === 'string')) failMessageOptions()
+  return [...list]
+}
+
+/**
+A button id among `count` buttons, or undefined when none is named
+*/
+function checkButtonId(id: unknown, count: number): number | undefined {
+  if (id === undefined) return undefined
+  if (typeof id !== 'number' || !Number.isSafeInteger(id) || id < 0 || id >= count) {
+    failMessageOptions()
+  }
+  return id
+}
+
+/**
+Message box options of the documented shape: 1-4 buttons, button ids within them
+*/
 function checkMessageOptions(value: unknown): MessageDialogOptions {
-  function fail(): never {
-    throw invalidArguments('dialog:message')
-  }
-  if (!isRecord(value)) fail()
-  const { type, title, message, buttons, defaultId, cancelId } = value
-  if (typeof message !== 'string') fail()
-  if (type !== undefined && !isMessageType(type)) fail()
-  if (title !== undefined && typeof title !== 'string') fail()
-  if (buttons !== undefined) {
-    if (!Array.isArray(buttons) || buttons.length < 1 || buttons.length > 4) fail()
-    if (!buttons.every((b): b is string => typeof b === 'string')) fail()
-  }
+  if (!isRecord(value)) failMessageOptions()
+  const { type, title, message, buttons: rawButtons, defaultId, cancelId } = value
+  if (typeof message !== 'string') failMessageOptions()
+  if (type !== undefined && !isMessageType(type)) failMessageOptions()
+  if (title !== undefined && typeof title !== 'string') failMessageOptions()
+  const buttons = checkMessageButtons(rawButtons)
   const count = buttons === undefined ? 1 : buttons.length
-  const buttonId = (id: unknown): number | undefined => {
-    if (id === undefined) return undefined
-    if (typeof id !== 'number' || !Number.isInteger(id) || id < 0 || id >= count) fail()
-    return id
-  }
-  const defaultButton = buttonId(defaultId)
-  const cancelButton = buttonId(cancelId)
+  const defaultButton = checkButtonId(defaultId, count)
+  const cancelButton = checkButtonId(cancelId, count)
   return {
     message,
     ...(type !== undefined && { type }),
     ...(title !== undefined && { title }),
-    ...(buttons !== undefined && { buttons: [...buttons] }),
+    ...(buttons !== undefined && { buttons }),
     ...(defaultButton !== undefined && { defaultId: defaultButton }),
     ...(cancelButton !== undefined && { cancelId: cancelButton })
   }
 }
 
-/** What a dialog may open at: a bare file name, or a folder it opens in */
+/**
+What a dialog may open at: a bare file name, or a folder it opens in
+*/
 export type DialogDefaultClass = 'filename' | 'directory-seed'
 
 const MAX_FILENAME_LENGTH = 255
 
 /**
- * The class of a dialog's default path, or null when the dialog opens without it. Decided from
- * the text alone, before anything looks the path up: the dialog looks its default path up before
- * the user acts, and looking up a network path sends the user's Windows credentials to its host.
- */
+The class of a dialog's default path, or null when the dialog opens without it. Decided from
+the text alone, before anything looks the path up: the dialog looks its default path up before
+the user acts, and looking up a network path sends the user's Windows credentials to its host.
+*/
 export function classifyDialogDefault(
   value: unknown,
   pathImpl: PlatformPath = path
 ): DialogDefaultClass | null {
-  if (typeof value !== 'string' || value === '' || value.includes('\0')) return null
-  if (isUncText(value)) return null
+  if (typeof value !== 'string' || value === '' || value.includes('\0') || isUncText(value))
+    return null
   // ':' is not part of a file name: `C:x.js` is relative to the current folder of drive C
   if (!/[\\/:]/.test(value)) {
-    const named =
+    const isNamed =
       value !== '.' &&
       value !== '..' &&
       value.length <= MAX_FILENAME_LENGTH &&
       isAllowedExtension(value, pathImpl)
-    return named ? 'filename' : null
+    return isNamed ? 'filename' : null
   }
   if (!pathImpl.isAbsolute(value)) return null
   try {
@@ -199,25 +224,23 @@ export function classifyDialogDefault(
 }
 
 /**
- * The save dialog's default path: a bare file name, or a full path to a file the app may write
- * (Save asks again at the file it last chose); anything else is dropped.
- */
+The save dialog's default path: a bare file name, or a full path to a file the app may write
+(Save asks again at the file it last chose); anything else is dropped.
+*/
 export function checkSaveDefaultPath(
   value: unknown,
   pathImpl: PlatformPath = path
 ): string | undefined {
   if (typeof value !== 'string') return undefined
-  switch (classifyDialogDefault(value, pathImpl)) {
-    case 'filename':
-      return value
-    case 'directory-seed':
-      return isAllowedExtension(value, pathImpl) ? value : undefined
-    default:
-      return undefined
-  }
+  const kind = classifyDialogDefault(value, pathImpl)
+  const isKept =
+    kind === 'filename' || (kind === 'directory-seed' && isAllowedExtension(value, pathImpl))
+  return isKept ? value : undefined
 }
 
-/** The folder dialog's default path: a folder it opens beside; anything else is dropped */
+/**
+The folder dialog's default path: a folder it opens beside; anything else is dropped
+*/
 function checkOpenDefaultPath(value: unknown): string | undefined {
   return typeof value === 'string' && classifyDialogDefault(value) === 'directory-seed'
     ? value
@@ -225,21 +248,23 @@ function checkOpenDefaultPath(value: unknown): string | undefined {
 }
 
 /**
- * A folder the file of dialog folders keeps: one a dialog may open at, or a local drive or
- * filesystem root (`D:\`, `/`), which a dialog may open at though a project may not be one
- */
+A folder the file of dialog folders keeps: one a dialog may open at, or a local drive or
+filesystem root (`D:\`, `/`), which a dialog may open at though a project may not be one
+*/
 export function checkDialogFolder(
   value: unknown,
   pathImpl: PlatformPath = path
 ): string | undefined {
   if (typeof value !== 'string') return undefined
-  const driveRoot = pathImpl.sep === '\\' ? /^[A-Za-z]:[\\/]$/.test(value) : value === '/'
-  return driveRoot || classifyDialogDefault(value, pathImpl) === 'directory-seed'
+  const isDriveRoot = pathImpl.sep === '\\' ? /^[A-Z]:[\\/]$/i.test(value) : value === '/'
+  return isDriveRoot || classifyDialogDefault(value, pathImpl) === 'directory-seed'
     ? value
     : undefined
 }
 
-/** Save dialog options: a safe default path and well-formed filters; anything else dropped */
+/**
+Save dialog options: a safe default path and well-formed filters; anything else dropped
+*/
 function checkSaveFileOptions(value: unknown): SaveFileOptions {
   if (!isRecord(value)) return {}
   const { defaultPath: rawDefaultPath, filters: rawFilters } = value
@@ -251,107 +276,154 @@ function checkSaveFileOptions(value: unknown): SaveFileOptions {
   }
 }
 
-/** Open dialog options: well-formed filters; anything else dropped, as main picks the folder */
+/**
+Open dialog options: well-formed filters; anything else dropped, as main picks the folder
+*/
 function checkOpenFileOptions(value: unknown): OpenFileOptions {
   if (!isRecord(value)) return {}
   const filters = checkFilters(value['filters'])
-  return filters !== undefined ? { filters } : {}
+  return filters === undefined ? {} : { filters }
 }
 
-/** Folder dialog options: a folder to suggest; anything else dropped */
+/**
+Folder dialog options: a folder to suggest; anything else dropped
+*/
 function checkOpenFolderOptions(value: unknown): OpenFolderOptions {
   if (!isRecord(value)) return {}
   const defaultPath = checkOpenDefaultPath(value['defaultPath'])
-  return defaultPath !== undefined ? { defaultPath } : {}
+  return defaultPath === undefined ? {} : { defaultPath }
 }
 
 type DefaultingDialog = 'open-folder' | 'open-file' | 'save-file'
 
 /**
- * Which dialogs share a remembered folder: the folder dialog, or the channel with the first
- * extension of its first filter (the handler's own filter, `.js`, when there is none).
- */
+Which dialogs share a remembered folder: the folder dialog, or the channel with the first
+extension of its first filter (the handler's own filter, `.js`, when there is none).
+*/
 export function dialogKind(
   channel: DefaultingDialog,
   filters?: readonly { name: string; extensions: readonly string[] }[]
 ): string {
-  if (channel === 'open-folder') return channel
-  return `${channel}:.${filters?.[0]?.extensions[0] ?? 'js'}`
+  return channel === 'open-folder' ? channel : `${channel}:.${filters?.[0]?.extensions[0] ?? 'js'}`
 }
 
 export interface DialogDefaultRequest {
   channel: DefaultingDialog
   kind: string
-  /** The renderer's default path, after the argument check */
+  /**
+  The renderer's default path, after the argument check
+  */
   rendererValue: string | undefined
-  /** The folder its kind last chose, this session or an earlier one; used if it still exists */
+  /**
+  The folder its kind last chose, this session or an earlier one; used if it still exists
+  */
   lastDirectory: string | undefined
-  projectRoot: string | null
-  /** Awaited, so a slow or offline drive never holds up the main process */
-  directoryExists: (dir: string) => Promise<boolean>
+  projectRoot: string | undefined
+  /**
+  Awaited, so a slow or offline drive never holds up the main process
+  */
+  directoryExists: (directory: string) => Promise<boolean>
 }
 
 /**
- * The default path a dialog opens with, or undefined for none: from Electron 43 a dialog without
- * one opens in Downloads, and the system no longer restores the folder it last showed.
- */
+The folder the request's kind last chose, while it exists. It may come from an earlier launch:
+a folder deleted since, or on a drive no longer there, would open the dialog with the folder's
+name typed in.
+*/
+async function existingLastDirectory(request: DialogDefaultRequest): Promise<string | undefined> {
+  const { lastDirectory } = request
+  return lastDirectory !== undefined && (await request.directoryExists(lastDirectory))
+    ? lastDirectory
+    : undefined
+}
+
+/**
+The open project's plugins folder for a dialog of plugins, or undefined: none open, or another kind
+*/
+function pluginsFolder(request: DialogDefaultRequest, pathImpl: PlatformPath): string | undefined {
+  return request.kind === dialogKind(request.channel) && request.projectRoot !== undefined
+    ? pathImpl.join(request.projectRoot, 'js', 'plugins')
+    : undefined
+}
+
+/**
+The save dialog's default path: a full path is the file Save asks again at; a file name goes in
+the plugins folder or the folder last chosen, else alone
+*/
+async function saveDefaultPath(
+  request: DialogDefaultRequest,
+  pathImpl: PlatformPath
+): Promise<string | undefined> {
+  const { rendererValue } = request
+  if (rendererValue !== undefined && pathImpl.isAbsolute(rendererValue)) return rendererValue
+  const folder = pluginsFolder(request, pathImpl) ?? (await existingLastDirectory(request))
+  if (folder === undefined) return rendererValue
+  return rendererValue === undefined ? folder : pathImpl.join(folder, rendererValue)
+}
+
+/**
+The default path a dialog opens with, or undefined for none: from Electron 43 a dialog without
+one opens in Downloads, and the system no longer restores the folder it last showed.
+*/
 export async function resolveDialogDefaultPath(
-  req: DialogDefaultRequest,
+  request: DialogDefaultRequest,
   pathImpl: PlatformPath = path
 ): Promise<string | undefined> {
-  const { rendererValue } = req
-  // It may come from an earlier launch: a folder deleted since, or on a drive no longer there,
-  // would open the dialog with the folder's name typed in
-  const lastDirectory = async (): Promise<string | undefined> =>
-    req.lastDirectory !== undefined && (await req.directoryExists(req.lastDirectory))
-      ? req.lastDirectory
-      : undefined
-  switch (req.channel) {
+  const { rendererValue } = request
+  switch (request.channel) {
     case 'open-folder': {
       // Beside the suggested project, so its siblings show
       if (rendererValue !== undefined) {
         const parent = pathImpl.dirname(rendererValue)
-        if (await req.directoryExists(parent)) return parent
+        if (await request.directoryExists(parent)) return parent
       }
-      return lastDirectory()
+      return existingLastDirectory(request)
     }
     case 'open-file': {
       // A plugin, with a project open: its plugins folder, as save starts there
-      if (req.kind === dialogKind('open-file') && req.projectRoot !== null) {
-        const folder = pathImpl.join(req.projectRoot, 'js', 'plugins')
-        if (await req.directoryExists(folder)) return folder
-      }
-      return lastDirectory()
+      const folder = pluginsFolder(request, pathImpl)
+      const isOpenable = folder !== undefined && (await request.directoryExists(folder))
+      return isOpenable ? folder : existingLastDirectory(request)
     }
     case 'save-file': {
-      // A full path is the file Save asks again at
-      if (rendererValue !== undefined && pathImpl.isAbsolute(rendererValue)) return rendererValue
-      const folder =
-        req.kind === dialogKind('save-file') && req.projectRoot !== null
-          ? pathImpl.join(req.projectRoot, 'js', 'plugins')
-          : await lastDirectory()
-      if (folder === undefined) return rendererValue
-      return rendererValue === undefined ? folder : pathImpl.join(folder, rendererValue)
+      return saveDefaultPath(request, pathImpl)
     }
   }
 }
 
-/** A folder a dialog may open in: absent and unreadable both mean none, as a default opens nothing */
-async function directoryExists(dir: string): Promise<boolean> {
+/**
+A folder a dialog may open in: absent and unreadable both mean none, as a default opens nothing
+*/
+async function isExistingDirectory(directory: string): Promise<boolean> {
   try {
-    return (await stat(dir)).isDirectory()
+    const stats = await stat(directory)
+    return stats.isDirectory()
   } catch {
     return false
   }
 }
 
-/** The file beside the granted project folders that keeps the folder each kind of dialog last chose */
-export const DIALOG_FOLDERS_FILE = 'dialog-folders.json'
+/**
+The file beside the granted project folders that keeps the folder each kind of dialog last chose
+*/
+const DIALOG_FOLDERS_FILE = 'dialog-folders.json'
 
-/** How many kinds of dialog the file keeps a folder for, the most recently chosen ones */
-export const MAX_DIALOG_FOLDERS = 32
+/**
+The file of dialog folders, or undefined while main keeps nothing across restarts
+*/
+function dialogFoldersFile(): string | undefined {
+  const directory = getProjectRootsDirectory()
+  return directory === undefined ? undefined : path.join(directory, DIALOG_FOLDERS_FILE)
+}
 
-/** A kind `dialogKind` gives for the filters the argument check lets through */
+/**
+How many kinds of dialog the file keeps a folder for, the most recently chosen ones
+*/
+const MAX_DIALOG_FOLDERS = 32
+
+/**
+A kind `dialogKind` gives for the filters the argument check lets through
+*/
 function isDialogKind(kind: string): boolean {
   if (kind === dialogKind('open-folder')) return true
   const extension = /^(?:open-file|save-file):\.(.+)$/.exec(kind)?.[1]
@@ -362,21 +434,22 @@ const reasonOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
 /**
- * The folders kept in `file`, by kind, oldest choice first. Only known kinds and local absolute
- * folders are kept, as a dialog looks its folder up; a missing or unreadable file keeps none.
- */
+The folders kept in `file`, by kind, oldest choice first. Only known kinds and local absolute
+folders are kept, as a dialog looks its folder up; a missing or unreadable file keeps none.
+*/
 async function readDialogFolders(file: string): Promise<Map<string, string>> {
   let text: string
   try {
     text = await readFile(file, 'utf8')
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    if (!isFileNotFound(error)) {
       log.warn(`[dialog] Could not read ${file}: ${reasonOf(error)}`)
     }
     return new Map()
   }
   try {
-    const folders: unknown = (JSON.parse(text) as { folders?: unknown } | null)?.folders
+    const parsed: unknown = JSON.parse(text)
+    const folders = isRecord(parsed) ? parsed['folders'] : undefined
     if (!isRecord(folders)) throw new Error('no folders by dialog kind')
     const kept = Object.entries(folders).filter(
       (entry): entry is [string, string] =>
@@ -389,7 +462,9 @@ async function readDialogFolders(file: string): Promise<Map<string, string>> {
   }
 }
 
-/** The methods of Electron's `dialog` the handlers call */
+/**
+The methods of Electron's `dialog` the handlers call
+*/
 export type DialogPort = Pick<Dialog, 'showOpenDialog' | 'showSaveDialog' | 'showMessageBox'>
 
 type DialogChannel =
@@ -399,24 +474,25 @@ type DialogChannel =
   | 'dialog:message'
 
 /**
- * Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used.
- * The open and save dialogs open where their kind last chose, also after a restart once main
- * keeps its files in the user data folder (`setProjectRootsDir`).
- */
+Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used.
+The open and save dialogs open where their kind last chose, also after a restart once main
+keeps its files in the user data folder (`setProjectRootsDirectory`).
+*/
 export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, DialogChannel> {
-  /** Folders chosen this session; they win over the file, which another app instance may write */
+  /**
+  Folders chosen this session; they win over the file, which another app instance may write
+  */
   const chosenFolders = new Map<string, string>()
-  /** Writes of the folders file, one after another */
+  /**
+  Writes of the folders file, one after another
+  */
   let saving: Promise<void> = Promise.resolve()
-  const foldersFile = (): string | null => {
-    const dir = getProjectRootsDir()
-    return dir === null ? null : path.join(dir, DIALOG_FOLDERS_FILE)
-  }
   const lastDirectory = async (kind: string): Promise<string | undefined> => {
     const chosen = chosenFolders.get(kind)
-    const file = foldersFile()
-    if (chosen !== undefined || file === null) return chosen
-    return (await readDialogFolders(file)).get(kind)
+    const file = dialogFoldersFile()
+    if (chosen !== undefined || file === undefined) return chosen
+    const kept = await readDialogFolders(file)
+    return kept.get(kind)
   }
   const defaultPath = async (
     channel: DefaultingDialog,
@@ -429,21 +505,21 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       rendererValue,
       lastDirectory: await lastDirectory(kind),
       projectRoot: getCurrentProjectRoot(),
-      directoryExists
+      directoryExists: isExistingDirectory
     })
   /**
-   * Keeps the folder of a chosen path for the next dialog of its kind, in the file too unless it
-   * is a folder the file does not keep (then the file keeps the kind's earlier one). The dialog
-   * answers without waiting for the file, which a locked file or slow drive would hold up; a
-   * failed write is logged and the folder still holds for this session.
-   */
-  const remember = (kind: string, chosen: string | null): string | null => {
-    if (chosen === null) return chosen
-    const folder = path.dirname(chosen)
+  Keeps the folder of a chosen path for the next dialog of its kind, in the file too unless it
+  is a folder the file does not keep (then the file keeps the kind's earlier one). The dialog
+  answers without waiting for the file, which a locked file or slow drive would hold up; a
+  failed write is logged and the folder still holds for this session.
+  */
+  const keepFolder = (kind: string, folder: string): void => {
     chosenFolders.set(kind, folder)
-    const file = foldersFile()
-    if (file === null || checkDialogFolder(folder) === undefined) return chosen
-    saving = saving.then(async () => {
+    const file = dialogFoldersFile()
+    if (file === undefined || checkDialogFolder(folder) === undefined) return
+    const previous = saving
+    saving = (async () => {
+      await previous
       const kept = await readDialogFolders(file)
       // Re-added last, as the most recent choice
       kept.delete(kind)
@@ -455,7 +531,10 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
       } catch (error) {
         log.warn(`[dialog] Could not save ${file}: ${reasonOf(error)}`)
       }
-    })
+    })()
+  }
+  const remember = (kind: string, chosen: string | null): string | null => {
+    if (chosen !== null) keepFolder(kind, path.dirname(chosen))
     return chosen
   }
 
@@ -490,7 +569,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
     'dialog:message': {
       access: 'none',
       check: (raw) => [checkMessageOptions(raw[0])],
-      run: (options) => showMessageDialog(dialog, options)
+      run: async (options) => showMessageDialog(dialog, options)
     }
   }
 }
