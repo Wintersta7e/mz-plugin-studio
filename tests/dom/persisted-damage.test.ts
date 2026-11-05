@@ -526,7 +526,11 @@ describe('damaged saved state: presets and full storage', () => {
     fullStorage()
     useSettingsStore.getState().setTheme('dark')
 
-    expect([errors.mock.calls.length, useToastStore.getState().toasts.length]).toStrictEqual([3, 3])
+    // One call order entry per logged error
+    expect([
+      errors.mock.invocationCallOrder.length,
+      useToastStore.getState().toasts.length
+    ]).toStrictEqual([3, 3])
   })
 
   it('a full storage quota is logged and reported once, and set does not throw', async () => {
