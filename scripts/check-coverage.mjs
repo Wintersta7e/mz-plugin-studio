@@ -48,7 +48,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/menu-system.ts`]: 100,
       [`${GENERATOR}/templates/message-system.ts`]: 97,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,
-      [`${GENERATOR}/templates/plugin-commands.ts`]: 94,
+      [`${GENERATOR}/templates/plugin-commands.ts`]: 95,
       [`${GENERATOR}/templates/save-load.ts`]: 90,
       [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
       [`${GENERATOR}/templates/sprite-system.ts`]: 99,

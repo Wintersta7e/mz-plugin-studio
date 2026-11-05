@@ -140,6 +140,25 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { featureType: 'reserveParty', maxReserve: 'abc' },
     { featureType: 'reserveParty', maxReserve: null }
   ],
+  'plugin-command-async': [
+    { waitType: 'setWaitMode', pluginName: 42 },
+    { waitType: 'waitCount', waitDuration: null },
+    { waitType: 'waitCount', waitDuration: 'abc' },
+    { waitType: 'waitCount', commandName: null }
+  ],
+  'plugin-command-basic': [
+    { arg1Name: 'target', arg1Type: 7, arg2Name: 'value', arg2Type: ['a', 'b'] },
+    { arg1Name: 'target', arg2Name: 42 },
+    { commandName: ' ', pluginName: null },
+    { commandName: '1st', arg1Type: null },
+    { pluginName: ' ', arg2Type: null }
+  ],
+  'plugin-command-validated': [
+    { errorHandling: 'silent', pluginName: 42 },
+    { errorHandling: 'throw', pluginName: null },
+    { minValue: null, maxValue: 'abc' },
+    { minValue: 5, maxValue: null }
+  ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
     { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
