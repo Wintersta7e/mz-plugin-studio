@@ -14,7 +14,7 @@ const GENERATED_INTO_APP = ['tailwindcss', 'tw-animate-css']
 const ALIASES = ['@/', '@renderer/']
 const BUILTINS = new Set(builtinModules.flatMap((name) => [name, `node:${name}`]))
 const IMPORT_RE =
-  /(?:^|[\s;])(?:import\s+(?!type\b)(?:[\w*{}\s,$]+\sfrom\s+)?|export\s+(?!type\b)[\w*{}\s,$]*\sfrom\s+|import\s*\(\s*)['"]([^'"]+)['"]|@import\s+(?:url\()?['"]([^'"]+)['"]/g
+  /(?:^|[\s;])(?:import\s+(?!\s|type\b)(?:[\w*{}\s,$]+\sfrom\s+)?|export\s+(?!\s|type\b)[\w*{}\s,$]*\sfrom\s+|import\s*\(\s*)['"]([^'"]+)['"]|@import\s+(?:url\()?['"]([^'"]+)['"]/g
 const LICENSE_FILE_RE = /^(licen[cs]e|copying)/i
 // The notices a package publishes for the code it vendors, reproduced after its own license
 const NOTICES_FILE = 'ThirdPartyNotices.txt'
