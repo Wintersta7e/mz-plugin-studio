@@ -1139,16 +1139,13 @@
       "count": 1
     },
     "@typescript-eslint/no-unsafe-assignment": {
-      "count": 8
+      "count": 4
     },
     "@typescript-eslint/no-unsafe-call": {
-      "count": 10
+      "count": 4
     },
     "@typescript-eslint/no-unsafe-member-access": {
-      "count": 13
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 3
+      "count": 7
     },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
@@ -1175,7 +1172,7 @@
       "count": 1
     },
     "unicorn/text-encoding-identifier-case": {
-      "count": 6
+      "count": 5
     }
   },
   "src/main/window-open.ts": {

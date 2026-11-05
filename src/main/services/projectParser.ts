@@ -19,12 +19,34 @@ import type {
   MZClass,
   MZTroop
 } from '../../shared/types/mz'
+import { isRecord } from '../ipc/arguments'
 
 /**
-A name read from a data file: text as written, anything else (a number, a list, null) as empty.
+Text read from a data file: text as written, anything else (a number, a list, null) as empty.
 */
-function nameText(name: unknown): string {
-  return typeof name === 'string' ? name : ''
+function text(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  return typeof value === 'number' ? value : fallback
+}
+
+/**
+The entries of a data file's list, its empty (`null`) slots left out. An entry that is not an
+object holds no fields; its id is the number it holds, or else its place in the list, the id
+RPG Maker MZ reads it by.
+*/
+function dataEntries(list: unknown): { id: number; entry: Record<string, unknown> }[] {
+  if (!Array.isArray(list)) throw new TypeError('The data file holds no list of entries')
+  const values: readonly unknown[] = list
+  const entries: { id: number; entry: Record<string, unknown> }[] = []
+  for (const [index, value] of values.entries()) {
+    if (value === null) continue
+    const entry = isRecord(value) ? value : {}
+    entries.push({ id: numberOr(entry['id'], index), entry })
+  }
+  return entries
 }
 
 export class ProjectParser {
@@ -63,10 +85,10 @@ export class ProjectParser {
 
     // Extract switches/variables directly from already-loaded system (avoids re-reading System.json)
     const switches: MZSwitch[] = (system.switches || [])
-      .map((name: unknown, index: number) => ({ id: index, name: nameText(name) }))
+      .map((name: unknown, index: number) => ({ id: index, name: text(name) }))
       .filter((s: MZSwitch) => s.id > 0 && s.name)
     const variables: MZVariable[] = (system.variables || [])
-      .map((name: unknown, index: number) => ({ id: index, name: nameText(name) }))
+      .map((name: unknown, index: number) => ({ id: index, name: text(name) }))
       .filter((v: MZVariable) => v.id > 0 && v.name)
 
     const [
@@ -126,10 +148,10 @@ export class ProjectParser {
   ): Promise<{ id: number; name: string }[]> {
     try {
       const content = await readFile(join(projectPath, 'data', filename), 'utf-8')
-      const data: ({ id: number; name: string } | null)[] = JSON.parse(content)
-      return data
-        .filter((d): d is { id: number; name: string } => d !== null)
-        .map((d) => ({ id: d.id, name: nameText(d.name) }))
+      return dataEntries(JSON.parse(content)).map(({ id, entry }) => ({
+        id,
+        name: text(entry['name'])
+      }))
     } catch (error) {
       // Projects may leave out data files they do not use
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -141,54 +163,35 @@ export class ProjectParser {
     }
   }
 
-  static async getActors(path: string): Promise<MZActor[]> {
+  // Actors and items share one shape: a name and a note with its tags
+  private static async loadNotedEntries(path: string, filename: string): Promise<MZActor[]> {
     try {
-      const content = await readFile(join(path, 'data/Actors.json'), 'utf-8')
-      const actors = JSON.parse(content)
-
-      return actors
-        .filter((a: MZActor | null) => a !== null)
-        .map((a: MZActor) => ({
-          id: a.id,
-          name: nameText(a.name),
-          note: a.note || '',
-          noteTags: this.parseNoteTags(a.note || '')
-        }))
+      const content = await readFile(join(path, 'data', filename), 'utf-8')
+      return dataEntries(JSON.parse(content)).map(({ id, entry }) => {
+        const note = text(entry['note'])
+        return { id, name: text(entry['name']), note, noteTags: this.parseNoteTags(note) }
+      })
     } catch {
       return []
     }
   }
 
-  static async getItems(path: string): Promise<MZItem[]> {
-    try {
-      const content = await readFile(join(path, 'data/Items.json'), 'utf-8')
-      const items = JSON.parse(content)
+  static async getActors(path: string): Promise<MZActor[]> {
+    return this.loadNotedEntries(path, 'Actors.json')
+  }
 
-      return items
-        .filter((index: MZItem | null) => index !== null)
-        .map((index: MZItem) => ({
-          id: index.id,
-          name: nameText(index.name),
-          note: index.note || '',
-          noteTags: this.parseNoteTags(index.note || '')
-        }))
-    } catch {
-      return []
-    }
+  static async getItems(path: string): Promise<MZItem[]> {
+    return this.loadNotedEntries(path, 'Items.json')
   }
 
   static async getMaps(path: string): Promise<MZMapInfo[]> {
     try {
       const content = await readFile(join(path, 'data/MapInfos.json'), 'utf-8')
-      const maps = JSON.parse(content)
-
-      return maps
-        .filter((m: MZMapInfo | null) => m !== null)
-        .map((m: MZMapInfo) => ({
-          id: m.id,
-          name: nameText(m.name),
-          parentId: m.parentId || 0
-        }))
+      return dataEntries(JSON.parse(content)).map(({ id, entry }) => ({
+        id,
+        name: text(entry['name']),
+        parentId: numberOr(entry['parentId'], 0)
+      }))
     } catch {
       return []
     }

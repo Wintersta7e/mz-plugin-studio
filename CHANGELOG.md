@@ -8,6 +8,7 @@
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
 - Opening a plugin file whose header has a tag such as `@author` followed by a long run of spaces, or a project whose actor or item note has a long tag opened with `<` and never closed, no longer stalls the app.
 - The Project Data Browser opens a project whose data files hold a name that is not text, such as a number; before, the panel failed.
+- In the Project Data Browser, an actor or item whose note is not text, such as a number, no longer empties the whole actor or item list: that entry is shown with an empty note. An entry whose id is not a number now shows its place in the data file as its id, and a map whose parent map is not a number is read as having none.
 
 ## [1.8.1] - 2026-11-05
 

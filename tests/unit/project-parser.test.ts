@@ -146,3 +146,83 @@ describe('names that are not text', () => {
     })
   })
 })
+
+// Entries whose note, id or parent map is not of its type: the entry is read with an empty note,
+// its place in the file as its id, or no parent map, and the other entries are read as written.
+describe('fields that are not of their type', () => {
+  it('reads an actor note that is a number as empty and keeps the other actors', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'Actors.json': '[null,{"id":1,"name":"Ann","note":5},{"id":2,"name":"Hero","note":"<a:b>"}]'
+    })
+
+    await expect(ProjectParser.getActors(project)).resolves.toStrictEqual([
+      { id: 1, name: 'Ann', note: '', noteTags: {} },
+      { id: 2, name: 'Hero', note: '<a:b>', noteTags: { a: 'b' } }
+    ])
+  })
+
+  it('reads an item note that is an object as empty and keeps the other items', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'Items.json':
+        '[null,{"id":1,"name":"Potion","note":{"a":1}},{"id":2,"name":"Ether","note":"<c>"}]'
+    })
+
+    await expect(ProjectParser.getItems(project)).resolves.toStrictEqual([
+      { id: 1, name: 'Potion', note: '', noteTags: {} },
+      { id: 2, name: 'Ether', note: '<c>', noteTags: { c: 'true' } }
+    ])
+  })
+
+  it('reads a parent map that is text as none', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'MapInfos.json':
+        '[null,{"id":1,"name":"Town","parentId":0},{"id":2,"name":"Inn","parentId":"1"}]'
+    })
+
+    await expect(ProjectParser.getMaps(project)).resolves.toStrictEqual([
+      { id: 1, name: 'Town', parentId: 0 },
+      { id: 2, name: 'Inn', parentId: 0 }
+    ])
+  })
+
+  it('reads an id that is not a number as the place of its entry', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'Skills.json': '[null,{"id":"1","name":"Fire"},{"name":"Ice"},{"id":3,"name":"Bolt"}]'
+    })
+
+    await expect(ProjectParser.getSkills(project)).resolves.toStrictEqual([
+      { id: 1, name: 'Fire' },
+      { id: 2, name: 'Ice' },
+      { id: 3, name: 'Bolt' }
+    ])
+  })
+
+  it('reads an entry that is not an object as one without a name', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'Actors.json': '[null,5,{"id":2,"name":"Hero","note":""}]'
+    })
+
+    await expect(ProjectParser.getActors(project)).resolves.toStrictEqual([
+      { id: 1, name: '', note: '', noteTags: {} },
+      { id: 2, name: 'Hero', note: '', noteTags: {} }
+    ])
+  })
+
+  it('reads a data file that holds no list as no entries', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'Weapons.json': '{"id":1,"name":"Sword"}' })
+
+    await expect(ProjectParser.getWeapons(project)).resolves.toStrictEqual([])
+  })
+})
