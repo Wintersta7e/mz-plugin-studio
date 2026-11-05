@@ -2567,32 +2567,6 @@
       "count": 2
     }
   },
-  "src/renderer/src/lib/generator/templates/actor-party.ts": {
-    "@typescript-eslint/no-base-to-string": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 2
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/prefer-else-if": {
-      "count": 1
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 2
-    }
-  },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 38
@@ -2766,26 +2740,6 @@
       "count": 1
     },
     "unicorn/prefer-ternary": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/generator/templates/map-events.ts": {
-    "@typescript-eslint/no-base-to-string": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/no-useless-switch-case": {
       "count": 1
     }
   },
@@ -2989,20 +2943,6 @@
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
-    }
-  },
-  "src/renderer/src/lib/generator/templates/sprite-system.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "unicorn/prefer-number-coercion": {
-      "count": 2
     }
   },
   "src/renderer/src/lib/monaco-setup.ts": {

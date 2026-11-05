@@ -9,7 +9,7 @@ Templates for modifying RPG Maker MZ actor and party systems:
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
-import { defaultLiteralOf, expectText, valueOr } from './values'
+import { defaultLiteralOf, definedOr, expectText, valueOr } from './values'
 
 /**
 Convert a property name to PascalCase for method names
@@ -89,74 +89,72 @@ const customActorPropertyTemplate: CodeTemplate = {
     const propertyName = String(values['propertyName'])
     const dataType = valueOr(values['dataType'], 'number')
     // Number() in the check ignores surrounding whitespace; the code gets the trimmed text.
-    const minValue = String(values['minValue'] ?? '').trim()
-    const maxValue = String(values['maxValue'] ?? '').trim()
+    const minValue = String(definedOr(values['minValue'], '')).trim()
+    const maxValue = String(definedOr(values['maxValue'], '')).trim()
     const isIncludeChange = values['includeChange'] !== false
 
     const pascalName = toPascalCase(values['propertyName'])
     const defaultLiteral = defaultLiteralOf(dataType, values['defaultValue'])
-    const hasMin = dataType === 'number' && minValue !== ''
-    const hasMax = dataType === 'number' && maxValue !== ''
+    const isNumber = dataType === 'number'
+    const hasMin = isNumber && minValue !== ''
+    const hasMax = isNumber && maxValue !== ''
     const hasClamp = hasMin || hasMax
+    const minString = hasMin ? minValue : '-Infinity'
+    const maxString = hasMax ? maxValue : 'Infinity'
 
-    const lines: string[] = [`// Custom Actor Property: ${propertyName}`]
-
-    // Header comment
-    lines.push(`// Type: ${String(dataType)}, Default: ${defaultLiteral}`)
-    if (hasClamp) {
-      const rangeString = `${hasMin ? minValue : '-Infinity'} to ${hasMax ? maxValue : 'Infinity'}`
-      lines.push(`// Range: ${rangeString}`)
-    }
-    lines.push('')
-
-    // Initialize the property in Game_Actor.initMembers
-    lines.push('// Initialize the property when actor is created')
-    lines.push('const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;')
-    lines.push('Game_Actor.prototype.initMembers = function() {')
-    lines.push('    _Game_Actor_initMembers.call(this);')
-    lines.push(`    this._${propertyName} = ${defaultLiteral};`)
-    lines.push('};')
-    lines.push('')
-
-    // Getter method
-    lines.push(`// Getter: actor.${propertyName}()`)
-    lines.push(`Game_Actor.prototype.${propertyName} = function() {`)
-    lines.push(`    return this._${propertyName};`)
-    lines.push('};')
-    lines.push('')
-
-    // Setter method
-    lines.push(`// Setter: actor.set${pascalName}(value)`)
-    lines.push(`Game_Actor.prototype.set${pascalName} = function(value) {`)
-    if (hasClamp) {
-      const minString = hasMin ? minValue : '-Infinity'
-      const maxString = hasMax ? maxValue : 'Infinity'
-      lines.push(`    // Clamp value to valid range`)
-      lines.push(
-        `    this._${propertyName} = Math.max(${minString}, Math.min(${maxString}, value));`
-      )
-    } else {
-      lines.push(`    this._${propertyName} = value;`)
-    }
-    lines.push('};')
+    const lines = [
+      `// Custom Actor Property: ${propertyName}`,
+      // Header comment
+      `// Type: ${String(dataType)}, Default: ${defaultLiteral}`,
+      ...(hasClamp ? [`// Range: ${minString} to ${maxString}`] : []),
+      '',
+      // Initialize the property in Game_Actor.initMembers
+      '// Initialize the property when actor is created',
+      'const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;',
+      'Game_Actor.prototype.initMembers = function() {',
+      '    _Game_Actor_initMembers.call(this);',
+      `    this._${propertyName} = ${defaultLiteral};`,
+      '};',
+      '',
+      // Getter method
+      `// Getter: actor.${propertyName}()`,
+      `Game_Actor.prototype.${propertyName} = function() {`,
+      `    return this._${propertyName};`,
+      '};',
+      '',
+      // Setter method
+      `// Setter: actor.set${pascalName}(value)`,
+      `Game_Actor.prototype.set${pascalName} = function(value) {`,
+      ...(hasClamp
+        ? [
+            `    // Clamp value to valid range`,
+            `    this._${propertyName} = Math.max(${minString}, Math.min(${maxString}, value));`
+          ]
+        : [`    this._${propertyName} = value;`]),
+      '};'
+    ]
 
     // Change method for numbers
-    if (isIncludeChange && dataType === 'number') {
-      lines.push('')
-      lines.push(`// Change method: actor.change${pascalName}(amount)`)
-      lines.push(`// Use positive values to increase, negative to decrease`)
-      lines.push(`Game_Actor.prototype.change${pascalName} = function(amount) {`)
-      lines.push(`    this.set${pascalName}(this._${propertyName} + amount);`)
-      lines.push('};')
+    if (isIncludeChange && isNumber) {
+      lines.push(
+        '',
+        `// Change method: actor.change${pascalName}(amount)`,
+        `// Use positive values to increase, negative to decrease`,
+        `Game_Actor.prototype.change${pascalName} = function(amount) {`,
+        `    this.set${pascalName}(this._${propertyName} + amount);`,
+        '};'
+      )
     }
 
     // Toggle method for booleans
     if (dataType === 'boolean') {
-      lines.push('')
-      lines.push(`// Toggle method: actor.toggle${pascalName}()`)
-      lines.push(`Game_Actor.prototype.toggle${pascalName} = function() {`)
-      lines.push(`    this._${propertyName} = !this._${propertyName};`)
-      lines.push('};')
+      lines.push(
+        '',
+        `// Toggle method: actor.toggle${pascalName}()`,
+        `Game_Actor.prototype.toggle${pascalName} = function() {`,
+        `    this._${propertyName} = !this._${propertyName};`,
+        '};'
+      )
     }
 
     return lines.join('\n')
@@ -208,10 +206,10 @@ const customActorPropertyTemplate: CodeTemplate = {
       const hasMin = Boolean(minValue)
       const hasMax = Boolean(maxValue)
 
-      if (hasMin && isNaN(Number(minValue))) {
+      if (hasMin && Number.isNaN(Number(minValue))) {
         errors.push('Minimum Value must be a valid number')
       }
-      if (hasMax && isNaN(Number(maxValue))) {
+      if (hasMax && Number.isNaN(Number(maxValue))) {
         errors.push('Maximum Value must be a valid number')
       }
       if (hasMin && hasMax && Number(minValue) > Number(maxValue)) {
@@ -224,6 +222,216 @@ const customActorPropertyTemplate: CodeTemplate = {
       errors
     }
   }
+}
+
+/**
+The size limit hooks: a full party refuses a new member, and a party at a minimum size above 1
+refuses to lose one.
+*/
+function sizeLimitLines(maxSize: string, minSize: unknown): string[] {
+  return [
+    `// Party Size Limit: ${String(minSize)} to ${maxSize} members`,
+    '',
+    '// Store the party size limits',
+    `Game_Party.prototype.maxBattleMembers = function() {`,
+    `    return ${maxSize};`,
+    '};',
+    '',
+    '// Prevent adding members beyond the max size',
+    'const _Game_Party_addActor = Game_Party.prototype.addActor;',
+    'Game_Party.prototype.addActor = function(actorId) {',
+    '    if (this._actors.length >= this.maxBattleMembers()) {',
+    '        // Party is full - you can customize this behavior',
+    "        console.log('Party is full! Cannot add more members.');",
+    '        return;',
+    '    }',
+    '    _Game_Party_addActor.call(this, actorId);',
+    '};',
+    ...(Number(minSize) > 1
+      ? [
+          '',
+          '// Prevent removing members below the min size',
+          'const _Game_Party_removeActor = Game_Party.prototype.removeActor;',
+          'Game_Party.prototype.removeActor = function(actorId) {',
+          `    if (this._actors.length <= ${String(minSize)}) {`,
+          '        // Party at minimum - you can customize this behavior',
+          "        console.log('Cannot remove member - party at minimum size.');",
+          '        return;',
+          '    }',
+          '    _Game_Party_removeActor.call(this, actorId);',
+          '};'
+        ]
+      : []),
+    '',
+    '// Helper method to check if party can add members',
+    'Game_Party.prototype.canAddMember = function() {',
+    '    return this._actors.length < this.maxBattleMembers();',
+    '};',
+    '',
+    '// Helper method to get remaining slots',
+    'Game_Party.prototype.remainingSlots = function() {',
+    '    return Math.max(0, this.maxBattleMembers() - this._actors.length);',
+    '};'
+  ]
+}
+
+/**
+Hooks that report a member who joined or left the party, after the change.
+*/
+function memberAfterHookLines(): string[] {
+  return [
+    // After hooks
+    '// Hook for when a member is added',
+    'const _Game_Party_addActor = Game_Party.prototype.addActor;',
+    'Game_Party.prototype.addActor = function(actorId) {',
+    '    const wasInParty = this._actors.includes(actorId);',
+    '    _Game_Party_addActor.call(this, actorId);',
+    '',
+    '    if (!wasInParty && this._actors.includes(actorId)) {',
+    '        // Member was successfully added',
+    '        this.onMemberAdded(actorId);',
+    '    }',
+    '};',
+    '',
+    '// Called when a member is added to the party',
+    'Game_Party.prototype.onMemberAdded = function(actorId) {',
+    '    const actor = $gameActors.actor(actorId);',
+    "    console.log(actor.name() + ' joined the party!');",
+    '    // Add your custom logic here',
+    '};',
+    '',
+    '// Hook for when a member is removed',
+    'const _Game_Party_removeActor = Game_Party.prototype.removeActor;',
+    'Game_Party.prototype.removeActor = function(actorId) {',
+    '    const wasInParty = this._actors.includes(actorId);',
+    '    _Game_Party_removeActor.call(this, actorId);',
+    '',
+    '    if (wasInParty && !this._actors.includes(actorId)) {',
+    '        // Member was successfully removed',
+    '        this.onMemberRemoved(actorId);',
+    '    }',
+    '};',
+    '',
+    '// Called when a member is removed from the party',
+    'Game_Party.prototype.onMemberRemoved = function(actorId) {',
+    '    const actor = $gameActors.actor(actorId);',
+    "    console.log(actor.name() + ' left the party!');",
+    '    // Add your custom logic here'
+  ]
+}
+
+/**
+Hooks that ask before a member joins or leaves the party, and can refuse the change.
+*/
+function memberBeforeHookLines(): string[] {
+  return [
+    // Before hooks (can prevent changes)
+    '// Hook for when a member is about to be added',
+    'const _Game_Party_addActor = Game_Party.prototype.addActor;',
+    'Game_Party.prototype.addActor = function(actorId) {',
+    '    // Return false from canAddMember to prevent adding',
+    '    if (!this.canAddThisMember(actorId)) {',
+    "        console.log('Cannot add this member!');",
+    '        return;',
+    '    }',
+    '    _Game_Party_addActor.call(this, actorId);',
+    '};',
+    '',
+    '// Override to control which actors can be added',
+    'Game_Party.prototype.canAddThisMember = function(actorId) {',
+    '    // Add your conditions here',
+    '    // Example: return actorId !== 5; // Cannot add actor 5',
+    '    return true;',
+    '};',
+    '',
+    '// Hook for when a member is about to be removed',
+    'const _Game_Party_removeActor = Game_Party.prototype.removeActor;',
+    'Game_Party.prototype.removeActor = function(actorId) {',
+    '    // Return false from canRemoveMember to prevent removing',
+    '    if (!this.canRemoveThisMember(actorId)) {',
+    "        console.log('Cannot remove this member!');",
+    '        return;',
+    '    }',
+    '    _Game_Party_removeActor.call(this, actorId);',
+    '};',
+    '',
+    '// Override to control which actors can be removed',
+    'Game_Party.prototype.canRemoveThisMember = function(actorId) {',
+    '    // Add your conditions here',
+    '    // Example: return actorId !== 1; // Cannot remove actor 1 (leader)',
+    '    return true;'
+  ]
+}
+
+/**
+The reserve party: members kept outside the active party, up to a maximum.
+*/
+function reservePartyLines(maxReserve: string): string[] {
+  return [
+    '// Reserve Party System',
+    `// Maximum reserve members: ${maxReserve}`,
+    '',
+    '// Initialize reserve party array',
+    'const _Game_Party_initialize = Game_Party.prototype.initialize;',
+    'Game_Party.prototype.initialize = function() {',
+    '    _Game_Party_initialize.call(this);',
+    '    this._reserveMembers = [];',
+    '};',
+    '',
+    '// Get maximum reserve size',
+    'Game_Party.prototype.maxReserveMembers = function() {',
+    `    return ${maxReserve};`,
+    '};',
+    '',
+    '// Get all reserve members',
+    'Game_Party.prototype.reserveMembers = function() {',
+    '    return this._reserveMembers.map(id => $gameActors.actor(id));',
+    '};',
+    '',
+    '// Add actor to reserve party',
+    'Game_Party.prototype.addToReserve = function(actorId) {',
+    '    if (this._reserveMembers.length >= this.maxReserveMembers()) {',
+    "        console.log('Reserve party is full!');",
+    '        return false;',
+    '    }',
+    '    if (!this._reserveMembers.includes(actorId)) {',
+    '        this._reserveMembers.push(actorId);',
+    '        return true;',
+    '    }',
+    '    return false;',
+    '};',
+    '',
+    '// Remove actor from reserve party',
+    'Game_Party.prototype.removeFromReserve = function(actorId) {',
+    '    const index = this._reserveMembers.indexOf(actorId);',
+    '    if (index >= 0) {',
+    '        this._reserveMembers.splice(index, 1);',
+    '        return true;',
+    '    }',
+    '    return false;',
+    '};',
+    '',
+    '// Swap actor between active party and reserve',
+    'Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {',
+    '    if (!this._actors.includes(activeActorId)) return false;',
+    '    if (!this._reserveMembers.includes(reserveActorId)) return false;',
+    '',
+    '    // Remove from current positions',
+    '    this.removeActor(activeActorId);',
+    '    this.removeFromReserve(reserveActorId);',
+    '',
+    '    // Add to new positions',
+    '    this.addActor(reserveActorId);',
+    '    this.addToReserve(activeActorId);',
+    '',
+    '    return true;',
+    '};',
+    '',
+    '// Check if actor is in reserve',
+    'Game_Party.prototype.isInReserve = function(actorId) {',
+    '    return this._reserveMembers.includes(actorId);',
+    '};'
+  ]
 }
 
 /**
@@ -292,218 +500,30 @@ const partyManagementTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const featureType = valueOr(values['featureType'], 'sizeLimit')
-    const lines: string[] = []
 
     switch (featureType) {
       case 'sizeLimit': {
         const maxSize = String(valueOr(values['maxSize'], 4))
         const minSize = valueOr(values['minSize'], 1)
-
-        lines.push(`// Party Size Limit: ${String(minSize)} to ${maxSize} members`)
-        lines.push('')
-        lines.push('// Store the party size limits')
-        lines.push(`Game_Party.prototype.maxBattleMembers = function() {`)
-        lines.push(`    return ${maxSize};`)
-        lines.push('};')
-        lines.push('')
-        lines.push('// Prevent adding members beyond the max size')
-        lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
-        lines.push('Game_Party.prototype.addActor = function(actorId) {')
-        lines.push('    if (this._actors.length >= this.maxBattleMembers()) {')
-        lines.push('        // Party is full - you can customize this behavior')
-        lines.push("        console.log('Party is full! Cannot add more members.');")
-        lines.push('        return;')
-        lines.push('    }')
-        lines.push('    _Game_Party_addActor.call(this, actorId);')
-        lines.push('};')
-
-        if (Number(minSize) > 1) {
-          lines.push('')
-          lines.push('// Prevent removing members below the min size')
-          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-          lines.push(`    if (this._actors.length <= ${String(minSize)}) {`)
-          lines.push('        // Party at minimum - you can customize this behavior')
-          lines.push("        console.log('Cannot remove member - party at minimum size.');")
-          lines.push('        return;')
-          lines.push('    }')
-          lines.push('    _Game_Party_removeActor.call(this, actorId);')
-          lines.push('};')
-        }
-
-        lines.push('')
-        lines.push('// Helper method to check if party can add members')
-        lines.push('Game_Party.prototype.canAddMember = function() {')
-        lines.push('    return this._actors.length < this.maxBattleMembers();')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Helper method to get remaining slots')
-        lines.push('Game_Party.prototype.remainingSlots = function() {')
-        lines.push('    return Math.max(0, this.maxBattleMembers() - this._actors.length);')
-        lines.push('};')
-
-        break
+        return sizeLimitLines(maxSize, minSize).join('\n')
       }
       case 'addRemoveHook': {
         const hookTiming = valueOr(values['hookTiming'], 'after')
-
-        lines.push('// Party Member Change Hooks')
-        lines.push('')
-
-        if (hookTiming === 'after') {
-          // After hooks
-          lines.push('// Hook for when a member is added')
-          lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
-          lines.push('Game_Party.prototype.addActor = function(actorId) {')
-          lines.push('    const wasInParty = this._actors.includes(actorId);')
-          lines.push('    _Game_Party_addActor.call(this, actorId);')
-          lines.push('')
-          lines.push('    if (!wasInParty && this._actors.includes(actorId)) {')
-          lines.push('        // Member was successfully added')
-          lines.push('        this.onMemberAdded(actorId);')
-          lines.push('    }')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Called when a member is added to the party')
-          lines.push('Game_Party.prototype.onMemberAdded = function(actorId) {')
-          lines.push('    const actor = $gameActors.actor(actorId);')
-          lines.push("    console.log(actor.name() + ' joined the party!');")
-          lines.push('    // Add your custom logic here')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Hook for when a member is removed')
-          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-          lines.push('    const wasInParty = this._actors.includes(actorId);')
-          lines.push('    _Game_Party_removeActor.call(this, actorId);')
-          lines.push('')
-          lines.push('    if (wasInParty && !this._actors.includes(actorId)) {')
-          lines.push('        // Member was successfully removed')
-          lines.push('        this.onMemberRemoved(actorId);')
-          lines.push('    }')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Called when a member is removed from the party')
-          lines.push('Game_Party.prototype.onMemberRemoved = function(actorId) {')
-          lines.push('    const actor = $gameActors.actor(actorId);')
-          lines.push("    console.log(actor.name() + ' left the party!');")
-          lines.push('    // Add your custom logic here')
-        } else {
-          // Before hooks (can prevent changes)
-          lines.push('// Hook for when a member is about to be added')
-          lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
-          lines.push('Game_Party.prototype.addActor = function(actorId) {')
-          lines.push('    // Return false from canAddMember to prevent adding')
-          lines.push('    if (!this.canAddThisMember(actorId)) {')
-          lines.push("        console.log('Cannot add this member!');")
-          lines.push('        return;')
-          lines.push('    }')
-          lines.push('    _Game_Party_addActor.call(this, actorId);')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Override to control which actors can be added')
-          lines.push('Game_Party.prototype.canAddThisMember = function(actorId) {')
-          lines.push('    // Add your conditions here')
-          lines.push('    // Example: return actorId !== 5; // Cannot add actor 5')
-          lines.push('    return true;')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Hook for when a member is about to be removed')
-          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-          lines.push('    // Return false from canRemoveMember to prevent removing')
-          lines.push('    if (!this.canRemoveThisMember(actorId)) {')
-          lines.push("        console.log('Cannot remove this member!');")
-          lines.push('        return;')
-          lines.push('    }')
-          lines.push('    _Game_Party_removeActor.call(this, actorId);')
-          lines.push('};')
-          lines.push('')
-          lines.push('// Override to control which actors can be removed')
-          lines.push('Game_Party.prototype.canRemoveThisMember = function(actorId) {')
-          lines.push('    // Add your conditions here')
-          lines.push('    // Example: return actorId !== 1; // Cannot remove actor 1 (leader)')
-          lines.push('    return true;')
-        }
-        lines.push('};')
-
-        break
+        return [
+          '// Party Member Change Hooks',
+          '',
+          ...(hookTiming === 'after' ? memberAfterHookLines() : memberBeforeHookLines()),
+          '};'
+        ].join('\n')
       }
       case 'reserveParty': {
         const maxReserve = String(valueOr(values['maxReserve'], 10))
-
-        lines.push('// Reserve Party System')
-        lines.push(`// Maximum reserve members: ${maxReserve}`)
-        lines.push('')
-        lines.push('// Initialize reserve party array')
-        lines.push('const _Game_Party_initialize = Game_Party.prototype.initialize;')
-        lines.push('Game_Party.prototype.initialize = function() {')
-        lines.push('    _Game_Party_initialize.call(this);')
-        lines.push('    this._reserveMembers = [];')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Get maximum reserve size')
-        lines.push('Game_Party.prototype.maxReserveMembers = function() {')
-        lines.push(`    return ${maxReserve};`)
-        lines.push('};')
-        lines.push('')
-        lines.push('// Get all reserve members')
-        lines.push('Game_Party.prototype.reserveMembers = function() {')
-        lines.push('    return this._reserveMembers.map(id => $gameActors.actor(id));')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Add actor to reserve party')
-        lines.push('Game_Party.prototype.addToReserve = function(actorId) {')
-        lines.push('    if (this._reserveMembers.length >= this.maxReserveMembers()) {')
-        lines.push("        console.log('Reserve party is full!');")
-        lines.push('        return false;')
-        lines.push('    }')
-        lines.push('    if (!this._reserveMembers.includes(actorId)) {')
-        lines.push('        this._reserveMembers.push(actorId);')
-        lines.push('        return true;')
-        lines.push('    }')
-        lines.push('    return false;')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Remove actor from reserve party')
-        lines.push('Game_Party.prototype.removeFromReserve = function(actorId) {')
-        lines.push('    const index = this._reserveMembers.indexOf(actorId);')
-        lines.push('    if (index >= 0) {')
-        lines.push('        this._reserveMembers.splice(index, 1);')
-        lines.push('        return true;')
-        lines.push('    }')
-        lines.push('    return false;')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Swap actor between active party and reserve')
-        lines.push(
-          'Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {'
-        )
-        lines.push('    if (!this._actors.includes(activeActorId)) return false;')
-        lines.push('    if (!this._reserveMembers.includes(reserveActorId)) return false;')
-        lines.push('')
-        lines.push('    // Remove from current positions')
-        lines.push('    this.removeActor(activeActorId);')
-        lines.push('    this.removeFromReserve(reserveActorId);')
-        lines.push('')
-        lines.push('    // Add to new positions')
-        lines.push('    this.addActor(reserveActorId);')
-        lines.push('    this.addToReserve(activeActorId);')
-        lines.push('')
-        lines.push('    return true;')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Check if actor is in reserve')
-        lines.push('Game_Party.prototype.isInReserve = function(actorId) {')
-        lines.push('    return this._reserveMembers.includes(actorId);')
-        lines.push('};')
-
-        break
+        return reservePartyLines(maxReserve).join('\n')
       }
-      // No default
+      default: {
+        return ''
+      }
     }
-
-    return lines.join('\n')
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
@@ -522,9 +542,7 @@ const partyManagementTemplate: CodeTemplate = {
       if (maxSize !== undefined && minSize !== undefined && Number(minSize) > Number(maxSize)) {
         errors.push('Minimum Party Size cannot be greater than Maximum Party Size')
       }
-    }
-
-    if (featureType === 'reserveParty') {
+    } else if (featureType === 'reserveParty') {
       const maxReserve = values['maxReserve']
       if (maxReserve !== undefined && Number(maxReserve) < 1) {
         errors.push('Maximum Reserve Size must be at least 1')
@@ -536,6 +554,259 @@ const partyManagementTemplate: CodeTemplate = {
       errors
     }
   }
+}
+
+const SLOT_NAMES: Record<string, string> = {
+  '0': 'Weapon',
+  '1': 'Shield',
+  '2': 'Head',
+  '3': 'Body',
+  '4': 'Accessory'
+}
+
+/**
+The equipment hook's slot filter and timing, as the hooks use them.
+*/
+interface EquipHook {
+  slotText: string
+  hasSlotFilter: boolean
+  isBefore: boolean
+  isAfter: boolean
+}
+
+/**
+The event part of the header: both, a swap, or the one event named.
+*/
+function equipEventLabel(eventType: unknown): string {
+  if (eventType === 'both') return 'Equip/Unequip'
+  if (eventType === 'change') return 'Equipment Change'
+  return toPascalCase(eventType)
+}
+
+/**
+The timing part of the header.
+*/
+function equipTimingLabel(timing: unknown): string {
+  if (timing === 'both') return 'Before and After'
+  return timing === 'before' ? 'Before' : 'After'
+}
+
+/**
+The start of a changeEquip hook that passes other slots through unchanged when a slot is filtered.
+*/
+function slotFilterLines(hook: EquipHook): string[] {
+  if (!hook.hasSlotFilter) return []
+  return [
+    `    if (slotId !== ${hook.slotText}) {`,
+    '        _Game_Actor_changeEquip.call(this, slotId, item);',
+    '        return;',
+    '    }',
+    ''
+  ]
+}
+
+/**
+A changeEquip hook for a swap, with its before and after callbacks.
+*/
+function equipChangeLines(hook: EquipHook): string[] {
+  return [
+    // Hook into changeEquip which handles both equip and unequip in one call
+    '// Hook into equipment change (swap)',
+    'const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;',
+    'Game_Actor.prototype.changeEquip = function(slotId, item) {',
+    ...slotFilterLines(hook),
+    ...(hook.isBefore
+      ? [
+          '    const oldItem = this.equips()[slotId];',
+          '',
+          '    // Before equipment change',
+          '    if (!this.onBeforeEquipChange(slotId, oldItem, item)) {',
+          '        return; // Prevent the change',
+          '    }',
+          ''
+        ]
+      : []),
+    '    const oldEquip = this.equips()[slotId];',
+    '    _Game_Actor_changeEquip.call(this, slotId, item);',
+    ...(hook.isAfter
+      ? [
+          '',
+          '    // After equipment change',
+          '    this.onAfterEquipChange(slotId, oldEquip, item);'
+        ]
+      : []),
+    '};',
+    '',
+    ...(hook.isBefore
+      ? [
+          '// Called before equipment change - return false to prevent',
+          'Game_Actor.prototype.onBeforeEquipChange = function(slotId, oldItem, newItem) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' is about to change equipment in slot ' + slotId);",
+          "    console.log('Old:', oldItem ? oldItem.name : 'none');",
+          "    console.log('New:', newItem ? newItem.name : 'none');",
+          '    return true; // Return false to prevent the change',
+          '};',
+          ''
+        ]
+      : []),
+    ...(hook.isAfter
+      ? [
+          '// Called after equipment change',
+          'Game_Actor.prototype.onAfterEquipChange = function(slotId, oldItem, newItem) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' changed equipment in slot ' + slotId);",
+          "    console.log('Was:', oldItem ? oldItem.name : 'none');",
+          "    console.log('Now:', newItem ? newItem.name : 'none');",
+          '};'
+        ]
+      : [])
+  ]
+}
+
+/**
+A changeEquip hook for equipment being put on, with its before and after callbacks.
+*/
+function equipOnLines(hook: EquipHook): string[] {
+  return [
+    '// Hook for equipment being put on',
+    'const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;',
+    'Game_Actor.prototype.changeEquip = function(slotId, item) {',
+    ...slotFilterLines(hook),
+    '    const oldItem = this.equips()[slotId];',
+    '    const isEquipping = item !== null && (oldItem === null || oldItem.id !== item.id);',
+    ...(hook.isBefore
+      ? [
+          '',
+          '    // Before equip hook',
+          '    if (isEquipping) {',
+          '        if (!this.onBeforeEquip(slotId, item)) {',
+          '            return; // Prevent the equip',
+          '        }',
+          '    }'
+        ]
+      : []),
+    '',
+    '    _Game_Actor_changeEquip.call(this, slotId, item);',
+    ...(hook.isAfter
+      ? [
+          '',
+          '    // After equip hook',
+          '    if (isEquipping && this.equips()[slotId] === item) {',
+          '        this.onAfterEquip(slotId, item);',
+          '    }'
+        ]
+      : []),
+    '};',
+    '',
+    ...(hook.isBefore
+      ? [
+          '// Called before equipment is put on - return false to prevent',
+          'Game_Actor.prototype.onBeforeEquip = function(slotId, item) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' is about to equip ' + item.name);",
+          '    return true; // Return false to prevent equipping',
+          '};',
+          ''
+        ]
+      : []),
+    ...(hook.isAfter
+      ? [
+          '// Called after equipment is put on',
+          'Game_Actor.prototype.onAfterEquip = function(slotId, item) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' equipped ' + item.name);",
+          '};'
+        ]
+      : [])
+  ]
+}
+
+/**
+A changeEquip hook of its own for equipment being removed, when only unequip is hooked.
+*/
+function unequipHookLines(hook: EquipHook): string[] {
+  return [
+    // Only generate the alias if we didn't already
+    '// Hook for equipment being removed',
+    'const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;',
+    'Game_Actor.prototype.changeEquip = function(slotId, item) {',
+    ...slotFilterLines(hook),
+    '    const oldItem = this.equips()[slotId];',
+    '    const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);',
+    ...(hook.isBefore
+      ? [
+          '',
+          '    // Before unequip hook',
+          '    if (isUnequipping) {',
+          '        if (!this.onBeforeUnequip(slotId, oldItem)) {',
+          '            return; // Prevent the unequip',
+          '        }',
+          '    }'
+        ]
+      : []),
+    '',
+    '    _Game_Actor_changeEquip.call(this, slotId, item);',
+    ...(hook.isAfter
+      ? [
+          '',
+          '    // After unequip hook',
+          '    if (isUnequipping) {',
+          '        this.onAfterUnequip(slotId, oldItem);',
+          '    }'
+        ]
+      : []),
+    '};'
+  ]
+}
+
+/**
+The unequip handling as a comment for the hook above, when equip and unequip are both hooked.
+*/
+function unequipNoteLines(): string[] {
+  return [
+    '// Additional unequip handling in the existing hook',
+    '// (Note: This is already handled in the changeEquip hook above)',
+    '// Add this logic to the existing hook:',
+    '',
+    '/*',
+    // For 'both', show as comments since we already have changeEquip hooked
+    'const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);',
+    'if (isUnequipping) {',
+    '    // Call onBeforeUnequip/onAfterUnequip as needed',
+    '}',
+    '*/'
+  ]
+}
+
+/**
+The unequip hook, or its note when equip is hooked too, and the unequip callbacks.
+*/
+function unequipLines(hook: EquipHook, isUnequipOnly: boolean): string[] {
+  return [
+    ...(isUnequipOnly ? unequipHookLines(hook) : unequipNoteLines()),
+    '',
+    ...(hook.isBefore
+      ? [
+          '// Called before equipment is removed - return false to prevent',
+          'Game_Actor.prototype.onBeforeUnequip = function(slotId, item) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' is about to unequip ' + item.name);",
+          '    return true; // Return false to prevent unequipping',
+          '};',
+          ''
+        ]
+      : []),
+    ...(hook.isAfter
+      ? [
+          '// Called after equipment is removed',
+          'Game_Actor.prototype.onAfterUnequip = function(slotId, item) {',
+          '    // Your code here',
+          "    console.log(this.name() + ' unequipped ' + item.name);",
+          '};'
+        ]
+      : [])
+  ]
 }
 
 /**
@@ -597,239 +868,26 @@ const equipmentHookTemplate: CodeTemplate = {
     const timing = valueOr(values['timing'], 'after')
     const slotFilter = valueOr(values['slotFilter'], 'all')
     const slotText = String(slotFilter)
-
-    const lines: string[] = []
-    const hasSlotFilter = slotFilter !== 'all'
-    const slotNames: Record<string, string> = {
-      '0': 'Weapon',
-      '1': 'Shield',
-      '2': 'Head',
-      '3': 'Body',
-      '4': 'Accessory'
+    const hook: EquipHook = {
+      slotText,
+      hasSlotFilter: slotFilter !== 'all',
+      isBefore: timing === 'before' || timing === 'both',
+      isAfter: timing === 'after' || timing === 'both'
     }
 
     // Header comment
-    const eventLabel =
-      eventType === 'both'
-        ? 'Equip/Unequip'
-        : eventType === 'change'
-          ? 'Equipment Change'
-          : toPascalCase(eventType)
-    const timingLabel =
-      timing === 'both' ? 'Before and After' : timing === 'before' ? 'Before' : 'After'
-    const slotLabel = hasSlotFilter ? ` (${slotNames[slotText]} slot only)` : ''
-    lines.push(`// Equipment Hook: ${eventLabel} - ${timingLabel}${slotLabel}`)
-    lines.push('')
+    const eventLabel = equipEventLabel(eventType)
+    const timingLabel = equipTimingLabel(timing)
+    const slotLabel = hook.hasSlotFilter ? ` (${SLOT_NAMES[slotText]} slot only)` : ''
+    const lines = [`// Equipment Hook: ${eventLabel} - ${timingLabel}${slotLabel}`, '']
 
-    if (eventType === 'change') {
-      // Hook into changeEquip which handles both equip and unequip in one call
-      lines.push('// Hook into equipment change (swap)')
-      lines.push('const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;')
-      lines.push('Game_Actor.prototype.changeEquip = function(slotId, item) {')
-
-      if (hasSlotFilter) {
-        lines.push(`    if (slotId !== ${slotText}) {`)
-        lines.push('        _Game_Actor_changeEquip.call(this, slotId, item);')
-        lines.push('        return;')
-        lines.push('    }')
-        lines.push('')
-      }
-
-      if (timing === 'before' || timing === 'both') {
-        lines.push('    const oldItem = this.equips()[slotId];')
-        lines.push('')
-        lines.push('    // Before equipment change')
-        lines.push('    if (!this.onBeforeEquipChange(slotId, oldItem, item)) {')
-        lines.push('        return; // Prevent the change')
-        lines.push('    }')
-        lines.push('')
-      }
-
-      lines.push('    const oldEquip = this.equips()[slotId];')
-      lines.push('    _Game_Actor_changeEquip.call(this, slotId, item);')
-
-      if (timing === 'after' || timing === 'both') {
-        lines.push('')
-        lines.push('    // After equipment change')
-        lines.push('    this.onAfterEquipChange(slotId, oldEquip, item);')
-      }
-
-      lines.push('};')
-      lines.push('')
-
-      if (timing === 'before' || timing === 'both') {
-        lines.push('// Called before equipment change - return false to prevent')
-        lines.push(
-          'Game_Actor.prototype.onBeforeEquipChange = function(slotId, oldItem, newItem) {'
-        )
-        lines.push('    // Your code here')
-        lines.push(
-          "    console.log(this.name() + ' is about to change equipment in slot ' + slotId);"
-        )
-        lines.push("    console.log('Old:', oldItem ? oldItem.name : 'none');")
-        lines.push("    console.log('New:', newItem ? newItem.name : 'none');")
-        lines.push('    return true; // Return false to prevent the change')
-        lines.push('};')
-        lines.push('')
-      }
-
-      if (timing === 'after' || timing === 'both') {
-        lines.push('// Called after equipment change')
-        lines.push('Game_Actor.prototype.onAfterEquipChange = function(slotId, oldItem, newItem) {')
-        lines.push('    // Your code here')
-        lines.push("    console.log(this.name() + ' changed equipment in slot ' + slotId);")
-        lines.push("    console.log('Was:', oldItem ? oldItem.name : 'none');")
-        lines.push("    console.log('Now:', newItem ? newItem.name : 'none');")
-        lines.push('};')
-      }
-    } else {
-      // Equip and/or unequip hooks using forceChangeEquip for more granular control
-      if (eventType === 'equip' || eventType === 'both') {
-        lines.push('// Hook for equipment being put on')
-        lines.push('const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;')
-        lines.push('Game_Actor.prototype.changeEquip = function(slotId, item) {')
-
-        if (hasSlotFilter) {
-          lines.push(`    if (slotId !== ${slotText}) {`)
-          lines.push('        _Game_Actor_changeEquip.call(this, slotId, item);')
-          lines.push('        return;')
-          lines.push('    }')
-          lines.push('')
-        }
-
-        lines.push('    const oldItem = this.equips()[slotId];')
-        lines.push(
-          '    const isEquipping = item !== null && (oldItem === null || oldItem.id !== item.id);'
-        )
-
-        if (timing === 'before' || timing === 'both') {
-          lines.push('')
-          lines.push('    // Before equip hook')
-          lines.push('    if (isEquipping) {')
-          lines.push('        if (!this.onBeforeEquip(slotId, item)) {')
-          lines.push('            return; // Prevent the equip')
-          lines.push('        }')
-          lines.push('    }')
-        }
-
-        lines.push('')
-        lines.push('    _Game_Actor_changeEquip.call(this, slotId, item);')
-
-        if (timing === 'after' || timing === 'both') {
-          lines.push('')
-          lines.push('    // After equip hook')
-          lines.push('    if (isEquipping && this.equips()[slotId] === item) {')
-          lines.push('        this.onAfterEquip(slotId, item);')
-          lines.push('    }')
-        }
-
-        lines.push('};')
-        lines.push('')
-
-        if (timing === 'before' || timing === 'both') {
-          lines.push('// Called before equipment is put on - return false to prevent')
-          lines.push('Game_Actor.prototype.onBeforeEquip = function(slotId, item) {')
-          lines.push('    // Your code here')
-          lines.push("    console.log(this.name() + ' is about to equip ' + item.name);")
-          lines.push('    return true; // Return false to prevent equipping')
-          lines.push('};')
-          lines.push('')
-        }
-
-        if (timing === 'after' || timing === 'both') {
-          lines.push('// Called after equipment is put on')
-          lines.push('Game_Actor.prototype.onAfterEquip = function(slotId, item) {')
-          lines.push('    // Your code here')
-          lines.push("    console.log(this.name() + ' equipped ' + item.name);")
-          lines.push('};')
-        }
-      }
-
-      if (eventType === 'both') {
-        lines.push('')
-      }
-
-      if (eventType === 'unequip' || eventType === 'both') {
-        if (eventType === 'unequip') {
-          // Only generate the alias if we didn't already
-          lines.push('// Hook for equipment being removed')
-          lines.push('const _Game_Actor_changeEquip = Game_Actor.prototype.changeEquip;')
-          lines.push('Game_Actor.prototype.changeEquip = function(slotId, item) {')
-        } else {
-          lines.push('// Additional unequip handling in the existing hook')
-          lines.push('// (Note: This is already handled in the changeEquip hook above)')
-          lines.push('// Add this logic to the existing hook:')
-          lines.push('')
-          lines.push('/*')
-        }
-
-        if (eventType === 'unequip') {
-          if (hasSlotFilter) {
-            lines.push(`    if (slotId !== ${slotText}) {`)
-            lines.push('        _Game_Actor_changeEquip.call(this, slotId, item);')
-            lines.push('        return;')
-            lines.push('    }')
-            lines.push('')
-          }
-
-          lines.push('    const oldItem = this.equips()[slotId];')
-          lines.push(
-            '    const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);'
-          )
-
-          if (timing === 'before' || timing === 'both') {
-            lines.push('')
-            lines.push('    // Before unequip hook')
-            lines.push('    if (isUnequipping) {')
-            lines.push('        if (!this.onBeforeUnequip(slotId, oldItem)) {')
-            lines.push('            return; // Prevent the unequip')
-            lines.push('        }')
-            lines.push('    }')
-          }
-
-          lines.push('')
-          lines.push('    _Game_Actor_changeEquip.call(this, slotId, item);')
-
-          if (timing === 'after' || timing === 'both') {
-            lines.push('')
-            lines.push('    // After unequip hook')
-            lines.push('    if (isUnequipping) {')
-            lines.push('        this.onAfterUnequip(slotId, oldItem);')
-            lines.push('    }')
-          }
-
-          lines.push('};')
-        } else {
-          // For 'both', show as comments since we already have changeEquip hooked
-          lines.push(
-            'const isUnequipping = oldItem !== null && (item === null || oldItem.id !== item.id);'
-          )
-          lines.push('if (isUnequipping) {')
-          lines.push('    // Call onBeforeUnequip/onAfterUnequip as needed')
-          lines.push('}')
-          lines.push('*/')
-        }
-
-        lines.push('')
-
-        if (timing === 'before' || timing === 'both') {
-          lines.push('// Called before equipment is removed - return false to prevent')
-          lines.push('Game_Actor.prototype.onBeforeUnequip = function(slotId, item) {')
-          lines.push('    // Your code here')
-          lines.push("    console.log(this.name() + ' is about to unequip ' + item.name);")
-          lines.push('    return true; // Return false to prevent unequipping')
-          lines.push('};')
-          lines.push('')
-        }
-
-        if (timing === 'after' || timing === 'both') {
-          lines.push('// Called after equipment is removed')
-          lines.push('Game_Actor.prototype.onAfterUnequip = function(slotId, item) {')
-          lines.push('    // Your code here')
-          lines.push("    console.log(this.name() + ' unequipped ' + item.name);")
-          lines.push('};')
-        }
-      }
+    // Equip and/or unequip hooks using forceChangeEquip for more granular control
+    const isBoth = eventType === 'both'
+    if (eventType === 'change') lines.push(...equipChangeLines(hook))
+    if (eventType === 'equip' || isBoth) lines.push(...equipOnLines(hook))
+    if (isBoth) lines.push('')
+    if (eventType === 'unequip' || isBoth) {
+      lines.push(...unequipLines(hook, eventType === 'unequip'))
     }
 
     return lines.join('\n')
@@ -840,5 +898,3 @@ const equipmentHookTemplate: CodeTemplate = {
 registerTemplate(customActorPropertyTemplate)
 registerTemplate(partyManagementTemplate)
 registerTemplate(equipmentHookTemplate)
-
-export { customActorPropertyTemplate, partyManagementTemplate, equipmentHookTemplate }

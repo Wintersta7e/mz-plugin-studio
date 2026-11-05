@@ -18,6 +18,13 @@ export function valueOr(value: unknown, fallback: unknown): unknown {
 }
 
 /**
+A template value, or the fallback when the value is unset (`undefined` or `null`).
+*/
+export function definedOr(value: unknown, fallback: unknown): unknown {
+  return value ?? fallback
+}
+
+/**
 The number `parseInt(text, 10)` reads: the decimal integer at the start of the text, after white
 space and an optional sign, or `NaN` when no digit is there.
 */
