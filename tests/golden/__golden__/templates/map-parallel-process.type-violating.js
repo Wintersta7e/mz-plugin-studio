@@ -3,7 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"processName":null,"updateInterval":null,"activeCondition":null,"conditionId":null,"conditionValue":null,"pauseInMenu":null,"pauseInBattle":null}
-// rejects: Update interval must be at least 1 frame
+// rejects: Field "Process Name" is required | Update interval must be at least 1 frame
 // Parallel Process: myParallelProcess
 // Runs custom logic every frame (or at specified interval) on the map
 

@@ -1,79 +1,93 @@
 /**
- * Method Alias Template
- *
- * Generates code for safely extending existing RPG Maker MZ class methods
- * while preserving original behavior through aliasing.
- */
+Method Alias Template
+
+Generates code for safely extending existing RPG Maker MZ class methods
+while preserving original behavior through aliasing.
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { getMethodInfo } from '../class-registry'
+import { valueOr } from './values'
 
 /**
- * Generates the alias variable name from class and method names
- * Example: Game_Actor.changeHp -> _Game_Actor_changeHp
- */
+Generates the alias variable name from class and method names
+Example: Game_Actor.changeHp -> _Game_Actor_changeHp
+*/
 function getAliasName(className: string, methodName: string): string {
   return `_${className}_${methodName}`
 }
 
 /**
- * Generates the method alias code based on timing option
- */
+The registry's entry for a method of a class. A class or method name that is not text names no
+entry, as the registry finds none for it.
+*/
+function methodInfoOf(className: unknown, methodName: unknown): ReturnType<typeof getMethodInfo> {
+  return typeof className === 'string' && typeof methodName === 'string'
+    ? getMethodInfo(className, methodName)
+    : undefined
+}
+
+/**
+Generates the method alias code based on timing option
+*/
 function generateAliasCode(
   className: string,
   methodName: string,
-  timing: string,
+  timing: unknown,
   callOriginal: boolean,
   params: string[]
 ): string {
   const aliasName = getAliasName(className, methodName)
-  const paramsStr = params.join(', ')
-  const lines: string[] = []
+  const paramsString = params.join(', ')
+  const lines: string[] = [
+    `// Alias: ${className}.${methodName}`,
+    `const ${aliasName} = ${className}.prototype.${methodName};`,
+    `${className}.prototype.${methodName} = function(${paramsString}) {`
+  ]
 
   // Header comment
-  lines.push(`// Alias: ${className}.${methodName}`)
-
   // Store original reference
-  lines.push(`const ${aliasName} = ${className}.prototype.${methodName};`)
 
   // Open method definition
-  lines.push(`${className}.prototype.${methodName} = function(${paramsStr}) {`)
 
   // Generate body based on timing
   switch (timing) {
-    case 'before':
+    case 'before': {
       lines.push('    // Your code here (before original)')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push(`    return ${aliasName}.apply(this, arguments);`)
       break
+    }
 
-    case 'after':
+    case 'after': {
       lines.push(`    const result = ${aliasName}.apply(this, arguments);`)
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    // Your code here (after original)')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    return result;')
       break
+    }
 
-    case 'wrap':
+    case 'wrap': {
       lines.push('    // Your code here (before original)')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push(`    const result = ${aliasName}.apply(this, arguments);`)
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    // Your code here (after original)')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    return result;')
       break
+    }
 
-    case 'replace':
+    case 'replace': {
       if (callOriginal) {
         lines.push('    // Your code here (replacing original, but still calling it)')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push(`    const result = ${aliasName}.apply(this, arguments);`)
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // More of your code here')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    return result;')
       } else {
         lines.push('    // ⚠  WARNING: This replacement does NOT call the original.')
@@ -86,23 +100,25 @@ function generateAliasCode(
         lines.push(
           '    //    that can never move). Replace the return value below before shipping.'
         )
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Your code here (completely replacing original)')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push(
           `    // TODO: return an appropriate value for ${className}.prototype.${methodName}`
         )
         lines.push('    return undefined;')
       }
       break
+    }
 
-    default:
+    default: {
       // Default to 'after' behavior
       lines.push(`    const result = ${aliasName}.apply(this, arguments);`)
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    // Your code here')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    return result;')
+    }
   }
 
   // Close method definition
@@ -158,26 +174,23 @@ const methodAliasTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const className = values['className'] as string
-    const methodName = values['methodName'] as string
-    const timing = (values['timing'] as string) || 'after'
-    const callOriginal = values['callOriginal'] !== false // Default to true
+    const className = values['className']
+    const methodName = values['methodName']
+    const timing = valueOr(values['timing'], 'after')
+    const isCallOriginal = values['callOriginal'] !== false // Default to true
 
     // Get method info for accurate parameter names
-    const methodInfo = getMethodInfo(className, methodName)
+    const methodInfo = methodInfoOf(className, methodName)
     const params = methodInfo?.params ?? []
 
-    return generateAliasCode(className, methodName, timing, callOriginal, params)
+    return generateAliasCode(String(className), String(methodName), timing, isCallOriginal, params)
   },
   validate: (values) => {
     const errors: string[] = []
 
     // Verify the method exists on the class
     if (values['className'] && values['methodName']) {
-      const methodInfo = getMethodInfo(
-        values['className'] as string,
-        values['methodName'] as string
-      )
+      const methodInfo = methodInfoOf(values['className'], values['methodName'])
       if (!methodInfo) {
         errors.push(`Method "${values['methodName']}" not found on class "${values['className']}"`)
       }

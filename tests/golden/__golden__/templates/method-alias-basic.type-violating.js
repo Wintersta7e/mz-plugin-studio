@@ -11,6 +11,7 @@ const _42_42 = 42.prototype.42;
 };
 
 // ==== case: type-violating: null {"className":null,"methodName":null,"timing":null,"callOriginal":null}
+// rejects: Field "Class" is required | Field "Method" is required
 // Alias: null.null
 const _null_null = null.prototype.null;
 null.prototype.null = function() {
@@ -29,6 +30,17 @@ a,b.prototype.a,b = function() {
     const result = _a,b_a,b.apply(this, arguments);
     
     // Your code here
+    
+    return result;
+};
+
+// ==== case: type-violating: timing=null {"timing":null,"callOriginal":true,"className":"Scene_Map","methodName":"start"}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here (after original)
     
     return result;
 };

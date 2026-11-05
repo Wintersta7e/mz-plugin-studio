@@ -18,9 +18,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -46,9 +45,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -71,15 +69,14 @@ function crossfadeBgm() {
 
     // Define the BGM settings
     const bgm = {
-        name: 'Theme2',
+        name: 'BGM_NAME',
         volume: 90,
         pitch: 100,
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -106,9 +103,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -134,9 +130,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -160,9 +155,8 @@ AudioManager.fadeOutBgm(fadeOutDuration);
 
 // Schedule the new BGM to play after fade out completes
 setTimeout(function() {
-    // Play new BGM at zero volume initially
-    const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Play new BGM, then fade it in from silence
+    AudioManager.playBgm(newBgm);
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
 }, fadeOutDuration * 1000);
@@ -187,9 +181,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -215,9 +208,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -243,9 +235,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -271,9 +262,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -299,9 +289,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -327,9 +316,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -355,9 +343,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -383,9 +370,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -411,9 +397,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -439,9 +424,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -467,9 +451,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -495,9 +478,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -523,9 +505,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -551,9 +532,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -579,9 +559,8 @@ function crossfadeBgm() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -601,9 +580,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -623,9 +601,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -645,9 +622,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -667,9 +643,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -689,9 +664,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -711,9 +685,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -733,9 +706,8 @@ function crossfadeBgm() {
         pan: 0
     };
 
-    // Start playing at zero volume
-    const tempBgm = Object.assign({}, bgm, { volume: 0 });
-    AudioManager.playBgm(tempBgm);
+    // Start playing, then fade in from silence
+    AudioManager.playBgm(bgm);
 
     // Fade in to target volume
     AudioManager.fadeInBgm(fadeInDuration);
@@ -762,9 +734,8 @@ function X */ globalThis.__pwn = 1; /* Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -791,9 +762,8 @@ function X */ globalThis.__pwn = 1; /* Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -820,9 +790,8 @@ function X */ globalThis.__pwn = 1; /* Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -850,9 +819,8 @@ globalThis.__pwn = 1; /* Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -879,9 +847,8 @@ function X' + (globalThis.__pwn = 1) + 'Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -908,9 +875,8 @@ function X" + (globalThis.__pwn = 1) + "Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
@@ -937,9 +903,8 @@ function X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y() {
 
     // Schedule the new BGM to play after fade out completes
     setTimeout(function() {
-        // Play new BGM at zero volume initially
-        const tempBgm = Object.assign({}, newBgm, { volume: 0 });
-        AudioManager.playBgm(tempBgm);
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
         // Fade in to target volume
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);

@@ -1518,64 +1518,37 @@
     }
   },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 38
-    },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 9
+      "count": 3
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 2
     },
     "complexity": {
-      "count": 4
-    },
-    "max-lines-per-function": {
       "count": 1
     },
     "regexp/prefer-w": {
-      "count": 3
-    },
-    "regexp/use-ignore-case": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 4
+    "regexp/use-ignore-case": {
+      "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
+    "sonarjs/cognitive-complexity": {
+      "count": 1
     },
-    "unicorn/no-for-each": {
-      "count": 3
-    },
-    "unicorn/no-negated-condition": {
-      "count": 13
-    },
-    "unicorn/prefer-hoisting-branch-code": {
+    "sonarjs/no-nested-conditional": {
       "count": 1
     },
     "unicorn/prefer-math-abs": {
       "count": 2
     },
     "unicorn/switch-case-braces": {
-      "count": 9
+      "count": 3
     }
   },
   "src/renderer/src/lib/generator/templates/battle-system.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 2
-    },
-    "@typescript-eslint/no-inferrable-types": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 9
     },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
@@ -1592,35 +1565,14 @@
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
     "unicorn/no-useless-switch-case": {
       "count": 2
     },
     "unicorn/prefer-number-coercion": {
       "count": 1
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 2
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 13
     }
   },
   "src/renderer/src/lib/generator/templates/database-ext.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 10
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
     },
@@ -1640,36 +1592,21 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 8
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
+      "count": 1
     },
     "unicorn/no-immediate-mutation": {
       "count": 1
     },
-    "unicorn/no-unnecessary-string-trim": {
-      "count": 1
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 1
-    },
     "unicorn/prefer-string-raw": {
-      "count": 4
-    },
-    "unicorn/prefer-ternary": {
-      "count": 2
+      "count": 1
     },
     "unicorn/switch-case-braces": {
-      "count": 21
+      "count": 1
     }
   },
   "src/renderer/src/lib/generator/templates/input-handler.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 3
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
@@ -1677,16 +1614,7 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
     "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 2
-    },
-    "unicorn/no-useless-else": {
       "count": 1
     },
     "unicorn/prefer-ternary": {
@@ -1694,12 +1622,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/message-system.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 15
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 39
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -1707,7 +1629,7 @@
       "count": 2
     },
     "complexity": {
-      "count": 5
+      "count": 2
     },
     "max-lines-per-function": {
       "count": 3
@@ -1718,22 +1640,7 @@
     "sonarjs/cognitive-complexity": {
       "count": 4
     },
-    "sonarjs/different-types-comparison": {
-      "count": 10
-    },
     "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 9
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
-    },
-    "unicorn/no-lonely-if": {
       "count": 1
     },
     "unicorn/no-useless-switch-case": {
@@ -1743,21 +1650,15 @@
       "count": 2
     },
     "unicorn/prefer-hoisting-branch-code": {
-      "count": 5
+      "count": 1
     },
     "unicorn/prefer-ternary": {
       "count": 4
-    },
-    "unicorn/switch-case-braces": {
-      "count": 9
     }
   },
   "src/renderer/src/lib/generator/templates/method-alias.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 5
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
@@ -1766,81 +1667,30 @@
       "count": 2
     },
     "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 13
-    },
-    "unicorn/switch-case-braces": {
-      "count": 5
     }
   },
   "src/renderer/src/lib/generator/templates/plugin-commands.ts": {
-    "@typescript-eslint/array-type": {
-      "count": 3
-    },
     "@typescript-eslint/no-base-to-string": {
       "count": 3
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 27
-    },
-    "@typescript-eslint/prefer-optional-chain": {
-      "count": 4
-    },
-    "complexity": {
-      "count": 1
     },
     "max-lines-per-function": {
       "count": 2
     },
     "regexp/prefer-w": {
-      "count": 5
+      "count": 3
     },
     "regexp/use-ignore-case": {
-      "count": 5
-    },
-    "sonarjs/different-types-comparison": {
       "count": 3
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
     },
     "unicorn/no-break-in-nested-loop": {
       "count": 4
     },
-    "unicorn/no-immediate-mutation": {
-      "count": 2
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
     "unicorn/no-useless-switch-case": {
       "count": 3
-    },
-    "unicorn/switch-case-braces": {
-      "count": 10
     }
   },
   "src/renderer/src/lib/generator/templates/save-load.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 7
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -1862,36 +1712,7 @@
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
-    },
     "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-string-trim": {
-      "count": 2
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 1
-    },
-    "unicorn/prefer-switch": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 4
-    }
-  },
-  "src/renderer/src/lib/generator/templates/scene-hooks.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
     }
   },

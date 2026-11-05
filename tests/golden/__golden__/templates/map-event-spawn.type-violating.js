@@ -142,7 +142,7 @@
 })();
 
 // ==== case: type-violating: null {"functionName":null,"templateEventId":null,"persistAcrossTransfer":null,"maxSpawnedEvents":null}
-// rejects: Max spawned events must be at least 1
+// rejects: Field "Function Name" is required | Max spawned events must be at least 1
 // Event Spawn System
 // Allows dynamic spawning of events at runtime
 

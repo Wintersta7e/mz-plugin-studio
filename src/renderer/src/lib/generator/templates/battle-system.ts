@@ -1,50 +1,53 @@
 /**
- * Battle System Templates
- *
- * Templates for modifying RPG Maker MZ battle mechanics:
- * - Damage calculation modification
- * - Battle event hooks (victory, defeat, escape, etc.)
- * - State change hooks
- * - Action execution hooks
- */
+Battle System Templates
+
+Templates for modifying RPG Maker MZ battle mechanics:
+- Damage calculation modification
+- Battle event hooks (victory, defeat, escape, etc.)
+- State change hooks
+- Action execution hooks
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { isOneLineExpression } from '../escape'
+import { expectText, valueOr } from './values'
 
 /**
- * Helper to generate condition check code for damage modifiers
- */
-function generateConditionCheck(condition: string, varName: string = 'value'): string {
+Helper to generate condition check code for damage modifiers
+*/
+function generateConditionCheck(condition: unknown, variableName = 'value'): string {
   switch (condition) {
-    case 'critical':
-      return `    if (critical) {\n        ${varName} = `
-    case 'skill':
-      return `    if (this.isSkill()) {\n        ${varName} = `
-    case 'physical':
-      return `    if (this.isPhysical()) {\n        ${varName} = `
-    case 'magical':
-      return `    if (this.isMagical()) {\n        ${varName} = `
+    case 'critical': {
+      return `    if (critical) {\n        ${variableName} = `
+    }
+    case 'skill': {
+      return `    if (this.isSkill()) {\n        ${variableName} = `
+    }
+    case 'physical': {
+      return `    if (this.isPhysical()) {\n        ${variableName} = `
+    }
+    case 'magical': {
+      return `    if (this.isMagical()) {\n        ${variableName} = `
+    }
     case 'always':
-    default:
-      return `    ${varName} = `
+    default: {
+      return `    ${variableName} = `
+    }
   }
 }
 
 /**
- * Helper to close condition block if needed
- */
-function closeConditionCheck(condition: string): string {
-  if (condition !== 'always') {
-    return '\n    }'
-  }
-  return ''
+Helper to close condition block if needed
+*/
+function closeConditionCheck(condition: unknown): string {
+  return condition === 'always' ? '' : '\n    }'
 }
 
 /**
- * Template 1: Damage Formula Modifier
- * Modifies damage calculation in battle with various options
- */
+Template 1: Damage Formula Modifier
+Modifies damage calculation in battle with various options
+*/
 const damageModifierTemplate: CodeTemplate = {
   id: 'battle-damage-modifier',
   category: 'battle-system',
@@ -89,10 +92,10 @@ const damageModifierTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modifyType = (values['modifyType'] as string) || 'multiply'
+    const modifyType = valueOr(values['modifyType'], 'multiply')
     // The check reads the value trimmed, so the code is written with the same text.
     const modifyValue = String(values['modifyValue'] ?? '').trim()
-    const condition = (values['condition'] as string) || 'always'
+    const condition = valueOr(values['condition'], 'always')
 
     const lines: string[] = []
 
@@ -127,18 +130,21 @@ const damageModifierTemplate: CodeTemplate = {
     let modificationCode: string
 
     switch (modifyType) {
-      case 'multiply':
+      case 'multiply': {
         // Healing skills produce negative value in MZ; Math.floor(-3.5) = -4
         // would over-heal by 1. Split on sign to keep healing symmetric.
         modificationCode = `value >= 0 ? Math.floor(value * ${modifyValue}) : Math.ceil(value * ${modifyValue});`
         break
-      case 'add':
+      }
+      case 'add': {
         modificationCode = `value + ${modifyValue};`
         break
+      }
       case 'custom':
-      default:
+      default: {
         modificationCode = `${modifyValue}; // Custom formula - edit as needed`
         break
+      }
     }
 
     lines.push(conditionStart + modificationCode + closeConditionCheck(condition))
@@ -152,23 +158,29 @@ const damageModifierTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['modifyValue']) {
-      const modifyType = values['modifyType'] as string
-      const modifyValue = values['modifyValue'] as string
+      const modifyType = values['modifyType']
+      const modifyValue: unknown = values['modifyValue']
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
-        const num = parseFloat(modifyValue)
-        if (isNaN(num)) {
+        const number_ = Number.parseFloat(String(modifyValue))
+        if (Number.isNaN(number_)) {
           errors.push('Value must be a valid number for multiply/add operations')
-        } else if (String(num) !== modifyValue.trim()) {
+        } else if (String(number_) !== expectText(modifyValue).trim()) {
           // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
           errors.push(
             'Value must contain only numeric characters (digits, decimal point, minus sign)'
           )
-        } else if (modifyType === 'multiply' && num <= 0) {
+        } else if (modifyType === 'multiply' && number_ <= 0) {
           errors.push('Multiplier should be a positive number')
         }
-      } else if (!isOneLineExpression(modifyValue)) {
+      } else if (
+        // Only text reaches here: an unset or empty value is skipped above, a value of another type
+        // is rejected before this check runs. Such a value passes, as the expression check passes a
+        // number.
+        typeof modifyValue === 'string' &&
+        !isOneLineExpression(modifyValue)
+      ) {
         errors.push('Value must be one expression on one line (no ";" or comments)')
       }
     }
@@ -181,9 +193,9 @@ const damageModifierTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Battle Event Hook
- * React to battle events (victory, defeat, escape, etc.)
- */
+Template 2: Battle Event Hook
+React to battle events (victory, defeat, escape, etc.)
+*/
 const battleEventTemplate: CodeTemplate = {
   id: 'battle-event-hook',
   category: 'battle-system',
@@ -209,7 +221,7 @@ const battleEventTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = (values['eventType'] as string) || 'victory'
+    const eventType = valueOr(values['eventType'], 'victory')
     const lines: string[] = []
 
     // Map event types to their MZ methods and appropriate timing
@@ -259,7 +271,7 @@ const battleEventTemplate: CodeTemplate = {
       }
     }
 
-    const mapping = eventMappings[eventType]
+    const mapping = eventMappings[String(eventType)]
 
     lines.push(`// ${mapping.comment}`)
     lines.push(`const ${mapping.aliasName} = BattleManager.${mapping.method};`)
@@ -267,15 +279,15 @@ const battleEventTemplate: CodeTemplate = {
 
     if (mapping.timing === 'before') {
       // Code runs before original (for victory/defeat/escape where we want to intercept)
-      lines.push(`    // Your code here (before ${eventType} processing)`)
-      lines.push(`    console.log('Battle ${eventType}!');`)
+      lines.push(`    // Your code here (before ${String(eventType)} processing)`)
+      lines.push(`    console.log('Battle ${String(eventType)}!');`)
       lines.push('')
       lines.push(`    ${mapping.aliasName}.call(this);`)
     } else {
       // Code runs after original (for start/turnStart/turnEnd)
       lines.push(`    ${mapping.aliasName}.call(this);`)
       lines.push('')
-      lines.push(`    // Your code here (after ${eventType} processing)`)
+      lines.push(`    // Your code here (after ${String(eventType)} processing)`)
       lines.push(`    console.log('${mapping.comment.replace(' Hook', '')}!');`)
     }
 
@@ -286,9 +298,9 @@ const battleEventTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: State Change Hook
- * React when states are added or removed from battlers
- */
+Template 3: State Change Hook
+React when states are added or removed from battlers
+*/
 const stateHookTemplate: CodeTemplate = {
   id: 'battle-state-hook',
   category: 'battle-system',
@@ -318,7 +330,7 @@ const stateHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const hookType = (values['hookType'] as string) || 'add'
+    const hookType = valueOr(values['hookType'], 'add')
     const stateId = String(values['stateId'] ?? '').trim()
     const lines: string[] = []
 
@@ -389,14 +401,17 @@ const stateHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const stateId = values['stateId'] as string
+    const stateId = values['stateId']
+    const hasStateId = Boolean(stateId)
 
     // Validate state ID if provided
-    if (stateId && stateId.trim() !== '') {
-      // The whole text is written as code: parseInt would pass anything after the digits.
-      if (!/^[1-9]\d*$/.test(stateId.trim())) {
-        errors.push('State ID must be a positive integer')
-      }
+    // The whole text is written as code: parseInt would pass anything after the digits.
+    if (
+      hasStateId &&
+      expectText(stateId).trim() !== '' &&
+      !/^[1-9]\d*$/.test(expectText(stateId).trim())
+    ) {
+      errors.push('State ID must be a positive integer')
     }
 
     return {
@@ -407,9 +422,9 @@ const stateHookTemplate: CodeTemplate = {
 }
 
 /**
- * Template 4: Action Execution Hook
- * React before or after battle actions execute
- */
+Template 4: Action Execution Hook
+React before or after battle actions execute
+*/
 const actionSequenceTemplate: CodeTemplate = {
   id: 'battle-action-hook',
   category: 'battle-system',
@@ -445,8 +460,8 @@ const actionSequenceTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = (values['timing'] as string) || 'after'
-    const actionType = (values['actionType'] as string) || 'all'
+    const timing = valueOr(values['timing'], 'after')
+    const actionType = valueOr(values['actionType'], 'all')
     const lines: string[] = []
 
     // Determine action type check
@@ -454,25 +469,30 @@ const actionSequenceTemplate: CodeTemplate = {
     let actionLabel = 'all actions'
 
     switch (actionType) {
-      case 'skill':
+      case 'skill': {
         actionCheck = 'this._action.isSkill()'
         actionLabel = 'skills'
         break
-      case 'item':
+      }
+      case 'item': {
         actionCheck = 'this._action.isItem()'
         actionLabel = 'items'
         break
-      case 'attack':
+      }
+      case 'attack': {
         actionCheck = 'this._action.isAttack()'
         actionLabel = 'normal attacks'
         break
-      case 'guard':
+      }
+      case 'guard': {
         actionCheck = 'this._action.isGuard()'
         actionLabel = 'guard actions'
         break
-      default:
+      }
+      default: {
         actionCheck = ''
         actionLabel = 'all actions'
+      }
     }
 
     const timingLabel = timing === 'before' ? 'Before' : 'After'

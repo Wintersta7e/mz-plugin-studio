@@ -3,6 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"sceneName":null,"windowName":null,"windowType":null,"includeHelp":null,"includeGold":null}
+// rejects: Field "Scene Name" is required | Field "Main Window Name" is required | Field "Window Type" is required
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"sceneName":["a","b"],"windowName":["a","b"],"windowType":["a","b"],"includeHelp":["a","b"],"includeGold":["a","b"]}

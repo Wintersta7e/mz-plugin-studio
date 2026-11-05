@@ -17,6 +17,17 @@
 - A parameter preset can be saved under a name such as `toString` or `constructor`. Before, the app asked whether to overwrite a preset of that name even when there was none, and answering **Cancel** left the preset unsaved.
 - When another project opens while the plugin browser is shown, the browser no longer lists the previous project's plugins while it reads the new project's list; clicking one of them tried to open a file the new project may not have.
 - The template dialog's preview shows each line of code as it will be inserted. Before, a comment was shown at the start of its line, ahead of the code and the indentation before it, although the inserted code was right.
+- In the Message Window Mod template's size mode, the Visible Lines setting now sets the message window's height, measured the way RPG Maker MZ measures its own 4-line window. Before, it was ignored.
+- In the Basic Plugin Command template, two arguments with one name, or an argument named like a JavaScript reserved word (such as `class`) or like a name the command's own code uses (`args`, `String`, `Number`, `JSON`, `console`), are listed as an error. Before, the template wrote code that RPG Maker MZ fails to load, or a command that fails when it runs.
+- In the BGM Control template, Save Current BGM now saves the playing music and Restore Saved BGM plays it again where it stopped. Before, saving kept nothing and restoring stopped the game with an error.
+- In the Audio Fade/Crossfade template, the crossfade and fade from silence now fade the new music in to its New BGM Volume. Before, it started at volume 0 and the fade kept it silent.
+- In the Audio Fade/Crossfade template, Fade from Silence now plays the music named in its own BGM Filename field. Before, a New BGM Filename entered earlier for a crossfade took its place.
+- In the Custom Text Code template, a code set to replace itself with text now does so in message text. Before, the code was never found, so its replacement never showed.
+- In the Choice Handler template's style mode, the Window Opacity setting now holds each time choices are shown. Before, the choice window's own background setting replaced it as soon as the choices appeared.
+- In the Message Window Mod template's background mode, the Custom color now fills the message window's background for every message. Before, it showed only on messages set to a Dim background.
+- In the Message Window Mod template's background mode, the Custom color now covers the whole message window, as the Dim background does. Before, it stopped 4 pixels short of the window's right edge.
+- In the template dialog, a required field whose saved value came back empty, such as a number that was saved as not a number, is listed as required. Before, the template's code failed without naming the field.
+- In the template dialog, a drop-down field whose saved choice the template no longer offers is listed as an error on that field. Before, the template read it as one of its choices, and the Battle Event Hook template failed without a message.
 
 ## [1.8.1] - 2026-11-05
 

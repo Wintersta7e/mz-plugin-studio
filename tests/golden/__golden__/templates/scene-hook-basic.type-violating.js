@@ -10,6 +10,7 @@ const _7_7 = 7.prototype.7;
 };
 
 // ==== case: type-violating: null {"sceneName":null,"hookPoint":null}
+// rejects: Field "Scene" is required | Field "Hook Point" is required
 // Hook: null.null
 const _null_null = null.prototype.null;
 null.prototype.null = function() {

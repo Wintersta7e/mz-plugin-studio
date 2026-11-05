@@ -3,7 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"windowName":null,"defaultDuration":null,"width":null,"height":null,"position":null,"fadeEffect":null,"bgColor":null,"textColor":null}
-// rejects: Duration must be a positive number
+// rejects: Field "Window Name" is required | Duration must be a positive number
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"windowName":["a","b"],"defaultDuration":["a","b"],"width":["a","b"],"height":["a","b"],"position":["a","b"],"fadeEffect":["a","b"],"bgColor":["a","b"],"textColor":["a","b"]}

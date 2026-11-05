@@ -78,9 +78,9 @@ Window_ChoiceList.prototype.select = function(index) {
 };
 
 // Set window opacity
-const _Window_ChoiceList_initialize = Window_ChoiceList.prototype.initialize;
-Window_ChoiceList.prototype.initialize = function() {
-    _Window_ChoiceList_initialize.apply(this, arguments);
+const _Window_ChoiceList_updateBackground = Window_ChoiceList.prototype.updateBackground;
+Window_ChoiceList.prototype.updateBackground = function() {
+    _Window_ChoiceList_updateBackground.call(this);
     this.opacity = 255;
 };
 

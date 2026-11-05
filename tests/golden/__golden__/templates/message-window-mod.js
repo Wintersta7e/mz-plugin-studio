@@ -30,19 +30,12 @@ Window_Message.prototype.updatePlacement = function() {
 // Message Window Size Modification
 // Changes the dimensions of the message window
 
-Window_Message.prototype.windowWidth = function() {
-    return 816;
-};
-
-Window_Message.prototype.numVisibleRows = function() {
-    return 4;
-};
-
 // Update the message window rect to use new dimensions
 const _Scene_Message_messageWindowRect = Scene_Message.prototype.messageWindowRect;
 Scene_Message.prototype.messageWindowRect = function() {
     const rect = _Scene_Message_messageWindowRect.call(this);
     rect.width = 816;
+    rect.height = this.calcWindowHeight(4, false) + 8;
     rect.x = (Graphics.boxWidth - rect.width) / 2;
     return rect;
 };
@@ -283,9 +276,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'rgba(0, 0, 0, 0.6)');
     }
 };
 
@@ -298,9 +293,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'rgba(0, 0, 0, 0.6)');
     }
 };
 
@@ -436,9 +433,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */ globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -450,9 +449,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -464,9 +465,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -478,9 +481,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\nglobalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\nglobalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -492,9 +497,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X\' + (globalThis.__pwn = 1) + \'Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X\' + (globalThis.__pwn = 1) + \'Y');
     }
 };
 
@@ -506,9 +513,11 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X" + (globalThis.__pwn = 1) + "Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X" + (globalThis.__pwn = 1) + "Y');
     }
 };
 
@@ -520,8 +529,10 @@ const _Window_Message_updateBackground = Window_Message.prototype.updateBackgrou
 Window_Message.prototype.updateBackground = function() {
     _Window_Message_updateBackground.call(this);
     // Apply custom background color
+    this.opacity = 0;
+    this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y');
     }
 };

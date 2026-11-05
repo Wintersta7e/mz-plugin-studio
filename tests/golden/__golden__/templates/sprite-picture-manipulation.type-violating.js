@@ -3,7 +3,7 @@
 
 
 // ==== case: type-violating: null {"operation":null,"pictureId":null,"imageName":null,"origin":null,"x":null,"y":null,"scaleX":null,"scaleY":null,"opacity":null,"blendMode":null,"duration":null,"rotationSpeed":null,"tintRed":null,"tintGreen":null,"tintBlue":null,"tintGray":null}
-// rejects: Picture ID must be between 1 and 100
+// rejects: Field "Operation" is required | Field "Picture ID" is required | Picture ID must be between 1 and 100
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
@@ -71,7 +71,7 @@ $gameScreen.tintPicture(
 // To remove tint: [0, 0, 0, 0]
 
 // ==== case: type-violating: operation="erase",pictureId=null {"operation":"erase","pictureId":null,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
-// rejects: Picture ID must be between 1 and 100
+// rejects: Field "Picture ID" is required | Picture ID must be between 1 and 100
 // Erase Picture
 //
 // Removes picture 1 from screen
@@ -79,7 +79,7 @@ $gameScreen.tintPicture(
 $gameScreen.erasePicture(1);
 
 // ==== case: type-violating: operation="utility",pictureId=null {"operation":"utility","pictureId":null,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
-// rejects: Picture ID must be between 1 and 100
+// rejects: Field "Picture ID" is required | Picture ID must be between 1 and 100
 // Picture Manipulation Utility Functions
 //
 // Helper functions for common picture operations.

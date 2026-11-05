@@ -9,6 +9,7 @@
 })();
 
 // ==== case: type-violating: null {"timing":null,"filterMapId":null,"includeFadeInfo":null,"includeDirection":null}
+// rejects: Field "Timing" is required
 // Map Transfer Hook
 // Execute custom code when transferring between maps
 

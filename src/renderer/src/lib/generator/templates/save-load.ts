@@ -1,41 +1,33 @@
 /**
- * Save/Load Template
- *
- * Generates code for persisting custom data in RPG Maker MZ save files.
- * Data is automatically saved and loaded with the game's save system.
- */
+Save/Load Template
+
+Generates code for persisting custom data in RPG Maker MZ save files.
+Data is automatically saved and loaded with the game's save system.
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
-import { getDefaultLiteral } from '../escape'
+import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
 /**
- * Convert a property name to PascalCase for method names
- * e.g., "questProgress" -> "QuestProgress"
- */
-function toPascalCase(str: string): string {
-  if (!str) return ''
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
-
-/**
- * Generate the save/load code
- */
+Generate the save/load code
+*/
 function generateSaveLoadCode(
-  dataName: string,
+  name: unknown,
   storageLocation: string,
-  dataType: string,
-  defaultValue?: string
+  dataType: unknown,
+  defaultValue: unknown
 ): string {
-  const pascalName = toPascalCase(dataName)
+  const pascalName = toPascalCase(name)
+  // Only written into the code as text
+  const dataName = String(name)
   const aliasName = `_${storageLocation}_initialize`
-  const defaultLiteral = getDefaultLiteral(dataType, defaultValue)
-  const lines: string[] = []
+  const defaultLiteral = defaultLiteralOf(dataType, defaultValue)
+  const lines: string[] = [`// Custom Save Data: ${dataName}`]
 
   // Header comment
-  lines.push(`// Custom Save Data: ${dataName}`)
   lines.push(`// Storage: $${storageLocation.replace('Game_', 'game').toLowerCase()}`)
-  lines.push(`// Type: ${dataType}`)
+  lines.push(`// Type: ${String(dataType)}`)
 
   // Warn at generation time for storage locations that don't reliably persist.
   if (storageLocation === 'Game_Actors') {
@@ -80,45 +72,59 @@ function generateSaveLoadCode(
   lines.push('};')
 
   // Add type-specific helper methods
-  if (dataType === 'object') {
-    lines.push('')
-    lines.push(`// Get a property from the ${dataName} object`)
-    lines.push(`${storageLocation}.prototype.get${pascalName}Value = function(key) {`)
-    lines.push(`    return this.${dataName}[key];`)
-    lines.push('};')
-    lines.push('')
-    lines.push(`// Set a property on the ${dataName} object`)
-    lines.push(`${storageLocation}.prototype.set${pascalName}Value = function(key, value) {`)
-    lines.push(`    this.${dataName}[key] = value;`)
-    lines.push('};')
-  } else if (dataType === 'array') {
-    lines.push('')
-    lines.push(`// Add an item to the ${dataName} array`)
-    lines.push(`${storageLocation}.prototype.add${pascalName}Item = function(item) {`)
-    lines.push(`    this.${dataName}.push(item);`)
-    lines.push('};')
-    lines.push('')
-    lines.push(`// Remove an item from the ${dataName} array by index`)
-    lines.push(`${storageLocation}.prototype.remove${pascalName}Item = function(index) {`)
-    lines.push(`    this.${dataName}.splice(index, 1);`)
-    lines.push('};')
-    lines.push('')
-    lines.push(`// Clear all items from the ${dataName} array`)
-    lines.push(`${storageLocation}.prototype.clear${pascalName} = function() {`)
-    lines.push(`    this.${dataName} = [];`)
-    lines.push('};')
-  } else if (dataType === 'number') {
-    lines.push('')
-    lines.push(`// Add to the ${dataName} value`)
-    lines.push(`${storageLocation}.prototype.add${pascalName} = function(amount) {`)
-    lines.push(`    this.${dataName} += amount;`)
-    lines.push('};')
-  } else if (dataType === 'boolean') {
-    lines.push('')
-    lines.push(`// Toggle the ${dataName} value`)
-    lines.push(`${storageLocation}.prototype.toggle${pascalName} = function() {`)
-    lines.push(`    this.${dataName} = !this.${dataName};`)
-    lines.push('};')
+  switch (dataType) {
+    case 'object': {
+      lines.push('')
+      lines.push(`// Get a property from the ${dataName} object`)
+      lines.push(`${storageLocation}.prototype.get${pascalName}Value = function(key) {`)
+      lines.push(`    return this.${dataName}[key];`)
+      lines.push('};')
+      lines.push('')
+      lines.push(`// Set a property on the ${dataName} object`)
+      lines.push(`${storageLocation}.prototype.set${pascalName}Value = function(key, value) {`)
+      lines.push(`    this.${dataName}[key] = value;`)
+      lines.push('};')
+
+      break
+    }
+    case 'array': {
+      lines.push('')
+      lines.push(`// Add an item to the ${dataName} array`)
+      lines.push(`${storageLocation}.prototype.add${pascalName}Item = function(item) {`)
+      lines.push(`    this.${dataName}.push(item);`)
+      lines.push('};')
+      lines.push('')
+      lines.push(`// Remove an item from the ${dataName} array by index`)
+      lines.push(`${storageLocation}.prototype.remove${pascalName}Item = function(index) {`)
+      lines.push(`    this.${dataName}.splice(index, 1);`)
+      lines.push('};')
+      lines.push('')
+      lines.push(`// Clear all items from the ${dataName} array`)
+      lines.push(`${storageLocation}.prototype.clear${pascalName} = function() {`)
+      lines.push(`    this.${dataName} = [];`)
+      lines.push('};')
+
+      break
+    }
+    case 'number': {
+      lines.push('')
+      lines.push(`// Add to the ${dataName} value`)
+      lines.push(`${storageLocation}.prototype.add${pascalName} = function(amount) {`)
+      lines.push(`    this.${dataName} += amount;`)
+      lines.push('};')
+
+      break
+    }
+    case 'boolean': {
+      lines.push('')
+      lines.push(`// Toggle the ${dataName} value`)
+      lines.push(`${storageLocation}.prototype.toggle${pascalName} = function() {`)
+      lines.push(`    this.${dataName} = !this.${dataName};`)
+      lines.push('};')
+
+      break
+    }
+    // No default
   }
 
   return lines.join('\n')
@@ -187,10 +193,12 @@ const saveLoadTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const dataName = values['dataName'] as string
-    const storageLocation = (values['storageLocation'] as string) || 'Game_System'
-    const dataType = (values['dataType'] as string) || 'object'
-    const defaultValue = values['defaultValue'] as string | undefined
+    const dataName = values['dataName']
+    // The code calls a string method on the location before it writes anything, so any value
+    // but text fails here as it fails there
+    const storageLocation = expectText(valueOr(values['storageLocation'], 'Game_System'))
+    const dataType = valueOr(values['dataType'], 'object')
+    const defaultValue = values['defaultValue']
 
     return generateSaveLoadCode(dataName, storageLocation, dataType, defaultValue)
   },
@@ -198,10 +206,10 @@ const saveLoadTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['dataName']) {
-      const dataName = values['dataName'] as string
+      const dataName: unknown = values['dataName']
 
       // Check for valid JavaScript identifier
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(dataName)) {
+      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(dataName))) {
         errors.push(
           'Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
         )
@@ -218,40 +226,48 @@ const saveLoadTemplate: CodeTemplate = {
         'save',
         'load'
       ]
-      if (reservedWords.includes(dataName.toLowerCase())) {
+      if (reservedWords.includes(expectText(dataName).toLowerCase())) {
         errors.push(
-          `"${dataName}" may conflict with existing methods. Consider a more specific name.`
+          `"${String(dataName)}" may conflict with existing methods. Consider a more specific name.`
         )
       }
     }
 
     // Validate default value format based on type
     if (values['defaultValue'] && values['dataType']) {
-      const defaultValue = values['defaultValue'] as string
-      const dataType = values['dataType'] as string
+      const defaultValue = values['defaultValue']
+      const dataType = values['dataType']
+      const hasDefaultValue = Boolean(defaultValue)
 
       try {
         switch (dataType) {
-          case 'object':
-            if (defaultValue && !defaultValue.trim().startsWith('{')) {
+          case 'object': {
+            if (hasDefaultValue && !expectText(defaultValue).trimStart().startsWith('{')) {
               errors.push('Default value for object should be JSON format starting with {')
             }
             break
-          case 'array':
-            if (defaultValue && !defaultValue.trim().startsWith('[')) {
+          }
+          case 'array': {
+            if (hasDefaultValue && !expectText(defaultValue).trimStart().startsWith('[')) {
               errors.push('Default value for array should be JSON format starting with [')
             }
             break
-          case 'number':
-            if (defaultValue && isNaN(Number(defaultValue))) {
+          }
+          case 'number': {
+            if (hasDefaultValue && Number.isNaN(Number(defaultValue))) {
               errors.push('Default value for number must be a valid number')
             }
             break
-          case 'boolean':
-            if (defaultValue && !['true', 'false'].includes(defaultValue.toLowerCase())) {
+          }
+          case 'boolean': {
+            if (
+              hasDefaultValue &&
+              !['true', 'false'].includes(expectText(defaultValue).toLowerCase())
+            ) {
               errors.push('Default value for boolean must be true or false')
             }
             break
+          }
         }
       } catch {
         errors.push('Invalid default value format')

@@ -3,7 +3,7 @@
 // throws: TypeError
 
 // ==== case: type-violating: null {"windowName":null,"parentClass":null,"width":null,"height":null,"addToScene":null}
-// rejects: Width must be a positive number | Height must be a positive number
+// rejects: Field "Window Name" is required | Field "Parent Class" is required | Width must be a positive number | Height must be a positive number
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"windowName":["a","b"],"parentClass":["a","b"],"width":["a","b"],"height":["a","b"],"addToScene":["a","b"]}

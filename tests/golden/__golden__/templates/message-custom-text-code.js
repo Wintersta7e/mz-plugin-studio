@@ -7,7 +7,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -25,7 +25,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE codes
-    text = text.replace(/\\SAMPLE(?![A-Za-z])/gi, () => {
+    text = text.replace(/\x1bSAMPLE(?![A-Za-z])/gi, () => {
         return $gameParty.gold();
     });
 
@@ -41,7 +41,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -75,7 +75,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return '';
@@ -93,7 +93,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -111,7 +111,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -129,7 +129,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -147,7 +147,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -211,7 +211,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X */ GLOBALTHIS.__PWN = 1; /* Y[n] codes
-    text = text.replace(/\\X */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -230,7 +230,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X */ GLOBALTHIS.__PWN = 1; /* Y[n] codes
-    text = text.replace(/\\X */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -249,7 +249,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X */ GLOBALTHIS.__PWN = 1; /* Y[n] codes
-    text = text.replace(/\\X */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX */ GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -270,7 +270,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 
     // Process \X */
 GLOBALTHIS.__PWN = 1; /* Y[n] codes
-    text = text.replace(/\\X */
+    text = text.replace(/\x1bX */
 GLOBALTHIS.__PWN = 1; /* Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
@@ -290,7 +290,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X' + (GLOBALTHIS.__PWN = 1) + 'Y[n] codes
-    text = text.replace(/\\X' + (GLOBALTHIS.__PWN = 1) + 'Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX' + (GLOBALTHIS.__PWN = 1) + 'Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -309,7 +309,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X" + (GLOBALTHIS.__PWN = 1) + "Y[n] codes
-    text = text.replace(/\\X" + (GLOBALTHIS.__PWN = 1) + "Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX" + (GLOBALTHIS.__PWN = 1) + "Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -328,7 +328,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \X${GLOBALTHIS.__PWN = 1}` + (GLOBALTHIS.__PWN = 1) + `Y[n] codes
-    text = text.replace(/\\X${GLOBALTHIS.__PWN = 1}` + (GLOBALTHIS.__PWN = 1) + `Y\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bX${GLOBALTHIS.__PWN = 1}` + (GLOBALTHIS.__PWN = 1) + `Y\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return $gameParty.gold();
@@ -347,7 +347,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X */ globalThis.__pwn = 1; /* Y;
@@ -366,7 +366,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X */ globalThis.__pwn = 1; /* Y;
@@ -385,7 +385,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X */ globalThis.__pwn = 1; /* Y;
@@ -404,7 +404,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X */
@@ -424,7 +424,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X' + (globalThis.__pwn = 1) + 'Y;
@@ -443,7 +443,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X" + (globalThis.__pwn = 1) + "Y;
@@ -462,7 +462,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
     text = _Window_Base_convertEscapeCharacters.call(this, text);
 
     // Process \SAMPLE[n] codes
-    text = text.replace(/\\SAMPLE\[(\d+)\]/gi, (_, param) => {
+    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
         param = parseInt(param);
         // Return the replacement text based on the parameter
         return X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y;

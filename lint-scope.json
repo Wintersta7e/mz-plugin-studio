@@ -222,7 +222,6 @@
     {
       "rule": "@typescript-eslint/restrict-template-expressions",
       "files": [
-        "src/renderer/src/lib/generator/templates/audio-system.ts",
         "src/renderer/src/lib/generator/templates/custom-window.ts",
         "src/renderer/src/lib/generator/templates/input-handler.ts",
         "src/renderer/src/lib/generator/templates/menu-system.ts",

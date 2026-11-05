@@ -150,4 +150,86 @@ describe('template values of the wrong type', () => {
 
     expect(rejected).toStrictEqual([])
   })
+
+  it('lists a required field whose saved number came back from JSON as null as required', () => {
+    // JSON writes a number that is not a number as null
+    const lost: unknown = JSON.parse('null')
+    const unnamed: string[] = []
+    let checked = 0
+    for (const id of templateIds()) {
+      for (const field of fieldsOf(id)) {
+        if (field.required !== true) continue
+        checked++
+        const values = { ...baseValues(id), [field.id]: lost }
+        const errors = validateTemplateValues(id, values).errors
+        if (!errors.includes(`Field "${field.label}" is required`))
+          unnamed.push(`${id}.${field.id}`)
+      }
+    }
+    process.stdout.write(`required fields checked with a lost value ${String(checked)}\n`)
+
+    expect(checked).toBeGreaterThan(0)
+    expect(unnamed).toStrictEqual([])
+  })
+})
+
+const STALE = 'not-a-choice'
+
+const choiceError = (field: TemplateField): string =>
+  `Field "${field.label}" must be one of its choices`
+
+// Every select field of every template, with its template.
+const selects = (): [id: string, field: TemplateField][] =>
+  templateIds().flatMap((id) =>
+    fieldsOf(id)
+      .filter((field) => field.type === 'select')
+      .map((field): [string, TemplateField] => [id, field])
+  )
+
+// A select field whose saved value is no longer one of its choices is named, not read as one.
+describe('select values outside their choices', () => {
+  it('names a battle event hook whose saved event is no longer offered', () => {
+    const field = fieldOf('battle-event-hook', 'eventType')
+    const values = { ...baseValues('battle-event-hook'), eventType: 'foo' }
+
+    expect(() => validateTemplateValues('battle-event-hook', values)).not.toThrow()
+
+    const result = validateTemplateValues('battle-event-hook', values)
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContain(choiceError(field))
+  })
+
+  it('names every select field holding a value none of its choices offer, without throwing', () => {
+    const fields = selects()
+    const unnamed: string[] = []
+    for (const [id, field] of fields) {
+      const values = { ...baseValues(id), [field.id]: STALE }
+      try {
+        const errors = validateTemplateValues(id, values).errors
+        if (errors.filter((message) => message === choiceError(field)).length !== 1)
+          unnamed.push(`${id}.${field.id}: ${JSON.stringify(errors)}`)
+      } catch (error) {
+        unnamed.push(`${id}.${field.id}: threw ${String(error)}`)
+      }
+    }
+    process.stdout.write(`select fields checked with a stale value ${String(fields.length)}\n`)
+
+    expect(fields.length).toBeGreaterThan(0)
+    expect(unnamed).toStrictEqual([])
+  })
+
+  it('accepts every choice a select field offers, and an unset select', () => {
+    const named: string[] = []
+    for (const [id, field] of selects()) {
+      const choices = [...(field.options ?? []).map((option) => option.value), undefined, '']
+      for (const choice of choices) {
+        const values = { ...baseValues(id), [field.id]: choice }
+        if (validateTemplateValues(id, values).errors.includes(choiceError(field)))
+          named.push(`${id}.${field.id}=${String(choice)}`)
+      }
+    }
+
+    expect(named).toStrictEqual([])
+  })
 })

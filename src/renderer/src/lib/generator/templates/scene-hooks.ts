@@ -1,7 +1,7 @@
 /**
- * Scene Hooks Template
- * Provides templates for hooking into RPG Maker MZ scene lifecycle methods
- */
+Scene Hooks Template
+Provides templates for hooking into RPG Maker MZ scene lifecycle methods
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
@@ -53,8 +53,9 @@ const sceneHooksTemplate: CodeTemplate = {
     }
   ],
   generate: (values) => {
-    const sceneName = values['sceneName'] as string
-    const hookPoint = values['hookPoint'] as string
+    // Both are only written into the code as text
+    const sceneName = String(values['sceneName'])
+    const hookPoint = String(values['hookPoint'])
 
     return `// Hook: ${sceneName}.${hookPoint}
 const _${sceneName}_${hookPoint} = ${sceneName}.prototype.${hookPoint};

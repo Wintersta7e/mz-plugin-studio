@@ -20,6 +20,7 @@ const _7_update = 7.prototype.update;
 };
 
 // ==== case: type-violating: null {"keyName":null,"triggerType":null,"activeScene":null}
+// rejects: Field "Key" is required
 // Input Handler: undefined key on Scene_Map
 // Triggers once when pressed
 
@@ -59,3 +60,28 @@ a,b.prototype.updateCustomKeyInput = function() {
         console.log('undefined key pressed!');
     }
 };
+
+// ==== case: type-violating: activeScene="all",triggerType=null {"triggerType":null,"activeScene":"all","keyName":"q"}
+// Global Input Handler: Q key (all scenes)
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+// Hook Scene_Base.update for global key handling
+const _Scene_Base_update_q = Scene_Base.prototype.update;
+Scene_Base.prototype.update = function() {
+    _Scene_Base_update_q.call(this);
+    this.updateGlobalKeyInput_Q();
+};
+
+Scene_Base.prototype.updateGlobalKeyInput_Q = function() {
+    if (Input.isTriggered('q')) {
+        // Your code here - runs when Q is pressed in any scene
+        console.log('Q key pressed!');
+    }
+};
+
+// ==== case: type-violating: activeScene="all",keyName=null {"triggerType":"isTriggered","activeScene":"all","keyName":null}
+// rejects: Field "Key" is required
+// throws: TypeError

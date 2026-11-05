@@ -3,6 +3,7 @@
 
 
 // ==== case: type-violating: null {"featureType":null,"maxSize":null,"minSize":null,"hookTiming":null,"maxReserve":null}
+// rejects: Field "Feature Type" is required
 // Party Size Limit: 1 to 4 members
 
 // Store the party size limits

@@ -40,6 +40,23 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { eventType: 'change', slotFilter: 7 },
     { eventType: 'unequip', slotFilter: 7 }
   ],
+  'audio-bgm-control': [{ pan: null, functionName: 'playTheme' }],
+  'audio-crossfade': [
+    { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: null },
+    { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: 7 },
+    { newBgmPitch: null, functionName: 'crossfadeTheme' }
+  ],
+  'audio-se-player': [
+    { randomizePitch: true, pitchVariation: null },
+    { pan: null, functionName: 'playCursor' }
+  ],
+  'battle-damage-modifier': [
+    { condition: null },
+    { modifyType: 'custom', condition: null },
+    { modifyType: 'add', modifyValue: '2;x', condition: null }
+  ],
+  'battle-event-hook': [{ eventType: 'start' }],
+  'battle-state-hook': [{ hookType: null, stateId: '3' }],
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
@@ -64,6 +81,21 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { hudType: 'minimap', positionY: null },
     { hudType: 'custom', width: null },
     { opacity: 300, positionY: null }
+  ],
+  'database-ext-notetag': [
+    { propertyName: null },
+    { tagName: null, defaultValue: null },
+    { tagName: 'note', tagFormat: 'boolean', propertyName: null },
+    { tagFormat: 'keyValue', propertyName: 'bonus', defaultValue: null },
+    { tagFormat: 'multiline', valueType: 'boolean', defaultValue: 'yes' },
+    { valueType: 'array', defaultValue: '1, 2', propertyName: null },
+    { tagFormat: 7 },
+    { valueType: 7 },
+    { valueType: 'number', defaultValue: 'abc' }
+  ],
+  'input-handler-basic': [
+    { activeScene: 'all', triggerType: null },
+    { activeScene: 'all', keyName: null }
   ],
   'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
   'map-parallel-process': [
@@ -110,6 +142,26 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'customCreate', commandName: null },
     { modType: 'hideCommand', hideTarget: null }
   ],
+  'message-choice-handler': [
+    { modType: 'columns', numColumns: null, choiceWidth: null },
+    { modType: 'style', highlightColor: null, windowOpacity: null },
+    { modType: 'behavior', wrapAround: null, rememberChoice: null }
+  ],
+  'message-custom-text-code': [
+    { hasParameter: null, effectType: null },
+    { codeType: null, replacementText: null },
+    { codeType: 'effect', hasParameter: null, effectType: null }
+  ],
+  'message-window-mod': [
+    { positionType: 'custom', customX: null, customY: 'abc' },
+    { modType: 'size', windowWidth: null, numLines: null },
+    { modType: 'background', bgType: null },
+    { modType: 'background', bgType: 'custom', bgColor: null },
+    { modType: 'background', bgType: 'custom', bgColor: 42 },
+    { modType: 'opacity', opacityValue: null },
+    { modType: 'nameBox', nameBoxPosition: null }
+  ],
+  'method-alias-basic': [{ timing: null }],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },
@@ -119,6 +171,25 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { featureType: 'addRemoveHook', maxSize: null },
     { minSize: 0, maxReserve: null }
   ],
+  'plugin-command-async': [
+    { waitType: 'setWaitMode', pluginName: 42 },
+    { waitType: 'waitCount', waitDuration: null },
+    { waitType: 'waitCount', waitDuration: 'abc' },
+    { waitType: 'waitCount', commandName: null }
+  ],
+  'plugin-command-basic': [
+    { arg1Name: 'target', arg1Type: 7, arg2Name: 'value', arg2Type: ['a', 'b'] },
+    { arg1Name: 'target', arg2Name: 42 },
+    { commandName: ' ', pluginName: null },
+    { commandName: '1st', arg1Type: null },
+    { pluginName: ' ', arg2Type: null }
+  ],
+  'plugin-command-validated': [
+    { errorHandling: 'silent', pluginName: 42 },
+    { errorHandling: 'throw', pluginName: null },
+    { minValue: null, maxValue: 'abc' },
+    { minValue: 5, maxValue: null }
+  ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
     { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
@@ -126,6 +197,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { textColor: 7 },
     { fadeEffect: 'slide', height: null },
     { fadeEffect: 'none', width: null }
+  ],
+  'save-load-basic': [
+    { dataName: 'save', defaultValue: null },
+    { dataType: 'object', defaultValue: '[]' },
+    { dataType: 'array', defaultValue: '{}' },
+    { dataType: 'number', defaultValue: 'abc' },
+    { dataType: 'boolean', defaultValue: 'yes' }
   ],
   'sprite-custom-class': [
     { width: null },
