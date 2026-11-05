@@ -108,15 +108,10 @@ function highlightCode(code: string): React.ReactNode {
     let remaining = line
     let partIndex = 0
 
-    // Comments
+    // Comments: split off here, shown after the code before them
     const commentMatch = /^(.*?)(\/\/.*)$/.exec(remaining)
     if (commentMatch) {
       remaining = commentMatch[1]
-      parts.push(
-        <span key={`comment-${lineIndex}`} className="text-emerald-500">
-          {commentMatch[2]}
-        </span>
-      )
     }
 
     // Process the non-comment part
@@ -205,6 +200,14 @@ function highlightCode(code: string): React.ReactNode {
       if (parts.length === 0 && remaining) {
         parts.push(<span key={`line-${lineIndex}`}>{remaining}</span>)
       }
+    }
+
+    if (commentMatch) {
+      parts.push(
+        <span key={`comment-${lineIndex}`} className="text-emerald-500">
+          {commentMatch[2]}
+        </span>
+      )
     }
 
     return (

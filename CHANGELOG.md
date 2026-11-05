@@ -12,6 +12,7 @@
 - The template inserter is announced to screen readers as a dialog named **Code Templates**. It takes the focus when it opens, keeps Tab inside it while open, and gives the focus back to the button that opened it when it closes. Escape and a click outside it still close it.
 - A parameter preset can be saved under a name such as `toString` or `constructor`. Before, the app asked whether to overwrite a preset of that name even when there was none, and answering **Cancel** left the preset unsaved.
 - When another project opens while the plugin browser is shown, the browser no longer lists the previous project's plugins while it reads the new project's list; clicking one of them tried to open a file the new project may not have.
+- The template dialog's preview shows each line of code as it will be inserted. Before, a comment was shown at the start of its line, ahead of the code and the indentation before it, although the inserted code was right.
 
 ## [1.8.1] - 2026-11-05
 

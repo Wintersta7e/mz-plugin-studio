@@ -6,7 +6,9 @@ import { TemplateInserter } from '../../src/renderer/src/components/plugin/Templ
 import {
   getAllTemplates,
   getTemplate,
-  getTemplateDefaults
+  getTemplateDefaults,
+  validateTemplateValues,
+  type CodeTemplate
 } from '../../src/renderer/src/lib/generator/templates'
 import { getClassMethods } from '../../src/renderer/src/lib/generator/class-registry'
 import { resetStores } from './support/reset-stores'
@@ -350,6 +352,45 @@ describe('template dialog actions', () => {
     expect(errors).toBeEmptyDOMElement()
     expect(insertButton()).toBeEnabled()
     expect(insertButton()).not.toHaveAccessibleDescription()
+  })
+})
+
+// A line holding code and then a comment
+const hasTrailingComment = (line: string): boolean => {
+  const start = line.indexOf('//')
+  return start > 0 && line.slice(0, start).trim() !== ''
+}
+
+const defaultCode = (id: string): string => getTemplate(id)?.generate(getTemplateDefaults(id)) ?? ''
+
+// The first template whose code from its defaults has a comment after the code on one line
+function trailingCommentTemplate(): CodeTemplate {
+  const found = getAllTemplates().find(
+    (template) =>
+      validateTemplateValues(template.id, getTemplateDefaults(template.id)).valid &&
+      defaultCode(template.id)
+        .split('\n')
+        .some((line) => hasTrailingComment(line))
+  )
+  if (found === undefined) throw new Error('no template writes a comment after code')
+  return found
+}
+
+// The preview shows each line of code in a row of its own, an empty line as a space
+const shownCode = (code: string): string =>
+  code
+    .split('\n')
+    .map((line) => (line === '' ? ' ' : line))
+    .join('')
+
+describe('template dialog preview', () => {
+  it('shows each line of the code in the order it is written', () => {
+    const template = trailingCommentTemplate()
+    renderInserter()
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: template.name } })
+    fireEvent.click(screen.getByText(template.name))
+
+    expect(preview()).toBe(shownCode(defaultCode(template.id)))
   })
 })
 
