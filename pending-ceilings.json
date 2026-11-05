@@ -105,7 +105,6 @@
       "src/renderer/src/stores/historyStore.ts": 4,
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 2,
-      "tests/dom/app-save.test.tsx": 6,
       "tests/dom/app-shell.test.tsx": 11,
       "tests/dom/code-preview.test.tsx": 4,
       "tests/dom/command-builder.test.tsx": 1,
