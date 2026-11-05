@@ -140,6 +140,7 @@ describe('ipc arguments', () => {
   it('checks message dialog options', async () => {
     await refuses('dialog:message', 'Synthetic')
     await refuses('dialog:message', {})
+    await refuses('dialog:message', { message: 'm', buttons: 'OK' })
     await refuses('dialog:message', { message: 'm', buttons: [] })
     await refuses('dialog:message', { message: 'm', buttons: ['1', '2', '3', '4', '5'] })
     await refuses('dialog:message', { message: 'm', buttons: ['OK', 2] })

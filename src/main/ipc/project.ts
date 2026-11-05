@@ -33,14 +33,14 @@ async function hasGrant(channel: string, projectPath: string): Promise<boolean> 
   return isGranted
 }
 
-export async function runProjectValidate(path: string): Promise<ProjectValidation> {
+async function runProjectValidate(path: string): Promise<ProjectValidation> {
   assertSafeProjectPath(path)
   await hasGrant('project:validate', path)
   log.debug(`[project:validate] ${path}`)
   return ProjectParser.validateProject(path)
 }
 
-export async function runProjectLoad(path: string): Promise<MZProject> {
+async function runProjectLoad(path: string): Promise<MZProject> {
   assertSafeProjectPath(path)
   try {
     const result = await ProjectParser.parseProject(path)
@@ -62,7 +62,7 @@ Asks in a native message box whether to open a folder with no record of being ch
 folder dialog or confirmed; Cancel is both the Enter and the Esc button. Returns whether the
 user chose Open.
 */
-export async function isOpenConfirmed(
+async function isOpenConfirmed(
   dialog: Pick<Dialog, 'showMessageBox'>,
   projectPath: string
 ): Promise<boolean> {
@@ -84,7 +84,7 @@ export async function isOpenConfirmed(
 Loads an RPG Maker MZ project folder the user chose in the folder dialog or confirms now, and
 makes it the project the project channels act on. A refused or failed load keeps the open one.
 */
-export async function loadGrantedProject(
+async function loadGrantedProject(
   dialog: Pick<Dialog, 'showMessageBox'>,
   projectPath: string
 ): Promise<MZProject> {

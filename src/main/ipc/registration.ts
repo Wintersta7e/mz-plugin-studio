@@ -23,7 +23,6 @@ import {
 
 import { invalidArguments } from './arguments'
 
-export { invalidArguments } from './arguments'
 export { LOG_CHANNEL } from '../../shared/ipc-types'
 
 /**
@@ -48,7 +47,7 @@ export interface Handler<C extends InvokeChannel> {
   run(...args: InvokeArgs<C>): InvokeResult<C> | Promise<InvokeResult<C>>
 }
 
-export interface Listener<C extends SendChannel> {
+interface Listener<C extends SendChannel> {
   /**
   Never throws: maps any input to a safe value
   */
@@ -145,7 +144,7 @@ function admit<T>(channel: string, step: () => T): T {
   }
 }
 
-export function handle<C extends InvokeChannel>(
+function handle<C extends InvokeChannel>(
   channel: C,
   handler: Handler<C>,
   isTrustedSender: SenderCheck,
@@ -163,7 +162,7 @@ export function handle<C extends InvokeChannel>(
   })
 }
 
-export function on<C extends SendChannel>(
+function on<C extends SendChannel>(
   channel: C,
   listener: Listener<C>,
   isTrustedSender: SenderCheck,
@@ -228,10 +227,24 @@ interface LogFields {
   data?: unknown
 }
 
+/**
+`Object.prototype`, read through `Reflect` so it keeps a type
+*/
+const OBJECT_PROTOTYPE = Reflect.getPrototypeOf({})
+
+/**
+The values of a log line: a list of at most `MAX_LOG_VALUES`
+*/
+function isLogValues(data: unknown): boolean {
+  if (!Array.isArray(data)) return false
+  const values: readonly unknown[] = data
+  return values.length <= MAX_LOG_VALUES
+}
+
 function isPlainObject(value: unknown): value is LogFields {
   if (typeof value !== 'object' || value === null) return false
-  const prototype: unknown = Object.getPrototypeOf(value)
-  return prototype === Object.prototype || prototype === null
+  const prototype = Reflect.getPrototypeOf(value)
+  return prototype === OBJECT_PROTOTYPE || prototype === null
 }
 
 /**
@@ -244,7 +257,7 @@ function isLogName(value: unknown): boolean {
     value === undefined ||
     (typeof value === 'string' &&
       value.length <= MAX_LOG_NAME &&
-      !Object.hasOwn(Object.prototype, value) &&
+      !Reflect.has({}, value) &&
       value !== 'prototype')
   )
 }
@@ -272,8 +285,7 @@ function checkLogLine(raw: readonly unknown[]): void {
     'cmd' in line ||
     !isLogName(line.logId) ||
     !isLogName(line.scope) ||
-    !Array.isArray(line.data) ||
-    line.data.length > MAX_LOG_VALUES ||
+    !isLogValues(line.data) ||
     jsonLength(line) > MAX_LOG_LENGTH
   ) {
     throw invalidArguments(LOG_CHANNEL)

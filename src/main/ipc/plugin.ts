@@ -217,7 +217,7 @@ export async function readFileByPath(filePath: string): Promise<string> {
 /**
 Parses plugin text the window holds; nothing is read from disk
 */
-export function parsePluginText(content: string): PluginDefinition {
+function parsePluginText(content: string): PluginDefinition {
   log.debug('[plugin:parse] Parsing plugin content')
   try {
     return PluginParser.parsePlugin(content)
@@ -233,7 +233,7 @@ export function parsePluginText(content: string): PluginDefinition {
 /**
 The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none when it is missing
 */
-export async function listPluginFiles(projectPath: string): Promise<string[]> {
+async function listPluginFiles(projectPath: string): Promise<string[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
   try {
@@ -250,7 +250,7 @@ export async function listPluginFiles(projectPath: string): Promise<string[]> {
 /**
 The load-order tags and prototype overrides of every plugin file in a project
 */
-export async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
+async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
   try {

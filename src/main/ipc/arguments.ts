@@ -59,25 +59,32 @@ The filters, when there are at most 4, each a name of at most 64 characters and 
 the app may read or write; otherwise undefined, and the dialog shows its own filter.
 */
 export function checkFilters(value: unknown): FileFilter[] | undefined {
-  if (!Array.isArray(value) || value.length > MAX_FILTERS) return undefined
+  if (!Array.isArray(value)) return undefined
+  const entries: readonly unknown[] = value
+  if (entries.length > MAX_FILTERS) return undefined
   const filters: FileFilter[] = []
-  for (const entry of value) {
+  for (const entry of entries) {
     if (!isRecord(entry)) return undefined
     const { name, extensions } = entry
     if (
       typeof name !== 'string' ||
       name.length > MAX_FILTER_NAME_LENGTH ||
-      !Array.isArray(extensions) ||
-      extensions.length === 0 ||
-      extensions.length > MAX_FILTER_EXTENSIONS ||
-      !extensions.every(
+      !Array.isArray(extensions)
+    ) {
+      return undefined
+    }
+    const list: readonly unknown[] = extensions
+    if (
+      list.length === 0 ||
+      list.length > MAX_FILTER_EXTENSIONS ||
+      !list.every(
         (extension): extension is string =>
           typeof extension === 'string' && isFilterExtension(extension)
       )
     ) {
       return undefined
     }
-    filters.push({ name, extensions: [...extensions] })
+    filters.push({ name, extensions: [...list] })
   }
   return filters
 }

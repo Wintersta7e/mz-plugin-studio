@@ -164,7 +164,8 @@ async function readPersistedRoots(directory: string): Promise<string[]> {
     const parsed: unknown = JSON.parse(text)
     const roots = isRecord(parsed) ? parsed['roots'] : undefined
     if (!Array.isArray(roots)) throw new TypeError('no list of project folders')
-    return roots.filter((root): root is string => typeof root === 'string')
+    const list: readonly unknown[] = roots
+    return list.filter((root): root is string => typeof root === 'string')
   } catch (error) {
     log.warn(`[file-access] Ignoring ${file}: ${reasonOf(error)}`)
     return []

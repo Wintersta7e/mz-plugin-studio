@@ -84,7 +84,7 @@ export async function showMessageDialog(
 Shows the folder picker; returns the chosen folder, or null when cancelled.
 The chosen folder becomes a project folder `project:load` opens without asking.
 */
-export async function openFolderDialog(
+async function openFolderDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
   options: Omit<OpenFolderOptions, 'defaultPath'> & { defaultPath?: string | undefined } = {}
 ): Promise<string | null> {
@@ -109,7 +109,7 @@ export async function openFolderDialog(
 Shows the file picker, in `defaultPath` when main chose a folder; returns the chosen file, or
 null when cancelled. The chosen file becomes readable by read-by-path for the rest of the session.
 */
-export async function openFileDialog(
+async function openFileDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
   options: Omit<OpenFileOptions, 'defaultPath'> & { defaultPath?: string | undefined }
 ): Promise<string | null> {
@@ -146,9 +146,11 @@ The buttons of a message box: 1-4 texts, or undefined for the single OK button
 */
 function checkMessageButtons(buttons: unknown): string[] | undefined {
   if (buttons === undefined) return undefined
-  if (!Array.isArray(buttons) || buttons.length === 0 || buttons.length > 4) failMessageOptions()
-  if (!buttons.every((b): b is string => typeof b === 'string')) failMessageOptions()
-  return [...buttons]
+  if (!Array.isArray(buttons)) failMessageOptions()
+  const list: readonly unknown[] = buttons
+  if (list.length === 0 || list.length > 4) failMessageOptions()
+  if (!list.every((button): button is string => typeof button === 'string')) failMessageOptions()
+  return [...list]
 }
 
 /**
@@ -404,7 +406,7 @@ async function isExistingDirectory(directory: string): Promise<boolean> {
 /**
 The file beside the granted project folders that keeps the folder each kind of dialog last chose
 */
-export const DIALOG_FOLDERS_FILE = 'dialog-folders.json'
+const DIALOG_FOLDERS_FILE = 'dialog-folders.json'
 
 /**
 The file of dialog folders, or undefined while main keeps nothing across restarts
@@ -417,7 +419,7 @@ function dialogFoldersFile(): string | undefined {
 /**
 How many kinds of dialog the file keeps a folder for, the most recently chosen ones
 */
-export const MAX_DIALOG_FOLDERS = 32
+const MAX_DIALOG_FOLDERS = 32
 
 /**
 A kind `dialogKind` gives for the filters the argument check lets through
