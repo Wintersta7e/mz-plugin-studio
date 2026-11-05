@@ -358,3 +358,66 @@ Scene_Base.prototype.updateGlobalKeyInput_Q = function() {
         console.log('Q key pressed!');
     }
 };
+
+// ==== case: keyName=unknownKey {"triggerType":"isTriggered","activeScene":"Scene_Map","keyName":"unknownKey"}
+// rejects: Unknown key: unknownKey
+// Input Handler: undefined key on Scene_Map
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[undefined] = 'unknownKey';  // undefined = undefined key code
+
+const _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Map.prototype.updateCustomKeyInput = function() {
+    if (Input.isTriggered('unknownKey')) {
+        // Your code here - runs when undefined is pressed
+        console.log('undefined key pressed!');
+    }
+};
+
+// ==== case: triggerType=unknownTrigger {"triggerType":"unknownTrigger","activeScene":"Scene_Map","keyName":"q"}
+// rejects: Invalid trigger type: unknownTrigger
+// Input Handler: Q key on Scene_Map
+// Triggers undefined
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+const _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Map.prototype.updateCustomKeyInput = function() {
+    if (Input.unknownTrigger('q')) {
+        // Your code here - runs when Q is pressed
+        console.log('Q key pressed!');
+    }
+};
+
+// ==== case: activeScene=unknownScene {"triggerType":"isTriggered","activeScene":"unknownScene","keyName":"q"}
+// rejects: Invalid scene: unknownScene
+// Input Handler: Q key on unknownScene
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+const _unknownScene_update = unknownScene.prototype.update;
+unknownScene.prototype.update = function() {
+    _unknownScene_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+unknownScene.prototype.updateCustomKeyInput = function() {
+    if (Input.isTriggered('q')) {
+        // Your code here - runs when Q is pressed
+        console.log('Q key pressed!');
+    }
+};
