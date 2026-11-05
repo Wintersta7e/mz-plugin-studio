@@ -6610,65 +6610,6 @@
       "count": 1
     }
   },
-  "tests/unit/export-formats.test.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-enum-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 17
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 5
-    },
-    "import-x/no-named-as-default-member": {
-      "count": 17
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "no-console": {
-      "count": 4
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-for-each": {
-      "count": 1
-    },
-    "unicorn/prefer-math-constants": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    },
-    "vitest/max-expects": {
-      "count": 16
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 3
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 16
-    },
-    "vitest/valid-expect": {
-      "count": 8
-    }
-  },
   "tests/unit/generator.test.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
