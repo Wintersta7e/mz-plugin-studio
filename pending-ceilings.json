@@ -178,14 +178,7 @@
       "tests/unit/static-scope.test.ts": 1,
       "tests/unit/template-injection.test.ts": 3,
       "tests/unit/test-layout.test.ts": 5,
-      "tests/unit/workflows.test.ts": 4,
-      "tools/analyze-plugins.ts": 14
-    }
-  },
-  "tools": {
-    "noUncheckedIndexedAccess": {
-      "tools/analyze-plugins.ts": 14,
-      "tools/apply-enrichment.ts": 3
+      "tests/unit/workflows.test.ts": 4
     }
   },
   "web": {

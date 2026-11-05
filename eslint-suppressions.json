@@ -6809,7 +6809,7 @@
   },
   "tests/unit/analyze-plugins.test.ts": {
     "vitest/prefer-describe-function-title": {
-      "count": 9
+      "count": 8
     },
     "vitest/prefer-strict-equal": {
       "count": 12
@@ -8540,88 +8540,6 @@
     },
     "vitest/valid-expect": {
       "count": 5
-    }
-  },
-  "tools/analyze-plugins.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 52
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "n/no-process-exit": {
-      "count": 1
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 14
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 2
-    },
-    "unicorn/no-for-each": {
-      "count": 3
-    },
-    "unicorn/no-null": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
-  "tools/apply-enrichment.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 8
-    },
-    "n/no-process-exit": {
-      "count": 2
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
     }
   },
   "vitest.config.ts": {

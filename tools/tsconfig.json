@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.strict.json",
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
@@ -10,8 +10,7 @@
     "types": ["node"],
     "outDir": "./dist",
     "rootDir": ".",
-    "sourceMap": false,
-    "noUncheckedIndexedAccess": false
+    "sourceMap": false
   },
   "include": ["./*.ts"],
   "exclude": [

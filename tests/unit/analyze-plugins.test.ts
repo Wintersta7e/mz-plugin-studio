@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   detectIIFEStyle,
   detectParamLoading,
-  detectUseStrict,
+  hasUseStrict,
   extractAliases,
   extractMethodOverrides,
   extractRegisterCommands,
@@ -73,15 +73,15 @@ describe('detectParamLoading', () => {
 
 describe('detectUseStrict', () => {
   it('detects single-quoted use strict', () => {
-    expect(detectUseStrict("'use strict';")).toBe(true)
+    expect(hasUseStrict("'use strict';")).toBe(true)
   })
 
   it('detects double-quoted use strict', () => {
-    expect(detectUseStrict('"use strict";')).toBe(true)
+    expect(hasUseStrict('"use strict";')).toBe(true)
   })
 
   it('returns false when absent', () => {
-    expect(detectUseStrict('var x = 1;')).toBe(false)
+    expect(hasUseStrict('var x = 1;')).toBe(false)
   })
 })
 

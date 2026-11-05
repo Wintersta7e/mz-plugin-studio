@@ -12,15 +12,16 @@ Output: tools/output/enrichment.json, conventions.md, full-report.json
 */
 
 import * as fs from 'node:fs'
-import * as path from 'node:path'
+import path from 'node:path'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export type IIFEStyle = 'arrow' | 'function' | 'none'
 export type ParamLoadingStyle = 'standard' | 'pluginmanagerex' | 'none'
 export type AliasStyle = 'const' | 'var' | 'let'
+const ALIAS_STYLES: readonly AliasStyle[] = ['const', 'var', 'let']
 export type NoteTagPattern = 'meta_bracket' | 'meta_property' | 'note_regex'
-export type ClassDefStyle = 'function' | 'es6_extends'
+export type ClassDefinitionStyle = 'function' | 'es6_extends'
 
 export interface AliasInfo {
   style: AliasStyle
@@ -33,9 +34,9 @@ export interface MethodOverride {
   methodName: string
 }
 
-export interface ClassDef {
+export interface ClassDefinition {
   name: string
-  style: ClassDefStyle
+  style: ClassDefinitionStyle
 }
 
 export interface PluginAnalysis {
@@ -50,7 +51,7 @@ export interface PluginAnalysis {
   registerCommands: string[]
   paramTypes: string[]
   noteTagPatterns: NoteTagPattern[]
-  newClasses: ClassDef[]
+  newClasses: ClassDefinition[]
   usesStructs: boolean
   usesArrays: boolean
 }
@@ -119,7 +120,7 @@ export function detectParamLoading(content: string): ParamLoadingStyle {
 /**
 Detect whether the plugin uses 'use strict'.
 */
-export function detectUseStrict(content: string): boolean {
+export function hasUseStrict(content: string): boolean {
   return /['"]use strict['"]/.test(content)
 }
 
@@ -130,13 +131,9 @@ export function extractAliases(content: string): AliasInfo[] {
   const results: AliasInfo[] = []
   // Match: const/var/let _Something = ClassName.prototype.methodName;
   const aliasRegex = /\b(const|var|let)\s+_\w+\s*=\s*([A-Z]\w+)\.prototype\.(\w+)\s*;/g
-  let match: RegExpExecArray | null
-  while ((match = aliasRegex.exec(content)) !== null) {
-    results.push({
-      style: match[1] as AliasStyle,
-      className: match[2],
-      methodName: match[3]
-    })
+  for (const [, keyword = '', className = '', methodName = ''] of content.matchAll(aliasRegex)) {
+    const style = ALIAS_STYLES.find((candidate) => candidate === keyword)
+    if (style !== undefined) results.push({ style, className, methodName })
   }
   return results
 }
@@ -148,12 +145,8 @@ This catches both aliased and non-aliased overrides.
 export function extractMethodOverrides(content: string): MethodOverride[] {
   const results: MethodOverride[] = []
   const overrideRegex = /([A-Z]\w+)\.prototype\.(\w+)\s*=\s*function/g
-  let match: RegExpExecArray | null
-  while ((match = overrideRegex.exec(content)) !== null) {
-    results.push({
-      className: match[1],
-      methodName: match[2]
-    })
+  for (const [, className = '', methodName = ''] of content.matchAll(overrideRegex)) {
+    results.push({ className, methodName })
   }
   return results
 }
@@ -165,15 +158,14 @@ export function extractRegisterCommands(content: string): string[] {
   const results: string[] = []
   // PluginManager.registerCommand(pluginName, 'commandName', ...) or
   // PluginManager.registerCommand(pluginName, "commandName", ...)
-  const cmdRegex = /PluginManager\.registerCommand\s*\([^,]+,\s*['"](\w+)['"]/g
+  const commandRegex = /PluginManager\.registerCommand\s*\([^,]+,\s*['"](\w+)['"]/g
   // Also catch PluginManagerEx.registerCommand
-  const cmdRegexEx = /PluginManagerEx\.registerCommand\s*\([^,]+,\s*['"](\w+)['"]/g
-  let match: RegExpExecArray | null
-  while ((match = cmdRegex.exec(content)) !== null) {
-    results.push(match[1])
+  const commandRegexEx = /PluginManagerEx\.registerCommand\s*\([^,]+,\s*['"](\w+)['"]/g
+  for (const [, name = ''] of content.matchAll(commandRegex)) {
+    results.push(name)
   }
-  while ((match = cmdRegexEx.exec(content)) !== null) {
-    results.push(match[1])
+  for (const [, name = ''] of content.matchAll(commandRegexEx)) {
+    results.push(name)
   }
   return results
 }
@@ -184,9 +176,8 @@ Extract @type declarations from plugin header comments.
 export function extractParamTypes(content: string): string[] {
   const results: string[] = []
   const typeRegex = /@type\s+(\w+)/g
-  let match: RegExpExecArray | null
-  while ((match = typeRegex.exec(content)) !== null) {
-    results.push(match[1].toLowerCase())
+  for (const [, type = ''] of content.matchAll(typeRegex)) {
+    results.push(type.toLowerCase())
   }
   return results
 }
@@ -208,32 +199,31 @@ export function detectNoteTagPattern(content: string): NoteTagPattern[] {
 /**
 Detect new class definitions (both function constructor and ES6 class extends).
 */
-export function detectNewClasses(content: string): ClassDef[] {
-  const results: ClassDef[] = []
+export function detectNewClasses(content: string): ClassDefinition[] {
+  const results: ClassDefinition[] = []
   const seen = new Set<string>()
 
   // Function constructor style: function ClassName() { ... }
   // Look for Game_, Window_, Scene_, Sprite_ prefixed classes
-  const funcRegex = /\bfunction\s+((?:Game|Window|Scene|Sprite|Spriteset)_\w+)\s*\(/g
-  let match: RegExpExecArray | null
-  while ((match = funcRegex.exec(content)) !== null) {
-    if (seen.has(match[1])) {
+  const functionRegex = /\bfunction\s+((?:Game|Window|Scene|Sprite|Spriteset)_\w+)\s*\(/g
+  for (const [, name = ''] of content.matchAll(functionRegex)) {
+    if (seen.has(name)) {
       continue
     }
 
-    seen.add(match[1])
-    results.push({ name: match[1], style: 'function' })
+    seen.add(name)
+    results.push({ name, style: 'function' })
   }
 
   // ES6 class extends: class ClassName extends ParentClass
-  const classRegex = /\bclass\s+(\w+)\s+extends\s+(\w+)/g
-  while ((match = classRegex.exec(content)) !== null) {
-    if (seen.has(match[1])) {
+  const classRegex = /\bclass\s+(\w+)\s+extends\s+\w+/g
+  for (const [, name = ''] of content.matchAll(classRegex)) {
+    if (seen.has(name)) {
       continue
     }
 
-    seen.add(match[1])
-    results.push({ name: match[1], style: 'es6_extends' })
+    seen.add(name)
+    results.push({ name, style: 'es6_extends' })
   }
 
   return results
@@ -241,18 +231,20 @@ export function detectNewClasses(content: string): ClassDef[] {
 
 // ── Aggregation ────────────────────────────────────────────────────────────
 
-/** Filter out single-letter class names (from minified code) */
+/**
+Filter out single-letter class names (from minified code)
+*/
 function isValidClassName(name: string): boolean {
   return name.length > 1
 }
 
-function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
-  const report: AggregatedReport = {
+function emptyReport(analyzedFiles: number): AggregatedReport {
+  return {
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
     corpus: {
       totalFiles: 0,
-      analyzedFiles: analyses.length,
+      analyzedFiles,
       skippedFiles: 0,
       categories: {}
     },
@@ -274,61 +266,69 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
     paramTypes: {},
     noteTagPatterns: { meta_bracket: 0, meta_property: 0, note_regex: 0 }
   }
+}
+
+function countPatterns(patterns: AggregatedReport['patterns'], a: PluginAnalysis): void {
+  // Structural patterns
+  patterns.iifeStyle[a.iifeStyle]++
+  if (a.useStrict) patterns.useStrict++
+  patterns.paramLoading[a.paramLoading]++
+  if (a.registerCommands.length > 0) patterns.hasRegisterCommand++
+  if (a.usesStructs) patterns.usesStructs++
+  if (a.usesArrays) patterns.usesArrays++
+
+  // Aliases
+  patterns.totalAliases += a.aliases.length
+  for (const alias of a.aliases) {
+    patterns.aliasStyle[alias.style] = (patterns.aliasStyle[alias.style] ?? 0) + 1
+  }
+
+  // New class definitions
+  if (a.newClasses.length > 0) patterns.definesNewClasses++
+  if (a.newClasses.some((c) => c.style === 'es6_extends')) patterns.usesES6Extends++
+}
+
+function addPlugin(pluginSets: Map<string, Set<string>>, key: string, fileName: string): void {
+  const plugins = pluginSets.get(key) ?? new Set<string>()
+  plugins.add(fileName)
+  pluginSets.set(key, plugins)
+}
+
+function pluginCounts(pluginSets: Map<string, Set<string>>): Record<string, number> {
+  return Object.fromEntries(Array.from(pluginSets, ([key, plugins]) => [key, plugins.size]))
+}
+
+function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
+  const report = emptyReport(analyses.length)
 
   // Per-category counts
   for (const a of analyses) {
-    report.corpus.categories[a.category] = (report.corpus.categories[a.category] || 0) + 1
+    report.corpus.categories[a.category] = (report.corpus.categories[a.category] ?? 0) + 1
   }
 
   // Track unique methods (class.method) across all plugins
   const allUniqueMethodKeys = new Set<string>()
 
   // Class popularity: number of distinct plugins that extend this class
-  const classPluginSets: Record<string, Set<string>> = {}
+  const classPluginSets = new Map<string, Set<string>>()
   // Method popularity: number of unique plugins that override this method
-  const methodPluginSets: Record<string, Set<string>> = {}
+  const methodPluginSets = new Map<string, Set<string>>()
 
   for (const a of analyses) {
-    // Structural patterns
-    report.patterns.iifeStyle[a.iifeStyle]++
-    if (a.useStrict) report.patterns.useStrict++
-    report.patterns.paramLoading[a.paramLoading]++
-    if (a.registerCommands.length > 0) report.patterns.hasRegisterCommand++
-    if (a.usesStructs) report.patterns.usesStructs++
-    if (a.usesArrays) report.patterns.usesArrays++
-
-    // Aliases
-    report.patterns.totalAliases += a.aliases.length
-    for (const alias of a.aliases) {
-      report.patterns.aliasStyle[alias.style] = (report.patterns.aliasStyle[alias.style] || 0) + 1
-    }
+    countPatterns(report.patterns, a)
 
     // Method overrides
     for (const override of a.methodOverrides) {
       if (!isValidClassName(override.className)) continue
       const key = `${override.className}.prototype.${override.methodName}`
       allUniqueMethodKeys.add(key)
-
-      // Class popularity: distinct plugins per class
-      if (!classPluginSets[override.className]) {
-        classPluginSets[override.className] = new Set()
-      }
-      classPluginSets[override.className].add(a.fileName)
-
-      // Method popularity: unique plugins per method
-      if (!methodPluginSets[key]) {
-        methodPluginSets[key] = new Set()
-      }
-      methodPluginSets[key].add(a.fileName)
+      addPlugin(classPluginSets, override.className, a.fileName)
+      addPlugin(methodPluginSets, key, a.fileName)
     }
-
-    // New class definitions
-    if (a.newClasses.length > 0) report.patterns.definesNewClasses++
-    if (a.newClasses.some((c) => c.style === 'es6_extends')) report.patterns.usesES6Extends++
 
     // Parameter types
     for (const t of a.paramTypes) {
-      report.paramTypes[t] = (report.paramTypes[t] || 0) + 1
+      report.paramTypes[t] = (report.paramTypes[t] ?? 0) + 1
     }
 
     // Note tag patterns
@@ -339,24 +339,16 @@ function aggregateResults(analyses: PluginAnalysis[]): AggregatedReport {
 
   report.patterns.uniqueMethodsOverridden = allUniqueMethodKeys.size
 
-  // Build sorted popularity maps
-  for (const [cls, plugins] of Object.entries(classPluginSets)) {
-    report.classPopularity[cls] = plugins.size
-  }
-  for (const [method, plugins] of Object.entries(methodPluginSets)) {
-    report.methodPopularity[method] = plugins.size
-  }
-
   // Sort by popularity (descending)
-  report.classPopularity = sortByValue(report.classPopularity)
-  report.methodPopularity = sortByValue(report.methodPopularity)
+  report.classPopularity = sortByValue(pluginCounts(classPluginSets))
+  report.methodPopularity = sortByValue(pluginCounts(methodPluginSets))
   report.paramTypes = sortByValue(report.paramTypes)
 
   return report
 }
 
-function sortByValue(obj: Record<string, number>): Record<string, number> {
-  return Object.fromEntries(Object.entries(obj).sort(([, a], [, b]) => b - a))
+function sortByValue(counts: Record<string, number>): Record<string, number> {
+  return Object.fromEntries(Object.entries(counts).toSorted(([, a], [, b]) => b - a))
 }
 
 // ── Output Generation ──────────────────────────────────────────────────────
@@ -371,22 +363,29 @@ function generateEnrichment(report: AggregatedReport): EnrichmentData {
   }
 }
 
+type Percent = (n: number) => string
+
 function generateConventions(report: AggregatedReport): string {
-  const r = report
+  const total = report.corpus.analyzedFiles
+  const pct: Percent = (n) => `${String(Math.round((n / total) * 100))}%`
+
+  return [
+    conventionsStructure(report, pct),
+    conventionsAliases(report, pct),
+    conventionsDeclarations(report, pct),
+    conventionsClasses(report, pct)
+  ].join('')
+}
+
+function conventionsStructure(r: AggregatedReport, pct: Percent): string {
   const p = r.patterns
   const total = r.corpus.analyzedFiles
 
-  const topClasses = Object.entries(r.classPopularity).slice(0, 20)
-  const topMethods = Object.entries(r.methodPopularity).slice(0, 30)
-  const topParamTypes = Object.entries(r.paramTypes).slice(0, 15)
-
-  const pct = (n: number) => `${Math.round((n / total) * 100)}%`
-
   return `# RPG Maker MZ Plugin Conventions Reference
-## Generated from analysis of ${total} plugins (${r.generatedAt.split('T', 1)[0]})
+## Generated from analysis of ${String(total)} plugins (${r.generatedAt.split('T', 1).at(0) ?? ''})
 
 > This document describes how MZ plugins are structured and written, based on
-> statistical analysis of ${total} real-world plugins. All code examples are
+> statistical analysis of ${String(total)} real-world plugins. All code examples are
 > original, generic illustrations of the patterns — not extracted from any
 > specific plugin. Statistics are aggregate counts only.
 
@@ -402,7 +401,7 @@ function generateConventions(report: AggregatedReport): string {
 **Convention:** Use arrow IIFE wrapper. ${pct(p.iifeStyle.arrow)} of plugins use it.
 
 ### Strict Mode
-- ${p.useStrict} plugins (${pct(p.useStrict)}) include \`'use strict'\`
+- ${String(p.useStrict)} plugins (${pct(p.useStrict)}) include \`'use strict'\`
 
 ### File Organization
 Standard order within the IIFE:
@@ -430,11 +429,19 @@ const params = PluginManagerEx.createParameter(document.currentScript);
 \`\`\`
 
 ### No Parameters (${pct(p.paramLoading.none)})
-${p.paramLoading.none} plugins load no parameters.
+${String(p.paramLoading.none)} plugins load no parameters.
 
 ---
 
-## Alias Conventions
+`
+}
+
+function conventionsAliases(r: AggregatedReport, pct: Percent): string {
+  const p = r.patterns
+  const topClasses = Object.entries(r.classPopularity).slice(0, 20)
+  const topMethods = Object.entries(r.methodPopularity).slice(0, 30)
+
+  return `## Alias Conventions
 
 ### The Standard Pattern
 \`\`\`javascript
@@ -446,15 +453,15 @@ ClassName.prototype.methodName = function(...args) {
 \`\`\`
 
 ### Declaration Style
-- **\`const\`** (${p.aliasStyle['const'] || 0} aliases, ${pct(p.aliasStyle['const'] || 0)} of plugins): Standard — use this
-- **\`var\`** (${p.aliasStyle['var'] || 0} aliases): Older pattern — avoid in new code
-- **\`let\`** (${p.aliasStyle['let'] || 0} aliases): Rare
+- **\`const\`** (${String(p.aliasStyle['const'] ?? 0)} aliases, ${pct(p.aliasStyle['const'] ?? 0)} of plugins): Standard — use this
+- **\`var\`** (${String(p.aliasStyle['var'] ?? 0)} aliases): Older pattern — avoid in new code
+- **\`let\`** (${String(p.aliasStyle['let'] ?? 0)} aliases): Rare
 
 ### Rules
 1. **Always use \`const\`** for alias declarations
 2. **Always call the original** via \`.call(this, ...args)\` — failing to do so breaks other plugins
 3. **Naming convention:** \`_ClassName_methodName\` (underscore prefix, class and method joined by underscore)
-4. Total aliases found across corpus: ${p.totalAliases}
+4. Total aliases found across corpus: ${String(p.totalAliases)}
 
 ---
 
@@ -465,7 +472,7 @@ more plugins extend this class — it's a proven, safe extension point.
 
 | Rank | Class | Plugins |
 |------|-------|---------|
-${topClasses.map(([cls, count], i) => `| ${i + 1} | ${cls} | ${count} |`).join('\n')}
+${topClasses.map(([cls, count], index) => `| ${String(index + 1)} | ${cls} | ${String(count)} |`).join('\n')}
 
 ---
 
@@ -477,30 +484,37 @@ these is well-established practice with minimal risk of conflicts.
 | Rank | Method | Plugins | Use Case |
 |------|--------|---------|----------|
 ${topMethods
-  .map(([method, count], i) => {
+  .map(([method, count], index) => {
     const desc = getMethodDescription(method)
-    return `| ${i + 1} | ${method} | ${count} | ${desc} |`
+    return `| ${String(index + 1)} | ${method} | ${String(count)} | ${desc} |`
   })
   .join('\n')}
 
 ---
 
-## Parameter Type Distribution (${Object.values(r.paramTypes).reduce((a, b) => a + b, 0)} total declarations)
+`
+}
+
+function conventionsDeclarations(r: AggregatedReport, pct: Percent): string {
+  const p = r.patterns
+  const topParamTypes = Object.entries(r.paramTypes).slice(0, 15)
+
+  return `## Parameter Type Distribution (${String(Object.values(r.paramTypes).reduce((a, b) => a + b, 0))} total declarations)
 
 | Type | Count | Percentage |
 |------|-------|------------|
-${topParamTypes.map(([type, count]) => `| ${type} | ${count} | ${pct(count)} |`).join('\n')}
+${topParamTypes.map(([type, count]) => `| ${type} | ${String(count)} | ${pct(count)} |`).join('\n')}
 
 ### Observations
 - \`number\` is the dominant parameter type
-- \`struct\` used by ${p.usesStructs} plugins (${pct(p.usesStructs)}) — complex data grouping
-- \`array\` patterns used by ${p.usesArrays} plugins (${pct(p.usesArrays)}) — list-based configuration
+- \`struct\` used by ${String(p.usesStructs)} plugins (${pct(p.usesStructs)}) — complex data grouping
+- \`array\` patterns used by ${String(p.usesArrays)} plugins (${pct(p.usesArrays)}) — list-based configuration
 
 ---
 
 ## Plugin Commands
 
-- ${p.hasRegisterCommand} plugins (${pct(p.hasRegisterCommand)}) register at least one plugin command
+- ${String(p.hasRegisterCommand)} plugins (${pct(p.hasRegisterCommand)}) register at least one plugin command
 
 ### Standard Registration
 \`\`\`javascript
@@ -516,9 +530,9 @@ PluginManager.registerCommand('PluginName', 'CommandName', function(args) {
 
 | Pattern | Plugins | Usage |
 |---------|---------|-------|
-| \`meta.propertyName\` | ${r.noteTagPatterns.meta_property} | Direct property access — preferred |
-| \`meta['propertyName']\` | ${r.noteTagPatterns.meta_bracket} | Bracket access — for dynamic keys |
-| \`.note.match(regex)\` | ${r.noteTagPatterns.note_regex} | Regex parsing — for complex tags |
+| \`meta.propertyName\` | ${String(r.noteTagPatterns.meta_property)} | Direct property access — preferred |
+| \`meta['propertyName']\` | ${String(r.noteTagPatterns.meta_bracket)} | Bracket access — for dynamic keys |
+| \`.note.match(regex)\` | ${String(r.noteTagPatterns.note_regex)} | Regex parsing — for complex tags |
 
 ### Standard Note Tag Access
 \`\`\`javascript
@@ -531,10 +545,16 @@ if (tagValue) {
 
 ---
 
-## New Class Definitions
+`
+}
 
-- ${p.definesNewClasses} plugins define new classes (${r.patterns.uniqueMethodsOverridden} unique methods overridden total)
-- ${p.usesES6Extends} plugins (${pct(p.usesES6Extends)}) use ES6 \`class extends\` syntax
+function conventionsClasses(r: AggregatedReport, pct: Percent): string {
+  const p = r.patterns
+
+  return `## New Class Definitions
+
+- ${String(p.definesNewClasses)} plugins define new classes (${String(r.patterns.uniqueMethodsOverridden)} unique methods overridden total)
+- ${String(p.usesES6Extends)} plugins (${pct(p.usesES6Extends)}) use ES6 \`class extends\` syntax
 
 ### Function Constructor Style (dominant)
 \`\`\`javascript
@@ -576,11 +596,11 @@ class Window_Custom extends Window_Base {
 | Pattern | Frequency | Recommendation |
 |---------|-----------|----------------|
 | Arrow IIFE | ${pct(p.iifeStyle.arrow)} | Use as default wrapper |
-| \`const\` alias + \`.call(this)\` | ${p.aliasStyle['const'] || 0} aliases | Standard aliasing pattern |
+| \`const\` alias + \`.call(this)\` | ${String(p.aliasStyle['const'] ?? 0)} aliases | Standard aliasing pattern |
 | \`PluginManager.parameters()\` | ${pct(p.paramLoading.standard)} | Default parameter loading |
 | \`PluginManagerEx.createParameter()\` | ${pct(p.paramLoading.pluginmanagerex)} | Auto-typed alternative |
 | \`registerCommand\` | ${pct(p.hasRegisterCommand)} | Standard command registration |
-| \`meta.property\` note tags | ${r.noteTagPatterns.meta_property} plugins | Preferred note tag access |
+| \`meta.property\` note tags | ${String(r.noteTagPatterns.meta_property)} plugins | Preferred note tag access |
 | Function constructor classes | dominant | Standard new class pattern |
 | ES6 class extends | ${pct(p.usesES6Extends)} | Modern alternative |
 
@@ -590,7 +610,9 @@ class Window_Custom extends Window_Base {
 `
 }
 
-/** Brief descriptions for well-known MZ methods */
+/**
+Brief descriptions for well-known MZ methods
+*/
 function getMethodDescription(method: string): string {
   const descriptions: Record<string, string> = {
     'Game_System.prototype.initialize': 'Save data initialization',
@@ -624,7 +646,7 @@ function getMethodDescription(method: string): string {
     'Sprite_Character.prototype.update': 'Character sprite update',
     'Window_Base.prototype.update': 'Window per-frame update'
   }
-  return descriptions[method] || ''
+  return descriptions[method] ?? ''
 }
 
 // ── Console Report ─────────────────────────────────────────────────────────
@@ -633,63 +655,59 @@ function printConsoleReport(report: AggregatedReport, skippedCount: number): voi
   const r = report
   const p = r.patterns
   const total = r.corpus.analyzedFiles
-  const pct = (n: number) => `${Math.round((n / total) * 100)}%`
+  const pct = (n: number) => `${String(Math.round((n / total) * 100))}%`
 
   console.log('\n╔══════════════════════════════════════════════════════╗')
   console.log('║       MZ Plugin Dictionary — Analysis Report        ║')
   console.log('╚══════════════════════════════════════════════════════╝\n')
 
   console.log(
-    `Corpus: ${total + skippedCount} files total, ${total} analyzed, ${skippedCount} skipped\n`
+    `Corpus: ${String(total + skippedCount)} files total, ${String(total)} analyzed, ${String(skippedCount)} skipped\n`
   )
   console.log('Categories:')
   for (const [cat, count] of Object.entries(r.corpus.categories)) {
-    console.log(`  ${cat}: ${count}`)
+    console.log(`  ${cat}: ${String(count)}`)
   }
 
   console.log('\n── Structural Patterns ──\n')
   console.log(
-    `  IIFE Style:       arrow ${p.iifeStyle.arrow} (${pct(p.iifeStyle.arrow)})  |  function ${p.iifeStyle.function} (${pct(p.iifeStyle.function)})  |  none ${p.iifeStyle.none} (${pct(p.iifeStyle.none)})`
+    `  IIFE Style:       arrow ${String(p.iifeStyle.arrow)} (${pct(p.iifeStyle.arrow)})  |  function ${String(p.iifeStyle.function)} (${pct(p.iifeStyle.function)})  |  none ${String(p.iifeStyle.none)} (${pct(p.iifeStyle.none)})`
   )
-  console.log(`  'use strict':     ${p.useStrict} (${pct(p.useStrict)})`)
+  console.log(`  'use strict':     ${String(p.useStrict)} (${pct(p.useStrict)})`)
   console.log(
-    `  Param Loading:    standard ${p.paramLoading.standard} (${pct(p.paramLoading.standard)})  |  PluginManagerEx ${p.paramLoading.pluginmanagerex} (${pct(p.paramLoading.pluginmanagerex)})  |  none ${p.paramLoading.none} (${pct(p.paramLoading.none)})`
+    `  Param Loading:    standard ${String(p.paramLoading.standard)} (${pct(p.paramLoading.standard)})  |  PluginManagerEx ${String(p.paramLoading.pluginmanagerex)} (${pct(p.paramLoading.pluginmanagerex)})  |  none ${String(p.paramLoading.none)} (${pct(p.paramLoading.none)})`
   )
   console.log(
-    `  Alias Styles:     const ${p.aliasStyle['const'] || 0}  |  var ${p.aliasStyle['var'] || 0}  |  let ${p.aliasStyle['let'] || 0}`
+    `  Alias Styles:     const ${String(p.aliasStyle['const'] ?? 0)}  |  var ${String(p.aliasStyle['var'] ?? 0)}  |  let ${String(p.aliasStyle['let'] ?? 0)}`
   )
-  console.log(`  Total Aliases:    ${p.totalAliases}`)
-  console.log(`  registerCommand:  ${p.hasRegisterCommand} (${pct(p.hasRegisterCommand)})`)
-  console.log(`  Uses Structs:     ${p.usesStructs} (${pct(p.usesStructs)})`)
-  console.log(`  Uses Arrays:      ${p.usesArrays} (${pct(p.usesArrays)})`)
-  console.log(`  New Classes:      ${p.definesNewClasses} plugins`)
-  console.log(`  ES6 Extends:      ${p.usesES6Extends} (${pct(p.usesES6Extends)})`)
-  console.log(`  Unique Methods:   ${p.uniqueMethodsOverridden}`)
+  console.log(`  Total Aliases:    ${String(p.totalAliases)}`)
+  console.log(`  registerCommand:  ${String(p.hasRegisterCommand)} (${pct(p.hasRegisterCommand)})`)
+  console.log(`  Uses Structs:     ${String(p.usesStructs)} (${pct(p.usesStructs)})`)
+  console.log(`  Uses Arrays:      ${String(p.usesArrays)} (${pct(p.usesArrays)})`)
+  console.log(`  New Classes:      ${String(p.definesNewClasses)} plugins`)
+  console.log(`  ES6 Extends:      ${String(p.usesES6Extends)} (${pct(p.usesES6Extends)})`)
+  console.log(`  Unique Methods:   ${String(p.uniqueMethodsOverridden)}`)
 
   console.log('\n── Top 15 Extended Classes ──\n')
-  Object.entries(r.classPopularity)
-    .slice(0, 15)
-    .forEach(([cls, count], i) => {
-      console.log(`  ${String(i + 1).padStart(2)}. ${cls.padEnd(25)} ${count}`)
-    })
+  for (const [index, [cls, count]] of Object.entries(r.classPopularity).slice(0, 15).entries()) {
+    console.log(`  ${String(index + 1).padStart(2)}. ${cls.padEnd(25)} ${String(count)}`)
+  }
 
   console.log('\n── Top 15 Overridden Methods ──\n')
-  Object.entries(r.methodPopularity)
+  for (const [index, [method, count]] of Object.entries(r.methodPopularity)
     .slice(0, 15)
-    .forEach(([method, count], i) => {
-      console.log(`  ${String(i + 1).padStart(2)}. ${method.padEnd(55)} ${count}`)
-    })
+    .entries()) {
+    console.log(`  ${String(index + 1).padStart(2)}. ${method.padEnd(55)} ${String(count)}`)
+  }
 
   console.log('\n── Parameter Types ──\n')
-  Object.entries(r.paramTypes)
-    .slice(0, 10)
-    .forEach(([type, count]) => {
-      console.log(`  ${type.padEnd(20)} ${count}`)
-    })
+  for (const [type, count] of Object.entries(r.paramTypes).slice(0, 10)) {
+    console.log(`  ${type.padEnd(20)} ${String(count)}`)
+  }
 
   console.log('\n── Note Tag Patterns ──\n')
   for (const [pattern, count] of Object.entries(r.noteTagPatterns)) {
-    console.log(`  ${pattern.padEnd(20)} ${count}`)
+    console.log(`  ${pattern.padEnd(20)} ${String(count)}`)
   }
 
   console.log('')
@@ -697,13 +715,13 @@ function printConsoleReport(report: AggregatedReport, skippedCount: number): voi
 
 // ── Main Pipeline ──────────────────────────────────────────────────────────
 
-function findPluginFiles(baseDir: string): { filePath: string; category: string }[] {
+function findPluginFiles(baseDirectory: string): { filePath: string; category: string }[] {
   const results: { filePath: string; category: string }[] = []
 
-  function walk(dir: string, category: string): void {
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
+  function walk(directory: string, category: string): void {
+    const entries = fs.readdirSync(directory, { withFileTypes: true })
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name)
+      const fullPath = path.join(directory, entry.name)
       if (entry.isDirectory()) {
         walk(fullPath, category)
       } else if (entry.isFile() && entry.name.endsWith('.js')) {
@@ -712,19 +730,19 @@ function findPluginFiles(baseDir: string): { filePath: string; category: string 
     }
   }
 
-  const categories = fs.readdirSync(baseDir, { withFileTypes: true })
+  const categories = fs.readdirSync(baseDirectory, { withFileTypes: true })
   for (const cat of categories) {
     if (cat.isDirectory()) {
-      walk(path.join(baseDir, cat.name), cat.name)
+      walk(path.join(baseDirectory, cat.name), cat.name)
     }
   }
 
   return results
 }
 
-function analyzeFile(filePath: string, category: string): PluginAnalysis | null {
+function analyzeFile(filePath: string, category: string): PluginAnalysis | undefined {
   const stat = fs.statSync(filePath)
-  if (stat.size < 200) return null // Skip separator/placeholder files
+  if (stat.size < 200) return // Skip separator/placeholder files
 
   const content = fs.readFileSync(filePath, 'utf8')
   const fileName = path.basename(filePath)
@@ -734,7 +752,7 @@ function analyzeFile(filePath: string, category: string): PluginAnalysis | null 
     fileSize: stat.size,
     category,
     iifeStyle: detectIIFEStyle(content),
-    useStrict: detectUseStrict(content),
+    useStrict: hasUseStrict(content),
     paramLoading: detectParamLoading(content),
     aliases: extractAliases(content),
     methodOverrides: extractMethodOverrides(content),
@@ -748,16 +766,17 @@ function analyzeFile(filePath: string, category: string): PluginAnalysis | null 
 }
 
 function main(): void {
-  const pluginsDir = path.resolve(__dirname, '../examples/plugins')
+  const pluginsDirectory = path.resolve(__dirname, '../examples/plugins')
 
-  if (!fs.existsSync(pluginsDir)) {
-    console.error(`Error: ${pluginsDir} not found.`)
+  if (!fs.existsSync(pluginsDirectory)) {
+    console.error(`Error: ${pluginsDirectory} not found.`)
     console.error('Place example plugins in examples/plugins/{category}/*.js')
-    process.exit(1)
+    process.exitCode = 1
+    return
   }
 
   // Phase A: Per-file analysis
-  const files = findPluginFiles(pluginsDir)
+  const files = findPluginFiles(pluginsDirectory)
   const analyses: PluginAnalysis[] = []
   let skipped = 0
 
@@ -776,32 +795,38 @@ function main(): void {
   report.corpus.skippedFiles = skipped
 
   // Phase C: Output
-  const outputDir = path.resolve(__dirname, 'output')
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true })
+  const outputDirectory = path.resolve(__dirname, 'output')
+  if (!fs.existsSync(outputDirectory)) {
+    fs.mkdirSync(outputDirectory, { recursive: true })
   }
 
   const enrichment = generateEnrichment(report)
-  fs.writeFileSync(path.join(outputDir, 'enrichment.json'), JSON.stringify(enrichment, null, 2))
+  fs.writeFileSync(
+    path.join(outputDirectory, 'enrichment.json'),
+    JSON.stringify(enrichment, undefined, 2)
+  )
 
   const conventions = generateConventions(report)
-  fs.writeFileSync(path.join(outputDir, 'conventions.md'), conventions)
+  fs.writeFileSync(path.join(outputDirectory, 'conventions.md'), conventions)
 
-  fs.writeFileSync(path.join(outputDir, 'full-report.json'), JSON.stringify(report, null, 2))
+  fs.writeFileSync(
+    path.join(outputDirectory, 'full-report.json'),
+    JSON.stringify(report, undefined, 2)
+  )
 
   printConsoleReport(report, skipped)
 
   console.log('Output files:')
-  console.log(`  ${path.join(outputDir, 'enrichment.json')}`)
-  console.log(`  ${path.join(outputDir, 'conventions.md')}`)
-  console.log(`  ${path.join(outputDir, 'full-report.json')}`)
+  console.log(`  ${path.join(outputDirectory, 'enrichment.json')}`)
+  console.log(`  ${path.join(outputDirectory, 'conventions.md')}`)
+  console.log(`  ${path.join(outputDirectory, 'full-report.json')}`)
   console.log('\nDone.')
 }
 
 // Run if executed directly (not imported for testing)
+const entryScript = process.argv.at(1) ?? ''
 const isDirectRun =
-  process.argv[1] &&
-  (process.argv[1].endsWith('analyze-plugins.ts') || process.argv[1].endsWith('analyze-plugins.js'))
+  entryScript.endsWith('analyze-plugins.ts') || entryScript.endsWith('analyze-plugins.js')
 if (isDirectRun) {
   main()
 }
