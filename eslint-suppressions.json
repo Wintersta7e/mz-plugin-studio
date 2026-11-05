@@ -2693,32 +2693,6 @@
       "count": 13
     }
   },
-  "src/renderer/src/lib/generator/templates/custom-window.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 3
-    },
-    "unicorn/no-non-function-verb-prefix": {
-      "count": 1
-    },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
-    "unicorn/prefer-number-coercion": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    }
-  },
   "src/renderer/src/lib/generator/templates/database-ext.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 10
@@ -2812,38 +2786,6 @@
       "count": 1
     },
     "unicorn/no-useless-switch-case": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/generator/templates/menu-system.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 3
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 2
-    },
-    "unicorn/no-useless-switch-case": {
-      "count": 4
-    },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
       "count": 1
     }
   },

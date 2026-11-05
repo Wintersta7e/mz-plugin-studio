@@ -18,6 +18,15 @@ export function valueOr(value: unknown, fallback: unknown): unknown {
 }
 
 /**
+The number `parseInt(text, 10)` reads: the decimal integer at the start of the text, after white
+space and an optional sign, or `NaN` when no digit is there.
+*/
+export function decimalIntegerOf(text: string): number {
+  const digits = /^\s*[+-]?\d+/.exec(text)
+  return digits === null ? NaN : Number(digits[0])
+}
+
+/**
 The literal `getDefaultLiteral` writes for a default value that is neither text nor unset, read the
 way it reads one: by `Number()` for a number, by the conversion to text that `JSON.parse` makes for
 an object or an array, and by a string method, which throws `TypeError`, for text and a boolean.
