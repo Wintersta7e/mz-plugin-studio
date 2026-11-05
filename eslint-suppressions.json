@@ -2594,29 +2594,23 @@
     }
   },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 38
-    },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 9
+      "count": 3
     },
     "@typescript-eslint/switch-exhaustiveness-check": {
       "count": 2
     },
     "complexity": {
-      "count": 3
-    },
-    "max-lines-per-function": {
       "count": 1
     },
     "regexp/prefer-w": {
-      "count": 3
+      "count": 1
     },
     "regexp/use-ignore-case": {
-      "count": 3
+      "count": 1
     },
     "sonarjs/cognitive-complexity": {
-      "count": 2
+      "count": 1
     },
     "sonarjs/no-nested-conditional": {
       "count": 1
@@ -2629,9 +2623,6 @@
     },
     "unicorn/no-for-each": {
       "count": 3
-    },
-    "unicorn/no-negated-condition": {
-      "count": 13
     },
     "unicorn/prefer-hoisting-branch-code": {
       "count": 1

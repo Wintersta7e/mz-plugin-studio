@@ -47,3 +47,11 @@ export function defaultLiteralOf(dataType: unknown, value: unknown): string {
     ? getDefaultLiteral(dataType, value)
     : otherDefaultLiteral(dataType, value)
 }
+
+/**
+A template value, or the fallback when no value is given (undefined). `null` and the other falsy
+values are kept.
+*/
+export function providedOr(value: unknown, fallback: unknown): unknown {
+  return value === undefined ? fallback : value
+}

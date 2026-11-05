@@ -10,6 +10,24 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString, escapeLineComment } from '../escape'
+import { expectText, providedOr, valueOr } from './values'
+
+/**
+A BGM filename as the text of a single-quoted string, or the placeholder when it is not set.
+*/
+function bgmNameText(filename: unknown, placeholder: string): string {
+  return escapeJSString(expectText(valueOr(filename, placeholder)))
+}
+
+/**
+The error for a function name the code is wrapped in that is not a JavaScript identifier.
+*/
+function functionNameErrors(values: Record<string, unknown>): string[] {
+  const hasFunctionName = Boolean(values['wrapInFunction']) && Boolean(values['functionName'])
+  if (!hasFunctionName) return []
+  const isIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(values['functionName']))
+  return isIdentifier ? [] : ['Function name must be a valid JavaScript identifier']
+}
 
 /**
  * Template 1: BGM Control
@@ -103,17 +121,15 @@ const bgmControlTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = (values['operation'] as string) || 'play'
-    const filename = values['filename'] as string
-    const volume = values['volume'] !== undefined ? (values['volume'] as number) : 90
-    const pitch = values['pitch'] !== undefined ? (values['pitch'] as number) : 100
-    const pan = values['pan'] !== undefined ? (values['pan'] as number) : 0
-    const fadeDuration =
-      values['fadeDuration'] !== undefined ? (values['fadeDuration'] as number) : 1
-    const fadeInDuration =
-      values['fadeInDuration'] !== undefined ? (values['fadeInDuration'] as number) : 1
+    const operation = valueOr(values['operation'], 'play')
+    const filename = values['filename']
+    const volume = String(providedOr(values['volume'], 90))
+    const pitch = String(providedOr(values['pitch'], 100))
+    const pan = String(providedOr(values['pan'], 0))
+    const fadeDuration = String(providedOr(values['fadeDuration'], 1))
+    const fadeInDuration = String(providedOr(values['fadeInDuration'], 1))
     const wrapInFunction = values['wrapInFunction'] !== false
-    const functionName = (values['functionName'] as string) || 'customBgmControl'
+    const functionName = String(valueOr(values['functionName'], 'customBgmControl'))
 
     const lines: string[] = []
 
@@ -125,7 +141,7 @@ const bgmControlTemplate: CodeTemplate = {
         coreCode = [
           '// Play BGM with specified settings',
           'const bgm = {',
-          `    name: '${escapeJSString(filename || 'BGM_NAME')}',`,
+          `    name: '${bgmNameText(filename, 'BGM_NAME')}',`,
           `    volume: ${volume},`,
           `    pitch: ${pitch},`,
           `    pan: ${pan}`,
@@ -172,7 +188,7 @@ const bgmControlTemplate: CodeTemplate = {
     }
 
     if (wrapInFunction) {
-      lines.push(`// BGM Control Function: ${operation}`)
+      lines.push(`// BGM Control Function: ${String(operation)}`)
       lines.push(`function ${functionName}() {`)
       coreCode.forEach((line) => {
         lines.push(line ? `    ${line}` : '')
@@ -186,39 +202,34 @@ const bgmControlTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const operation = values['operation'] as string
+    const operation = values['operation']
 
     if (operation === 'play' && !values['filename']) {
       errors.push('BGM filename is required for Play operation')
     }
 
     if (values['volume'] !== undefined) {
-      const volume = values['volume'] as number
+      const volume = Number(values['volume'])
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
     if (values['pitch'] !== undefined) {
-      const pitch = values['pitch'] as number
+      const pitch = Number(values['pitch'])
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
     if (values['pan'] !== undefined) {
-      const pan = values['pan'] as number
+      const pan = Number(values['pan'])
       if (pan < -100 || pan > 100) {
         errors.push('Pan must be between -100 and 100')
       }
     }
 
-    if (values['wrapInFunction'] && values['functionName']) {
-      const functionName = values['functionName'] as string
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
-        errors.push('Function name must be a valid JavaScript identifier')
-      }
-    }
+    errors.push(...functionNameErrors(values))
 
     return {
       valid: errors.length === 0,
@@ -299,15 +310,14 @@ const sePlayerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const filename = values['filename'] as string
-    const volume = values['volume'] !== undefined ? (values['volume'] as number) : 90
-    const pitch = values['pitch'] !== undefined ? (values['pitch'] as number) : 100
-    const pan = values['pan'] !== undefined ? (values['pan'] as number) : 0
+    const filename = values['filename']
+    const volume = String(providedOr(values['volume'], 90))
+    const pitch = String(providedOr(values['pitch'], 100))
+    const pan = String(providedOr(values['pan'], 0))
     const wrapInFunction = values['wrapInFunction'] !== false
-    const functionName = (values['functionName'] as string) || 'playCustomSE'
+    const functionName = String(valueOr(values['functionName'], 'playCustomSE'))
     const randomizePitch = values['randomizePitch'] === true
-    const pitchVariation =
-      values['pitchVariation'] !== undefined ? (values['pitchVariation'] as number) : 10
+    const pitchVariation = String(providedOr(values['pitchVariation'], 10))
 
     const lines: string[] = []
 
@@ -322,7 +332,7 @@ const sePlayerTemplate: CodeTemplate = {
         'const randomPitch = basePitch + Math.floor(Math.random() * variation * 2) - variation;'
       )
       coreCode.push('const se = {')
-      coreCode.push(`    name: '${escapeJSString(filename)}',`)
+      coreCode.push(`    name: '${escapeJSString(expectText(filename))}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push('    pitch: Math.max(50, Math.min(150, randomPitch)),')
       coreCode.push(`    pan: ${pan}`)
@@ -330,7 +340,7 @@ const sePlayerTemplate: CodeTemplate = {
     } else {
       coreCode.push('// Play sound effect')
       coreCode.push('const se = {')
-      coreCode.push(`    name: '${escapeJSString(filename)}',`)
+      coreCode.push(`    name: '${escapeJSString(expectText(filename))}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push(`    pitch: ${pitch},`)
       coreCode.push(`    pan: ${pan}`)
@@ -339,7 +349,7 @@ const sePlayerTemplate: CodeTemplate = {
     coreCode.push('AudioManager.playSe(se);')
 
     if (wrapInFunction) {
-      lines.push(`// Sound Effect Function: ${escapeLineComment(filename)}`)
+      lines.push(`// Sound Effect Function: ${escapeLineComment(expectText(filename))}`)
       lines.push(`function ${functionName}() {`)
       coreCode.forEach((line) => {
         lines.push(line ? `    ${line}` : '')
@@ -355,35 +365,30 @@ const sePlayerTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['volume'] !== undefined) {
-      const volume = values['volume'] as number
+      const volume = Number(values['volume'])
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
     if (values['pitch'] !== undefined) {
-      const pitch = values['pitch'] as number
+      const pitch = Number(values['pitch'])
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
     if (values['pan'] !== undefined) {
-      const pan = values['pan'] as number
+      const pan = Number(values['pan'])
       if (pan < -100 || pan > 100) {
         errors.push('Pan must be between -100 and 100')
       }
     }
 
-    if (values['wrapInFunction'] && values['functionName']) {
-      const functionName = values['functionName'] as string
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
-        errors.push('Function name must be a valid JavaScript identifier')
-      }
-    }
+    errors.push(...functionNameErrors(values))
 
     if (values['pitchVariation'] !== undefined) {
-      const pitchVariation = values['pitchVariation'] as number
+      const pitchVariation = Number(values['pitchVariation'])
       if (pitchVariation < 0 || pitchVariation > 50) {
         errors.push('Pitch variation should be between 0 and 50')
       }
@@ -481,19 +486,15 @@ const audioCrossfadeTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const crossfadeType = (values['crossfadeType'] as string) || 'crossfade'
-    const newBgmFilename = values['newBgmFilename'] as string
-    const fadeFromSilenceBgm = values['fadeFromSilenceBgm'] as string
-    const fadeOutDuration =
-      values['fadeOutDuration'] !== undefined ? (values['fadeOutDuration'] as number) : 2
-    const fadeInDuration =
-      values['fadeInDuration'] !== undefined ? (values['fadeInDuration'] as number) : 2
-    const newBgmVolume =
-      values['newBgmVolume'] !== undefined ? (values['newBgmVolume'] as number) : 90
-    const newBgmPitch =
-      values['newBgmPitch'] !== undefined ? (values['newBgmPitch'] as number) : 100
+    const crossfadeType = valueOr(values['crossfadeType'], 'crossfade')
+    const newBgmFilename = values['newBgmFilename']
+    const fadeFromSilenceBgm = values['fadeFromSilenceBgm']
+    const fadeOutDuration = String(providedOr(values['fadeOutDuration'], 2))
+    const fadeInDuration = String(providedOr(values['fadeInDuration'], 2))
+    const newBgmVolume = String(providedOr(values['newBgmVolume'], 90))
+    const newBgmPitch = String(providedOr(values['newBgmPitch'], 100))
     const wrapInFunction = values['wrapInFunction'] !== false
-    const functionName = (values['functionName'] as string) || 'crossfadeBgm'
+    const functionName = String(valueOr(values['functionName'], 'crossfadeBgm'))
 
     const lines: string[] = []
 
@@ -508,7 +509,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         coreCode.push('')
         coreCode.push('// Define the new BGM settings')
         coreCode.push('const newBgm = {')
-        coreCode.push(`    name: '${escapeJSString(newBgmFilename || 'NEW_BGM_NAME')}',`)
+        coreCode.push(`    name: '${bgmNameText(newBgmFilename, 'NEW_BGM_NAME')}',`)
         coreCode.push(`    volume: ${newBgmVolume},`)
         coreCode.push(`    pitch: ${newBgmPitch},`)
         coreCode.push('    pan: 0')
@@ -538,7 +539,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         coreCode.push('')
         coreCode.push('// Define the BGM settings')
         coreCode.push('const bgm = {')
-        coreCode.push(`    name: '${escapeJSString(fadeFromSilenceBgm || 'BGM_NAME')}',`)
+        coreCode.push(`    name: '${bgmNameText(fadeFromSilenceBgm, 'BGM_NAME')}',`)
         coreCode.push(`    volume: ${newBgmVolume},`)
         coreCode.push(`    pitch: ${newBgmPitch},`)
         coreCode.push('    pan: 0')
@@ -573,7 +574,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const crossfadeType = values['crossfadeType'] as string
+    const crossfadeType = values['crossfadeType']
 
     // Validate BGM filename based on crossfade type
     if (crossfadeType === 'crossfade' && !values['newBgmFilename']) {
@@ -586,14 +587,14 @@ const audioCrossfadeTemplate: CodeTemplate = {
 
     // Validate durations
     if (values['fadeOutDuration'] !== undefined) {
-      const duration = values['fadeOutDuration'] as number
+      const duration = Number(values['fadeOutDuration'])
       if (duration < 0 || duration > 60) {
         errors.push('Fade out duration must be between 0 and 60 seconds')
       }
     }
 
     if (values['fadeInDuration'] !== undefined) {
-      const duration = values['fadeInDuration'] as number
+      const duration = Number(values['fadeInDuration'])
       if (duration < 0 || duration > 60) {
         errors.push('Fade in duration must be between 0 and 60 seconds')
       }
@@ -601,26 +602,21 @@ const audioCrossfadeTemplate: CodeTemplate = {
 
     // Validate volume and pitch
     if (values['newBgmVolume'] !== undefined) {
-      const volume = values['newBgmVolume'] as number
+      const volume = Number(values['newBgmVolume'])
       if (volume < 0 || volume > 100) {
         errors.push('Volume must be between 0 and 100')
       }
     }
 
     if (values['newBgmPitch'] !== undefined) {
-      const pitch = values['newBgmPitch'] as number
+      const pitch = Number(values['newBgmPitch'])
       if (pitch < 50 || pitch > 150) {
         errors.push('Pitch must be between 50 and 150')
       }
     }
 
     // Validate function name
-    if (values['wrapInFunction'] && values['functionName']) {
-      const functionName = values['functionName'] as string
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(functionName)) {
-        errors.push('Function name must be a valid JavaScript identifier')
-      }
-    }
+    errors.push(...functionNameErrors(values))
 
     return {
       valid: errors.length === 0,
