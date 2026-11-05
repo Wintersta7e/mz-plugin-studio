@@ -3,6 +3,7 @@
 import { createElement } from 'react'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { createFakeApi } from '../helpers/fake-api'
 
 const KEY = 'mz-plugin-studio-settings'
@@ -320,6 +321,39 @@ describe('damaged saved state', () => {
       inGood({ key: 'structs' }, at(0), { key: 'parameters' }, at(0), { key: 'desc' }),
       inGood({ key: 'structs' }, at(1))
     ])
+  })
+
+  it('note group fields of the wrong type are left out and named, and the plugin code is written', async () => {
+    expect.assertions(3)
+
+    const meta = {
+      ...tab('a', 'Notes').meta,
+      noteParams: [
+        { name: 'Face', type: 'file', dir: 7, data: true, require: 'yes' },
+        { name: 'Portrait', type: 'file', dir: 'img/faces', data: 'actors', require: true }
+      ]
+    }
+    localStorage.setItem(PLUGIN_KEY, savedTabs([{ ...tab('a', 'Notes'), meta }]))
+    const { usePluginStore, persist } = await loadPlugins()
+    const { openPlugins } = usePluginStore.getState()
+
+    expect(openPlugins.map((plugin) => plugin.meta.noteParams)).toStrictEqual([
+      [
+        { name: 'Face', type: 'file' },
+        { name: 'Portrait', type: 'file', dir: 'img/faces', data: 'actors', require: true }
+      ]
+    ])
+
+    const face = [{ key: 'meta' }, { key: 'noteParams' }, { index: 0 }]
+    const inTab = [{ key: 'openPlugins' }, { index: 0, name: 'Notes' }, ...face]
+    const dropped = persist.takeRestoreReport().find((entry) => entry.kind === 'entries-dropped')
+
+    expect(dropped?.fields).toStrictEqual(
+      [[{ key: 'plugin' }, ...face], inTab].flatMap((at) =>
+        ['dir', 'data', 'require'].map((key) => [...at, { key }])
+      )
+    )
+    expect(() => openPlugins.map((plugin) => generatePlugin(plugin))).not.toThrow()
   })
 
   it('an unknown key of any spelling is named as written and the report still names its tab', async () => {

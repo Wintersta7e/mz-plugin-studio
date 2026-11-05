@@ -215,18 +215,18 @@ function noteParamLines(
   shouldKeepRequire: boolean
 ): string[] {
   const lines: string[] = []
-  // `@noteDir`, `@noteData` and `@noteRequire` are written only when their field is set to a
-  // value JavaScript reads as true; nothing here checks that `dir` and `data` hold text.
+  // `@noteDir` and `@noteData` are written for text that is not empty, `@noteRequire` for true;
+  // the plugin store checks these field types when it loads a saved note group.
   for (const np of noteParams) {
     lines.push(` * @noteParam ${blockValue(sink, 'Plugin @noteParam', np.name)}`)
     lines.push(` * @noteType ${blockValue(sink, 'Plugin @noteType', np.type)}`)
-    if (np.dir !== undefined && Boolean(np.dir)) {
+    if (np.dir !== undefined && np.dir !== '') {
       lines.push(` * @noteDir ${blockValue(sink, 'Plugin @noteDir', np.dir)}`)
     }
-    if (np.data !== undefined && Boolean(np.data)) {
+    if (np.data !== undefined && np.data !== '') {
       lines.push(` * @noteData ${blockValue(sink, 'Plugin @noteData', np.data)}`)
     }
-    if (shouldKeepRequire && Boolean(np.require)) lines.push(' * @noteRequire 1')
+    if (shouldKeepRequire && np.require === true) lines.push(' * @noteRequire 1')
   }
   return lines
 }

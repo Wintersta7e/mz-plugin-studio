@@ -72,7 +72,7 @@
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
       "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 50,
+      "src/renderer/src/stores/pluginStore.ts": 48,
       "src/renderer/src/stores/templateStore.ts": 4,
       "src/renderer/src/stores/uiStore.ts": 2,
       "tests/dom/persisted-damage.test.ts": 4,
@@ -210,7 +210,7 @@
     },
     "noPropertyAccessFromIndexSignature": {
       "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 50,
+      "src/renderer/src/stores/pluginStore.ts": 48,
       "src/renderer/src/stores/templateStore.ts": 4,
       "src/renderer/src/stores/uiStore.ts": 2
     },

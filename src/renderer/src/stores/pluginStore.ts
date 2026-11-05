@@ -185,10 +185,20 @@ const META_OPTIONAL_LISTS = ['orderAfter', 'orderBefore', 'requiredAssets'] as c
 const checkStringList = checkArrayOf(checkString)
 const checkParameters = checkArrayOf(checkSavedParameter)
 
-const checkNoteParam: FieldCheck<NoteParam> = (value) =>
-  isRecord(value) && typeof value.name === 'string' && typeof value.type === 'string'
-    ? (value as unknown as NoteParam)
-    : undefined
+// A note group: `dir` and `data` are kept as text and `require` as true or false; any other is named
+const checkNoteParam: FieldCheck<NoteParam> = (value, drop) => {
+  if (!isRecord(value)) return
+  const { name, type, dir, data, require: required } = value
+  if (typeof name !== 'string' || typeof type !== 'string') return
+  const noteParam: NoteParam = { name, type }
+  if (typeof dir === 'string') noteParam.dir = dir
+  else if (dir !== undefined) drop([{ key: 'dir' }])
+  if (typeof data === 'string') noteParam.data = data
+  else if (data !== undefined) drop([{ key: 'data' }])
+  if (typeof required === 'boolean') noteParam.require = required
+  else if (required !== undefined) drop([{ key: 'require' }])
+  return noteParam
+}
 
 const checkLocalized: FieldCheck<LocalizedContent> = (value) =>
   isRecord(value) &&
