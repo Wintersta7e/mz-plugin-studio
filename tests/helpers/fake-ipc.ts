@@ -1,27 +1,42 @@
 // A stand-in for `ipcMain`: records what main registers and calls it as a window's request would.
 // A test importing this file mocks `electron` (the registration module imports `ipcMain`).
-import { resolve } from 'node:path'
+import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
-import { createSenderCheck, handleAll, onAll } from '../../src/main/ipc/registration'
-import type { Registrar, SenderCheck, SenderEvent } from '../../src/main/ipc/registration'
+import { vi } from 'vitest'
+import {
+  createInvokeHandlers,
+  createSendListeners,
+  type DialogPort,
+  type MainDeps as MainDependencies
+} from '../../src/main/ipc/handlers'
+import {
+  createSenderCheck,
+  handleAll,
+  onAll,
+  type Registrar,
+  type SenderCheck,
+  type SenderEvent
+} from '../../src/main/ipc/registration'
 
-type Listener = (event: SenderEvent, ...args: unknown[]) => unknown
-
-/** The part of a frame the sender check reads */
+/**
+The part of a frame the sender check reads
+*/
 export interface FakeFrame {
   url: string
 }
 
-/** A window whose main frame shows `url` */
+/**
+A window whose main frame shows `url`
+*/
 export function createFakeWindow(url: string): { webContents: { mainFrame: FakeFrame } } {
   return { webContents: { mainFrame: { url } } }
 }
 
-/** The app's window at a synthetic renderer entry, and a sender check that trusts its main frame */
+/**
+The app's window at a synthetic renderer entry, and a sender check that trusts its main frame
+*/
 export function createAppPage(): { frame: FakeFrame; isTrustedSender: SenderCheck } {
-  const entry = resolve('/Synthetic_App/out/renderer/index.html')
+  const entry = path.resolve('/Synthetic_App/out/renderer/index.html')
   const window = createFakeWindow(pathToFileURL(entry).href)
   const isTrustedSender = createSenderCheck(() => window, { kind: 'file', path: entry })
   return { frame: window.webContents.mainFrame, isTrustedSender }
@@ -31,7 +46,9 @@ export interface FakeRegistrar {
   registrar: Registrar
   handled: string[]
   listened: string[]
-  /** Calls as a request from `defaultFrame` */
+  /**
+  Calls as a request from `defaultFrame`
+  */
   invoke(channel: string, ...args: unknown[]): Promise<unknown>
   send(channel: string, ...args: unknown[]): void
   invokeFrom(frame: FakeFrame | null, channel: string, ...args: unknown[]): Promise<unknown>
@@ -39,6 +56,7 @@ export interface FakeRegistrar {
 }
 
 export function createFakeRegistrar(defaultFrame: FakeFrame | null = null): FakeRegistrar {
+  type Listener = (event: SenderEvent, ...args: unknown[]) => unknown
   const handlers = new Map<string, Listener>()
   const listeners = new Map<string, Listener>()
   const handled: string[] = []
@@ -50,7 +68,7 @@ export function createFakeRegistrar(defaultFrame: FakeFrame | null = null): Fake
   ): Promise<unknown> => {
     const handler = handlers.get(channel)
     if (handler === undefined) throw new Error(`no handler for ${channel}`)
-    return handler({ senderFrame: frame }, ...args)
+    return await handler({ senderFrame: frame }, ...args)
   }
   const sendFrom = (frame: FakeFrame | null, channel: string, ...args: unknown[]): void => {
     const listener = listeners.get(channel)
@@ -70,24 +88,49 @@ export function createFakeRegistrar(defaultFrame: FakeFrame | null = null): Fake
     },
     handled,
     listened,
-    invoke: (channel, ...args) => invokeFrom(defaultFrame, channel, ...args),
-    send: (channel, ...args) => sendFrom(defaultFrame, channel, ...args),
+    invoke: async (channel, ...args) => invokeFrom(defaultFrame, channel, ...args),
+    send: (channel, ...args) => {
+      sendFrom(defaultFrame, channel, ...args)
+    },
     invokeFrom,
     sendFrom
   }
 }
 
-/** Main's handlers and listeners registered on a fresh stand-in, called from the app page, `dialog` answering the dialogs */
+/**
+A dialog method the test left out: calling it fails the request
+*/
+function unanswered(name: keyof DialogPort): () => never {
+  return () => {
+    throw new Error(`the test's dialog has no ${name}`)
+  }
+}
+
+/**
+Main's handlers and listeners registered on a fresh stand-in, called from the app page, `dialog` answering the dialogs
+*/
 export function registerMainHandlers(dialog: Partial<DialogPort> = {}): FakeRegistrar {
-  const deps: MainDeps = {
-    dialog: dialog as DialogPort,
+  // Read when called, so a method the test replaces later is the one used
+  const port: DialogPort = {
+    get showOpenDialog() {
+      return dialog.showOpenDialog ?? unanswered('showOpenDialog')
+    },
+    get showSaveDialog() {
+      return dialog.showSaveDialog ?? unanswered('showSaveDialog')
+    },
+    get showMessageBox() {
+      return dialog.showMessageBox ?? unanswered('showMessageBox')
+    }
+  }
+  const dependencies: MainDependencies = {
+    dialog: port,
     getWindow: () => null,
-    openLogFolder: async () => {},
-    setLogLevel: () => {}
+    openLogFolder: vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue(),
+    setLogLevel: vi.fn<MainDependencies['setLogLevel']>()
   }
   const page = createAppPage()
   const fake = createFakeRegistrar(page.frame)
-  handleAll(createInvokeHandlers(deps), page.isTrustedSender, fake.registrar)
-  onAll(createSendListeners(deps), page.isTrustedSender, fake.registrar)
+  handleAll(createInvokeHandlers(dependencies), page.isTrustedSender, fake.registrar)
+  onAll(createSendListeners(dependencies), page.isTrustedSender, fake.registrar)
   return fake
 }

@@ -2,7 +2,7 @@
 // an editor is a textarea, and `beforeMount`/`onMount` receive a fake Monaco namespace and a fake
 // editor whose members are recorded `vi.fn`s.
 import { useEffect, useRef, useState } from 'react'
-import { vi } from 'vitest'
+import { vi, type Mock } from 'vitest'
 
 /**
 Every completion provider registered since the last reset, and whether it was disposed; every
@@ -21,14 +21,18 @@ export function resetMonacoStub(): void {
   monacoStub.editors = []
 }
 
+interface Disposable {
+  dispose: Mock<() => void>
+}
+
 export function createFakeMonaco() {
   return {
     languages: {
-      registerCompletionItemProvider: vi.fn((language: string) => {
+      registerCompletionItemProvider: vi.fn<(language: string) => Disposable>((language) => {
         const provider = { language, disposed: false }
         monacoStub.providers.push(provider)
         return {
-          dispose: vi.fn(() => {
+          dispose: vi.fn<() => void>(() => {
             provider.disposed = true
           })
         }
@@ -46,17 +50,36 @@ interface Range {
   endColumn: number
 }
 
-/** The 1-based line and column of `offset` in `text`, as Monaco counts them. */
-function position(text: string, offset: number): { line: number; column: number } {
-  const before = text.slice(0, offset).split('\n')
-  return { line: before.length, column: before[before.length - 1].length + 1 }
+interface Edit {
+  range: Range
+  text: string
 }
 
-/** The offset in `text` of a 1-based line and column. */
+interface Selection extends Range {
+  isEmpty: () => boolean
+}
+
+interface EditorOptions {
+  readOnly?: boolean
+  fontSize?: number
+}
+
+/**
+The 1-based line and column of `offset` in `text`, as Monaco counts them.
+*/
+function position(text: string, offset: number): { line: number; column: number } {
+  const before = text.slice(0, offset)
+  const lineStart = before.lastIndexOf('\n') + 1
+  return { line: before.split('\n').length, column: before.length - lineStart + 1 }
+}
+
+/**
+The offset in `text` of a 1-based line and column.
+*/
 function offsetOf(text: string, line: number, column: number): number {
-  const lines = text.split('\n')
   let offset = 0
-  for (let i = 0; i < line - 1; i++) offset += lines[i].length + 1
+  const linesBefore = text.split('\n').slice(0, line - 1)
+  for (const before of linesBefore) offset += before.length + 1
   return offset + column - 1
 }
 
@@ -66,7 +89,7 @@ export function createFakeEditor(
   selection: () => { start: number; end: number }
 ) {
   const lines = (): string[] => read().split('\n')
-  const lineMaxColumn = (line: number): number => lines()[line - 1].length + 1
+  const lineMaxColumn = (line: number): number => (lines().at(line - 1) ?? '').length + 1
   const model = {
     getValue: read,
     getLineCount: () => lines().length,
@@ -82,10 +105,10 @@ export function createFakeEditor(
     }
   }
   return {
-    getValue: vi.fn(read),
-    setValue: vi.fn(write),
+    getValue: vi.fn<() => string>(read),
+    setValue: vi.fn<(value: string) => void>(write),
     // Applies each edit's line/column range to the text, as Monaco does
-    executeEdits: vi.fn((_source: string, edits: { range: Range; text: string }[]) => {
+    executeEdits: vi.fn<(source: string, edits: Edit[]) => boolean>((_source, edits) => {
       let text = read()
       for (const { range, text: insert } of edits) {
         const start = offsetOf(text, range.startLineNumber, range.startColumn)
@@ -95,9 +118,9 @@ export function createFakeEditor(
       write(text)
       return true
     }),
-    getModel: vi.fn(() => model),
+    getModel: vi.fn<() => typeof model>(() => model),
     // The textarea's selection, as a Monaco range
-    getSelection: vi.fn(() => {
+    getSelection: vi.fn<() => Selection>(() => {
       const text = read()
       const { start, end } = selection()
       const from = position(text, start)
@@ -110,9 +133,9 @@ export function createFakeEditor(
         isEmpty: () => start === end
       }
     }),
-    focus: vi.fn(),
-    updateOptions: vi.fn(),
-    onDidChangeModelContent: vi.fn(() => ({ dispose: vi.fn() }))
+    focus: vi.fn<() => void>(),
+    updateOptions: vi.fn<(options: EditorOptions) => void>(),
+    onDidChangeModelContent: vi.fn<() => Disposable>(() => ({ dispose: vi.fn<() => void>() }))
   }
 }
 
@@ -121,7 +144,7 @@ export type FakeEditor = ReturnType<typeof createFakeEditor>
 interface EditorProps {
   value?: string
   defaultValue?: string
-  options?: { readOnly?: boolean; fontSize?: number }
+  options?: EditorOptions
   beforeMount?: (monaco: FakeMonaco) => void
   onMount?: (editor: FakeEditor, monaco: FakeMonaco) => void
   onChange?: (value: string | undefined) => void
@@ -129,13 +152,13 @@ interface EditorProps {
 
 export function Editor({
   value,
-  defaultValue,
+  defaultValue = '',
   options,
   beforeMount,
   onMount,
   onChange
-}: EditorProps) {
-  const [text, setText] = useState(defaultValue ?? '')
+}: Readonly<EditorProps>) {
+  const [text, setText] = useState(defaultValue)
   const shown = value ?? text
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   // Monaco calls the mount callbacks once, with the props of the first render.
@@ -144,18 +167,17 @@ export function Editor({
 
   useEffect(() => {
     const { beforeMount, onMount, onChange } = mountRef.current
+    const textarea = textareaRef.current
+    if (textarea === null) return
     const monaco = createFakeMonaco()
     beforeMount?.(monaco)
     const editor = createFakeEditor(
-      () => textareaRef.current!.value,
+      () => textarea.value,
       (next) => {
         setText(next)
         onChange?.(next)
       },
-      () => ({
-        start: textareaRef.current!.selectionStart,
-        end: textareaRef.current!.selectionEnd
-      })
+      () => ({ start: textarea.selectionStart, end: textarea.selectionEnd })
     )
     editorRef.current = editor
     monacoStub.editors.push(editor)
@@ -176,9 +198,9 @@ export function Editor({
       data-testid="monaco-editor"
       readOnly={options?.readOnly}
       value={shown}
-      onChange={(e) => {
-        setText(e.target.value)
-        onChange?.(e.target.value)
+      onChange={(event) => {
+        setText(event.target.value)
+        onChange?.(event.target.value)
       }}
     />
   )
@@ -186,11 +208,14 @@ export function Editor({
 
 export default Editor
 
-export function DiffEditor({ original, modified }: { original?: string; modified?: string }) {
+export function DiffEditor({
+  original = '',
+  modified = ''
+}: Readonly<{ original?: string; modified?: string }>) {
   return (
     <>
-      <textarea data-testid="monaco-diff-original" value={original ?? ''} readOnly />
-      <textarea data-testid="monaco-diff-modified" value={modified ?? ''} readOnly />
+      <textarea data-testid="monaco-diff-original" value={original} readOnly />
+      <textarea data-testid="monaco-diff-modified" value={modified} readOnly />
     </>
   )
 }

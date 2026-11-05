@@ -4962,9 +4962,6 @@
     "@typescript-eslint/no-empty-function": {
       "count": 10
     },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
     },
@@ -5762,137 +5759,6 @@
       "count": 1
     }
   },
-  "tests/helpers/console-guard.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "tests/helpers/evaluate-plugin.ts": {
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-duplicate-loops": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/fake-api.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/require-await": {
-      "count": 15
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 21
-    }
-  },
-  "tests/helpers/fake-ipc.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/prefer-smaller-scope": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
-  "tests/helpers/fixture-project.ts": {
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "tests/helpers/hostile.ts": {
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/js-context.ts": {
-    "import-x/no-named-as-default-member": {
-      "count": 15
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
   "tests/helpers/mz-conformance.ts": {
     "@typescript-eslint/no-misused-spread": {
       "count": 1
@@ -5967,46 +5833,6 @@
       "count": 26
     }
   },
-  "tests/helpers/mz-corescript.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 8
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-return-array-push": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/mz-runtime.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 9
-    }
-  },
   "tests/helpers/persist-v160.ts": {
     "@typescript-eslint/no-dynamic-delete": {
       "count": 3
@@ -6027,40 +5853,6 @@
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
-  "tests/helpers/test-dirs.ts": {
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
-  "tests/helpers/workflow-reader.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-assignment": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    },
-    "vitest/no-conditional-tests": {
       "count": 2
     }
   },
@@ -7155,76 +6947,7 @@
     }
   },
   "tests/setup/dom.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 4
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 2
-    },
     "vitest/require-top-level-describe": {
-      "count": 1
-    },
-    "vitest/unbound-method": {
-      "count": 3
-    }
-  },
-  "tests/setup/mocks.ts": {
-    "vitest/prefer-import-in-mock": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 6
-    }
-  },
-  "tests/setup/monaco-stub.tsx": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 3
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-default-parameters": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 11
-    }
-  },
-  "tests/setup/no-skips-reporter.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
       "count": 1
     }
   },

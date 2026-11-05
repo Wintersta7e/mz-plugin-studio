@@ -5,7 +5,9 @@ import { createEmptyPlugin } from '../../src/shared/types/plugin'
 import type { SaveResult } from '../../src/shared/ipc-types'
 import type { MZProject } from '../../src/shared/types/mz'
 
-/** A loaded project with no game data, for tests that only need one to be open */
+/**
+A loaded project with no game data, for tests that only need one to be open
+*/
 export function sampleProject(path = '/project'): MZProject {
   return {
     path,
@@ -28,7 +30,9 @@ export function sampleProject(path = '/project'): MZProject {
   }
 }
 
-/** A save that wrote nothing */
+/**
+A save that wrote nothing
+*/
 const notWritten: SaveResult = {
   success: false,
   path: '',
@@ -39,10 +43,11 @@ const notWritten: SaveResult = {
 export type FakeApiOverrides = { [K in keyof Window['api']]?: Partial<Window['api'][K]> }
 
 export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
+  type Api = Window['api']
   const api: Window['api'] = {
     project: {
-      validate: vi.fn(async () => ({ valid: false })),
-      load: vi.fn(async () => ({
+      validate: vi.fn<Api['project']['validate']>().mockResolvedValue({ valid: false }),
+      load: vi.fn<Api['project']['load']>().mockResolvedValue({
         path: '',
         gameTitle: '',
         switches: [],
@@ -60,34 +65,38 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
         commonEvents: [],
         classes: [],
         troops: []
-      }))
+      })
     },
     plugin: {
-      save: vi.fn(async () => notWritten),
-      saveToPath: vi.fn(async () => notWritten),
-      load: vi.fn(async () => ({ plugin: createEmptyPlugin(), path: '', sha256: '' })),
-      parse: vi.fn(async () => createEmptyPlugin()),
-      readRaw: vi.fn(async () => ({ content: '', path: '', sha256: '' })),
-      list: vi.fn(async () => []),
-      readByPath: vi.fn(async () => ''),
-      scanHeaders: vi.fn(async () => [])
+      save: vi.fn<Api['plugin']['save']>().mockResolvedValue(notWritten),
+      saveToPath: vi.fn<Api['plugin']['saveToPath']>().mockResolvedValue(notWritten),
+      load: vi
+        .fn<Api['plugin']['load']>()
+        .mockResolvedValue({ plugin: createEmptyPlugin(), path: '', sha256: '' }),
+      parse: vi.fn<Api['plugin']['parse']>().mockResolvedValue(createEmptyPlugin()),
+      readRaw: vi
+        .fn<Api['plugin']['readRaw']>()
+        .mockResolvedValue({ content: '', path: '', sha256: '' }),
+      list: vi.fn<Api['plugin']['list']>().mockResolvedValue([]),
+      readByPath: vi.fn<Api['plugin']['readByPath']>().mockResolvedValue(''),
+      scanHeaders: vi.fn<Api['plugin']['scanHeaders']>().mockResolvedValue([])
     },
     dialog: {
-      openFolder: vi.fn(async () => null),
-      saveFile: vi.fn(async () => null),
-      openFile: vi.fn(async () => null),
-      message: vi.fn(async () => 0)
+      openFolder: vi.fn<Api['dialog']['openFolder']>().mockResolvedValue(null),
+      saveFile: vi.fn<Api['dialog']['saveFile']>().mockResolvedValue(null),
+      openFile: vi.fn<Api['dialog']['openFile']>().mockResolvedValue(null),
+      message: vi.fn<Api['dialog']['message']>().mockResolvedValue(0)
     },
     window: {
-      minimize: vi.fn(),
-      maximize: vi.fn(),
-      close: vi.fn(),
-      isMaximized: vi.fn(async () => false),
-      onMaximizeChange: vi.fn(() => () => {})
+      minimize: vi.fn<Api['window']['minimize']>(),
+      maximize: vi.fn<Api['window']['maximize']>(),
+      close: vi.fn<Api['window']['close']>(),
+      isMaximized: vi.fn<Api['window']['isMaximized']>().mockResolvedValue(false),
+      onMaximizeChange: vi.fn<Api['window']['onMaximizeChange']>(() => vi.fn<() => void>())
     },
     log: {
-      openFolder: vi.fn(async () => {}),
-      setLevel: vi.fn()
+      openFolder: vi.fn<Api['log']['openFolder']>().mockResolvedValue(),
+      setLevel: vi.fn<Api['log']['setLevel']>()
     }
   }
   return {

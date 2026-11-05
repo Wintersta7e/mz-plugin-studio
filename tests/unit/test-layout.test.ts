@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ESLint } from 'eslint'
 import eslintConfig from '../../eslint.config.mjs'
-import { TEST_DIRS } from '../helpers/test-dirs'
+import { TEST_DIRS } from '../helpers/test-directories'
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
 const ROUTED_GROUPS = [

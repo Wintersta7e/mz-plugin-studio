@@ -6,7 +6,7 @@ import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 import { ALL_PARAM_TYPES } from '../../src/shared/types/plugin'
 import { CATEGORIES } from '../../src/renderer/src/lib/generator/templates/types'
-import { TEST_DIRS } from '../helpers/test-dirs'
+import { TEST_DIRS } from '../helpers/test-directories'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const read = (file: string): string => readFileSync(join(ROOT, file), 'utf8')

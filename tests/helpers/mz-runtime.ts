@@ -2,11 +2,12 @@
 // `$plugins` list, hand each plugin its stored parameters, and run a plugin command as an event
 // does. `createMzShim` is the stand-in the suite runs on; a second implementation over a local
 // MZ install compares against it.
-import { Script, createContext } from 'node:vm'
-import type { Context } from 'node:vm'
+import { Script, createContext, type Context } from 'node:vm'
 import { installStandIns } from './evaluate-plugin'
 
-/** One entry of a game's plugin list; every stored value is a string. */
+/**
+One entry of a game's plugin list; every stored value is a string.
+*/
 export interface MzPluginEntry {
   name: string
   status: boolean
@@ -15,18 +16,28 @@ export interface MzPluginEntry {
 }
 
 export interface MzLoadReport {
-  /** A plugin whose file is missing, or whose code threw or did not parse; loading went on. */
+  /**
+  A plugin whose file is missing, or whose code threw or did not parse; loading went on.
+  */
   errors: { name: string; message: string }[]
 }
 
 export interface MzRuntime {
-  /** The global scope the plugins run in. */
+  /**
+  The global scope the plugins run in.
+  */
   readonly context: Context
-  /** The object a plugin command runs with as `this`, created inside the context. */
+  /**
+  The object a plugin command runs with as `this`, created inside the context.
+  */
   readonly interpreter: object
-  /** Loads `entries` in order; a plugin's code is `sources.get('js/plugins/<name>.js')`. */
+  /**
+  Loads `entries` in order; a plugin's code is `sources.get('js/plugins/<name>.js')`.
+  */
   load(entries: readonly MzPluginEntry[], sources: ReadonlyMap<string, string>): MzLoadReport
-  /** The parameters stored for the plugin `name`, `{}` when none. */
+  /**
+  The parameters stored for the plugin `name`, `{}` when none.
+  */
   parameters(name: string): Record<string, string>
   /**
   Runs a plugin command as an event does, from its `[plugin, command, label, args]`; false
@@ -37,7 +48,9 @@ export interface MzRuntime {
 
 const TIMEOUT_MS = 2000
 
-/** `sub/Foo` → `Foo`: a plugin is known by the last segment of its name. */
+/**
+`sub/Foo` → `Foo`: a plugin is known by the last segment of its name.
+*/
 export const lastSegment = (name: string): string => name.slice(name.lastIndexOf('/') + 1)
 
 export function describeThrown(error: unknown): string {
@@ -48,11 +61,52 @@ export function describeThrown(error: unknown): string {
   return String(error)
 }
 
-/** Copies plain data into `context`, so the plugin reads values made in its own realm. */
-export function intoContext<T>(context: Context, value: T): T {
+/**
+Copies plain data into `context`, so the plugin reads values made in its own realm.
+*/
+export function intoContext(context: Context, value: unknown): unknown {
   const text = JSON.stringify(JSON.stringify(value))
   // eslint-disable-next-line sonarjs/code-eval -- copies a value into the test runtime context as JSON
-  return new Script(`JSON.parse(${text})`).runInContext(context) as T
+  return new Script(`JSON.parse(${text})`).runInContext(context)
+}
+
+type Method = (...args: unknown[]) => unknown
+
+function hasMethods<K extends string>(
+  value: unknown,
+  names: readonly K[]
+): value is Record<K, Method> {
+  return (
+    ((typeof value === 'object' && value !== null) || typeof value === 'function') &&
+    names.every((name) => typeof Reflect.get(value, name) === 'function')
+  )
+}
+
+/**
+`value`, a script's object, with the methods `names` the test calls; throws when one is missing.
+*/
+export function requireMethods<K extends string>(
+  value: unknown,
+  what: string,
+  ...names: K[]
+): Record<K, Method> {
+  if (!hasMethods(value, names)) throw new TypeError(`${what} lacks one of: ${names.join(', ')}`)
+  return value
+}
+
+/**
+Parameters read in a script's realm, copied out as the string record MZ stores; throws on any
+other shape.
+*/
+export function parametersFrom(value: unknown): Record<string, string> {
+  const copy: unknown = structuredClone(value)
+  if (typeof copy !== 'object' || copy === null) throw new TypeError('parameters are not an object')
+  const parameters: Record<string, string> = {}
+  for (const [key, item] of Object.entries(copy)) {
+    if (typeof item !== 'string') throw new TypeError(`parameter ${key} is not a string`)
+    parameters[key] = item
+  }
+  return parameters
 }
 
 // Runs inside the context. Parameters are stored under the plugin's name in lower case and
@@ -85,23 +139,22 @@ const LOADER_SOURCE = `
 })();
 `
 
-interface Loader {
-  store(name: string, parameters: Record<string, string>): void
-  call(key: string, self: object, args: Record<string, string>): boolean
-  interpreter: object
-}
-
-/** A fresh MZ stand-in: every MZ global a plugin may touch, and a plugin loader of our own. */
+/**
+A fresh MZ stand-in: every MZ global a plugin may touch, and a plugin loader of our own.
+*/
 export function createMzShim(): MzRuntime {
   const context = createContext({})
   installStandIns(context)
   // eslint-disable-next-line sonarjs/code-eval -- runs the plugin loader in the test runtime context
-  const loader = new Script(LOADER_SOURCE, { filename: 'loader.js' }).runInContext(
-    context
-  ) as Loader
+  const loaded: unknown = new Script(LOADER_SOURCE, { filename: 'loader.js' }).runInContext(context)
+  const loader = requireMethods(loaded, 'the plugin loader', 'store', 'call')
+  const interpreter: unknown = Reflect.get(loader, 'interpreter')
+  if (typeof interpreter !== 'object' || interpreter === null) {
+    throw new TypeError('the plugin loader has no interpreter')
+  }
   return {
     context,
-    interpreter: loader.interpreter,
+    interpreter,
     load(entries, sources) {
       const errors: MzLoadReport['errors'] = []
       const loaded = new Set<string>()
@@ -125,12 +178,13 @@ export function createMzShim(): MzRuntime {
       return { errors }
     },
     parameters(name) {
-      const found = (context.PluginManager as { parameters(n: string): unknown }).parameters(name)
-      return JSON.parse(JSON.stringify(found)) as Record<string, string>
+      const { PluginManager: manager }: Record<string, unknown> = context
+      const found = requireMethods(manager, 'PluginManager', 'parameters').parameters(name)
+      return parametersFrom(found)
     },
     runCommand([plugin, command, , args]) {
       const key = `${lastSegment(plugin)}:${command}`
-      return loader.call(key, loader.interpreter, intoContext(context, args))
+      return loader.call(key, interpreter, intoContext(context, args)) === true
     }
   }
 }
