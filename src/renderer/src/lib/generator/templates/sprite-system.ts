@@ -1,11 +1,11 @@
 /**
- * Sprite System Templates
- *
- * Templates for RPG Maker MZ sprite manipulation:
- * - Custom sprite class creation
- * - Picture manipulation (show, move, rotate, tint)
- * - Sprite animation (frame-based)
- */
+Sprite System Templates
+
+Templates for RPG Maker MZ sprite manipulation:
+- Custom sprite class creation
+- Picture manipulation (show, move, rotate, tint)
+- Sprite animation (frame-based)
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -13,13 +13,13 @@ import { escapeJSString } from '../escape'
 import { expectText, valueOr } from './values'
 
 /**
- * Converts a sprite name to a valid identifier
- * Strips spaces and ensures PascalCase
- */
+Converts a sprite name to a valid identifier
+Strips spaces and ensures PascalCase
+*/
 function sanitizeSpriteName(name: string): string {
   return name
     .trim()
-    .replace(/[^a-zA-Z0-9]/g, '')
+    .replaceAll(/[^a-zA-Z0-9]/g, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 }
 
@@ -30,7 +30,7 @@ function spriteNameErrors(value: unknown): string[] {
   const hasName = Boolean(value)
   if (!hasName) return []
   const name = expectText(value)
-  const isValid = /^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))
+  const isValid = /^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replaceAll(/\s+/g, ''))
   return isValid
     ? []
     : ['Sprite Name must start with a letter and contain only letters and numbers']
@@ -56,9 +56,9 @@ function animationStateLines(
 }
 
 /**
- * Template 1: Custom Sprite Class
- * Creates a new Sprite subclass with initialize, update methods
- */
+Template 1: Custom Sprite Class
+Creates a new Sprite subclass with initialize, update methods
+*/
 const customSpriteClassTemplate: CodeTemplate = {
   id: 'sprite-custom-class',
   category: 'sprite-system',
@@ -137,7 +137,7 @@ const customSpriteClassTemplate: CodeTemplate = {
     const height = valueOr(values['height'], 48)
     const useBitmap = valueOr(values['useBitmap'], 'none')
     const fillColor = valueOr(values['fillColor'], '#ffffff')
-    const includeUpdate = values['includeUpdate'] !== false
+    const isIncludeUpdate = values['includeUpdate'] !== false
 
     const fullClassName = `Sprite_${spriteName}`
     const lines: string[] = []
@@ -193,7 +193,7 @@ const customSpriteClassTemplate: CodeTemplate = {
     lines.push('};')
 
     // Update method
-    if (includeUpdate) {
+    if (isIncludeUpdate) {
       lines.push('')
       lines.push(`${fullClassName}.prototype.update = function() {`)
       lines.push(`    ${parentClassText}.prototype.update.call(this);`)
@@ -258,9 +258,9 @@ const customSpriteClassTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Picture Manipulation
- * Show, move, rotate, and tint pictures programmatically
- */
+Template 2: Picture Manipulation
+Show, move, rotate, and tint pictures programmatically
+*/
 const pictureManipulationTemplate: CodeTemplate = {
   id: 'sprite-picture-manipulation',
   category: 'sprite-system',
@@ -430,188 +430,210 @@ const pictureManipulationTemplate: CodeTemplate = {
 
     const lines: string[] = []
 
-    if (operation === 'utility') {
-      // Generate utility functions for all picture operations
-      lines.push('// Picture Manipulation Utility Functions')
-      lines.push('//')
-      lines.push('// Helper functions for common picture operations.')
-      lines.push('// Call these from plugin commands or other code.')
-      lines.push('')
+    switch (operation) {
+      case 'utility': {
+        // Generate utility functions for all picture operations
+        lines.push('// Picture Manipulation Utility Functions')
+        lines.push('//')
+        lines.push('// Helper functions for common picture operations.')
+        lines.push('// Call these from plugin commands or other code.')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Show a picture on screen')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' * @param {string} name - Image filename (without extension)')
-      lines.push(' * @param {number} x - X coordinate')
-      lines.push(' * @param {number} y - Y coordinate')
-      lines.push(' * @param {number} [origin=0] - 0 = Upper Left, 1 = Center')
-      lines.push(' * @param {number} [scaleX=100] - Horizontal scale %')
-      lines.push(' * @param {number} [scaleY=100] - Vertical scale %')
-      lines.push(' * @param {number} [opacity=255] - Opacity (0-255)')
-      lines.push(' * @param {number} [blendMode=0] - 0=Normal, 1=Additive, 2=Multiply, 3=Screen')
-      lines.push(' */')
-      lines.push(
-        'function showPicture(pictureId, name, x, y, origin = 0, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0) {'
-      )
-      lines.push(
-        '    $gameScreen.showPicture(pictureId, name, origin, x, y, scaleX, scaleY, opacity, blendMode);'
-      )
-      lines.push('}')
-      lines.push('')
+        lines.push('/**')
+        lines.push(' * Show a picture on screen')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(' * @param {string} name - Image filename (without extension)')
+        lines.push(' * @param {number} x - X coordinate')
+        lines.push(' * @param {number} y - Y coordinate')
+        lines.push(' * @param {number} [origin=0] - 0 = Upper Left, 1 = Center')
+        lines.push(' * @param {number} [scaleX=100] - Horizontal scale %')
+        lines.push(' * @param {number} [scaleY=100] - Vertical scale %')
+        lines.push(' * @param {number} [opacity=255] - Opacity (0-255)')
+        lines.push(' * @param {number} [blendMode=0] - 0=Normal, 1=Additive, 2=Multiply, 3=Screen')
+        lines.push(' */')
+        lines.push(
+          'function showPicture(pictureId, name, x, y, origin = 0, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0) {'
+        )
+        lines.push(
+          '    $gameScreen.showPicture(pictureId, name, origin, x, y, scaleX, scaleY, opacity, blendMode);'
+        )
+        lines.push('}')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Move a picture to new position/properties over time')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' * @param {number} x - Target X coordinate')
-      lines.push(' * @param {number} y - Target Y coordinate')
-      lines.push(' * @param {number} [duration=60] - Animation duration in frames')
-      lines.push(' * @param {number} [scaleX=100] - Target horizontal scale %')
-      lines.push(' * @param {number} [scaleY=100] - Target vertical scale %')
-      lines.push(' * @param {number} [opacity=255] - Target opacity (0-255)')
-      lines.push(' * @param {number} [blendMode=0] - Target blend mode')
-      lines.push(' * @param {number} [easingType=0] - Easing type (MZ only)')
-      lines.push(' */')
-      lines.push(
-        'function movePicture(pictureId, x, y, duration = 60, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0, easingType = 0) {'
-      )
-      lines.push('    const picture = $gameScreen.picture(pictureId);')
-      lines.push('    if (picture) {')
-      lines.push('        const origin = picture.origin();')
-      lines.push(
-        '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, opacity, blendMode, duration, easingType);'
-      )
-      lines.push('    }')
-      lines.push('}')
-      lines.push('')
+        lines.push('/**')
+        lines.push(' * Move a picture to new position/properties over time')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(' * @param {number} x - Target X coordinate')
+        lines.push(' * @param {number} y - Target Y coordinate')
+        lines.push(' * @param {number} [duration=60] - Animation duration in frames')
+        lines.push(' * @param {number} [scaleX=100] - Target horizontal scale %')
+        lines.push(' * @param {number} [scaleY=100] - Target vertical scale %')
+        lines.push(' * @param {number} [opacity=255] - Target opacity (0-255)')
+        lines.push(' * @param {number} [blendMode=0] - Target blend mode')
+        lines.push(' * @param {number} [easingType=0] - Easing type (MZ only)')
+        lines.push(' */')
+        lines.push(
+          'function movePicture(pictureId, x, y, duration = 60, scaleX = 100, scaleY = 100, opacity = 255, blendMode = 0, easingType = 0) {'
+        )
+        lines.push('    const picture = $gameScreen.picture(pictureId);')
+        lines.push('    if (picture) {')
+        lines.push('        const origin = picture.origin();')
+        lines.push(
+          '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, opacity, blendMode, duration, easingType);'
+        )
+        lines.push('    }')
+        lines.push('}')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Rotate a picture continuously')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(
-        ' * @param {number} speed - Rotation speed (degrees per frame, positive = clockwise)'
-      )
-      lines.push(' */')
-      lines.push('function rotatePicture(pictureId, speed) {')
-      lines.push('    $gameScreen.rotatePicture(pictureId, speed);')
-      lines.push('}')
-      lines.push('')
+        lines.push('/**')
+        lines.push(' * Rotate a picture continuously')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(
+          ' * @param {number} speed - Rotation speed (degrees per frame, positive = clockwise)'
+        )
+        lines.push(' */')
+        lines.push('function rotatePicture(pictureId, speed) {')
+        lines.push('    $gameScreen.rotatePicture(pictureId, speed);')
+        lines.push('}')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Apply color tint to a picture')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' * @param {number} red - Red adjustment (-255 to 255)')
-      lines.push(' * @param {number} green - Green adjustment (-255 to 255)')
-      lines.push(' * @param {number} blue - Blue adjustment (-255 to 255)')
-      lines.push(' * @param {number} gray - Gray level (0-255, 0 = no gray)')
-      lines.push(' * @param {number} [duration=60] - Tint animation duration')
-      lines.push(' */')
-      lines.push('function tintPicture(pictureId, red, green, blue, gray, duration = 60) {')
-      lines.push('    $gameScreen.tintPicture(pictureId, [red, green, blue, gray], duration);')
-      lines.push('}')
-      lines.push('')
+        lines.push('/**')
+        lines.push(' * Apply color tint to a picture')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(' * @param {number} red - Red adjustment (-255 to 255)')
+        lines.push(' * @param {number} green - Green adjustment (-255 to 255)')
+        lines.push(' * @param {number} blue - Blue adjustment (-255 to 255)')
+        lines.push(' * @param {number} gray - Gray level (0-255, 0 = no gray)')
+        lines.push(' * @param {number} [duration=60] - Tint animation duration')
+        lines.push(' */')
+        lines.push('function tintPicture(pictureId, red, green, blue, gray, duration = 60) {')
+        lines.push('    $gameScreen.tintPicture(pictureId, [red, green, blue, gray], duration);')
+        lines.push('}')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Erase a picture from screen')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' */')
-      lines.push('function erasePicture(pictureId) {')
-      lines.push('    $gameScreen.erasePicture(pictureId);')
-      lines.push('}')
-      lines.push('')
+        lines.push('/**')
+        lines.push(' * Erase a picture from screen')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(' */')
+        lines.push('function erasePicture(pictureId) {')
+        lines.push('    $gameScreen.erasePicture(pictureId);')
+        lines.push('}')
+        lines.push('')
 
-      lines.push('/**')
-      lines.push(' * Fade out a picture over time')
-      lines.push(' * @param {number} pictureId - Picture ID (1-100)')
-      lines.push(' * @param {number} [duration=60] - Fade duration in frames')
-      lines.push(' */')
-      lines.push('function fadeOutPicture(pictureId, duration = 60) {')
-      lines.push('    const picture = $gameScreen.picture(pictureId);')
-      lines.push('    if (picture) {')
-      lines.push('        const origin = picture.origin();')
-      lines.push('        const x = picture.x();')
-      lines.push('        const y = picture.y();')
-      lines.push('        const scaleX = picture.scaleX();')
-      lines.push('        const scaleY = picture.scaleY();')
-      lines.push('        const blendMode = picture.blendMode();')
-      lines.push(
-        '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, 0, blendMode, duration);'
-      )
-      lines.push('    }')
-      lines.push('}')
-    } else if (operation === 'show') {
-      lines.push('// Show Picture')
-      lines.push('//')
-      lines.push(
-        `// Displays picture ${String(pictureId)} at position (${String(x)}, ${String(y)})`
-      )
-      lines.push('')
-      lines.push(`$gameScreen.showPicture(`)
-      lines.push(`    ${String(pictureId)},         // Picture ID`)
-      lines.push(
-        `    '${escapeJSString(expectText(imageName))}',       // Image name (from img/pictures/)`
-      )
-      lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
-      lines.push(`    ${String(x)},                 // X position`)
-      lines.push(`    ${String(y)},                 // Y position`)
-      lines.push(`    ${String(scaleX)},            // Scale X (%)`)
-      lines.push(`    ${String(scaleY)},            // Scale Y (%)`)
-      lines.push(`    ${String(opacity)},           // Opacity (0-255)`)
-      lines.push(
-        `    ${blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`
-      )
-      lines.push(');')
-    } else if (operation === 'move') {
-      lines.push('// Move Picture')
-      lines.push('//')
-      lines.push(
-        `// Moves picture ${String(pictureId)} to (${String(x)}, ${String(y)}) over ${String(duration)} frames`
-      )
-      lines.push('')
-      lines.push(`$gameScreen.movePicture(`)
-      lines.push(`    ${String(pictureId)},         // Picture ID`)
-      lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
-      lines.push(`    ${String(x)},                 // Target X position`)
-      lines.push(`    ${String(y)},                 // Target Y position`)
-      lines.push(`    ${String(scaleX)},            // Target Scale X (%)`)
-      lines.push(`    ${String(scaleY)},            // Target Scale Y (%)`)
-      lines.push(`    ${String(opacity)},           // Target Opacity (0-255)`)
-      lines.push(`    ${blendMode},         // Target Blend mode`)
-      lines.push(`    ${String(duration)},          // Duration (frames)`)
-      lines.push(`    0                     // Easing type (0 = constant speed)`)
-      lines.push(');')
-    } else if (operation === 'rotate') {
-      lines.push('// Rotate Picture')
-      lines.push('//')
-      lines.push(
-        `// Rotates picture ${String(pictureId)} at ${String(rotationSpeed)} degrees per frame`
-      )
-      lines.push('')
-      lines.push(`$gameScreen.rotatePicture(${String(pictureId)}, ${String(rotationSpeed)});`)
-      lines.push('')
-      lines.push('// Note: Positive values rotate clockwise, negative counter-clockwise')
-      lines.push('// To stop rotation, set speed to 0:')
-      lines.push(`// $gameScreen.rotatePicture(${String(pictureId)}, 0);`)
-    } else if (operation === 'tint') {
-      lines.push('// Tint Picture')
-      lines.push('//')
-      lines.push(`// Applies color tint to picture ${String(pictureId)}`)
-      lines.push('')
-      lines.push(`$gameScreen.tintPicture(`)
-      lines.push(`    ${String(pictureId)},                                   // Picture ID`)
-      lines.push(
-        `    [${String(tintRed)}, ${String(tintGreen)}, ${String(tintBlue)}, ${String(tintGray)}],  // [Red, Green, Blue, Gray]`
-      )
-      lines.push(`    ${String(duration)}                                     // Duration (frames)`)
-      lines.push(');')
-      lines.push('')
-      lines.push('// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255')
-      lines.push('// To remove tint: [0, 0, 0, 0]')
-    } else if (operation === 'erase') {
-      lines.push('// Erase Picture')
-      lines.push('//')
-      lines.push(`// Removes picture ${String(pictureId)} from screen`)
-      lines.push('')
-      lines.push(`$gameScreen.erasePicture(${String(pictureId)});`)
+        lines.push('/**')
+        lines.push(' * Fade out a picture over time')
+        lines.push(' * @param {number} pictureId - Picture ID (1-100)')
+        lines.push(' * @param {number} [duration=60] - Fade duration in frames')
+        lines.push(' */')
+        lines.push('function fadeOutPicture(pictureId, duration = 60) {')
+        lines.push('    const picture = $gameScreen.picture(pictureId);')
+        lines.push('    if (picture) {')
+        lines.push('        const origin = picture.origin();')
+        lines.push('        const x = picture.x();')
+        lines.push('        const y = picture.y();')
+        lines.push('        const scaleX = picture.scaleX();')
+        lines.push('        const scaleY = picture.scaleY();')
+        lines.push('        const blendMode = picture.blendMode();')
+        lines.push(
+          '        $gameScreen.movePicture(pictureId, origin, x, y, scaleX, scaleY, 0, blendMode, duration);'
+        )
+        lines.push('    }')
+        lines.push('}')
+
+        break
+      }
+      case 'show': {
+        lines.push('// Show Picture')
+        lines.push('//')
+        lines.push(
+          `// Displays picture ${String(pictureId)} at position (${String(x)}, ${String(y)})`
+        )
+        lines.push('')
+        lines.push(`$gameScreen.showPicture(`)
+        lines.push(`    ${String(pictureId)},         // Picture ID`)
+        lines.push(
+          `    '${escapeJSString(expectText(imageName))}',       // Image name (from img/pictures/)`
+        )
+        lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
+        lines.push(`    ${String(x)},                 // X position`)
+        lines.push(`    ${String(y)},                 // Y position`)
+        lines.push(`    ${String(scaleX)},            // Scale X (%)`)
+        lines.push(`    ${String(scaleY)},            // Scale Y (%)`)
+        lines.push(`    ${String(opacity)},           // Opacity (0-255)`)
+        lines.push(
+          `    ${blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`
+        )
+        lines.push(');')
+
+        break
+      }
+      case 'move': {
+        lines.push('// Move Picture')
+        lines.push('//')
+        lines.push(
+          `// Moves picture ${String(pictureId)} to (${String(x)}, ${String(y)}) over ${String(duration)} frames`
+        )
+        lines.push('')
+        lines.push(`$gameScreen.movePicture(`)
+        lines.push(`    ${String(pictureId)},         // Picture ID`)
+        lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
+        lines.push(`    ${String(x)},                 // Target X position`)
+        lines.push(`    ${String(y)},                 // Target Y position`)
+        lines.push(`    ${String(scaleX)},            // Target Scale X (%)`)
+        lines.push(`    ${String(scaleY)},            // Target Scale Y (%)`)
+        lines.push(`    ${String(opacity)},           // Target Opacity (0-255)`)
+        lines.push(`    ${blendMode},         // Target Blend mode`)
+        lines.push(`    ${String(duration)},          // Duration (frames)`)
+        lines.push(`    0                     // Easing type (0 = constant speed)`)
+        lines.push(');')
+
+        break
+      }
+      case 'rotate': {
+        lines.push('// Rotate Picture')
+        lines.push('//')
+        lines.push(
+          `// Rotates picture ${String(pictureId)} at ${String(rotationSpeed)} degrees per frame`
+        )
+        lines.push('')
+        lines.push(`$gameScreen.rotatePicture(${String(pictureId)}, ${String(rotationSpeed)});`)
+        lines.push('')
+        lines.push('// Note: Positive values rotate clockwise, negative counter-clockwise')
+        lines.push('// To stop rotation, set speed to 0:')
+        lines.push(`// $gameScreen.rotatePicture(${String(pictureId)}, 0);`)
+
+        break
+      }
+      case 'tint': {
+        lines.push('// Tint Picture')
+        lines.push('//')
+        lines.push(`// Applies color tint to picture ${String(pictureId)}`)
+        lines.push('')
+        lines.push(`$gameScreen.tintPicture(`)
+        lines.push(`    ${String(pictureId)},                                   // Picture ID`)
+        lines.push(
+          `    [${String(tintRed)}, ${String(tintGreen)}, ${String(tintBlue)}, ${String(tintGray)}],  // [Red, Green, Blue, Gray]`
+        )
+        lines.push(
+          `    ${String(duration)}                                     // Duration (frames)`
+        )
+        lines.push(');')
+        lines.push('')
+        lines.push('// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255')
+        lines.push('// To remove tint: [0, 0, 0, 0]')
+
+        break
+      }
+      case 'erase': {
+        lines.push('// Erase Picture')
+        lines.push('//')
+        lines.push(`// Removes picture ${String(pictureId)} from screen`)
+        lines.push('')
+        lines.push(`$gameScreen.erasePicture(${String(pictureId)});`)
+
+        break
+      }
+      // No default
     }
 
     return lines.join('\n')
@@ -642,9 +664,9 @@ const pictureManipulationTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Sprite Animation
- * Add frame-based animation to sprites
- */
+Template 3: Sprite Animation
+Add frame-based animation to sprites
+*/
 const spriteAnimationTemplate: CodeTemplate = {
   id: 'sprite-frame-animation',
   category: 'sprite-system',
@@ -742,8 +764,8 @@ const spriteAnimationTemplate: CodeTemplate = {
     const frameHeight = valueOr(values['frameHeight'], 48)
     const columns = valueOr(values['columns'], 4)
     const frameDelay = valueOr(values['frameDelay'], 12)
-    const loop = values['loop'] !== false
-    const autoPlay = values['autoPlay'] !== false
+    const isLoop = values['loop'] !== false
+    const isAutoPlay = values['autoPlay'] !== false
     const targetClass = valueOr(values['targetClass'], 'Sprite_Base')
 
     const fullClassName = `Sprite_${spriteName}`
@@ -763,7 +785,7 @@ const spriteAnimationTemplate: CodeTemplate = {
       )
       lines.push(`${String(targetClass)}.prototype.initialize = function() {`)
       lines.push(`    _${String(targetClass)}_initialize.apply(this, arguments);`)
-      lines.push(...animationStateLines(frameCount, frameDelay, loop, autoPlay))
+      lines.push(...animationStateLines(frameCount, frameDelay, isLoop, isAutoPlay))
       lines.push('};')
       lines.push('')
 
@@ -831,7 +853,6 @@ const spriteAnimationTemplate: CodeTemplate = {
 
       lines.push(`${String(targetClass)}.prototype.resumeAnimation = function() {`)
       lines.push('    this._animPlaying = true;')
-      lines.push('};')
     } else {
       // Generate standalone animated sprite class
       lines.push('//-----------------------------------------------------------------------------')
@@ -857,7 +878,7 @@ const spriteAnimationTemplate: CodeTemplate = {
       lines.push('    Sprite.prototype.initialize.call(this);')
       lines.push('')
       lines.push('    // Animation properties')
-      lines.push(...animationStateLines(frameCount, frameDelay, loop, autoPlay))
+      lines.push(...animationStateLines(frameCount, frameDelay, isLoop, isAutoPlay))
       lines.push(`    this._frameWidth = ${String(frameWidth)};`)
       lines.push(`    this._frameHeight = ${String(frameHeight)};`)
 
@@ -912,21 +933,32 @@ const spriteAnimationTemplate: CodeTemplate = {
 
       // Update frame based on animation type
       lines.push(`${fullClassName}.prototype.updateAnimationFrame = function() {`)
-      if (animationType === 'horizontal') {
-        lines.push('    // Horizontal strip layout')
-        lines.push('    const x = this._animPattern * this._frameWidth;')
-        lines.push('    this.setFrame(x, 0, this._frameWidth, this._frameHeight);')
-      } else if (animationType === 'vertical') {
-        lines.push('    // Vertical strip layout')
-        lines.push('    const y = this._animPattern * this._frameHeight;')
-        lines.push('    this.setFrame(0, y, this._frameWidth, this._frameHeight);')
-      } else if (animationType === 'grid') {
-        lines.push('    // Grid layout')
-        lines.push('    const col = this._animPattern % this._columns;')
-        lines.push('    const row = Math.floor(this._animPattern / this._columns);')
-        lines.push('    const x = col * this._frameWidth;')
-        lines.push('    const y = row * this._frameHeight;')
-        lines.push('    this.setFrame(x, y, this._frameWidth, this._frameHeight);')
+      switch (animationType) {
+        case 'horizontal': {
+          lines.push('    // Horizontal strip layout')
+          lines.push('    const x = this._animPattern * this._frameWidth;')
+          lines.push('    this.setFrame(x, 0, this._frameWidth, this._frameHeight);')
+
+          break
+        }
+        case 'vertical': {
+          lines.push('    // Vertical strip layout')
+          lines.push('    const y = this._animPattern * this._frameHeight;')
+          lines.push('    this.setFrame(0, y, this._frameWidth, this._frameHeight);')
+
+          break
+        }
+        case 'grid': {
+          lines.push('    // Grid layout')
+          lines.push('    const col = this._animPattern % this._columns;')
+          lines.push('    const row = Math.floor(this._animPattern / this._columns);')
+          lines.push('    const x = col * this._frameWidth;')
+          lines.push('    const y = row * this._frameHeight;')
+          lines.push('    this.setFrame(x, y, this._frameWidth, this._frameHeight);')
+
+          break
+        }
+        // No default
       }
       lines.push('};')
       lines.push('')
@@ -990,8 +1022,8 @@ const spriteAnimationTemplate: CodeTemplate = {
 
       lines.push(`${fullClassName}.prototype.currentFrame = function() {`)
       lines.push('    return this._animPattern;')
-      lines.push('};')
     }
+    lines.push('};')
 
     return lines.join('\n')
   },

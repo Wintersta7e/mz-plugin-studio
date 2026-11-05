@@ -1,20 +1,20 @@
 /**
- * Actor & Party Templates
- *
- * Templates for modifying RPG Maker MZ actor and party systems:
- * - Custom actor properties with getter/setter
- * - Party management (add/remove members, size limits)
- * - Equipment hooks (equip/unequip events)
- */
+Actor & Party Templates
+
+Templates for modifying RPG Maker MZ actor and party systems:
+- Custom actor properties with getter/setter
+- Party management (add/remove members, size limits)
+- Equipment hooks (equip/unequip events)
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { defaultLiteralOf, expectText, valueOr } from './values'
 
 /**
- * Convert a property name to PascalCase for method names
- * e.g., "loyalty" -> "Loyalty"
- */
+Convert a property name to PascalCase for method names
+e.g., "loyalty" -> "Loyalty"
+*/
 function toPascalCase(value: unknown): string {
   const hasText = Boolean(value)
   if (!hasText) return ''
@@ -23,9 +23,9 @@ function toPascalCase(value: unknown): string {
 }
 
 /**
- * Template 1: Custom Actor Property
- * Add a new property to Game_Actor with getter/setter
- */
+Template 1: Custom Actor Property
+Add a new property to Game_Actor with getter/setter
+*/
 const customActorPropertyTemplate: CodeTemplate = {
   id: 'actor-custom-property',
   category: 'actor-party',
@@ -91,7 +91,7 @@ const customActorPropertyTemplate: CodeTemplate = {
     // Number() in the check ignores surrounding whitespace; the code gets the trimmed text.
     const minValue = String(values['minValue'] ?? '').trim()
     const maxValue = String(values['maxValue'] ?? '').trim()
-    const includeChange = values['includeChange'] !== false
+    const isIncludeChange = values['includeChange'] !== false
 
     const pascalName = toPascalCase(values['propertyName'])
     const defaultLiteral = defaultLiteralOf(dataType, values['defaultValue'])
@@ -99,14 +99,13 @@ const customActorPropertyTemplate: CodeTemplate = {
     const hasMax = dataType === 'number' && maxValue !== ''
     const hasClamp = hasMin || hasMax
 
-    const lines: string[] = []
+    const lines: string[] = [`// Custom Actor Property: ${propertyName}`]
 
     // Header comment
-    lines.push(`// Custom Actor Property: ${propertyName}`)
     lines.push(`// Type: ${String(dataType)}, Default: ${defaultLiteral}`)
     if (hasClamp) {
-      const rangeStr = `${hasMin ? minValue : '-Infinity'} to ${hasMax ? maxValue : 'Infinity'}`
-      lines.push(`// Range: ${rangeStr}`)
+      const rangeString = `${hasMin ? minValue : '-Infinity'} to ${hasMax ? maxValue : 'Infinity'}`
+      lines.push(`// Range: ${rangeString}`)
     }
     lines.push('')
 
@@ -130,17 +129,19 @@ const customActorPropertyTemplate: CodeTemplate = {
     lines.push(`// Setter: actor.set${pascalName}(value)`)
     lines.push(`Game_Actor.prototype.set${pascalName} = function(value) {`)
     if (hasClamp) {
-      const minStr = hasMin ? minValue : '-Infinity'
-      const maxStr = hasMax ? maxValue : 'Infinity'
+      const minString = hasMin ? minValue : '-Infinity'
+      const maxString = hasMax ? maxValue : 'Infinity'
       lines.push(`    // Clamp value to valid range`)
-      lines.push(`    this._${propertyName} = Math.max(${minStr}, Math.min(${maxStr}, value));`)
+      lines.push(
+        `    this._${propertyName} = Math.max(${minString}, Math.min(${maxString}, value));`
+      )
     } else {
       lines.push(`    this._${propertyName} = value;`)
     }
     lines.push('};')
 
     // Change method for numbers
-    if (includeChange && dataType === 'number') {
+    if (isIncludeChange && dataType === 'number') {
       lines.push('')
       lines.push(`// Change method: actor.change${pascalName}(amount)`)
       lines.push(`// Use positive values to increase, negative to decrease`)
@@ -226,9 +227,9 @@ const customActorPropertyTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Party Management
- * Add/remove party members with optional size limits
- */
+Template 2: Party Management
+Add/remove party members with optional size limits
+*/
 const partyManagementTemplate: CodeTemplate = {
   id: 'party-management',
   category: 'actor-party',
@@ -293,201 +294,213 @@ const partyManagementTemplate: CodeTemplate = {
     const featureType = valueOr(values['featureType'], 'sizeLimit')
     const lines: string[] = []
 
-    if (featureType === 'sizeLimit') {
-      const maxSize = String(valueOr(values['maxSize'], 4))
-      const minSize = valueOr(values['minSize'], 1)
+    switch (featureType) {
+      case 'sizeLimit': {
+        const maxSize = String(valueOr(values['maxSize'], 4))
+        const minSize = valueOr(values['minSize'], 1)
 
-      lines.push(`// Party Size Limit: ${String(minSize)} to ${maxSize} members`)
-      lines.push('')
-      lines.push('// Store the party size limits')
-      lines.push(`Game_Party.prototype.maxBattleMembers = function() {`)
-      lines.push(`    return ${maxSize};`)
-      lines.push('};')
-      lines.push('')
-      lines.push('// Prevent adding members beyond the max size')
-      lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
-      lines.push('Game_Party.prototype.addActor = function(actorId) {')
-      lines.push('    if (this._actors.length >= this.maxBattleMembers()) {')
-      lines.push('        // Party is full - you can customize this behavior')
-      lines.push("        console.log('Party is full! Cannot add more members.');")
-      lines.push('        return;')
-      lines.push('    }')
-      lines.push('    _Game_Party_addActor.call(this, actorId);')
-      lines.push('};')
-
-      if (Number(minSize) > 1) {
+        lines.push(`// Party Size Limit: ${String(minSize)} to ${maxSize} members`)
         lines.push('')
-        lines.push('// Prevent removing members below the min size')
-        lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-        lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-        lines.push(`    if (this._actors.length <= ${String(minSize)}) {`)
-        lines.push('        // Party at minimum - you can customize this behavior')
-        lines.push("        console.log('Cannot remove member - party at minimum size.');")
-        lines.push('        return;')
-        lines.push('    }')
-        lines.push('    _Game_Party_removeActor.call(this, actorId);')
+        lines.push('// Store the party size limits')
+        lines.push(`Game_Party.prototype.maxBattleMembers = function() {`)
+        lines.push(`    return ${maxSize};`)
         lines.push('};')
-      }
-
-      lines.push('')
-      lines.push('// Helper method to check if party can add members')
-      lines.push('Game_Party.prototype.canAddMember = function() {')
-      lines.push('    return this._actors.length < this.maxBattleMembers();')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Helper method to get remaining slots')
-      lines.push('Game_Party.prototype.remainingSlots = function() {')
-      lines.push('    return Math.max(0, this.maxBattleMembers() - this._actors.length);')
-      lines.push('};')
-    } else if (featureType === 'addRemoveHook') {
-      const hookTiming = valueOr(values['hookTiming'], 'after')
-
-      lines.push('// Party Member Change Hooks')
-      lines.push('')
-
-      if (hookTiming === 'after') {
-        // After hooks
-        lines.push('// Hook for when a member is added')
+        lines.push('')
+        lines.push('// Prevent adding members beyond the max size')
         lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
         lines.push('Game_Party.prototype.addActor = function(actorId) {')
-        lines.push('    const wasInParty = this._actors.includes(actorId);')
-        lines.push('    _Game_Party_addActor.call(this, actorId);')
-        lines.push('')
-        lines.push('    if (!wasInParty && this._actors.includes(actorId)) {')
-        lines.push('        // Member was successfully added')
-        lines.push('        this.onMemberAdded(actorId);')
-        lines.push('    }')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Called when a member is added to the party')
-        lines.push('Game_Party.prototype.onMemberAdded = function(actorId) {')
-        lines.push('    const actor = $gameActors.actor(actorId);')
-        lines.push("    console.log(actor.name() + ' joined the party!');")
-        lines.push('    // Add your custom logic here')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Hook for when a member is removed')
-        lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-        lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-        lines.push('    const wasInParty = this._actors.includes(actorId);')
-        lines.push('    _Game_Party_removeActor.call(this, actorId);')
-        lines.push('')
-        lines.push('    if (wasInParty && !this._actors.includes(actorId)) {')
-        lines.push('        // Member was successfully removed')
-        lines.push('        this.onMemberRemoved(actorId);')
-        lines.push('    }')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Called when a member is removed from the party')
-        lines.push('Game_Party.prototype.onMemberRemoved = function(actorId) {')
-        lines.push('    const actor = $gameActors.actor(actorId);')
-        lines.push("    console.log(actor.name() + ' left the party!');")
-        lines.push('    // Add your custom logic here')
-        lines.push('};')
-      } else {
-        // Before hooks (can prevent changes)
-        lines.push('// Hook for when a member is about to be added')
-        lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
-        lines.push('Game_Party.prototype.addActor = function(actorId) {')
-        lines.push('    // Return false from canAddMember to prevent adding')
-        lines.push('    if (!this.canAddThisMember(actorId)) {')
-        lines.push("        console.log('Cannot add this member!');")
+        lines.push('    if (this._actors.length >= this.maxBattleMembers()) {')
+        lines.push('        // Party is full - you can customize this behavior')
+        lines.push("        console.log('Party is full! Cannot add more members.');")
         lines.push('        return;')
         lines.push('    }')
         lines.push('    _Game_Party_addActor.call(this, actorId);')
         lines.push('};')
-        lines.push('')
-        lines.push('// Override to control which actors can be added')
-        lines.push('Game_Party.prototype.canAddThisMember = function(actorId) {')
-        lines.push('    // Add your conditions here')
-        lines.push('    // Example: return actorId !== 5; // Cannot add actor 5')
-        lines.push('    return true;')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Hook for when a member is about to be removed')
-        lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
-        lines.push('Game_Party.prototype.removeActor = function(actorId) {')
-        lines.push('    // Return false from canRemoveMember to prevent removing')
-        lines.push('    if (!this.canRemoveThisMember(actorId)) {')
-        lines.push("        console.log('Cannot remove this member!');")
-        lines.push('        return;')
-        lines.push('    }')
-        lines.push('    _Game_Party_removeActor.call(this, actorId);')
-        lines.push('};')
-        lines.push('')
-        lines.push('// Override to control which actors can be removed')
-        lines.push('Game_Party.prototype.canRemoveThisMember = function(actorId) {')
-        lines.push('    // Add your conditions here')
-        lines.push('    // Example: return actorId !== 1; // Cannot remove actor 1 (leader)')
-        lines.push('    return true;')
-        lines.push('};')
-      }
-    } else if (featureType === 'reserveParty') {
-      const maxReserve = String(valueOr(values['maxReserve'], 10))
 
-      lines.push('// Reserve Party System')
-      lines.push(`// Maximum reserve members: ${maxReserve}`)
-      lines.push('')
-      lines.push('// Initialize reserve party array')
-      lines.push('const _Game_Party_initialize = Game_Party.prototype.initialize;')
-      lines.push('Game_Party.prototype.initialize = function() {')
-      lines.push('    _Game_Party_initialize.call(this);')
-      lines.push('    this._reserveMembers = [];')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Get maximum reserve size')
-      lines.push('Game_Party.prototype.maxReserveMembers = function() {')
-      lines.push(`    return ${maxReserve};`)
-      lines.push('};')
-      lines.push('')
-      lines.push('// Get all reserve members')
-      lines.push('Game_Party.prototype.reserveMembers = function() {')
-      lines.push('    return this._reserveMembers.map(id => $gameActors.actor(id));')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Add actor to reserve party')
-      lines.push('Game_Party.prototype.addToReserve = function(actorId) {')
-      lines.push('    if (this._reserveMembers.length >= this.maxReserveMembers()) {')
-      lines.push("        console.log('Reserve party is full!');")
-      lines.push('        return false;')
-      lines.push('    }')
-      lines.push('    if (!this._reserveMembers.includes(actorId)) {')
-      lines.push('        this._reserveMembers.push(actorId);')
-      lines.push('        return true;')
-      lines.push('    }')
-      lines.push('    return false;')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Remove actor from reserve party')
-      lines.push('Game_Party.prototype.removeFromReserve = function(actorId) {')
-      lines.push('    const index = this._reserveMembers.indexOf(actorId);')
-      lines.push('    if (index >= 0) {')
-      lines.push('        this._reserveMembers.splice(index, 1);')
-      lines.push('        return true;')
-      lines.push('    }')
-      lines.push('    return false;')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Swap actor between active party and reserve')
-      lines.push('Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {')
-      lines.push('    if (!this._actors.includes(activeActorId)) return false;')
-      lines.push('    if (!this._reserveMembers.includes(reserveActorId)) return false;')
-      lines.push('')
-      lines.push('    // Remove from current positions')
-      lines.push('    this.removeActor(activeActorId);')
-      lines.push('    this.removeFromReserve(reserveActorId);')
-      lines.push('')
-      lines.push('    // Add to new positions')
-      lines.push('    this.addActor(reserveActorId);')
-      lines.push('    this.addToReserve(activeActorId);')
-      lines.push('')
-      lines.push('    return true;')
-      lines.push('};')
-      lines.push('')
-      lines.push('// Check if actor is in reserve')
-      lines.push('Game_Party.prototype.isInReserve = function(actorId) {')
-      lines.push('    return this._reserveMembers.includes(actorId);')
-      lines.push('};')
+        if (Number(minSize) > 1) {
+          lines.push('')
+          lines.push('// Prevent removing members below the min size')
+          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
+          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
+          lines.push(`    if (this._actors.length <= ${String(minSize)}) {`)
+          lines.push('        // Party at minimum - you can customize this behavior')
+          lines.push("        console.log('Cannot remove member - party at minimum size.');")
+          lines.push('        return;')
+          lines.push('    }')
+          lines.push('    _Game_Party_removeActor.call(this, actorId);')
+          lines.push('};')
+        }
+
+        lines.push('')
+        lines.push('// Helper method to check if party can add members')
+        lines.push('Game_Party.prototype.canAddMember = function() {')
+        lines.push('    return this._actors.length < this.maxBattleMembers();')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Helper method to get remaining slots')
+        lines.push('Game_Party.prototype.remainingSlots = function() {')
+        lines.push('    return Math.max(0, this.maxBattleMembers() - this._actors.length);')
+        lines.push('};')
+
+        break
+      }
+      case 'addRemoveHook': {
+        const hookTiming = valueOr(values['hookTiming'], 'after')
+
+        lines.push('// Party Member Change Hooks')
+        lines.push('')
+
+        if (hookTiming === 'after') {
+          // After hooks
+          lines.push('// Hook for when a member is added')
+          lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
+          lines.push('Game_Party.prototype.addActor = function(actorId) {')
+          lines.push('    const wasInParty = this._actors.includes(actorId);')
+          lines.push('    _Game_Party_addActor.call(this, actorId);')
+          lines.push('')
+          lines.push('    if (!wasInParty && this._actors.includes(actorId)) {')
+          lines.push('        // Member was successfully added')
+          lines.push('        this.onMemberAdded(actorId);')
+          lines.push('    }')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Called when a member is added to the party')
+          lines.push('Game_Party.prototype.onMemberAdded = function(actorId) {')
+          lines.push('    const actor = $gameActors.actor(actorId);')
+          lines.push("    console.log(actor.name() + ' joined the party!');")
+          lines.push('    // Add your custom logic here')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Hook for when a member is removed')
+          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
+          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
+          lines.push('    const wasInParty = this._actors.includes(actorId);')
+          lines.push('    _Game_Party_removeActor.call(this, actorId);')
+          lines.push('')
+          lines.push('    if (wasInParty && !this._actors.includes(actorId)) {')
+          lines.push('        // Member was successfully removed')
+          lines.push('        this.onMemberRemoved(actorId);')
+          lines.push('    }')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Called when a member is removed from the party')
+          lines.push('Game_Party.prototype.onMemberRemoved = function(actorId) {')
+          lines.push('    const actor = $gameActors.actor(actorId);')
+          lines.push("    console.log(actor.name() + ' left the party!');")
+          lines.push('    // Add your custom logic here')
+        } else {
+          // Before hooks (can prevent changes)
+          lines.push('// Hook for when a member is about to be added')
+          lines.push('const _Game_Party_addActor = Game_Party.prototype.addActor;')
+          lines.push('Game_Party.prototype.addActor = function(actorId) {')
+          lines.push('    // Return false from canAddMember to prevent adding')
+          lines.push('    if (!this.canAddThisMember(actorId)) {')
+          lines.push("        console.log('Cannot add this member!');")
+          lines.push('        return;')
+          lines.push('    }')
+          lines.push('    _Game_Party_addActor.call(this, actorId);')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Override to control which actors can be added')
+          lines.push('Game_Party.prototype.canAddThisMember = function(actorId) {')
+          lines.push('    // Add your conditions here')
+          lines.push('    // Example: return actorId !== 5; // Cannot add actor 5')
+          lines.push('    return true;')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Hook for when a member is about to be removed')
+          lines.push('const _Game_Party_removeActor = Game_Party.prototype.removeActor;')
+          lines.push('Game_Party.prototype.removeActor = function(actorId) {')
+          lines.push('    // Return false from canRemoveMember to prevent removing')
+          lines.push('    if (!this.canRemoveThisMember(actorId)) {')
+          lines.push("        console.log('Cannot remove this member!');")
+          lines.push('        return;')
+          lines.push('    }')
+          lines.push('    _Game_Party_removeActor.call(this, actorId);')
+          lines.push('};')
+          lines.push('')
+          lines.push('// Override to control which actors can be removed')
+          lines.push('Game_Party.prototype.canRemoveThisMember = function(actorId) {')
+          lines.push('    // Add your conditions here')
+          lines.push('    // Example: return actorId !== 1; // Cannot remove actor 1 (leader)')
+          lines.push('    return true;')
+        }
+        lines.push('};')
+
+        break
+      }
+      case 'reserveParty': {
+        const maxReserve = String(valueOr(values['maxReserve'], 10))
+
+        lines.push('// Reserve Party System')
+        lines.push(`// Maximum reserve members: ${maxReserve}`)
+        lines.push('')
+        lines.push('// Initialize reserve party array')
+        lines.push('const _Game_Party_initialize = Game_Party.prototype.initialize;')
+        lines.push('Game_Party.prototype.initialize = function() {')
+        lines.push('    _Game_Party_initialize.call(this);')
+        lines.push('    this._reserveMembers = [];')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Get maximum reserve size')
+        lines.push('Game_Party.prototype.maxReserveMembers = function() {')
+        lines.push(`    return ${maxReserve};`)
+        lines.push('};')
+        lines.push('')
+        lines.push('// Get all reserve members')
+        lines.push('Game_Party.prototype.reserveMembers = function() {')
+        lines.push('    return this._reserveMembers.map(id => $gameActors.actor(id));')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Add actor to reserve party')
+        lines.push('Game_Party.prototype.addToReserve = function(actorId) {')
+        lines.push('    if (this._reserveMembers.length >= this.maxReserveMembers()) {')
+        lines.push("        console.log('Reserve party is full!');")
+        lines.push('        return false;')
+        lines.push('    }')
+        lines.push('    if (!this._reserveMembers.includes(actorId)) {')
+        lines.push('        this._reserveMembers.push(actorId);')
+        lines.push('        return true;')
+        lines.push('    }')
+        lines.push('    return false;')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Remove actor from reserve party')
+        lines.push('Game_Party.prototype.removeFromReserve = function(actorId) {')
+        lines.push('    const index = this._reserveMembers.indexOf(actorId);')
+        lines.push('    if (index >= 0) {')
+        lines.push('        this._reserveMembers.splice(index, 1);')
+        lines.push('        return true;')
+        lines.push('    }')
+        lines.push('    return false;')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Swap actor between active party and reserve')
+        lines.push(
+          'Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {'
+        )
+        lines.push('    if (!this._actors.includes(activeActorId)) return false;')
+        lines.push('    if (!this._reserveMembers.includes(reserveActorId)) return false;')
+        lines.push('')
+        lines.push('    // Remove from current positions')
+        lines.push('    this.removeActor(activeActorId);')
+        lines.push('    this.removeFromReserve(reserveActorId);')
+        lines.push('')
+        lines.push('    // Add to new positions')
+        lines.push('    this.addActor(reserveActorId);')
+        lines.push('    this.addToReserve(activeActorId);')
+        lines.push('')
+        lines.push('    return true;')
+        lines.push('};')
+        lines.push('')
+        lines.push('// Check if actor is in reserve')
+        lines.push('Game_Party.prototype.isInReserve = function(actorId) {')
+        lines.push('    return this._reserveMembers.includes(actorId);')
+        lines.push('};')
+
+        break
+      }
+      // No default
     }
 
     return lines.join('\n')
@@ -526,9 +539,9 @@ const partyManagementTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Equipment Hook
- * Hook into equip/unequip events with before/after timing
- */
+Template 3: Equipment Hook
+Hook into equip/unequip events with before/after timing
+*/
 const equipmentHookTemplate: CodeTemplate = {
   id: 'actor-equipment-hook',
   category: 'actor-party',

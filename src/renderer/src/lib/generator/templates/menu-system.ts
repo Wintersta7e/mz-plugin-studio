@@ -1,12 +1,12 @@
 /**
- * Menu System Templates
- *
- * Templates for RPG Maker MZ menu and scene customization:
- * - Custom menu scenes (Scene_MenuBase subclass)
- * - Title screen modifications
- * - Menu command additions
- * - Options menu additions
- */
+Menu System Templates
+
+Templates for RPG Maker MZ menu and scene customization:
+- Custom menu scenes (Scene_MenuBase subclass)
+- Title screen modifications
+- Menu command additions
+- Options menu additions
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -14,17 +14,17 @@ import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
 import { expectText } from './values'
 
 /**
- * Helper to convert a name to a valid JavaScript identifier
- */
+Helper to convert a name to a valid JavaScript identifier
+*/
 function toValidIdentifier(name: string): string {
   // Remove special characters and replace spaces with nothing
-  return name.replace(/[^a-zA-Z0-9_]/g, '').replace(/^[0-9]/, '_$&')
+  return name.replaceAll(/[^a-zA-Z0-9_]/g, '').replace(/^[0-9]/, '_$&')
 }
 
 /**
- * Template 1: Custom Menu Scene
- * Create a new Scene_MenuBase subclass with custom windows
- */
+Template 1: Custom Menu Scene
+Create a new Scene_MenuBase subclass with custom windows
+*/
 const customMenuSceneTemplate: CodeTemplate = {
   id: 'menu-custom-scene',
   category: 'menu-system',
@@ -81,8 +81,8 @@ const customMenuSceneTemplate: CodeTemplate = {
     const windowName = toValidIdentifier(expectText(values['windowName']))
     const hasWindowType = Boolean(values['windowType'])
     const windowType = hasWindowType ? values['windowType'] : 'selectable'
-    const includeHelp = Boolean(values['includeHelp'])
-    const includeGold = Boolean(values['includeGold'])
+    const isIncludeHelp = Boolean(values['includeHelp'])
+    const isIncludeGold = Boolean(values['includeGold'])
 
     const sceneClass = `Scene_${sceneName}`
     const windowClass = `Window_${windowName}`
@@ -90,40 +90,42 @@ const customMenuSceneTemplate: CodeTemplate = {
     // Determine window parent class
     let windowParent: string
     switch (windowType) {
-      case 'command':
+      case 'command': {
         windowParent = 'Window_Command'
         break
-      case 'base':
+      }
+      case 'base': {
         windowParent = 'Window_Base'
         break
+      }
       case 'selectable':
-      default:
+      default: {
         windowParent = 'Window_Selectable'
+      }
     }
 
-    const lines: string[] = []
+    const lines: string[] = [
+      `// Custom Menu Scene: ${sceneClass}`,
+      `// A custom scene with ${windowClass} based on ${windowParent}`,
+      '',
+      '//-----------------------------------------------------------------------------',
+      `// ${windowClass}`,
+      '//',
+      `// The window for displaying custom content in ${sceneClass}.`,
+      '',
+      `function ${windowClass}() {`,
+      '    this.initialize(...arguments);',
+      '}',
+      '',
+      `${windowClass}.prototype = Object.create(${windowParent}.prototype);`,
+      `${windowClass}.prototype.constructor = ${windowClass};`,
+      '',
+      `${windowClass}.prototype.initialize = function(rect) {`,
+      `    ${windowParent}.prototype.initialize.call(this, rect);`
+    ]
 
     // Header comment
-    lines.push(`// Custom Menu Scene: ${sceneClass}`)
-    lines.push(`// A custom scene with ${windowClass} based on ${windowParent}`)
-    lines.push('')
-
     // Window class definition
-    lines.push('//-----------------------------------------------------------------------------')
-    lines.push(`// ${windowClass}`)
-    lines.push('//')
-    lines.push(`// The window for displaying custom content in ${sceneClass}.`)
-    lines.push('')
-    lines.push(`function ${windowClass}() {`)
-    lines.push('    this.initialize(...arguments);')
-    lines.push('}')
-    lines.push('')
-    lines.push(`${windowClass}.prototype = Object.create(${windowParent}.prototype);`)
-    lines.push(`${windowClass}.prototype.constructor = ${windowClass};`)
-    lines.push('')
-    lines.push(`${windowClass}.prototype.initialize = function(rect) {`)
-    lines.push(`    ${windowParent}.prototype.initialize.call(this, rect);`)
-
     if (windowType === 'base') {
       lines.push('    this.refresh();')
     } else if (windowType === 'selectable') {
@@ -142,8 +144,6 @@ const customMenuSceneTemplate: CodeTemplate = {
       lines.push("    this.addCommand('Command 1', 'command1');")
       lines.push("    this.addCommand('Command 2', 'command2');")
       lines.push("    this.addCommand('Cancel', 'cancel');")
-      lines.push('};')
-      lines.push('')
     } else if (windowType === 'selectable') {
       lines.push(`${windowClass}.prototype.maxItems = function() {`)
       lines.push('    // Return the number of items in your list')
@@ -153,17 +153,15 @@ const customMenuSceneTemplate: CodeTemplate = {
       lines.push(`${windowClass}.prototype.drawItem = function(index) {`)
       lines.push('    const rect = this.itemLineRect(index);')
       lines.push("    this.drawText('Item ' + (index + 1), rect.x, rect.y, rect.width);")
-      lines.push('};')
-      lines.push('')
     } else {
       // Base window
       lines.push(`${windowClass}.prototype.refresh = function() {`)
       lines.push('    this.contents.clear();')
       lines.push('    // Draw your content here')
       lines.push("    this.drawText('Custom Window Content', 0, 0, this.innerWidth, 'center');")
-      lines.push('};')
-      lines.push('')
     }
+    lines.push('};')
+    lines.push('')
 
     // Scene class definition
     lines.push('//-----------------------------------------------------------------------------')
@@ -187,13 +185,13 @@ const customMenuSceneTemplate: CodeTemplate = {
     lines.push(`${sceneClass}.prototype.create = function() {`)
     lines.push('    Scene_MenuBase.prototype.create.call(this);')
 
-    if (includeHelp) {
+    if (isIncludeHelp) {
       lines.push('    this.createHelpWindow();')
     }
 
     lines.push(`    this.create${windowName}Window();`)
 
-    if (includeGold) {
+    if (isIncludeGold) {
       lines.push('    this.createGoldWindow();')
     }
 
@@ -224,7 +222,7 @@ const customMenuSceneTemplate: CodeTemplate = {
       )
     }
 
-    if (includeHelp && windowType !== 'base') {
+    if (isIncludeHelp && windowType !== 'base') {
       lines.push(`    this._${windowName.toLowerCase()}Window.setHelpWindow(this._helpWindow);`)
     }
 
@@ -235,7 +233,7 @@ const customMenuSceneTemplate: CodeTemplate = {
     // Window rect method
     lines.push(`${sceneClass}.prototype.${windowName.toLowerCase()}WindowRect = function() {`)
 
-    if (includeHelp) {
+    if (isIncludeHelp) {
       lines.push('    const wx = 0;')
       lines.push('    const wy = this.mainAreaTop();')
       lines.push('    const ww = Graphics.boxWidth;')
@@ -309,10 +307,10 @@ const customMenuSceneTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Title Screen Mod
- * Add commands or modify the title screen
- */
-const titleScreenModTemplate: CodeTemplate = {
+Template 2: Title Screen Mod
+Add commands or modify the title screen
+*/
+const titleScreenModuleTemplate: CodeTemplate = {
   id: 'menu-title-mod',
   category: 'menu-system',
   name: 'Title Screen Mod',
@@ -364,10 +362,10 @@ const titleScreenModTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const hasChosenType = Boolean(values['modType'])
-    const modType = hasChosenType ? values['modType'] : 'addCommand'
+    const moduleType = hasChosenType ? values['modType'] : 'addCommand'
     const lines: string[] = []
 
-    switch (modType) {
+    switch (moduleType) {
       case 'addCommand': {
         const hasCommandName = Boolean(values['commandName'])
         const commandName = hasCommandName ? values['commandName'] : 'Custom'
@@ -410,7 +408,7 @@ const titleScreenModTemplate: CodeTemplate = {
           `    console.log("${escapeJSDoubleQuote(expectText(commandName))} command selected");`
         )
         lines.push('    this._commandWindow.activate();')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Example: Push a custom scene')
         lines.push('    // SceneManager.push(Scene_Custom);')
         lines.push('};')
@@ -423,7 +421,7 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('const _Scene_Title_createBackground = Scene_Title.prototype.createBackground;')
         lines.push('Scene_Title.prototype.createBackground = function() {')
         lines.push('    _Scene_Title_createBackground.call(this);')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Add custom background elements here')
         lines.push('    // Example: Create an additional sprite layer')
         lines.push('    // this._customSprite = new Sprite();')
@@ -437,7 +435,7 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('const _Scene_Title_update = Scene_Title.prototype.update;')
         lines.push('Scene_Title.prototype.update = function() {')
         lines.push('    _Scene_Title_update.call(this);')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Update custom background elements')
         lines.push('    // if (this._customSprite) {')
         lines.push(
@@ -455,18 +453,21 @@ const titleScreenModTemplate: CodeTemplate = {
         let methodName: string
         let description: string
         switch (hideTarget) {
-          case 'newGame':
+          case 'newGame': {
             methodName = 'isNewGameVisible'
             description = 'New Game'
             break
-          case 'continue':
+          }
+          case 'continue': {
             methodName = 'isContinueVisible'
             description = 'Continue'
             break
+          }
           case 'options':
-          default:
+          default: {
             methodName = 'isOptionsVisible'
             description = 'Options'
+          }
         }
 
         lines.push(`// Title Screen Mod: Hide "${description}" Command`)
@@ -484,13 +485,12 @@ const titleScreenModTemplate: CodeTemplate = {
             "    this.addCommand(TextManager.continue_, 'continue', this.isContinueEnabled());"
           )
           lines.push('    // Options command removed')
-          lines.push('};')
         } else {
           lines.push(`// Override visibility check for ${description}`)
           lines.push(`Window_TitleCommand.prototype.${methodName} = function() {`)
           lines.push('    return false;')
-          lines.push('};')
         }
+        lines.push('};')
         break
       }
 
@@ -500,14 +500,14 @@ const titleScreenModTemplate: CodeTemplate = {
         lines.push('const _Scene_Title_create = Scene_Title.prototype.create;')
         lines.push('Scene_Title.prototype.create = function() {')
         lines.push('    _Scene_Title_create.call(this);')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Add custom elements after scene creation')
         lines.push('    this.createCustomElements();')
         lines.push('};')
         lines.push('')
         lines.push('Scene_Title.prototype.createCustomElements = function() {')
         lines.push('    // Create custom UI elements here')
-        lines.push('    ')
+        lines.push(' '.repeat(4))
         lines.push('    // Example: Create a version text sprite')
         lines.push('    this._versionSprite = new Sprite();')
         lines.push('    this._versionSprite.bitmap = new Bitmap(200, 30);')
@@ -524,21 +524,21 @@ const titleScreenModTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values['modType']
+    const moduleType = values['modType']
 
-    if (modType === 'addCommand') {
+    if (moduleType === 'addCommand') {
       if (!values['commandName']) {
         errors.push('Command name is required')
       }
       const commandSymbol = values['commandSymbol']
       const hasCommandSymbol = Boolean(commandSymbol)
-      if (!hasCommandSymbol) {
-        errors.push('Command symbol is required')
-      } else {
+      if (hasCommandSymbol) {
         const symbol = String(commandSymbol)
         if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(symbol)) {
           errors.push('Command symbol must be a valid JavaScript identifier')
         }
+      } else {
+        errors.push('Command symbol is required')
       }
     }
 
@@ -550,9 +550,9 @@ const titleScreenModTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Menu Command Addition
- * Add new commands to the main menu (Scene_Menu)
- */
+Template 3: Menu Command Addition
+Add new commands to the main menu (Scene_Menu)
+*/
 const menuCommandAdditionTemplate: CodeTemplate = {
   id: 'menu-command-addition',
   category: 'menu-system',
@@ -641,30 +641,38 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     // Determine insertion logic
     let insertCode: string
     switch (insertPosition) {
-      case 'afterItem':
+      case 'afterItem': {
         insertCode = 'item'
         break
-      case 'afterSkill':
+      }
+      case 'afterSkill': {
         insertCode = 'skill'
         break
-      case 'afterEquip':
+      }
+      case 'afterEquip': {
         insertCode = 'equip'
         break
-      case 'afterStatus':
+      }
+      case 'afterStatus': {
         insertCode = 'status'
         break
-      case 'beforeOptions':
+      }
+      case 'beforeOptions': {
         insertCode = 'options'
         break
-      case 'beforeSave':
+      }
+      case 'beforeSave': {
         insertCode = 'save'
         break
-      case 'beforeGameEnd':
+      }
+      case 'beforeGameEnd': {
         insertCode = 'gameEnd'
         break
+      }
       case 'end':
-      default:
+      default: {
         insertCode = ''
+      }
     }
 
     // Add command to menu
@@ -685,16 +693,19 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     lines.push(`Window_MenuCommand.prototype.is${symbolId}Enabled = function() {`)
 
     switch (enableCondition) {
-      case 'switch':
+      case 'switch': {
         lines.push(`    return $gameSwitches.value(${String(switchId)});`)
         break
-      case 'custom':
+      }
+      case 'custom': {
         lines.push('    // Add your custom condition here')
         lines.push('    return true;')
         break
+      }
       case 'always':
-      default:
+      default: {
         lines.push('    return true;')
+      }
     }
 
     lines.push('};')
@@ -708,7 +719,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       )
       lines.push('Window_MenuCommand.prototype.makeCommandList = function() {')
       lines.push('    _Window_MenuCommand_makeCommandList.call(this);')
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push(`    // Find index of "${escapeJSDoubleQuote(insertCode)}" and insert before it`)
       lines.push(
         `    const index = this._list.findIndex(cmd => cmd.symbol === "${escapeJSDoubleQuote(insertCode)}");`
@@ -751,7 +762,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push(
         `    console.log("${escapeJSDoubleQuote(expectText(commandName))} command selected");`
       )
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    // Example: Push a custom scene')
       lines.push(`    // SceneManager.push(Scene_${symbolId});`)
       lines.push('    this._commandWindow.activate();')
@@ -767,7 +778,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       lines.push(
         `    console.log("${escapeJSDoubleQuote(expectText(commandName))} - selected actor:", actor.name());`
       )
-      lines.push('    ')
+      lines.push(' '.repeat(4))
       lines.push('    // Example: Push scene with actor data')
       lines.push(`    // SceneManager.push(Scene_${symbolId});`)
       lines.push('    this._statusWindow.activate();')
@@ -810,9 +821,9 @@ const menuCommandAdditionTemplate: CodeTemplate = {
 }
 
 /**
- * Template 4: Options Menu Addition
- * Add custom options to the options menu
- */
+Template 4: Options Menu Addition
+Add custom options to the options menu
+*/
 const optionsMenuAdditionTemplate: CodeTemplate = {
   id: 'menu-options-addition',
   category: 'menu-system',
@@ -883,7 +894,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     const hasDefaultValue = Boolean(defaultValue)
     const choices = values['choices']
     const hasChoices = Boolean(choices)
-    const persistToConfig = values['persistToConfig'] !== false
+    const isPersistToConfig = values['persistToConfig'] !== false
 
     const lines: string[] = []
 
@@ -893,17 +904,21 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     // Determine default value
     let defaultCode: string
     switch (optionType) {
-      case 'boolean':
+      case 'boolean': {
         defaultCode = defaultValue === 'false' ? 'false' : 'true'
         break
-      case 'volume':
+      }
+      case 'volume': {
         defaultCode = hasDefaultValue ? String(defaultValue) : '100'
         break
-      case 'select':
+      }
+      case 'select': {
         defaultCode = hasDefaultValue ? String(defaultValue) : '0'
         break
-      default:
+      }
+      default: {
         defaultCode = 'true'
+      }
     }
 
     // Add ConfigManager property
@@ -911,7 +926,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     lines.push(`ConfigManager.${optionSymbol} = ${defaultCode};`)
     lines.push('')
 
-    if (persistToConfig) {
+    if (isPersistToConfig) {
       // makeData - save
       lines.push('// Save option to config')
       lines.push('const _ConfigManager_makeData = ConfigManager.makeData;')
@@ -929,21 +944,24 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
       lines.push('    _ConfigManager_applyData.call(this, config);')
 
       switch (optionType) {
-        case 'boolean':
+        case 'boolean': {
           lines.push(
             `    this.${optionSymbol} = this.readFlag(config, "${escapeJSDoubleQuote(expectText(optionSymbolValue))}", ${defaultCode});`
           )
           break
-        case 'volume':
+        }
+        case 'volume': {
           lines.push(
             `    this.${optionSymbol} = this.readVolume(config, "${escapeJSDoubleQuote(expectText(optionSymbolValue))}");`
           )
           break
-        case 'select':
+        }
+        case 'select': {
           lines.push(
             `    this.${optionSymbol} = config.${optionSymbol} !== undefined ? config.${optionSymbol} : ${defaultCode};`
           )
           break
+        }
       }
 
       lines.push('};')
@@ -965,12 +983,13 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
 
     // Type-specific methods
     switch (optionType) {
-      case 'boolean':
+      case 'boolean': {
         lines.push('// Boolean type uses default behavior - no additional code needed')
         lines.push(`// Access the value with: ConfigManager.${optionSymbol}`)
         break
+      }
 
-      case 'volume':
+      case 'volume': {
         lines.push('// Volume type uses default behavior - no additional code needed')
         lines.push(`// Access the value with: ConfigManager.${optionSymbol} (0-100)`)
         lines.push('')
@@ -985,6 +1004,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
         lines.push('    return _Window_Options_isVolumeSymbol.call(this, symbol);')
         lines.push('};')
         break
+      }
 
       case 'select': {
         const choiceList = hasChoices
@@ -1084,10 +1104,12 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     // Written as code for these two types: a volume, or the index of the chosen choice.
     const defaultValue = values['defaultValue']
     const hasDefaultValue = Boolean(defaultValue)
-    if ((optionType === 'volume' || optionType === 'select') && hasDefaultValue) {
-      if (!/^\d+$/.test(String(defaultValue))) {
-        errors.push(`Default Value must be a whole number for a ${optionType} option`)
-      }
+    if (
+      (optionType === 'volume' || optionType === 'select') &&
+      hasDefaultValue &&
+      !/^\d+$/.test(String(defaultValue))
+    ) {
+      errors.push(`Default Value must be a whole number for a ${optionType} option`)
     }
 
     return {
@@ -1099,13 +1121,13 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
 
 // Register all templates when this module loads
 registerTemplate(customMenuSceneTemplate)
-registerTemplate(titleScreenModTemplate)
+registerTemplate(titleScreenModuleTemplate)
 registerTemplate(menuCommandAdditionTemplate)
 registerTemplate(optionsMenuAdditionTemplate)
 
 export {
   customMenuSceneTemplate,
-  titleScreenModTemplate,
+  titleScreenModuleTemplate as titleScreenModTemplate,
   menuCommandAdditionTemplate,
   optionsMenuAdditionTemplate
 }

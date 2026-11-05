@@ -1,12 +1,12 @@
 /**
- * Map & Events Templates
- *
- * Templates for RPG Maker MZ map and event manipulation:
- * - Dynamic event spawning at runtime
- * - Custom movement routes programmatically
- * - Map transfer hooks with before/after timing
- * - Parallel process updates on the map
- */
+Map & Events Templates
+
+Templates for RPG Maker MZ map and event manipulation:
+- Dynamic event spawning at runtime
+- Custom movement routes programmatically
+- Map transfer hooks with before/after timing
+- Parallel process updates on the map
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -24,9 +24,9 @@ function identifierErrors(value: unknown, label: string): string[] {
 }
 
 /**
- * Template 1: Event Spawn
- * Dynamically spawn events at runtime
- */
+Template 1: Event Spawn
+Dynamically spawn events at runtime
+*/
 const eventSpawnTemplate: CodeTemplate = {
   id: 'map-event-spawn',
   category: 'map-events',
@@ -70,28 +70,27 @@ const eventSpawnTemplate: CodeTemplate = {
     const functionName = String(valueOr(values['functionName'], 'spawnEvent'))
     const templateEventId = values['templateEventId']
     const hasTemplateEvent = Boolean(templateEventId)
-    const persistAcrossTransfer = Boolean(values['persistAcrossTransfer'])
+    const isPersistAcrossTransfer = Boolean(values['persistAcrossTransfer'])
     const maxSpawnedEvents = String(valueOr(values['maxSpawnedEvents'], 100))
 
-    const lines: string[] = []
-
-    lines.push('// Event Spawn System')
-    lines.push('// Allows dynamic spawning of events at runtime')
-    lines.push('')
-    lines.push('(() => {')
-    lines.push('')
-    lines.push('    // Store for spawned event data')
-    lines.push('    const _spawnedEvents = [];')
-    lines.push(`    const MAX_SPAWNED_EVENTS = ${maxSpawnedEvents};`)
-    lines.push('')
+    const lines: string[] = [
+      '// Event Spawn System',
+      '// Allows dynamic spawning of events at runtime',
+      '',
+      '(() => {',
+      '',
+      '    // Store for spawned event data',
+      '    const _spawnedEvents = [];',
+      `    const MAX_SPAWNED_EVENTS = ${maxSpawnedEvents};`,
+      '',
+      '    // Initialize spawned events when map loads',
+      '    const _Game_Map_setup = Game_Map.prototype.setup;',
+      '    Game_Map.prototype.setup = function(mapId) {',
+      '        _Game_Map_setup.call(this, mapId);'
+    ]
 
     // Initialize spawned events array on map setup
-    lines.push('    // Initialize spawned events when map loads')
-    lines.push('    const _Game_Map_setup = Game_Map.prototype.setup;')
-    lines.push('    Game_Map.prototype.setup = function(mapId) {')
-    lines.push('        _Game_Map_setup.call(this, mapId);')
-
-    if (persistAcrossTransfer) {
+    if (isPersistAcrossTransfer) {
       lines.push('        // Restore persistent spawned events')
       lines.push('        this.restoreSpawnedEvents();')
     } else {
@@ -189,7 +188,7 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push('        this._spawnedEventIds.push(newEventId);')
     lines.push('')
 
-    if (persistAcrossTransfer) {
+    if (isPersistAcrossTransfer) {
       lines.push('        // Store for persistence')
       lines.push('        _spawnedEvents.push({')
       lines.push('            mapId: this._mapId,')
@@ -241,7 +240,7 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push('        if (index > -1) this._spawnedEventIds.splice(index, 1);')
     lines.push('')
 
-    if (persistAcrossTransfer) {
+    if (isPersistAcrossTransfer) {
       lines.push('        // Remove from persistence')
       lines.push('        const persistIndex = _spawnedEvents.findIndex(e => ')
       lines.push('            e.mapId === this._mapId && e.eventId === eventId);')
@@ -252,7 +251,7 @@ const eventSpawnTemplate: CodeTemplate = {
     lines.push('        return true;')
     lines.push('    };')
 
-    if (persistAcrossTransfer) {
+    if (isPersistAcrossTransfer) {
       lines.push('')
       lines.push('    // Restore spawned events for current map')
       lines.push('    Game_Map.prototype.restoreSpawnedEvents = function() {')
@@ -288,9 +287,9 @@ const eventSpawnTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Movement Route
- * Create custom movement routes programmatically
- */
+Template 2: Movement Route
+Create custom movement routes programmatically
+*/
 const movementRouteTemplate: CodeTemplate = {
   id: 'map-movement-route',
   category: 'map-events',
@@ -324,87 +323,86 @@ const movementRouteTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const functionName = String(valueOr(values['functionName'], 'setCustomRoute'))
-    const includeHelpers = Boolean(values['includeHelpers'])
-    const waitForCompletion = Boolean(values['waitForCompletion'])
+    const isIncludeHelpers = Boolean(values['includeHelpers'])
+    const isWaitForCompletion = Boolean(values['waitForCompletion'])
 
-    const lines: string[] = []
-
-    lines.push('// Custom Movement Route System')
-    lines.push('// Create and apply movement routes to events programmatically')
-    lines.push('')
-    lines.push('(() => {')
-    lines.push('')
+    const lines: string[] = [
+      '// Custom Movement Route System',
+      '// Create and apply movement routes to events programmatically',
+      '',
+      '(() => {',
+      '',
+      '    // Movement route command codes',
+      '    const ROUTE = {',
+      '        END: 0,',
+      '        MOVE_DOWN: 1,',
+      '        MOVE_LEFT: 2,',
+      '        MOVE_RIGHT: 3,',
+      '        MOVE_UP: 4,',
+      '        MOVE_LOWER_L: 5,',
+      '        MOVE_LOWER_R: 6,',
+      '        MOVE_UPPER_L: 7,',
+      '        MOVE_UPPER_R: 8,',
+      '        MOVE_RANDOM: 9,',
+      '        MOVE_TOWARD: 10,',
+      '        MOVE_AWAY: 11,',
+      '        MOVE_FORWARD: 12,',
+      '        MOVE_BACKWARD: 13,',
+      '        JUMP: 14,           // params: [x, y]',
+      '        WAIT: 15,           // params: [frames]',
+      '        TURN_DOWN: 16,',
+      '        TURN_LEFT: 17,',
+      '        TURN_RIGHT: 18,',
+      '        TURN_UP: 19,',
+      '        TURN_90_RIGHT: 20,',
+      '        TURN_90_LEFT: 21,',
+      '        TURN_180: 22,',
+      '        TURN_90_RANDOM: 23,',
+      '        TURN_RANDOM: 24,',
+      '        TURN_TOWARD: 25,',
+      '        TURN_AWAY: 26,',
+      '        SWITCH_ON: 27,      // params: [switchId]',
+      '        SWITCH_OFF: 28,     // params: [switchId]',
+      '        CHANGE_SPEED: 29,   // params: [speed]',
+      '        CHANGE_FREQ: 30,    // params: [frequency]',
+      '        WALK_ON: 31,',
+      '        WALK_OFF: 32,',
+      '        STEP_ON: 33,',
+      '        STEP_OFF: 34,',
+      '        DIR_FIX_ON: 35,',
+      '        DIR_FIX_OFF: 36,',
+      '        THROUGH_ON: 37,',
+      '        THROUGH_OFF: 38,',
+      '        TRANSPARENT_ON: 39,',
+      '        TRANSPARENT_OFF: 40,',
+      '        CHANGE_IMAGE: 41,   // params: [name, index]',
+      '        CHANGE_OPACITY: 42, // params: [opacity]',
+      '        CHANGE_BLEND: 43,   // params: [blendMode]',
+      '        PLAY_SE: 44,        // params: [se]',
+      '        SCRIPT: 45          // params: [script]',
+      '    };',
+      '',
+      '    // Expose ROUTE constants globally for easy access',
+      '    window.ROUTE = ROUTE;',
+      '',
+      `    // Set a custom movement route for an event`,
+      `    Game_Event.prototype.${functionName} = function(commands, options = {}) {`,
+      '        const route = {',
+      '            list: commands.concat([{ code: ROUTE.END, parameters: [] }]),',
+      '            repeat: options.repeat || false,',
+      '            skippable: options.skippable || false,',
+      '            wait: options.wait || false',
+      '        };',
+      '',
+      '        this.forceMoveRoute(route);'
+    ]
 
     // Movement command constants
-    lines.push('    // Movement route command codes')
-    lines.push('    const ROUTE = {')
-    lines.push('        END: 0,')
-    lines.push('        MOVE_DOWN: 1,')
-    lines.push('        MOVE_LEFT: 2,')
-    lines.push('        MOVE_RIGHT: 3,')
-    lines.push('        MOVE_UP: 4,')
-    lines.push('        MOVE_LOWER_L: 5,')
-    lines.push('        MOVE_LOWER_R: 6,')
-    lines.push('        MOVE_UPPER_L: 7,')
-    lines.push('        MOVE_UPPER_R: 8,')
-    lines.push('        MOVE_RANDOM: 9,')
-    lines.push('        MOVE_TOWARD: 10,')
-    lines.push('        MOVE_AWAY: 11,')
-    lines.push('        MOVE_FORWARD: 12,')
-    lines.push('        MOVE_BACKWARD: 13,')
-    lines.push('        JUMP: 14,           // params: [x, y]')
-    lines.push('        WAIT: 15,           // params: [frames]')
-    lines.push('        TURN_DOWN: 16,')
-    lines.push('        TURN_LEFT: 17,')
-    lines.push('        TURN_RIGHT: 18,')
-    lines.push('        TURN_UP: 19,')
-    lines.push('        TURN_90_RIGHT: 20,')
-    lines.push('        TURN_90_LEFT: 21,')
-    lines.push('        TURN_180: 22,')
-    lines.push('        TURN_90_RANDOM: 23,')
-    lines.push('        TURN_RANDOM: 24,')
-    lines.push('        TURN_TOWARD: 25,')
-    lines.push('        TURN_AWAY: 26,')
-    lines.push('        SWITCH_ON: 27,      // params: [switchId]')
-    lines.push('        SWITCH_OFF: 28,     // params: [switchId]')
-    lines.push('        CHANGE_SPEED: 29,   // params: [speed]')
-    lines.push('        CHANGE_FREQ: 30,    // params: [frequency]')
-    lines.push('        WALK_ON: 31,')
-    lines.push('        WALK_OFF: 32,')
-    lines.push('        STEP_ON: 33,')
-    lines.push('        STEP_OFF: 34,')
-    lines.push('        DIR_FIX_ON: 35,')
-    lines.push('        DIR_FIX_OFF: 36,')
-    lines.push('        THROUGH_ON: 37,')
-    lines.push('        THROUGH_OFF: 38,')
-    lines.push('        TRANSPARENT_ON: 39,')
-    lines.push('        TRANSPARENT_OFF: 40,')
-    lines.push('        CHANGE_IMAGE: 41,   // params: [name, index]')
-    lines.push('        CHANGE_OPACITY: 42, // params: [opacity]')
-    lines.push('        CHANGE_BLEND: 43,   // params: [blendMode]')
-    lines.push('        PLAY_SE: 44,        // params: [se]')
-    lines.push('        SCRIPT: 45          // params: [script]')
-    lines.push('    };')
-    lines.push('')
-
     // Make ROUTE constants available globally
-    lines.push('    // Expose ROUTE constants globally for easy access')
-    lines.push('    window.ROUTE = ROUTE;')
-    lines.push('')
 
     // Main route setting function
-    lines.push(`    // Set a custom movement route for an event`)
-    lines.push(`    Game_Event.prototype.${functionName} = function(commands, options = {}) {`)
-    lines.push('        const route = {')
-    lines.push('            list: commands.concat([{ code: ROUTE.END, parameters: [] }]),')
-    lines.push('            repeat: options.repeat || false,')
-    lines.push('            skippable: options.skippable || false,')
-    lines.push('            wait: options.wait || false')
-    lines.push('        };')
-    lines.push('')
-    lines.push('        this.forceMoveRoute(route);')
 
-    if (waitForCompletion) {
+    if (isWaitForCompletion) {
       lines.push('')
       lines.push('        // Store callback if provided')
       lines.push('        if (options.onComplete) {')
@@ -422,14 +420,14 @@ const movementRouteTemplate: CodeTemplate = {
     lines.push(`    Game_Player.prototype.${functionName} = Game_Event.prototype.${functionName};`)
     lines.push('')
 
-    if (waitForCompletion) {
+    if (isWaitForCompletion) {
       lines.push('    // Hook route completion to trigger callbacks')
       lines.push(
         '    const _Game_Character_processRouteEnd = Game_Character.prototype.processRouteEnd;'
       )
       lines.push('    Game_Character.prototype.processRouteEnd = function() {')
       lines.push('        _Game_Character_processRouteEnd.call(this);')
-      lines.push('        ')
+      lines.push(' '.repeat(8))
       lines.push('        if (this._routeCompleteCallback) {')
       lines.push('            const callback = this._routeCompleteCallback;')
       lines.push('            this._routeCompleteCallback = null;')
@@ -446,7 +444,7 @@ const movementRouteTemplate: CodeTemplate = {
     lines.push('    };')
     lines.push('')
 
-    if (includeHelpers) {
+    if (isIncludeHelpers) {
       lines.push('    // ===== Preset Route Builders =====')
       lines.push('')
 
@@ -458,25 +456,25 @@ const movementRouteTemplate: CodeTemplate = {
       lines.push('            // Move to waypoint')
       lines.push('            const dx = wp.x - this.x;')
       lines.push('            const dy = wp.y - this.y;')
-      lines.push('            ')
+      lines.push(' '.repeat(12))
       lines.push('            // Add horizontal movement')
       lines.push('            const hDir = dx > 0 ? ROUTE.MOVE_RIGHT : ROUTE.MOVE_LEFT;')
       lines.push('            for (let i = 0; i < Math.abs(dx); i++) {')
       lines.push('                commands.push({ code: hDir, parameters: [] });')
       lines.push('            }')
-      lines.push('            ')
+      lines.push(' '.repeat(12))
       lines.push('            // Add vertical movement')
       lines.push('            const vDir = dy > 0 ? ROUTE.MOVE_DOWN : ROUTE.MOVE_UP;')
       lines.push('            for (let i = 0; i < Math.abs(dy); i++) {')
       lines.push('                commands.push({ code: vDir, parameters: [] });')
       lines.push('            }')
-      lines.push('            ')
+      lines.push(' '.repeat(12))
       lines.push('            // Wait at waypoint if specified')
       lines.push('            if (wp.wait) {')
       lines.push('                commands.push({ code: ROUTE.WAIT, parameters: [wp.wait] });')
       lines.push('            }')
       lines.push('        }')
-      lines.push('        ')
+      lines.push(' '.repeat(8))
       lines.push(`        return this.${functionName}(commands, { repeat: true, ...options });`)
       lines.push('    };')
       lines.push('')
@@ -535,9 +533,9 @@ const movementRouteTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Map Transfer Hook
- * Hook into map transfers with before/after timing
- */
+Template 3: Map Transfer Hook
+Hook into map transfers with before/after timing
+*/
 const mapTransferHookTemplate: CodeTemplate = {
   id: 'map-transfer-hook',
   category: 'map-events',
@@ -583,18 +581,18 @@ const mapTransferHookTemplate: CodeTemplate = {
   generate: (values): string => {
     const timing = valueOr(values['timing'], 'after')
     const filterMapId = String(values['filterMapId'] ?? '').trim()
-    const includeFadeInfo = Boolean(values['includeFadeInfo'])
-    const includeDirection = Boolean(values['includeDirection'])
+    const isIncludeFadeInfo = Boolean(values['includeFadeInfo'])
+    const isIncludeDirection = Boolean(values['includeDirection'])
 
     const hasMapFilter = filterMapId && filterMapId.trim() !== ''
 
-    const lines: string[] = []
-
-    lines.push('// Map Transfer Hook')
-    lines.push('// Execute custom code when transferring between maps')
-    lines.push('')
-    lines.push('(() => {')
-    lines.push('')
+    const lines: string[] = [
+      '// Map Transfer Hook',
+      '// Execute custom code when transferring between maps',
+      '',
+      '(() => {',
+      ''
+    ]
 
     // Before transfer hook
     if (timing === 'before' || timing === 'both') {
@@ -625,14 +623,14 @@ const mapTransferHookTemplate: CodeTemplate = {
       lines.push('        // Your code here (before leaving the current map)')
       lines.push("        console.log('Leaving map', fromMapId, 'for map', toMapId);")
 
-      if (includeFadeInfo) {
+      if (isIncludeFadeInfo) {
         lines.push('')
         lines.push('        // Access fade type: 0 = black, 1 = white, 2 = none')
         lines.push('        const fadeType = this._fadeType;')
         lines.push("        console.log('Fade type:', fadeType);")
       }
 
-      if (includeDirection) {
+      if (isIncludeDirection) {
         lines.push('')
         lines.push('        // Access the direction player will face')
         lines.push('        const direction = this._newDirection;')
@@ -675,7 +673,7 @@ const mapTransferHookTemplate: CodeTemplate = {
       lines.push('        const mapName = $dataMap.displayName || $dataMapInfos[mapId].name;')
       lines.push("        console.log('Map name:', mapName);")
 
-      if (includeDirection) {
+      if (isIncludeDirection) {
         lines.push('')
         lines.push("        // Player's position and direction")
         lines.push('        const x = $gamePlayer.x;')
@@ -698,11 +696,13 @@ const mapTransferHookTemplate: CodeTemplate = {
     const hasFilterMapId = Boolean(filterMapId)
 
     // Validate map ID if provided
-    if (hasFilterMapId && expectText(filterMapId).trim() !== '') {
-      // The whole text is written as code: parseInt would pass anything after the digits.
-      if (!/^[1-9]\d*$/.test(expectText(filterMapId).trim())) {
-        errors.push('Map ID must be a positive integer')
-      }
+    // The whole text is written as code: parseInt would pass anything after the digits.
+    if (
+      hasFilterMapId &&
+      expectText(filterMapId).trim() !== '' &&
+      !/^[1-9]\d*$/.test(expectText(filterMapId).trim())
+    ) {
+      errors.push('Map ID must be a positive integer')
     }
 
     return {
@@ -713,9 +713,9 @@ const mapTransferHookTemplate: CodeTemplate = {
 }
 
 /**
- * Template 4: Parallel Process
- * Create a parallel update process on the map
- */
+Template 4: Parallel Process
+Create a parallel update process on the map
+*/
 const parallelProcessTemplate: CodeTemplate = {
   id: 'map-parallel-process',
   category: 'map-events',
@@ -790,8 +790,8 @@ const parallelProcessTemplate: CodeTemplate = {
     const activeCondition = valueOr(values['activeCondition'], 'always')
     const conditionId = String(valueOr(values['conditionId'], 1))
     const conditionValue = String(valueOr(values['conditionValue'], 1))
-    const pauseInMenu = Boolean(values['pauseInMenu'])
-    const pauseInBattle = Boolean(values['pauseInBattle'])
+    const isPauseInMenu = Boolean(values['pauseInMenu'])
+    const isPauseInBattle = Boolean(values['pauseInBattle'])
 
     const lines: string[] = []
 
@@ -815,21 +815,25 @@ const parallelProcessTemplate: CodeTemplate = {
     )
 
     switch (activeCondition) {
-      case 'switch':
+      case 'switch': {
         lines.push(`        // Active when switch ${conditionId} is ON`)
         lines.push(`        return $gameSwitches.value(${conditionId});`)
         break
-      case 'variable':
+      }
+      case 'variable': {
         lines.push(`        // Active when variable ${conditionId} >= ${conditionValue}`)
         lines.push(`        return $gameVariables.value(${conditionId}) >= ${conditionValue};`)
         break
-      case 'custom':
+      }
+      case 'custom': {
         lines.push('        // Custom condition - edit as needed')
         lines.push('        return true; // Replace with your condition')
         break
+      }
       case 'always':
-      default:
+      default: {
         lines.push('        return true;')
+      }
     }
 
     lines.push('    }')
@@ -839,10 +843,10 @@ const parallelProcessTemplate: CodeTemplate = {
     lines.push('    // Check if process should be paused based on current scene')
     lines.push('    function shouldPauseProcess() {')
 
-    if (pauseInMenu || pauseInBattle) {
+    if (isPauseInMenu || isPauseInBattle) {
       const conditions: string[] = []
 
-      if (pauseInMenu) {
+      if (isPauseInMenu) {
         conditions.push('SceneManager._scene instanceof Scene_Menu')
         conditions.push('SceneManager._scene instanceof Scene_Item')
         conditions.push('SceneManager._scene instanceof Scene_Skill')
@@ -854,7 +858,7 @@ const parallelProcessTemplate: CodeTemplate = {
         conditions.push('SceneManager._scene instanceof Scene_GameEnd')
       }
 
-      if (pauseInBattle) {
+      if (isPauseInBattle) {
         conditions.push('SceneManager._scene instanceof Scene_Battle')
       }
 

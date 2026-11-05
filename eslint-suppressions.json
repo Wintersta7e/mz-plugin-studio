@@ -2589,29 +2589,14 @@
     "sonarjs/no-nested-conditional": {
       "count": 2
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 5
-    },
     "unicorn/no-immediate-mutation": {
       "count": 1
     },
     "unicorn/prefer-else-if": {
       "count": 1
     },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
     "unicorn/prefer-number-properties": {
       "count": 2
-    },
-    "unicorn/prefer-switch": {
-      "count": 1
     }
   },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
@@ -2727,32 +2712,17 @@
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 8
-    },
     "unicorn/no-immediate-mutation": {
-      "count": 5
+      "count": 3
     },
     "unicorn/no-non-function-verb-prefix": {
       "count": 1
     },
     "unicorn/prefer-hoisting-branch-code": {
-      "count": 3
+      "count": 1
     },
     "unicorn/prefer-number-coercion": {
       "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 14
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 5
-    },
-    "unicorn/prefer-switch": {
-      "count": 2
     },
     "unicorn/prefer-ternary": {
       "count": 1
@@ -2851,25 +2821,13 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 8
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 5
+      "count": 1
     },
     "unicorn/no-immediate-mutation": {
-      "count": 4
-    },
-    "unicorn/no-lonely-if": {
       "count": 1
     },
     "unicorn/no-useless-switch-case": {
       "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 5
-    },
-    "unicorn/switch-case-braces": {
-      "count": 4
     }
   },
   "src/renderer/src/lib/generator/templates/menu-system.ts": {
@@ -2900,41 +2858,17 @@
     "sonarjs/no-nested-template-literals": {
       "count": 3
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
     "unicorn/no-immediate-mutation": {
-      "count": 3
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
+      "count": 2
     },
     "unicorn/no-useless-switch-case": {
       "count": 4
     },
     "unicorn/prefer-hoisting-branch-code": {
-      "count": 3
+      "count": 1
     },
     "unicorn/prefer-simple-condition-first": {
       "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 8
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 26
     }
   },
   "src/renderer/src/lib/generator/templates/message-system.ts": {
@@ -3155,22 +3089,7 @@
     "regexp/use-ignore-case": {
       "count": 3
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 5
-    },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
     "unicorn/prefer-number-coercion": {
-      "count": 2
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
-    },
-    "unicorn/prefer-switch": {
       "count": 2
     }
   },
