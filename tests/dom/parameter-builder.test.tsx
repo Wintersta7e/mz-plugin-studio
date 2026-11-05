@@ -856,4 +856,40 @@ describe('parameter toolbar', () => {
 
     await presetListed(1)
   })
+
+  it.each(['constructor', 'toString'])(
+    'saves a first preset named %s without asking to overwrite',
+    async (name) => {
+      expect.hasAssertions()
+
+      const message = answering('Cancel')
+      vi.stubGlobal('api', createFakeApi({ dialog: { message } }))
+      const view = renderToolbar([param('speed', 'Speed')])
+      await view.click(screen.getByRole('button', { name: 'Select All' }))
+      await chooseMenuItem(view, 'Presets', 'Save Selection as Preset...')
+      await view.type(await screen.findByLabelText('Preset Name'), name)
+      await view.keyboard('{Enter}')
+      await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      })
+
+      expect(message).not.toHaveBeenCalled()
+      expect(Object.keys(useSettingsStore.getState().parameterPresets)).toStrictEqual([name])
+    }
+  )
+
+  it('clears the selection when another plugin opens', async () => {
+    expect.hasAssertions()
+
+    const parameters = [param('speed', 'Speed'), param('power', 'Power')]
+    const view = renderToolbar(parameters)
+    await view.click(screen.getByRole('button', { name: 'Select All' }))
+    act(() => {
+      usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), parameters })
+    })
+
+    for (const box of screen.getAllByRole('checkbox')) expect(box).not.toBeChecked()
+
+    expect(screen.getByRole('button', { name: 'Duplicate' })).toBeDisabled()
+  })
 })
