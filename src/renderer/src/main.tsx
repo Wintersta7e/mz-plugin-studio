@@ -58,7 +58,7 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-const root = document.getElementById('root')
+const root = document.querySelector('#root')
 if (!root) throw new Error('Missing root element')
 
 ReactDOM.createRoot(root).render(

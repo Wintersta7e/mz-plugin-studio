@@ -922,7 +922,6 @@ const TRANSITIONAL_ARTEFACTS: string[] = [
   'tsconfig.scripts.pending.json',
   'tsconfig.e2e.pending.json',
   'pending-ceilings.json',
-  KNOWN_VIOLATIONS,
   'scripts/strictness-status.mjs'
 ]
 
@@ -1147,6 +1146,6 @@ describe('static scope: format gate, transitional files and gate scripts', () =>
 
     expect(scripts.length).toBeGreaterThan(0)
     expect(loose).toStrictEqual([])
-    expect(ignoringKnown).toStrictEqual(['deps'])
+    expect(ignoringKnown).toStrictEqual([])
   })
 })

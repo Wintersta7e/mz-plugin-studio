@@ -9,9 +9,9 @@ import {
   checkOneOf,
   checkRecordOf,
   checkString,
-  definePersist
+  definePersist,
+  type MigrationStep
 } from './persist'
-import type { MigrationStep } from './persist'
 
 interface SettingsState {
   // Appearance
@@ -27,13 +27,13 @@ interface SettingsState {
   parameterPresets: Record<string, PluginParameter[]>
   // Logging
   debugLogging: boolean
-  setDebugLogging: (debug: boolean) => void
+  setDebugLogging: (isEnabled: boolean) => void
   // Setters
   setTheme: (theme: 'dark' | 'light') => void
   setEditorFontSize: (size: number) => void
-  setEditorWordWrap: (wrap: boolean) => void
-  setEditorMinimap: (minimap: boolean) => void
-  setEditorLineNumbers: (lineNumbers: boolean) => void
+  setEditorWordWrap: (isWrapped: boolean) => void
+  setEditorMinimap: (isShown: boolean) => void
+  setEditorLineNumbers: (areShown: boolean) => void
   setDefaultAuthor: (author: string) => void
   savePreset: (name: string, params: PluginParameter[]) => void
   deletePreset: (name: string) => void
@@ -56,6 +56,59 @@ type SettingsPersisted = Pick<
 // Schema 1 began checking each preset parameter; that check is the field check, run on every load.
 const SETTINGS_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
+const clampFontSize = (size: number): number =>
+  Math.max(10, Math.min(24, Number.isFinite(size) ? size : 10))
+
+// The preload's log bridge; absent where the renderer runs without the app's preload (tests)
+interface LogLevelBridge {
+  log?: { setLevel?: (isDebug: boolean) => void }
+}
+
+function logBridge(): LogLevelBridge | undefined {
+  return globalThis.api
+}
+
+function setMainLogLevel(isDebug: boolean): void {
+  if (logBridge()?.log?.setLevel !== undefined) globalThis.api.log.setLevel(isDebug)
+}
+
+const SETTINGS_PERSIST = definePersist<SettingsState, SettingsPersisted>({
+  name: 'mz-plugin-studio-settings',
+  area: 'Settings',
+  migrations: SETTINGS_MIGRATIONS,
+  fields: {
+    theme: checkOneOf(['dark', 'light'] as const),
+    editorFontSize: checkFiniteNumber,
+    editorWordWrap: checkBoolean,
+    editorMinimap: checkBoolean,
+    editorLineNumbers: checkBoolean,
+    defaultAuthor: checkString,
+    parameterPresets: checkRecordOf(checkArrayOf(checkSavedParameter)),
+    debugLogging: checkBoolean
+  },
+  labels: {
+    theme: 'theme',
+    editorFontSize: 'editor font size',
+    editorWordWrap: 'word wrap',
+    editorMinimap: 'minimap',
+    editorLineNumbers: 'line numbers',
+    defaultAuthor: 'default author',
+    parameterPresets: { all: 'parameter presets', one: 'parameter preset' },
+    debugLogging: 'debug logging',
+    ...PARAMETER_LABELS
+  },
+  partialize: (state) => ({
+    theme: state.theme,
+    editorFontSize: state.editorFontSize,
+    editorWordWrap: state.editorWordWrap,
+    editorMinimap: state.editorMinimap,
+    editorLineNumbers: state.editorLineNumbers,
+    defaultAuthor: state.defaultAuthor,
+    parameterPresets: state.parameterPresets,
+    debugLogging: state.debugLogging
+  })
+})
+
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
@@ -69,11 +122,10 @@ export const useSettingsStore = create<SettingsState>()(
       debugLogging: false,
 
       setTheme: (theme) => set({ theme }),
-      setEditorFontSize: (size) =>
-        set({ editorFontSize: Math.max(10, Math.min(24, Number.isFinite(size) ? size : 10)) }),
-      setEditorWordWrap: (wrap) => set({ editorWordWrap: wrap }),
-      setEditorMinimap: (minimap) => set({ editorMinimap: minimap }),
-      setEditorLineNumbers: (lineNumbers) => set({ editorLineNumbers: lineNumbers }),
+      setEditorFontSize: (size) => set({ editorFontSize: clampFontSize(size) }),
+      setEditorWordWrap: (isWrapped) => set({ editorWordWrap: isWrapped }),
+      setEditorMinimap: (isShown) => set({ editorMinimap: isShown }),
+      setEditorLineNumbers: (areShown) => set({ editorLineNumbers: areShown }),
       setDefaultAuthor: (author) => set({ defaultAuthor: author }),
 
       savePreset: (name, params) => {
@@ -88,11 +140,11 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       deletePreset: (name) =>
-        set((state) => {
-          const updated = { ...state.parameterPresets }
-          delete updated[name]
-          return { parameterPresets: updated }
-        }),
+        set((state) => ({
+          parameterPresets: Object.fromEntries(
+            Object.entries(state.parameterPresets).filter(([preset]) => preset !== name)
+          )
+        })),
 
       clearAllPresets: () => set({ parameterPresets: {} }),
 
@@ -106,57 +158,14 @@ export const useSettingsStore = create<SettingsState>()(
           debugLogging: false
         }),
 
-      setDebugLogging: (debug) => {
-        set({ debugLogging: debug })
-        if (typeof window !== 'undefined' && window.api?.log?.setLevel) {
-          window.api.log.setLevel(debug)
-        }
+      setDebugLogging: (isEnabled) => {
+        set({ debugLogging: isEnabled })
+        setMainLogLevel(isEnabled)
       }
     }),
-    definePersist<SettingsState, SettingsPersisted>({
-      name: 'mz-plugin-studio-settings',
-      area: 'Settings',
-      migrations: SETTINGS_MIGRATIONS,
-      fields: {
-        theme: checkOneOf(['dark', 'light'] as const),
-        editorFontSize: checkFiniteNumber,
-        editorWordWrap: checkBoolean,
-        editorMinimap: checkBoolean,
-        editorLineNumbers: checkBoolean,
-        defaultAuthor: checkString,
-        parameterPresets: checkRecordOf(checkArrayOf(checkSavedParameter)),
-        debugLogging: checkBoolean
-      },
-      labels: {
-        theme: 'theme',
-        editorFontSize: 'editor font size',
-        editorWordWrap: 'word wrap',
-        editorMinimap: 'minimap',
-        editorLineNumbers: 'line numbers',
-        defaultAuthor: 'default author',
-        parameterPresets: { all: 'parameter presets', one: 'parameter preset' },
-        debugLogging: 'debug logging',
-        ...PARAMETER_LABELS
-      },
-      partialize: (state) => ({
-        theme: state.theme,
-        editorFontSize: state.editorFontSize,
-        editorWordWrap: state.editorWordWrap,
-        editorMinimap: state.editorMinimap,
-        editorLineNumbers: state.editorLineNumbers,
-        defaultAuthor: state.defaultAuthor,
-        parameterPresets: state.parameterPresets,
-        debugLogging: state.debugLogging
-      })
-    })
+    SETTINGS_PERSIST
   )
 )
 
 // Sync persisted debug logging state to main process on startup
-// Guarded to avoid crashes in test environments where window.api is unavailable
-if (typeof window !== 'undefined' && window.api?.log?.setLevel) {
-  const initialDebug = useSettingsStore.getState().debugLogging
-  if (initialDebug) {
-    window.api.log.setLevel(true)
-  }
-}
+if (useSettingsStore.getState().debugLogging) setMainLogLevel(true)

@@ -6,10 +6,9 @@ import {
   checkRecordOf,
   checkString,
   definePersist,
-  isRecord
+  isRecord,
+  type MigrationStep
 } from './persist'
-import type { MigrationStep } from './persist'
-import { usePluginStore } from './pluginStore'
 
 interface UIState {
   sidebarWidth: number
@@ -35,9 +34,9 @@ interface UIState {
   setSelectedStructId: (id: string | null) => void
   setMainView: (view: UIState['mainView']) => void
   setLastTemplateCategory: (cat: string) => void
-  setPreviewCollapsed: (collapsed: boolean) => void
+  setPreviewCollapsed: (isCollapsed: boolean) => void
   togglePreview: () => void
-  setRawModeForPlugin: (pluginId: string, enabled: boolean) => void
+  setRawModeForPlugin: (pluginId: string, isEnabled: boolean) => void
   clearRawModeForPlugin: (pluginId: string) => void
   confirmStructuralSave: (pluginId: string) => void
   requestDiff: (pluginId: string) => void
@@ -51,12 +50,13 @@ type PersistedField =
   | 'lastTemplateCategory'
   | 'rawModeByPluginId'
 
-/** The record without `key`; the same record when it has no such key. */
+/**
+The record without `key`; the same record when it has no such key.
+*/
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
-  if (!(key in record)) return record
-  const next = { ...record }
-  delete next[key]
-  return next
+  return Object.hasOwn(record, key)
+    ? Object.fromEntries(Object.entries(record).filter(([entry]) => entry !== key))
+    : record
 }
 
 const UI_MIGRATIONS: readonly MigrationStep[] = [
@@ -64,15 +64,42 @@ const UI_MIGRATIONS: readonly MigrationStep[] = [
   // Raw mode is on for imported plugins unless the user turns it off; v1.6.0 stored false
   // for plugins it had restored without their file text, so those entries are dropped.
   (state) =>
-    isRecord(state.rawModeByPluginId)
+    isRecord(state['rawModeByPluginId'])
       ? {
           ...state,
           rawModeByPluginId: Object.fromEntries(
-            Object.entries(state.rawModeByPluginId).filter(([, on]) => on !== false)
+            Object.entries(state['rawModeByPluginId']).filter(([, on]) => on !== false)
           )
         }
       : state
 ]
+
+const UI_PERSIST = definePersist<UIState, Pick<UIState, PersistedField>>({
+  name: 'mz-plugin-studio-ui',
+  area: 'Layout',
+  migrations: UI_MIGRATIONS,
+  fields: {
+    sidebarWidth: checkFiniteNumber,
+    previewWidth: checkFiniteNumber,
+    previewCollapsed: checkBoolean,
+    lastTemplateCategory: checkString,
+    rawModeByPluginId: checkRecordOf(checkBoolean)
+  },
+  labels: {
+    sidebarWidth: 'sidebar width',
+    previewWidth: 'preview width',
+    previewCollapsed: 'collapsed preview',
+    lastTemplateCategory: 'last template category',
+    rawModeByPluginId: { all: 'raw mode switches', one: 'raw mode switch of tab' }
+  },
+  partialize: (state) => ({
+    sidebarWidth: state.sidebarWidth,
+    previewWidth: state.previewWidth,
+    previewCollapsed: state.previewCollapsed,
+    lastTemplateCategory: state.lastTemplateCategory,
+    rawModeByPluginId: state.rawModeByPluginId
+  })
+})
 
 export const useUIStore = create<UIState>()(
   persist(
@@ -101,14 +128,14 @@ export const useUIStore = create<UIState>()(
       setLastTemplateCategory: (lastTemplateCategory) => set({ lastTemplateCategory }),
       setPreviewCollapsed: (previewCollapsed) => set({ previewCollapsed }),
       togglePreview: () => set((state) => ({ previewCollapsed: !state.previewCollapsed })),
-      setRawModeForPlugin: (pluginId, enabled) =>
+      setRawModeForPlugin: (pluginId, isEnabled) =>
         set((state) => {
           const next: Partial<UIState> = {}
-          if (state.rawModeByPluginId[pluginId] !== enabled) {
-            next.rawModeByPluginId = { ...state.rawModeByPluginId, [pluginId]: enabled }
+          if (state.rawModeByPluginId[pluginId] !== isEnabled) {
+            next.rawModeByPluginId = { ...state.rawModeByPluginId, [pluginId]: isEnabled }
           }
           // Turning raw mode off asks again before the next save regenerates the file
-          if (!enabled && pluginId in state.structuralSaveConfirmedByPluginId) {
+          if (!isEnabled && Object.hasOwn(state.structuralSaveConfirmedByPluginId, pluginId)) {
             next.structuralSaveConfirmedByPluginId = without(
               state.structuralSaveConfirmedByPluginId,
               pluginId
@@ -119,8 +146,8 @@ export const useUIStore = create<UIState>()(
       clearRawModeForPlugin: (pluginId) =>
         set((state) => {
           if (
-            !(pluginId in state.rawModeByPluginId) &&
-            !(pluginId in state.structuralSaveConfirmedByPluginId)
+            !Object.hasOwn(state.rawModeByPluginId, pluginId) &&
+            !Object.hasOwn(state.structuralSaveConfirmedByPluginId, pluginId)
           ) {
             return {}
           }
@@ -143,49 +170,6 @@ export const useUIStore = create<UIState>()(
       requestDiff: (pluginId) => set({ diffRequestPluginId: pluginId, previewCollapsed: false }),
       clearDiffRequest: () => set({ diffRequestPluginId: null })
     }),
-    definePersist<UIState, Pick<UIState, PersistedField>>({
-      name: 'mz-plugin-studio-ui',
-      area: 'Layout',
-      migrations: UI_MIGRATIONS,
-      fields: {
-        sidebarWidth: checkFiniteNumber,
-        previewWidth: checkFiniteNumber,
-        previewCollapsed: checkBoolean,
-        lastTemplateCategory: checkString,
-        rawModeByPluginId: checkRecordOf(checkBoolean)
-      },
-      labels: {
-        sidebarWidth: 'sidebar width',
-        previewWidth: 'preview width',
-        previewCollapsed: 'collapsed preview',
-        lastTemplateCategory: 'last template category',
-        rawModeByPluginId: { all: 'raw mode switches', one: 'raw mode switch of tab' }
-      },
-      partialize: (state) => ({
-        sidebarWidth: state.sidebarWidth,
-        previewWidth: state.previewWidth,
-        previewCollapsed: state.previewCollapsed,
-        lastTemplateCategory: state.lastTemplateCategory,
-        rawModeByPluginId: state.rawModeByPluginId
-      }),
-      // Prune rawModeByPluginId entries for plugins no longer open (LEAK-05)
-      onRehydrateStorage: () => (state) => {
-        if (!state) return
-        // Defer to next tick so pluginStore is fully hydrated first
-        setTimeout(() => {
-          try {
-            const liveIds = new Set(usePluginStore.getState().openPlugins.map((p) => p.id))
-            const raw = useUIStore.getState().rawModeByPluginId
-            const stale = Object.keys(raw).filter((k) => !liveIds.has(k))
-            if (stale.length === 0) return
-            const next = { ...raw }
-            for (const key of stale) delete next[key]
-            useUIStore.setState({ rawModeByPluginId: next })
-          } catch {
-            // pluginStore not available (e.g. in tests) — skip pruning
-          }
-        }, 0)
-      }
-    })
+    UI_PERSIST
   )
 )

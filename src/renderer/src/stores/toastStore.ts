@@ -2,7 +2,9 @@ import { create } from 'zustand'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
-/** A button on a toast; clicking it runs `run` and dismisses the toast. */
+/**
+A button on a toast; clicking it runs `run` and dismisses the toast.
+*/
 export interface ToastAction {
   label: string
   run: () => void
@@ -35,13 +37,15 @@ interface ToastState {
   addToast: (input: AddToastInput) => void
   dismiss: (id: string) => void
   dismissAll: () => void
-  /** Stops a timed toast's countdown while the user reads or uses it. */
+  /**
+  Stops a timed toast's countdown while the user reads or uses it.
+  */
   pause: (id: string) => void
-  /** Restarts a paused toast's countdown with the time it had left. */
+  /**
+  Restarts a paused toast's countdown with the time it had left.
+  */
   resume: (id: string) => void
 }
-
-let counter = 0
 
 // Each timed toast's countdown: `handle` is null while paused, with `left` ms to go
 interface Countdown {
@@ -51,15 +55,16 @@ interface Countdown {
 }
 const timerMap = new Map<string, Countdown>()
 
-const evictable = (toast: Toast): boolean => toast.duration > 0 && toast.action === undefined
+const isEvictable = (toast: Toast): boolean => toast.duration > 0 && toast.action === undefined
 
 function stopCountdown(id: string): void {
   const handle = timerMap.get(id)?.handle
-  if (handle) clearTimeout(handle)
+  if (handle !== undefined && handle !== null) clearTimeout(handle)
   timerMap.delete(id)
 }
 
 export const useToastStore = create<ToastState>((set, get) => {
+  let counter = 0
   const startCountdown = (id: string, ms: number): void => {
     const handle = setTimeout(() => {
       timerMap.delete(id)
@@ -72,7 +77,7 @@ export const useToastStore = create<ToastState>((set, get) => {
     toasts: [],
 
     addToast: (input) => {
-      const id = `toast-${++counter}-${Date.now()}`
+      const id = `toast-${String(++counter)}-${String(Date.now())}`
       const duration = input.duration ?? 3000
       const toast: Toast = {
         id,
@@ -90,7 +95,7 @@ export const useToastStore = create<ToastState>((set, get) => {
         if (excess <= 0) return { toasts: next }
         return {
           toasts: next.filter((t) => {
-            if (excess <= 0 || !evictable(t) || t === toast) return true
+            if (t === toast || excess <= 0 || !isEvictable(t)) return true
             excess--
             stopCountdown(t.id)
             return false
@@ -107,20 +112,20 @@ export const useToastStore = create<ToastState>((set, get) => {
     },
 
     dismissAll: () => {
-      for (const id of [...timerMap.keys()]) stopCountdown(id)
+      for (const id of timerMap.keys()) stopCountdown(id)
       set({ toasts: [] })
     },
 
     pause: (id) => {
       const countdown = timerMap.get(id)
-      if (countdown?.handle == null) return
+      if (countdown === undefined || countdown.handle === null) return
       clearTimeout(countdown.handle)
       timerMap.set(id, { ...countdown, handle: null, left: countdown.endsAt - Date.now() })
     },
 
     resume: (id) => {
       const countdown = timerMap.get(id)
-      if (countdown === undefined || countdown.handle !== null) return
+      if (countdown?.handle !== null) return
       startCountdown(id, Math.max(0, countdown.left))
     }
   }

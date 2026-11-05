@@ -1,8 +1,7 @@
 import log from 'electron-log/renderer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { checkArrayOf, checkString, definePersist } from './persist'
-import type { MigrationStep } from './persist'
+import { checkArrayOf, checkString, definePersist, type MigrationStep } from './persist'
 import type {
   MZProject,
   MZSwitch,
@@ -20,10 +19,8 @@ import type {
   MZClass,
   MZTroop
 } from '../types/mz'
-import type { DependencyReport } from '../lib/dependency-analyzer'
-import { validateDependencies } from '../lib/dependency-analyzer'
-import type { ConflictReport } from '../lib/conflict-detector'
-import { detectConflicts } from '../lib/conflict-detector'
+import { validateDependencies, type DependencyReport } from '../lib/dependency-analyzer'
+import { detectConflicts, type ConflictReport } from '../lib/conflict-detector'
 import mzClasses from '../data/mz-classes.json'
 
 interface ProjectState {
@@ -51,7 +48,7 @@ interface ProjectState {
 
   setProject: (project: MZProject | null) => void
   addRecentProject: (path: string) => void
-  setLoading: (loading: boolean) => void
+  setLoading: (isLoading: boolean) => void
   setError: (error: string | null) => void
   setSwitches: (switches: MZSwitch[]) => void
   setVariables: (variables: MZVariable[]) => void
@@ -67,29 +64,61 @@ interface ProjectState {
   setCommonEvents: (commonEvents: MZCommonEvent[]) => void
   setClasses: (classes: MZClass[]) => void
   setTroops: (troops: MZTroop[]) => void
-  /** Batch-set all game data in a single store update (avoids 14 re-renders) */
-  setAllGameData: (data: {
-    switches: MZSwitch[]
-    variables: MZVariable[]
-    actors: MZActor[]
-    items: MZItem[]
-    skills: MZSkill[]
-    weapons: MZWeapon[]
-    armors: MZArmor[]
-    enemies: MZEnemy[]
-    states: MZState[]
-    animations: MZAnimation[]
-    tilesets: MZTileset[]
-    commonEvents: MZCommonEvent[]
-    classes: MZClass[]
-    troops: MZTroop[]
-  }) => void
+  /**
+  Batch-set all game data in a single store update (avoids 14 re-renders)
+  */
+  setAllGameData: (data: GameData) => void
   clearProject: () => void
   scanDependencies: () => Promise<void>
   clearDependencyReport: () => void
 }
 
+type GameData = Pick<
+  ProjectState,
+  | 'switches'
+  | 'variables'
+  | 'actors'
+  | 'items'
+  | 'skills'
+  | 'weapons'
+  | 'armors'
+  | 'enemies'
+  | 'states'
+  | 'animations'
+  | 'tilesets'
+  | 'commonEvents'
+  | 'classes'
+  | 'troops'
+>
+
+// A project's game data before one is loaded: every list empty, fresh on each call
+const noGameData = (): GameData => ({
+  switches: [],
+  variables: [],
+  actors: [],
+  items: [],
+  skills: [],
+  weapons: [],
+  armors: [],
+  enemies: [],
+  states: [],
+  animations: [],
+  tilesets: [],
+  commonEvents: [],
+  classes: [],
+  troops: []
+})
+
 const PROJECT_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
+
+const PROJECT_PERSIST = definePersist<ProjectState, Pick<ProjectState, 'recentProjects'>>({
+  name: 'mz-plugin-studio-project',
+  area: 'Recent projects',
+  migrations: PROJECT_MIGRATIONS,
+  fields: { recentProjects: checkArrayOf(checkString) },
+  labels: { recentProjects: { all: 'recent projects', one: 'recent project' } },
+  partialize: (state) => ({ recentProjects: state.recentProjects })
+})
 
 export const useProjectStore = create<ProjectState>()(
   persist(
@@ -98,20 +127,7 @@ export const useProjectStore = create<ProjectState>()(
       recentProjects: [],
       isLoading: false,
       error: null,
-      switches: [],
-      variables: [],
-      actors: [],
-      items: [],
-      skills: [],
-      weapons: [],
-      armors: [],
-      enemies: [],
-      states: [],
-      animations: [],
-      tilesets: [],
-      commonEvents: [],
-      classes: [],
-      troops: [],
+      ...noGameData(),
       dependencyReport: null,
       conflictReport: null,
       isScanning: false,
@@ -146,20 +162,7 @@ export const useProjectStore = create<ProjectState>()(
       clearProject: () =>
         set({
           project: null,
-          switches: [],
-          variables: [],
-          actors: [],
-          items: [],
-          skills: [],
-          weapons: [],
-          armors: [],
-          enemies: [],
-          states: [],
-          animations: [],
-          tilesets: [],
-          commonEvents: [],
-          classes: [],
-          troops: [],
+          ...noGameData(),
           dependencyReport: null,
           conflictReport: null,
           isScanning: false,
@@ -171,12 +174,9 @@ export const useProjectStore = create<ProjectState>()(
 
         set({ isScanning: true })
         try {
-          const headers = await window.api.plugin.scanHeaders(project.path)
+          const headers = await globalThis.api.plugin.scanHeaders(project.path)
           const report = validateDependencies(headers)
-          const conflicts = detectConflicts(
-            headers,
-            mzClasses as Record<string, { popularity?: number }>
-          )
+          const conflicts = detectConflicts(headers, mzClasses)
           set({ dependencyReport: report, conflictReport: conflicts, isScanning: false })
         } catch (error) {
           log.error('Dependency scan failed:', error)
@@ -185,13 +185,6 @@ export const useProjectStore = create<ProjectState>()(
       },
       clearDependencyReport: () => set({ dependencyReport: null, conflictReport: null })
     }),
-    definePersist<ProjectState, Pick<ProjectState, 'recentProjects'>>({
-      name: 'mz-plugin-studio-project',
-      area: 'Recent projects',
-      migrations: PROJECT_MIGRATIONS,
-      fields: { recentProjects: checkArrayOf(checkString) },
-      labels: { recentProjects: { all: 'recent projects', one: 'recent project' } },
-      partialize: (state) => ({ recentProjects: state.recentProjects })
-    })
+    PROJECT_PERSIST
   )
 )

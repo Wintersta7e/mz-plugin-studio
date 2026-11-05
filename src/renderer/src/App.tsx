@@ -68,7 +68,7 @@ function App() {
   const setPreviewWidth = useUIStore((s) => s.setPreviewWidth)
   const mainView = useUIStore((s) => s.mainView)
   const setMainView = useUIStore((s) => s.setMainView)
-  const previewCollapsed = useUIStore((s) => s.previewCollapsed)
+  const isPreviewCollapsed = useUIStore((s) => s.previewCollapsed)
 
   const theme = useSettingsStore((s) => s.theme)
 
@@ -157,12 +157,14 @@ function App() {
     const handleBeforeUnload = (e: BeforeUnloadEvent): string | void => {
       // Check ALL open plugins for unsaved changes, not just the active one
       const state = usePluginStore.getState()
-      const anyDirty = Object.values(state.dirtyByPluginId).some(Boolean)
-      if (anyDirty) {
-        e.preventDefault()
-        e.returnValue = ''
-        return ''
+      const isAnyDirty = Object.values(state.dirtyByPluginId).some(Boolean)
+      if (!isAnyDirty) {
+        return
       }
+
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -265,7 +267,7 @@ function App() {
 
       switch (shortcut.key) {
         case 'ctrl+z': {
-          const prev = undo()
+          const prev = undo(usePluginStore.getState().plugin)
           if (prev) {
             isUndoRedoRef.current = true
             // Restore rawSource from current plugin since history strips it to save memory
@@ -275,7 +277,7 @@ function App() {
           break
         }
         case 'ctrl+shift+z': {
-          const next = redo()
+          const next = redo(usePluginStore.getState().plugin)
           if (next) {
             isUndoRedoRef.current = true
             const currentRawSource = usePluginStore.getState().plugin.rawSource
@@ -477,7 +479,7 @@ function App() {
                         </div>
 
                         {/* Resize handle */}
-                        {!previewCollapsed && (
+                        {!isPreviewCollapsed && (
                           <div
                             className="w-1.5 cursor-col-resize bg-border hover:bg-primary/50 active:bg-primary"
                             onMouseDown={handleResizeStart}
@@ -485,7 +487,7 @@ function App() {
                         )}
 
                         {/* Code preview */}
-                        {!previewCollapsed && (
+                        {!isPreviewCollapsed && (
                           <div
                             className="overflow-hidden transition-shadow duration-300 focus-within:shadow-[inset_0_0_20px_hsl(var(--primary)/0.04)]"
                             style={{ width: previewWidth }}

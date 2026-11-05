@@ -2,7 +2,7 @@
 // reported instead of silently replaced, every loaded field is type-checked, and a full storage
 // quota is reported instead of thrown out of `set()`.
 import log from 'electron-log/renderer'
-import type { PersistOptions, PersistStorage, StorageValue } from 'zustand/middleware'
+import type { PersistOptions, PersistStorage } from 'zustand/middleware'
 import { useToastStore } from './toastStore'
 
 export type PersistedKey =
@@ -39,9 +39,9 @@ export interface PersistSpec<S, P> {
   // every field, and any key inside one whose words are not its own split at capitals
   labels: { [K in keyof P]-?: FieldLabel } & FieldLabels
   partialize: (state: S) => P
-  // pure; run by merge after the checks; never names a store (hydration runs inside create())
-  prune?: (persisted: P) => P
-  onRehydrateStorage?: PersistOptions<S, P>['onRehydrateStorage']
+  // pure; run by merge on the loaded state after the checks; never names a store (hydration runs
+  // inside create())
+  prune?: (state: S) => S
 }
 
 // kept: the backup entry holds this data; earlier-copy-kept: it holds older data, so this was not
@@ -56,11 +56,11 @@ export interface RestoreReportEntry {
   backup: BackupOutcome
 }
 
-let pendingReport: RestoreReportEntry[] = []
+const pendingReport: RestoreReportEntry[] = []
 // Writes of each store that failed on a full quota since its last successful write
 const quotaFailures = new Map<PersistedKey, number>()
 // Each loaded store's user words, for its backup and its report entries
-const wordsOf = new Map<PersistedKey, { area: string; labels: FieldLabels }>()
+const wordsOf = new Map<string, { area: string; labels: FieldLabels }>()
 
 const BACKUPS_PLACE = 'Settings > Data > Saved-state backups'
 
@@ -74,62 +74,73 @@ function report(
   pendingReport.push({ name, area, kind, fields, backup })
 }
 
-/** Everything reported since the last call, in load order. */
+/**
+Everything reported since the last call, in load order.
+*/
 export function takeRestoreReport(): RestoreReportEntry[] {
-  const entries = pendingReport
-  pendingReport = []
-  return entries
+  return pendingReport.splice(0)
 }
 
 function backupText(key: string, backup: BackupOutcome): string {
   switch (backup) {
-    case 'kept':
+    case 'kept': {
       return `a copy was kept as ${key}.`
-    case 'earlier-copy-kept':
+    }
+    case 'earlier-copy-kept': {
       return `it was not copied because ${key} already holds an earlier copy, and it will be replaced at the next save.`
-    case 'failed':
+    }
+    case 'failed': {
       return `it could not be copied to ${key} because storage is full, and it will be replaced at the next save.`
+    }
   }
 }
 
 function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
   switch (kind) {
-    case 'unparseable':
+    case 'unparseable': {
       return 'the saved data could not be read, so defaults were loaded'
-    case 'newer-schema':
+    }
+    case 'newer-schema': {
       return 'saved by a newer version; the parts this version understands were kept'
-    case 'fields-reset':
+    }
+    case 'fields-reset': {
       return `${fields.join(', ')} had unexpected values and were reset`
-    case 'entries-dropped':
+    }
+    case 'entries-dropped': {
       return `${fields.join(', ')} could not be read and were left out`
+    }
   }
 }
 
-/** A field path as code writes it, for logs: `openPlugins[0].parameters[1].desc`. */
+/**
+A field path as code writes it, for logs: `openPlugins[0].parameters[1].desc`.
+*/
 export function pathText(path: FieldPath): string {
-  return path
-    .map((step, i) =>
-      'key' in step
-        ? `${i === 0 ? '' : '.'}${step.key}`
-        : `[${'index' in step ? step.index : JSON.stringify(step.entry)}]`
-    )
-    .join('')
+  return path.map((step, index) => stepText(step, index === 0)).join('')
+}
+
+function stepText(step: PathStep, isFirst: boolean): string {
+  if ('key' in step) return isFirst ? step.key : `.${step.key}`
+  return `[${'index' in step ? String(step.index) : JSON.stringify(step.entry)}]`
+}
+
+// A label's words for a whole field, or for one entry of it when `at` names one
+function nounOf(label: FieldLabel, at: string | undefined): string {
+  if (typeof label === 'string') return label
+  return at === undefined ? label.all : label.one
 }
 
 /**
- * A field path in the store's words, innermost first: `openPlugins[0].parameters[1]` with the tab
- * named Good → "parameter 2 of open plugin Good".
- */
+A field path in the store's words, innermost first: `openPlugins[0].parameters[1]` with the tab
+named Good → "parameter 2 of open plugin Good".
+*/
 function describeField(path: FieldPath, labels: FieldLabels): string {
   const parts: { label: FieldLabel; at?: string }[] = []
   for (const step of path) {
     if ('key' in step) {
       const { key } = step
-      parts.push({
-        label: Object.hasOwn(labels, key)
-          ? labels[key]
-          : key.replace(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase()
-      })
+      const own = Object.hasOwn(labels, key) ? labels[key] : undefined
+      parts.push({ label: own ?? key.replaceAll(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase() })
       continue
     }
     const at = 'entry' in step ? step.entry : (step.name ?? String(step.index + 1))
@@ -139,11 +150,11 @@ function describeField(path: FieldPath, labels: FieldLabels): string {
   }
   return parts
     .map(({ label, at }) => {
-      const noun = typeof label === 'string' ? label : at === undefined ? label.all : label.one
+      const noun = nounOf(label, at)
       return noun === '' || at === undefined ? noun : `${noun} ${at}`
     })
     .filter((words) => words !== '')
-    .reverse()
+    .toReversed()
     .join(' of ')
 }
 
@@ -173,39 +184,55 @@ export const checkStringOrNull: FieldCheck<string | null> = (value) =>
   value === null || typeof value === 'string' ? value : undefined
 
 export function checkOneOf<T extends string>(values: readonly T[]): FieldCheck<T> {
-  return (value) => (values.includes(value as T) ? (value as T) : undefined)
+  return (value) => values.find((candidate) => candidate === value)
 }
 
 /**
- * An array whose elements are checked one by one; a rejected element is dropped and named by its
- * index and, when `label` reads one from it, its name.
- */
+An array whose elements are checked one by one; a rejected element is dropped and named by its
+index and, when `label` reads one from it, its name.
+*/
 export function checkArrayOf<T>(
   element: FieldCheck<T>,
   label?: (item: unknown) => string | undefined
 ): FieldCheck<T[]> {
-  return (value, drop) => {
-    if (!Array.isArray(value)) return undefined
+  const checkItems = checkEach(element, label)
+  return (value, drop) => (Array.isArray(value) ? checkItems(value, drop) : undefined)
+}
+
+/**
+`checkArrayOf` for a value already known to be an array.
+*/
+export function checkEach<T>(
+  element: FieldCheck<T>,
+  label?: (item: unknown) => string | undefined
+): (items: readonly unknown[], drop: (path: FieldPath) => void) => T[] {
+  return (items, drop) => {
     const kept: T[] = []
-    value.forEach((item, i) => {
+    for (const [index, item] of items.entries()) {
       const name = label?.(item)
-      const step: PathStep = name === undefined ? { index: i } : { index: i, name }
-      const checked = element(item, (path) => drop([step, ...path]))
+      const step: PathStep = name === undefined ? { index: index } : { index: index, name }
+      const checked = element(item, (path) => {
+        drop([step, ...path])
+      })
       if (checked === undefined) drop([step])
       else kept.push(checked)
-    })
+    }
     return kept
   }
 }
 
-/** A string-keyed record whose entries are checked one by one; a rejected entry is dropped and named. */
+/**
+A string-keyed record whose entries are checked one by one; a rejected entry is dropped and named.
+*/
 export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string, T>> {
   return (value, drop) => {
-    if (!isRecord(value)) return undefined
+    if (!isRecord(value)) return
     const kept: Record<string, T> = {}
     for (const [key, item] of Object.entries(value)) {
       const step: PathStep = { entry: key }
-      const checked = entry(item, (path) => drop([step, ...path]))
+      const checked = entry(item, (path) => {
+        drop([step, ...path])
+      })
       if (checked === undefined) drop([step])
       else kept[key] = checked
     }
@@ -213,21 +240,34 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
   }
 }
 
-/** The schema a payload was written at: a non-negative integer, else 0 (written before schemas). */
+/**
+The schema a payload was written at: a non-negative integer, else 0 (written before schemas).
+*/
 function schemaOf(state: Record<string, unknown>): number {
-  const schema = state.schemaVersion
-  return typeof schema === 'number' && Number.isInteger(schema) && schema >= 0 ? schema : 0
+  const schema = state['schemaVersion']
+  return typeof schema === 'number' && isWholeNumber(schema) && schema >= 0 ? schema : 0
+}
+
+// Any whole number, safe or not: a schema too large to be exact still reads as newer than this
+// build (every finite number past the safe range is whole)
+function isWholeNumber(value: number): boolean {
+  return (
+    Number.isSafeInteger(value) ||
+    (Number.isFinite(value) && Math.abs(value) > Number.MAX_SAFE_INTEGER)
+  )
 }
 
 function isEnvelope(value: unknown): value is { state: Record<string, unknown>; version?: 0 } {
   return (
     isRecord(value) &&
-    isRecord(value.state) &&
-    (!Object.hasOwn(value, 'version') || value.version === 0)
+    isRecord(value['state']) &&
+    (!Object.hasOwn(value, 'version') || value['version'] === 0)
   )
 }
 
-/** Keeps the first copy of saved data this build could not use. */
+/**
+Keeps the first copy of saved data this build could not use.
+*/
 function backUp(name: PersistedKey, raw: string): BackupOutcome {
   const key = name + BACKUP_SUFFIX
   const existing = localStorage.getItem(key)
@@ -243,13 +283,20 @@ function backUp(name: PersistedKey, raw: string): BackupOutcome {
 }
 
 function isQuotaError(error: unknown): boolean {
-  return error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)
+  // The name is the one a full quota sets; the legacy code 22 always comes with it
+  return error instanceof DOMException && error.name === 'QuotaExceededError'
+}
+
+// The order Array#sort uses without a compare function: by UTF-16 code units
+function byCodeUnits(a: string, b: string): number {
+  if (a < b) return -1
+  return a > b ? 1 : 0
 }
 
 function backupKeys(): string[] {
   return Object.keys(localStorage)
     .filter((key) => key.endsWith(BACKUP_SUFFIX))
-    .sort()
+    .toSorted(byCodeUnits)
 }
 
 export interface SavedBackup {
@@ -260,7 +307,7 @@ export interface SavedBackup {
 
 export function listBackups(): SavedBackup[] {
   return backupKeys().map((key) => {
-    const name = key.slice(0, -BACKUP_SUFFIX.length) as PersistedKey
+    const name = key.slice(0, -BACKUP_SUFFIX.length)
     return { key, area: wordsOf.get(name)?.area ?? name, text: localStorage.getItem(key) ?? '' }
   })
 }
@@ -269,11 +316,12 @@ export function deleteBackup(key: string): void {
   localStorage.removeItem(key)
 }
 
-function guardedStorage<P>(
+// The state read is checked field by field by merge, so the storage claims no type for it
+function guardedStorage(
   name: PersistedKey,
   area: string,
   currentSchema: number
-): PersistStorage<P> {
+): PersistStorage<unknown> {
   return {
     getItem: (key) => {
       const raw = localStorage.getItem(key)
@@ -293,7 +341,7 @@ function guardedStorage<P>(
         log.warn(`Saved ${name} was written by a newer version`)
         report(name, area, 'newer-schema', backUp(name, raw))
       }
-      return value as StorageValue<P>
+      return value
     },
     setItem: (key, value) => {
       try {
@@ -302,7 +350,9 @@ function guardedStorage<P>(
         if (failed === undefined) return
         quotaFailures.delete(name)
         if (failed > 1) {
-          log.warn(`${name} could not be saved ${failed - 1} more times while storage was full`)
+          log.warn(
+            `${name} could not be saved ${String(failed - 1)} more times while storage was full`
+          )
         }
       } catch (error) {
         if (!isQuotaError(error)) throw error
@@ -312,41 +362,45 @@ function guardedStorage<P>(
         if (failures > 1) return
         log.error(`Storage is full; ${name} was not saved:`, error)
         const backups = backupKeys()
+        const present =
+          backups.length > 0
+            ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}`
+            : 'none'
         useToastStore.getState().addToast({
           type: 'error',
-          message: `Storage is full: recent changes to ${area.toLowerCase()} were not saved. Backup entries present: ${backups.length > 0 ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}` : 'none'}. Nothing was deleted.`,
+          message: `Storage is full: recent changes to ${area.toLowerCase()} were not saved. Backup entries present: ${present}. Nothing was deleted.`,
           duration: 0
         })
       }
     },
-    removeItem: (key) => localStorage.removeItem(key)
+    removeItem: (key) => {
+      localStorage.removeItem(key)
+    }
   }
 }
 
 export function definePersist<S, P extends object>(
   spec: PersistSpec<S, P>
-): PersistOptions<S, P & { schemaVersion: number }> {
+): PersistOptions<S, unknown> {
   const currentSchema = spec.migrations.length
   wordsOf.set(spec.name, { area: spec.area, labels: spec.labels })
   // The envelope keeps the middleware's default version 0, which v1.6.0 also writes and reads;
   // schema changes are tracked by schemaVersion inside the state instead.
   return {
     name: spec.name,
-    storage: guardedStorage<P & { schemaVersion: number }>(spec.name, spec.area, currentSchema),
+    storage: guardedStorage(spec.name, spec.area, currentSchema),
     partialize: (state) => ({ ...spec.partialize(state), schemaVersion: currentSchema }),
     merge: (persisted, current) => {
       if (!isRecord(persisted)) return current
       let state = persisted
-      for (const step of spec.migrations.slice(schemaOf(persisted))) state = step(state)
-      const defaults = current as Record<string, unknown>
+      const steps = spec.migrations.slice(schemaOf(persisted))
+      for (const step of steps) state = step(state)
+      // A field missing or reset keeps the store's default: it is left out of `checked`
       const checked: Record<string, unknown> = {}
       const reset: FieldPath[] = []
       const dropped: FieldPath[] = []
-      for (const [field, check] of Object.entries(spec.fields) as [string, FieldCheck<unknown>][]) {
-        if (!Object.hasOwn(state, field)) {
-          checked[field] = defaults[field]
-          continue
-        }
+      for (const [field, check] of Object.entries<FieldCheck<unknown>>(spec.fields)) {
+        if (!Object.hasOwn(state, field)) continue
         const value = check(state[field], (path) => {
           const full = [{ key: field }, ...path]
           log.warn(`Saved ${spec.name}: dropped ${pathText(full)}`)
@@ -355,7 +409,6 @@ export function definePersist<S, P extends object>(
         if (value === undefined) {
           log.warn(`Saved ${spec.name}: ${field} had an unexpected value and was reset`)
           reset.push([{ key: field }])
-          checked[field] = defaults[field]
         } else {
           checked[field] = value
         }
@@ -367,9 +420,8 @@ export function definePersist<S, P extends object>(
         if (reset.length > 0) report(spec.name, spec.area, 'fields-reset', backup, reset)
         if (dropped.length > 0) report(spec.name, spec.area, 'entries-dropped', backup, dropped)
       }
-      const pruned = spec.prune ? spec.prune(checked as P) : checked
-      return { ...current, ...pruned }
-    },
-    onRehydrateStorage: spec.onRehydrateStorage
+      const merged = { ...current, ...checked }
+      return spec.prune ? spec.prune(merged) : merged
+    }
   }
 }

@@ -1,18 +1,15 @@
 {
   "e2e": {
     "exactOptionalPropertyTypes": {
-      "e2e/fixtures/app.ts": 2,
-      "src/renderer/src/stores/persist.ts": 1
+      "e2e/fixtures/app.ts": 2
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/flows/dialog-default-path.e2e.ts": 4,
-      "e2e/playwright.config.ts": 1,
-      "src/renderer/src/stores/persist.ts": 3
+      "e2e/playwright.config.ts": 1
     },
     "noUncheckedIndexedAccess": {
       "e2e/flows/dialog-default-path.e2e.ts": 4,
-      "e2e/release-smoke.e2e.ts": 2,
-      "src/renderer/src/stores/persist.ts": 1
+      "e2e/release-smoke.e2e.ts": 2
     }
   },
   "scripts": {
@@ -46,8 +43,6 @@
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
       "src/renderer/src/lib/raw-mode.ts": 1,
-      "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 1,
       "tests/dom/app-shell.test.tsx": 1,
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
@@ -59,10 +54,6 @@
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
-      "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 48,
-      "src/renderer/src/stores/templateStore.ts": 4,
-      "src/renderer/src/stores/uiStore.ts": 2,
       "tests/dom/persisted-damage.test.ts": 4,
       "tests/dom/persisted-downgrade.test.ts": 4,
       "tests/dom/persisted-load.test.ts": 25,
@@ -97,9 +88,6 @@
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
       "src/renderer/src/lib/shortcuts.ts": 1,
-      "src/renderer/src/stores/historyStore.ts": 4,
-      "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 2,
       "tests/dom/app-close.test.tsx": 1,
       "tests/dom/app-save.test.tsx": 6,
       "tests/dom/app-shell.test.tsx": 11,
@@ -182,25 +170,14 @@
   "web": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/lib/raw-mode.ts": 1,
-      "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 1
-    },
-    "noPropertyAccessFromIndexSignature": {
-      "src/renderer/src/stores/persist.ts": 3,
-      "src/renderer/src/stores/pluginStore.ts": 48,
-      "src/renderer/src/stores/templateStore.ts": 4,
-      "src/renderer/src/stores/uiStore.ts": 2
+      "src/renderer/src/lib/raw-mode.ts": 1
     },
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,
       "src/renderer/src/lib/conflict-detector.ts": 2,
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
-      "src/renderer/src/lib/shortcuts.ts": 1,
-      "src/renderer/src/stores/historyStore.ts": 4,
-      "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 2
+      "src/renderer/src/lib/shortcuts.ts": 1
     }
   }
 }

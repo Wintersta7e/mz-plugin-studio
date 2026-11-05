@@ -168,18 +168,6 @@
           }
         ]
       }
-    },
-    {
-      "files": ["src/renderer/**"],
-      "rules": {
-        "@typescript-eslint/dot-notation": [
-          "error",
-          {
-            "allowIndexSignaturePropertyAccess": true
-          }
-        ]
-      },
-      "reason": "Renderer code reads index-signature keys with brackets, as noPropertyAccessFromIndexSignature requires; the web program still holds that flag in tsconfig.web.pending.json, whose count a new dot read raises. Delete this row when the web program turns the flag on: the rule then accepts brackets by itself"
     }
   ],
   "exclusions": [
