@@ -606,53 +606,6 @@
       "count": 6
     }
   },
-  "scripts/third-party-licenses.mjs": {
-    "n/no-process-exit": {
-      "count": 2
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "sonarjs/regex-complexity": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/no-array-sort": {
-      "count": 4
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 3
-    },
-    "unicorn/no-duplicate-loops": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 3
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-sort-comparator": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 3
-    }
-  },
   "src/main/atomic-write.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 2

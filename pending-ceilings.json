@@ -28,12 +28,10 @@
   },
   "scripts": {
     "strict": {
-      "scripts/ci-policy.mjs": 9,
-      "scripts/third-party-licenses.mjs": 6
+      "scripts/ci-policy.mjs": 9
     },
     "noImplicitAny": {
-      "scripts/ci-policy.mjs": 57,
-      "scripts/third-party-licenses.mjs": 10
+      "scripts/ci-policy.mjs": 57
     },
     "exactOptionalPropertyTypes": {
       "tsconfig.scripts.json": 1
