@@ -1234,9 +1234,6 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 5
     },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
     "sonarjs/public-static-readonly": {
       "count": 10
     },

@@ -22,7 +22,6 @@
       "src/main/ipc/plugin.ts": 8,
       "src/main/ipc/project.ts": 2,
       "src/main/services/pluginParser.ts": 45,
-      "src/main/services/projectParser.ts": 1,
       "src/main/services/syntax-check.ts": 2
     }
   },
@@ -108,7 +107,6 @@
       "src/main/ipc/plugin.ts": 8,
       "src/main/ipc/project.ts": 2,
       "src/main/services/pluginParser.ts": 41,
-      "src/main/services/projectParser.ts": 1,
       "src/main/services/syntax-check.ts": 2,
       "src/renderer/src/App.tsx": 1,
       "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,

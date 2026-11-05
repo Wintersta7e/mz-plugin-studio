@@ -208,13 +208,29 @@ export class ProjectParser {
   static getTroops = async (p: string): Promise<MZTroop[]> =>
     ProjectParser.loadDataArray(p, 'Troops.json')
 
+  /**
+  Note tags `<name>` and `<name:value>`, read as /<([^:>]+):?([^>]*)>/g read them (a tag with no
+  value reads 'true'), in linear time: a tag starting at a `<` can only end at the first `>`
+  after it, so that `>` is found once and kept for every `<` before it.
+  */
   static parseNoteTags(note: string): Record<string, string> {
     const tags: Record<string, string> = {}
-    const regex = /<([^:>]+):?([^>]*)>/g
-    let match
+    let end = -1
+    let start = note.indexOf('<')
 
-    while ((match = regex.exec(note)) !== null) {
-      tags[match[1]] = match[2] || 'true'
+    while (start !== -1) {
+      if (end <= start) end = note.indexOf('>', start + 1)
+      if (end === -1) break
+      // A name needs one character before any `:` or `>`
+      if (end === start + 1 || note.startsWith(':', start + 1)) {
+        start = note.indexOf('<', start + 1)
+      } else {
+        const tag = note.slice(start + 1, end)
+        const colon = tag.indexOf(':')
+        const value = colon === -1 ? '' : tag.slice(colon + 1)
+        tags[colon === -1 ? tag : tag.slice(0, colon)] = value || 'true'
+        start = note.indexOf('<', end + 1)
+      }
     }
 
     return tags

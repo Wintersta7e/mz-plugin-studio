@@ -1,6 +1,6 @@
 // Parse time of the custom-code marker patterns on a long run of spaces after the marker,
-// of help text and tag values on long runs of spaces or blank lines, and of a wrapper close
-// followed by a long run of spaces.
+// of help text and tag values on long runs of spaces or blank lines, of a wrapper close
+// followed by a long run of spaces, and of a project note tag left open.
 import { describe, it, expect } from 'vitest'
 import {
   PluginParser,
@@ -10,6 +10,7 @@ import {
   matchScriptName,
   stripTrailingStar
 } from '../../src/main/services/pluginParser'
+import { ProjectParser } from '../../src/main/services/projectParser'
 
 const BOUND_MS = 250
 
@@ -66,17 +67,39 @@ const LEGS: [string, (size: number) => string][] = [
   ])
 ]
 
+function expectRampWithinBound(
+  leg: string,
+  input: (size: number) => string,
+  parse: (content: string) => unknown
+): void {
+  for (const size of RAMP) {
+    const content = input(size)
+    const start = performance.now()
+    parse(content)
+    const elapsed = performance.now() - start
+    console.log(`${leg} ramp: ${size} chars ${Math.round(elapsed)} ms`)
+
+    expect(elapsed, `${size} chars`).toBeLessThan(BOUND_MS)
+  }
+}
+
 describe('parse time of help text and tag values', () => {
   it.each(LEGS)('%s ramp stays within the bound', (leg, input) => {
-    for (const size of RAMP) {
-      const content = input(size)
-      const start = performance.now()
-      PluginParser.parsePlugin(content)
-      const elapsed = performance.now() - start
-      console.log(`${leg} ramp: ${size} chars ${Math.round(elapsed)} ms`)
+    expect.hasAssertions()
 
-      expect(elapsed, `${size} chars`).toBeLessThan(BOUND_MS)
-    }
+    expectRampWithinBound(leg, input, (content) => PluginParser.parsePlugin(content))
+  })
+})
+
+describe('parse time of project note tags', () => {
+  it('note tag left open ramp stays within the bound', () => {
+    expect.hasAssertions()
+
+    expectRampWithinBound(
+      'note tag',
+      (size) => '<' + 'a'.repeat(size),
+      (note) => ProjectParser.parseNoteTags(note)
+    )
   })
 })
 
@@ -145,6 +168,14 @@ const oldScriptName = (content: string): string | undefined =>
 const previousPattern = (source: string, flags = ''): RegExp => new RegExp(source, flags)
 const oldWrapperClose = (code: string): number | undefined =>
   previousPattern(String.raw`\}\s*\)\s*\(\s*\)\s*;?\s*$`).exec(code)?.index
+const oldNoteTags = (note: string): string => {
+  const tags: Record<string, string> = {}
+  const matches = note.matchAll(previousPattern('<([^:>]+):?([^>]*)>', 'g'))
+  for (const [, name = '', value] of matches) {
+    tags[name] = value || 'true'
+  }
+  return JSON.stringify(tags)
+}
 // Tag values run to the line break: built from the tag as the parser built them. `\u{2028}` is
 // whitespace for the spaces before the value but ends the value, like `\r`.
 const oldTagValue = (tag: string, flags: string): RegExp =>
@@ -261,4 +292,14 @@ describe('linear-time tag value readers match the regular expressions they repla
       )
     }
   )
+})
+
+describe('linear-time note tag reader matches the regular expression it replaces', () => {
+  it('note tags, any note', () => {
+    expect.hasAssertions()
+
+    checkEquivalence('note tags', strings(['<', '>', ':', 'a'], 9), oldNoteTags, (s) =>
+      JSON.stringify(ProjectParser.parseNoteTags(s))
+    )
+  })
 })
