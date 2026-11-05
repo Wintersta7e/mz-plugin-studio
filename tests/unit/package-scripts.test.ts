@@ -2,15 +2,31 @@
 // without bin links that is a global install of another version.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { join, posix } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
-const readJson = (file: string): Record<string, unknown> =>
-  JSON.parse(readFileSync(join(ROOT, file), 'utf8'))
+const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
 
-const scripts = readJson('package.json').scripts as Record<string, string>
+/**
+A member of a value parsed from JSON; undefined when the value holds no such member.
+*/
+function member(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined
+}
+
+const listed = member(readJson('package.json'), 'scripts')
+const scripts = new Map(
+  (typeof listed === 'object' && listed !== null ? Object.keys(listed) : []).flatMap(
+    (name): [string, string][] => {
+      const body = member(listed, name)
+      return typeof body === 'string' ? [[name, body]] : []
+    }
+  )
+)
+// A script's text; empty when package.json has no such script
+const script = (name: string): string => scripts.get(name) ?? ''
 
 // Packages whose bin file a script must name exactly
 const PINNED_BINS = new Set([
@@ -32,12 +48,12 @@ const NPM_TEST = /^npm test(?: -- .+)?$/
 const NODE_SCRIPT = /^node (scripts\/\S+)(?: .+)?$/
 const NODE_MODULE = /^node node_modules\/((?:@[^/\s]+\/)?[^/\s]+)\/(\S+)(?: .+)?$/
 
-const commandsOf = (script: string): string[] => script.split('&&').map((c) => c.trim())
+const commandsOf = (body: string): string[] => body.split('&&').map((c) => c.trim())
 
-function binPaths(pkg: string): string[] {
-  const { bin } = readJson(`node_modules/${pkg}/package.json`)
-  const paths = typeof bin === 'string' ? [bin] : Object.values(bin as Record<string, string>)
-  return paths.map((p) => p.replace(/^\.\//, ''))
+function binPaths(name: string): string[] {
+  const bin = member(readJson(`node_modules/${name}/package.json`), 'bin')
+  const paths: unknown[] = typeof bin === 'object' && bin !== null ? Object.values(bin) : [bin]
+  return paths.flatMap((p) => (typeof p === 'string' ? p.replace(/^\.\//, '') : []))
 }
 
 const isTracked = (file: string): boolean =>
@@ -45,10 +61,10 @@ const isTracked = (file: string): boolean =>
 
 const CD = /^cd ([\w.-]+)$/
 // Each command of a script with the folder an earlier `cd` in that script moved it to
-function located(script: string): { c: string; folder: string }[] {
+function located(body: string): { c: string; folder: string }[] {
   let folder = '.'
-  return commandsOf(script).map((c) => {
-    folder = CD.exec(c)?.[1] ?? folder
+  return commandsOf(body).map((c) => {
+    folder = CD.exec(c)?.at(1) ?? folder
     return { c, folder }
   })
 }
@@ -58,56 +74,92 @@ function locatedProblem(raw: string, folder: string): string | null {
   if (CD.test(raw)) return isTracked(folder) ? null : `moves to an untracked folder ${folder}`
   // A tool path from a moved-to folder names the root's node_modules through that folder
   return problem(
-    raw.replace(`node ${posix.relative(folder, '.')}/node_modules/`, 'node node_modules/')
+    raw.replace(`node ${path.posix.relative(folder, '.')}/node_modules/`, 'node node_modules/')
   )
 }
 
 // Why a command is rejected, or null when it is allowed
 function problem(command: string): string | null {
-  const run = NPM_RUN.exec(command)
-  if (run) return run[1] in scripts ? null : `runs a missing script "${run[1]}"`
+  const run = NPM_RUN.exec(command)?.at(1)
+  if (run !== undefined) return scripts.has(run) ? null : `runs a missing script "${run}"`
   if (NPM_TEST.test(command)) return null
-  const local = NODE_SCRIPT.exec(command)
-  if (local) return isTracked(local[1]) ? null : `runs an untracked file ${local[1]}`
+  const local = NODE_SCRIPT.exec(command)?.at(1)
+  if (local !== undefined) return isTracked(local) ? null : `runs an untracked file ${local}`
   const tool = NODE_MODULE.exec(command)
   if (tool) {
-    const [, pkg, path] = tool
-    if (path.startsWith('.bin/')) return 'calls a .bin shim'
-    if (!existsSync(join(ROOT, 'node_modules', pkg, path))) return `calls a missing file ${path}`
-    if (PINNED_BINS.has(pkg) && !binPaths(pkg).includes(path))
-      return `calls ${pkg}/${path}, not its package bin`
+    const name = tool.at(1) ?? ''
+    const file = tool.at(2) ?? ''
+    if (file.startsWith('.bin/')) return 'calls a .bin shim'
+    if (!existsSync(path.join(ROOT, 'node_modules', name, file)))
+      return `calls a missing file ${file}`
+    if (PINNED_BINS.has(name) && !binPaths(name).includes(file))
+      return `calls ${name}/${file}, not its package bin`
     return null
   }
   return 'calls a tool by bare name'
 }
 
+const README = readFileSync(path.join(ROOT, 'README.md'), 'utf8')
+// The README's text from its `## heading` line to the next heading; empty when it has none
+function section(heading: string): string {
+  const start = README.indexOf(`\n## ${heading}\n`)
+  if (start === -1) return ''
+  const end = README.indexOf('\n## ', start + 1)
+  return README.slice(start, end === -1 ? README.length : end)
+}
+const DEVELOPMENT_LINES = README.slice(
+  README.indexOf('\n## Development\n'),
+  README.indexOf('\n## Layout\n')
+).split('\n')
+// The Development line that runs a command and explains it in a comment
+const commented = (command: string): string | undefined =>
+  DEVELOPMENT_LINES.find((line) => line.startsWith(`${command} `) && line.includes(' # '))
+
+// Whether a workflow job runs the Windows package script
+function doesJobPackage(file: string, job: string): boolean {
+  const lines = readFileSync(path.join(ROOT, '.github/workflows', file), 'utf8').split(/\r?\n/)
+  const start = lines.indexOf(`  ${job}:`)
+  if (start === -1) return false
+  const end = lines.findIndex((line, index) => index > start && /^ {0,2}\S/.test(line))
+  return lines
+    .slice(start + 1, end === -1 ? lines.length : end)
+    .includes('      - run: npm run package:win')
+}
+const PACKAGE_JOBS: [file: string, job: string][] = [
+  ['ci.yml', 'package-win'],
+  ['release.yml', 'build']
+]
+
 describe('package.json scripts', () => {
   it('every script calls its tool by its package bin path', () => {
-    const names = Object.keys(scripts)
-    const commands = names.flatMap((name) => located(scripts[name]).map((at) => ({ name, ...at })))
-    console.log(`package scripts: scripts ${names.length}, commands ${commands.length}`)
+    const commands = [...scripts].flatMap(([name, body]) =>
+      located(body).map((at) => ({ name, ...at }))
+    )
+    process.stdout.write(
+      `package scripts: scripts ${String(scripts.size)}, commands ${String(commands.length)}\n`
+    )
 
     expect(commands.length).toBeGreaterThan(0)
 
     const failures = commands.flatMap(({ name, c, folder }) => {
       const why = locatedProblem(c, folder)
-      return why ? [`${name}: "${c}" ${why}`] : []
+      return why === null ? [] : `${name}: "${c}" ${why}`
     })
 
-    expect(failures).toEqual([])
+    expect(failures).toStrictEqual([])
   })
 
   it('check runs the local gate and leaves out the toolchain check', () => {
-    expect(scripts.check).toBeDefined()
-    expect(commandsOf(scripts.check)).not.toContain('npm run ci:toolchain')
+    expect(scripts.get('check')).toBeDefined()
+    expect(commandsOf(script('check'))).not.toContain('npm run ci:toolchain')
   })
 
   it('check runs the golden project once besides the full suite, with coverage', () => {
-    const golden = commandsOf(scripts.check).filter((c) =>
-      (scripts[NPM_RUN.exec(c)?.[1] ?? ''] ?? '').includes('--project golden')
+    const golden = commandsOf(script('check')).filter((c) =>
+      script(NPM_RUN.exec(c)?.at(1) ?? '').includes('--project golden')
     )
 
-    expect(golden).toEqual(['npm run test:golden:coverage'])
+    expect(golden).toStrictEqual(['npm run test:golden:coverage'])
   })
 
   it('check runs the static gates in their CI order', () => {
@@ -124,13 +176,14 @@ describe('package.json scripts', () => {
       'npm run licenses -- --check'
     ]
 
-    expect(commandsOf(scripts.check).slice(0, gates.length)).toStrictEqual(gates)
+    expect(commandsOf(script('check')).slice(0, gates.length)).toStrictEqual(gates)
   })
 
   it('each type coverage script runs one program or the report that holds their ceilings', () => {
-    const typecov = Object.keys(scripts).filter(
-      (name) => name === 'typecov' || name.startsWith('typecov:')
-    )
+    const typecov = scripts
+      .keys()
+      .filter((name) => name === 'typecov' || name.startsWith('typecov:'))
+      .toArray()
     const other = typecov.filter((name) => name.split(':').length !== 2)
 
     expect(typecov.length).toBeGreaterThan(1)
@@ -138,97 +191,80 @@ describe('package.json scripts', () => {
   })
 
   it('the lint covers the whole tree and fails on any warning', () => {
-    expect(scripts.lint).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 .')
-    expect(scripts['lint:scripts']).toBeUndefined()
+    expect(scripts.get('lint')).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 .')
+    expect(scripts.get('lint:scripts')).toBeUndefined()
   })
 
   it('the format check covers the whole tree the formatter writes', () => {
-    expect(scripts['format:check']).toBe('node node_modules/prettier/bin/prettier.cjs --check .')
-    expect(scripts['format:check']).toBe(scripts.format.replace('--write', '--check'))
+    expect(scripts.get('format:check')).toBe(
+      'node node_modules/prettier/bin/prettier.cjs --check .'
+    )
+    expect(scripts.get('format:check')).toBe(script('format').replace('--write', '--check'))
   })
 
+  it('typecheck includes the scripts project', () => {
+    expect(commandsOf(script('typecheck'))).toContain('npm run typecheck:scripts')
+  })
+
+  it('typecheck includes the e2e project', () => {
+    expect(commandsOf(script('typecheck'))).toContain('npm run typecheck:e2e')
+  })
+
+  it('the Windows package script never publishes', () => {
+    expect(scripts.get('package:win')).toMatch(/ --publish never(?: |$)/)
+  })
+})
+
+describe('package.json scripts: README and workflows', () => {
   it('a script runs the golden commit rules outside check, and the README names it', () => {
-    const runners = Object.keys(scripts).filter((name) =>
-      commandsOf(scripts[name]).some(
-        (c) => NODE_SCRIPT.exec(c)?.[1] === 'scripts/check-golden-commits.mjs'
+    const runners = [...scripts]
+      .filter(([, body]) =>
+        commandsOf(body).some(
+          (c) => NODE_SCRIPT.exec(c)?.at(1) === 'scripts/check-golden-commits.mjs'
+        )
       )
-    )
-    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
-    const section = (heading: string): string => {
-      const start = readme.indexOf(`\n## ${heading}\n`)
+      .map(([name]) => name)
+    process.stdout.write(`golden commit rules: scripts running them ${String(runners.length)}\n`)
 
-      expect(start, heading).toBeGreaterThanOrEqual(0)
-
-      const end = readme.indexOf('\n## ', start + 1)
-      return readme.slice(start, end === -1 ? undefined : end)
-    }
-    console.log(`golden commit rules: scripts running them ${runners.length}`)
-
-    expect(runners).toEqual(['check:commits'])
-    expect(commandsOf(scripts.check)).not.toContain('npm run check:commits')
-
-    for (const heading of ['Development', 'Contributing'])
-      expect(section(heading), heading).toContain('npm run check:commits')
+    expect(runners).toStrictEqual(['check:commits'])
+    expect(commandsOf(script('check'))).not.toContain('npm run check:commits')
+    expect(
+      ['Development', 'Contributing'].map((heading) => [
+        heading,
+        section(heading).includes('npm run check:commits')
+      ])
+    ).toStrictEqual([
+      ['Development', true],
+      ['Contributing', true]
+    ])
   })
 
   it('a script runs the core-script parity check, and the README names it', () => {
-    expect(scripts['test:parity']).toBe(
+    expect(scripts.get('test:parity')).toBe(
       'node node_modules/vitest/vitest.mjs run --project node tests/integration/mz-parity.test.ts'
     )
-    expect(commandsOf(scripts.check)).not.toContain('npm run test:parity')
-
-    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
-    const development = readme.slice(
-      readme.indexOf('\n## Development\n'),
-      readme.indexOf('\n## Layout\n')
+    expect(commandsOf(script('check'))).not.toContain('npm run test:parity')
+    expect(DEVELOPMENT_LINES.join('\n')).toContain(
+      'MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity'
     )
-
-    expect(development).toContain('MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity')
   })
 
   it('the README names the e2e commands, and that check and typecheck differ on e2e', () => {
-    const readme = readFileSync(join(ROOT, 'README.md'), 'utf8')
-    const lines = readme
-      .slice(readme.indexOf('\n## Development\n'), readme.indexOf('\n## Layout\n'))
-      .split('\n')
-    const commented = (command: string): string | undefined =>
-      lines.find((line) => line.startsWith(`${command} `) && line.includes(' # '))
     const e2e = ['npm run e2e:prepare', 'npm run e2e', 'npm run e2e:visual:update']
     const named = e2e.filter((command) => commented(command) !== undefined)
-    console.log(`README e2e commands: named ${named.length}/${e2e.length}`)
+    process.stdout.write(
+      `README e2e commands: named ${String(named.length)}/${String(e2e.length)}\n`
+    )
 
-    expect(named).toEqual(e2e)
-    expect(commandsOf(scripts.check).filter((c) => c.startsWith('npm run e2e'))).toEqual([])
+    expect(named).toStrictEqual(e2e)
+    expect(commandsOf(script('check')).filter((c) => c.startsWith('npm run e2e'))).toStrictEqual([])
     expect(commented('npm run check')).toMatch(/not the e2e suite/)
     expect(commented('npm run typecheck')).toMatch(/\be2e\b/)
   })
 
-  it('typecheck includes the scripts project', () => {
-    expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:scripts')
-  })
-
-  it('typecheck includes the e2e project', () => {
-    expect(commandsOf(scripts.typecheck)).toContain('npm run typecheck:e2e')
-  })
-
-  it('the Windows package script never publishes', () => {
-    expect(scripts['package:win']).toMatch(/ --publish never(?: |$)/)
-  })
-
-  it('CI and the release package the exe with that script', () => {
-    for (const [file, job] of [
-      ['ci.yml', 'package-win'],
-      ['release.yml', 'build']
-    ]) {
-      const lines = readFileSync(join(ROOT, '.github/workflows', file), 'utf8').split(/\r?\n/)
-      const start = lines.indexOf(`  ${job}:`)
-
-      expect(start, `${file} ${job}`).toBeGreaterThanOrEqual(0)
-
-      const end = lines.findIndex((line, index) => index > start && /^ {0,2}\S/.test(line))
-      const body = lines.slice(start + 1, end === -1 ? undefined : end)
-
-      expect(body, `${file} ${job}`).toContain('      - run: npm run package:win')
-    }
+  it('the CI and the release package the exe with that script', () => {
+    expect(PACKAGE_JOBS.map(([file, job]) => [file, job, doesJobPackage(file, job)])).toStrictEqual(
+      PACKAGE_JOBS.map(([file, job]) => [file, job, true])
+    )
   })
 })

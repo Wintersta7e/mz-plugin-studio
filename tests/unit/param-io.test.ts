@@ -1,15 +1,18 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import path from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import {
   serializeParams,
   deserializeParams,
-  duplicateParams
+  duplicateParams,
+  type ParamImportResult
 } from '../../src/renderer/src/lib/param-io'
-import type { ParamImportResult } from '../../src/renderer/src/lib/param-io'
-import type { PluginParameter } from '../../src/renderer/src/types/plugin'
-import { createEmptyParameter, createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import {
+  createEmptyParameter,
+  createEmptyPlugin,
+  type PluginParameter
+} from '../../src/renderer/src/types/plugin'
 import { V160_FIXTURE, V160_PARAMS, V160_SOURCE } from '../golden/corpus/mzparams'
 
 function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
@@ -24,23 +27,36 @@ function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
   }
 }
 
-/** What reading `content` loads; fails the test when the file is refused. */
+/**
+What reading `content` loads; fails the test when the file is refused.
+*/
 function loaded(content: string): Extract<ParamImportResult, { success: true }> {
   const result = deserializeParams(content)
   if (!result.success) throw new Error(`file refused: ${result.reason}`)
   return result
 }
 
-describe('serializeParams', () => {
+const fileOf = (parameters: unknown[]): string =>
+  JSON.stringify({ version: 1, source: 'Test', exportedAt: '2026-01-01', parameters })
+
+// A copy of an object without the named fields
+const omit = (from: object, ...keys: string[]): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(from).filter(([key]) => !keys.includes(key)))
+
+/**
+A member of a value parsed from JSON; undefined when the value holds no such member.
+*/
+function member(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined
+}
+
+describe(serializeParams, () => {
   it('produces valid JSON with version and source', () => {
     const params = [makeParam({ name: 'speed', text: 'Speed', default: 5 })]
-    const json = serializeParams(params, 'TestPlugin')
-    const parsed = JSON.parse(json)
+    const parsed: unknown = JSON.parse(serializeParams(params, 'TestPlugin'))
 
-    expect(parsed.version).toBe(1)
-    expect(parsed.source).toBe('TestPlugin')
-    expect(parsed.parameters).toHaveLength(1)
-    expect(parsed.exportedAt).toBeTruthy()
+    expect(parsed).toMatchObject({ version: 1, source: 'TestPlugin', parameters: [{}] })
+    expect(member(parsed, 'exportedAt')).toMatch(/./)
   })
 
   it('includes all parameter properties', () => {
@@ -53,20 +69,17 @@ describe('serializeParams', () => {
         default: '#FF0000'
       })
     ]
-    const json = serializeParams(params, 'Test')
-    const parsed = JSON.parse(json)
+    const parsed: unknown = JSON.parse(serializeParams(params, 'Test'))
 
-    expect(parsed.parameters[0].name).toBe('color')
-    expect(parsed.parameters[0].desc).toBe('Pick a color')
-    expect(parsed.parameters[0].default).toBe('#FF0000')
+    expect(parsed).toMatchObject({
+      parameters: [{ name: 'color', desc: 'Pick a color', default: '#FF0000' }]
+    })
   })
 
   it('handles empty parameter list', () => {
-    const json = serializeParams([], 'Empty')
-    const parsed = JSON.parse(json)
+    const parsed: unknown = JSON.parse(serializeParams([], 'Empty'))
 
-    expect(parsed.parameters).toEqual([])
-    expect(parsed.source).toBe('Empty')
+    expect(parsed).toMatchObject({ parameters: [], source: 'Empty' })
   })
 
   it('preserves optional fields like min, max, options', () => {
@@ -79,23 +92,15 @@ describe('serializeParams', () => {
         max: 100
       })
     ]
-    const json = serializeParams(params, 'Test')
-    const parsed = JSON.parse(json)
+    const parsed: unknown = JSON.parse(serializeParams(params, 'Test'))
 
-    expect(parsed.parameters[0].min).toBe(0)
-    expect(parsed.parameters[0].max).toBe(100)
+    expect(parsed).toMatchObject({ parameters: [{ min: 0, max: 100 }] })
   })
 })
 
-describe('deserializeParams', () => {
+describe(deserializeParams, () => {
   it('parses valid .mzparams content', () => {
-    const content = JSON.stringify({
-      version: 1,
-      source: 'Test',
-      exportedAt: '2026-01-01',
-      parameters: [makeParam({ name: 'x', text: 'X' })]
-    })
-    const result = loaded(content)
+    const result = loaded(fileOf([makeParam({ name: 'x', text: 'X' })]))
 
     expect(result.parameters).toHaveLength(1)
     expect(result.source).toBe('Test')
@@ -103,55 +108,49 @@ describe('deserializeParams', () => {
 
   it('regenerates IDs to avoid collisions', () => {
     const originalId = 'original-id-12345'
-    const content = JSON.stringify({
-      version: 1,
-      source: 'Test',
-      exportedAt: '2026-01-01',
-      parameters: [makeParam({ id: originalId, name: 'x' })]
-    })
+    const content = fileOf([makeParam({ id: originalId, name: 'x' })])
 
-    expect(loaded(content).parameters[0].id).not.toBe(originalId)
+    expect(loaded(content).parameters.map((p) => p.id === originalId)).toStrictEqual([false])
   })
 
   it('refuses text that is not JSON', () => {
-    expect(deserializeParams('not json at all')).toEqual({ success: false, reason: 'not-json' })
+    expect(deserializeParams('not json at all')).toStrictEqual({
+      success: false,
+      reason: 'not-json'
+    })
   })
 
   it('refuses a file without a version', () => {
     const content = JSON.stringify({ parameters: [] })
 
-    expect(deserializeParams(content)).toEqual({ success: false, reason: 'not-mzparams' })
+    expect(deserializeParams(content)).toStrictEqual({ success: false, reason: 'not-mzparams' })
   })
 
   it('refuses a file from a newer version', () => {
     const content = JSON.stringify({ version: 2, parameters: [makeParam()] })
 
-    expect(deserializeParams(content)).toEqual({ success: false, reason: 'newer-version' })
+    expect(deserializeParams(content)).toStrictEqual({ success: false, reason: 'newer-version' })
   })
 
   it('refuses a file without a parameters list', () => {
     const content = JSON.stringify({ version: 1 })
 
-    expect(deserializeParams(content)).toEqual({ success: false, reason: 'not-mzparams' })
+    expect(deserializeParams(content)).toStrictEqual({ success: false, reason: 'not-mzparams' })
   })
 
   it('skips entries that are not parameters and lists them', () => {
-    const content = JSON.stringify({
-      version: 1,
-      source: 'Test',
-      exportedAt: '2026-01-01',
-      parameters: [
+    const result = loaded(
+      fileOf([
         makeParam({ name: 'valid' }),
         { noName: true },
         42,
         null,
         makeParam({ name: 'alsoValid' })
-      ]
-    })
-    const result = loaded(content)
+      ])
+    )
 
-    expect(result.parameters.map((p) => p.name)).toEqual(['valid', 'alsoValid'])
-    expect(result.skipped).toEqual([
+    expect(result.parameters.map((p) => p.name)).toStrictEqual(['valid', 'alsoValid'])
+    expect(result.skipped).toStrictEqual([
       { index: 1, name: null, reason: 'shape' },
       { index: 2, name: null, reason: 'shape' },
       { index: 3, name: null, reason: 'shape' }
@@ -175,11 +174,8 @@ describe('deserializeParams', () => {
       exportedAt: '2026-01-01',
       parameters: [makeParam({ name: 'a' }), makeParam({ name: 'b' }), makeParam({ name: 'c' })]
     })
-    const result = loaded(content)
 
-    expect(result.parameters).toHaveLength(3)
-    expect(result.parameters[0].name).toBe('a')
-    expect(result.parameters[2].name).toBe('c')
+    expect(loaded(content).parameters.map((p) => p.name)).toStrictEqual(['a', 'b', 'c'])
   })
 
   it('skips parameters with unrecognized type and lists them', () => {
@@ -192,31 +188,28 @@ describe('deserializeParams', () => {
     })
     const result = loaded(content)
 
-    expect(result.parameters.map((p) => p.name)).toEqual(['good'])
-    expect(result.skipped).toEqual([{ index: 1, name: 'bad', reason: 'type' }])
+    expect(result.parameters.map((p) => p.name)).toStrictEqual(['good'])
+    expect(result.skipped).toStrictEqual([{ index: 1, name: 'bad', reason: 'type' }])
   })
 })
 
 describe('param-io round-trip', () => {
   it('round-trips through serialize and deserialize', () => {
-    const params = [createEmptyParameter()]
-    params[0].name = 'testParam'
-    params[0].type = 'number'
-    params[0].default = '42'
-    const serialized = serializeParams(params, 'TestPlugin')
-    const result = loaded(serialized)
+    const params: PluginParameter[] = [
+      { ...createEmptyParameter(), name: 'testParam', type: 'number', default: '42' }
+    ]
+    const result = loaded(serializeParams(params, 'TestPlugin'))
 
-    expect(result.parameters).toHaveLength(1)
-    expect(result.parameters[0].name).toBe('testParam')
-    expect(result.parameters[0].type).toBe('number')
-    expect(result.parameters[0].default).toBe('42')
-    expect(result.dropped).toEqual([])
+    expect(result.parameters.map((p) => [p.name, p.type, p.default])).toStrictEqual([
+      ['testParam', 'number', '42']
+    ])
+    expect(result.dropped).toStrictEqual([])
   })
 })
 
 // How a file this app did not write, or wrote in another version, is read.
 const fixtureText = (name: string): string =>
-  readFileSync(resolve(process.cwd(), 'tests/fixtures/mzparams', name), 'utf8')
+  readFileSync(path.resolve(process.cwd(), 'tests/fixtures/mzparams', name), 'utf8')
 
 describe('deserializeParams with files it was not written for', () => {
   it('names why it refuses a file', () => {
@@ -231,27 +224,28 @@ describe('deserializeParams with files it was not written for', () => {
       [JSON.stringify({ version: 1, source: 'Test', parameters: {} }), 'not-mzparams'],
       [fixtureText('invalid-newer-version.mzparams'), 'newer-version']
     ]
-    for (const [content, reason] of cases) {
-      expect(deserializeParams(content), content).toEqual({ success: false, reason })
-    }
+
+    expect(cases.map(([content]) => [content, deserializeParams(content)])).toStrictEqual(
+      cases.map(([content, reason]) => [content, { success: false, reason }])
+    )
   })
 
   it('skips a parameter of an unknown type and lists it', () => {
     const result = loaded(fixtureText('invalid-unknown-type.mzparams'))
 
-    expect(result.parameters.map((p) => p.name)).toEqual(['Label'])
-    expect(result.skipped).toEqual([{ index: 1, name: 'Shape', reason: 'type' }])
-    expect(result.dropped).toEqual([])
+    expect(result.parameters.map((p) => p.name)).toStrictEqual(['Label'])
+    expect(result.skipped).toStrictEqual([{ index: 1, name: 'Shape', reason: 'type' }])
+    expect(result.dropped).toStrictEqual([])
   })
 
   it('drops an unknown key and a description that is not text, and lists them', () => {
     const withKey = loaded(fixtureText('invalid-unknown-key.mzparams'))
     const wrongType = loaded(fixtureText('invalid-wrong-type-field.mzparams'))
 
-    expect(withKey.parameters[0]).not.toHaveProperty('extra')
-    expect(withKey.dropped).toEqual([{ param: 'Label', field: 'extra' }])
-    expect(wrongType.parameters[0].desc).toBe('')
-    expect(wrongType.dropped).toEqual([{ param: 'Label', field: 'desc' }])
+    expect(withKey.parameters.map((p) => Object.hasOwn(p, 'extra'))).toStrictEqual([false])
+    expect(withKey.dropped).toStrictEqual([{ param: 'Label', field: 'extra' }])
+    expect(wrongType.parameters.map((p) => p.desc)).toStrictEqual([''])
+    expect(wrongType.dropped).toStrictEqual([{ param: 'Label', field: 'desc' }])
   })
 
   it('names the source Unknown when it is not text', () => {
@@ -270,8 +264,8 @@ describe('deserializeParams with files it was not written for', () => {
     })
     const result = loaded(content)
 
-    expect(result.parameters[0]).not.toHaveProperty('min')
-    expect(result.dropped).toEqual([])
+    expect(result.parameters.map((p) => Object.hasOwn(p, 'min'))).toStrictEqual([false])
+    expect(result.dropped).toStrictEqual([])
 
     const code = generatePlugin({ ...createEmptyPlugin(), parameters: result.parameters })
 
@@ -282,19 +276,21 @@ describe('deserializeParams with files it was not written for', () => {
     const result = loaded(readFileSync(V160_FIXTURE, 'utf8'))
 
     expect(result.source).toBe(V160_SOURCE)
-    expect(result.skipped).toEqual([])
-    expect(result.dropped).toEqual([])
+    expect(result.skipped).toStrictEqual([])
+    expect(result.dropped).toStrictEqual([])
     // A number the user cleared was written as null and reads back as no value.
-    expect(result.parameters.map(({ id: _id, ...p }) => p)).toEqual(
-      V160_PARAMS.map(({ id: _id, ...p }) =>
-        Object.fromEntries(Object.entries(p).filter(([, v]) => !Number.isNaN(v)))
+    expect(result.parameters.map((p) => omit(p, 'id'))).toStrictEqual(
+      V160_PARAMS.map((p) =>
+        omit(p, 'id', ...Object.keys(p).filter((key) => Number.isNaN(Reflect.get(p, key))))
       )
     )
   })
 })
 
-// Every field a parameter has, at values the released version could write: a description that
-// closes a comment and spans two lines; the second parameter holds the numbers a user cleared.
+/*
+Every field a parameter has, at values the released version could write: a description that
+closes a comment and spans two lines; the second parameter holds the numbers a user cleared.
+*/
 const EVERY_FIELD = {
   id: 'full',
   name: 'Full',
@@ -315,7 +311,7 @@ const EVERY_FIELD = {
   onLabel: 'On',
   offLabel: 'Off'
 } satisfies Record<keyof PluginParameter, unknown>
-const { id: _fullId, ...FULL_LOADED } = EVERY_FIELD
+const FULL_LOADED = omit(EVERY_FIELD, 'id')
 
 type Expected = { skip: 'shape' | 'type' } | { dropped: string[]; reads?: unknown }
 
@@ -361,64 +357,81 @@ const WRONG_VALUES: [field: string, value: unknown, expected: Expected][] = [
 ]
 const NOT_PARAMETERS: unknown[] = [42, null, ['Full'], 'Full']
 
-describe('parameter fields read from a .mzparams file', () => {
-  const fileOf = (parameters: unknown[]): string =>
-    JSON.stringify({ version: 1, source: 'Test', exportedAt: '2026-01-01', parameters })
+// What a file read loads, without the ids it assigns
+const outcome = ({
+  parameters,
+  skipped,
+  dropped
+}: Extract<ParamImportResult, { success: true }>): Record<string, unknown> => ({
+  parameters: parameters.map((p) => omit(p, 'id')),
+  skipped,
+  dropped
+})
 
+// What a file holding EVERY_FIELD with one field set to a wrong value loads
+function wrongValueOutcome(field: string, expected: Expected): Record<string, unknown> {
+  if ('skip' in expected)
+    return {
+      parameters: [],
+      skipped: [{ index: 0, name: field === 'name' ? null : 'Full', reason: expected.skip }],
+      dropped: []
+    }
+  return {
+    parameters: [
+      'reads' in expected ? { ...FULL_LOADED, [field]: expected.reads } : omit(FULL_LOADED, field)
+    ],
+    skipped: [],
+    dropped: expected.dropped.map((f) => ({ param: 'Full', field: f }))
+  }
+}
+
+describe('parameter fields read from a .mzparams file', () => {
   it('loads every field the released version could write', () => {
     const cleared = { ...EVERY_FIELD, name: 'Cleared', min: null, max: null, decimals: null }
     const result = loaded(fileOf([EVERY_FIELD, cleared]))
 
-    expect(result.skipped).toEqual([])
-    expect(result.dropped).toEqual([])
-
-    const { min: _min, max: _max, decimals: _decimals, ...noNumbers } = FULL_LOADED
-
-    expect(result.parameters.map(({ id: _id, ...p }) => p)).toEqual([
+    expect(result.skipped).toStrictEqual([])
+    expect(result.dropped).toStrictEqual([])
+    expect(result.parameters.map((p) => omit(p, 'id'))).toStrictEqual([
       FULL_LOADED,
-      { ...noNumbers, name: 'Cleared' }
+      { ...omit(FULL_LOADED, 'min', 'max', 'decimals'), name: 'Cleared' }
     ])
   })
 
   it('drops each wrong-typed field and skips what is not a parameter', () => {
-    for (const value of NOT_PARAMETERS) {
-      const result = loaded(fileOf([value]))
+    expect(NOT_PARAMETERS.map((value) => outcome(loaded(fileOf([value]))))).toStrictEqual(
+      NOT_PARAMETERS.map(() => ({
+        parameters: [],
+        skipped: [{ index: 0, name: null, reason: 'shape' }],
+        dropped: []
+      }))
+    )
+    expect(
+      WRONG_VALUES.map(([field, value]) => [
+        field,
+        value,
+        outcome(loaded(fileOf([{ ...EVERY_FIELD, [field]: value }])))
+      ])
+    ).toStrictEqual(
+      WRONG_VALUES.map(([field, value, expected]) => [
+        field,
+        value,
+        wrongValueOutcome(field, expected)
+      ])
+    )
 
-      expect(result.parameters).toEqual([])
-      expect(result.skipped).toEqual([{ index: 0, name: null, reason: 'shape' }])
-    }
-    for (const [field, value, expected] of WRONG_VALUES) {
-      const result = loaded(fileOf([{ ...EVERY_FIELD, [field]: value }]))
-      if ('skip' in expected) {
-        const name = field === 'name' ? null : 'Full'
-
-        expect(result.parameters, field).toEqual([])
-        expect(result.skipped, field).toEqual([{ index: 0, name, reason: expected.skip }])
-
-        continue
-      }
-      const { id: _id, ...parameter } = result.parameters[0]
-      const { [field]: _left, ...without } = FULL_LOADED as Record<string, unknown>
-      const reads = 'reads' in expected ? { ...FULL_LOADED, [field]: expected.reads } : without
-
-      expect(parameter, `${field}: ${JSON.stringify(value)}`).toEqual(reads)
-      expect(result.dropped, field).toEqual(
-        expected.dropped.map((f) => ({ param: 'Full', field: f }))
-      )
-      expect(result.skipped, field).toEqual([])
-    }
     const fields = new Set(WRONG_VALUES.map(([field]) => field))
-    console.log(
-      `mzparams fields checked: ${fields.size} and the parameter itself ` +
-        `(cases ${WRONG_VALUES.length + NOT_PARAMETERS.length})`
+    process.stdout.write(
+      `mzparams fields checked: ${String(fields.size)} and the parameter itself ` +
+        `(cases ${String(WRONG_VALUES.length + NOT_PARAMETERS.length)})\n`
     )
 
     expect(fields.size).toBeGreaterThan(0)
-    expect(Object.keys(EVERY_FIELD).filter((key) => !fields.has(key))).toEqual([])
+    expect(Object.keys(EVERY_FIELD).filter((key) => !fields.has(key))).toStrictEqual([])
   })
 })
 
-describe('duplicateParams', () => {
+describe(duplicateParams, () => {
   it('creates copies with new IDs and _copy suffix', () => {
     const params = [
       makeParam({ id: 'id-1', name: 'speed', default: 5 }),
@@ -426,16 +439,14 @@ describe('duplicateParams', () => {
     ]
     const duped = duplicateParams(params, ['speed', 'volume'])
 
-    expect(duped).toHaveLength(2)
-    expect(duped[0].id).not.toBe('id-1')
-    expect(duped[0].name).toBe('speed_copy')
-    expect(duped[1].name).toBe('volume_copy')
-    expect(duped[0].default).toBe(5)
-    expect(duped[1].default).toBe(100)
+    expect(duped.map((p) => [p.name, p.default, ['id-1', 'id-2'].includes(p.id)])).toStrictEqual([
+      ['speed_copy', 5, false],
+      ['volume_copy', 100, false]
+    ])
   })
 
   it('handles empty array', () => {
-    expect(duplicateParams([], [])).toEqual([])
+    expect(duplicateParams([], [])).toStrictEqual([])
   })
 
   it('names each copy apart from the parameters already there, without stacking suffixes', () => {
@@ -487,10 +498,8 @@ describe('duplicateParams', () => {
     ]
     const duped = duplicateParams(params, ['test'])
 
-    expect(duped[0].text).toBe('Test')
-    expect(duped[0].desc).toBe('A description')
-    expect(duped[0].type).toBe('number')
-    expect(duped[0].min).toBe(0)
-    expect(duped[0].max).toBe(10)
+    expect(duped.map((p) => [p.text, p.desc, p.type, p.min, p.max])).toStrictEqual([
+      ['Test', 'A description', 'number', 0, 10]
+    ])
   })
 })
