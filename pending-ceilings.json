@@ -37,7 +37,6 @@
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
       "tests/integration/check-coverage.test.ts": 1,
-      "tests/unit/round-trip.test.ts": 2,
       "tests/unit/validation.test.ts": 1
     },
     "noPropertyAccessFromIndexSignature": {
@@ -117,11 +116,7 @@
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
       "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/preload-ipc.test.ts": 1,
-      "tests/unit/raw-mode-insertion.test.ts": 2,
-      "tests/unit/round-trip.test.ts": 5,
       "tests/unit/static-scope.test.ts": 1,
-      "tests/unit/template-injection.test.ts": 3,
       "tests/unit/test-layout.test.ts": 5,
       "tests/unit/workflows.test.ts": 4
     }

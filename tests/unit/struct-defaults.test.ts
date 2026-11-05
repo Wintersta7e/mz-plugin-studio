@@ -11,19 +11,19 @@ function makeStruct(fields: Partial<PluginParameter>[]): PluginStruct {
   return {
     id: 's1',
     name: 'TestStruct',
-    parameters: fields.map((f, i) => ({
-      id: `f${i}`,
-      name: f.name || `field${i}`,
-      text: f.text || f.name || `field${i}`,
+    parameters: fields.map((f, index) => ({
+      id: `f${String(index)}`,
+      name: f.name ?? `field${String(index)}`,
+      text: f.text ?? f.name ?? `field${String(index)}`,
       desc: '',
-      type: f.type || 'string',
+      type: f.type ?? 'string',
       default: f.default ?? '',
       ...f
-    })) as PluginParameter[]
+    }))
   }
 }
 
-describe('buildStructDefault', () => {
+describe(buildStructDefault, () => {
   it('builds JSON from field values — all values are strings', () => {
     const struct = makeStruct([
       { name: 'x', type: 'number', default: 0 },
@@ -59,33 +59,33 @@ describe('buildStructDefault', () => {
   })
 })
 
-describe('parseStructDefault', () => {
+describe(parseStructDefault, () => {
   it('parses valid JSON into field values', () => {
     const result = parseStructDefault('{"x":"100","y":"200"}')
 
-    expect(result).toEqual({ x: '100', y: '200' })
+    expect(result).toStrictEqual({ x: '100', y: '200' })
   })
 
   it('returns empty object for empty string', () => {
-    expect(parseStructDefault('')).toEqual({})
+    expect(parseStructDefault('')).toStrictEqual({})
   })
 
   it('returns empty object for invalid JSON', () => {
-    expect(parseStructDefault('not json')).toEqual({})
+    expect(parseStructDefault('not json')).toStrictEqual({})
   })
 
   it('returns empty object for empty JSON object', () => {
-    expect(parseStructDefault('{}')).toEqual({})
+    expect(parseStructDefault('{}')).toStrictEqual({})
   })
 
   it('coerces non-string values to strings', () => {
     const result = parseStructDefault('{"x":100,"flag":true}')
 
-    expect(result).toEqual({ x: '100', flag: 'true' })
+    expect(result).toStrictEqual({ x: '100', flag: 'true' })
   })
 })
 
-describe('validateStructDefault', () => {
+describe(validateStructDefault, () => {
   it('returns valid for matching fields', () => {
     const struct = makeStruct([
       { name: 'x', type: 'number' },
@@ -94,7 +94,7 @@ describe('validateStructDefault', () => {
     const result = validateStructDefault('{"x":"100","y":"200"}', struct)
 
     expect(result.status).toBe('valid')
-    expect(result.errors).toEqual([])
+    expect(result.errors).toStrictEqual([])
   })
 
   it('returns valid for empty default', () => {
@@ -128,7 +128,7 @@ describe('validateStructDefault', () => {
   })
 })
 
-describe('fillFromStructDefaults', () => {
+describe(fillFromStructDefaults, () => {
   it('builds values from each field default', () => {
     const struct = makeStruct([
       { name: 'x', type: 'number', default: 100 },
@@ -137,7 +137,7 @@ describe('fillFromStructDefaults', () => {
     ])
     const result = fillFromStructDefaults(struct)
 
-    expect(result).toEqual({ x: '100', y: '200', visible: 'true' })
+    expect(result).toStrictEqual({ x: '100', y: '200', visible: 'true' })
   })
 
   it('skips fields with no meaningful default', () => {
@@ -147,6 +147,6 @@ describe('fillFromStructDefaults', () => {
     ])
     const result = fillFromStructDefaults(struct)
 
-    expect(result).toEqual({ x: '50' })
+    expect(result).toStrictEqual({ x: '50' })
   })
 })
