@@ -28,22 +28,6 @@ interface ProjectBrowserProps {
   onClose: () => void
 }
 
-type TabType =
-  | 'switches'
-  | 'variables'
-  | 'actors'
-  | 'items'
-  | 'skills'
-  | 'weapons'
-  | 'armors'
-  | 'enemies'
-  | 'states'
-  | 'animations'
-  | 'tilesets'
-  | 'commonEvents'
-  | 'classes'
-  | 'troops'
-
 interface CollapsibleSectionProps {
   title: string
   icon: React.ReactNode
@@ -140,6 +124,21 @@ function DataList({ items, emptyMessage }: DataListProps) {
 }
 
 export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
+  type TabType =
+    | 'switches'
+    | 'variables'
+    | 'actors'
+    | 'items'
+    | 'skills'
+    | 'weapons'
+    | 'armors'
+    | 'enemies'
+    | 'states'
+    | 'animations'
+    | 'tilesets'
+    | 'commonEvents'
+    | 'classes'
+    | 'troops'
   const project = useProjectStore((s) => s.project)
   const switches = useProjectStore((s) => s.switches)
   const variables = useProjectStore((s) => s.variables)
@@ -174,12 +173,12 @@ export function ProjectBrowser({ onClose }: ProjectBrowserProps) {
   })
 
   const toggleSection = (section: TabType) => {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }))
+    setOpenSections((previous) => ({ ...previous, [section]: !previous[section] }))
   }
 
   // Count named items only (memoized to avoid O(n) scans on unrelated re-renders)
-  const filterNamed = <T extends { name: string }>(arr: T[]): T[] =>
-    arr.filter((x) => x.name?.trim())
+  const filterNamed = <T extends { name: string }>(array: T[]): T[] =>
+    array.filter((x) => x.name?.trim())
   const namedSwitches = useMemo(() => filterNamed(switches), [switches])
   const namedVariables = useMemo(() => filterNamed(variables), [variables])
   const namedActors = useMemo(() => filterNamed(actors), [actors])

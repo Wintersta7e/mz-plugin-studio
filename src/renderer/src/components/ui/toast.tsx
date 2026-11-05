@@ -51,13 +51,13 @@ function ToastItem({
   const [paused, setPaused] = useState(false)
 
   const hold = (reason: 'pointer' | 'focus', on: boolean): void => {
-    const was = holds.current.pointer || holds.current.focus
+    const isWas = holds.current.pointer || holds.current.focus
     holds.current[reason] = on
-    const now = holds.current.pointer || holds.current.focus
-    if (now === was) return
-    if (now) pause(id)
+    const isNow = holds.current.pointer || holds.current.focus
+    if (isNow === isWas) return
+    if (isNow) pause(id)
     else resume(id)
-    setPaused(now)
+    setPaused(isNow)
   }
 
   return (

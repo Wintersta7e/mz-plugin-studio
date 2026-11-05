@@ -22,7 +22,9 @@ function formatSize(text: string): string {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
 }
 
-/** Copies of saved state the app could not load; mounted with the Data tab, so it lists afresh. */
+/**
+Copies of saved state the app could not load; mounted with the Data tab, so it lists afresh.
+*/
 function BackupsSection() {
   const [backups, setBackups] = useState(listBackups)
   const addToast = useToastStore((s) => s.addToast)

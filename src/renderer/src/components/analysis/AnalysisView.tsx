@@ -20,7 +20,7 @@ export function AnalysisView() {
   const scanDependencies = useProjectStore((s) => s.scanDependencies)
 
   const [conflictsOpen, setConflictsOpen] = useState(true)
-  const [depsOpen, setDepsOpen] = useState(true)
+  const [dependenciesOpen, setDependenciesOpen] = useState(true)
 
   if (!project) {
     return (
@@ -33,9 +33,9 @@ export function AnalysisView() {
     )
   }
 
-  const initialScan = isScanning && !conflictReport && !dependencyReport
+  const isInitialScan = isScanning && !conflictReport && !dependencyReport
   const conflictCount = conflictReport?.conflicts.length ?? 0
-  const depIssueCount = dependencyReport?.issues.length ?? 0
+  const dependencyIssueCount = dependencyReport?.issues.length ?? 0
   const pluginCount = dependencyReport?.pluginNames.length ?? 0
   const totalOverrides = conflictReport?.totalOverrides ?? 0
 
@@ -56,7 +56,7 @@ export function AnalysisView() {
       </div>
 
       {/* Loading state during initial scan */}
-      {initialScan && (
+      {isInitialScan && (
         <div className="space-y-4 p-6">
           <div className="shimmer h-8 w-48 rounded-lg bg-muted" />
           <div className="flex gap-4">
@@ -70,7 +70,7 @@ export function AnalysisView() {
         </div>
       )}
 
-      {!initialScan && (
+      {!isInitialScan && (
         <>
           {/* Overview card */}
           <div className="mb-4 rounded-lg border border-border bg-card p-4">
@@ -99,10 +99,10 @@ export function AnalysisView() {
                 <div
                   className={cn(
                     'text-2xl font-semibold',
-                    depIssueCount > 0 ? 'text-amber-500' : 'text-green-500'
+                    dependencyIssueCount > 0 ? 'text-amber-500' : 'text-green-500'
                   )}
                 >
-                  {depIssueCount}
+                  {dependencyIssueCount}
                 </div>
               </div>
             </div>
@@ -136,8 +136,8 @@ export function AnalysisView() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {conflictReport?.conflicts.map((conflict, i) => (
-                      <div key={i} className="py-3">
+                    {conflictReport?.conflicts.map((conflict, index) => (
+                      <div key={index} className="py-3">
                         <div className="flex items-center gap-2">
                           {conflict.severity === 'warning' ? (
                             <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -157,7 +157,7 @@ export function AnalysisView() {
                           </span>
                         </div>
                         <div className="pl-6 pt-1 text-sm text-muted-foreground">
-                          {conflict.plugins.map((p) => p || '(unnamed)').join(' \u2192 ')}
+                          {conflict.plugins.map((p) => p || '(unnamed)').join(' \u{2192} ')}
                         </div>
                       </div>
                     ))}
@@ -171,16 +171,16 @@ export function AnalysisView() {
           <div className="mb-4 rounded-lg border border-border bg-card">
             <button
               className="flex w-full items-center gap-2 px-4 py-3 text-left font-medium"
-              onClick={() => setDepsOpen(!depsOpen)}
-              aria-expanded={depsOpen}
+              onClick={() => setDependenciesOpen(!dependenciesOpen)}
+              aria-expanded={dependenciesOpen}
             >
-              {depsOpen ? (
+              {dependenciesOpen ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
               Dependencies
-              {depIssueCount > 0 && (
+              {dependencyIssueCount > 0 && (
                 <span
                   className={cn(
                     'rounded-full px-2 py-0.5 text-xs',
@@ -189,21 +189,21 @@ export function AnalysisView() {
                       : 'bg-amber-500/20 text-amber-500'
                   )}
                 >
-                  {depIssueCount}
+                  {dependencyIssueCount}
                 </span>
               )}
             </button>
-            {depsOpen && (
+            {dependenciesOpen && (
               <div className="border-t border-border px-4 pb-4">
-                {depIssueCount === 0 ? (
+                {dependencyIssueCount === 0 ? (
                   <div className="flex items-center gap-2 pt-3 text-sm text-muted-foreground">
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     No dependency issues
                   </div>
                 ) : (
                   <div className="divide-y divide-border">
-                    {dependencyReport?.issues.map((issue, i) => (
-                      <div key={i} className="py-3">
+                    {dependencyReport?.issues.map((issue, index) => (
+                      <div key={index} className="py-3">
                         <div className="flex items-center gap-2">
                           {issue.severity === 'error' ? (
                             <AlertCircle className="h-4 w-4 text-red-500" />

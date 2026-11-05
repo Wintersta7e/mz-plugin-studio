@@ -38,7 +38,9 @@ const DIFF_LAST_COPY = 'Left: the copy this app last read or wrote'
 const DIFF_CHOOSE_FILE = "The saved file can't be opened automatically. Choose it to compare."
 const JS_FILTERS = [{ name: 'JavaScript', extensions: ['js'] }]
 
-/** Whether main refused a read because the file is outside what the app may read on its own */
+/**
+Whether main refused a read because the file is outside what the app may read on its own
+*/
 const isAccessDenied = (error: unknown): boolean => refusalReason(error) !== null
 
 export function CodePreview() {
@@ -47,18 +49,18 @@ export function CodePreview() {
   const savedPath = usePluginStore((s) => s.savedPath)
 
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
-  const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
-  const editorMinimap = useSettingsStore((s) => s.editorMinimap)
-  const editorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
+  const isEditorWordWrap = useSettingsStore((s) => s.editorWordWrap)
+  const isEditorMinimap = useSettingsStore((s) => s.editorMinimap)
+  const isEditorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
   const theme = useSettingsStore((s) => s.theme)
 
   const addToast = useToastStore((s) => s.addToast)
-  const previewRawMode = isRawMode(
+  const isPreviewRawMode = isRawMode(
     plugin,
     useUIStore((s) => s.rawModeByPluginId[plugin.id])
   )
   const setRawModeForPlugin = useUIStore((s) => s.setRawModeForPlugin)
-  const diffRequested = useUIStore((s) => s.diffRequestPluginId === plugin.id)
+  const isDiffRequested = useUIStore((s) => s.diffRequestPluginId === plugin.id)
 
   const [copied, setCopied] = useState(false)
   // The open diff belongs to the plugin it was opened for; another plugin's tab shows none
@@ -71,10 +73,10 @@ export function CodePreview() {
     needsFile: boolean
   } | null>(null)
   const diff = openedDiff?.pluginId === plugin.id ? openedDiff : null
-  const showDiff = diff !== null
+  const isShowDiff = diff !== null
   const onDiskCode = diff?.original ?? null
   const diffLabel = diff?.label ?? null
-  const diffNeedsFile = diff?.needsFile ?? false
+  const isDiffNeedsFile = diff?.needsFile ?? false
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
   const [badgeBounce, setBadgeBounce] = useState(false)
@@ -82,18 +84,18 @@ export function CodePreview() {
   const previewOptions = useMemo(
     () => ({
       readOnly: true,
-      minimap: { enabled: editorMinimap },
+      minimap: { enabled: isEditorMinimap },
       fontSize: editorFontSize,
-      lineNumbers: editorLineNumbers ? ('on' as const) : ('off' as const),
+      lineNumbers: isEditorLineNumbers ? ('on' as const) : ('off' as const),
       scrollBeyondLastLine: false,
-      wordWrap: editorWordWrap ? ('on' as const) : ('off' as const),
+      wordWrap: isEditorWordWrap ? ('on' as const) : ('off' as const),
       automaticLayout: true,
       padding: { top: 16, bottom: 16 }
     }),
-    [editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
+    [isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
   )
   const exportMenuRef = useRef<HTMLDivElement>(null)
-  const prevCountRef = useRef({ errors: 0, warnings: 0 })
+  const previousCountRef = useRef({ errors: 0, warnings: 0 })
   const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Clean up copy timer on unmount
@@ -111,7 +113,7 @@ export function CodePreview() {
   const deferredPlugin = useDeferredValue(plugin)
 
   // Derive raw mode from deferred plugin to keep code gen consistent (R3-02)
-  const deferredRawMode = isRawMode(
+  const isDeferredRawMode = isRawMode(
     deferredPlugin,
     useUIStore((s) => s.rawModeByPluginId[deferredPlugin.id])
   )
@@ -119,21 +121,21 @@ export function CodePreview() {
 
   const output = useMemo((): PluginOutput => {
     try {
-      return generatePluginOutput(deferredPlugin, deferredRawMode, deferredBaseline)
-    } catch (e) {
-      log.error('Code generation error:', e)
+      return generatePluginOutput(deferredPlugin, isDeferredRawMode, deferredBaseline)
+    } catch (error) {
+      log.error('Code generation error:', error)
       return {
         ok: true,
-        code: `// Code generation error: ${e instanceof Error ? e.message : String(e)}`
+        code: `// Code generation error: ${error instanceof Error ? error.message : String(error)}`
       }
     }
-  }, [deferredPlugin, deferredRawMode, deferredBaseline])
+  }, [deferredPlugin, isDeferredRawMode, deferredBaseline])
   // The diff shows the code a save would write
   const code = output.ok ? output.code : ''
-  const sourceMissing = !output.ok && output.refusal === 'source-missing'
+  const isSourceMissing = !output.ok && output.refusal === 'source-missing'
   const remedy =
     'Open its project and click Reload from project to restore it. Until then, raw mode cannot save it.'
-  const banner = sourceMissing
+  const banner = isSourceMissing
     ? deferredPlugin.rawSource
       ? `The app's copy of ${deferredPlugin.importedFrom} as it was last read is missing, so raw mode cannot tell what changed. ${remedy}`
       : `This plugin's file text (${deferredPlugin.importedFrom}) is not loaded — plugins opened in an older version of the app did not keep it. ${remedy}`
@@ -144,25 +146,25 @@ export function CodePreview() {
   const validation = useMemo(() => {
     try {
       return validatePlugin(deferredPlugin)
-    } catch (e) {
-      log.error('Validation error:', e)
-      return { valid: false, errors: [String(e)], warnings: [] }
+    } catch (error) {
+      log.error('Validation error:', error)
+      return { valid: false, errors: [String(error)], warnings: [] }
     }
   }, [deferredPlugin])
 
   // Badge bounce when validation counts change
   useEffect(() => {
-    const prevErrors = prevCountRef.current.errors
-    const prevWarnings = prevCountRef.current.warnings
+    const previousErrors = previousCountRef.current.errors
+    const previousWarnings = previousCountRef.current.warnings
     let timer: ReturnType<typeof setTimeout> | undefined
     if (
-      validation.errors.length !== prevErrors ||
-      (validation.warnings?.length ?? 0) !== prevWarnings
+      validation.errors.length !== previousErrors ||
+      (validation.warnings?.length ?? 0) !== previousWarnings
     ) {
       setBadgeBounce(true)
       timer = setTimeout(() => setBadgeBounce(false), 300)
     }
-    prevCountRef.current = {
+    previousCountRef.current = {
       errors: validation.errors.length,
       warnings: validation.warnings?.length ?? 0
     }
@@ -263,19 +265,19 @@ export function CodePreview() {
   }, [plugin.id, addToast, showDiffWith])
 
   const handleDiffToggle = useCallback(async () => {
-    if (showDiff) {
+    if (isShowDiff) {
       setOpenedDiff(null)
       return
     }
     await openDiff()
-  }, [showDiff, openDiff])
+  }, [isShowDiff, openDiff])
 
   // "Show Diff" in the save confirmation opens the diff of the plugin it asked about
   useEffect(() => {
-    if (!diffRequested) return
+    if (!isDiffRequested) return
     useUIStore.getState().clearDiffRequest()
     void openDiff()
-  }, [diffRequested, openDiff])
+  }, [isDiffRequested, openDiff])
 
   const handleExportFormat = useCallback(
     async (format: 'readme' | 'dts' | 'plugins-json') => {
@@ -288,11 +290,12 @@ export function CodePreview() {
       let notes: string[] = []
 
       switch (format) {
-        case 'readme':
+        case 'readme': {
           content = generateReadme(plugin)
           defaultName = `${plugin.meta.name || 'NewPlugin'}_README.md`
           filters = [{ name: 'Markdown Files', extensions: ['md'] }]
           break
+        }
         case 'dts': {
           const declaration = typeDeclaration(plugin)
           content = declaration.content
@@ -301,11 +304,12 @@ export function CodePreview() {
           filters = [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }]
           break
         }
-        case 'plugins-json':
+        case 'plugins-json': {
           content = generatePluginsJsonEntry(plugin)
           defaultName = `${plugin.meta.name || 'NewPlugin'}_plugins-entry.json`
           filters = [{ name: 'JSON Files', extensions: ['json'] }]
           break
+        }
       }
 
       const filePath = await window.api.dialog.saveFile({ defaultPath: defaultName, filters })
@@ -352,7 +356,7 @@ export function CodePreview() {
                     badgeBounce && validation.errors.length > 0 && 'animate-badge-bounce'
                   )}
                 >
-                  {validation.errors.length} error{validation.errors.length !== 1 ? 's' : ''}
+                  {validation.errors.length} error{validation.errors.length === 1 ? '' : 's'}
                 </span>
               )}
               {validation.warnings && validation.warnings.length > 0 && (
@@ -362,7 +366,7 @@ export function CodePreview() {
                     badgeBounce && validation.warnings.length > 0 && 'animate-badge-bounce'
                   )}
                 >
-                  {validation.warnings.length} warning{validation.warnings.length !== 1 ? 's' : ''}
+                  {validation.warnings.length} warning{validation.warnings.length === 1 ? '' : 's'}
                 </span>
               )}
               <span className="text-muted-foreground">{showValidation ? '▲' : '▼'}</span>
@@ -374,26 +378,26 @@ export function CodePreview() {
           {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
           <span title={imported ? undefined : RAW_UNAVAILABLE} className="inline-flex">
             <Button
-              variant={previewRawMode ? 'default' : 'outline'}
+              variant={isPreviewRawMode ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setRawModeForPlugin(plugin.id, !previewRawMode)}
+              onClick={() => setRawModeForPlugin(plugin.id, !isPreviewRawMode)}
               disabled={!imported}
               title={
                 imported
-                  ? previewRawMode
+                  ? isPreviewRawMode
                     ? "Raw mode ON: the file's own code and unchanged blocks are kept"
                     : 'Raw mode OFF: the whole plugin is regenerated from the editor'
                   : RAW_UNAVAILABLE
               }
             >
               <FileCode2 className="mr-1 h-4 w-4" />
-              {previewRawMode ? 'Raw ON' : 'Raw'}
+              {isPreviewRawMode ? 'Raw ON' : 'Raw'}
             </Button>
           </span>
 
           <span title={hasSavedVersion ? undefined : DIFF_UNAVAILABLE} className="inline-flex">
             <Button
-              variant={showDiff ? 'default' : 'outline'}
+              variant={isShowDiff ? 'default' : 'outline'}
               size="sm"
               onClick={handleDiffToggle}
               disabled={!hasSavedVersion}
@@ -483,8 +487,8 @@ export function CodePreview() {
           {!validation.valid && (
             <div className="border-b border-border bg-destructive/10 p-3">
               <ul className="space-y-1 text-sm text-destructive-text">
-                {validation.errors.map((error, i) => (
-                  <li key={i}>{error}</li>
+                {validation.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
                 ))}
               </ul>
             </div>
@@ -492,8 +496,8 @@ export function CodePreview() {
           {validation.warnings && validation.warnings.length > 0 && (
             <div className="border-b border-border bg-yellow-500/10 p-3">
               <ul className="space-y-1 text-sm text-warning-text">
-                {validation.warnings.map((warning, i) => (
-                  <li key={i}>{warning}</li>
+                {validation.warnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
                 ))}
               </ul>
             </div>
@@ -503,16 +507,16 @@ export function CodePreview() {
 
       {banner !== null && (
         <div
-          role={sourceMissing ? 'status' : 'alert'}
+          role={isSourceMissing ? 'status' : 'alert'}
           className={cn(
             'flex items-center gap-3 border-b border-border p-3 text-sm',
-            sourceMissing
+            isSourceMissing
               ? 'bg-yellow-500/10 text-warning-text'
               : 'bg-destructive/10 text-destructive-text'
           )}
         >
           <span className="flex-1">{banner}</span>
-          {sourceMissing && (
+          {isSourceMissing && (
             // A disabled button ignores the pointer, so its hint also sits on this wrapper
             <span title={project ? undefined : 'Open the project first.'} className="inline-flex">
               <Button
@@ -531,7 +535,7 @@ export function CodePreview() {
       )}
 
       <div className="flex-1">
-        {showDiff && onDiskCode !== null && diffLabel !== null ? (
+        {isShowDiff && onDiskCode !== null && diffLabel !== null ? (
           <div className="flex h-full flex-col">
             <p className="border-b border-border px-4 py-1 text-xs text-muted-foreground">
               {diffLabel}
@@ -540,9 +544,9 @@ export function CodePreview() {
               <DiffView original={onDiskCode} modified={code} />
             </div>
           </div>
-        ) : showDiff && onDiskCode !== null ? (
+        ) : isShowDiff && onDiskCode !== null ? (
           <DiffView original={onDiskCode} modified={code} />
-        ) : showDiff && diffNeedsFile ? (
+        ) : isShowDiff && isDiffNeedsFile ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-sm text-muted-foreground">
             <p>{DIFF_CHOOSE_FILE}</p>
             <Button size="sm" variant="outline" onClick={() => void chooseDiffFile()}>

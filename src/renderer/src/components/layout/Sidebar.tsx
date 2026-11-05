@@ -105,7 +105,7 @@ export function Sidebar({
         <ScrollArea className="flex-1">
           <div className="flex flex-col items-center gap-1 p-2">
             {openPlugins.map((plugin) => {
-              const pluginIsDirty = Boolean(dirtyByPluginId[plugin.id])
+              const isPluginIsDirty = Boolean(dirtyByPluginId[plugin.id])
 
               return (
                 <Tooltip key={plugin.id}>
@@ -114,7 +114,7 @@ export function Sidebar({
                       <Button
                         variant={activePluginId === plugin.id ? 'secondary' : 'ghost'}
                         size="icon"
-                        aria-label={`${plugin.meta.name || 'Untitled'}${pluginIsDirty ? ' (unsaved changes)' : ''}`}
+                        aria-label={`${plugin.meta.name || 'Untitled'}${isPluginIsDirty ? ' (unsaved changes)' : ''}`}
                         data-testid="plugin-tab"
                         onClick={() => setActivePlugin(plugin.id)}
                         className={cn(
@@ -127,7 +127,7 @@ export function Sidebar({
                           <ChevronRight className="absolute -right-1 h-3 w-3 text-primary" />
                         )}
                         {/* Dirty state is tracked per open plugin so switching tabs does not hide unsaved edits. */}
-                        {pluginIsDirty && (
+                        {isPluginIsDirty && (
                           <>
                             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-500 animate-dot-pulse" />
                             <span className="sr-only">unsaved changes</span>
@@ -146,7 +146,7 @@ export function Sidebar({
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     {plugin.meta.name || 'Untitled'}
-                    {pluginIsDirty && ' (unsaved)'}
+                    {isPluginIsDirty && ' (unsaved)'}
                   </TooltipContent>
                 </Tooltip>
               )

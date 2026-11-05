@@ -1034,15 +1034,6 @@
     },
     "max-lines-per-function": {
       "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 5
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 1
     }
   },
   "src/renderer/src/components/layout/Sidebar.tsx": {
@@ -1068,9 +1059,6 @@
       "count": 1
     },
     "sonarjs/prefer-read-only-props": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
       "count": 1
     },
     "unicorn/name-replacements": {
@@ -1106,9 +1094,6 @@
       "count": 1
     },
     "sonarjs/no-nested-conditional": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
       "count": 2
     },
     "unicorn/prefer-simple-condition-first": {
@@ -1187,26 +1172,14 @@
     "sonarjs/no-nested-conditional": {
       "count": 5
     },
-    "unicorn/catch-error-name": {
-      "count": 2
-    },
     "unicorn/consistent-boolean-name": {
-      "count": 11
+      "count": 2
     },
     "unicorn/name-replacements": {
-      "count": 8
-    },
-    "unicorn/no-negated-condition": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-global-this": {
       "count": 5
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 2
     }
   },
   "src/renderer/src/components/preview/DiffView.tsx": {
@@ -1240,12 +1213,6 @@
       "count": 3
     },
     "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/prefer-smaller-scope": {
       "count": 1
     }
   },
@@ -1282,9 +1249,6 @@
     },
     "unicorn/prefer-global-this": {
       "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
     }
   },
   "src/renderer/src/components/settings/ShortcutsDialog.tsx": {
@@ -1398,7 +1362,7 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 3
+      "count": 1
     },
     "unicorn/name-replacements": {
       "count": 1

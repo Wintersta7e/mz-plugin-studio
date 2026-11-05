@@ -14,15 +14,15 @@ export function StatusBar() {
 
   const [showIssues, setShowIssues] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
-  const prevDirtyRef = useRef(isDirty)
+  const previousDirtyRef = useRef(isDirty)
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
-    if (prevDirtyRef.current && !isDirty) {
+    if (previousDirtyRef.current && !isDirty) {
       setShowSaved(true)
       timer = setTimeout(() => setShowSaved(false), 1500)
     }
-    prevDirtyRef.current = isDirty
+    previousDirtyRef.current = isDirty
     return () => {
       if (timer) clearTimeout(timer)
     }
@@ -78,9 +78,9 @@ export function StatusBar() {
                 </DialogHeader>
                 <ScrollArea className="max-h-80">
                   <div className="space-y-2 pr-4">
-                    {dependencyReport.issues.map((issue, i) => (
+                    {dependencyReport.issues.map((issue, index) => (
                       <div
-                        key={i}
+                        key={index}
                         className={cn(
                           'flex items-start gap-2 rounded px-2 py-1.5 text-sm',
                           issue.severity === 'error'
