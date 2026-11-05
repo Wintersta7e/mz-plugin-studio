@@ -15,7 +15,7 @@ import { ALL_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
 import { contextsOf, isContained } from '../helpers/js-context'
 import type { JsContext } from '../helpers/js-context'
 
-const INSERTER = 'src/renderer/src/components/plugin/TemplateInserter.tsx'
+const FIELDS = 'src/renderer/src/components/plugin/TemplateFields.tsx'
 const MARKER = 'QQ7QQ'
 const INJECTED = `globalThis.${SENTINEL}`
 
@@ -29,15 +29,27 @@ const CONTEXTS: JsContext[] = [
   'code'
 ]
 
-/** Each field renderer's type, and those that store the typed text as it is. */
+// The source of the function `name`, up to the next top-level function
+function functionSource(source: string, name: string): string {
+  const start = source.indexOf(`function ${name}(`)
+  const end = source.indexOf('\nfunction ', start + 1)
+  return source.slice(start, end === -1 ? source.length : end)
+}
+
+/** Each field control's type, and those that store the typed text as it is. */
 function fieldRenderers(): { types: string[]; free: string[] } {
-  const blocks = readFileSync(resolve(INSERTER), 'utf8')
-    .split(/\n\s*case '/)
-    .slice(1)
-  const types = blocks.map((block) => block.slice(0, block.indexOf("'")))
-  const free = types.filter((_, i) =>
-    blocks[i].includes('handleFieldChange(field.id, e.target.value)')
+  const source = readFileSync(resolve(FIELDS), 'utf8')
+  const table = source.slice(source.indexOf('const FIELD_CONTROLS = {'))
+  const rows = Array.from(
+    table.slice(0, table.indexOf('}')).matchAll(/^ +'?([\w-]+)'?: (\w+),?$/gm),
+    ([, type = '', control = '']) => ({ type, control })
   )
+  const types = rows.map((row) => row.type)
+  const free = rows
+    .filter((row) =>
+      functionSource(source, row.control).includes('onChange(field.id, event.target.value)')
+    )
+    .map((row) => row.type)
   return { types, free }
 }
 

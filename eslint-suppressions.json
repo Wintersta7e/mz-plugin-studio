@@ -1679,92 +1679,6 @@
       "count": 5
     }
   },
-  "src/renderer/src/components/plugin/TemplateInserter.tsx": {
-    "@eslint-react/dom-no-missing-button-type": {
-      "count": 6
-    },
-    "@eslint-react/no-array-index-key": {
-      "count": 7
-    },
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 11
-    },
-    "@typescript-eslint/no-misused-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 9
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 4
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 8
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 30
-    },
-    "complexity": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 4
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    },
-    "sonarjs/no-gratuitous-expressions": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 4
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/no-array-sort": {
-      "count": 2
-    },
-    "unicorn/no-declarations-before-early-exit": {
-      "count": 1
-    },
-    "unicorn/no-useless-logical-operand": {
-      "count": 1
-    },
-    "unicorn/no-useless-undefined": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
-      "count": 2
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 5
-    },
-    "unicorn/prefer-switch": {
-      "count": 1
-    }
-  },
   "src/renderer/src/components/preview/CodePreview.tsx": {
     "@eslint-react/dom-no-missing-button-type": {
       "count": 4
@@ -5053,7 +4967,7 @@
       "count": 1
     },
     "unicorn/no-unnecessary-parameters": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-scoped-selector": {
       "count": 1
@@ -8989,9 +8903,6 @@
       "count": 1
     },
     "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
       "count": 1
     },
     "unicorn/no-computed-property-existence-check": {
