@@ -330,6 +330,18 @@ const SETTINGS_CASES: [string, string][] = [
   ]
 ]
 
+// Values no case above reads: a `false` default, an array of a type other than a struct and
+// command code whose function block never closes.
+const VALUE_CASES: [string, string][] = [
+  ['param-default-false', block('@param flag', '@type boolean', '@default false')],
+  ['param-array-of-numbers', block('@param list', '@type number[]', '@default []')],
+  [
+    'command-code-block-without-closing-brace',
+    WRAPPER_HEADER +
+      "PluginManager.registerCommand('Fixture_Pattern', 'run', () => {\n  const value = 1\n"
+  ]
+]
+
 const named =
   (filename: string) =>
   ([name, source]: [string, string]): ParserPatternCase => ({ name, filename, source })
@@ -345,7 +357,8 @@ export const parserPatternCases: readonly ParserPatternCase[] = [
     ...PARAMETER_CASES,
     ...COMMAND_CASES,
     ...TAG_VALUE_CASES,
-    ...SETTINGS_CASES
+    ...SETTINGS_CASES,
+    ...VALUE_CASES
   ].map(named(FILENAME)),
   ...SCRIPT_NAME_CASES.map(named(''))
 ]
