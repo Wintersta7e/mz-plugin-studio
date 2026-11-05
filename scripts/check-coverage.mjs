@@ -24,7 +24,7 @@ const FLOORS = {
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 88 },
     'src/renderer/src/lib': { lines: 96, branches: 88 },
-    [GENERATOR]: { lines: 98, branches: 94 },
+    [GENERATOR]: { lines: 98, branches: 95 },
     'src/renderer/src/components': { lines: 90, branches: 83 },
     'src/renderer/src': { lines: 82, branches: 79 },
     global: { lines: 95, branches: 89 }
@@ -48,7 +48,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/menu-system.ts`]: 100,
       [`${GENERATOR}/templates/message-system.ts`]: 97,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,
-      [`${GENERATOR}/templates/plugin-commands.ts`]: 95,
+      [`${GENERATOR}/templates/plugin-commands.ts`]: 97,
       [`${GENERATOR}/templates/save-load.ts`]: 90,
       [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
       [`${GENERATOR}/templates/sprite-system.ts`]: 99,

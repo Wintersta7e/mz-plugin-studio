@@ -11,11 +11,12 @@ import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString } from '../escape'
 import { JS_RESERVED } from '../index'
+import { definedOr, expectText, valueOr } from './values'
 
 /**
  * Helper to generate argument parsing code
  */
-function generateArgParsing(args: Array<{ name: string; type: string }>): string[] {
+function generateArgParsing(args: Array<{ name: string; type: unknown }>): string[] {
   const lines: string[] = []
 
   for (const arg of args) {
@@ -42,12 +43,12 @@ function generateArgParsing(args: Array<{ name: string; type: string }>): string
 /**
  * Helper to generate argument info comment
  */
-function generateArgComment(args: Array<{ name: string; type: string; desc: string }>): string[] {
+function generateArgComment(args: Array<{ name: string; type: unknown; desc: string }>): string[] {
   if (args.length === 0) return []
 
   const lines: string[] = ['// Arguments:']
   for (const arg of args) {
-    lines.push(`//   ${arg.name} (${arg.type}) - ${arg.desc}`)
+    lines.push(`//   ${arg.name} (${String(arg.type)}) - ${arg.desc}`)
   }
   return lines
 }
@@ -72,6 +73,26 @@ function argNameErrors(values: Record<string, unknown>): string[] {
   }
   if (names[0] !== '' && names[0] === names[1]) {
     errors.push('Argument 1 and argument 2 need different names')
+  }
+  return errors
+}
+
+// The command and plugin name checks every command template runs first; `identifierError` is the
+// template's message for a command name that is not an identifier
+function commandNameErrors(values: Record<string, unknown>, identifierError: string): string[] {
+  const errors: string[] = []
+  const commandName = values['commandName']
+  const hasCommandName = Boolean(commandName)
+  if (hasCommandName && !expectText(commandName).trim()) {
+    errors.push('Command name is required')
+  } else if (hasCommandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(commandName).trim())) {
+    errors.push(identifierError)
+  }
+
+  const pluginName = values['pluginName']
+  const hasPluginName = Boolean(pluginName)
+  if (hasPluginName && !expectText(pluginName).trim()) {
+    errors.push('Plugin name is required')
   }
   return errors
 }
@@ -149,21 +170,23 @@ const basicCommandTemplate: CodeTemplate = {
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
     const commandName = String(values['commandName'] ?? '').trim()
-    const pluginName = values['pluginName'] as string
-    const arg1Name = values['arg1Name'] as string
-    const arg1Type = (values['arg1Type'] as string) || 'string'
-    const arg2Name = values['arg2Name'] as string
-    const arg2Type = (values['arg2Type'] as string) || 'number'
+    const pluginName = values['pluginName']
+    const arg1Name = values['arg1Name']
+    const arg1Type = valueOr(values['arg1Type'], 'string')
+    const arg2Name = values['arg2Name']
+    const arg2Type = valueOr(values['arg2Type'], 'number')
 
     const lines: string[] = []
 
     // Build argument list
-    const args: Array<{ name: string; type: string; desc: string }> = []
-    if (arg1Name && arg1Name.trim()) {
-      args.push({ name: arg1Name.trim(), type: arg1Type, desc: 'First argument' })
+    const args: Array<{ name: string; type: unknown; desc: string }> = []
+    const hasArg1Name = Boolean(arg1Name)
+    if (hasArg1Name && expectText(arg1Name).trim()) {
+      args.push({ name: expectText(arg1Name).trim(), type: arg1Type, desc: 'First argument' })
     }
-    if (arg2Name && arg2Name.trim()) {
-      args.push({ name: arg2Name.trim(), type: arg2Type, desc: 'Second argument' })
+    const hasArg2Name = Boolean(arg2Name)
+    if (hasArg2Name && expectText(arg2Name).trim()) {
+      args.push({ name: expectText(arg2Name).trim(), type: arg2Type, desc: 'Second argument' })
     }
 
     // Header comment
@@ -174,7 +197,7 @@ const basicCommandTemplate: CodeTemplate = {
 
     // Registration
     lines.push(
-      `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+      `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
     )
 
     // Argument parsing
@@ -198,32 +221,30 @@ const basicCommandTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    const commandName = values['commandName'] as string
-    const pluginName = values['pluginName'] as string
-
-    if (commandName && !commandName.trim()) {
-      errors.push('Command name is required')
-    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
-      errors.push(
-        'Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)'
-      )
-    }
-
-    if (pluginName && !pluginName.trim()) {
-      errors.push('Plugin name is required')
-    }
+    const errors = commandNameErrors(
+      values,
+      'Command name must be a valid identifier (letters, numbers, underscores, cannot start with a number)'
+    )
 
     // Validate argument names if provided
-    const arg1Name = values['arg1Name'] as string
-    const arg2Name = values['arg2Name'] as string
+    const arg1Name = values['arg1Name']
+    const arg2Name = values['arg2Name']
 
-    if (arg1Name && arg1Name.trim() && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(arg1Name.trim())) {
+    const hasArg1Name = Boolean(arg1Name)
+    if (
+      hasArg1Name &&
+      expectText(arg1Name).trim() &&
+      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(arg1Name).trim())
+    ) {
       errors.push('Argument 1 name must be a valid identifier')
     }
 
-    if (arg2Name && arg2Name.trim() && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(arg2Name.trim())) {
+    const hasArg2Name = Boolean(arg2Name)
+    if (
+      hasArg2Name &&
+      expectText(arg2Name).trim() &&
+      !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(expectText(arg2Name).trim())
+    ) {
       errors.push('Argument 2 name must be a valid identifier')
     }
 
@@ -289,9 +310,9 @@ const asyncCommandTemplate: CodeTemplate = {
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
     const commandName = String(values['commandName'] ?? '').trim()
-    const pluginName = values['pluginName'] as string
-    const waitType = (values['waitType'] as string) || 'callback'
-    const waitDuration = (values['waitDuration'] as number) || 60
+    const pluginName = values['pluginName']
+    const waitType = valueOr(values['waitType'], 'callback')
+    const waitDuration = valueOr(values['waitDuration'], 60)
 
     const lines: string[] = []
 
@@ -320,7 +341,7 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push(
-          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push('    const interpreter = this;')
         lines.push(`    interpreter.setWaitMode('${escapeJSString(commandName)}');`)
@@ -339,19 +360,19 @@ const asyncCommandTemplate: CodeTemplate = {
       case 'waitCount':
         // Simple frame wait
         lines.push(
-          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push('    const interpreter = this;')
         lines.push('')
         lines.push(
-          `    // Wait for ${waitDuration} frames (${Math.round((waitDuration / 60) * 100) / 100} seconds at 60fps)`
+          `    // Wait for ${String(waitDuration)} frames (${Math.round((Number(waitDuration) / 60) * 100) / 100} seconds at 60fps)`
         )
-        lines.push(`    interpreter.wait(${waitDuration});`)
+        lines.push(`    interpreter.wait(${String(waitDuration)});`)
         lines.push('')
         lines.push('    // Your command logic here')
         lines.push('    // Note: Code here runs immediately, wait only affects event flow')
         lines.push(
-          `    console.log('${escapeJSString(commandName)} initiated ${waitDuration} frame wait');`
+          `    console.log('${escapeJSString(commandName)} initiated ${String(waitDuration)} frame wait');`
         )
         lines.push('});')
         break
@@ -375,7 +396,7 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push(
-          `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+          `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
         )
         lines.push('    const interpreter = this;')
         lines.push(`    interpreter[_${commandName}PendingKey] = true;`)
@@ -395,27 +416,15 @@ const asyncCommandTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = commandNameErrors(values, 'Command name must be a valid identifier')
 
-    const commandName = values['commandName'] as string
-    const pluginName = values['pluginName'] as string
-    const waitType = values['waitType'] as string
-    const waitDuration = values['waitDuration'] as number
-
-    if (commandName && !commandName.trim()) {
-      errors.push('Command name is required')
-    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
-      errors.push('Command name must be a valid identifier')
-    }
-
-    if (pluginName && !pluginName.trim()) {
-      errors.push('Plugin name is required')
-    }
+    const waitType = values['waitType']
+    const waitDuration = values['waitDuration']
 
     if (waitType === 'waitCount') {
-      if (waitDuration === undefined || waitDuration < 1) {
+      if (waitDuration === undefined || Number(waitDuration) < 1) {
         errors.push('Wait duration must be at least 1 frame')
-      } else if (waitDuration > 3600) {
+      } else if (Number(waitDuration) > 3600) {
         errors.push('Wait duration should not exceed 3600 frames (1 minute)')
       }
     }
@@ -503,12 +512,12 @@ const validatedCommandTemplate: CodeTemplate = {
   generate: (values): string => {
     // The check reads the name trimmed, so the code is written with the same text.
     const commandName = String(values['commandName'] ?? '').trim()
-    const pluginName = values['pluginName'] as string
-    const validateActorId = values['validateActorId'] as boolean
-    const validateNumberRange = values['validateNumberRange'] as boolean
-    const minValue = (values['minValue'] as number) ?? 0
-    const maxValue = (values['maxValue'] as number) ?? 9999
-    const errorHandling = (values['errorHandling'] as string) || 'warning'
+    const pluginName = values['pluginName']
+    const validateActorId = Boolean(values['validateActorId'])
+    const validateNumberRange = Boolean(values['validateNumberRange'])
+    const minValue = definedOr(values['minValue'], 0)
+    const maxValue = definedOr(values['maxValue'], 9999)
+    const errorHandling = valueOr(values['errorHandling'], 'warning')
 
     const lines: string[] = []
 
@@ -522,19 +531,19 @@ const validatedCommandTemplate: CodeTemplate = {
     switch (errorHandling) {
       case 'silent':
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    console.log('[${escapeJSString(pluginName)}] ' + message);`)
+        lines.push(`    console.log('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
       case 'throw':
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    throw new Error('[${escapeJSString(pluginName)}] ' + message);`)
+        lines.push(`    throw new Error('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('}')
         break
       case 'warning':
       default:
         lines.push(`function ${commandName}_handleError(message) {`)
-        lines.push(`    console.warn('[${escapeJSString(pluginName)}] ' + message);`)
+        lines.push(`    console.warn('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
@@ -565,9 +574,9 @@ const validatedCommandTemplate: CodeTemplate = {
         `        return ${commandName}_handleError('Value must be a number: ' + args.value);`
       )
       lines.push('    }')
-      lines.push(`    if (value < ${minValue} || value > ${maxValue}) {`)
+      lines.push(`    if (value < ${String(minValue)} || value > ${String(maxValue)}) {`)
       lines.push(
-        `        return ${commandName}_handleError('Value out of range (${minValue}-${maxValue}): ' + value);`
+        `        return ${commandName}_handleError('Value out of range (${String(minValue)}-${String(maxValue)}): ' + value);`
       )
       lines.push('    }')
       lines.push('')
@@ -579,7 +588,7 @@ const validatedCommandTemplate: CodeTemplate = {
 
     // Command registration
     lines.push(
-      `PluginManager.registerCommand('${escapeJSString(pluginName)}', '${escapeJSString(commandName)}', function(args) {`
+      `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
     )
     lines.push('    // Run validation')
     lines.push(`    if (!${commandName}_validate(args)) {`)
@@ -616,26 +625,14 @@ const validatedCommandTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = commandNameErrors(values, 'Command name must be a valid identifier')
 
-    const commandName = values['commandName'] as string
-    const pluginName = values['pluginName'] as string
-    const validateNumberRange = values['validateNumberRange'] as boolean
-    const minValue = values['minValue'] as number
-    const maxValue = values['maxValue'] as number
-
-    if (commandName && !commandName.trim()) {
-      errors.push('Command name is required')
-    } else if (commandName && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(commandName.trim())) {
-      errors.push('Command name must be a valid identifier')
-    }
-
-    if (pluginName && !pluginName.trim()) {
-      errors.push('Plugin name is required')
-    }
+    const validateNumberRange = Boolean(values['validateNumberRange'])
+    const minValue = values['minValue']
+    const maxValue = values['maxValue']
 
     if (validateNumberRange) {
-      if (minValue !== undefined && maxValue !== undefined && minValue > maxValue) {
+      if (minValue !== undefined && maxValue !== undefined && Number(minValue) > Number(maxValue)) {
         errors.push('Minimum value cannot be greater than maximum value')
       }
     }

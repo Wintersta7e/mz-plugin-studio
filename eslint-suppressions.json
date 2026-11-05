@@ -2869,28 +2869,13 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 3
     },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 27
-    },
-    "@typescript-eslint/prefer-optional-chain": {
-      "count": 4
-    },
-    "complexity": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 2
     },
     "regexp/prefer-w": {
-      "count": 5
+      "count": 3
     },
     "regexp/use-ignore-case": {
-      "count": 5
-    },
-    "sonarjs/different-types-comparison": {
       "count": 3
     },
     "unicorn/consistent-boolean-name": {
