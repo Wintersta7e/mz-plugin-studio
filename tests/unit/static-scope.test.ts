@@ -918,7 +918,6 @@ const CRUISE_ROOTS = ['src', 'tests', 'tools', 'scripts', 'e2e']
 const KNOWN_VIOLATIONS = '.dependency-cruiser-known-violations.json'
 const TRANSITIONAL_ARTEFACTS: string[] = [
   'eslint-suppressions.json',
-  'tsconfig.node.pending.json',
   'tsconfig.web.pending.json',
   'tsconfig.test.pending.json',
   'tsconfig.tools.pending.json',

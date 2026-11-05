@@ -15,14 +15,12 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
-The first `count` arguments, each required to be a string
+The argument at `index`, required to be a string
 */
-export function strings(channel: string, raw: readonly unknown[], count: number): string[] {
-  const values = raw.slice(0, count)
-  if (values.length < count || !values.every((v): v is string => typeof v === 'string')) {
-    throw invalidArguments(channel)
-  }
-  return values
+export function stringArg(channel: string, raw: readonly unknown[], index: number): string {
+  const value = raw[index]
+  if (typeof value !== 'string') throw invalidArguments(channel)
+  return value
 }
 
 /**

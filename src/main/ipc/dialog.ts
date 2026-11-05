@@ -91,14 +91,15 @@ export async function openFolderDialog(
     title: 'Select RPG Maker MZ Project Folder'
   })
 
-  if (result.canceled || result.filePaths.length === 0) {
+  const selected = result.canceled ? undefined : result.filePaths[0]
+  if (selected === undefined) {
     log.debug('[dialog:open-folder] Cancelled')
     return null
   }
 
-  log.info(`[dialog:open-folder] Selected: ${result.filePaths[0]}`)
-  await recordProjectRoot(result.filePaths[0])
-  return result.filePaths[0]
+  log.info(`[dialog:open-folder] Selected: ${selected}`)
+  await recordProjectRoot(selected)
+  return selected
 }
 
 /**
@@ -115,14 +116,15 @@ export async function openFileDialog(
     filters: options.filters || [{ name: 'JavaScript', extensions: ['js'] }]
   })
 
-  if (result.canceled || result.filePaths.length === 0) {
+  const selected = result.canceled ? undefined : result.filePaths[0]
+  if (selected === undefined) {
     log.debug('[dialog:open-file] Cancelled')
     return null
   }
 
-  log.info(`[dialog:open-file] Selected: ${result.filePaths[0]}`)
-  recordReadGrant(result.filePaths[0])
-  return result.filePaths[0]
+  log.info(`[dialog:open-file] Selected: ${selected}`)
+  recordReadGrant(selected)
+  return selected
 }
 
 const MESSAGE_TYPES = ['none', 'info', 'error', 'question', 'warning'] as const

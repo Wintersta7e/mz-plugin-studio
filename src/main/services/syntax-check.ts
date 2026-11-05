@@ -18,7 +18,9 @@ export function compileCheck(content: string, filename: string): SyntaxProblem |
       return null
     }
     if (!(error instanceof Error) || error.name !== 'SyntaxError') throw error
-    const first = String(error.stack).split('\n', 1)[0]
+    const stack = String(error.stack)
+    // The first line: everything before the first line break, all of it when there is none
+    const first = stack.slice(0, `${stack}\n`.indexOf('\n'))
     const prefix = `${filename}:`
     const line = first.startsWith(prefix) ? /^\d+/.exec(first.slice(prefix.length))?.[0] : undefined
     return { message: error.message, line: line === undefined ? null : Number(line) }

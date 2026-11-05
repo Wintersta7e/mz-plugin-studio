@@ -1131,7 +1131,7 @@
       "count": 1
     },
     "@typescript-eslint/no-unnecessary-condition": {
-      "count": 6
+      "count": 5
     },
     "@typescript-eslint/prefer-nullish-coalescing": {
       "count": 8
@@ -1166,9 +1166,6 @@
     "sonarjs/cognitive-complexity": {
       "count": 6
     },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    },
     "sonarjs/function-return-type": {
       "count": 1
     },
@@ -1186,9 +1183,6 @@
     },
     "unicorn/name-replacements": {
       "count": 4
-    },
-    "unicorn/prefer-includes-over-repeated-comparisons": {
-      "count": 1
     },
     "unicorn/prefer-number-coercion": {
       "count": 7

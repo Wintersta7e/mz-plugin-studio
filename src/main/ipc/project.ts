@@ -9,7 +9,7 @@ import {
 import type { MZProject } from '../../shared/types/mz'
 import { assertSafeProjectPath, isUncText } from '../../shared/path-safety'
 import { isProjectRootGranted, recordProjectRoot, setCurrentProjectRoot } from '../file-access'
-import { strings } from './arguments'
+import { stringArg } from './arguments'
 import type { InvokeHandlers } from './registration'
 
 /**
@@ -105,18 +105,12 @@ export function createProjectHandlers(
   return {
     'project:validate': {
       access: 'project-load',
-      check: (raw) => {
-        const [path] = strings('project:validate', raw, 1)
-        return [path]
-      },
+      check: (raw) => [stringArg('project:validate', raw, 0)],
       run: runProjectValidate
     },
     'project:load': {
       access: 'project-load',
-      check: (raw) => {
-        const [path] = strings('project:load', raw, 1)
-        return [path]
-      },
+      check: (raw) => [stringArg('project:load', raw, 0)],
       run: async (path) => loadGrantedProject(dialog, path)
     }
   }

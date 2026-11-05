@@ -22,7 +22,7 @@ import {
 } from '../../shared/path-safety'
 import { replaceFile } from '../atomic-write'
 import { assertWriteGranted, grantKey } from '../file-access'
-import { checkSaveGuard, strings } from './arguments'
+import { checkSaveGuard, stringArg } from './arguments'
 import type { InvokeHandlers } from './registration'
 
 /**
@@ -295,16 +295,19 @@ type PluginChannel =
 export const pluginHandlers: Pick<InvokeHandlers, PluginChannel> = {
   'plugin:save': {
     access: 'current-project',
-    check: (raw) => {
-      const [projectPath, filename, content] = strings('plugin:save', raw, 3)
-      return [projectPath, filename, content, checkSaveGuard('plugin:save', raw[3])]
-    },
+    check: (raw) => [
+      stringArg('plugin:save', raw, 0),
+      stringArg('plugin:save', raw, 1),
+      stringArg('plugin:save', raw, 2),
+      checkSaveGuard('plugin:save', raw[3])
+    ],
     run: savePluginFile
   },
   'plugin:save-to-path': {
     access: 'granted-write',
     check: (raw) => {
-      const [filePath, content] = strings('plugin:save-to-path', raw, 2)
+      const filePath = stringArg('plugin:save-to-path', raw, 0)
+      const content = stringArg('plugin:save-to-path', raw, 1)
       return raw[2] === undefined
         ? [filePath, content]
         : [filePath, content, checkSaveGuard('plugin:save-to-path', raw[2])]
@@ -313,50 +316,32 @@ export const pluginHandlers: Pick<InvokeHandlers, PluginChannel> = {
   },
   'plugin:load': {
     access: 'current-project',
-    check: (raw) => {
-      const [projectPath, filename] = strings('plugin:load', raw, 2)
-      return [projectPath, filename]
-    },
+    check: (raw) => [stringArg('plugin:load', raw, 0), stringArg('plugin:load', raw, 1)],
     run: loadPluginFile
   },
   'plugin:parse': {
     access: 'none',
-    check: (raw) => {
-      const [content] = strings('plugin:parse', raw, 1)
-      return [content]
-    },
+    check: (raw) => [stringArg('plugin:parse', raw, 0)],
     run: parsePluginText
   },
   'plugin:read-raw': {
     access: 'current-project',
-    check: (raw) => {
-      const [projectPath, filename] = strings('plugin:read-raw', raw, 2)
-      return [projectPath, filename]
-    },
+    check: (raw) => [stringArg('plugin:read-raw', raw, 0), stringArg('plugin:read-raw', raw, 1)],
     run: readRawPlugin
   },
   'plugin:list': {
     access: 'current-project',
-    check: (raw) => {
-      const [projectPath] = strings('plugin:list', raw, 1)
-      return [projectPath]
-    },
+    check: (raw) => [stringArg('plugin:list', raw, 0)],
     run: listPluginFiles
   },
   'plugin:read-by-path': {
     access: 'granted-read',
-    check: (raw) => {
-      const [filePath] = strings('plugin:read-by-path', raw, 1)
-      return [filePath]
-    },
+    check: (raw) => [stringArg('plugin:read-by-path', raw, 0)],
     run: readFileByPath
   },
   'plugin:scan-headers': {
     access: 'current-project',
-    check: (raw) => {
-      const [projectPath] = strings('plugin:scan-headers', raw, 1)
-      return [projectPath]
-    },
+    check: (raw) => [stringArg('plugin:scan-headers', raw, 0)],
     run: scanPluginHeaders
   }
 }

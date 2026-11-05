@@ -41,14 +41,26 @@ function tagRegex(rest: string, flags = ''): RegExp {
 }
 
 /**
+`value`, which is always there: a capture group that takes part in every match, or an entry
+inside a table's bounds. A missing one throws a `TypeError`.
+*/
+function present<T>(value: T | undefined): T {
+  if (value === undefined) throw new TypeError('A value the parser always reads is missing')
+  return value
+}
+
+/**
 nextNonWs[i]: first index >= i of `text` that is not whitespace (the length if none).
 */
 function nextNonWsTable(text: string): Int32Array {
   const n = text.length
   const nextNonWs = new Int32Array(n + 1)
-  nextNonWs[n] = n
-  for (let index = n - 1; index >= 0; index--)
-    nextNonWs[index] = /\s/.test(text[index]) ? nextNonWs[index + 1] : index
+  let next = n
+  nextNonWs[n] = next
+  for (let index = n - 1; index >= 0; index--) {
+    if (!/\s/.test(text.charAt(index))) next = index
+    nextNonWs[index] = next
+  }
   return nextNonWs
 }
 
@@ -81,7 +93,7 @@ export function matchHelp(header: string): string | undefined {
   if (m === null) return undefined
   const s0 = m.index + m[0].length
   let e = s0
-  while (e < header.length && /\s/.test(header[e])) e++
+  while (e < header.length && /\s/.test(header.charAt(e))) e++
   const end = firstEnd(header, HELP_END, e)
   if (end !== -1) return header.slice(e, end)
   // The regex gives back leading whitespace to reach an end inside it, capturing nothing
@@ -146,10 +158,10 @@ export function joinStarLines(text: string): string {
   let copied = 0
   for (let index = 0; index < text.length; index++) {
     if (text[index] !== '\n') continue
-    const star = nextNonWs[index + 1]
+    const star = present(nextNonWs[index + 1])
     if (text[star] !== '*') continue
     out += text.slice(copied, index) + ' '
-    copied = nextNonWs[star + 1]
+    copied = present(nextNonWs[star + 1])
     index = copied - 1
   }
   return out + text.slice(copied)
@@ -350,7 +362,7 @@ export class PluginParser {
     let minIndent = Infinity
     for (const line of lines) {
       if (line.trim().length === 0) continue
-      const indent = /^(\s*)/.exec(line)?.[1].length ?? 0
+      const indent = line.length - line.trimStart().length
       if (indent < minIndent) minIndent = indent
     }
     if (minIndent > 0 && minIndent < Infinity) {
@@ -497,19 +509,17 @@ export class PluginParser {
       tagRegex(String.raw`requiredAssets(?!\S)[^\S\r\n]*(.*?)(?=\n|\r|\*\/|$)`, 'gi')
     )
     for (const match of requiredAssetMatches) {
-      const value = stripTrailingStar(match[1]).trim()
+      const value = stripTrailingStar(present(match[1])).trim()
       if (value) meta.requiredAssets.push(value)
     }
 
     // Parse @noteParam groups
     // Each @noteParam starts a new group; subsequent @noteType/@noteDir/@noteData/@noteRequire belong to it
     const noteParamMatches = this.matchTagValues(header, 'noteParam')
-    for (let index = 0; index < noteParamMatches.length; index++) {
-      const npMatch = noteParamMatches[index]
+    for (const [index, npMatch] of noteParamMatches.entries()) {
       // Get the text between this @noteParam and the next one (or end of header)
       const startIndex = npMatch.end
-      const endIndex =
-        index + 1 < noteParamMatches.length ? noteParamMatches[index + 1].index : header.length
+      const endIndex = noteParamMatches[index + 1]?.index ?? header.length
       const groupBlock = header.slice(startIndex, endIndex)
 
       const noteParam: NoteParam = {
@@ -581,10 +591,10 @@ export class PluginParser {
     let match
 
     while ((match = paramRegex.exec(header)) !== null) {
-      const rawParamName = stripTrailingStar(match[1]).trim()
+      const rawParamName = stripTrailingStar(present(match[1])).trim()
       // Skip empty @param lines (used as visual separators)
       if (!rawParamName) continue
-      const paramBlock = match[2]
+      const paramBlock = present(match[2])
 
       // Detect single-line compact format (all attributes on one line with the @param)
       const isCompact = this.isCompactFormat(rawParamName)
@@ -622,14 +632,14 @@ export class PluginParser {
 
       // Parse type-specific attributes
       const minMatch = effectiveBlock.match(tagRegex(String.raw`min\s+(-?[\d.]+)`, 'i'))
-      if (minMatch) param.min = parseFloat(minMatch[1])
+      if (minMatch) param.min = parseFloat(present(minMatch[1]))
 
       const maxMatch = effectiveBlock.match(tagRegex(String.raw`max\s+(-?[\d.]+)`, 'i'))
-      if (maxMatch) param.max = parseFloat(maxMatch[1])
+      if (maxMatch) param.max = parseFloat(present(maxMatch[1]))
 
       // Parse @decimals
       const decimalsMatch = effectiveBlock.match(tagRegex(String.raw`decimals\s+(\d+)`, 'i'))
-      if (decimalsMatch) param.decimals = parseInt(decimalsMatch[1], 10)
+      if (decimalsMatch) param.decimals = parseInt(present(decimalsMatch[1]), 10)
 
       // Parse @parent for nested parameters
       const parent = this.extractTag(effectiveBlock, 'parent')
@@ -653,7 +663,7 @@ export class PluginParser {
       if (!param.structType) {
         const structMatch = effectiveBlock.match(tagRegex(String.raw`type\s+struct<(\w+)>`, 'i'))
         if (structMatch) {
-          param.structType = structMatch[1]
+          param.structType = present(structMatch[1])
         }
       }
 
@@ -683,9 +693,9 @@ export class PluginParser {
     let match
 
     while ((match = commandRegex.exec(header)) !== null) {
-      const commandName = match[1]
+      const commandName = present(match[1])
       if (!commandName) continue
-      const commandBlock = match[2]
+      const commandBlock = present(match[2])
       // The command's own tags come before its first @arg
       const firstArg = commandBlock.search(tagRegex(String.raw`arg\s`))
       const commandHead = firstArg === -1 ? commandBlock : commandBlock.slice(0, firstArg)
@@ -715,9 +725,9 @@ export class PluginParser {
     let match
 
     while ((match = argRegex.exec(block)) !== null) {
-      const argName = stripTrailingStar(match[1]).trim()
+      const argName = stripTrailingStar(present(match[1])).trim()
       if (!argName) continue
-      const argBlock = match[2]
+      const argBlock = present(match[2])
 
       const rawTypeString = this.extractTag(argBlock, 'type') || 'string'
       const { type, arrayType, structType: arrayStructType } = this.parseParamTypeEx(rawTypeString)
@@ -740,13 +750,13 @@ export class PluginParser {
 
       // Parse type-specific attributes for args
       const minMatch = argBlock.match(tagRegex(String.raw`min\s+(-?[\d.]+)`, 'i'))
-      if (minMatch) arg.min = parseFloat(minMatch[1])
+      if (minMatch) arg.min = parseFloat(present(minMatch[1]))
 
       const maxMatch = argBlock.match(tagRegex(String.raw`max\s+(-?[\d.]+)`, 'i'))
-      if (maxMatch) arg.max = parseFloat(maxMatch[1])
+      if (maxMatch) arg.max = parseFloat(present(maxMatch[1]))
 
       const decimalsMatch = argBlock.match(tagRegex(String.raw`decimals\s+(\d+)`, 'i'))
-      if (decimalsMatch) arg.decimals = parseInt(decimalsMatch[1], 10)
+      if (decimalsMatch) arg.decimals = parseInt(present(decimalsMatch[1]), 10)
 
       const dir = this.tagValue(argBlock, 'dir')
       if (dir) arg.dir = dir
@@ -758,7 +768,7 @@ export class PluginParser {
       // Parse struct reference for args (only if not set by array type)
       if (!arg.structType) {
         const structMatch = argBlock.match(tagRegex(String.raw`type\s+struct<(\w+)>`, 'i'))
-        if (structMatch) arg.structType = structMatch[1]
+        if (structMatch) arg.structType = present(structMatch[1])
       }
 
       // Parse options for select/combo type
@@ -790,7 +800,7 @@ export class PluginParser {
       const own = blocks.filter(([n]) => n === name)
       const structBlock = (own.find(([, lang]) => lang === '') ??
         own.find(([, lang]) => lang === 'en') ??
-        own[0])[2]
+        present(own[0]))[2]
       return {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString() + Math.random(),
         name,
@@ -809,7 +819,7 @@ export class PluginParser {
   */
   private static tagValue(block: string, tag: string): string | null {
     const match = block.match(tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i'))
-    return match ? match[1].trim() : null
+    return match ? present(match[1]).trim() : null
   }
 
   /**
@@ -892,7 +902,7 @@ export class PluginParser {
       // Array of structs: struct<Name>[]
       const structArrayMatch = /^struct<(\w+)>$/i.exec(baseString)
       if (structArrayMatch) {
-        return { type: 'array', arrayType: 'struct', structType: structArrayMatch[1] }
+        return { type: 'array', arrayType: 'struct', structType: present(structArrayMatch[1]) }
       }
 
       // Array of other types
@@ -903,7 +913,7 @@ export class PluginParser {
     // Check for struct (non-array)
     const structMatch = /^struct<(\w+)>$/i.exec(trimmed)
     if (structMatch) {
-      return { type: 'struct', structType: structMatch[1] }
+      return { type: 'struct', structType: present(structMatch[1]) }
     }
 
     return { type: this.parseSingleType(normalized) }
@@ -966,7 +976,7 @@ export class PluginParser {
     let match
 
     while ((match = optionRegex.exec(block)) !== null) {
-      const optText = match[1].trim()
+      const optText = present(match[1]).trim()
       // Only look for @value between this @option and the next @option (or end of block)
       const afterOption = match.index + match[0].length
       const nextOptionMatch = block.slice(afterOption).search(tagRegex(String.raw`option\s`, 'i'))
