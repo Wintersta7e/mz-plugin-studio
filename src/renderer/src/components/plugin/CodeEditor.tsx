@@ -14,15 +14,15 @@ export function CodeEditor() {
   const customCode = usePluginStore((s) => s.plugin.customCode)
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
-  const rawMode = useActiveRawMode()
+  const isRawMode = useActiveRawMode()
 
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
   const completionDisposableRef = useRef<IDisposable | null>(null)
 
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
-  const editorWordWrap = useSettingsStore((s) => s.editorWordWrap)
-  const editorMinimap = useSettingsStore((s) => s.editorMinimap)
-  const editorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
+  const isEditorWordWrap = useSettingsStore((s) => s.editorWordWrap)
+  const isEditorMinimap = useSettingsStore((s) => s.editorMinimap)
+  const isEditorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
   const theme = useSettingsStore((s) => s.theme)
 
   const handleBeforeMount = useCallback((monaco: Monaco) => {
@@ -51,16 +51,16 @@ export function CodeEditor() {
 
   const editorOptions = useMemo(
     () => ({
-      readOnly: rawMode,
-      minimap: { enabled: editorMinimap },
+      readOnly: isRawMode,
+      minimap: { enabled: isEditorMinimap },
       fontSize: editorFontSize,
-      lineNumbers: editorLineNumbers ? ('on' as const) : ('off' as const),
-      wordWrap: editorWordWrap ? ('on' as const) : ('off' as const),
+      lineNumbers: isEditorLineNumbers ? ('on' as const) : ('off' as const),
+      wordWrap: isEditorWordWrap ? ('on' as const) : ('off' as const),
       automaticLayout: true,
       scrollBeyondLastLine: false,
       padding: { top: 16, bottom: 16 }
     }),
-    [rawMode, editorMinimap, editorFontSize, editorLineNumbers, editorWordWrap]
+    [isRawMode, isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
   )
 
   const handleInsertTemplate = (code: string) => {
@@ -116,7 +116,7 @@ export function CodeEditor() {
         </div>
         {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
         <span
-          title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+          title={isRawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
           className="inline-flex shrink-0"
         >
           <Button
@@ -124,8 +124,8 @@ export function CodeEditor() {
             size="sm"
             onClick={() => setIsTemplateOpen(true)}
             data-testid="template-inserter-open"
-            disabled={rawMode}
-            title={rawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
+            disabled={isRawMode}
+            title={isRawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
             className="shrink-0 gap-2"
           >
             <Wand2 className="h-4 w-4" />
@@ -134,7 +134,7 @@ export function CodeEditor() {
         </span>
       </div>
 
-      {rawMode && (
+      {isRawMode && (
         <p className="px-4 pb-2 text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
       )}
 
@@ -164,7 +164,7 @@ export function CodeEditor() {
         open={isTemplateOpen}
         onClose={() => setIsTemplateOpen(false)}
         onInsert={handleInsertTemplate}
-        readOnly={rawMode}
+        readOnly={isRawMode}
       />
     </div>
   )

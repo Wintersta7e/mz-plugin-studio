@@ -1694,9 +1694,6 @@
     },
     "max-lines-per-function": {
       "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 4
     }
   },
   "src/renderer/src/components/plugin/CommandBuilder.tsx": {
@@ -1724,25 +1721,13 @@
     "sonarjs/prefer-read-only-props": {
       "count": 2
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
-      "count": 19
+      "count": 14
     },
     "unicorn/no-array-reduce": {
       "count": 1
     },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
     "unicorn/prefer-early-return": {
-      "count": 1
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
       "count": 1
     }
   },
@@ -1777,11 +1762,8 @@
     "sonarjs/prefer-read-only-props": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
     "unicorn/name-replacements": {
-      "count": 19
+      "count": 18
     },
     "unicorn/no-negated-condition": {
       "count": 1
@@ -1805,9 +1787,6 @@
     },
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
     },
     "@typescript-eslint/prefer-nullish-coalescing": {
       "count": 7
@@ -1842,12 +1821,6 @@
     "react-hooks/set-state-in-effect": {
       "count": 1
     },
-    "regexp/prefer-w": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
@@ -1858,18 +1831,12 @@
       "count": 2
     },
     "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 33
-    },
-    "unicorn/no-computed-property-existence-check": {
       "count": 1
     },
-    "unicorn/no-negated-condition": {
-      "count": 3
+    "unicorn/name-replacements": {
+      "count": 28
     },
-    "unicorn/prefer-dom-node-append": {
+    "unicorn/no-computed-property-existence-check": {
       "count": 1
     },
     "unicorn/prefer-dom-node-remove": {
@@ -1883,15 +1850,6 @@
     },
     "unicorn/prefer-spread": {
       "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "unicorn/switch-case-braces": {
-      "count": 5
     }
   },
   "src/renderer/src/components/plugin/PluginBrowser.tsx": {
@@ -1940,23 +1898,11 @@
     "sonarjs/prefer-read-only-props": {
       "count": 1
     },
-    "unicorn/catch-error-name": {
-      "count": 3
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
-      "count": 7
+      "count": 3
     },
     "unicorn/no-array-sort": {
       "count": 1
-    },
-    "unicorn/no-declarations-before-early-exit": {
-      "count": 1
-    },
-    "unicorn/no-for-each": {
-      "count": 2
     },
     "unicorn/prefer-await": {
       "count": 1
@@ -1969,9 +1915,6 @@
     },
     "unicorn/prefer-simple-condition-first": {
       "count": 1
-    },
-    "unicorn/prefer-smaller-scope": {
-      "count": 2
     },
     "unicorn/prefer-switch": {
       "count": 1
@@ -2005,14 +1948,8 @@
     "sonarjs/prefer-read-only-props": {
       "count": 2
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
-      "count": 11
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
+      "count": 10
     }
   },
   "src/renderer/src/components/plugin/StructDefaultEditor.tsx": {
@@ -2038,10 +1975,7 @@
       "count": 2
     },
     "unicorn/name-replacements": {
-      "count": 7
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
+      "count": 3
     },
     "unicorn/prefer-ternary": {
       "count": 1
@@ -2050,9 +1984,6 @@
   "src/renderer/src/components/plugin/TemplateInserter.tsx": {
     "@eslint-react/dom-no-missing-button-type": {
       "count": 6
-    },
-    "@eslint-react/jsx-no-useless-fragment": {
-      "count": 1
     },
     "@eslint-react/no-array-index-key": {
       "count": 7
@@ -2071,9 +2002,6 @@
     },
     "@typescript-eslint/prefer-nullish-coalescing": {
       "count": 4
-    },
-    "@typescript-eslint/prefer-regexp-exec": {
-      "count": 1
     },
     "@typescript-eslint/promise-function-async": {
       "count": 1
@@ -2118,10 +2046,10 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 2
+      "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 9
+      "count": 5
     },
     "unicorn/no-array-sort": {
       "count": 2
@@ -2133,7 +2061,7 @@
       "count": 1
     },
     "unicorn/no-useless-undefined": {
-      "count": 3
+      "count": 2
     },
     "unicorn/prefer-early-return": {
       "count": 2
@@ -2143,12 +2071,6 @@
     },
     "unicorn/prefer-switch": {
       "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 4
-    },
-    "unicorn/switch-case-braces": {
-      "count": 8
     }
   },
   "src/renderer/src/components/plugin/TypeFields.tsx": {
@@ -2171,21 +2093,7 @@
       "count": 3
     },
     "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    }
-  },
-  "src/renderer/src/components/plugin/param-types.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
+      "count": 2
     }
   },
   "src/renderer/src/components/preview/CodePreview.tsx": {

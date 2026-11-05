@@ -39,8 +39,8 @@ export function MetaEditor() {
     normalizeLines
   )
   // Raw mode keeps the file's language blocks, so their fields are read-only
-  const rawMode = useActiveRawMode()
-  const localizedReadOnly = rawMode
+  const isRawMode = useActiveRawMode()
+  const localizedReadOnly = isRawMode
     ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
     : { readOnly: false }
   // A plugin loaded from a file is saved back to that file, so its name stays the file's
@@ -53,10 +53,10 @@ export function MetaEditor() {
         }
       : { readOnly: false }
   // A file with no main annotation block cannot take header changes in raw mode
-  const headerReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useHeaderReadOnly()
   const headerFieldset = {
-    disabled: headerReadOnly,
-    title: headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+    disabled: isHeaderReadOnly,
+    title: isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
   }
 
   const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
@@ -95,7 +95,7 @@ export function MetaEditor() {
   return (
     <div className="space-y-4 p-4">
       <h2 className="text-lg font-semibold">Plugin Metadata</h2>
-      {headerReadOnly && (
+      {isHeaderReadOnly && (
         <p className="text-sm text-muted-foreground">{RAW_MODE_HEADER_READ_ONLY_NOTICE}</p>
       )}
 
@@ -204,7 +204,7 @@ export function MetaEditor() {
             </TabsContent>
 
             <TabsContent value="ja" className="space-y-4">
-              {rawMode && (
+              {isRawMode && (
                 <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
               )}
               <div className="space-y-2">
@@ -233,7 +233,7 @@ export function MetaEditor() {
             </TabsContent>
 
             <TabsContent value="zh" className="space-y-4">
-              {rawMode && (
+              {isRawMode && (
                 <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
               )}
               <div className="space-y-2">
@@ -369,18 +369,18 @@ export function MetaEditor() {
             </div>
             {(meta.noteParams || []).length > 0 && (
               <div className="space-y-3 rounded-md border border-border p-3">
-                {(meta.noteParams || []).map((np, idx) => (
+                {(meta.noteParams || []).map((np, index) => (
                   <NoteParamRow
-                    key={idx}
+                    key={index}
                     noteParam={np}
                     onUpdate={(updates) => {
                       const current = [...(meta.noteParams || [])]
-                      current[idx] = { ...current[idx], ...updates }
+                      current[index] = { ...current[index], ...updates }
                       updateMeta({ noteParams: current })
                     }}
                     onDelete={() => {
                       const current = [...(meta.noteParams || [])]
-                      current.splice(idx, 1)
+                      current.splice(index, 1)
                       updateMeta({ noteParams: current })
                     }}
                   />

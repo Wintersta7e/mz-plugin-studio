@@ -59,7 +59,7 @@ export function StructBuilder() {
   const removeStructParam = usePluginStore((s) => s.removeStructParam)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const headerReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useHeaderReadOnly()
 
   const handleAddStruct = () => {
     const struct = createEmptyStruct(structs.map((s) => s.name))
@@ -69,8 +69,8 @@ export function StructBuilder() {
 
   return (
     <fieldset
-      disabled={headerReadOnly}
-      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
+      disabled={isHeaderReadOnly}
+      title={isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
       className="flex h-full min-w-0 flex-col"
     >
       <div className="flex items-center justify-between border-b border-border p-4">
@@ -80,7 +80,7 @@ export function StructBuilder() {
           Add Struct
         </Button>
       </div>
-      {headerReadOnly && (
+      {isHeaderReadOnly && (
         <p className="px-4 pt-2 text-sm text-muted-foreground">
           {RAW_MODE_HEADER_READ_ONLY_NOTICE}
         </p>
@@ -151,7 +151,7 @@ function StructCard({
         <div className="flex-1">
           <span className="font-medium">{struct.name}</span>
           <span className="ml-2 text-sm text-muted-foreground">
-            ({struct.parameters.length} field{struct.parameters.length !== 1 ? 's' : ''})
+            ({struct.parameters.length} field{struct.parameters.length === 1 ? '' : 's'})
           </span>
         </div>
         <Button
@@ -293,8 +293,8 @@ function StructParamRow({ param, onUpdate, onRemove, allStructs }: StructParamRo
                 <Input
                   value={String(param.default || '')}
                   onChange={(e) => {
-                    const val = param.type === 'number' ? Number(e.target.value) : e.target.value
-                    onUpdate({ default: val })
+                    const value = param.type === 'number' ? Number(e.target.value) : e.target.value
+                    onUpdate({ default: value })
                   }}
                   type={param.type === 'number' ? 'number' : 'text'}
                   placeholder="Default"

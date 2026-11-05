@@ -108,7 +108,7 @@ function highlightCode(code: string): React.ReactNode {
     let partIndex = 0
 
     // Comments
-    const commentMatch = remaining.match(/^(.*?)(\/\/.*)$/)
+    const commentMatch = /^(.*?)(\/\/.*)$/.exec(remaining)
     if (commentMatch) {
       remaining = commentMatch[1]
       parts.push(
@@ -164,12 +164,12 @@ function highlightCode(code: string): React.ReactNode {
       // Filter overlapping tokens (strings take precedence)
       const filteredTokens: typeof tokens = []
       for (const token of tokens) {
-        const overlaps = filteredTokens.some(
+        const isOverlaps = filteredTokens.some(
           (t) =>
             (token.start >= t.start && token.start < t.end) ||
             (token.end > t.start && token.end <= t.end)
         )
-        if (!overlaps) {
+        if (!isOverlaps) {
           filteredTokens.push(token)
         }
       }
@@ -312,8 +312,7 @@ export function TemplateInserter({
 
   // Get selected template
   const selectedTemplate = useMemo(() => {
-    if (!selectedTemplateId) return undefined
-    return getTemplate(selectedTemplateId)
+    return selectedTemplateId ? getTemplate(selectedTemplateId) : undefined
   }, [selectedTemplateId])
 
   // Get class options grouped by category, sorted by popularity (descending) then name
@@ -326,8 +325,7 @@ export function TemplateInserter({
         .sort((a, b) => {
           const popA = a.popularity ?? 0
           const popB = b.popularity ?? 0
-          if (popB !== popA) return popB - popA
-          return a.name.localeCompare(b.name)
+          return popB === popA ? a.name.localeCompare(b.name) : popB - popA
         })
         .map((c) => ({ value: c.name, label: c.name }))
     }))
@@ -344,8 +342,7 @@ export function TemplateInserter({
       .sort((a, b) => {
         const popA = a.popularity ?? 0
         const popB = b.popularity ?? 0
-        if (popB !== popA) return popB - popA
-        return a.name.localeCompare(b.name)
+        return popB === popA ? a.name.localeCompare(b.name) : popB - popA
       })
       .map((method) => ({
         value: method.name,
@@ -398,7 +395,7 @@ export function TemplateInserter({
   // Reset method when class changes
   useEffect(() => {
     if (selectedClassName) {
-      setFieldValues((prev) => ({ ...prev, methodName: '' }))
+      setFieldValues((previous) => ({ ...previous, methodName: '' }))
     }
   }, [selectedClassName])
 
@@ -459,17 +456,16 @@ export function TemplateInserter({
   }
 
   const handleFieldChange = (fieldId: string, value: unknown) => {
-    setFieldValues((prev) => ({ ...prev, [fieldId]: value }))
+    setFieldValues((previous) => ({ ...previous, [fieldId]: value }))
   }
 
   // Check if a field should be visible based on dependsOn
   const isFieldVisible = (field: TemplateField): boolean => {
     if (!field.dependsOn) return true
-    const depValue = fieldValues[field.dependsOn.field]
-    if (field.dependsOn.value === undefined) {
-      return depValue !== undefined && depValue !== ''
-    }
-    return depValue === field.dependsOn.value
+    const dependencyValue = fieldValues[field.dependsOn.field]
+    return field.dependsOn.value === undefined
+      ? dependencyValue !== undefined && dependencyValue !== ''
+      : dependencyValue === field.dependsOn.value
   }
 
   // Render a field based on its type
@@ -479,7 +475,7 @@ export function TemplateInserter({
     const value = fieldValues[field.id]
 
     switch (field.type) {
-      case 'text':
+      case 'text': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -506,8 +502,9 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      case 'number':
+      case 'number': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -535,8 +532,9 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      case 'boolean':
+      case 'boolean': {
         return (
           <div
             key={field.id}
@@ -564,8 +562,9 @@ export function TemplateInserter({
             />
           </div>
         )
+      }
 
-      case 'select':
+      case 'select': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -600,8 +599,9 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      case 'class-select':
+      case 'class-select': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -643,8 +643,9 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      case 'method-select':
+      case 'method-select': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -686,8 +687,9 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      case 'key-select':
+      case 'key-select': {
         return (
           <div key={field.id} className="space-y-1.5">
             <Label htmlFor={field.id} className="text-sm flex items-center gap-1.5">
@@ -736,9 +738,11 @@ export function TemplateInserter({
             {field.help && <p className="text-xs text-muted-foreground">{field.help}</p>}
           </div>
         )
+      }
 
-      default:
+      default: {
         return null
+      }
     }
   }
 
@@ -916,12 +920,12 @@ export function TemplateInserter({
                       ref={searchInputRef}
                       value={searchQuery}
                       onChange={(e) => {
-                        const val = e.target.value
-                        setSearchQuery(val)
-                        if (val.trim() && viewMode === 'category') {
+                        const value = e.target.value
+                        setSearchQuery(value)
+                        if (value.trim() && viewMode === 'category') {
                           setViewMode('all')
                           setSelectedTemplateId(null)
-                        } else if (!val.trim() && viewMode === 'all') {
+                        } else if (!value.trim() && viewMode === 'all') {
                           setViewMode('category')
                         }
                       }}
@@ -1038,35 +1042,33 @@ export function TemplateInserter({
               {/* Configuration Panel */}
               <div className="flex flex-1 flex-col overflow-hidden">
                 {selectedTemplate ? (
-                  <>
-                    <div className="flex-1 overflow-y-auto p-6">
-                      <div className="mb-6">
-                        <h3 className="text-base font-semibold">{selectedTemplate.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {selectedTemplate.description}
-                        </p>
-                      </div>
-
-                      {selectedTemplate.fields.length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                            <span className="h-px flex-1 bg-border" />
-                            <span>Configuration</span>
-                            <span className="h-px flex-1 bg-border" />
-                          </div>
-                          <TooltipProvider delayDuration={300}>
-                            <div className="grid gap-4">
-                              {selectedTemplate.fields.map((field) => renderField(field))}
-                            </div>
-                          </TooltipProvider>
-                        </div>
-                      ) : (
-                        <div className="rounded-lg border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
-                          No configuration required for this template
-                        </div>
-                      )}
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="mb-6">
+                      <h3 className="text-base font-semibold">{selectedTemplate.name}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedTemplate.description}
+                      </p>
                     </div>
-                  </>
+
+                    {selectedTemplate.fields.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                          <span className="h-px flex-1 bg-border" />
+                          <span>Configuration</span>
+                          <span className="h-px flex-1 bg-border" />
+                        </div>
+                        <TooltipProvider delayDuration={300}>
+                          <div className="grid gap-4">
+                            {selectedTemplate.fields.map((field) => renderField(field))}
+                          </div>
+                        </TooltipProvider>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
+                        No configuration required for this template
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground p-6">
                     <div className="mb-4 rounded-full bg-muted/50 p-4">

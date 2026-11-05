@@ -10,11 +10,17 @@ import { StructDefaultEditor } from './StructDefaultEditor'
 interface TypeFieldsProps {
   param: PluginParameter
   onUpdate: (updates: Partial<PluginParameter>) => void
-  /** The structs a struct or struct array can hold */
+  /**
+  The structs a struct or struct array can hold
+  */
   structNames: string[]
-  /** Given, a struct also edits its default, so picking another struct clears the old one */
+  /**
+  Given, a struct also edits its default, so picking another struct clears the old one
+  */
   structDefaults?: PluginStruct[]
-  /** Smaller fields for the rows of a command argument or a struct field */
+  /**
+  Smaller fields for the rows of a command argument or a struct field
+  */
   compact?: boolean
   className?: string
 }
@@ -37,9 +43,9 @@ const COMPACT: Sizes = {
 }
 
 /**
- * The fields a parameter, command argument or struct field needs for its type to be written:
- * the options of a select or combo, the struct of a struct, the element type of an array.
- */
+The fields a parameter, command argument or struct field needs for its type to be written:
+the options of a select or combo, the struct of a struct, the element type of an array.
+*/
 export function TypeFields({
   param,
   onUpdate,
@@ -72,7 +78,7 @@ export function TypeFields({
           <StructDefaultEditor
             struct={structDef}
             value={typeof param.default === 'string' ? param.default : ''}
-            onChange={(jsonStr) => onUpdate({ default: jsonStr })}
+            onChange={(jsonString) => onUpdate({ default: jsonString })}
           />
         )}
       </div>
@@ -163,7 +169,9 @@ function StructPicker({
   )
 }
 
-/** Options editor that keeps the text as typed so a value|label is not eaten on keystroke */
+/**
+Options editor that keeps the text as typed so a value|label is not eaten on keystroke
+*/
 function OptionsEditor({
   param,
   onUpdate,

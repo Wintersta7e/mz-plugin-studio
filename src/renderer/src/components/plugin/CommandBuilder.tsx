@@ -20,9 +20,11 @@ import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/r
 import { ARG_TYPES } from './param-types'
 import { TypeFields } from './TypeFields'
 
-/** The parts of a command's skeleton that name it, escaped exactly as the skeleton writes them. */
-function skeletonMarkers(cmd: PluginCommand): string[] {
-  const [header, register, todo] = generateCommandSkeleton(cmd).split('\n')
+/**
+The parts of a command's skeleton that name it, escaped exactly as the skeleton writes them.
+*/
+function skeletonMarkers(command: PluginCommand): string[] {
+  const [header, register, todo] = generateCommandSkeleton(command).split('\n', 3)
   const call = register.slice(
     register.indexOf('registerCommand('),
     register.lastIndexOf("', function(args) {") + 1
@@ -46,23 +48,23 @@ export function CommandBuilder() {
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const headerReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useHeaderReadOnly()
 
   const handleAddCommand = () => {
-    const cmd = createEmptyCommand()
-    addCommand(cmd)
-    setExpandedId(cmd.id)
+    const command = createEmptyCommand()
+    addCommand(command)
+    setExpandedId(command.id)
 
     // Inject command skeleton into customCode
-    const skeleton = generateCommandSkeleton(cmd)
+    const skeleton = generateCommandSkeleton(command)
     const current = customCode || ''
     setCustomCode(current ? `${current}\n\n${skeleton}` : skeleton)
   }
 
   return (
     <fieldset
-      disabled={headerReadOnly}
-      title={headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
+      disabled={isHeaderReadOnly}
+      title={isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined}
       className="flex h-full min-w-0 flex-col"
     >
       <div className="flex items-center justify-between border-b border-border p-4">
@@ -72,7 +74,7 @@ export function CommandBuilder() {
           Add Command
         </Button>
       </div>
-      {headerReadOnly && (
+      {isHeaderReadOnly && (
         <p className="px-4 pt-2 text-sm text-muted-foreground">
           {RAW_MODE_HEADER_READ_ONLY_NOTICE}
         </p>
@@ -86,23 +88,23 @@ export function CommandBuilder() {
               <p className="text-sm">Click &quot;Add Command&quot; to create one</p>
             </div>
           ) : (
-            commands.map((cmd) => (
+            commands.map((command) => (
               <CommandCard
-                key={cmd.id}
-                command={cmd}
-                expanded={expandedId === cmd.id}
+                key={command.id}
+                command={command}
+                expanded={expandedId === command.id}
                 structNames={structNames}
-                onToggle={() => setExpandedId(expandedId === cmd.id ? null : cmd.id)}
+                onToggle={() => setExpandedId(expandedId === command.id ? null : command.id)}
                 onUpdate={(updates) => {
-                  updateCommand(cmd.id, updates)
+                  updateCommand(command.id, updates)
                   // Sync skeleton in customCode when command name changes
-                  if (updates.name !== undefined && updates.name !== cmd.name) {
+                  if (updates.name !== undefined && updates.name !== command.name) {
                     const current = customCode || ''
-                    const before = skeletonMarkers(cmd)
-                    const after = skeletonMarkers({ ...cmd, name: updates.name })
+                    const before = skeletonMarkers(command)
+                    const after = skeletonMarkers({ ...command, name: updates.name })
                     // A function inserts the name literally: a string would expand $' $` $& in it
                     const updated = before.reduce(
-                      (code, marker, i) => code.replace(marker, () => after[i]),
+                      (code, marker, index) => code.replace(marker, () => after[index]),
                       current
                     )
                     if (updated !== current) {
@@ -110,10 +112,10 @@ export function CommandBuilder() {
                     }
                   }
                 }}
-                onDelete={() => removeCommand(cmd.id)}
-                onAddArg={() => addCommandArg(cmd.id, createEmptyParameter())}
-                onUpdateArg={(argId, updates) => updateCommandArg(cmd.id, argId, updates)}
-                onRemoveArg={(argId) => removeCommandArg(cmd.id, argId)}
+                onDelete={() => removeCommand(command.id)}
+                onAddArg={() => addCommandArg(command.id, createEmptyParameter())}
+                onUpdateArg={(argId, updates) => updateCommandArg(command.id, argId, updates)}
+                onRemoveArg={(argId) => removeCommandArg(command.id, argId)}
               />
             ))
           )}
@@ -159,7 +161,7 @@ function CommandCard({
         <div className="flex-1">
           <span className="font-medium">{command.text || command.name}</span>
           <span className="ml-2 text-sm text-muted-foreground">
-            ({command.args.length} arg{command.args.length !== 1 ? 's' : ''})
+            ({command.args.length} arg{command.args.length === 1 ? '' : 's'})
           </span>
         </div>
         <Button
@@ -324,8 +326,8 @@ function ArgumentRow({ arg, structNames, onUpdate, onRemove }: ArgumentRowProps)
               <Input
                 value={String(arg.default || '')}
                 onChange={(e) => {
-                  const val = arg.type === 'number' ? Number(e.target.value) : e.target.value
-                  onUpdate({ default: val })
+                  const value = arg.type === 'number' ? Number(e.target.value) : e.target.value
+                  onUpdate({ default: value })
                 }}
                 type={arg.type === 'number' ? 'number' : 'text'}
                 placeholder="Default"

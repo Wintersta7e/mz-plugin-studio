@@ -16,7 +16,7 @@ import type { PluginStruct, PluginParameter } from '../../types/plugin'
 interface StructDefaultEditorProps {
   struct: PluginStruct
   value: string
-  onChange: (jsonStr: string) => void
+  onChange: (jsonString: string) => void
 }
 
 const NUMERIC_TYPES = new Set([
@@ -48,8 +48,8 @@ export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEd
     setFields(parseStructDefault(typeof value === 'string' ? value : ''))
   }, [value, struct.id])
 
-  const updateField = (name: string, val: string) => {
-    const next = { ...fields, [name]: val }
+  const updateField = (name: string, value_: string) => {
+    const next = { ...fields, [name]: value_ }
     setFields(next)
     onChange(buildStructDefault(struct, next))
   }
@@ -84,7 +84,7 @@ export function StructDefaultEditor({ struct, value, onChange }: StructDefaultEd
               key={field.id}
               field={field}
               value={fields[field.name] ?? ''}
-              onChange={(val) => updateField(field.name, val)}
+              onChange={(value_) => updateField(field.name, value_)}
             />
           ))}
         </div>
@@ -138,7 +138,7 @@ function StructFieldInput({
 }: {
   field: PluginParameter
   value: string
-  onChange: (val: string) => void
+  onChange: (value_: string) => void
 }) {
   if (field.type === 'boolean') {
     return (
@@ -198,7 +198,7 @@ function StructFieldInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={
-            field.default !== undefined && field.default !== '' ? String(field.default) : '0'
+            field.default === undefined || field.default === '' ? '0' : String(field.default)
           }
           className="h-8 text-xs"
           min={field.min}

@@ -47,14 +47,16 @@ import { TypeFields } from './TypeFields'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
 
-/** Map from param id to param name — lightweight alternative to passing full array (R3-03) */
+/**
+Map from param id to param name — lightweight alternative to passing full array (R3-03)
+*/
 type ParamNameMap = ReadonlyMap<string, string>
 
 function getParamNameError(name: string, paramNames: ParamNameMap, selfId: string): string | null {
   if (!name.trim()) return 'Name is required'
   // Allow section dividers (--- or ===)
   if (/^-{3,}$/.test(name) || /^={3,}$/.test(name)) return null
-  if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+  if (!/^[a-z_$][\w$]*$/i.test(name)) {
     return 'Must be a valid identifier (letters, numbers, _, $)'
   }
   for (const [id, n] of paramNames) {
@@ -72,7 +74,9 @@ const IMPORT_REFUSED: Record<Extract<ParamImportResult, { success: false }>['rea
 
 const plural = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`
 
-/** What an import left out of the file, or null when it loaded all of it. */
+/**
+What an import left out of the file, or null when it loaded all of it.
+*/
 function importReport(result: Extract<ParamImportResult, { success: true }>): string | null {
   const { parameters, skipped, dropped } = result
   if (skipped.length === 0 && dropped.length === 0) return null
@@ -150,8 +154,8 @@ export function ParameterBuilder() {
   const hasSelection = selectedIds.size > 0
 
   const toggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
+    setSelectedIds((previous) => {
+      const next = new Set(previous)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
@@ -159,11 +163,9 @@ export function ParameterBuilder() {
   }, [])
 
   const selectAll = () => {
-    if (selectedIds.size === parameters.length) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(parameters.map((p) => p.id)))
-    }
+    setSelectedIds(
+      selectedIds.size === parameters.length ? new Set() : new Set(parameters.map((p) => p.id))
+    )
   }
 
   const handleDuplicate = () => {
@@ -319,11 +321,11 @@ export function ParameterBuilder() {
     setExpandedId(param.id)
   }
 
-  const headerReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useHeaderReadOnly()
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, id: string) => {
-      if (headerReadOnly) {
+      if (isHeaderReadOnly) {
         e.preventDefault()
         return
       }
@@ -335,11 +337,11 @@ export function ParameterBuilder() {
       const dragImage = document.createElement('div')
       dragImage.style.cssText =
         'position:absolute;top:-1000px;width:200px;height:40px;background:#333;border-radius:8px;'
-      document.body.appendChild(dragImage)
+      document.body.append(dragImage)
       e.dataTransfer.setDragImage(dragImage, 100, 20)
       setTimeout(() => document.body.removeChild(dragImage), 0)
     },
-    [headerReadOnly]
+    [isHeaderReadOnly]
   )
 
   const handleDragEnd = useCallback(() => {
@@ -351,7 +353,7 @@ export function ParameterBuilder() {
   const handleDragOver = useCallback((e: React.DragEvent, targetId: string) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-    setDropTargetId((prev) => (prev !== targetId ? targetId : prev))
+    setDropTargetId((previous) => (previous === targetId ? previous : targetId))
   }, [])
 
   const handleDragLeave = useCallback(() => {
@@ -376,8 +378,8 @@ export function ParameterBuilder() {
   // The selection toolbar and the row checkboxes stay outside the lock: selecting, exporting and
   // saving a preset only read
   const lock = {
-    disabled: headerReadOnly,
-    title: headerReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+    disabled: isHeaderReadOnly,
+    title: isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
   }
 
   return (
@@ -391,7 +393,7 @@ export function ParameterBuilder() {
               Add Parameter
             </Button>
           </div>
-          {headerReadOnly && (
+          {isHeaderReadOnly && (
             <p className="px-4 pb-2 text-sm text-muted-foreground">
               {RAW_MODE_HEADER_READ_ONLY_NOTICE}
             </p>
@@ -417,7 +419,7 @@ export function ParameterBuilder() {
               variant="ghost"
               size="sm"
               onClick={handleDuplicate}
-              disabled={!hasSelection || headerReadOnly}
+              disabled={!hasSelection || isHeaderReadOnly}
               className="text-xs"
             >
               <Copy className="mr-1 h-3.5 w-3.5" /> Duplicate
@@ -427,7 +429,7 @@ export function ParameterBuilder() {
               variant="ghost"
               size="sm"
               onClick={handleBulkDelete}
-              disabled={!hasSelection || headerReadOnly}
+              disabled={!hasSelection || isHeaderReadOnly}
               className="text-xs text-destructive"
             >
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
@@ -451,7 +453,7 @@ export function ParameterBuilder() {
                   variant="ghost"
                   size="sm"
                   className="text-xs"
-                  disabled={headerReadOnly}
+                  disabled={isHeaderReadOnly}
                   data-testid="param-menu"
                 >
                   <Upload className="mr-1 h-3.5 w-3.5" /> Import
@@ -486,7 +488,7 @@ export function ParameterBuilder() {
                       <DropdownMenuItem
                         key={name}
                         onClick={() => handleApplyPreset(name)}
-                        disabled={headerReadOnly}
+                        disabled={isHeaderReadOnly}
                       >
                         {name} ({params.length} params)
                       </DropdownMenuItem>
@@ -514,7 +516,7 @@ export function ParameterBuilder() {
                   param={param}
                   isExpanded={expandedId === param.id}
                   isSelected={selectedIds.has(param.id)}
-                  readOnly={headerReadOnly}
+                  readOnly={isHeaderReadOnly}
                   isDragging={draggedId === param.id}
                   isDropTarget={dropTargetId === param.id}
                   anyDragging={draggedId !== null}
@@ -556,7 +558,7 @@ export function ParameterBuilder() {
             <DialogTitle>Save Preset</DialogTitle>
             <DialogDescription>
               Enter a name for this parameter preset ({selectedParams.length} parameter
-              {selectedParams.length !== 1 ? 's' : ''})
+              {selectedParams.length === 1 ? '' : 's'})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
@@ -601,11 +603,11 @@ export function ParameterBuilder() {
               size="sm"
               className="text-xs"
               onClick={() => {
-                if (importPickerSelected.size === importPickerParams.length) {
-                  setImportPickerSelected(new Set())
-                } else {
-                  setImportPickerSelected(new Set(importPickerParams.map((p) => p.id)))
-                }
+                setImportPickerSelected(
+                  importPickerSelected.size === importPickerParams.length
+                    ? new Set()
+                    : new Set(importPickerParams.map((p) => p.id))
+                )
               }}
             >
               {importPickerSelected.size === importPickerParams.length
@@ -655,7 +657,7 @@ export function ParameterBuilder() {
               }}
             >
               Import {importPickerSelected.size} Parameter
-              {importPickerSelected.size !== 1 ? 's' : ''}
+              {importPickerSelected.size === 1 ? '' : 's'}
             </Button>
           </div>
         </DialogContent>
@@ -664,7 +666,9 @@ export function ParameterBuilder() {
   )
 }
 
-/** Thin wrapper that binds param.id into stable callbacks for ParameterCard memo */
+/**
+Thin wrapper that binds param.id into stable callbacks for ParameterCard memo
+*/
 const MemoizedParamRow = memo(function MemoizedParamRow({
   param,
   isExpanded,
@@ -730,7 +734,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
       ) {
         const current = usePluginStore.getState().plugin.customCode || ''
         const oldComment = generateParameterComment(before)
-        const newComment = generateParameterComment({ ...before, ...updates } as PluginParameter)
+        const newComment = generateParameterComment({ ...before, ...updates })
         // A function inserts the name literally: a string would expand $' $` $& in it
         const updated = current.replace(oldComment, () => newComment)
         if (updated !== current) {
@@ -743,9 +747,9 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
 
   const onDelete = useCallback(() => {
     removeParameter(param.id)
-    setSelectedIds((prev) => {
-      if (!prev.has(param.id)) return prev
-      const next = new Set(prev)
+    setSelectedIds((previous) => {
+      if (!previous.has(param.id)) return previous
+      const next = new Set(previous)
       next.delete(param.id)
       return next
     })
@@ -770,7 +774,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
 
   const onToggleSelect = useCallback(() => toggleSelect(param.id), [param.id, toggleSelect])
   const onToggle = useCallback(
-    () => setExpandedId((prev) => (prev === param.id ? null : param.id)),
+    () => setExpandedId((previous) => (previous === param.id ? null : param.id)),
     [param.id, setExpandedId]
   )
 
@@ -808,7 +812,9 @@ interface ParameterCardProps {
   param: PluginParameter
   expanded: boolean
   isSelected: boolean
-  /** Locks the row's fields; its checkbox stays outside the lock so the row can still be selected */
+  /**
+  Locks the row's fields; its checkbox stays outside the lock so the row can still be selected
+  */
   readOnly: boolean
   onToggleSelect: () => void
   onToggle: () => void
@@ -867,16 +873,21 @@ const ParameterCard = memo(function ParameterCard({
   // Helper to get the appropriate game data array based on param type
   const getGameDataOptions = () => {
     switch (param.type) {
-      case 'variable':
+      case 'variable': {
         return variables
-      case 'switch':
+      }
+      case 'switch': {
         return switches
-      case 'actor':
+      }
+      case 'actor': {
         return actors
-      case 'item':
+      }
+      case 'item': {
         return items
-      default:
+      }
+      default: {
         return []
+      }
     }
   }
 
@@ -1058,9 +1069,9 @@ const ParameterCard = memo(function ParameterCard({
                       <Input
                         value={String(param.default || '')}
                         onChange={(e) => {
-                          const val =
+                          const value =
                             param.type === 'number' ? Number(e.target.value) : e.target.value
-                          onUpdate({ default: val })
+                          onUpdate({ default: value })
                         }}
                         type={param.type === 'number' ? 'number' : 'text'}
                         placeholder="Default value"

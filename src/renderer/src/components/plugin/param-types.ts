@@ -11,7 +11,9 @@ interface ParamTypeGroup {
   types: ParamTypeOption[]
 }
 
-/** The types a parameter can have, grouped as its type picker lists them */
+/**
+The types a parameter can have, grouped as its type picker lists them
+*/
 export const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
   {
     group: 'Basic',
@@ -77,7 +79,7 @@ export const PARAM_TYPE_GROUPS: ParamTypeGroup[] = [
 ]
 
 /**
- * The types a command argument can have: RPG Maker MZ gives `@arg` the same types as `@param`,
- * so these are the parameter types, without their groups.
- */
+The types a command argument can have: RPG Maker MZ gives `@arg` the same types as `@param`,
+so these are the parameter types, without their groups.
+*/
 export const ARG_TYPES: ParamTypeOption[] = PARAM_TYPE_GROUPS.flatMap((g) => g.types)

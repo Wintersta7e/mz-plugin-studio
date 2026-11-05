@@ -25,9 +25,6 @@ interface PluginBrowserProps {
   onClose: () => void
 }
 
-type FilterMode = 'all' | 'open' | 'dirty' | 'errors'
-type SortMode = 'name' | 'order'
-
 interface PluginRow {
   name: string // filename without .js
   filename: string
@@ -42,6 +39,8 @@ interface PluginRow {
 }
 
 export function PluginBrowser({ onClose }: PluginBrowserProps) {
+  type SortMode = 'name' | 'order'
+  type FilterMode = 'all' | 'open' | 'dirty' | 'errors'
   const project = useProjectStore((s) => s.project)
   const openPlugins = usePluginStore((s) => s.openPlugins)
   const activePluginId = usePluginStore((s) => s.activePluginId)
@@ -60,29 +59,29 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
 
   // Load plugin file list when project changes
   useEffect(() => {
-    let cancelled = false
     if (!project?.path) {
       setAllPluginFiles([])
       return
     }
+    let isCancelled = false
     setIsLoading(true)
     window.api.plugin.list(project.path).then(
       (files) => {
-        if (!cancelled) {
+        if (!isCancelled) {
           setAllPluginFiles(files)
           setIsLoading(false)
         }
       },
-      (err) => {
-        if (!cancelled) {
-          log.error('PluginBrowser: failed to list plugins', err)
+      (error) => {
+        if (!isCancelled) {
+          log.error('PluginBrowser: failed to list plugins', error)
           setAllPluginFiles([])
           setIsLoading(false)
         }
       }
     )
     return () => {
-      cancelled = true
+      isCancelled = true
     }
   }, [project?.path])
 
@@ -134,20 +133,20 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
         issues,
         hasError,
         hasWarning,
-        issueTitle: issues.length > 0 ? issues.map((i) => i.message).join('\n') : null
+        issueTitle: issues.length > 0 ? issues.map((index) => index.message).join('\n') : null
       }
     }
 
     // Start with on-disk files in their list() order
-    allPluginFiles.forEach((filename, index) => {
+    for (const [index, filename] of allPluginFiles.entries()) {
       const name = filename.replace(/\.js$/, '')
       rows.push(buildRow(name, filename, index, openByName.get(name), pluginIssues.get(name) ?? []))
       seenNames.add(name)
-    })
+    }
 
     // Append any open plugins that aren't on disk yet (new/unsaved)
-    openPlugins.forEach((p) => {
-      if (seenNames.has(p.meta.name)) return
+    for (const p of openPlugins) {
+      if (seenNames.has(p.meta.name)) continue
       rows.push(
         buildRow(
           p.meta.name || '(unnamed)',
@@ -157,7 +156,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
           []
         )
       )
-    })
+    }
 
     return rows
   }, [allPluginFiles, openPlugins, activePluginId, dirtyByPluginId, pluginIssues])
@@ -200,8 +199,8 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
       const files = await window.api.plugin.list(project.path)
       setAllPluginFiles(files)
       await scanDependencies()
-    } catch (err) {
-      log.error('PluginBrowser: refresh failed', err)
+    } catch (error) {
+      log.error('PluginBrowser: refresh failed', error)
     } finally {
       setIsLoading(false)
     }
@@ -217,12 +216,12 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     try {
       const loaded = await window.api.plugin.load(project.path, row.filename)
       openPlugin(loaded.plugin, { path: loaded.path, sha256: loaded.sha256 })
-    } catch (err) {
-      log.error(`PluginBrowser: failed to load ${row.filename}`, err)
+    } catch (error) {
+      log.error(`PluginBrowser: failed to load ${row.filename}`, error)
       // Main's message names the file and says why it was not opened
       useToastStore.getState().addToast({
         type: 'error',
-        message: userMessage(err),
+        message: userMessage(error),
         duration: NOTICE_MS
       })
     }
