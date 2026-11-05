@@ -1004,9 +1004,6 @@
     }
   },
   "src/main/ipc/arguments.ts": {
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "unicorn/name-replacements": {
       "count": 1
     }
@@ -1028,9 +1025,6 @@
       "count": 2
     },
     "promise/always-return": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
@@ -1170,9 +1164,6 @@
       "count": 1
     },
     "regexp/no-useless-assertions": {
-      "count": 2
-    },
-    "regexp/optimal-quantifier-concatenation": {
       "count": 2
     },
     "sonarjs/cognitive-complexity": {

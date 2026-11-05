@@ -242,7 +242,7 @@ export function checkDialogFolder(
   pathImpl: PlatformPath = path
 ): string | undefined {
   if (typeof value !== 'string') return undefined
-  const isDriveRoot = pathImpl.sep === '\\' ? /^[A-Za-z]:[\\/]$/.test(value) : value === '/'
+  const isDriveRoot = pathImpl.sep === '\\' ? /^[A-Z]:[\\/]$/i.test(value) : value === '/'
   return isDriveRoot || classifyDialogDefault(value, pathImpl) === 'directory-seed'
     ? value
     : undefined

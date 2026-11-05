@@ -236,8 +236,8 @@ export class PluginParser {
       /\/\/\s*your\s*code\s*here/i,
       /\/\/\s*implementation/i,
       /\/\/\s*main\s*(?:plugin\s*)?logic/i,
-      /\/\/\s*===+\s*custom/i,
-      /\/\/\s*---+\s*custom/i
+      /\/\/\s*={3,}\s*custom/i,
+      /\/\/\s*-{3,}\s*custom/i
     ]
 
     for (const marker of customMarkers) {

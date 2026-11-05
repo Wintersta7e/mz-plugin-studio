@@ -47,7 +47,7 @@ export function checkSaveGuard(channel: string, value: unknown): SaveGuard {
 const MAX_FILTERS = 4
 const MAX_FILTER_NAME_LENGTH = 64
 const MAX_FILTER_EXTENSIONS = 4
-const FILTER_EXTENSION = /^[A-Za-z0-9.]{1,16}$/
+const FILTER_EXTENSION = /^[A-Z0-9.]{1,16}$/i
 
 /**
 Whether a filter may name the extension (without its dot): one the app may read or write
