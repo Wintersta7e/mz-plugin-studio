@@ -30,20 +30,12 @@ Window_Message.prototype.updatePlacement = function() {
 // Message Window Size Modification
 // Changes the dimensions of the message window
 
-Window_Message.prototype.windowWidth = function() {
-    return 816;
-};
-
-Window_Message.prototype.numVisibleRows = function() {
-    return 4;
-};
-
 // Update the message window rect to use new dimensions
 const _Scene_Message_messageWindowRect = Scene_Message.prototype.messageWindowRect;
 Scene_Message.prototype.messageWindowRect = function() {
     const rect = _Scene_Message_messageWindowRect.call(this);
     rect.width = 816;
-    rect.height = 180;
+    rect.height = this.calcWindowHeight(4, false) + 8;
     rect.x = (Graphics.boxWidth - rect.width) / 2;
     return rect;
 };

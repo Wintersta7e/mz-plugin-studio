@@ -149,29 +149,6 @@ describe('message-system custom escape code', () => {
   })
 })
 
-// The message window template's size mode, from its defaults with the given values
-function sizeCode(values: Record<string, unknown>): string {
-  const template = getTemplate('message-window-mod')
-  if (template === undefined) throw new Error('message-window-mod is not registered')
-  return template.generate({
-    ...getTemplateDefaults('message-window-mod'),
-    modType: 'size',
-    ...values
-  })
-}
-
-describe('message-system window size', () => {
-  it('sets the window height it is given', () => {
-    const out = sizeCode({ windowHeight: 300 })
-
-    expect(out).toContain('    rect.width = 816;\n    rect.height = 300;\n')
-  })
-
-  it('sets the default height when none is given', () => {
-    expect(sizeCode({ windowHeight: undefined })).toContain('    rect.height = 180;\n')
-  })
-})
-
 describe('plugin-commands async callback', () => {
   it('uses per-interpreter pending state (not module-scope flag)', () => {
     const tpl = getTemplate('plugin-command-async')!
@@ -381,8 +358,28 @@ describe('custom text code replacement', () => {
 // The engine's window background, as RPG Maker MZ defines it: a Window background makes the frame
 // opaque, Dim and Transparent make it clear, and only Dim shows the dimmer sprite, made on first
 // use. A choice list sets its background each time it starts, a message window each message.
-// A bitmap records the colours filled into it since it was last cleared.
+// A bitmap records the colours filled into it since it was last cleared. The message scene's
+// window rect is as wide as the screen and 4 text lines high: 36 pixels a line, 12 of padding
+// above and below, and 8 more.
 const WINDOW_ENGINE = `
+var Graphics = { boxWidth: 816 };
+var Rectangle = function (x, y, width, height) {
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+};
+var Scene_Message = function () {};
+Scene_Message.prototype.calcWindowHeight = function (numLines, selectable) {
+  return numLines * 36 + 12 * 2;
+};
+Scene_Message.prototype.messageWindowRect = function () {
+  const ww = Graphics.boxWidth;
+  const wh = this.calcWindowHeight(4, false) + 8;
+  const wx = (Graphics.boxWidth - ww) / 2;
+  const wy = 0;
+  return new Rectangle(wx, wy, ww, wh);
+};
 var Bitmap = function () { this.fills = []; };
 Bitmap.prototype.clear = function () { this.fills = []; };
 Bitmap.prototype.fillRect = function (x, y, width, height, color) { this.fills.push(color); };
@@ -469,5 +466,20 @@ describe('custom message background colour', () => {
       opacity: 0,
       _dimmerSprite: { visible: true, bitmap: { fills: ['rgba(0, 0, 64, 0.8)'] } }
     })
+  })
+})
+
+describe('message window visible lines', () => {
+  it.each([
+    [2, 2 * 36 + 12 * 2 + 8],
+    [6, 6 * 36 + 12 * 2 + 8]
+  ])('makes the window %i text lines high', (lineCount, height) => {
+    const shown = windowAfter(
+      'message-window-mod',
+      { modType: 'size', windowWidth: 600, numLines: lineCount },
+      'var shown = new Scene_Message().messageWindowRect();'
+    )
+
+    expect(shown).toMatchObject({ x: 108, width: 600, height })
   })
 })

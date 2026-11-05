@@ -393,19 +393,10 @@ const messageWindowModTemplate: CodeTemplate = {
 
       case 'size': {
         const windowWidth = valueOr(values['windowWidth'], 816)
-        const windowHeight = valueOr(values['windowHeight'], 180)
         const numLines = valueOr(values['numLines'], 4)
 
         lines.push('// Message Window Size Modification')
         lines.push('// Changes the dimensions of the message window')
-        lines.push('')
-        lines.push('Window_Message.prototype.windowWidth = function() {')
-        lines.push(`    return ${String(windowWidth)};`)
-        lines.push('};')
-        lines.push('')
-        lines.push('Window_Message.prototype.numVisibleRows = function() {')
-        lines.push(`    return ${String(numLines)};`)
-        lines.push('};')
         lines.push('')
         lines.push('// Update the message window rect to use new dimensions')
         lines.push(
@@ -414,7 +405,7 @@ const messageWindowModTemplate: CodeTemplate = {
         lines.push('Scene_Message.prototype.messageWindowRect = function() {')
         lines.push('    const rect = _Scene_Message_messageWindowRect.call(this);')
         lines.push(`    rect.width = ${String(windowWidth)};`)
-        lines.push(`    rect.height = ${String(windowHeight)};`)
+        lines.push(`    rect.height = this.calcWindowHeight(${String(numLines)}, false) + 8;`)
         lines.push('    rect.x = (Graphics.boxWidth - rect.width) / 2;')
         lines.push('    return rect;')
         lines.push('};')
