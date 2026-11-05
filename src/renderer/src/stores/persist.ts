@@ -74,7 +74,9 @@ function report(
   pendingReport.push({ name, area, kind, fields, backup })
 }
 
-/** Everything reported since the last call, in load order. */
+/**
+Everything reported since the last call, in load order.
+*/
 export function takeRestoreReport(): RestoreReportEntry[] {
   const entries = pendingReport
   pendingReport = []
@@ -83,43 +85,52 @@ export function takeRestoreReport(): RestoreReportEntry[] {
 
 function backupText(key: string, backup: BackupOutcome): string {
   switch (backup) {
-    case 'kept':
+    case 'kept': {
       return `a copy was kept as ${key}.`
-    case 'earlier-copy-kept':
+    }
+    case 'earlier-copy-kept': {
       return `it was not copied because ${key} already holds an earlier copy, and it will be replaced at the next save.`
-    case 'failed':
+    }
+    case 'failed': {
       return `it could not be copied to ${key} because storage is full, and it will be replaced at the next save.`
+    }
   }
 }
 
 function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
   switch (kind) {
-    case 'unparseable':
+    case 'unparseable': {
       return 'the saved data could not be read, so defaults were loaded'
-    case 'newer-schema':
+    }
+    case 'newer-schema': {
       return 'saved by a newer version; the parts this version understands were kept'
-    case 'fields-reset':
+    }
+    case 'fields-reset': {
       return `${fields.join(', ')} had unexpected values and were reset`
-    case 'entries-dropped':
+    }
+    case 'entries-dropped': {
       return `${fields.join(', ')} could not be read and were left out`
+    }
   }
 }
 
-/** A field path as code writes it, for logs: `openPlugins[0].parameters[1].desc`. */
+/**
+A field path as code writes it, for logs: `openPlugins[0].parameters[1].desc`.
+*/
 export function pathText(path: FieldPath): string {
   return path
-    .map((step, i) =>
+    .map((step, index) =>
       'key' in step
-        ? `${i === 0 ? '' : '.'}${step.key}`
+        ? `${index === 0 ? '' : '.'}${step.key}`
         : `[${'index' in step ? step.index : JSON.stringify(step.entry)}]`
     )
     .join('')
 }
 
 /**
- * A field path in the store's words, innermost first: `openPlugins[0].parameters[1]` with the tab
- * named Good → "parameter 2 of open plugin Good".
- */
+A field path in the store's words, innermost first: `openPlugins[0].parameters[1]` with the tab
+named Good → "parameter 2 of open plugin Good".
+*/
 function describeField(path: FieldPath, labels: FieldLabels): string {
   const parts: { label: FieldLabel; at?: string }[] = []
   for (const step of path) {
@@ -128,7 +139,7 @@ function describeField(path: FieldPath, labels: FieldLabels): string {
       parts.push({
         label: Object.hasOwn(labels, key)
           ? labels[key]
-          : key.replace(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase()
+          : key.replaceAll(/([a-z\d])([A-Z])/g, '$1 $2').toLowerCase()
       })
       continue
     }
@@ -177,35 +188,41 @@ export function checkOneOf<T extends string>(values: readonly T[]): FieldCheck<T
 }
 
 /**
- * An array whose elements are checked one by one; a rejected element is dropped and named by its
- * index and, when `label` reads one from it, its name.
- */
+An array whose elements are checked one by one; a rejected element is dropped and named by its
+index and, when `label` reads one from it, its name.
+*/
 export function checkArrayOf<T>(
   element: FieldCheck<T>,
   label?: (item: unknown) => string | undefined
 ): FieldCheck<T[]> {
   return (value, drop) => {
-    if (!Array.isArray(value)) return undefined
+    if (!Array.isArray(value)) return
     const kept: T[] = []
-    value.forEach((item, i) => {
+    for (const [index, item] of value.entries()) {
       const name = label?.(item)
-      const step: PathStep = name === undefined ? { index: i } : { index: i, name }
-      const checked = element(item, (path) => drop([step, ...path]))
+      const step: PathStep = name === undefined ? { index: index } : { index: index, name }
+      const checked = element(item, (path) => {
+        drop([step, ...path])
+      })
       if (checked === undefined) drop([step])
       else kept.push(checked)
-    })
+    }
     return kept
   }
 }
 
-/** A string-keyed record whose entries are checked one by one; a rejected entry is dropped and named. */
+/**
+A string-keyed record whose entries are checked one by one; a rejected entry is dropped and named.
+*/
 export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string, T>> {
   return (value, drop) => {
-    if (!isRecord(value)) return undefined
+    if (!isRecord(value)) return
     const kept: Record<string, T> = {}
     for (const [key, item] of Object.entries(value)) {
       const step: PathStep = { entry: key }
-      const checked = entry(item, (path) => drop([step, ...path]))
+      const checked = entry(item, (path) => {
+        drop([step, ...path])
+      })
       if (checked === undefined) drop([step])
       else kept[key] = checked
     }
@@ -213,7 +230,9 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
   }
 }
 
-/** The schema a payload was written at: a non-negative integer, else 0 (written before schemas). */
+/**
+The schema a payload was written at: a non-negative integer, else 0 (written before schemas).
+*/
 function schemaOf(state: Record<string, unknown>): number {
   const schema = state.schemaVersion
   return typeof schema === 'number' && Number.isInteger(schema) && schema >= 0 ? schema : 0
@@ -227,7 +246,9 @@ function isEnvelope(value: unknown): value is { state: Record<string, unknown>; 
   )
 }
 
-/** Keeps the first copy of saved data this build could not use. */
+/**
+Keeps the first copy of saved data this build could not use.
+*/
 function backUp(name: PersistedKey, raw: string): BackupOutcome {
   const key = name + BACKUP_SUFFIX
   const existing = localStorage.getItem(key)
@@ -319,7 +340,9 @@ function guardedStorage<P>(
         })
       }
     },
-    removeItem: (key) => localStorage.removeItem(key)
+    removeItem: (key) => {
+      localStorage.removeItem(key)
+    }
   }
 }
 

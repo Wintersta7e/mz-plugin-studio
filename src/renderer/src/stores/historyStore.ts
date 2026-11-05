@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 import type { PluginDefinition } from '../types/plugin'
 
-/** Plugin snapshot stored in history — rawSource is always stripped to save memory (R3-07) */
+/**
+Plugin snapshot stored in history — rawSource is always stripped to save memory (R3-07)
+*/
 type HistoryPluginSnapshot = Omit<PluginDefinition, 'rawSource'> & { rawSource?: undefined }
 
 interface HistoryEntry {
@@ -14,13 +16,15 @@ function entryOf(plugin: PluginDefinition): HistoryEntry {
   // Strip rawSource to avoid retaining large strings in history
   const { rawSource: _raw, ...snapshot } = plugin
   return {
-    plugin: snapshot as HistoryPluginSnapshot,
+    plugin: snapshot,
     timestamp: Date.now(),
     json: JSON.stringify(snapshot)
   }
 }
 
-/** Whether `entry` holds exactly `plugin`, apart from the file text history never keeps. */
+/**
+Whether `entry` holds exactly `plugin`, apart from the file text history never keeps.
+*/
 function shows(entry: HistoryEntry, plugin: PluginDefinition): boolean {
   return entry.json === entryOf(plugin).json
 }
@@ -28,14 +32,18 @@ function shows(entry: HistoryEntry, plugin: PluginDefinition): boolean {
 interface HistoryState {
   past: HistoryEntry[]
   future: HistoryEntry[]
-  /** The plugin ID that current history entries belong to */
+  /**
+  The plugin ID that current history entries belong to
+  */
   activePluginId: string | null
 
   push: (plugin: PluginDefinition) => void
   undo: (current: PluginDefinition) => HistoryPluginSnapshot | null
   redo: (current: PluginDefinition) => HistoryPluginSnapshot | null
   clear: () => void
-  /** Call when switching plugins to reset history for the new context */
+  /**
+  Call when switching plugins to reset history for the new context
+  */
   setActivePluginId: (id: string | null) => void
 }
 
@@ -51,7 +59,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     }
   },
 
-  push: (plugin) =>
+  push: (plugin) => {
     set((state) => {
       const entry = entryOf(plugin)
 
@@ -73,20 +81,21 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
         future: [],
         activePluginId: plugin.id
       }
-    }),
+    })
+  },
 
   // The app records each state once edits pause, so the newest entry of `past` is the state
   // shown unless an edit is still waiting to be recorded
   undo: (current) => {
     const { past, future } = get()
     const top = past[past.length - 1]
-    const shown = top !== undefined && shows(top, current)
-    const earlier = shown ? past.slice(0, -1) : past
+    const isShown = top !== undefined && shows(top, current)
+    const earlier = isShown ? past.slice(0, -1) : past
     const previous = earlier[earlier.length - 1]
     if (previous === undefined) return null
 
     // `previous` stays the newest entry: it is the state shown from now on
-    set({ past: earlier, future: [shown ? top : entryOf(current), ...future] })
+    set({ past: earlier, future: [isShown ? top : entryOf(current), ...future] })
     return previous.plugin
   },
 
@@ -102,5 +111,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     return next.plugin
   },
 
-  clear: () => set({ past: [], future: [], activePluginId: null })
+  clear: () => {
+    set({ past: [], future: [], activePluginId: null })
+  }
 }))

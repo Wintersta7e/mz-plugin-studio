@@ -2,7 +2,9 @@ import { create } from 'zustand'
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
-/** A button on a toast; clicking it runs `run` and dismisses the toast. */
+/**
+A button on a toast; clicking it runs `run` and dismisses the toast.
+*/
 export interface ToastAction {
   label: string
   run: () => void
@@ -35,9 +37,13 @@ interface ToastState {
   addToast: (input: AddToastInput) => void
   dismiss: (id: string) => void
   dismissAll: () => void
-  /** Stops a timed toast's countdown while the user reads or uses it. */
+  /**
+  Stops a timed toast's countdown while the user reads or uses it.
+  */
   pause: (id: string) => void
-  /** Restarts a paused toast's countdown with the time it had left. */
+  /**
+  Restarts a paused toast's countdown with the time it had left.
+  */
   resume: (id: string) => void
 }
 

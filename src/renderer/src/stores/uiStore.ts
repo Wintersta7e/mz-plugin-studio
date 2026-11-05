@@ -50,7 +50,9 @@ type PersistedField =
   | 'lastTemplateCategory'
   | 'rawModeByPluginId'
 
-/** The record without `key`; the same record when it has no such key. */
+/**
+The record without `key`; the same record when it has no such key.
+*/
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
   if (!(key in record)) return record
   const next = { ...record }

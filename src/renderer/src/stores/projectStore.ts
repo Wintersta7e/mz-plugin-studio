@@ -67,7 +67,9 @@ interface ProjectState {
   setCommonEvents: (commonEvents: MZCommonEvent[]) => void
   setClasses: (classes: MZClass[]) => void
   setTroops: (troops: MZTroop[]) => void
-  /** Batch-set all game data in a single store update (avoids 14 re-renders) */
+  /**
+  Batch-set all game data in a single store update (avoids 14 re-renders)
+  */
   setAllGameData: (data: {
     switches: MZSwitch[]
     variables: MZVariable[]
@@ -173,10 +175,7 @@ export const useProjectStore = create<ProjectState>()(
         try {
           const headers = await window.api.plugin.scanHeaders(project.path)
           const report = validateDependencies(headers)
-          const conflicts = detectConflicts(
-            headers,
-            mzClasses as Record<string, { popularity?: number }>
-          )
+          const conflicts = detectConflicts(headers, mzClasses)
           set({ dependencyReport: report, conflictReport: conflicts, isScanning: false })
         } catch (error) {
           log.error('Dependency scan failed:', error)

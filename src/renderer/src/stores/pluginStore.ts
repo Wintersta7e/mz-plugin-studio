@@ -55,12 +55,12 @@ interface PluginState {
   reorderParameters: (fromIndex: number, toIndex: number) => void
 
   // Commands
-  addCommand: (cmd: PluginCommand) => void
-  updateCommand: (id: string, cmd: Partial<PluginCommand>) => void
+  addCommand: (command: PluginCommand) => void
+  updateCommand: (id: string, command: Partial<PluginCommand>) => void
   removeCommand: (id: string) => void
-  addCommandArg: (cmdId: string, arg: PluginParameter) => void
-  updateCommandArg: (cmdId: string, argId: string, arg: Partial<PluginParameter>) => void
-  removeCommandArg: (cmdId: string, argId: string) => void
+  addCommandArg: (commandId: string, arg: PluginParameter) => void
+  updateCommandArg: (commandId: string, argId: string, arg: Partial<PluginParameter>) => void
+  removeCommandArg: (commandId: string, argId: string) => void
 
   // Structs
   addStruct: (struct: PluginStruct) => void
@@ -104,7 +104,9 @@ type PluginPersisted = Pick<
   | 'baseByPluginId'
 >
 
-/** A tab written to `path`: `saved` is the definition the code was generated from. */
+/**
+A tab written to `path`: `saved` is the definition the code was generated from.
+*/
 export interface SaveRecord {
   id: string
   saved: PluginDefinition
@@ -113,7 +115,9 @@ export interface SaveRecord {
   written: string
 }
 
-/** A v1.6.0 tab with a code body was imported; it keeps no code body from now on. */
+/**
+A v1.6.0 tab with a code body was imported; it keeps no code body from now on.
+*/
 function migrateImported(def: unknown): unknown {
   if (!isRecord(def)) return def
   const { codeBody, ...rest } = def
@@ -158,7 +162,9 @@ const TAB_KEYED_MAPS = [
 ] as const
 type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
 
-/** Every tab-keyed map with only the entries whose plugin id `keep` accepts. */
+/**
+Every tab-keyed map with only the entries whose plugin id `keep` accepts.
+*/
 function filterTabMaps(maps: TabKeyedMaps, keep: (id: string) => boolean): TabKeyedMaps {
   const next: Record<string, Record<string, unknown>> = {}
   for (const name of TAB_KEYED_MAPS) {
@@ -167,7 +173,9 @@ function filterTabMaps(maps: TabKeyedMaps, keep: (id: string) => boolean): TabKe
   return next as TabKeyedMaps
 }
 
-/** Drops the saved entries of tabs that were closed without their entries being cleared. */
+/**
+Drops the saved entries of tabs that were closed without their entries being cleared.
+*/
 function pruneClosedTabs(persisted: PluginPersisted): PluginPersisted {
   const open = new Set(persisted.openPlugins.map((p) => p.id))
   for (const name of TAB_KEYED_MAPS) {
@@ -202,18 +210,20 @@ const checkNoteParam: FieldCheck<NoteParam> = (value, drop) => {
 const checkLocalized: FieldCheck<LocalizedContent> = (value) =>
   isRecord(value) &&
   ['description', 'help'].every((key) => value[key] === undefined || typeof value[key] === 'string')
-    ? (value as LocalizedContent)
+    ? value
     : undefined
 
 /**
- * `meta` as the editors read it: a field of the wrong type takes its default, or is left out when
- * optional, and is named through `drop`.
- */
+`meta` as the editors read it: a field of the wrong type takes its default, or is left out when
+optional, and is named through `drop`.
+*/
 function checkMeta(meta: Record<string, unknown>, drop: (path: FieldPath) => void): PluginMeta {
   const checked = { ...meta }
   const take = (field: string, check: FieldCheck<unknown>, fallback?: unknown): void => {
     if (fallback === undefined && !Object.hasOwn(checked, field)) return
-    const value = check(checked[field], (path) => drop([{ key: field }, ...path]))
+    const value = check(checked[field], (path) => {
+      drop([{ key: field }, ...path])
+    })
     if (value !== undefined) {
       checked[field] = value
       return
@@ -234,9 +244,11 @@ const idOf = (value: Record<string, unknown>): string =>
   typeof value.id === 'string' ? value.id : crypto.randomUUID()
 
 const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
-  if (!isRecord(value) || typeof value.name !== 'string') return undefined
-  const args = checkParameters(value.args, (path) => drop([{ key: 'args' }, ...path]))
-  if (args === undefined) return undefined
+  if (!isRecord(value) || typeof value.name !== 'string') return
+  const args = checkParameters(value.args, (path) => {
+    drop([{ key: 'args' }, ...path])
+  })
+  if (args === undefined) return
   for (const field of ['text', 'desc']) if (typeof value[field] !== 'string') drop([{ key: field }])
   return {
     id: idOf(value),
@@ -248,14 +260,16 @@ const checkCommand: FieldCheck<PluginCommand> = (value, drop) => {
 }
 
 const checkStruct: FieldCheck<PluginStruct> = (value, drop) => {
-  if (!isRecord(value) || typeof value.name !== 'string') return undefined
-  const parameters = checkParameters(value.parameters, (path) =>
+  if (!isRecord(value) || typeof value.name !== 'string') return
+  const parameters = checkParameters(value.parameters, (path) => {
     drop([{ key: 'parameters' }, ...path])
-  )
+  })
   return parameters === undefined ? undefined : { id: idOf(value), name: value.name, parameters }
 }
 
-/** A saved plugin definition: rejected unless every editor can read it, elements one by one. */
+/**
+A saved plugin definition: rejected unless every editor can read it, elements one by one.
+*/
 const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
   if (
     !isRecord(value) ||
@@ -266,9 +280,11 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
     !Array.isArray(value.commands) ||
     !Array.isArray(value.structs)
   ) {
-    return undefined
+    return
   }
-  const within = (field: string) => (path: FieldPath) => drop([{ key: field }, ...path])
+  const within = (field: string) => (path: FieldPath) => {
+    drop([{ key: field }, ...path])
+  }
   const plugin: Record<string, unknown> = {
     ...value,
     meta: checkMeta(value.meta, within('meta')),
@@ -277,15 +293,19 @@ const checkDefinition: FieldCheck<PluginDefinition> = (value, drop) => {
     structs: checkArrayOf(checkStruct)(value.structs, within('structs'))
   }
   for (const field of OPTIONAL_STRING_FIELDS) {
-    if (Object.hasOwn(plugin, field) && typeof plugin[field] !== 'string') {
-      delete plugin[field]
-      drop([{ key: field }])
+    if (!Object.hasOwn(plugin, field) || typeof plugin[field] === 'string') {
+      continue
     }
+
+    delete plugin[field]
+    drop([{ key: field }])
   }
   return plugin as unknown as PluginDefinition
 }
 
-/** The plugin name a saved tab shows, if it has one, to name it when it cannot be loaded. */
+/**
+The plugin name a saved tab shows, if it has one, to name it when it cannot be loaded.
+*/
 const tabName = (value: unknown): string | undefined =>
   isRecord(value) && isRecord(value.meta) && typeof value.meta.name === 'string'
     ? value.meta.name
@@ -303,7 +323,9 @@ const checkFileBase: FieldCheck<FileBase> = (value) =>
     ? { path: value.path, sha256: value.sha256 }
     : undefined
 
-/** A definition as saved: the code body is not kept, it is part of the file text. */
+/**
+A definition as saved: the code body is not kept, it is part of the file text.
+*/
 function toStored({ codeBody: _codeBody, ...plugin }: PluginDefinition): PluginDefinition {
   return plugin
 }
@@ -359,17 +381,19 @@ function markPluginDirty(
 }
 
 /**
- * Applies an edit to a parameter or argument. A changed type drops the `@type` text it was
- * imported with, so the generated `@type` follows the edit.
- */
+Applies an edit to a parameter or argument. A changed type drops the `@type` text it was
+imported with, so the generated `@type` follows the edit.
+*/
 function editParameter(param: PluginParameter, edit: Partial<PluginParameter>): PluginParameter {
-  const retyped = (['type', 'arrayType', 'structType'] as const).some(
+  const isRetyped = (['type', 'arrayType', 'structType'] as const).some(
     (key) => key in edit && edit[key] !== param[key]
   )
-  return retyped ? { ...param, rawType: undefined, ...edit } : { ...param, ...edit }
+  return isRetyped ? { ...param, rawType: undefined, ...edit } : { ...param, ...edit }
 }
 
-/** Sets the file text of an open tab, in the tab list and on the active plugin; not an edit. */
+/**
+Sets the file text of an open tab, in the tab list and on the active plugin; not an edit.
+*/
 function withRawSource(
   state: PluginState,
   id: string,
@@ -489,18 +513,18 @@ export const usePluginStore = create<PluginState>()(
         }),
 
       // Commands
-      addCommand: (cmd) =>
+      addCommand: (command) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
-            commands: [...plugin.commands, cmd]
+            commands: [...plugin.commands, command]
           }))
         ),
-      updateCommand: (id, cmd) =>
+      updateCommand: (id, command) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
-            commands: plugin.commands.map((c) => (c.id === id ? { ...c, ...cmd } : c))
+            commands: plugin.commands.map((c) => (c.id === id ? { ...c, ...command } : c))
           }))
         ),
       removeCommand: (id) =>
@@ -510,32 +534,32 @@ export const usePluginStore = create<PluginState>()(
             commands: plugin.commands.filter((c) => c.id !== id)
           }))
         ),
-      addCommandArg: (cmdId, arg) =>
+      addCommandArg: (commandId, arg) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
             commands: plugin.commands.map((c) =>
-              c.id === cmdId ? { ...c, args: [...c.args, arg] } : c
+              c.id === commandId ? { ...c, args: [...c.args, arg] } : c
             )
           }))
         ),
-      updateCommandArg: (cmdId, argId, arg) =>
+      updateCommandArg: (commandId, argId, arg) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
             commands: plugin.commands.map((c) =>
-              c.id === cmdId
+              c.id === commandId
                 ? { ...c, args: c.args.map((a) => (a.id === argId ? editParameter(a, arg) : a)) }
                 : c
             )
           }))
         ),
-      removeCommandArg: (cmdId, argId) =>
+      removeCommandArg: (commandId, argId) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
             ...plugin,
             commands: plugin.commands.map((c) =>
-              c.id === cmdId ? { ...c, args: c.args.filter((a) => a.id !== argId) } : c
+              c.id === commandId ? { ...c, args: c.args.filter((a) => a.id !== argId) } : c
             )
           }))
         ),
@@ -722,16 +746,18 @@ export const usePluginStore = create<PluginState>()(
             baseByPluginId[id] = { path, sha256 }
             // An edit made while the file was written is not in it
             if (tab === saved) delete dirtyByPluginId[id]
-            if (isImported(tab)) {
-              ;({ openPlugins, plugin } = withRawSource(
-                { ...state, openPlugins, plugin },
-                id,
-                written
-              ))
-              baselineByPluginId[id] = toBaseline(saved)
+            if (!isImported(tab)) {
+              continue
             }
+
+            ;({ openPlugins, plugin } = withRawSource(
+              { ...state, openPlugins, plugin },
+              id,
+              written
+            ))
+            baselineByPluginId[id] = toBaseline(saved)
           }
-          const activeSaved = records.some((r) => r.id === plugin.id)
+          const isActiveSaved = records.some((r) => r.id === plugin.id)
           return {
             openPlugins,
             plugin,
@@ -739,7 +765,7 @@ export const usePluginStore = create<PluginState>()(
             savedPathsByPluginId,
             baseByPluginId,
             baselineByPluginId,
-            ...(activeSaved && {
+            ...(isActiveSaved && {
               isDirty: getPluginDirty(dirtyByPluginId, plugin.id),
               savedPath: getPluginSavedPath(savedPathsByPluginId, plugin.id)
             })
