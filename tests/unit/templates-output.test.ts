@@ -377,3 +377,82 @@ describe('custom text code replacement', () => {
     expect(convertedText(values, text)).toBe('Gold: 250!')
   })
 })
+
+// The engine's window background, as RPG Maker MZ defines it: a Window background makes the frame
+// opaque, Dim and Transparent make it clear, and only Dim shows the dimmer sprite, made on first
+// use. A choice list sets its background each time it starts, a message window each message.
+// A bitmap records the colours filled into it since it was last cleared.
+const WINDOW_ENGINE = `
+var Bitmap = function () { this.fills = []; };
+Bitmap.prototype.clear = function () { this.fills = []; };
+Bitmap.prototype.fillRect = function (x, y, width, height, color) { this.fills.push(color); };
+var Window_Base = function () {};
+Window_Base.prototype.setBackgroundType = function (type) {
+  if (type === 0) {
+    this.opacity = 255;
+  } else {
+    this.opacity = 0;
+  }
+  if (type === 1) {
+    this.showBackgroundDimmer();
+  } else {
+    this.hideBackgroundDimmer();
+  }
+};
+Window_Base.prototype.showBackgroundDimmer = function () {
+  if (!this._dimmerSprite) {
+    this._dimmerSprite = { bitmap: new Bitmap(), visible: false };
+  }
+  this._dimmerSprite.visible = true;
+};
+Window_Base.prototype.hideBackgroundDimmer = function () {
+  if (this._dimmerSprite) {
+    this._dimmerSprite.visible = false;
+  }
+};
+var $gameMessage = {
+  background: function () { return 0; },
+  choiceBackground: function () { return 0; }
+};
+var Window_Message = function () {};
+Window_Message.prototype = Object.create(Window_Base.prototype);
+Window_Message.prototype.updateBackground = function () {
+  this._background = $gameMessage.background();
+  this.setBackgroundType(this._background);
+};
+var Window_ChoiceList = function () {};
+Window_ChoiceList.prototype = Object.create(Window_Base.prototype);
+Window_ChoiceList.prototype.initialize = function () {};
+Window_ChoiceList.prototype.start = function () {
+  this.updateBackground();
+};
+Window_ChoiceList.prototype.updateBackground = function () {
+  this._background = $gameMessage.choiceBackground();
+  this.setBackgroundType(this._background);
+};
+`
+
+// The window a template's code from its defaults with the given values leaves after `steps` run
+// on a new window of the engine; an error the code throws is thrown here
+function windowAfter(id: string, values: Record<string, unknown>, steps: string): unknown {
+  const template = getTemplate(id)
+  if (template === undefined) throw new Error(`${id} is not registered`)
+  const code = template.generate({ ...getTemplateDefaults(id), ...values })
+  const result = evaluatePlugin(`${WINDOW_ENGINE}${code}\n${steps}`, { mode: 'generator' })
+  const error = result.compileProblem?.message ?? result.threw
+  if (error !== null) throw new Error(error)
+  const context: { shown?: unknown } | null = result.context
+  return context?.shown
+}
+
+describe('choice window opacity', () => {
+  it('keeps the set opacity once the choice list starts', () => {
+    const shown = windowAfter(
+      'message-choice-handler',
+      { modType: 'style', windowOpacity: 128 },
+      'var shown = new Window_ChoiceList(); shown.initialize(); shown.start();'
+    )
+
+    expect(shown).toMatchObject({ opacity: 128 })
+  })
+})

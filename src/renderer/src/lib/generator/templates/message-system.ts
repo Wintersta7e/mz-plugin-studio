@@ -774,9 +774,11 @@ const choiceHandlerTemplate: CodeTemplate = {
         lines.push('};')
         lines.push('')
         lines.push('// Set window opacity')
-        lines.push('const _Window_ChoiceList_initialize = Window_ChoiceList.prototype.initialize;')
-        lines.push('Window_ChoiceList.prototype.initialize = function() {')
-        lines.push('    _Window_ChoiceList_initialize.apply(this, arguments);')
+        lines.push(
+          'const _Window_ChoiceList_updateBackground = Window_ChoiceList.prototype.updateBackground;'
+        )
+        lines.push('Window_ChoiceList.prototype.updateBackground = function() {')
+        lines.push('    _Window_ChoiceList_updateBackground.call(this);')
         lines.push(`    this.opacity = ${String(windowOpacity)};`)
         lines.push('};')
         break
