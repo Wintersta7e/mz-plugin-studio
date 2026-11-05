@@ -219,3 +219,137 @@ Game_Party.prototype.canAddMember = function() {
 Game_Party.prototype.remainingSlots = function() {
     return Math.max(0, this.maxBattleMembers() - this._actors.length);
 };
+
+// ==== case: minSize=2 {"featureType":"sizeLimit","maxSize":4,"minSize":2,"hookTiming":"after","maxReserve":10}
+// Party Size Limit: 2 to 4 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 4;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Prevent removing members below the min size
+const _Game_Party_removeActor = Game_Party.prototype.removeActor;
+Game_Party.prototype.removeActor = function(actorId) {
+    if (this._actors.length <= 2) {
+        // Party at minimum - you can customize this behavior
+        console.log('Cannot remove member - party at minimum size.');
+        return;
+    }
+    _Game_Party_removeActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
+// ==== case: maxSize=1 {"featureType":"sizeLimit","maxSize":1,"minSize":1,"hookTiming":"after","maxReserve":10}
+// Party Size Limit: 1 to 1 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 1;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
+// ==== case: featureType=reserveParty,maxReserve=1 {"featureType":"reserveParty","maxSize":4,"minSize":1,"hookTiming":"after","maxReserve":1}
+// Reserve Party System
+// Maximum reserve members: 1
+
+// Initialize reserve party array
+const _Game_Party_initialize = Game_Party.prototype.initialize;
+Game_Party.prototype.initialize = function() {
+    _Game_Party_initialize.call(this);
+    this._reserveMembers = [];
+};
+
+// Get maximum reserve size
+Game_Party.prototype.maxReserveMembers = function() {
+    return 1;
+};
+
+// Get all reserve members
+Game_Party.prototype.reserveMembers = function() {
+    return this._reserveMembers.map(id => $gameActors.actor(id));
+};
+
+// Add actor to reserve party
+Game_Party.prototype.addToReserve = function(actorId) {
+    if (this._reserveMembers.length >= this.maxReserveMembers()) {
+        console.log('Reserve party is full!');
+        return false;
+    }
+    if (!this._reserveMembers.includes(actorId)) {
+        this._reserveMembers.push(actorId);
+        return true;
+    }
+    return false;
+};
+
+// Remove actor from reserve party
+Game_Party.prototype.removeFromReserve = function(actorId) {
+    const index = this._reserveMembers.indexOf(actorId);
+    if (index >= 0) {
+        this._reserveMembers.splice(index, 1);
+        return true;
+    }
+    return false;
+};
+
+// Swap actor between active party and reserve
+Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {
+    if (!this._actors.includes(activeActorId)) return false;
+    if (!this._reserveMembers.includes(reserveActorId)) return false;
+
+    // Remove from current positions
+    this.removeActor(activeActorId);
+    this.removeFromReserve(reserveActorId);
+
+    // Add to new positions
+    this.addActor(reserveActorId);
+    this.addToReserve(activeActorId);
+
+    return true;
+};
+
+// Check if actor is in reserve
+Game_Party.prototype.isInReserve = function(actorId) {
+    return this._reserveMembers.includes(actorId);
+};

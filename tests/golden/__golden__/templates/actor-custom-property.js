@@ -1210,3 +1210,32 @@ Game_Actor.prototype.setSample = function(value) {
 Game_Actor.prototype.changeSample = function(amount) {
     this.setSample(this._Sample + amount);
 };
+
+// ==== case: minValue=5,maxValue=5 {"dataType":"number","includeChange":true,"propertyName":"Sample","minValue":"5","maxValue":"5"}
+// Custom Actor Property: Sample
+// Type: number, Default: 0
+// Range: 5 to 5
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = 0;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    // Clamp value to valid range
+    this._Sample = Math.max(5, Math.min(5, value));
+};
+
+// Change method: actor.changeSample(amount)
+// Use positive values to increase, negative to decrease
+Game_Actor.prototype.changeSample = function(amount) {
+    this.setSample(this._Sample + amount);
+};

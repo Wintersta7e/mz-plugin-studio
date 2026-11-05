@@ -27,7 +27,7 @@ const FLOORS = {
     [GENERATOR]: { lines: 96, branches: 92 },
     'src/renderer/src/components': { lines: 90, branches: 83 },
     'src/renderer/src': { lines: 82, branches: 79 },
-    global: { lines: 94, branches: 88 }
+    global: { lines: 94, branches: 89 }
   },
   golden: {
     // Every generator file, the category modules under templates/ included: a new one needs its
@@ -38,13 +38,13 @@ const FLOORS = {
       [`${GENERATOR}/class-registry.ts`]: 100,
       [`${GENERATOR}/templates/index.ts`]: 88,
       [`${GENERATOR}/templates/types.ts`]: 100,
-      [`${GENERATOR}/templates/actor-party.ts`]: 80,
+      [`${GENERATOR}/templates/actor-party.ts`]: 83,
       [`${GENERATOR}/templates/audio-system.ts`]: 96,
       [`${GENERATOR}/templates/battle-system.ts`]: 94,
       [`${GENERATOR}/templates/custom-window.ts`]: 97,
       [`${GENERATOR}/templates/database-ext.ts`]: 93,
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
-      [`${GENERATOR}/templates/map-events.ts`]: 94,
+      [`${GENERATOR}/templates/map-events.ts`]: 98,
       [`${GENERATOR}/templates/menu-system.ts`]: 98,
       [`${GENERATOR}/templates/message-system.ts`]: 95,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,

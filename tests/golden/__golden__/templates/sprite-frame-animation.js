@@ -3090,3 +3090,71 @@ X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y.prototype.pauseAnimation
 X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y.prototype.resumeAnimation = function() {
     this._animPlaying = true;
 };
+
+// ==== case: animationType=mixin,targetClass=Sprite_Character,columns=1 {"animationType":"mixin","frameCount":4,"frameWidth":48,"frameHeight":48,"columns":1,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample","targetClass":"Sprite_Character"}
+// Animation Mixin
+//
+// Adds frame-based animation to Sprite_Character
+//-----------------------------------------------------------------------------
+
+// Store original initialize
+const _Sprite_Character_initialize = Sprite_Character.prototype.initialize;
+Sprite_Character.prototype.initialize = function() {
+    _Sprite_Character_initialize.apply(this, arguments);
+    this._animFrameCount = 0;
+    this._animPattern = 0;
+    this._animMaxPattern = 4;
+    this._animDelay = 12;
+    this._animLoop = true;
+    this._animPlaying = true;
+};
+
+// Store original update
+const _Sprite_Character_update = Sprite_Character.prototype.update;
+Sprite_Character.prototype.update = function() {
+    _Sprite_Character_update.call(this);
+    if (this._animPlaying) {
+        this.updateFrameAnimation();
+    }
+};
+
+Sprite_Character.prototype.updateFrameAnimation = function() {
+    this._animFrameCount++;
+    if (this._animFrameCount >= this._animDelay) {
+        this._animFrameCount = 0;
+        this._animPattern++;
+        if (this._animPattern >= this._animMaxPattern) {
+            if (this._animLoop) {
+                this._animPattern = 0;
+            } else {
+                this._animPattern = this._animMaxPattern - 1;
+                this._animPlaying = false;
+            }
+        }
+        this.updateAnimationFrame();
+    }
+};
+
+Sprite_Character.prototype.updateAnimationFrame = function() {
+    // Override this method to set the frame based on this._animPattern
+    this.setFrame(this._animPattern * 48, 0, 48, 48);
+};
+
+// Animation control methods
+Sprite_Character.prototype.playAnimation = function() {
+    this._animPlaying = true;
+    this._animPattern = 0;
+    this._animFrameCount = 0;
+};
+
+Sprite_Character.prototype.stopAnimation = function() {
+    this._animPlaying = false;
+};
+
+Sprite_Character.prototype.pauseAnimation = function() {
+    this._animPlaying = false;
+};
+
+Sprite_Character.prototype.resumeAnimation = function() {
+    this._animPlaying = true;
+};
