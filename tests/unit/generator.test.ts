@@ -7,13 +7,20 @@ import {
   generateHeaderOnly
 } from '../../src/renderer/src/lib/generator/index'
 import { parameterConstant } from '../helpers/generated-names'
-import type { PluginDefinition, PluginParameter } from '../../src/renderer/src/types/plugin'
+import type {
+  LocalizedContent,
+  ParamType,
+  PluginDefinition,
+  PluginParameter,
+  PluginStruct
+} from '../../src/renderer/src/types/plugin'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { createEmptyCommand, createEmptyParameter, toBaseline } from '../../src/shared/types/plugin'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefinition {
+  const { meta, parameters = [], commands = [], structs = [], customCode, codeBody } = overrides
   return {
     id: 'test-id',
     meta: {
@@ -27,33 +34,95 @@ function createTestPlugin(overrides: Partial<PluginDefinition> = {}): PluginDefi
       dependencies: [],
       orderAfter: [],
       localizations: {},
-      ...overrides.meta
+      ...meta
     },
-    parameters: overrides.parameters ?? [],
-    commands: overrides.commands ?? [],
-    structs: overrides.structs ?? [],
-    customCode: overrides.customCode,
-    codeBody: overrides.codeBody
+    parameters,
+    commands,
+    structs,
+    ...(customCode !== undefined && { customCode }),
+    ...(codeBody !== undefined && { codeBody })
   }
 }
 
-describe('generatePlugin', () => {
-  it('generates minimal plugin header', () => {
-    const plugin = createTestPlugin()
-    const output = generatePlugin(plugin)
+/**
+The fragments of `wanted` that `text` lacks, then the fragments of `unwanted` it holds.
+*/
+function strayFragments(
+  text: string,
+  wanted: readonly string[],
+  unwanted: readonly string[] = []
+): string[] {
+  return [
+    ...wanted.filter((fragment) => !text.includes(fragment)),
+    ...unwanted.filter((fragment) => text.includes(fragment)).map((fragment) => `held: ${fragment}`)
+  ]
+}
 
-    expect(output).toContain('/*:')
-    expect(output).toContain('@target MZ')
-    expect(output).toContain('@plugindesc A test plugin')
-    expect(output).toContain('@author TestAuthor')
-    expect(output).toContain('*/')
-    expect(output).toContain('(() => {')
-    expect(output).toContain("'use strict';")
-    expect(output).toContain('})();')
-  })
+/**
+A test title, the definition fields it sets, the text the generated plugin must hold and the
+text it must not.
+*/
+type OutputCase = [
+  title: string,
+  overrides: Partial<PluginDefinition>,
+  wanted: string[],
+  unwanted?: string[]
+]
 
-  it('generates plugin with string parameter', () => {
-    const plugin = createTestPlugin({
+/**
+What the plugin generated from a case's fields lacks of its wanted text and holds of its
+unwanted text.
+*/
+function strayOutput([, overrides, wanted, unwanted]: OutputCase): string[] {
+  return strayFragments(generatePlugin(createTestPlugin(overrides)), wanted, unwanted)
+}
+
+/**
+The first item of a list a test edits; a missing one is a broken fixture.
+*/
+function firstOf<T>(items: readonly T[]): T {
+  const [item] = items
+  if (item === undefined) throw new Error('the fixture lacks the item the test edits')
+  return item
+}
+
+const POSITION: PluginStruct = {
+  id: 's1',
+  name: 'Position',
+  parameters: [
+    { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
+    { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
+  ]
+}
+
+const SETTINGS: PluginParameter = {
+  id: 'p1',
+  name: 'settings',
+  text: 'Settings',
+  desc: '',
+  type: 'struct',
+  default: '{"x":"100","y":"200"}',
+  structType: 'Position'
+}
+
+const GENERATED_PARTS: OutputCase[] = [
+  [
+    'generates minimal plugin header',
+    {},
+    [
+      '/*:',
+      '@target MZ',
+      '@plugindesc A test plugin',
+      '@author TestAuthor',
+      '*/',
+      '(() => {',
+      "'use strict';",
+      '})();'
+    ]
+  ],
+  [
+    'generates plugin with string parameter',
+    {
       parameters: [
         {
           id: 'p1',
@@ -64,19 +133,19 @@ describe('generatePlugin', () => {
           default: 'Hello'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@param greeting')
-    expect(output).toContain('@text Greeting')
-    expect(output).toContain('@desc The greeting message')
-    expect(output).toContain('@type string')
-    expect(output).toContain('@default Hello')
-    expect(output).toContain("params['greeting']")
-  })
-
-  it('generates plugin with number parameter including min/max', () => {
-    const plugin = createTestPlugin({
+    },
+    [
+      '@param greeting',
+      '@text Greeting',
+      '@desc The greeting message',
+      '@type string',
+      '@default Hello',
+      "params['greeting']"
+    ]
+  ],
+  [
+    'generates plugin with number parameter including min/max',
+    {
       parameters: [
         {
           id: 'p1',
@@ -90,18 +159,12 @@ describe('generatePlugin', () => {
           decimals: 2
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@type number')
-    expect(output).toContain('@min 1')
-    expect(output).toContain('@max 10')
-    expect(output).toContain('@decimals 2')
-    expect(output).toContain('@default 5')
-  })
-
-  it('generates plugin with boolean parameter', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@type number', '@min 1', '@max 10', '@decimals 2', '@default 5']
+  ],
+  [
+    'generates plugin with boolean parameter',
+    {
       parameters: [
         {
           id: 'p1',
@@ -114,17 +177,12 @@ describe('generatePlugin', () => {
           offLabel: 'No'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@type boolean')
-    expect(output).toContain('@on Yes')
-    expect(output).toContain('@off No')
-    expect(output).toContain('@default true')
-  })
-
-  it('generates plugin with select parameter', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@type boolean', '@on Yes', '@off No', '@default true']
+  ],
+  [
+    'generates plugin with select parameter',
+    {
       parameters: [
         {
           id: 'p1',
@@ -139,18 +197,12 @@ describe('generatePlugin', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@type select')
-    expect(output).toContain('@option Automatic')
-    expect(output).toContain('@value auto')
-    expect(output).toContain('@option Manual')
-    expect(output).toContain('@value manual')
-  })
-
-  it('generates plugin with commands', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@type select', '@option Automatic', '@value auto', '@option Manual', '@value manual']
+  ],
+  [
+    'generates plugin with commands',
+    {
       commands: [
         {
           id: 'c1',
@@ -169,17 +221,12 @@ describe('generatePlugin', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@command DoThing')
-    expect(output).toContain('@text Do Thing')
-    expect(output).toContain('@arg target')
-    expect(output).toContain("registerCommand(PLUGIN_NAME, 'DoThing'")
-  })
-
-  it('generates plugin with @base and @orderAfter', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@command DoThing', '@text Do Thing', '@arg target', "registerCommand(PLUGIN_NAME, 'DoThing'"]
+  ],
+  [
+    'generates plugin with @base and @orderAfter',
+    {
       meta: {
         name: 'TestPlugin',
         version: '1.0.0',
@@ -192,21 +239,58 @@ describe('generatePlugin', () => {
         orderAfter: ['BasePlugin'],
         localizations: {}
       }
-    })
-    const output = generatePlugin(plugin)
+    },
+    ['@base BasePlugin', '@orderAfter BasePlugin']
+  ],
+  [
+    'preserves custom code',
+    { customCode: '// My custom code\nconsole.log("hello");' },
+    ['// My custom code', 'console.log("hello")']
+  ],
+  [
+    'generates struct definition blocks',
+    { structs: [POSITION] },
+    ['/*~struct~Position:', '@param x', '@param y']
+  ],
+  [
+    'emits @default for struct parameter with JSON default',
+    { parameters: [SETTINGS], structs: [POSITION] },
+    ['@type struct<Position>', '@default {"x":"100","y":"200"}']
+  ],
+  [
+    'uses struct default as JSON.parse fallback in body',
+    { parameters: [SETTINGS], structs: [POSITION] },
+    ['JSON.parse(params[\'settings\'] || \'{"x":"100","y":"200"}\')']
+  ],
+  [
+    'falls back to empty object when struct has no default',
+    {
+      parameters: [
+        {
+          id: 'p1',
+          name: 'pos',
+          text: 'Pos',
+          desc: '',
+          type: 'struct',
+          default: '',
+          structType: 'Position'
+        }
+      ],
+      structs: [
+        {
+          id: 's1',
+          name: 'Position',
+          parameters: [{ id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
+        }
+      ]
+    },
+    ["JSON.parse(params['pos'] || '{}')"]
+  ]
+]
 
-    expect(output).toContain('@base BasePlugin')
-    expect(output).toContain('@orderAfter BasePlugin')
-  })
-
-  it('preserves custom code', () => {
-    const plugin = createTestPlugin({
-      customCode: '// My custom code\nconsole.log("hello");'
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('// My custom code')
-    expect(output).toContain('console.log("hello")')
+describe(generatePlugin, () => {
+  it.each(GENERATED_PARTS)('%s', (...row) => {
+    expect(strayOutput(row)).toStrictEqual([])
   })
 
   it('generates syntactically valid JavaScript', () => {
@@ -235,128 +319,28 @@ describe('generatePlugin', () => {
 
     expect(compileCheck(code, 'plugin.js')).toBeNull()
   })
-
-  it('generates struct definition blocks', () => {
-    const plugin = createTestPlugin({
-      structs: [
-        {
-          id: 's1',
-          name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
-            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
-          ]
-        }
-      ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('/*~struct~Position:')
-    expect(output).toContain('@param x')
-    expect(output).toContain('@param y')
-  })
-
-  it('emits @default for struct parameter with JSON default', () => {
-    const plugin = createTestPlugin({
-      parameters: [
-        {
-          id: 'p1',
-          name: 'settings',
-          text: 'Settings',
-          desc: '',
-          type: 'struct',
-          default: '{"x":"100","y":"200"}',
-          structType: 'Position'
-        }
-      ],
-      structs: [
-        {
-          id: 's1',
-          name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
-            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
-          ]
-        }
-      ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@type struct<Position>')
-    expect(output).toContain('@default {"x":"100","y":"200"}')
-  })
-
-  it('uses struct default as JSON.parse fallback in body', () => {
-    const plugin = createTestPlugin({
-      parameters: [
-        {
-          id: 'p1',
-          name: 'settings',
-          text: 'Settings',
-          desc: '',
-          type: 'struct',
-          default: '{"x":"100","y":"200"}',
-          structType: 'Position'
-        }
-      ],
-      structs: [
-        {
-          id: 's1',
-          name: 'Position',
-          parameters: [
-            { id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 },
-            { id: 'sp2', name: 'y', text: 'Y', desc: '', type: 'number', default: 0 }
-          ]
-        }
-      ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('JSON.parse(params[\'settings\'] || \'{"x":"100","y":"200"}\')')
-  })
-
-  it('falls back to empty object when struct has no default', () => {
-    const plugin = createTestPlugin({
-      parameters: [
-        {
-          id: 'p1',
-          name: 'pos',
-          text: 'Pos',
-          desc: '',
-          type: 'struct',
-          default: '',
-          structType: 'Position'
-        }
-      ],
-      structs: [
-        {
-          id: 's1',
-          name: 'Position',
-          parameters: [{ id: 'sp1', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
-        }
-      ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("JSON.parse(params['pos'] || '{}')")
-  })
 })
 
-// COV-01: generateRawMode against the definition the file was opened with
-describe('generateRawMode', () => {
-  /** The file as the app opens it, and a copy to edit; the opened definition is the baseline. */
-  function open(rawSource: string): { opened: PluginDefinition; plugin: PluginDefinition } {
-    const opened = {
-      ...PluginParser.parsePlugin(rawSource, 'RawPlugin.js'),
-      importedFrom: 'RawPlugin.js'
-    }
-    return { opened, plugin: structuredClone(opened) }
+/**
+The file as the app opens it, and a copy to edit; the opened definition is the baseline.
+*/
+function open(rawSource: string): { opened: PluginDefinition; plugin: PluginDefinition } {
+  const opened = {
+    ...PluginParser.parsePlugin(rawSource, 'RawPlugin.js'),
+    importedFrom: 'RawPlugin.js'
   }
+  return { opened, plugin: structuredClone(opened) }
+}
 
-  const save = (plugin: PluginDefinition, opened: PluginDefinition): string =>
-    generateRawMode(plugin, toBaseline(opened))
+/**
+The file raw mode writes for the edited copy of a file opened by `open`.
+*/
+function save(plugin: PluginDefinition, opened: PluginDefinition): string {
+  return generateRawMode(plugin, toBaseline(opened))
+}
 
-  const param = (name: string, overrides: Partial<PluginParameter> = {}): PluginParameter => ({
+function param(name: string, overrides: Partial<PluginParameter> = {}): PluginParameter {
+  return {
     id: name,
     name,
     text: name,
@@ -364,18 +348,10 @@ describe('generateRawMode', () => {
     type: 'string',
     default: '',
     ...overrides
-  })
+  }
+}
 
-  it('refuses to run without rawSource', () => {
-    const plugin = createTestPlugin()
-
-    expect(() => generateRawMode(plugin, toBaseline(plugin))).toThrow(
-      'generateRawMode needs rawSource'
-    )
-  })
-
-  it('writes an unedited file back unchanged, whatever its blocks look like', () => {
-    const raw = `/*:
+const RAW_SPACED_OUT = `/*:
  *   @plugindesc   Spaced out
  * @param speed
  *     @type number
@@ -385,13 +361,8 @@ describe('generateRawMode', () => {
     const speed = Number(params['speed']);
 })();
 `
-    const { opened, plugin } = open(raw)
 
-    expect(save(plugin, opened)).toBe(raw)
-  })
-
-  it('keeps a file without a main block as it is', () => {
-    const raw = `/*:ja
+const RAW_WITHOUT_MAIN_BLOCK = `/*:ja
  * @plugindesc テスト
  */
 
@@ -400,154 +371,13 @@ describe('generateRawMode', () => {
     console.log('hello');
 })();
 `
-    const { opened, plugin } = open(raw)
 
-    expect(save(plugin, opened)).toBe(raw)
-  })
+const UNEDITED_FILES: [title: string, raw: string][] = [
+  ['writes an unedited file back unchanged, whatever its blocks look like', RAW_SPACED_OUT],
+  ['keeps a file without a main block as it is', RAW_WITHOUT_MAIN_BLOCK]
+]
 
-  it('declares PLUGIN_NAME and params for an added parameter when the code reads none', () => {
-    const raw = `/*:
- * @plugindesc Test
- * @author Test
- */
-
-(() => {
-    'use strict';
-    // custom logic only
-    console.log('hello');
-})();`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('newParam', { default: 'x' }))
-    const result = save(plugin, opened)
-
-    expect(result).toContain("const PLUGIN_NAME = 'RawPlugin';")
-    expect(result).toContain('const params = PluginManager.parameters(PLUGIN_NAME);')
-    expect(result).toContain('const newParam =')
-    expect(compileCheck(result, 'plugin.js')).toBeNull()
-  })
-
-  it('scaffolds only parameters added since the file was opened', () => {
-    const raw = `/*:
- * @param oldParam
- * @type string
- * @default hello
- */
-
-(() => {
-    'use strict';
-    const PLUGIN_NAME = 'RawPlugin';
-    const prm = PluginManager.parameters(PLUGIN_NAME);
-    const oldParam = prm.oldParam || 'hello';
-})();`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('newParam', { type: 'number', default: 5 }))
-    const result = save(plugin, opened)
-
-    expect(result.match(/const PLUGIN_NAME/g)).toHaveLength(1)
-    expect(result.match(/const oldParam/g)).toHaveLength(1)
-    expect(result).toContain("const newParam = Number(prm['newParam'] || 5);")
-    expect(compileCheck(result, 'plugin.js')).toBeNull()
-  })
-
-  it('reads an added parameter through the object the file stores its parameters in', () => {
-    const raw = `/*:
- * @param speed
- */
-(() => {
-    const parameters = PluginManager.parameters('RawPlugin');
-    const speed = parameters['speed'];
-})();
-`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('label', { default: 'x' }))
-    const result = save(plugin, opened)
-
-    expect(result).toContain("const label = parameters['label'] ?? 'x';")
-    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
-  })
-
-  it('adds parameter code in a block after a top-level parameters call on several lines', () => {
-    const raw = `/*:
- * @param speed
- */
-var prm = PluginManager.parameters(
-    'RawPlugin'
-);
-var speed = prm.speed;
-`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('label'))
-    const result = save(plugin, opened)
-
-    expect(result).toContain(
-      "    'RawPlugin'\n);\n\n{\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
-    )
-    expect(result).toContain('    // --- End new parameters ---\n}\nvar speed = prm.speed;\n')
-    expect(compileCheck(result, 'plugin.js')).toBeNull()
-  })
-
-  it('falls back to IIFE-opening injection when no use strict present', () => {
-    const raw = `/*:
- * @plugindesc Test
- * @author Test
- */
-
-(() => {
-    // no use strict here
-    console.log('hello');
-})();`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('fresh'))
-    const result = save(plugin, opened)
-
-    expect(result).toContain('const fresh =')
-    expect(result.indexOf('const fresh =')).toBeLessThan(result.indexOf("console.log('hello')"))
-  })
-
-  it('injects new commands before closing })(); and only those', () => {
-    const raw = `/*:
- * @command Old
- */
-
-(() => {
-    'use strict';
-    const PLUGIN_NAME = 'RawPlugin';
-    // existing code
-    console.log('loaded');
-})();`
-    const { opened, plugin } = open(raw)
-    plugin.commands.push({ id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] })
-    const result = save(plugin, opened)
-
-    expect(result).not.toContain("'Old'")
-
-    const cmdIdx = result.indexOf("registerCommand(PLUGIN_NAME, 'NewCommand'")
-
-    expect(cmdIdx).toBeGreaterThan(-1)
-    expect(cmdIdx).toBeLessThan(result.lastIndexOf('})();'))
-    expect(compileCheck(result, 'plugin.js')).toBeNull()
-  })
-
-  it('appends code for added items inside braces when the file has no IIFE', () => {
-    const raw = `/*:
- * @plugindesc Legacy
- */
-var Legacy = {};
-`
-    const { opened, plugin } = open(raw)
-    plugin.parameters.push(param('fresh'))
-    plugin.commands.push({ id: 'c1', name: 'Go', text: 'Go', desc: '', args: [] })
-    const result = save(plugin, opened)
-
-    expect(result).toContain('var Legacy = {};\n')
-    expect(result).toContain("registerCommand(PLUGIN_NAME, 'Go'")
-    expect(result.trimEnd().endsWith('}')).toBe(true)
-    expect(compileCheck(result, 'plugin.js')).toBeNull()
-    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
-  })
-
-  it('preserves preamble (license text) before first annotation', () => {
-    const raw = `/*:
+const RAW_PREAMBLE = `/*:
  * MZ Plugin Studio - RawPlugin
  * Copyright (c) 2024 Test Author
  * License: MIT
@@ -560,49 +390,27 @@ var Legacy = {};
 (() => {
     'use strict';
 })();`
-    const { opened, plugin } = open(raw)
-    plugin.meta.description = 'New description'
-    const result = save(plugin, opened)
 
-    expect(result).toContain('MZ Plugin Studio - RawPlugin')
-    expect(result).toContain('Copyright (c) 2024 Test Author')
-    expect(result).toContain('@plugindesc New description')
-  })
+const RAW_CRLF = [
+  '\u{FEFF}/*:',
+  ' * @plugindesc Old',
+  ' */',
+  '',
+  '/*:ja',
+  ' * @plugindesc 古い',
+  ' */',
+  '',
+  '/*~struct~Pos:',
+  ' * @param x',
+  ' */',
+  '',
+  '(() => {',
+  "    const params = PluginManager.parameters('RawPlugin');",
+  '})();',
+  ''
+].join('\r\n')
 
-  it('writes the file line endings and keeps blocks that did not change', () => {
-    const raw = [
-      '\u{FEFF}/*:',
-      ' * @plugindesc Old',
-      ' */',
-      '',
-      '/*:ja',
-      ' * @plugindesc 古い',
-      ' */',
-      '',
-      '/*~struct~Pos:',
-      ' * @param x',
-      ' */',
-      '',
-      '(() => {',
-      "    const params = PluginManager.parameters('RawPlugin');",
-      '})();',
-      ''
-    ].join('\r\n')
-    const { opened, plugin } = open(raw)
-    plugin.meta.description = 'New'
-    plugin.parameters.push(param('added'))
-    const result = save(plugin, opened)
-
-    expect(result.startsWith('\u{FEFF}/*:\r\n')).toBe(true)
-    expect(result).not.toMatch(/[^\r]\n/)
-    expect(result).toContain('/*:ja\r\n * @plugindesc 古い\r\n */')
-    expect(result).toContain('/*~struct~Pos:\r\n * @param x\r\n */')
-    expect(result).toContain('@plugindesc New\r\n')
-    expect(result).toContain("params['added']")
-  })
-
-  it('rewrites the English block that stands in for a missing bare block, keeping its opener', () => {
-    const raw = `/*:en
+const RAW_ENGLISH_FOR_BARE = `/*:en
  * @plugindesc Old
  */
 
@@ -610,17 +418,8 @@ var Legacy = {};
  * @plugindesc 古い
  */
 `
-    const { opened, plugin } = open(raw)
-    plugin.meta.description = 'New'
-    const result = save(plugin, opened)
 
-    expect(result.startsWith('/*:en\n')).toBe(true)
-    expect(result).toContain('@plugindesc New')
-    expect(result).toContain('/*:ja\n * @plugindesc 古い\n */')
-  })
-
-  it("rewrites a struct's own block and keeps its translated blocks", () => {
-    const raw = `/*:
+const RAW_TRANSLATED_STRUCT = `/*:
  * @param pos
  * @type struct<Pos>
  */
@@ -635,8 +434,64 @@ var Legacy = {};
  * @text 横
  */
 `
+
+// COV-01: generateRawMode against the definition the file was opened with
+describe(generateRawMode, () => {
+  it('refuses to run without rawSource', () => {
+    const plugin = createTestPlugin()
+
+    expect(() => generateRawMode(plugin, toBaseline(plugin))).toThrow(
+      'generateRawMode needs rawSource'
+    )
+  })
+
+  it.each(UNEDITED_FILES)('%s', (_title, raw) => {
     const { opened, plugin } = open(raw)
-    plugin.structs[0].parameters.push(param('y'))
+
+    expect(save(plugin, opened)).toBe(raw)
+  })
+
+  it('preserves preamble (license text) before first annotation', () => {
+    const { opened, plugin } = open(RAW_PREAMBLE)
+    plugin.meta.description = 'New description'
+    const result = save(plugin, opened)
+
+    expect(result).toContain('MZ Plugin Studio - RawPlugin')
+    expect(result).toContain('Copyright (c) 2024 Test Author')
+    expect(result).toContain('@plugindesc New description')
+  })
+
+  it('writes the file line endings and keeps blocks that did not change', () => {
+    const { opened, plugin } = open(RAW_CRLF)
+    plugin.meta.description = 'New'
+    plugin.parameters.push(param('added'))
+    const result = save(plugin, opened)
+
+    expect(result.startsWith('\u{FEFF}/*:\r\n')).toBe(true)
+    expect(result).not.toMatch(/[^\r]\n/)
+    expect(
+      strayFragments(result, [
+        '/*:ja\r\n * @plugindesc 古い\r\n */',
+        '/*~struct~Pos:\r\n * @param x\r\n */',
+        '@plugindesc New\r\n',
+        "params['added']"
+      ])
+    ).toStrictEqual([])
+  })
+
+  it('rewrites the English block that stands in for a missing bare block, keeping its opener', () => {
+    const { opened, plugin } = open(RAW_ENGLISH_FOR_BARE)
+    plugin.meta.description = 'New'
+    const result = save(plugin, opened)
+
+    expect(result.startsWith('/*:en\n')).toBe(true)
+    expect(result).toContain('@plugindesc New')
+    expect(result).toContain('/*:ja\n * @plugindesc 古い\n */')
+  })
+
+  it("rewrites a struct's own block and keeps its translated blocks", () => {
+    const { opened, plugin } = open(RAW_TRANSLATED_STRUCT)
+    firstOf(plugin.structs).parameters.push(param('y'))
     const result = save(plugin, opened)
 
     expect(result.match(/\/\*~struct~Pos:/g)).toHaveLength(2)
@@ -644,9 +499,159 @@ var Legacy = {};
     expect(result).toContain(' * @param y\n')
     expect(result).toContain('/*~struct~Pos:ja\n * @param x\n * @text 横\n */')
   })
+})
 
-  describe('note and require lines', () => {
-    const raw = `/*:
+const RAW_NO_PARAMETER_READS = `/*:
+ * @plugindesc Test
+ * @author Test
+ */
+
+(() => {
+    'use strict';
+    // custom logic only
+    console.log('hello');
+})();`
+
+const RAW_OLD_PARAMETER = `/*:
+ * @param oldParam
+ * @type string
+ * @default hello
+ */
+
+(() => {
+    'use strict';
+    const PLUGIN_NAME = 'RawPlugin';
+    const prm = PluginManager.parameters(PLUGIN_NAME);
+    const oldParam = prm.oldParam || 'hello';
+})();`
+
+const RAW_PARAMETERS_OBJECT = `/*:
+ * @param speed
+ */
+(() => {
+    const parameters = PluginManager.parameters('RawPlugin');
+    const speed = parameters['speed'];
+})();
+`
+
+const RAW_TOP_LEVEL_CALL = `/*:
+ * @param speed
+ */
+var prm = PluginManager.parameters(
+    'RawPlugin'
+);
+var speed = prm.speed;
+`
+
+const RAW_NO_USE_STRICT = `/*:
+ * @plugindesc Test
+ * @author Test
+ */
+
+(() => {
+    // no use strict here
+    console.log('hello');
+})();`
+
+const RAW_OLD_COMMAND = `/*:
+ * @command Old
+ */
+
+(() => {
+    'use strict';
+    const PLUGIN_NAME = 'RawPlugin';
+    // existing code
+    console.log('loaded');
+})();`
+
+const RAW_NO_IIFE = `/*:
+ * @plugindesc Legacy
+ */
+var Legacy = {};
+`
+
+describe('generateRawMode: code for added items', () => {
+  it('declares PLUGIN_NAME and params for an added parameter when the code reads none', () => {
+    const { opened, plugin } = open(RAW_NO_PARAMETER_READS)
+    plugin.parameters.push(param('newParam', { default: 'x' }))
+    const result = save(plugin, opened)
+
+    expect(result).toContain("const PLUGIN_NAME = 'RawPlugin';")
+    expect(result).toContain('const params = PluginManager.parameters(PLUGIN_NAME);')
+    expect(result).toContain('const newParam =')
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
+  })
+
+  it('scaffolds only parameters added since the file was opened', () => {
+    const { opened, plugin } = open(RAW_OLD_PARAMETER)
+    plugin.parameters.push(param('newParam', { type: 'number', default: 5 }))
+    const result = save(plugin, opened)
+
+    expect(result.match(/const PLUGIN_NAME/g)).toHaveLength(1)
+    expect(result.match(/const oldParam/g)).toHaveLength(1)
+    expect(result).toContain("const newParam = Number(prm['newParam'] || 5);")
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
+  })
+
+  it('reads an added parameter through the object the file stores its parameters in', () => {
+    const { opened, plugin } = open(RAW_PARAMETERS_OBJECT)
+    plugin.parameters.push(param('label', { default: 'x' }))
+    const result = save(plugin, opened)
+
+    expect(result).toContain("const label = parameters['label'] ?? 'x';")
+    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
+  })
+
+  it('adds parameter code in a block after a top-level parameters call on several lines', () => {
+    const { opened, plugin } = open(RAW_TOP_LEVEL_CALL)
+    plugin.parameters.push(param('label'))
+    const result = save(plugin, opened)
+
+    expect(result).toContain(
+      "    'RawPlugin'\n);\n\n{\n    // --- New parameters (added by MZ Plugin Studio) ---\n"
+    )
+    expect(result).toContain('    // --- End new parameters ---\n}\nvar speed = prm.speed;\n')
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
+  })
+
+  it('falls back to IIFE-opening injection when no use strict present', () => {
+    const { opened, plugin } = open(RAW_NO_USE_STRICT)
+    plugin.parameters.push(param('fresh'))
+    const result = save(plugin, opened)
+
+    expect(result).toContain('const fresh =')
+    expect(result.indexOf('const fresh =')).toBeLessThan(result.indexOf("console.log('hello')"))
+  })
+
+  it('injects new commands before closing })(); and only those', () => {
+    const { opened, plugin } = open(RAW_OLD_COMMAND)
+    plugin.commands.push({ id: 'c1', name: 'NewCommand', text: 'New Command', desc: '', args: [] })
+    const result = save(plugin, opened)
+
+    expect(result).not.toContain("'Old'")
+
+    const commandIndex = result.indexOf("registerCommand(PLUGIN_NAME, 'NewCommand'")
+
+    expect(commandIndex).toBeGreaterThan(-1)
+    expect(commandIndex).toBeLessThan(result.lastIndexOf('})();'))
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
+  })
+
+  it('appends code for added items inside braces when the file has no IIFE', () => {
+    const { opened, plugin } = open(RAW_NO_IIFE)
+    plugin.parameters.push(param('fresh'))
+    plugin.commands.push({ id: 'c1', name: 'Go', text: 'Go', desc: '', args: [] })
+    const result = save(plugin, opened)
+
+    expect(result).toContain('var Legacy = {};\n')
+    expect(result).toContain("registerCommand(PLUGIN_NAME, 'Go'")
+    expect(result.trimEnd().endsWith('}')).toBe(true)
+    expect(compileCheck(result, 'plugin.js')).toBeNull()
+    expect(evaluatePlugin(result, { mode: 'generator' }).threw).toBeNull()
+  })
+})
+
+const RAW_ASSETS = `/*:
  * @plugindesc Assets
  *
  * @noteParam Face
@@ -675,44 +680,47 @@ var Legacy = {};
  * @require 1
  */
 `
-    const requireLines = (text: string): number =>
-      (text.match(/^ \* @(?:noteRequire|require) 1$/gm) ?? []).length
 
-    it('are kept byte for byte in blocks that did not change', () => {
-      const { opened, plugin } = open(raw)
-      plugin.meta.description = 'Edited'
-      const result = save(plugin, opened)
-      const struct = raw.slice(raw.indexOf('/*~struct~'))
+function requireLines(text: string): number {
+  return (text.match(/^ \* @(?:noteRequire|require) 1$/gm) ?? []).length
+}
 
-      expect(result.endsWith(struct)).toBe(true)
+describe('generateRawMode: note and require lines', () => {
+  it('are kept byte for byte in blocks that did not change', () => {
+    const { opened, plugin } = open(RAW_ASSETS)
+    plugin.meta.description = 'Edited'
+    const result = save(plugin, opened)
+    const structStart = RAW_ASSETS.indexOf('/*~struct~')
 
-      plugin.meta.description = opened.meta.description
-      plugin.structs[0].parameters[0].desc = 'Edited'
+    expect(result.endsWith(RAW_ASSETS.slice(structStart))).toBe(true)
 
-      expect(save(plugin, opened).startsWith(raw.slice(0, raw.indexOf('/*~struct~')))).toBe(true)
-    })
+    plugin.meta.description = opened.meta.description
+    firstOf(firstOf(plugin.structs).parameters).desc = 'Edited'
+    const head = RAW_ASSETS.slice(0, structStart)
 
-    it('are written again when their block is rewritten', () => {
-      const { opened, plugin } = open(raw)
-      plugin.meta.description = 'Edited'
-      plugin.structs[0].parameters[0].desc = 'Edited'
-      const result = save(plugin, opened)
+    expect(save(plugin, opened).startsWith(head)).toBe(true)
+  })
 
-      expect(result).toContain('@plugindesc Edited')
-      expect(result).toContain(' * @noteData actors\n * @noteRequire 1\n')
-      expect(requireLines(result)).toBe(requireLines(raw))
-      expect(requireLines(raw)).toBe(4)
-    })
+  it('are written again when their block is rewritten', () => {
+    const { opened, plugin } = open(RAW_ASSETS)
+    plugin.meta.description = 'Edited'
+    firstOf(firstOf(plugin.structs).parameters).desc = 'Edited'
+    const result = save(plugin, opened)
 
-    it('stay out of a plugin generated without raw mode', () => {
-      const { opened } = open(raw)
+    expect(result).toContain('@plugindesc Edited')
+    expect(result).toContain(' * @noteData actors\n * @noteRequire 1\n')
+    expect(requireLines(result)).toBe(requireLines(RAW_ASSETS))
+    expect(requireLines(RAW_ASSETS)).toBe(4)
+  })
 
-      expect(requireLines(generatePlugin(opened))).toBe(0)
-    })
+  it('stay out of a plugin generated without raw mode', () => {
+    const { opened } = open(RAW_ASSETS)
+
+    expect(requireLines(generatePlugin(opened))).toBe(0)
   })
 })
 
-describe('generateHeaderOnly', () => {
+describe(generateHeaderOnly, () => {
   it('generates only the header without body', () => {
     const plugin = createTestPlugin()
     const header = generateHeaderOnly(plugin)
@@ -744,78 +752,51 @@ describe('camelCase', () => {
   })
 })
 
+/**
+Each parameter type, the name its parameter gets, the reader the generated plugin must hold
+and the default the parameter carries.
+*/
+const ACCESSOR_CASES: [
+  type: ParamType,
+  name: string,
+  reader: string,
+  fallback: string | number | boolean
+][] = [
+  ['string', 'greeting', "params['greeting'] ?? ''", ''],
+  ['number', 'speed', "Number(params['speed'] || 0)", 0],
+  ['boolean', 'flag', "(params['flag'] ?? 'false') === 'true'", false],
+  ['select', 'mode', "params['mode'] ?? 'easy'", 'easy'],
+  ['combo', 'combo', "params['combo'] ?? ''", ''],
+  ['note', 'note', "params['note'] ?? ''", ''],
+  ['text', 'txt', "params['txt'] ?? ''", ''],
+  ['hidden', 'hid', "params['hid'] ?? ''", ''],
+  ['variable', 'variable', "Number(params['variable'] || 0)", 0],
+  ['switch', 'sw', "Number(params['sw'] || 0)", 0],
+  ['actor', 'actor', "Number(params['actor'] || 0)", 0],
+  ['class', 'cls', "Number(params['cls'] || 0)", 0],
+  ['skill', 'skill', "Number(params['skill'] || 0)", 0],
+  ['item', 'item', "Number(params['item'] || 0)", 0],
+  ['weapon', 'weapon', "Number(params['weapon'] || 0)", 0],
+  ['armor', 'armor', "Number(params['armor'] || 0)", 0],
+  ['enemy', 'enemy', "Number(params['enemy'] || 0)", 0],
+  ['troop', 'troop', "Number(params['troop'] || 0)", 0],
+  ['state', 'state', "Number(params['state'] || 0)", 0],
+  ['animation', 'animation', "Number(params['animation'] || 0)", 0],
+  ['tileset', 'tileset', "Number(params['tileset'] || 0)", 0],
+  ['common_event', 'common_event', "Number(params['common_event'] || 0)", 0],
+  ['icon', 'icon', "Number(params['icon'] || 0)", 0],
+  ['map', 'map', "Number(params['map'] || 0)", 0],
+  ['file', 'file', "params['file'] ?? ''", ''],
+  ['color', 'color', "params['color'] ?? ''", ''],
+  ['struct', 'settings', "JSON.parse(params['settings'] || '{}')", ''],
+  ['array', 'items', "JSON.parse(params['items'] || '[]')", '']
+]
+
 // COV-02: generateAccessorParser for all 26 param types
 describe('generatePlugin - accessor parser for all param types', () => {
-  const cases: { type: string; expectContains: string; default?: unknown }[] = [
-    { type: 'string', expectContains: "params['greeting'] ?? ''", default: '' },
-    { type: 'number', expectContains: "Number(params['speed'] || 0)", default: 0 },
-    { type: 'boolean', expectContains: "(params['flag'] ?? 'false') === 'true'", default: false },
-    { type: 'select', expectContains: "params['mode'] ?? 'easy'", default: 'easy' },
-    { type: 'combo', expectContains: "params['combo'] ?? ''", default: '' },
-    { type: 'note', expectContains: "params['note'] ?? ''", default: '' },
-    { type: 'text', expectContains: "params['txt'] ?? ''", default: '' },
-    { type: 'hidden', expectContains: "params['hid'] ?? ''", default: '' },
-    { type: 'variable', expectContains: "Number(params['variable'] || 0)", default: 0 },
-    { type: 'switch', expectContains: "Number(params['sw'] || 0)", default: 0 },
-    { type: 'actor', expectContains: "Number(params['actor'] || 0)", default: 0 },
-    { type: 'class', expectContains: "Number(params['cls'] || 0)", default: 0 },
-    { type: 'skill', expectContains: "Number(params['skill'] || 0)", default: 0 },
-    { type: 'item', expectContains: "Number(params['item'] || 0)", default: 0 },
-    { type: 'weapon', expectContains: "Number(params['weapon'] || 0)", default: 0 },
-    { type: 'armor', expectContains: "Number(params['armor'] || 0)", default: 0 },
-    { type: 'enemy', expectContains: "Number(params['enemy'] || 0)", default: 0 },
-    { type: 'troop', expectContains: "Number(params['troop'] || 0)", default: 0 },
-    { type: 'state', expectContains: "Number(params['state'] || 0)", default: 0 },
-    { type: 'animation', expectContains: "Number(params['animation'] || 0)", default: 0 },
-    { type: 'tileset', expectContains: "Number(params['tileset'] || 0)", default: 0 },
-    { type: 'common_event', expectContains: "Number(params['common_event'] || 0)", default: 0 },
-    { type: 'icon', expectContains: "Number(params['icon'] || 0)", default: 0 },
-    { type: 'map', expectContains: "Number(params['map'] || 0)", default: 0 },
-    { type: 'file', expectContains: "params['file'] ?? ''", default: '' },
-    { type: 'color', expectContains: "params['color'] ?? ''", default: '' },
-    {
-      type: 'struct',
-      expectContains: "JSON.parse(params['settings'] || '{}')",
-      default: ''
-    },
-    { type: 'array', expectContains: "JSON.parse(params['items'] || '[]')", default: '' }
-  ]
-
-  // name map: type → param name used
-  const nameForType: Record<string, string> = {
-    string: 'greeting',
-    number: 'speed',
-    boolean: 'flag',
-    select: 'mode',
-    combo: 'combo',
-    note: 'note',
-    text: 'txt',
-    hidden: 'hid',
-    variable: 'variable',
-    switch: 'sw',
-    actor: 'actor',
-    class: 'cls',
-    skill: 'skill',
-    item: 'item',
-    weapon: 'weapon',
-    armor: 'armor',
-    enemy: 'enemy',
-    troop: 'troop',
-    state: 'state',
-    animation: 'animation',
-    tileset: 'tileset',
-    common_event: 'common_event',
-    icon: 'icon',
-    map: 'map',
-    file: 'file',
-    color: 'color',
-    struct: 'settings',
-    array: 'items'
-  }
-
-  for (const { type, expectContains, default: def } of cases) {
-    it(`generates correct parser for @type ${type}`, () => {
-      const name = nameForType[type]
+  it.each(ACCESSOR_CASES)(
+    'generates correct parser for @type %s',
+    (type, name, reader, fallback) => {
       const plugin = createTestPlugin({
         parameters: [
           {
@@ -823,17 +804,17 @@ describe('generatePlugin - accessor parser for all param types', () => {
             name,
             text: name,
             desc: '',
-            type: type as PluginDefinition['parameters'][0]['type'],
-            default: def as string | number | boolean,
-            structType: type === 'struct' ? 'Pos' : undefined
+            type,
+            default: fallback,
+            ...(type === 'struct' && { structType: 'Pos' })
           }
         ]
       })
       const output = generatePlugin(plugin)
 
-      expect(output).toContain(expectContains)
-    })
-  }
+      expect(output).toContain(reader)
+    }
+  )
 
   it('generates JSON.parse with default fallback for struct with non-empty default', () => {
     const plugin = createTestPlugin({
@@ -855,68 +836,46 @@ describe('generatePlugin - accessor parser for all param types', () => {
   })
 })
 
-// COV-03: formatJSDefault edge cases
-describe('generatePlugin - formatJSDefault', () => {
-  it('handles empty default for number type (falls back to 0)', () => {
-    const plugin = createTestPlugin({
+const FORMATTED_DEFAULTS: OutputCase[] = [
+  [
+    'handles empty default for number type (falls back to 0)',
+    {
       parameters: [
-        {
-          id: 'p1',
-          name: 'count',
-          text: 'Count',
-          desc: '',
-          type: 'number',
-          default: ''
-        }
+        { id: 'p1', name: 'count', text: 'Count', desc: '', type: 'number', default: '' }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("Number(params['count'] || 0)")
-  })
-
-  it('handles empty default for ID-based types (falls back to 0)', () => {
-    const plugin = createTestPlugin({
+    },
+    ["Number(params['count'] || 0)"]
+  ],
+  [
+    'handles empty default for ID-based types (falls back to 0)',
+    {
       parameters: [
-        {
-          id: 'p1',
-          name: 'actorId',
-          text: 'Actor',
-          desc: '',
-          type: 'actor',
-          default: ''
-        }
+        { id: 'p1', name: 'actorId', text: 'Actor', desc: '', type: 'actor', default: '' }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("Number(params['actorId'] || 0)")
-  })
-
-  it('handles boolean default true (nullish-fallback to preserve default when key absent)', () => {
-    const plugin = createTestPlugin({
+    },
+    ["Number(params['actorId'] || 0)"]
+  ],
+  [
+    'handles boolean default true (nullish-fallback to preserve default when key absent)',
+    {
       parameters: [
         { id: 'p1', name: 'enabled', text: 'Enabled', desc: '', type: 'boolean', default: true }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("(params['enabled'] ?? 'true') === 'true'")
-  })
-
-  it('handles boolean default false (nullish-fallback)', () => {
-    const plugin = createTestPlugin({
+    },
+    ["(params['enabled'] ?? 'true') === 'true'"]
+  ],
+  [
+    'handles boolean default false (nullish-fallback)',
+    {
       parameters: [
         { id: 'p1', name: 'enabled', text: 'Enabled', desc: '', type: 'boolean', default: false }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("(params['enabled'] ?? 'false') === 'true'")
-  })
-
-  it('deep-parses struct<X>[] arrays (MZ double-encodes struct arrays)', () => {
-    const plugin = createTestPlugin({
+    },
+    ["(params['enabled'] ?? 'false') === 'true'"]
+  ],
+  [
+    'deep-parses struct<X>[] arrays (MZ double-encodes struct arrays)',
+    {
       parameters: [
         {
           id: 'p1',
@@ -930,14 +889,12 @@ describe('generatePlugin - formatJSDefault', () => {
         }
       ],
       structs: [{ id: 's1', name: 'ItemConfig', parameters: [] }]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('.map(s => JSON.parse(s))')
-  })
-
-  it('coerces elements of number[] arrays via Number()', () => {
-    const plugin = createTestPlugin({
+    },
+    ['.map(s => JSON.parse(s))']
+  ],
+  [
+    'coerces elements of number[] arrays via Number()',
+    {
       parameters: [
         {
           id: 'p1',
@@ -949,14 +906,12 @@ describe('generatePlugin - formatJSDefault', () => {
           default: '[]'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('.map(Number)')
-  })
-
-  it('coerces elements of ID-based arrays (actor[], variable[], etc.) via Number()', () => {
-    const plugin = createTestPlugin({
+    },
+    ['.map(Number)']
+  ],
+  [
+    'coerces elements of ID-based arrays (actor[], variable[], etc.) via Number()',
+    {
       parameters: [
         {
           id: 'p1',
@@ -968,14 +923,12 @@ describe('generatePlugin - formatJSDefault', () => {
           default: '[]'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('.map(Number)')
-  })
-
-  it('coerces elements of boolean[] arrays via === true', () => {
-    const plugin = createTestPlugin({
+    },
+    ['.map(Number)']
+  ],
+  [
+    'coerces elements of boolean[] arrays via === true',
+    {
       parameters: [
         {
           id: 'p1',
@@ -987,14 +940,12 @@ describe('generatePlugin - formatJSDefault', () => {
           default: '[]'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain(".map(v => v === 'true')")
-  })
-
-  it('leaves string[] arrays as plain JSON.parse (elements are already strings)', () => {
-    const plugin = createTestPlugin({
+    },
+    [".map(v => v === 'true')"]
+  ],
+  [
+    'leaves string[] arrays as plain JSON.parse (elements are already strings)',
+    {
       parameters: [
         {
           id: 'p1',
@@ -1006,206 +957,111 @@ describe('generatePlugin - formatJSDefault', () => {
           default: '[]'
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain("JSON.parse(params['tags'] || '[]')")
-    expect(output).not.toContain('.map(')
-  })
-
-  it('parses @type location as JSON with stringly-typed coordinate fields', () => {
-    const plugin = createTestPlugin({
+    },
+    ["JSON.parse(params['tags'] || '[]')"],
+    ['.map(']
+  ],
+  [
+    'parses @type location as JSON with stringly-typed coordinate fields',
+    {
       parameters: [
-        {
-          id: 'p1',
-          name: 'spawn',
-          text: 'Spawn',
-          desc: '',
-          type: 'location',
-          default: ''
-        }
+        { id: 'p1', name: 'spawn', text: 'Spawn', desc: '', type: 'location', default: '' }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain(`JSON.parse(params['spawn'] || '{"mapId":"0","x":"0","y":"0"}')`)
-  })
-
-  it('escapes single quotes in string defaults', () => {
-    const plugin = createTestPlugin({
+    },
+    [`JSON.parse(params['spawn'] || '{"mapId":"0","x":"0","y":"0"}')`]
+  ],
+  [
+    'escapes single quotes in string defaults',
+    {
       parameters: [
-        {
-          id: 'p1',
-          name: 'msg',
-          text: 'Msg',
-          desc: '',
-          type: 'string',
-          default: "it's fine"
-        }
+        { id: 'p1', name: 'msg', text: 'Msg', desc: '', type: 'string', default: "it's fine" }
       ]
-    })
-    const output = generatePlugin(plugin)
-
+    },
     // The default in the accessor should escape the quote
-    expect(output).toContain("params['msg'] ?? 'it\\'s fine'")
-  })
-
-  it('escapes backslashes in string defaults', () => {
-    const plugin = createTestPlugin({
+    ["params['msg'] ?? 'it\\'s fine'"]
+  ],
+  [
+    'escapes backslashes in string defaults',
+    {
       parameters: [
-        {
-          id: 'p1',
-          name: 'path',
-          text: 'Path',
-          desc: '',
-          type: 'string',
-          default: 'C:\\Users'
-        }
+        { id: 'p1', name: 'path', text: 'Path', desc: '', type: 'string', default: 'C:\\Users' }
       ]
-    })
-    const output = generatePlugin(plugin)
+    },
+    ["params['path'] ?? 'C:\\\\Users'"]
+  ]
+]
 
-    expect(output).toContain("params['path'] ?? 'C:\\\\Users'")
+// COV-03: formatJSDefault edge cases
+describe('generatePlugin - formatJSDefault', () => {
+  it.each(FORMATTED_DEFAULTS)('%s', (...row) => {
+    expect(strayOutput(row)).toStrictEqual([])
   })
 })
+
+/**
+The fields of a plugin whose English text is 'English' and that carries the given translations.
+*/
+function withLocalizations(
+  localizations: Record<string, LocalizedContent>
+): Partial<PluginDefinition> {
+  return {
+    meta: {
+      name: 'TestPlugin',
+      version: '1.0.0',
+      author: 'Test',
+      description: 'English',
+      help: '',
+      url: '',
+      target: 'MZ',
+      dependencies: [],
+      orderAfter: [],
+      localizations
+    }
+  }
+}
+
+const LOCALIZED_HEADERS: OutputCase[] = [
+  [
+    'generates localized block for a language with only description',
+    withLocalizations({ ja: { description: '日本語の説明' } }),
+    ['/*:ja', '@plugindesc 日本語の説明'],
+    // No @help line when help is absent
+    ['@help\n * ']
+  ],
+  [
+    'generates localized block for a language with only help',
+    withLocalizations({ de: { help: 'Hilftext hier.' } }),
+    ['/*:de', '@help', 'Hilftext hier.']
+  ],
+  [
+    'skips language block when both description and help are empty',
+    withLocalizations({ fr: { description: '', help: '' } }),
+    [],
+    ['/*:fr']
+  ],
+  [
+    'generates multiple language blocks',
+    withLocalizations({ ja: { description: '日本語' }, de: { description: 'Deutsch' } }),
+    ['/*:ja', '/*:de']
+  ],
+  [
+    'generates multi-line help text in localized block',
+    withLocalizations({ ja: { description: 'JP desc', help: 'Line 1\nLine 2\nLine 3' } }),
+    [' * Line 1', ' * Line 2', ' * Line 3']
+  ]
+]
 
 // COV-05: generateLocalizedHeaders
 describe('generatePlugin - localized headers', () => {
-  it('generates localized block for a language with only description', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: 'TestPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'English',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {
-          ja: { description: '日本語の説明' }
-        }
-      }
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('/*:ja')
-    expect(output).toContain('@plugindesc 日本語の説明')
-    // No @help line when help is absent
-    expect(output).not.toContain('@help\n * ')
-  })
-
-  it('generates localized block for a language with only help', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: 'TestPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'English',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {
-          de: { help: 'Hilftext hier.' }
-        }
-      }
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('/*:de')
-    expect(output).toContain('@help')
-    expect(output).toContain('Hilftext hier.')
-  })
-
-  it('skips language block when both description and help are empty', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: 'TestPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'English',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {
-          fr: { description: '', help: '' }
-        }
-      }
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).not.toContain('/*:fr')
-  })
-
-  it('generates multiple language blocks', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: 'TestPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'English',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {
-          ja: { description: '日本語' },
-          de: { description: 'Deutsch' }
-        }
-      }
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('/*:ja')
-    expect(output).toContain('/*:de')
-  })
-
-  it('generates multi-line help text in localized block', () => {
-    const plugin = createTestPlugin({
-      meta: {
-        name: 'TestPlugin',
-        version: '1.0.0',
-        author: 'Test',
-        description: 'English',
-        help: '',
-        url: '',
-        target: 'MZ',
-        dependencies: [],
-        orderAfter: [],
-        localizations: {
-          ja: { description: 'JP desc', help: 'Line 1\nLine 2\nLine 3' }
-        }
-      }
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain(' * Line 1')
-    expect(output).toContain(' * Line 2')
-    expect(output).toContain(' * Line 3')
+  it.each(LOCALIZED_HEADERS)('%s', (...row) => {
+    expect(strayOutput(row)).toStrictEqual([])
   })
 })
 
-// COV-14: generateCommandBlock arg attributes
-describe('generatePlugin - command arg attributes', () => {
-  it('declares a constant of its own for each argument whose name makes the same identifier', () => {
-    const args = ['foo-bar', 'fooBar'].map((name) => ({ ...createEmptyParameter(), name }))
-    const plugin = createTestPlugin({ commands: [{ ...createEmptyCommand(), name: 'DoIt', args }] })
-    const code = generatePlugin(plugin)
-
-    expect(code).toContain("        const fooBar = args['foo-bar'] ?? '';\n")
-    expect(code).toContain("        const fooBar_ = args['fooBar'] ?? '';\n")
-    expect(code).toContain('        // Parsed args available as: fooBar, fooBar_\n')
-    expect(compileCheck(code, 'plugin.js')).toBeNull()
-  })
-
-  it('generates boolean arg with @on/@off labels', () => {
-    const plugin = createTestPlugin({
+const COMMAND_ARGUMENTS: OutputCase[] = [
+  [
+    'generates boolean arg with @on/@off labels',
+    {
       commands: [
         {
           id: 'c1',
@@ -1226,16 +1082,12 @@ describe('generatePlugin - command arg attributes', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@type boolean')
-    expect(output).toContain('@on ON')
-    expect(output).toContain('@off OFF')
-  })
-
-  it('generates number arg with min/max/decimals', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@type boolean', '@on ON', '@off OFF']
+  ],
+  [
+    'generates number arg with min/max/decimals',
+    {
       commands: [
         {
           id: 'c1',
@@ -1257,16 +1109,12 @@ describe('generatePlugin - command arg attributes', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@min 1')
-    expect(output).toContain('@max 100')
-    expect(output).toContain('@decimals 1')
-  })
-
-  it('generates file arg with @dir but drops @require (MV-era)', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@min 1', '@max 100', '@decimals 1']
+  ],
+  [
+    'generates file arg with @dir but drops @require (MV-era)',
+    {
       commands: [
         {
           id: 'c1',
@@ -1287,15 +1135,13 @@ describe('generatePlugin - command arg attributes', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
-
-    expect(output).toContain('@dir img/pictures')
-    expect(output).not.toContain('@require 1')
-  })
-
-  it('generates select arg with multiple options', () => {
-    const plugin = createTestPlugin({
+    },
+    ['@dir img/pictures'],
+    ['@require 1']
+  ],
+  [
+    'generates select arg with multiple options',
+    {
       commands: [
         {
           id: 'c1',
@@ -1319,14 +1165,26 @@ describe('generatePlugin - command arg attributes', () => {
           ]
         }
       ]
-    })
-    const output = generatePlugin(plugin)
+    },
+    ['@option Easy', '@value easy', '@option Normal', '@option Hard', '@value hard']
+  ]
+]
 
-    expect(output).toContain('@option Easy')
-    expect(output).toContain('@value easy')
-    expect(output).toContain('@option Normal')
-    expect(output).toContain('@option Hard')
-    expect(output).toContain('@value hard')
+// COV-14: generateCommandBlock arg attributes
+describe('generatePlugin - command arg attributes', () => {
+  it('declares a constant of its own for each argument whose name makes the same identifier', () => {
+    const args = ['foo-bar', 'fooBar'].map((name) => ({ ...createEmptyParameter(), name }))
+    const plugin = createTestPlugin({ commands: [{ ...createEmptyCommand(), name: 'DoIt', args }] })
+    const code = generatePlugin(plugin)
+
+    expect(code).toContain("        const fooBar = args['foo-bar'] ?? '';\n")
+    expect(code).toContain("        const fooBar_ = args['fooBar'] ?? '';\n")
+    expect(code).toContain('        // Parsed args available as: fooBar, fooBar_\n')
+    expect(compileCheck(code, 'plugin.js')).toBeNull()
+  })
+
+  it.each(COMMAND_ARGUMENTS)('%s', (...row) => {
+    expect(strayOutput(row)).toStrictEqual([])
   })
 })
 
@@ -1445,7 +1303,7 @@ describe('generatePlugin - body dedup and section dividers', () => {
     // Should not duplicate registerCommand in the template section
     const bodyStart = output.indexOf('(() => {')
     const bodySection = output.slice(bodyStart)
-    const registerCalls = bodySection.match(/registerCommand\(PLUGIN_NAME, ['"]MyCmd['"]/g) || []
+    const registerCalls = bodySection.match(/registerCommand\(PLUGIN_NAME, ['"]MyCmd['"]/g) ?? []
 
     // Only the one in customCode should appear
     expect(registerCalls).toHaveLength(1)
@@ -1516,7 +1374,7 @@ describe('generatePlugin - body dedup and section dividers', () => {
   })
 })
 
-describe('validatePlugin', () => {
+describe(validatePlugin, () => {
   it('returns error for invalid plugin name', () => {
     const plugin = createTestPlugin({
       meta: {
@@ -1544,7 +1402,7 @@ describe('validatePlugin', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Invalid command name'))).toBe(true)
+    expect(result.errors.some((message) => message.includes('Invalid command name'))).toBe(true)
   })
 
   it('returns error for duplicate command arg names', () => {
@@ -1565,6 +1423,6 @@ describe('validatePlugin', () => {
     const result = validatePlugin(plugin)
 
     expect(result.valid).toBe(false)
-    expect(result.errors.some((e) => e.includes('Duplicate argument'))).toBe(true)
+    expect(result.errors.some((message) => message.includes('Duplicate argument'))).toBe(true)
   })
 })

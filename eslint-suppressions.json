@@ -6610,38 +6610,6 @@
       "count": 1
     }
   },
-  "tests/unit/generator.test.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 6
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 4
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 4
-    },
-    "vitest/prefer-each": {
-      "count": 1
-    }
-  },
   "tests/unit/ipc-contract.test.ts": {
     "@typescript-eslint/restrict-template-expressions": {
       "count": 4

@@ -37,7 +37,6 @@
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
       "tests/integration/check-coverage.test.ts": 1,
-      "tests/unit/generator.test.ts": 2,
       "tests/unit/mz-annotations.test.ts": 1,
       "tests/unit/round-trip.test.ts": 2,
       "tests/unit/validation.test.ts": 1
@@ -121,7 +120,6 @@
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
       "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/generator.test.ts": 7,
       "tests/unit/mz-annotations.test.ts": 30,
       "tests/unit/package-scripts.test.ts": 19,
       "tests/unit/param-io.test.ts": 21,
