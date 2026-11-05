@@ -7,6 +7,7 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
+import { expectText, valueOr } from './values'
 
 /**
  * Key code mappings for common keys
@@ -189,30 +190,33 @@ const inputHandlerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const keyName = values['keyName'] as string
-    const triggerType = (values['triggerType'] as string) || 'isTriggered'
-    const activeScene = (values['activeScene'] as string) || 'Scene_Map'
+    const keyName = values['keyName']
+    // Used only as an object key and written into the code as text
+    const triggerType = String(valueOr(values['triggerType'], 'isTriggered'))
+    const activeScene = valueOr(values['activeScene'], 'Scene_Map')
 
     if (activeScene === 'all') {
-      return generateGlobalHandler(keyName, triggerType)
+      // The global handler calls a string method on the key name before it writes anything
+      return generateGlobalHandler(expectText(keyName), triggerType)
     } else {
-      return generateSceneHandler(keyName, triggerType, activeScene)
+      return generateSceneHandler(String(keyName), triggerType, String(activeScene))
     }
   },
   validate: (values) => {
     const errors: string[] = []
 
-    if (values['keyName'] && !KEY_CODES[values['keyName'] as string]) {
+    const keyName: unknown = values['keyName']
+    if (values['keyName'] && !KEY_CODES[String(keyName)]) {
       errors.push(`Unknown key: ${values['keyName']}`)
     }
 
-    const validTriggers = ['isTriggered', 'isPressed', 'isRepeated']
-    if (values['triggerType'] && !validTriggers.includes(values['triggerType'] as string)) {
+    const validTriggers: readonly unknown[] = ['isTriggered', 'isPressed', 'isRepeated']
+    if (values['triggerType'] && !validTriggers.includes(values['triggerType'])) {
       errors.push(`Invalid trigger type: ${values['triggerType']}`)
     }
 
-    const validScenes = ['Scene_Map', 'Scene_Battle', 'Scene_Menu', 'all']
-    if (values['activeScene'] && !validScenes.includes(values['activeScene'] as string)) {
+    const validScenes: readonly unknown[] = ['Scene_Map', 'Scene_Battle', 'Scene_Menu', 'all']
+    if (values['activeScene'] && !validScenes.includes(values['activeScene'])) {
       errors.push(`Invalid scene: ${values['activeScene']}`)
     }
 

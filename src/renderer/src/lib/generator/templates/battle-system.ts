@@ -11,11 +11,12 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { isOneLineExpression } from '../escape'
+import { expectText, valueOr } from './values'
 
 /**
  * Helper to generate condition check code for damage modifiers
  */
-function generateConditionCheck(condition: string, varName: string = 'value'): string {
+function generateConditionCheck(condition: unknown, varName: string = 'value'): string {
   switch (condition) {
     case 'critical':
       return `    if (critical) {\n        ${varName} = `
@@ -34,7 +35,7 @@ function generateConditionCheck(condition: string, varName: string = 'value'): s
 /**
  * Helper to close condition block if needed
  */
-function closeConditionCheck(condition: string): string {
+function closeConditionCheck(condition: unknown): string {
   if (condition !== 'always') {
     return '\n    }'
   }
@@ -89,10 +90,10 @@ const damageModifierTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modifyType = (values['modifyType'] as string) || 'multiply'
+    const modifyType = valueOr(values['modifyType'], 'multiply')
     // The check reads the value trimmed, so the code is written with the same text.
     const modifyValue = String(values['modifyValue'] ?? '').trim()
-    const condition = (values['condition'] as string) || 'always'
+    const condition = valueOr(values['condition'], 'always')
 
     const lines: string[] = []
 
@@ -152,15 +153,15 @@ const damageModifierTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['modifyValue']) {
-      const modifyType = values['modifyType'] as string
-      const modifyValue = values['modifyValue'] as string
+      const modifyType = values['modifyType']
+      const modifyValue: unknown = values['modifyValue']
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
-        const num = parseFloat(modifyValue)
+        const num = parseFloat(String(modifyValue))
         if (isNaN(num)) {
           errors.push('Value must be a valid number for multiply/add operations')
-        } else if (String(num) !== modifyValue.trim()) {
+        } else if (String(num) !== expectText(modifyValue).trim()) {
           // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
           errors.push(
             'Value must contain only numeric characters (digits, decimal point, minus sign)'
@@ -168,7 +169,13 @@ const damageModifierTemplate: CodeTemplate = {
         } else if (modifyType === 'multiply' && num <= 0) {
           errors.push('Multiplier should be a positive number')
         }
-      } else if (!isOneLineExpression(modifyValue)) {
+      } else if (
+        // Only text reaches here: an unset or empty value is skipped above, a value of another type
+        // is rejected before this check runs. Such a value passes, as the expression check passes a
+        // number.
+        typeof modifyValue === 'string' &&
+        !isOneLineExpression(modifyValue)
+      ) {
         errors.push('Value must be one expression on one line (no ";" or comments)')
       }
     }
@@ -209,7 +216,7 @@ const battleEventTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = (values['eventType'] as string) || 'victory'
+    const eventType = valueOr(values['eventType'], 'victory')
     const lines: string[] = []
 
     // Map event types to their MZ methods and appropriate timing
@@ -259,7 +266,7 @@ const battleEventTemplate: CodeTemplate = {
       }
     }
 
-    const mapping = eventMappings[eventType]
+    const mapping = eventMappings[String(eventType)]
 
     lines.push(`// ${mapping.comment}`)
     lines.push(`const ${mapping.aliasName} = BattleManager.${mapping.method};`)
@@ -267,15 +274,15 @@ const battleEventTemplate: CodeTemplate = {
 
     if (mapping.timing === 'before') {
       // Code runs before original (for victory/defeat/escape where we want to intercept)
-      lines.push(`    // Your code here (before ${eventType} processing)`)
-      lines.push(`    console.log('Battle ${eventType}!');`)
+      lines.push(`    // Your code here (before ${String(eventType)} processing)`)
+      lines.push(`    console.log('Battle ${String(eventType)}!');`)
       lines.push('')
       lines.push(`    ${mapping.aliasName}.call(this);`)
     } else {
       // Code runs after original (for start/turnStart/turnEnd)
       lines.push(`    ${mapping.aliasName}.call(this);`)
       lines.push('')
-      lines.push(`    // Your code here (after ${eventType} processing)`)
+      lines.push(`    // Your code here (after ${String(eventType)} processing)`)
       lines.push(`    console.log('${mapping.comment.replace(' Hook', '')}!');`)
     }
 
@@ -318,7 +325,7 @@ const stateHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const hookType = (values['hookType'] as string) || 'add'
+    const hookType = valueOr(values['hookType'], 'add')
     const stateId = String(values['stateId'] ?? '').trim()
     const lines: string[] = []
 
@@ -389,12 +396,13 @@ const stateHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const stateId = values['stateId'] as string
+    const stateId = values['stateId']
+    const hasStateId = Boolean(stateId)
 
     // Validate state ID if provided
-    if (stateId && stateId.trim() !== '') {
+    if (hasStateId && expectText(stateId).trim() !== '') {
       // The whole text is written as code: parseInt would pass anything after the digits.
-      if (!/^[1-9]\d*$/.test(stateId.trim())) {
+      if (!/^[1-9]\d*$/.test(expectText(stateId).trim())) {
         errors.push('State ID must be a positive integer')
       }
     }
@@ -445,8 +453,8 @@ const actionSequenceTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = (values['timing'] as string) || 'after'
-    const actionType = (values['actionType'] as string) || 'all'
+    const timing = valueOr(values['timing'], 'after')
+    const actionType = valueOr(values['actionType'], 'all')
     const lines: string[] = []
 
     // Determine action type check

@@ -2641,9 +2641,6 @@
     "@typescript-eslint/no-inferrable-types": {
       "count": 1
     },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 9
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -2685,9 +2682,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/database-ext.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 10
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
     },
@@ -2707,10 +2701,10 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 8
+      "count": 7
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
+      "count": 6
     },
     "unicorn/no-immediate-mutation": {
       "count": 1
@@ -2724,9 +2718,6 @@
     "unicorn/prefer-string-raw": {
       "count": 4
     },
-    "unicorn/prefer-ternary": {
-      "count": 2
-    },
     "unicorn/switch-case-braces": {
       "count": 21
     }
@@ -2734,9 +2725,6 @@
   "src/renderer/src/lib/generator/templates/input-handler.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 3
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
@@ -2834,9 +2822,6 @@
     "@typescript-eslint/no-base-to-string": {
       "count": 2
     },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 5
-    },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 2
     },
@@ -2901,9 +2886,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/save-load.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 7
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -2925,11 +2907,8 @@
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
+      "count": 2
     },
     "unicorn/no-immediate-mutation": {
       "count": 1
@@ -2943,17 +2922,11 @@
     "unicorn/prefer-switch": {
       "count": 1
     },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
     "unicorn/switch-case-braces": {
       "count": 4
     }
   },
   "src/renderer/src/lib/generator/templates/scene-hooks.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
     }

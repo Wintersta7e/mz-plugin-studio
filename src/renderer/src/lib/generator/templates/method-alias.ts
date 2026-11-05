@@ -8,6 +8,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { getMethodInfo } from '../class-registry'
+import { valueOr } from './values'
 
 /**
  * Generates the alias variable name from class and method names
@@ -18,12 +19,22 @@ function getAliasName(className: string, methodName: string): string {
 }
 
 /**
+The registry's entry for a method of a class. A class or method name that is not text names no
+entry, as the registry finds none for it.
+*/
+function methodInfoOf(className: unknown, methodName: unknown): ReturnType<typeof getMethodInfo> {
+  return typeof className === 'string' && typeof methodName === 'string'
+    ? getMethodInfo(className, methodName)
+    : undefined
+}
+
+/**
  * Generates the method alias code based on timing option
  */
 function generateAliasCode(
   className: string,
   methodName: string,
-  timing: string,
+  timing: unknown,
   callOriginal: boolean,
   params: string[]
 ): string {
@@ -158,26 +169,23 @@ const methodAliasTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const className = values['className'] as string
-    const methodName = values['methodName'] as string
-    const timing = (values['timing'] as string) || 'after'
+    const className = values['className']
+    const methodName = values['methodName']
+    const timing = valueOr(values['timing'], 'after')
     const callOriginal = values['callOriginal'] !== false // Default to true
 
     // Get method info for accurate parameter names
-    const methodInfo = getMethodInfo(className, methodName)
+    const methodInfo = methodInfoOf(className, methodName)
     const params = methodInfo?.params ?? []
 
-    return generateAliasCode(className, methodName, timing, callOriginal, params)
+    return generateAliasCode(String(className), String(methodName), timing, callOriginal, params)
   },
   validate: (values) => {
     const errors: string[] = []
 
     // Verify the method exists on the class
     if (values['className'] && values['methodName']) {
-      const methodInfo = getMethodInfo(
-        values['className'] as string,
-        values['methodName'] as string
-      )
+      const methodInfo = methodInfoOf(values['className'], values['methodName'])
       if (!methodInfo) {
         errors.push(`Method "${values['methodName']}" not found on class "${values['className']}"`)
       }

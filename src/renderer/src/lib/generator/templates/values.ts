@@ -62,3 +62,14 @@ A template value, or the fallback when the value is unset (`undefined` or `null`
 export function definedOr(value: unknown, fallback: unknown): unknown {
   return value ?? fallback
 }
+
+/**
+A name with its first letter in upper case (`questProgress` → `QuestProgress`), or empty text for
+an unset or empty value. Any other value but text throws `TypeError`, as the string methods would.
+*/
+export function toPascalCase(value: unknown): string {
+  const hasValue = Boolean(value)
+  if (!hasValue) return ''
+  const text = expectText(value)
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}

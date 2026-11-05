@@ -7,35 +7,28 @@
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
-import { getDefaultLiteral } from '../escape'
-
-/**
- * Convert a property name to PascalCase for method names
- * e.g., "questProgress" -> "QuestProgress"
- */
-function toPascalCase(str: string): string {
-  if (!str) return ''
-  return str.charAt(0).toUpperCase() + str.slice(1)
-}
+import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
 /**
  * Generate the save/load code
  */
 function generateSaveLoadCode(
-  dataName: string,
+  name: unknown,
   storageLocation: string,
-  dataType: string,
-  defaultValue?: string
+  dataType: unknown,
+  defaultValue: unknown
 ): string {
-  const pascalName = toPascalCase(dataName)
+  const pascalName = toPascalCase(name)
+  // Only written into the code as text
+  const dataName = String(name)
   const aliasName = `_${storageLocation}_initialize`
-  const defaultLiteral = getDefaultLiteral(dataType, defaultValue)
+  const defaultLiteral = defaultLiteralOf(dataType, defaultValue)
   const lines: string[] = []
 
   // Header comment
   lines.push(`// Custom Save Data: ${dataName}`)
   lines.push(`// Storage: $${storageLocation.replace('Game_', 'game').toLowerCase()}`)
-  lines.push(`// Type: ${dataType}`)
+  lines.push(`// Type: ${String(dataType)}`)
 
   // Warn at generation time for storage locations that don't reliably persist.
   if (storageLocation === 'Game_Actors') {
@@ -187,10 +180,12 @@ const saveLoadTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const dataName = values['dataName'] as string
-    const storageLocation = (values['storageLocation'] as string) || 'Game_System'
-    const dataType = (values['dataType'] as string) || 'object'
-    const defaultValue = values['defaultValue'] as string | undefined
+    const dataName = values['dataName']
+    // The code calls a string method on the location before it writes anything, so any value
+    // but text fails here as it fails there
+    const storageLocation = expectText(valueOr(values['storageLocation'], 'Game_System'))
+    const dataType = valueOr(values['dataType'], 'object')
+    const defaultValue = values['defaultValue']
 
     return generateSaveLoadCode(dataName, storageLocation, dataType, defaultValue)
   },
@@ -198,10 +193,10 @@ const saveLoadTemplate: CodeTemplate = {
     const errors: string[] = []
 
     if (values['dataName']) {
-      const dataName = values['dataName'] as string
+      const dataName: unknown = values['dataName']
 
       // Check for valid JavaScript identifier
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(dataName)) {
+      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(dataName))) {
         errors.push(
           'Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
         )
@@ -218,37 +213,41 @@ const saveLoadTemplate: CodeTemplate = {
         'save',
         'load'
       ]
-      if (reservedWords.includes(dataName.toLowerCase())) {
+      if (reservedWords.includes(expectText(dataName).toLowerCase())) {
         errors.push(
-          `"${dataName}" may conflict with existing methods. Consider a more specific name.`
+          `"${String(dataName)}" may conflict with existing methods. Consider a more specific name.`
         )
       }
     }
 
     // Validate default value format based on type
     if (values['defaultValue'] && values['dataType']) {
-      const defaultValue = values['defaultValue'] as string
-      const dataType = values['dataType'] as string
+      const defaultValue = values['defaultValue']
+      const dataType = values['dataType']
+      const hasDefaultValue = Boolean(defaultValue)
 
       try {
         switch (dataType) {
           case 'object':
-            if (defaultValue && !defaultValue.trim().startsWith('{')) {
+            if (hasDefaultValue && !expectText(defaultValue).trim().startsWith('{')) {
               errors.push('Default value for object should be JSON format starting with {')
             }
             break
           case 'array':
-            if (defaultValue && !defaultValue.trim().startsWith('[')) {
+            if (hasDefaultValue && !expectText(defaultValue).trim().startsWith('[')) {
               errors.push('Default value for array should be JSON format starting with [')
             }
             break
           case 'number':
-            if (defaultValue && isNaN(Number(defaultValue))) {
+            if (hasDefaultValue && isNaN(Number(defaultValue))) {
               errors.push('Default value for number must be a valid number')
             }
             break
           case 'boolean':
-            if (defaultValue && !['true', 'false'].includes(defaultValue.toLowerCase())) {
+            if (
+              hasDefaultValue &&
+              !['true', 'false'].includes(expectText(defaultValue).toLowerCase())
+            ) {
               errors.push('Default value for boolean must be true or false')
             }
             break
