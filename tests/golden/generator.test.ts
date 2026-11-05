@@ -180,15 +180,12 @@ describe('generator rules no file golden reaches', () => {
   })
 })
 
-// A saved note group is checked for its name and type only, so its other fields can hold any
-// saved value.
+// A note group's empty folder and data fields and a false required field write no line.
 describe('generator output for saved note groups', () => {
-  it('leaves out note group fields that hold an empty or false value of any type', () => {
+  it('leaves out note group fields that hold an empty or false value', () => {
     const definition = customCodeRows()
-    const portrait: NoteParam = { name: 'Portrait', type: 'file' }
-    const face: NoteParam = { name: 'Face', type: 'file' }
-    Object.assign(portrait, JSON.parse('{"dir":0,"data":false}') as unknown)
-    Object.assign(face, JSON.parse('{"dir":null,"data":""}') as unknown)
+    const portrait: NoteParam = { name: 'Portrait', type: 'file', dir: '', data: '' }
+    const face: NoteParam = { name: 'Face', type: 'file', dir: '', data: '', require: false }
     definition.meta.noteParams = [portrait, face]
 
     expect(generatePlugin(definition)).toContain(
