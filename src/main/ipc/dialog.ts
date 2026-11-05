@@ -32,7 +32,7 @@ import type { InvokeHandlers } from './registration'
  */
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
-  options: SaveFileOptions
+  options: Omit<SaveFileOptions, 'defaultPath'> & { defaultPath?: string | undefined }
 ): Promise<string | null> {
   const result = await dialog.showSaveDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
@@ -83,7 +83,7 @@ export async function showMessageDialog(
  */
 export async function openFolderDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
-  options: OpenFolderOptions = {}
+  options: Omit<OpenFolderOptions, 'defaultPath'> & { defaultPath?: string | undefined } = {}
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),
@@ -107,7 +107,7 @@ export async function openFolderDialog(
  */
 export async function openFileDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
-  options: OpenFileOptions & { defaultPath?: string }
+  options: Omit<OpenFileOptions, 'defaultPath'> & { defaultPath?: string | undefined }
 ): Promise<string | null> {
   const result = await dialog.showOpenDialog({
     ...(options.defaultPath !== undefined && { defaultPath: options.defaultPath }),

@@ -44,19 +44,19 @@ export interface PluginParameter {
   type: ParamType
   default: string | number | boolean
   // Type-specific options
-  min?: number
-  max?: number
-  decimals?: number
+  min?: number | undefined
+  max?: number | undefined
+  decimals?: number | undefined
   options?: SelectOption[] // For select/combo type
   structType?: string // Reference to struct name
   arrayType?: ParamType // For array types
-  dir?: string // For file type, directory
-  require?: boolean // For file/animation type, @require 1
+  dir?: string | undefined // For file type, directory
+  require?: boolean | undefined // For file/animation type, @require 1
   parent?: string // For nested parameters
-  rawType?: string // Original @type string for round-trip fidelity (e.g., 'color', 'nuumer')
+  rawType?: string | undefined // Original @type string for round-trip fidelity (e.g., 'color', 'nuumer')
   // Boolean-specific labels
-  onLabel?: string // @on label for booleans
-  offLabel?: string // @off label for booleans
+  onLabel?: string | undefined // @on label for booleans
+  offLabel?: string | undefined // @off label for booleans
 }
 
 export interface PluginCommand {
@@ -81,9 +81,9 @@ export interface LocalizedContent {
 export interface NoteParam {
   name: string // @noteParam value
   type: string // @noteType (usually 'file')
-  dir?: string // @noteDir
-  data?: string // @noteData (e.g. 'actors', 'enemies')
-  require?: boolean // @noteRequire 1
+  dir?: string | undefined // @noteDir
+  data?: string | undefined // @noteData (e.g. 'actors', 'enemies')
+  require?: boolean | undefined // @noteRequire 1
 }
 
 export interface PluginMeta {

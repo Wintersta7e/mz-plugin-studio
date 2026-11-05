@@ -10,7 +10,6 @@
   "exclude": ["tests/fixtures/**", "tests/golden/__golden__/**", "e2e/__screenshots__/**"],
   "compilerOptions": {
     "composite": true,
-    "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": false,
     "types": ["electron-vite/node"]
   }

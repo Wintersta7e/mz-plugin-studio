@@ -17,15 +17,11 @@
     }
   },
   "node": {
-    "exactOptionalPropertyTypes": {
-      "src/main/ipc/dialog.ts": 3,
-      "src/main/services/pluginParser.ts": 2
-    },
     "noUncheckedIndexedAccess": {
       "src/main/ipc/dialog.ts": 4,
       "src/main/ipc/plugin.ts": 8,
       "src/main/ipc/project.ts": 2,
-      "src/main/services/pluginParser.ts": 49,
+      "src/main/services/pluginParser.ts": 53,
       "src/main/services/projectParser.ts": 1,
       "src/main/services/syntax-check.ts": 2
     }
@@ -59,17 +55,11 @@
   },
   "test": {
     "exactOptionalPropertyTypes": {
-      "src/main/ipc/dialog.ts": 3,
-      "src/main/services/pluginParser.ts": 2,
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
-      "src/renderer/src/components/plugin/MetaEditor.tsx": 2,
-      "src/renderer/src/components/plugin/ParameterBuilder.tsx": 5,
-      "src/renderer/src/components/plugin/StructBuilder.tsx": 3,
       "src/renderer/src/components/plugin/TypeFields.tsx": 1,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 2,
+      "src/renderer/src/stores/pluginStore.ts": 1,
       "tests/dom/app-shell.test.tsx": 1,
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
@@ -213,14 +203,10 @@
   "web": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/components/plugin/CommandBuilder.tsx": 6,
-      "src/renderer/src/components/plugin/MetaEditor.tsx": 2,
-      "src/renderer/src/components/plugin/ParameterBuilder.tsx": 5,
-      "src/renderer/src/components/plugin/StructBuilder.tsx": 3,
       "src/renderer/src/components/plugin/TypeFields.tsx": 1,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "src/renderer/src/stores/persist.ts": 1,
-      "src/renderer/src/stores/pluginStore.ts": 2
+      "src/renderer/src/stores/pluginStore.ts": 1
     },
     "noPropertyAccessFromIndexSignature": {
       "src/renderer/src/stores/persist.ts": 3,
