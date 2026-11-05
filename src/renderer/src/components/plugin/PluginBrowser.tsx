@@ -38,6 +38,67 @@ interface PluginRow {
   issueTitle: string | null
 }
 
+const NO_FILES: readonly string[] = []
+
+// The plugin files in the project folder, or none when they cannot be listed
+async function listPluginFiles(projectPath: string): Promise<readonly string[]> {
+  try {
+    return await globalThis.api.plugin.list(projectPath)
+  } catch (error) {
+    log.error('PluginBrowser: failed to list plugins', error)
+    return NO_FILES
+  }
+}
+
+/**
+The plugin files of the open project. A list is kept with the folder it was read from, so the
+list of one project is never shown for the next while that one's list loads.
+*/
+function usePluginFiles(projectPath: string | undefined): {
+  files: readonly string[]
+  isLoading: boolean
+  refresh: () => Promise<void>
+} {
+  type Listing = Readonly<{ path: string; files: readonly string[] }>
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const scanDependencies = useProjectStore((s) => s.scanDependencies)
+
+  useEffect(() => {
+    if (projectPath === undefined) return
+    let isCancelled = false
+    const load = async (): Promise<void> => {
+      const files = await listPluginFiles(projectPath)
+      if (!isCancelled) setListing({ path: projectPath, files })
+    }
+    void load()
+    return () => {
+      isCancelled = true
+    }
+  }, [projectPath])
+
+  const refresh = async (): Promise<void> => {
+    if (projectPath === undefined) return
+    setIsRefreshing(true)
+    try {
+      const files = await globalThis.api.plugin.list(projectPath)
+      setListing({ path: projectPath, files })
+      await scanDependencies()
+    } catch (error) {
+      log.error('PluginBrowser: refresh failed', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  const isCurrent = listing !== null && listing.path === projectPath
+  return {
+    files: isCurrent ? listing.files : NO_FILES,
+    isLoading: isRefreshing || (projectPath !== undefined && !isCurrent),
+    refresh
+  }
+}
+
 export function PluginBrowser({ onClose }: PluginBrowserProps) {
   type SortMode = 'name' | 'order'
   type FilterMode = 'all' | 'open' | 'dirty' | 'errors'
@@ -49,41 +110,14 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
   const closePlugin = usePluginStore((s) => s.closePlugin)
   const setActivePlugin = usePluginStore((s) => s.setActivePlugin)
   const dependencyReport = useProjectStore((s) => s.dependencyReport)
-  const scanDependencies = useProjectStore((s) => s.scanDependencies)
-
-  const [allPluginFiles, setAllPluginFiles] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const {
+    files: allPluginFiles,
+    isLoading,
+    refresh
+  } = usePluginFiles(project === null || project.path === '' ? undefined : project.path)
   const [search, setSearch] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [sortMode, setSortMode] = useState<SortMode>('order')
-
-  // Load plugin file list when project changes
-  useEffect(() => {
-    if (!project?.path) {
-      setAllPluginFiles([])
-      return
-    }
-    let isCancelled = false
-    setIsLoading(true)
-    window.api.plugin.list(project.path).then(
-      (files) => {
-        if (!isCancelled) {
-          setAllPluginFiles(files)
-          setIsLoading(false)
-        }
-      },
-      (error) => {
-        if (!isCancelled) {
-          log.error('PluginBrowser: failed to list plugins', error)
-          setAllPluginFiles([])
-          setIsLoading(false)
-        }
-      }
-    )
-    return () => {
-      isCancelled = true
-    }
-  }, [project?.path])
 
   const pluginIssues = useMemo(() => {
     const map = new Map<string, DependencyIssue[]>()
@@ -192,20 +226,6 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
     return { total: allRows.length, open, dirty, errors }
   }, [allRows])
 
-  const handleRefresh = async () => {
-    if (!project?.path) return
-    setIsLoading(true)
-    try {
-      const files = await window.api.plugin.list(project.path)
-      setAllPluginFiles(files)
-      await scanDependencies()
-    } catch (error) {
-      log.error('PluginBrowser: refresh failed', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   const handleRowClick = async (row: PluginRow) => {
     if (row.openId) {
       // Already open — just switch to it
@@ -258,7 +278,9 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={handleRefresh}
+            onClick={() => {
+              void refresh()
+            }}
             disabled={isLoading}
             aria-label="Refresh plugin list"
             title="Refresh"

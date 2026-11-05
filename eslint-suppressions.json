@@ -1745,7 +1745,7 @@
       "count": 3
     },
     "@typescript-eslint/no-misused-promises": {
-      "count": 3
+      "count": 2
     },
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 1
@@ -1760,24 +1760,12 @@
       "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 11
-    },
-    "@typescript-eslint/use-unknown-in-catch-callback-variable": {
-      "count": 1
+      "count": 9
     },
     "complexity": {
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    },
-    "promise/always-return": {
-      "count": 1
-    },
-    "promise/catch-or-return": {
-      "count": 1
-    },
-    "react-hooks/set-state-in-effect": {
       "count": 1
     },
     "sonarjs/prefer-read-only-props": {
@@ -1789,14 +1777,8 @@
     "unicorn/no-array-sort": {
       "count": 1
     },
-    "unicorn/prefer-await": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
-      "count": 2
-    },
     "unicorn/prefer-global-this": {
-      "count": 4
+      "count": 2
     },
     "unicorn/prefer-simple-condition-first": {
       "count": 1
@@ -1805,9 +1787,6 @@
       "count": 1
     },
     "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/prefer-then-catch": {
       "count": 1
     }
   },
