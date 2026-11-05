@@ -10,6 +10,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString } from '../escape'
+import { expectText, valueOr } from './values'
 
 /**
  * Converts a sprite name to a valid identifier
@@ -20,6 +21,38 @@ function sanitizeSpriteName(name: string): string {
     .trim()
     .replace(/[^a-zA-Z0-9]/g, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
+}
+
+/**
+The error for a sprite name that is set but is not a letter followed by letters and digits.
+*/
+function spriteNameErrors(value: unknown): string[] {
+  const hasName = Boolean(value)
+  if (!hasName) return []
+  const name = expectText(value)
+  const isValid = /^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))
+  return isValid
+    ? []
+    : ['Sprite Name must start with a letter and contain only letters and numbers']
+}
+
+/**
+The initialize lines that set up frame animation state, shared by the mixin and the sprite class.
+*/
+function animationStateLines(
+  frameCount: unknown,
+  frameDelay: unknown,
+  shouldLoop: boolean,
+  shouldAutoPlay: boolean
+): string[] {
+  return [
+    '    this._animFrameCount = 0;',
+    '    this._animPattern = 0;',
+    `    this._animMaxPattern = ${String(frameCount)};`,
+    `    this._animDelay = ${String(frameDelay)};`,
+    `    this._animLoop = ${shouldLoop};`,
+    `    this._animPlaying = ${shouldAutoPlay};`
+  ]
 }
 
 /**
@@ -97,23 +130,24 @@ const customSpriteClassTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = values['spriteName'] as string
+    const rawName = expectText(values['spriteName'])
     const spriteName = sanitizeSpriteName(rawName)
-    const parentClass = (values['parentClass'] as string) || 'Sprite'
-    const width = (values['width'] as number) || 48
-    const height = (values['height'] as number) || 48
-    const useBitmap = (values['useBitmap'] as string) || 'none'
-    const fillColor = (values['fillColor'] as string) || '#ffffff'
+    const parentClass = valueOr(values['parentClass'], 'Sprite')
+    const width = valueOr(values['width'], 48)
+    const height = valueOr(values['height'], 48)
+    const useBitmap = valueOr(values['useBitmap'], 'none')
+    const fillColor = valueOr(values['fillColor'], '#ffffff')
     const includeUpdate = values['includeUpdate'] !== false
 
     const fullClassName = `Sprite_${spriteName}`
     const lines: string[] = []
+    const parentClassText = String(parentClass)
 
     // Header comment
     lines.push('//-----------------------------------------------------------------------------')
     lines.push(`// ${fullClassName}`)
     lines.push('//')
-    lines.push(`// Custom sprite class extending ${parentClass}.`)
+    lines.push(`// Custom sprite class extending ${parentClassText}.`)
     lines.push('//-----------------------------------------------------------------------------')
     lines.push('')
 
@@ -124,13 +158,13 @@ const customSpriteClassTemplate: CodeTemplate = {
     lines.push('')
 
     // Prototype chain setup
-    lines.push(`${fullClassName}.prototype = Object.create(${parentClass}.prototype);`)
+    lines.push(`${fullClassName}.prototype = Object.create(${parentClassText}.prototype);`)
     lines.push(`${fullClassName}.prototype.constructor = ${fullClassName};`)
     lines.push('')
 
     // Initialize method
     lines.push(`${fullClassName}.prototype.initialize = function() {`)
-    lines.push(`    ${parentClass}.prototype.initialize.call(this);`)
+    lines.push(`    ${parentClassText}.prototype.initialize.call(this);`)
     lines.push('')
     lines.push('    // Initialize sprite properties')
     lines.push('    this._animationCount = 0;')
@@ -140,12 +174,12 @@ const customSpriteClassTemplate: CodeTemplate = {
     // Bitmap creation based on option
     if (useBitmap === 'empty') {
       lines.push('    // Create empty bitmap')
-      lines.push(`    this.bitmap = new Bitmap(${width}, ${height});`)
+      lines.push(`    this.bitmap = new Bitmap(${String(width)}, ${String(height)});`)
     } else if (useBitmap === 'filled') {
       lines.push('    // Create filled bitmap')
-      lines.push(`    this.bitmap = new Bitmap(${width}, ${height});`)
+      lines.push(`    this.bitmap = new Bitmap(${String(width)}, ${String(height)});`)
       lines.push(
-        `    this.bitmap.fillRect(0, 0, ${width}, ${height}, '${escapeJSString(fillColor)}');`
+        `    this.bitmap.fillRect(0, 0, ${String(width)}, ${String(height)}, '${escapeJSString(expectText(fillColor))}');`
       )
     } else {
       lines.push('    // Load external image')
@@ -162,7 +196,7 @@ const customSpriteClassTemplate: CodeTemplate = {
     if (includeUpdate) {
       lines.push('')
       lines.push(`${fullClassName}.prototype.update = function() {`)
-      lines.push(`    ${parentClass}.prototype.update.call(this);`)
+      lines.push(`    ${parentClassText}.prototype.update.call(this);`)
       lines.push('')
       lines.push('    // Update animation')
       lines.push('    this.updateAnimation();')
@@ -204,20 +238,15 @@ const customSpriteClassTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = spriteNameErrors(values['spriteName'])
 
-    if (values['spriteName']) {
-      const name = values['spriteName'] as string
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Sprite Name must start with a letter and contain only letters and numbers')
-      }
-    }
-
-    if (values['width'] !== undefined && (values['width'] as number) <= 0) {
+    const width = values['width']
+    if (width !== undefined && Number(width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values['height'] !== undefined && (values['height'] as number) <= 0) {
+    const height = values['height']
+    if (height !== undefined && Number(height) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -380,22 +409,24 @@ const pictureManipulationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = (values['operation'] as string) || 'show'
-    const pictureId = (values['pictureId'] as number) || 1
-    const imageName = (values['imageName'] as string) || 'Picture1'
-    const origin = parseInt((values['origin'] as string) || '0', 10)
-    const x = (values['x'] as number) || 0
-    const y = (values['y'] as number) || 0
-    const scaleX = (values['scaleX'] as number) || 100
-    const scaleY = (values['scaleY'] as number) || 100
-    const opacity = (values['opacity'] as number) || 255
-    const blendMode = parseInt((values['blendMode'] as string) || '0', 10)
-    const duration = (values['duration'] as number) || 60
-    const rotationSpeed = (values['rotationSpeed'] as number) || 1
-    const tintRed = (values['tintRed'] as number) || 0
-    const tintGreen = (values['tintGreen'] as number) || 0
-    const tintBlue = (values['tintBlue'] as number) || 0
-    const tintGray = (values['tintGray'] as number) || 0
+    const operation = valueOr(values['operation'], 'show')
+    const pictureId = valueOr(values['pictureId'], 1)
+    const imageName = valueOr(values['imageName'], 'Picture1')
+    const originText = String(valueOr(values['origin'], '0'))
+    const origin = parseInt(originText, 10)
+    const x = valueOr(values['x'], 0)
+    const y = valueOr(values['y'], 0)
+    const scaleX = valueOr(values['scaleX'], 100)
+    const scaleY = valueOr(values['scaleY'], 100)
+    const opacity = valueOr(values['opacity'], 255)
+    const blendModeText = String(valueOr(values['blendMode'], '0'))
+    const blendMode = parseInt(blendModeText, 10)
+    const duration = valueOr(values['duration'], 60)
+    const rotationSpeed = valueOr(values['rotationSpeed'], 1)
+    const tintRed = valueOr(values['tintRed'], 0)
+    const tintGreen = valueOr(values['tintGreen'], 0)
+    const tintBlue = valueOr(values['tintBlue'], 0)
+    const tintGray = valueOr(values['tintGray'], 0)
 
     const lines: string[] = []
 
@@ -510,17 +541,21 @@ const pictureManipulationTemplate: CodeTemplate = {
     } else if (operation === 'show') {
       lines.push('// Show Picture')
       lines.push('//')
-      lines.push(`// Displays picture ${pictureId} at position (${x}, ${y})`)
+      lines.push(
+        `// Displays picture ${String(pictureId)} at position (${String(x)}, ${String(y)})`
+      )
       lines.push('')
       lines.push(`$gameScreen.showPicture(`)
-      lines.push(`    ${pictureId},         // Picture ID`)
-      lines.push(`    '${escapeJSString(imageName)}',       // Image name (from img/pictures/)`)
+      lines.push(`    ${String(pictureId)},         // Picture ID`)
+      lines.push(
+        `    '${escapeJSString(expectText(imageName))}',       // Image name (from img/pictures/)`
+      )
       lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
-      lines.push(`    ${x},                 // X position`)
-      lines.push(`    ${y},                 // Y position`)
-      lines.push(`    ${scaleX},            // Scale X (%)`)
-      lines.push(`    ${scaleY},            // Scale Y (%)`)
-      lines.push(`    ${opacity},           // Opacity (0-255)`)
+      lines.push(`    ${String(x)},                 // X position`)
+      lines.push(`    ${String(y)},                 // Y position`)
+      lines.push(`    ${String(scaleX)},            // Scale X (%)`)
+      lines.push(`    ${String(scaleY)},            // Scale Y (%)`)
+      lines.push(`    ${String(opacity)},           // Opacity (0-255)`)
       lines.push(
         `    ${blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`
       )
@@ -528,41 +563,45 @@ const pictureManipulationTemplate: CodeTemplate = {
     } else if (operation === 'move') {
       lines.push('// Move Picture')
       lines.push('//')
-      lines.push(`// Moves picture ${pictureId} to (${x}, ${y}) over ${duration} frames`)
+      lines.push(
+        `// Moves picture ${String(pictureId)} to (${String(x)}, ${String(y)}) over ${String(duration)} frames`
+      )
       lines.push('')
       lines.push(`$gameScreen.movePicture(`)
-      lines.push(`    ${pictureId},         // Picture ID`)
+      lines.push(`    ${String(pictureId)},         // Picture ID`)
       lines.push(`    ${origin},            // Origin (0 = Upper Left, 1 = Center)`)
-      lines.push(`    ${x},                 // Target X position`)
-      lines.push(`    ${y},                 // Target Y position`)
-      lines.push(`    ${scaleX},            // Target Scale X (%)`)
-      lines.push(`    ${scaleY},            // Target Scale Y (%)`)
-      lines.push(`    ${opacity},           // Target Opacity (0-255)`)
+      lines.push(`    ${String(x)},                 // Target X position`)
+      lines.push(`    ${String(y)},                 // Target Y position`)
+      lines.push(`    ${String(scaleX)},            // Target Scale X (%)`)
+      lines.push(`    ${String(scaleY)},            // Target Scale Y (%)`)
+      lines.push(`    ${String(opacity)},           // Target Opacity (0-255)`)
       lines.push(`    ${blendMode},         // Target Blend mode`)
-      lines.push(`    ${duration},          // Duration (frames)`)
+      lines.push(`    ${String(duration)},          // Duration (frames)`)
       lines.push(`    0                     // Easing type (0 = constant speed)`)
       lines.push(');')
     } else if (operation === 'rotate') {
       lines.push('// Rotate Picture')
       lines.push('//')
-      lines.push(`// Rotates picture ${pictureId} at ${rotationSpeed} degrees per frame`)
+      lines.push(
+        `// Rotates picture ${String(pictureId)} at ${String(rotationSpeed)} degrees per frame`
+      )
       lines.push('')
-      lines.push(`$gameScreen.rotatePicture(${pictureId}, ${rotationSpeed});`)
+      lines.push(`$gameScreen.rotatePicture(${String(pictureId)}, ${String(rotationSpeed)});`)
       lines.push('')
       lines.push('// Note: Positive values rotate clockwise, negative counter-clockwise')
       lines.push('// To stop rotation, set speed to 0:')
-      lines.push(`// $gameScreen.rotatePicture(${pictureId}, 0);`)
+      lines.push(`// $gameScreen.rotatePicture(${String(pictureId)}, 0);`)
     } else if (operation === 'tint') {
       lines.push('// Tint Picture')
       lines.push('//')
-      lines.push(`// Applies color tint to picture ${pictureId}`)
+      lines.push(`// Applies color tint to picture ${String(pictureId)}`)
       lines.push('')
       lines.push(`$gameScreen.tintPicture(`)
-      lines.push(`    ${pictureId},                                   // Picture ID`)
+      lines.push(`    ${String(pictureId)},                                   // Picture ID`)
       lines.push(
-        `    [${tintRed}, ${tintGreen}, ${tintBlue}, ${tintGray}],  // [Red, Green, Blue, Gray]`
+        `    [${String(tintRed)}, ${String(tintGreen)}, ${String(tintBlue)}, ${String(tintGray)}],  // [Red, Green, Blue, Gray]`
       )
-      lines.push(`    ${duration}                                     // Duration (frames)`)
+      lines.push(`    ${String(duration)}                                     // Duration (frames)`)
       lines.push(');')
       lines.push('')
       lines.push('// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255')
@@ -570,9 +609,9 @@ const pictureManipulationTemplate: CodeTemplate = {
     } else if (operation === 'erase') {
       lines.push('// Erase Picture')
       lines.push('//')
-      lines.push(`// Removes picture ${pictureId} from screen`)
+      lines.push(`// Removes picture ${String(pictureId)} from screen`)
       lines.push('')
-      lines.push(`$gameScreen.erasePicture(${pictureId});`)
+      lines.push(`$gameScreen.erasePicture(${String(pictureId)});`)
     }
 
     return lines.join('\n')
@@ -580,17 +619,17 @@ const pictureManipulationTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const pictureId = values['pictureId'] as number
-    if (pictureId === undefined || pictureId < 1 || pictureId > 100) {
+    const pictureId = values['pictureId']
+    if (pictureId === undefined || Number(pictureId) < 1 || Number(pictureId) > 100) {
       errors.push('Picture ID must be between 1 and 100')
     }
 
-    const opacity = values['opacity'] as number
-    if (opacity !== undefined && (opacity < 0 || opacity > 255)) {
+    const opacity = values['opacity']
+    if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
 
-    const operation = values['operation'] as string
+    const operation = values['operation']
     if (operation === 'show' && !values['imageName']) {
       errors.push('Image Name is required for Show Picture operation')
     }
@@ -695,17 +734,17 @@ const spriteAnimationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const animationType = (values['animationType'] as string) || 'horizontal'
-    const rawName = values['spriteName'] as string
+    const animationType = valueOr(values['animationType'], 'horizontal')
+    const rawName = expectText(values['spriteName'])
     const spriteName = sanitizeSpriteName(rawName)
-    const frameCount = (values['frameCount'] as number) || 4
-    const frameWidth = (values['frameWidth'] as number) || 48
-    const frameHeight = (values['frameHeight'] as number) || 48
-    const columns = (values['columns'] as number) || 4
-    const frameDelay = (values['frameDelay'] as number) || 12
+    const frameCount = valueOr(values['frameCount'], 4)
+    const frameWidth = valueOr(values['frameWidth'], 48)
+    const frameHeight = valueOr(values['frameHeight'], 48)
+    const columns = valueOr(values['columns'], 4)
+    const frameDelay = valueOr(values['frameDelay'], 12)
     const loop = values['loop'] !== false
     const autoPlay = values['autoPlay'] !== false
-    const targetClass = (values['targetClass'] as string) || 'Sprite_Base'
+    const targetClass = valueOr(values['targetClass'], 'Sprite_Base')
 
     const fullClassName = `Sprite_${spriteName}`
     const lines: string[] = []
@@ -714,34 +753,31 @@ const spriteAnimationTemplate: CodeTemplate = {
       // Generate mixin code for existing sprites
       lines.push('// Animation Mixin')
       lines.push('//')
-      lines.push(`// Adds frame-based animation to ${targetClass}`)
+      lines.push(`// Adds frame-based animation to ${String(targetClass)}`)
       lines.push('//-----------------------------------------------------------------------------')
       lines.push('')
 
       lines.push(`// Store original initialize`)
-      lines.push(`const _${targetClass}_initialize = ${targetClass}.prototype.initialize;`)
-      lines.push(`${targetClass}.prototype.initialize = function() {`)
-      lines.push(`    _${targetClass}_initialize.apply(this, arguments);`)
-      lines.push('    this._animFrameCount = 0;')
-      lines.push('    this._animPattern = 0;')
-      lines.push(`    this._animMaxPattern = ${frameCount};`)
-      lines.push(`    this._animDelay = ${frameDelay};`)
-      lines.push(`    this._animLoop = ${loop};`)
-      lines.push(`    this._animPlaying = ${autoPlay};`)
+      lines.push(
+        `const _${String(targetClass)}_initialize = ${String(targetClass)}.prototype.initialize;`
+      )
+      lines.push(`${String(targetClass)}.prototype.initialize = function() {`)
+      lines.push(`    _${String(targetClass)}_initialize.apply(this, arguments);`)
+      lines.push(...animationStateLines(frameCount, frameDelay, loop, autoPlay))
       lines.push('};')
       lines.push('')
 
       lines.push(`// Store original update`)
-      lines.push(`const _${targetClass}_update = ${targetClass}.prototype.update;`)
-      lines.push(`${targetClass}.prototype.update = function() {`)
-      lines.push(`    _${targetClass}_update.call(this);`)
+      lines.push(`const _${String(targetClass)}_update = ${String(targetClass)}.prototype.update;`)
+      lines.push(`${String(targetClass)}.prototype.update = function() {`)
+      lines.push(`    _${String(targetClass)}_update.call(this);`)
       lines.push('    if (this._animPlaying) {')
       lines.push('        this.updateFrameAnimation();')
       lines.push('    }')
       lines.push('};')
       lines.push('')
 
-      lines.push(`${targetClass}.prototype.updateFrameAnimation = function() {`)
+      lines.push(`${String(targetClass)}.prototype.updateFrameAnimation = function() {`)
       lines.push('    this._animFrameCount++;')
       lines.push('    if (this._animFrameCount >= this._animDelay) {')
       lines.push('        this._animFrameCount = 0;')
@@ -759,41 +795,41 @@ const spriteAnimationTemplate: CodeTemplate = {
       lines.push('};')
       lines.push('')
 
-      lines.push(`${targetClass}.prototype.updateAnimationFrame = function() {`)
+      lines.push(`${String(targetClass)}.prototype.updateAnimationFrame = function() {`)
       lines.push('    // Override this method to set the frame based on this._animPattern')
-      if (columns > 1) {
-        lines.push(`    const col = this._animPattern % ${columns};`)
-        lines.push(`    const row = Math.floor(this._animPattern / ${columns});`)
+      if (Number(columns) > 1) {
+        lines.push(`    const col = this._animPattern % ${String(columns)};`)
+        lines.push(`    const row = Math.floor(this._animPattern / ${String(columns)});`)
         lines.push(
-          `    this.setFrame(col * ${frameWidth}, row * ${frameHeight}, ${frameWidth}, ${frameHeight});`
+          `    this.setFrame(col * ${String(frameWidth)}, row * ${String(frameHeight)}, ${String(frameWidth)}, ${String(frameHeight)});`
         )
       } else {
         lines.push(
-          `    this.setFrame(this._animPattern * ${frameWidth}, 0, ${frameWidth}, ${frameHeight});`
+          `    this.setFrame(this._animPattern * ${String(frameWidth)}, 0, ${String(frameWidth)}, ${String(frameHeight)});`
         )
       }
       lines.push('};')
       lines.push('')
 
       lines.push(`// Animation control methods`)
-      lines.push(`${targetClass}.prototype.playAnimation = function() {`)
+      lines.push(`${String(targetClass)}.prototype.playAnimation = function() {`)
       lines.push('    this._animPlaying = true;')
       lines.push('    this._animPattern = 0;')
       lines.push('    this._animFrameCount = 0;')
       lines.push('};')
       lines.push('')
 
-      lines.push(`${targetClass}.prototype.stopAnimation = function() {`)
+      lines.push(`${String(targetClass)}.prototype.stopAnimation = function() {`)
       lines.push('    this._animPlaying = false;')
       lines.push('};')
       lines.push('')
 
-      lines.push(`${targetClass}.prototype.pauseAnimation = function() {`)
+      lines.push(`${String(targetClass)}.prototype.pauseAnimation = function() {`)
       lines.push('    this._animPlaying = false;')
       lines.push('};')
       lines.push('')
 
-      lines.push(`${targetClass}.prototype.resumeAnimation = function() {`)
+      lines.push(`${String(targetClass)}.prototype.resumeAnimation = function() {`)
       lines.push('    this._animPlaying = true;')
       lines.push('};')
     } else {
@@ -821,17 +857,12 @@ const spriteAnimationTemplate: CodeTemplate = {
       lines.push('    Sprite.prototype.initialize.call(this);')
       lines.push('')
       lines.push('    // Animation properties')
-      lines.push('    this._animFrameCount = 0;')
-      lines.push('    this._animPattern = 0;')
-      lines.push(`    this._animMaxPattern = ${frameCount};`)
-      lines.push(`    this._animDelay = ${frameDelay};`)
-      lines.push(`    this._animLoop = ${loop};`)
-      lines.push(`    this._animPlaying = ${autoPlay};`)
-      lines.push(`    this._frameWidth = ${frameWidth};`)
-      lines.push(`    this._frameHeight = ${frameHeight};`)
+      lines.push(...animationStateLines(frameCount, frameDelay, loop, autoPlay))
+      lines.push(`    this._frameWidth = ${String(frameWidth)};`)
+      lines.push(`    this._frameHeight = ${String(frameHeight)};`)
 
       if (animationType === 'grid') {
-        lines.push(`    this._columns = ${columns};`)
+        lines.push(`    this._columns = ${String(columns)};`)
       }
 
       lines.push('')
@@ -965,41 +996,34 @@ const spriteAnimationTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
+    const errors = spriteNameErrors(values['spriteName'])
 
-    if (values['spriteName']) {
-      const name = values['spriteName'] as string
-      if (!/^[a-zA-Z][a-zA-Z0-9]*$/.test(name.trim().replace(/\s+/g, ''))) {
-        errors.push('Sprite Name must start with a letter and contain only letters and numbers')
-      }
-    }
-
-    const frameCount = values['frameCount'] as number
-    if (frameCount !== undefined && frameCount < 1) {
+    const frameCount = values['frameCount']
+    if (frameCount !== undefined && Number(frameCount) < 1) {
       errors.push('Frame Count must be at least 1')
     }
 
-    const frameWidth = values['frameWidth'] as number
-    if (frameWidth !== undefined && frameWidth <= 0) {
+    const frameWidth = values['frameWidth']
+    if (frameWidth !== undefined && Number(frameWidth) <= 0) {
       errors.push('Frame Width must be a positive number')
     }
 
-    const frameHeight = values['frameHeight'] as number
-    if (frameHeight !== undefined && frameHeight <= 0) {
+    const frameHeight = values['frameHeight']
+    if (frameHeight !== undefined && Number(frameHeight) <= 0) {
       errors.push('Frame Height must be a positive number')
     }
 
-    const frameDelay = values['frameDelay'] as number
-    if (frameDelay !== undefined && frameDelay < 1) {
+    const frameDelay = values['frameDelay']
+    if (frameDelay !== undefined && Number(frameDelay) < 1) {
       errors.push('Frame Delay must be at least 1')
     }
 
-    const animationType = values['animationType'] as string
+    const animationType = values['animationType']
     if (animationType === 'mixin' && !values['targetClass']) {
       errors.push('Target Sprite Class is required for Animation Mixin')
     } else if (
       animationType === 'mixin' &&
-      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(values['targetClass'] as string)
+      !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(values['targetClass']))
     ) {
       errors.push('Target Sprite Class must be a class name (letters, numbers, _ or $)')
     }

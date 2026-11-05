@@ -3170,20 +3170,11 @@
     }
   },
   "src/renderer/src/lib/generator/templates/sprite-system.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 43
-    },
     "@typescript-eslint/restrict-template-expressions": {
-      "count": 4
+      "count": 2
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
-    },
-    "complexity": {
-      "count": 1
+      "count": 2
     },
     "max-lines-per-function": {
       "count": 3
@@ -3192,19 +3183,13 @@
       "count": 1
     },
     "regexp/use-ignore-case": {
-      "count": 4
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 6
+      "count": 3
     },
     "unicorn/consistent-boolean-name": {
       "count": 3
     },
     "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 5
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
     },
     "unicorn/prefer-hoisting-branch-code": {
       "count": 1
@@ -3213,7 +3198,7 @@
       "count": 2
     },
     "unicorn/prefer-string-replace-all": {
-      "count": 3
+      "count": 2
     },
     "unicorn/prefer-switch": {
       "count": 2
