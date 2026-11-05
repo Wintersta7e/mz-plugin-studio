@@ -112,3 +112,59 @@ Game_Actor.prototype.Sample = function() {
 Game_Actor.prototype.setSample = function(value) {
     this._Sample = value;
 };
+
+// ==== case: type-violating: dataType="boolean",minValue=null {"dataType":"boolean","includeChange":true,"propertyName":"Sample","minValue":null}
+// Custom Actor Property: Sample
+// Type: boolean, Default: false
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = false;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    this._Sample = value;
+};
+
+// Toggle method: actor.toggleSample()
+Game_Actor.prototype.toggleSample = function() {
+    this._Sample = !this._Sample;
+};
+
+// ==== case: type-violating: minValue="9",maxValue="1",includeChange=null {"dataType":"number","includeChange":null,"propertyName":"Sample","minValue":"9","maxValue":"1"}
+// rejects: Minimum Value cannot be greater than Maximum Value
+// Custom Actor Property: Sample
+// Type: number, Default: 0
+// Range: 9 to 1
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = 0;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    // Clamp value to valid range
+    this._Sample = Math.max(9, Math.min(1, value));
+};
+
+// Change method: actor.changeSample(amount)
+// Use positive values to increase, negative to decrease
+Game_Actor.prototype.changeSample = function(amount) {
+    this.setSample(this._Sample + amount);
+};

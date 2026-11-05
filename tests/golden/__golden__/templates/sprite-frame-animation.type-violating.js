@@ -584,3 +584,240 @@ Sprite_Base.prototype.pauseAnimation = function() {
 Sprite_Base.prototype.resumeAnimation = function() {
     this._animPlaying = true;
 };
+
+// ==== case: type-violating: animationType="vertical",frameCount=null {"animationType":"vertical","frameCount":null,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample"}
+// rejects: Frame Count must be at least 1
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Animated sprite with frame-based animation support.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(Sprite.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function(imageName) {
+    Sprite.prototype.initialize.call(this);
+
+    // Animation properties
+    this._animFrameCount = 0;
+    this._animPattern = 0;
+    this._animMaxPattern = 4;
+    this._animDelay = 12;
+    this._animLoop = true;
+    this._animPlaying = true;
+    this._frameWidth = 48;
+    this._frameHeight = 48;
+
+    // Load bitmap if provided
+    if (imageName) {
+        this.bitmap = ImageManager.loadPicture(imageName);
+        this.bitmap.addLoadListener(this.onBitmapLoad.bind(this));
+    }
+};
+
+Sprite_Sample.prototype.onBitmapLoad = function() {
+    // Set initial frame
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+    if (this._animPlaying && this.bitmap && this.bitmap.isReady()) {
+        this.updateFrameAnimation();
+    }
+};
+
+Sprite_Sample.prototype.updateFrameAnimation = function() {
+    this._animFrameCount++;
+    if (this._animFrameCount >= this._animDelay) {
+        this._animFrameCount = 0;
+        this._animPattern++;
+        if (this._animPattern >= this._animMaxPattern) {
+            if (this._animLoop) {
+                this._animPattern = 0;
+            } else {
+                this._animPattern = this._animMaxPattern - 1;
+                this._animPlaying = false;
+                this.onAnimationEnd();
+            }
+        }
+        this.updateAnimationFrame();
+    }
+};
+
+Sprite_Sample.prototype.updateAnimationFrame = function() {
+    // Vertical strip layout
+    const y = this._animPattern * this._frameHeight;
+    this.setFrame(0, y, this._frameWidth, this._frameHeight);
+};
+
+Sprite_Sample.prototype.onAnimationEnd = function() {
+    // Override this for custom behavior when animation ends
+};
+
+// Animation Control Methods
+
+Sprite_Sample.prototype.play = function() {
+    this._animPlaying = true;
+    this._animPattern = 0;
+    this._animFrameCount = 0;
+};
+
+Sprite_Sample.prototype.stop = function() {
+    this._animPlaying = false;
+    this._animPattern = 0;
+    this._animFrameCount = 0;
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.pause = function() {
+    this._animPlaying = false;
+};
+
+Sprite_Sample.prototype.resume = function() {
+    this._animPlaying = true;
+};
+
+Sprite_Sample.prototype.setFrameDelay = function(delay) {
+    this._animDelay = delay;
+};
+
+Sprite_Sample.prototype.setLoop = function(loop) {
+    this._animLoop = loop;
+};
+
+Sprite_Sample.prototype.gotoFrame = function(frame) {
+    this._animPattern = Math.max(0, Math.min(frame, this._animMaxPattern - 1));
+    this._animFrameCount = 0;
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.isPlaying = function() {
+    return this._animPlaying;
+};
+
+Sprite_Sample.prototype.currentFrame = function() {
+    return this._animPattern;
+};
+
+// ==== case: type-violating: animationType=7 {"animationType":7,"frameCount":4,"frameWidth":48,"frameHeight":48,"columns":4,"frameDelay":12,"loop":true,"autoPlay":true,"spriteName":"Sample"}
+// rejects: Field "Animation Type" must be text
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Animated sprite with frame-based animation support.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(Sprite.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function(imageName) {
+    Sprite.prototype.initialize.call(this);
+
+    // Animation properties
+    this._animFrameCount = 0;
+    this._animPattern = 0;
+    this._animMaxPattern = 4;
+    this._animDelay = 12;
+    this._animLoop = true;
+    this._animPlaying = true;
+    this._frameWidth = 48;
+    this._frameHeight = 48;
+
+    // Load bitmap if provided
+    if (imageName) {
+        this.bitmap = ImageManager.loadPicture(imageName);
+        this.bitmap.addLoadListener(this.onBitmapLoad.bind(this));
+    }
+};
+
+Sprite_Sample.prototype.onBitmapLoad = function() {
+    // Set initial frame
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+    if (this._animPlaying && this.bitmap && this.bitmap.isReady()) {
+        this.updateFrameAnimation();
+    }
+};
+
+Sprite_Sample.prototype.updateFrameAnimation = function() {
+    this._animFrameCount++;
+    if (this._animFrameCount >= this._animDelay) {
+        this._animFrameCount = 0;
+        this._animPattern++;
+        if (this._animPattern >= this._animMaxPattern) {
+            if (this._animLoop) {
+                this._animPattern = 0;
+            } else {
+                this._animPattern = this._animMaxPattern - 1;
+                this._animPlaying = false;
+                this.onAnimationEnd();
+            }
+        }
+        this.updateAnimationFrame();
+    }
+};
+
+Sprite_Sample.prototype.updateAnimationFrame = function() {
+};
+
+Sprite_Sample.prototype.onAnimationEnd = function() {
+    // Override this for custom behavior when animation ends
+};
+
+// Animation Control Methods
+
+Sprite_Sample.prototype.play = function() {
+    this._animPlaying = true;
+    this._animPattern = 0;
+    this._animFrameCount = 0;
+};
+
+Sprite_Sample.prototype.stop = function() {
+    this._animPlaying = false;
+    this._animPattern = 0;
+    this._animFrameCount = 0;
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.pause = function() {
+    this._animPlaying = false;
+};
+
+Sprite_Sample.prototype.resume = function() {
+    this._animPlaying = true;
+};
+
+Sprite_Sample.prototype.setFrameDelay = function(delay) {
+    this._animDelay = delay;
+};
+
+Sprite_Sample.prototype.setLoop = function(loop) {
+    this._animLoop = loop;
+};
+
+Sprite_Sample.prototype.gotoFrame = function(frame) {
+    this._animPattern = Math.max(0, Math.min(frame, this._animMaxPattern - 1));
+    this._animFrameCount = 0;
+    this.updateAnimationFrame();
+};
+
+Sprite_Sample.prototype.isPlaying = function() {
+    return this._animPlaying;
+};
+
+Sprite_Sample.prototype.currentFrame = function() {
+    return this._animPattern;
+};

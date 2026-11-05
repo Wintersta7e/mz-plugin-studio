@@ -283,3 +283,70 @@
     };
 
 })();
+
+// ==== case: type-violating: activeCondition="custom",conditionId=null {"processName":"myParallelProcess","updateInterval":1,"activeCondition":"custom","pauseInMenu":true,"pauseInBattle":true,"conditionId":null}
+// Parallel Process: myParallelProcess
+// Runs custom logic every frame (or at specified interval) on the map
+
+(() => {
+
+    // Internal state
+    let _frameCount = 0;
+    const UPDATE_INTERVAL = 1;
+
+    // Check if the parallel process should be active
+    function isMyParallelProcessActive() {
+        // Custom condition - edit as needed
+        return true; // Replace with your condition
+    }
+
+    // Check if process should be paused based on current scene
+    function shouldPauseProcess() {
+        return SceneManager._scene instanceof Scene_Menu ||
+               SceneManager._scene instanceof Scene_Item ||
+               SceneManager._scene instanceof Scene_Skill ||
+               SceneManager._scene instanceof Scene_Equip ||
+               SceneManager._scene instanceof Scene_Status ||
+               SceneManager._scene instanceof Scene_Options ||
+               SceneManager._scene instanceof Scene_Save ||
+               SceneManager._scene instanceof Scene_Load ||
+               SceneManager._scene instanceof Scene_GameEnd ||
+               SceneManager._scene instanceof Scene_Battle;
+    }
+
+    // Main parallel process logic - customize this!
+    function myParallelProcess() {
+        // Your parallel process code here
+        // This runs every frame (or at your specified interval) while active
+
+        // Example: Check player position
+        // const px = $gamePlayer.x;
+        // const py = $gamePlayer.y;
+
+        // Example: Check for nearby events
+        // const events = $gameMap.eventsXy(px, py);
+
+        // Example: Trigger something
+        // if (someCondition) {
+        //     $gameSwitches.setValue(1, true);
+        // }
+    }
+
+    // Hook into map scene update
+    const _Scene_Map_update = Scene_Map.prototype.update;
+    Scene_Map.prototype.update = function() {
+        _Scene_Map_update.call(this);
+
+        // Skip if paused or inactive
+        if (shouldPauseProcess()) return;
+        if (!isMyParallelProcessActive()) return;
+
+        myParallelProcess();
+    };
+
+    // ===== Utility Functions =====
+
+    // Enable/disable the process via script call
+    // For custom/always conditions, add your own control logic
+
+})();

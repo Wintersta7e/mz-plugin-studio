@@ -24,7 +24,7 @@ const FLOORS = {
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 88 },
     'src/renderer/src/lib': { lines: 96, branches: 88 },
-    [GENERATOR]: { lines: 98, branches: 92 },
+    [GENERATOR]: { lines: 98, branches: 93 },
     'src/renderer/src/components': { lines: 90, branches: 83 },
     'src/renderer/src': { lines: 82, branches: 79 },
     global: { lines: 95, branches: 89 }
@@ -44,14 +44,14 @@ const FLOORS = {
       [`${GENERATOR}/templates/custom-window.ts`]: 100,
       [`${GENERATOR}/templates/database-ext.ts`]: 93,
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
-      [`${GENERATOR}/templates/map-events.ts`]: 98,
+      [`${GENERATOR}/templates/map-events.ts`]: 99,
       [`${GENERATOR}/templates/menu-system.ts`]: 100,
       [`${GENERATOR}/templates/message-system.ts`]: 95,
       [`${GENERATOR}/templates/method-alias.ts`]: 100,
       [`${GENERATOR}/templates/plugin-commands.ts`]: 94,
       [`${GENERATOR}/templates/save-load.ts`]: 90,
       [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
-      [`${GENERATOR}/templates/sprite-system.ts`]: 99,
+      [`${GENERATOR}/templates/sprite-system.ts`]: 100,
       [`${GENERATOR}/templates/values.ts`]: 100
     }
   }

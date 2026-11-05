@@ -125,3 +125,120 @@ Sprite_Sample.prototype.updatePattern = function() {
 // ==== case: type-violating: width=["a","b"],useBitmap="filled",fillColor=7 {"parentClass":"Sprite","width":["a","b"],"height":48,"useBitmap":"filled","includeUpdate":true,"spriteName":"Sample","fillColor":7}
 // rejects: Field "Width" must be a number | Field "Fill Color" must be text
 // throws: TypeError
+
+// ==== case: type-violating: parentClass="Sprite_Clickable",width=null {"parentClass":"Sprite_Clickable","width":null,"height":48,"useBitmap":"none","includeUpdate":true,"spriteName":"Sample"}
+// rejects: Width must be a positive number
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Custom sprite class extending Sprite_Clickable.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(Sprite_Clickable.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function() {
+    Sprite_Clickable.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Sample.prototype.update = function() {
+    Sprite_Clickable.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_Sample.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_Sample.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};
+
+Sprite_Sample.prototype.onClick = function() {
+    // Handle click/touch
+    console.log('Sprite_Sample clicked!');
+};
+
+// ==== case: type-violating: spriteName="effect",width=null {"parentClass":"Sprite","width":null,"height":48,"useBitmap":"none","includeUpdate":true,"spriteName":"effect"}
+// rejects: Width must be a positive number
+//-----------------------------------------------------------------------------
+// Sprite_Effect
+//
+// Custom sprite class extending Sprite.
+//-----------------------------------------------------------------------------
+
+function Sprite_Effect() {
+    this.initialize(...arguments);
+}
+
+Sprite_Effect.prototype = Object.create(Sprite.prototype);
+Sprite_Effect.prototype.constructor = Sprite_Effect;
+
+Sprite_Effect.prototype.initialize = function() {
+    Sprite.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Effect.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_Effect.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_Effect.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};

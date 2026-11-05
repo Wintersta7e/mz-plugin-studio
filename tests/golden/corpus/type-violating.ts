@@ -31,7 +31,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { minValue: null },
     { propertyName: 'level', maxValue: null },
     { dataType: 'boolean', defaultValue: 7 },
-    { dataType: 'array', defaultValue: null }
+    { dataType: 'array', defaultValue: null },
+    { dataType: 'boolean', minValue: null },
+    { minValue: '9', maxValue: '1', includeChange: null }
   ],
   'actor-equipment-hook': [
     { slotFilter: 7 },
@@ -67,9 +69,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'map-parallel-process': [
     { updateInterval: '2' },
     { activeCondition: 'switch', conditionId: '3' },
-    { activeCondition: 'variable', conditionValue: 'abc' }
+    { activeCondition: 'variable', conditionValue: 'abc' },
+    { activeCondition: 'custom', conditionId: null }
   ],
-  'map-transfer-hook': [{ filterMapId: '12', includeDirection: null }],
+  'map-transfer-hook': [
+    { filterMapId: '12', includeDirection: null },
+    { timing: 'both', includeFadeInfo: 'yes', filterMapId: null }
+  ],
   'menu-command-addition': [
     { enableCondition: 'switch', switchId: null },
     { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' },
@@ -109,7 +115,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { maxSize: null },
     { featureType: 'addRemoveHook', hookTiming: 7 },
     { featureType: 'reserveParty', maxReserve: 'abc' },
-    { featureType: 'reserveParty', maxReserve: null }
+    { featureType: 'reserveParty', maxReserve: null },
+    { featureType: 'addRemoveHook', maxSize: null },
+    { minSize: 0, maxReserve: null }
   ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
@@ -122,7 +130,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'sprite-custom-class': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, useBitmap: 'empty' },
-    { width: ['a', 'b'], useBitmap: 'filled', fillColor: 7 }
+    { width: ['a', 'b'], useBitmap: 'filled', fillColor: 7 },
+    { parentClass: 'Sprite_Clickable', width: null },
+    { spriteName: 'effect', width: null }
   ],
   'sprite-frame-animation': [
     { frameCount: null, frameWidth: null },
@@ -130,13 +140,17 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { animationType: 'grid', columns: ['a', 'b'] },
     { animationType: 'mixin', targetClass: 7, frameCount: 'abc', columns: ['a', 'b'] },
     { animationType: 'mixin', columns: '3', frameWidth: null },
-    { animationType: 'mixin', targetClass: null }
+    { animationType: 'mixin', targetClass: null },
+    { animationType: 'vertical', frameCount: null },
+    { animationType: 7 }
   ],
   'sprite-picture-manipulation': [
     { operation: 'move', pictureId: 'abc', x: null, duration: ['a', 'b'] },
     { operation: 'rotate', rotationSpeed: 'abc' },
     { operation: 'tint', tintRed: null, tintGray: 'abc' },
-    { operation: 'erase', pictureId: null }
+    { operation: 'erase', pictureId: null },
+    { operation: 'utility', pictureId: null },
+    { opacity: 300, x: null }
   ]
 }
 

@@ -277,3 +277,74 @@ Game_Party.prototype.swapWithReserve = function(activeActorId, reserveActorId) {
 Game_Party.prototype.isInReserve = function(actorId) {
     return this._reserveMembers.includes(actorId);
 };
+
+// ==== case: type-violating: featureType="addRemoveHook",maxSize=null {"featureType":"addRemoveHook","maxSize":null,"minSize":1,"hookTiming":"after","maxReserve":10}
+// Party Member Change Hooks
+
+// Hook for when a member is added
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    const wasInParty = this._actors.includes(actorId);
+    _Game_Party_addActor.call(this, actorId);
+
+    if (!wasInParty && this._actors.includes(actorId)) {
+        // Member was successfully added
+        this.onMemberAdded(actorId);
+    }
+};
+
+// Called when a member is added to the party
+Game_Party.prototype.onMemberAdded = function(actorId) {
+    const actor = $gameActors.actor(actorId);
+    console.log(actor.name() + ' joined the party!');
+    // Add your custom logic here
+};
+
+// Hook for when a member is removed
+const _Game_Party_removeActor = Game_Party.prototype.removeActor;
+Game_Party.prototype.removeActor = function(actorId) {
+    const wasInParty = this._actors.includes(actorId);
+    _Game_Party_removeActor.call(this, actorId);
+
+    if (wasInParty && !this._actors.includes(actorId)) {
+        // Member was successfully removed
+        this.onMemberRemoved(actorId);
+    }
+};
+
+// Called when a member is removed from the party
+Game_Party.prototype.onMemberRemoved = function(actorId) {
+    const actor = $gameActors.actor(actorId);
+    console.log(actor.name() + ' left the party!');
+    // Add your custom logic here
+};
+
+// ==== case: type-violating: minSize=0,maxReserve=null {"featureType":"sizeLimit","maxSize":4,"minSize":0,"hookTiming":"after","maxReserve":null}
+// rejects: Minimum Party Size must be at least 1
+// Party Size Limit: 1 to 4 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 4;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
