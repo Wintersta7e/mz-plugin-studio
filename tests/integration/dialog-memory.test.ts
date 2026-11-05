@@ -37,7 +37,7 @@ async function session(userData?: string) {
   const log = (await import('electron-log/main')).default
   if (userData !== undefined) {
     const access = await import('../../src/main/file-access')
-    access.setProjectRootsDir(userData)
+    access.setProjectRootsDirectory(userData)
   }
   const opens: OpenAnswer[] = []
   const saves: SaveAnswer[] = []

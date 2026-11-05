@@ -79,7 +79,7 @@ async function session(userData?: string) {
   const access: typeof FileAccess = await import('../../src/main/file-access')
   const { registerMainHandlers } = await import('../helpers/fake-ipc')
   const log = (await import('electron-log/main')).default
-  if (userData !== undefined) access.setProjectRootsDir(userData)
+  if (userData !== undefined) access.setProjectRootsDirectory(userData)
   const folders: string[] = []
   const responses: number[] = []
   const dialog = {
@@ -254,7 +254,7 @@ describe('project scope', () => {
     await first.choose(a)
     const second = await session(userData)
 
-    expect(second.access.getCurrentProjectRoot()).toBeNull()
+    expect(second.access.getCurrentProjectRoot()).toBeUndefined()
 
     await second.ipc.invoke('project:load', a)
 

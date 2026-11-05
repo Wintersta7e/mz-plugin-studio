@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import log from 'electron-log/main'
 import { replaceFile } from './atomic-write'
+import { isRecord } from './ipc/arguments'
 import { accessDenied } from '../shared/ipc-types'
 import {
   assertSafeFilePath,
@@ -74,7 +75,7 @@ project's `js/plugins` folder. A UNC path needs the dialog, also under a UNC pro
 function assertReadAllowed(filePath: string, pathImpl: PlatformPath): void {
   if (readGrants.has(grantKey(filePath, pathImpl))) return
   const root = getCurrentProjectRoot()
-  if (root !== null && !isUncText(filePath)) {
+  if (root !== undefined && !isUncText(filePath)) {
     const plugins = grantKey(pathImpl.join(root, 'js', 'plugins'), pathImpl)
     const relative = pathImpl.relative(plugins, grantKey(filePath, pathImpl))
     const isOutside =
@@ -103,53 +104,65 @@ Project folders granted this session, as grant keys
 const sessionRoots = new Set<string>()
 
 /**
-The folder holding the granted project folders file; null keeps grants for the session only
+What main keeps for the session, set as the app starts and as projects load
 */
-let rootsDir: string | null = null
+const session: {
+  /**
+  The folder holding the granted project folders file; none keeps grants for the session only
+  */
+  rootsDirectory?: string
+  /**
+  Writes of the granted project folders file, one after another
+  */
+  persisting: Promise<void>
+  /**
+  The project folder `project:load` last loaded; the project channels act only on it
+  */
+  currentProjectRoot?: string
+} = { persisting: Promise.resolve() }
 
 /**
-Writes of the granted project folders file, one after another
+Keep granted project folders across restarts in `directory` (the app's user data folder)
 */
-let persisting: Promise<void> = Promise.resolve()
-
-/**
-The project folder `project:load` last loaded; the project channels act only on it
-*/
-let currentProjectRoot: string | null = null
-
-/**
-Keep granted project folders across restarts in `dir` (the app's user data folder)
-*/
-export function setProjectRootsDir(dir: string): void {
-  rootsDir = dir
+export function setProjectRootsDirectory(directory: string): void {
+  session.rootsDirectory = directory
 }
 
 /**
-The folder `setProjectRootsDir` set, where main keeps what lasts across restarts; null before
+The folder `setProjectRootsDirectory` set, where main keeps what lasts across restarts;
+undefined before
 */
-export function getProjectRootsDir(): string | null {
-  return rootsDir
+export function getProjectRootsDirectory(): string | undefined {
+  return session.rootsDirectory
+}
+
+/**
+Whether a file operation failed because the file is not there
+*/
+export function isFileNotFound(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }
 
 const reasonOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
 /**
-The granted project folders kept in `dir`; a missing or unreadable file grants none
+The granted project folders kept in `directory`; a missing or unreadable file grants none
 */
-async function readPersistedRoots(dir: string): Promise<string[]> {
-  const file = path.join(dir, PROJECT_ROOTS_FILE)
+async function readPersistedRoots(directory: string): Promise<string[]> {
+  const file = path.join(directory, PROJECT_ROOTS_FILE)
   let text: string
   try {
     text = await readFile(file, 'utf8')
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    if (!isFileNotFound(error)) {
       log.warn(`[file-access] Could not read ${file}: ${reasonOf(error)}`)
     }
     return []
   }
   try {
-    const roots: unknown = (JSON.parse(text) as { roots?: unknown } | null)?.roots
+    const parsed: unknown = JSON.parse(text)
+    const roots = isRecord(parsed) ? parsed['roots'] : undefined
     if (!Array.isArray(roots)) throw new TypeError('no list of project folders')
     return roots.filter((root): root is string => typeof root === 'string')
   } catch (error) {
@@ -169,23 +182,25 @@ export async function recordProjectRoot(
   const resolved = pathImpl.resolve(projectPath)
   const key = grantKey(resolved, pathImpl)
   sessionRoots.add(key)
-  const dir = rootsDir
-  if (dir === null) return
-  persisting = persisting.then(async () => {
-    const kept = await readPersistedRoots(dir)
+  const directory = session.rootsDirectory
+  if (directory === undefined) return
+  const previous = session.persisting
+  session.persisting = (async () => {
+    await previous
+    const kept = await readPersistedRoots(directory)
     const roots = [resolved, ...kept.filter((root) => grantKey(root, pathImpl) !== key)].slice(
       0,
       MAX_PROJECT_ROOTS
     )
-    const file = path.join(dir, PROJECT_ROOTS_FILE)
+    const file = path.join(directory, PROJECT_ROOTS_FILE)
     try {
       // Another app instance may save at the same moment: each writes its own temporary file
-      await replaceFile(file, Buffer.from(`${JSON.stringify({ roots }, null, 2)}\n`), false)
+      await replaceFile(file, Buffer.from(`${JSON.stringify({ roots }, undefined, 2)}\n`), false)
     } catch (error) {
       log.warn(`[file-access] Could not save ${file}: ${reasonOf(error)}`)
     }
-  })
-  await persisting
+  })()
+  await session.persisting
 }
 
 /**
@@ -197,8 +212,8 @@ export async function isProjectRootGranted(
 ): Promise<boolean> {
   const key = grantKey(projectPath, pathImpl)
   if (sessionRoots.has(key)) return true
-  if (rootsDir === null) return false
-  const kept = await readPersistedRoots(rootsDir)
+  if (session.rootsDirectory === undefined) return false
+  const kept = await readPersistedRoots(session.rootsDirectory)
   return kept.some((root) => grantKey(root, pathImpl) === key)
 }
 
@@ -206,14 +221,14 @@ export async function isProjectRootGranted(
 Make `projectPath` the open project, after `project:load` loaded it
 */
 export function setCurrentProjectRoot(projectPath: string, pathImpl: PlatformPath = path): void {
-  currentProjectRoot = pathImpl.resolve(projectPath)
+  session.currentProjectRoot = pathImpl.resolve(projectPath)
 }
 
 /**
-The open project's folder, or null before a project is loaded
+The open project's folder, or undefined before a project is loaded
 */
-export function getCurrentProjectRoot(): string | null {
-  return currentProjectRoot
+export function getCurrentProjectRoot(): string | undefined {
+  return session.currentProjectRoot
 }
 
 /**
@@ -224,28 +239,30 @@ export function authorize(
   target: unknown,
   pathImpl: PlatformPath = path
 ): void {
+  // A target that is not text fails the path checks below as an empty path does
+  const targetPath = typeof target === 'string' ? target : ''
   switch (access) {
     case 'project-load': {
-      assertSafeProjectPath(target as string, pathImpl)
+      assertSafeProjectPath(targetPath, pathImpl)
       return
     }
     case 'current-project': {
-      assertSafeProjectPath(target as string, pathImpl)
+      assertSafeProjectPath(targetPath, pathImpl)
       const root = getCurrentProjectRoot()
-      if (root === null) throw accessDenied('no project is open')
-      if (grantKey(target as string, pathImpl) !== grantKey(root, pathImpl)) {
+      if (root === undefined) throw accessDenied('no project is open')
+      if (grantKey(targetPath, pathImpl) !== grantKey(root, pathImpl)) {
         throw accessDenied('not the open project')
       }
       return
     }
     case 'granted-write': {
-      assertSafeFilePath(target as string, pathImpl)
-      assertWriteGranted(target as string, pathImpl)
+      assertSafeFilePath(targetPath, pathImpl)
+      assertWriteGranted(targetPath, pathImpl)
       return
     }
     case 'granted-read': {
-      assertSafeFilePath(target as string, pathImpl)
-      assertReadAllowed(target as string, pathImpl)
+      assertSafeFilePath(targetPath, pathImpl)
+      assertReadAllowed(targetPath, pathImpl)
       return
     }
     case 'none': {

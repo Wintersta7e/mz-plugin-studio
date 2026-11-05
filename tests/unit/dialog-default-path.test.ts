@@ -43,7 +43,7 @@ function request(
     kind: KIND[channel],
     rendererValue: undefined,
     lastDirectory: undefined,
-    projectRoot: null,
+    projectRoot: undefined,
     directoryExists: async (dir) => existing.includes(dir),
     ...partial
   }

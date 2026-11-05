@@ -315,7 +315,6 @@
         "tests/integration/write-grant.test.ts",
         "tests/unit/annotation-blocks.test.ts",
         "tests/unit/dialog-default-class.test.ts",
-        "tests/unit/dialog-default-path.test.ts",
         "tests/unit/evaluate-plugin.test.ts",
         "tests/unit/fixture-set.test.ts",
         "tests/unit/injection.test.ts",

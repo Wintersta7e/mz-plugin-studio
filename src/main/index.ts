@@ -14,7 +14,7 @@ import {
   type MainDeps as MainDependencies
 } from './ipc/handlers'
 import { createSenderCheck, emit, handleAll, onAll, routeLogChannel } from './ipc/registration'
-import { setProjectRootsDir } from './file-access'
+import { setProjectRootsDirectory } from './file-access'
 import { handleWillPreventUnload } from './close-prompt'
 import { createWindowOpenHandler } from './window-open'
 import { DEV_SERVER_CSP, PRODUCTION_CSP, installFileRequestFilter } from './csp'
@@ -133,7 +133,7 @@ app.whenReady().then(() => {
   )
   // Project folders the user opened stay granted, and dialogs open where they last chose, across
   // restarts
-  setProjectRootsDir(app.getPath('userData'))
+  setProjectRootsDirectory(app.getPath('userData'))
   handleAll(createInvokeHandlers(dependencies), isTrustedSender)
   onAll(createSendListeners(dependencies), isTrustedSender)
   // electron-log's own channel, which it registered unchecked on import, takes the same check
