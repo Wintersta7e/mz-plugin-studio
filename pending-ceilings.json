@@ -59,7 +59,6 @@
       "tests/integration/mz-runtime-conformance.test.ts": 10,
       "tests/integration/project-scope.test.ts": 3,
       "tests/integration/release-ci-gate.test.ts": 1,
-      "tests/unit/pluginParser-edge-cases.test.ts": 1,
       "tests/unit/static-scope.test.ts": 5,
       "tests/unit/template-store.test.ts": 5,
       "tests/unit/workflows.test.ts": 1
@@ -118,8 +117,6 @@
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
       "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/pluginParser-edge-cases.test.ts": 11,
-      "tests/unit/pluginParser.test.ts": 96,
       "tests/unit/preload-ipc.test.ts": 1,
       "tests/unit/raw-mode-insertion.test.ts": 2,
       "tests/unit/round-trip.test.ts": 5,

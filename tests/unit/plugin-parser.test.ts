@@ -6,7 +6,40 @@ import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { loadFixture } from '../golden/corpus/raw-mode'
 
-describe('PluginParser', () => {
+const HELP_THEN_TAG = `/*:
+ * @plugindesc Test plugin
+ * @author Test
+ * @help
+ * This is help text.
+ * It spans multiple lines.
+ *
+ * @param dummy
+ * @type string
+ */`
+
+const HELP_LAST = `/*:
+ * @plugindesc Test plugin
+ * @help
+ * This is help text.
+ * It spans multiple lines.
+ */
+
+/*:ja
+ * @plugindesc 説明
+ * @help
+ * ヘルプテキスト
+ */`
+
+const DESCRIPTION_LAST = `/*:
+ * @author Test
+ * @plugindesc Last description
+ */
+
+/*:ja
+ * @plugindesc 最後の説明
+ */`
+
+describe(PluginParser, () => {
   describe('parseMeta', () => {
     it('parses minimal plugin with @plugindesc and @author', () => {
       const content = `/*:
@@ -15,10 +48,11 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.meta.description).toBe('A simple test plugin')
-      expect(result.meta.author).toBe('TestAuthor')
-      expect(result.parameters).toHaveLength(0)
-      expect(result.commands).toHaveLength(0)
+      expect(result).toMatchObject({
+        meta: { description: 'A simple test plugin', author: 'TestAuthor' },
+        parameters: [],
+        commands: []
+      })
     })
 
     it('parses @target and @url', () => {
@@ -43,7 +77,7 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.meta.dependencies).toEqual(['Synthetic_CoreBase', 'AnotherPlugin'])
+      expect(result.meta.dependencies).toStrictEqual(['Synthetic_CoreBase', 'AnotherPlugin'])
     })
 
     it('parses @orderAfter', () => {
@@ -54,58 +88,32 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.meta.orderAfter).toEqual(['Synthetic_CoreBase'])
+      expect(result.meta.orderAfter).toStrictEqual(['Synthetic_CoreBase'])
     })
 
     it('parses @help text when followed by another tag', () => {
-      const content = `/*:
- * @plugindesc Test plugin
- * @author Test
- * @help
- * This is help text.
- * It spans multiple lines.
- *
- * @param dummy
- * @type string
- */`
-      const result = PluginParser.parsePlugin(content)
+      const result = PluginParser.parsePlugin(HELP_THEN_TAG)
 
       expect(result.meta.help).toContain('This is help text.')
       expect(result.meta.help).toContain('It spans multiple lines.')
     })
 
     it('reads @help written as the last tag of a block', () => {
-      const content = `/*:
- * @plugindesc Test plugin
- * @help
- * This is help text.
- * It spans multiple lines.
- */
+      const result = PluginParser.parsePlugin(HELP_LAST)
 
-/*:ja
- * @plugindesc 説明
- * @help
- * ヘルプテキスト
- */`
-      const result = PluginParser.parsePlugin(content)
-
-      expect(result.meta.help).toBe('This is help text.\nIt spans multiple lines.')
-      expect(result.meta.localizations!['ja'].help).toBe('ヘルプテキスト')
+      expect(result.meta).toMatchObject({
+        help: 'This is help text.\nIt spans multiple lines.',
+        localizations: { ja: { help: 'ヘルプテキスト' } }
+      })
     })
 
     it('reads @plugindesc written as the last tag of a block', () => {
-      const content = `/*:
- * @author Test
- * @plugindesc Last description
- */
+      const result = PluginParser.parsePlugin(DESCRIPTION_LAST)
 
-/*:ja
- * @plugindesc 最後の説明
- */`
-      const result = PluginParser.parsePlugin(content)
-
-      expect(result.meta.description).toBe('Last description')
-      expect(result.meta.localizations!['ja'].description).toBe('最後の説明')
+      expect(result.meta).toMatchObject({
+        description: 'Last description',
+        localizations: { ja: { description: '最後の説明' } }
+      })
     })
 
     it('reads the help of a fixture plugin that writes @help last', () => {
@@ -124,28 +132,17 @@ describe('PluginParser', () => {
       expect(result.meta.name).toBe('MyPlugin')
     })
   })
+})
 
-  describe('parseParameters', () => {
-    it('parses string parameter', () => {
-      const content = `/*:
+const STRING_PARAMETER = `/*:
  * @param greeting
  * @text Greeting Text
  * @desc The greeting to display
  * @type string
  * @default Hello
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('greeting')
-      expect(result.parameters[0].text).toBe('Greeting Text')
-      expect(result.parameters[0].desc).toBe('The greeting to display')
-      expect(result.parameters[0].type).toBe('string')
-      expect(result.parameters[0].default).toBe('Hello')
-    })
-
-    it('parses number parameter with min/max/decimals', () => {
-      const content = `/*:
+const NUMBER_PARAMETER = `/*:
  * @param speed
  * @text Speed
  * @desc Movement speed
@@ -155,17 +152,8 @@ describe('PluginParser', () => {
  * @decimals 2
  * @default 10
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('number')
-      expect(result.parameters[0].min).toBe(1)
-      expect(result.parameters[0].max).toBe(100)
-      expect(result.parameters[0].decimals).toBe(2)
-      expect(result.parameters[0].default).toBe(10)
-    })
-
-    it('parses boolean parameter with @on/@off', () => {
-      const content = `/*:
+const BOOLEAN_PARAMETER = `/*:
  * @param enabled
  * @text Enabled
  * @type boolean
@@ -173,16 +161,8 @@ describe('PluginParser', () => {
  * @off No
  * @default true
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('boolean')
-      expect(result.parameters[0].default).toBe(true)
-      expect(result.parameters[0].onLabel).toBe('Yes')
-      expect(result.parameters[0].offLabel).toBe('No')
-    })
-
-    it('parses select parameter with options', () => {
-      const content = `/*:
+const SELECT_PARAMETER = `/*:
  * @param difficulty
  * @text Difficulty
  * @type select
@@ -194,57 +174,30 @@ describe('PluginParser', () => {
  * @value hard
  * @default medium
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('select')
-      expect(result.parameters[0].options).toHaveLength(3)
-      expect(result.parameters[0].options![0]).toEqual({ value: 'easy', text: 'Easy' })
-      expect(result.parameters[0].options![2]).toEqual({ value: 'hard', text: 'Hard' })
-    })
-
-    it('parses struct parameter', () => {
-      const content = `/*:
+const STRUCT_PARAMETER = `/*:
  * @param settings
  * @text Settings
  * @type struct<GameSettings>
  * @default {}
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('struct')
-      expect(result.parameters[0].structType).toBe('GameSettings')
-    })
-
-    it('parses array parameter', () => {
-      const content = `/*:
+const ARRAY_PARAMETER = `/*:
  * @param enemies
  * @text Enemy List
  * @type struct<Enemy>[]
  * @default []
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('array')
-      expect(result.parameters[0].arrayType).toBe('struct')
-      expect(result.parameters[0].structType).toBe('Enemy')
-    })
-
-    it('parses file parameter with @dir', () => {
-      const content = `/*:
+const FILE_PARAMETER = `/*:
  * @param bgImage
  * @text Background Image
  * @type file
  * @dir img/pictures
  * @default
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('file')
-      expect(result.parameters[0].dir).toBe('img/pictures')
-    })
-
-    it('parses nested parameters with @parent', () => {
-      const content = `/*:
+const NESTED_PARAMETERS = `/*:
  * @param parentParam
  * @text Parent
  * @type string
@@ -256,14 +209,8 @@ describe('PluginParser', () => {
  * @parent parentParam
  * @default 0
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters).toHaveLength(2)
-      expect(result.parameters[1].parent).toBe('parentParam')
-    })
-
-    it('parses multiple parameters', () => {
-      const content = `/*:
+const MULTIPLE_PARAMETERS = `/*:
  * @param name
  * @text Name
  * @type string
@@ -279,15 +226,89 @@ describe('PluginParser', () => {
  * @type boolean
  * @default true
  */`
-      const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters).toHaveLength(3)
-      expect(result.parameters[0].name).toBe('name')
-      expect(result.parameters[1].name).toBe('age')
-      expect(result.parameters[2].name).toBe('active')
+describe(PluginParser, () => {
+  describe('parseParameters', () => {
+    it('parses string parameter', () => {
+      const result = PluginParser.parsePlugin(STRING_PARAMETER)
+
+      expect(result.parameters).toMatchObject([
+        {
+          name: 'greeting',
+          text: 'Greeting Text',
+          desc: 'The greeting to display',
+          type: 'string',
+          default: 'Hello'
+        }
+      ])
+    })
+
+    it('parses number parameter with min/max/decimals', () => {
+      const result = PluginParser.parsePlugin(NUMBER_PARAMETER)
+
+      expect(result.parameters).toMatchObject([
+        { type: 'number', min: 1, max: 100, decimals: 2, default: 10 }
+      ])
+    })
+
+    it('parses boolean parameter with @on/@off', () => {
+      const result = PluginParser.parsePlugin(BOOLEAN_PARAMETER)
+
+      expect(result.parameters).toMatchObject([
+        { type: 'boolean', default: true, onLabel: 'Yes', offLabel: 'No' }
+      ])
+    })
+
+    it('parses select parameter with options', () => {
+      const result = PluginParser.parsePlugin(SELECT_PARAMETER)
+
+      expect(result.parameters.map((p) => [p.type, p.options])).toStrictEqual([
+        [
+          'select',
+          [
+            { value: 'easy', text: 'Easy' },
+            { value: 'medium', text: 'Medium' },
+            { value: 'hard', text: 'Hard' }
+          ]
+        ]
+      ])
+    })
+
+    it('parses struct parameter', () => {
+      const result = PluginParser.parsePlugin(STRUCT_PARAMETER)
+
+      expect(result.parameters).toMatchObject([{ type: 'struct', structType: 'GameSettings' }])
+    })
+
+    it('parses array parameter', () => {
+      const result = PluginParser.parsePlugin(ARRAY_PARAMETER)
+
+      expect(result.parameters).toMatchObject([
+        { type: 'array', arrayType: 'struct', structType: 'Enemy' }
+      ])
+    })
+
+    it('parses file parameter with @dir', () => {
+      const result = PluginParser.parsePlugin(FILE_PARAMETER)
+
+      expect(result.parameters).toMatchObject([{ type: 'file', dir: 'img/pictures' }])
+    })
+
+    it('parses nested parameters with @parent', () => {
+      const result = PluginParser.parsePlugin(NESTED_PARAMETERS)
+
+      expect(result.parameters).toMatchObject([{}, { parent: 'parentParam' }])
+    })
+
+    it('parses multiple parameters', () => {
+      const result = PluginParser.parsePlugin(MULTIPLE_PARAMETERS)
+
+      expect(result.parameters.map((p) => p.name)).toStrictEqual(['name', 'age', 'active'])
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('parseCommands', () => {
     it('parses a command with arguments', () => {
       const content = `/*:
@@ -307,13 +328,14 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.commands).toHaveLength(1)
-      expect(result.commands[0].name).toBe('ShowMessage')
-      expect(result.commands[0].text).toBe('Show Message')
-      expect(result.commands[0].desc).toBe('Displays a message on screen')
-      expect(result.commands[0].args).toHaveLength(2)
-      expect(result.commands[0].args[0].name).toBe('message')
-      expect(result.commands[0].args[1].name).toBe('duration')
+      expect(result.commands).toMatchObject([
+        {
+          name: 'ShowMessage',
+          text: 'Show Message',
+          desc: 'Displays a message on screen',
+          args: [{ name: 'message' }, { name: 'duration' }]
+        }
+      ])
     })
 
     it('parses multiple commands', () => {
@@ -328,12 +350,12 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.commands).toHaveLength(2)
-      expect(result.commands[0].name).toBe('CmdA')
-      expect(result.commands[1].name).toBe('CmdB')
+      expect(result.commands.map((c) => c.name)).toStrictEqual(['CmdA', 'CmdB'])
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('parseStructs', () => {
     it('parses struct definitions', () => {
       const content = `/*:
@@ -354,11 +376,9 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.structs).toHaveLength(1)
-      expect(result.structs[0].name).toBe('Position')
-      expect(result.structs[0].parameters).toHaveLength(2)
-      expect(result.structs[0].parameters[0].name).toBe('x')
-      expect(result.structs[0].parameters[1].name).toBe('y')
+      expect(result.structs).toMatchObject([
+        { name: 'Position', parameters: [{ name: 'x' }, { name: 'y' }] }
+      ])
     })
 
     it('reads a translated struct block as a translation, not a second struct', () => {
@@ -386,11 +406,15 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.structs.map((s) => s.name)).toEqual(['Position'])
-      expect(result.structs[0].parameters.map((p) => p.text)).toEqual(['X'])
+      expect(result.structs.map((s) => s.name)).toStrictEqual(['Position'])
+      expect(result.structs.map((struct) => struct.parameters.map((p) => p.text))).toStrictEqual([
+        ['X']
+      ])
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('main block by rule', () => {
     it('reads parameters and commands from the bare block when a Japanese block comes first', () => {
       const content = `/*:ja
@@ -415,9 +439,9 @@ describe('PluginParser', () => {
       const result = PluginParser.parsePlugin(content)
 
       expect(result.meta.description).toBe('Description')
-      expect(result.parameters.map((p) => p.text)).toEqual(['Speed'])
-      expect(result.commands.map((c) => c.text)).toEqual(['Run now'])
-      expect(result.meta.localizations).toEqual({ ja: { description: '説明', help: '' } })
+      expect(result.parameters.map((p) => p.text)).toStrictEqual(['Speed'])
+      expect(result.commands.map((c) => c.text)).toStrictEqual(['Run now'])
+      expect(result.meta.localizations).toStrictEqual({ ja: { description: '説明', help: '' } })
     })
 
     it('takes a command text and description from before its first argument', () => {
@@ -430,9 +454,7 @@ describe('PluginParser', () => {
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.commands[0].text).toBe('Run')
-      expect(result.commands[0].desc).toBe('')
-      expect(result.commands[0].args[0].text).toBe('Speed')
+      expect(result.commands).toMatchObject([{ text: 'Run', desc: '', args: [{ text: 'Speed' }] }])
     })
 
     it('keeps code between annotation blocks in the code body', () => {
@@ -449,7 +471,9 @@ var after = 2;`
       expect(result.codeBody).toBe('var before = 1;\n\nvar after = 2;')
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('compact format', () => {
     it('parses compact single-line parameter format', () => {
       const content = `/*:
@@ -457,13 +481,14 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('mySwitch')
-      expect(result.parameters[0].text).toBe('My Switch')
-      expect(result.parameters[0].type).toBe('switch')
+      expect(result.parameters).toMatchObject([
+        { name: 'mySwitch', text: 'My Switch', type: 'switch' }
+      ])
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('code body extraction', () => {
     it('extracts IIFE-wrapped code body', () => {
       const content = `/*:
@@ -491,7 +516,9 @@ var after = 2;`
       expect(result.customCode).toBe('')
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('multi-language headers', () => {
     it('parses localized headers', () => {
       const content = `/*:
@@ -506,12 +533,15 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.meta.description).toBe('English description')
-      expect(result.meta.localizations).toHaveProperty('ja')
-      expect(result.meta.localizations!['ja'].description).toBe('日本語の説明')
+      expect(result.meta).toMatchObject({
+        description: 'English description',
+        localizations: { ja: { description: '日本語の説明' } }
+      })
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('edge cases', () => {
     it('handles malformed input without crashing', () => {
       expect(() => PluginParser.parsePlugin('')).not.toThrow()
@@ -521,16 +551,15 @@ var after = 2;`
       for (const input of ['', 'not a plugin', '/* unclosed comment']) {
         const result = PluginParser.parsePlugin(input)
 
-        expect(result.parameters).toEqual([])
-        expect(result.commands).toEqual([])
+        expect(result.parameters).toStrictEqual([])
+        expect(result.commands).toStrictEqual([])
       }
     })
 
     it('handles plugin with no header comment', () => {
       const result = PluginParser.parsePlugin('console.log("hello");')
 
-      expect(result.parameters).toHaveLength(0)
-      expect(result.commands).toHaveLength(0)
+      expect(result).toMatchObject({ parameters: [], commands: [] })
     })
 
     it('generates unique IDs for each element', () => {
@@ -545,11 +574,13 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].id).not.toBe(result.parameters[1].id)
+      expect(new Set(result.parameters.map((p) => p.id)).size).toBe(2)
     })
   })
+})
 
-  // COV-12: parseParameters edge cases
+// COV-12: parseParameters edge cases
+describe(PluginParser, () => {
   describe('parseParameters edge cases', () => {
     it('maps @type num to number', () => {
       const content = `/*:
@@ -559,7 +590,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('number')
+      expect(result.parameters).toMatchObject([{ type: 'number' }])
     })
 
     it('maps @type bool to boolean', () => {
@@ -570,7 +601,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('boolean')
+      expect(result.parameters).toMatchObject([{ type: 'boolean' }])
     })
 
     it('maps @type string[] to array with arrayType string', () => {
@@ -581,8 +612,7 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('array')
-      expect(result.parameters[0].arrayType).toBe('string')
+      expect(result.parameters).toMatchObject([{ type: 'array', arrayType: 'string' }])
     })
 
     it('preserves rawType for struct<Name> types', () => {
@@ -593,9 +623,9 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('struct')
-      expect(result.parameters[0].structType).toBe('Position')
-      expect(result.parameters[0].rawType).toBe('struct<Position>')
+      expect(result.parameters).toMatchObject([
+        { type: 'struct', structType: 'Position', rawType: 'struct<Position>' }
+      ])
     })
 
     it('parses compact format with options on one line', () => {
@@ -604,14 +634,27 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.parameters[0].type).toBe('select')
-      expect(result.parameters[0].options).toBeDefined()
-      expect(result.parameters[0].options).toHaveLength(2)
-      expect(result.parameters[0].options![0].text).toBe('Easy')
+      expect(result.parameters).toMatchObject([{ type: 'select', options: [{ text: 'Easy' }, {}] }])
     })
   })
+})
 
-  // COV-13: parseCommands/parseArgs edge cases
+const SELECT_ARGUMENT = `/*:
+ * @command SetDiff
+ * @text Set Difficulty
+ *
+ * @arg difficulty
+ * @text Difficulty
+ * @type select
+ * @option Easy
+ * @value easy
+ * @option Normal
+ * @value normal
+ * @default normal
+ */`
+
+// COV-13: parseCommands/parseArgs edge cases
+describe(PluginParser, () => {
   describe('parseCommands/parseArgs edge cases', () => {
     it('parses boolean arg with @on and @off', () => {
       const content = `/*:
@@ -627,10 +670,9 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content)
 
-      expect(result.commands[0].args[0].type).toBe('boolean')
-      expect(result.commands[0].args[0].onLabel).toBe('Show')
-      expect(result.commands[0].args[0].offLabel).toBe('Hide')
-      expect(result.commands[0].args[0].default).toBe(true)
+      expect(result.commands).toMatchObject([
+        { args: [{ type: 'boolean', onLabel: 'Show', offLabel: 'Hide', default: true }] }
+      ])
     })
 
     it('parses file arg with @require', () => {
@@ -646,11 +688,10 @@ var after = 2;`
  * @default
  */`
       const result = PluginParser.parsePlugin(content)
-      const arg = result.commands[0].args[0]
 
-      expect(arg.type).toBe('file')
-      expect(arg.dir).toBe('img/pictures')
-      expect(arg.require).toBe(true)
+      expect(result.commands).toMatchObject([
+        { args: [{ type: 'file', dir: 'img/pictures', require: true }] }
+      ])
     })
 
     it('parses struct type arg', () => {
@@ -664,33 +705,16 @@ var after = 2;`
  * @default {}
  */`
       const result = PluginParser.parsePlugin(content)
-      const arg = result.commands[0].args[0]
 
-      expect(arg.type).toBe('struct')
-      expect(arg.structType).toBe('Config')
+      expect(result.commands).toMatchObject([{ args: [{ type: 'struct', structType: 'Config' }] }])
     })
 
     it('parses select arg with options', () => {
-      const content = `/*:
- * @command SetDiff
- * @text Set Difficulty
- *
- * @arg difficulty
- * @text Difficulty
- * @type select
- * @option Easy
- * @value easy
- * @option Normal
- * @value normal
- * @default normal
- */`
-      const result = PluginParser.parsePlugin(content)
-      const arg = result.commands[0].args[0]
+      const result = PluginParser.parsePlugin(SELECT_ARGUMENT)
 
-      expect(arg.type).toBe('select')
-      expect(arg.options).toBeDefined()
-      expect(arg.options!.some((o) => o.value === 'easy')).toBe(true)
-      expect(arg.options!.some((o) => o.value === 'normal')).toBe(true)
+      expect(result.commands).toMatchObject([
+        { args: [{ type: 'select', options: [{ value: 'easy' }, { value: 'normal' }] }] }
+      ])
     })
 
     it('parses number arg with min/max/decimals', () => {
@@ -707,16 +731,16 @@ var after = 2;`
  * @default 50
  */`
       const result = PluginParser.parsePlugin(content)
-      const arg = result.commands[0].args[0]
 
-      expect(arg.type).toBe('number')
-      expect(arg.min).toBe(0)
-      expect(arg.max).toBe(100)
-      expect(arg.decimals).toBe(2)
+      expect(result.commands).toMatchObject([
+        { args: [{ type: 'number', min: 0, max: 100, decimals: 2 }] }
+      ])
     })
   })
+})
 
-  // COV-11: extractCustomCode
+// COV-11: extractCustomCode
+describe(PluginParser, () => {
   describe('extractCustomCode', () => {
     it('extracts code after custom code marker comment', () => {
       const content = `/*:
@@ -782,7 +806,9 @@ var after = 2;`
       expect(result.customCode).toContain('MyPlugin.init')
     })
   })
+})
 
+describe(PluginParser, () => {
   describe('real-world plugin', () => {
     it('parses a full-featured plugin header', () => {
       const content = `/*:
@@ -832,15 +858,14 @@ var after = 2;`
  */`
       const result = PluginParser.parsePlugin(content, 'Synthetic_BattleCore.js')
 
-      expect(result.meta.name).toBe('Synthetic_BattleCore')
-      expect(result.meta.target).toBe('MZ')
-      expect(result.meta.author).toBe('Example Author')
+      expect(result).toMatchObject({
+        meta: { name: 'Synthetic_BattleCore', target: 'MZ', author: 'Example Author' },
+        commands: [{ args: [{}] }]
+      })
       expect(result.meta.dependencies).toContain('Synthetic_CoreBase')
       expect(result.meta.orderAfter).toContain('Synthetic_CoreBase')
       // +1 for helpEndMarker used to terminate the @help block
       expect(result.parameters.length).toBeGreaterThanOrEqual(3)
-      expect(result.commands).toHaveLength(1)
-      expect(result.commands[0].args).toHaveLength(1)
       expect(result.meta.help).toContain('Introduction')
     })
   })

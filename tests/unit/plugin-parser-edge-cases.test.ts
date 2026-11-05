@@ -2,12 +2,15 @@
 import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/generator/index'
-import { toBaseline } from '../../src/shared/types/plugin'
+import { toBaseline, type PluginParameter } from '../../src/shared/types/plugin'
 
-describe('PluginParser edge cases', () => {
-  describe('rawSource storage', () => {
-    it('stores the complete original source when parsing', () => {
-      const content = `/*:
+// The fragments of a text it does not hold (no text holds none)
+const missing = (text: string | undefined, fragments: string[]): string[] =>
+  fragments.filter((fragment) => text?.includes(fragment) !== true)
+
+describe('pluginParser edge cases: rawSource storage', () => {
+  it('stores the complete original source when parsing', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc My Plugin
  * @author TestAuthor
@@ -30,32 +33,32 @@ describe('PluginParser edge cases', () => {
     console.log('Speed is', speed);
 })();`
 
-      const result = PluginParser.parsePlugin(content, 'MyPlugin.js')
+    const result = PluginParser.parsePlugin(content, 'MyPlugin.js')
 
-      expect(result.rawSource).toBe(content)
-    })
+    expect(result.rawSource).toBe(content)
+  })
 
-    it('stores rawSource even for minimal plugins', () => {
-      const content = `/*:
+  it('stores rawSource even for minimal plugins', () => {
+    const content = `/*:
  * @plugindesc Minimal
  * @author Test
  */`
-      const result = PluginParser.parsePlugin(content)
+    const result = PluginParser.parsePlugin(content)
 
-      expect(result.rawSource).toBe(content)
-    })
-
-    it('stores rawSource for empty/malformed input', () => {
-      const content = 'not a plugin at all'
-      const result = PluginParser.parsePlugin(content)
-
-      expect(result.rawSource).toBe(content)
-    })
+    expect(result.rawSource).toBe(content)
   })
 
-  describe('plugin with multiple IIFEs', () => {
-    it('parses plugin containing multiple IIFE blocks', () => {
-      const content = `/*:
+  it('stores rawSource for empty/malformed input', () => {
+    const content = 'not a plugin at all'
+    const result = PluginParser.parsePlugin(content)
+
+    expect(result.rawSource).toBe(content)
+  })
+})
+
+describe('pluginParser edge cases: plugin with multiple IIFEs', () => {
+  it('parses plugin containing multiple IIFE blocks', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc Plugin with multiple IIFEs
  * @author Test
@@ -89,21 +92,20 @@ describe('PluginParser edge cases', () => {
     console.log('Both modules loaded');
 })();`
 
-      const result = PluginParser.parsePlugin(content, 'MultiIIFE.js')
+    const result = PluginParser.parsePlugin(content, 'MultiIIFE.js')
 
-      expect(result.meta.name).toBe('MultiIIFE')
-      expect(result.meta.description).toBe('Plugin with multiple IIFEs')
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('volume')
-      expect(result.codeBody).toContain('AudioModule')
-      expect(result.codeBody).toContain('VideoModule')
-      expect(result.rawSource).toBe(content)
+    expect(result).toMatchObject({
+      meta: { name: 'MultiIIFE', description: 'Plugin with multiple IIFEs' },
+      parameters: [{ name: 'volume' }],
+      rawSource: content
     })
+    expect(missing(result.codeBody, ['AudioModule', 'VideoModule'])).toStrictEqual([])
   })
+})
 
-  describe('plugin using ES6 class syntax', () => {
-    it('parses plugin with ES6 classes', () => {
-      const content = `/*:
+describe('pluginParser edge cases: plugin using ES6 class syntax', () => {
+  it('parses plugin with ES6 classes', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc ES6 Class Plugin
  * @author ClassAuthor
@@ -172,24 +174,23 @@ describe('PluginParser edge cases', () => {
     });
 })();`
 
-      const result = PluginParser.parsePlugin(content, 'ES6ClassPlugin.js')
+    const result = PluginParser.parsePlugin(content, 'ES6ClassPlugin.js')
 
-      expect(result.meta.name).toBe('ES6ClassPlugin')
-      expect(result.meta.description).toBe('ES6 Class Plugin')
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('maxItems')
-      expect(result.commands).toHaveLength(1)
-      expect(result.commands[0].name).toBe('AddItem')
-      expect(result.commands[0].args).toHaveLength(1)
-      expect(result.codeBody).toContain('class InventoryManager')
-      expect(result.codeBody).toContain('static getInstance()')
-      expect(result.rawSource).toBe(content)
+    expect(result).toMatchObject({
+      meta: { name: 'ES6ClassPlugin', description: 'ES6 Class Plugin' },
+      parameters: [{ name: 'maxItems' }],
+      commands: [{ name: 'AddItem', args: [{}] }],
+      rawSource: content
     })
+    expect(
+      missing(result.codeBody, ['class InventoryManager', 'static getInstance()'])
+    ).toStrictEqual([])
   })
+})
 
-  describe('plugin with arrow function IIFE variant', () => {
-    it('parses plugin using (() => { ... })() pattern', () => {
-      const content = `/*:
+describe('pluginParser edge cases: plugin with arrow function IIFE variant', () => {
+  it('parses plugin using (() => { ... })() pattern', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc Arrow IIFE Plugin
  * @author ArrowAuthor
@@ -215,21 +216,20 @@ describe('PluginParser edge cases', () => {
     };
 })();`
 
-      const result = PluginParser.parsePlugin(content, 'ArrowIIFE.js')
+    const result = PluginParser.parsePlugin(content, 'ArrowIIFE.js')
 
-      expect(result.meta.name).toBe('ArrowIIFE')
-      expect(result.meta.description).toBe('Arrow IIFE Plugin')
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('debug')
-      expect(result.parameters[0].type).toBe('boolean')
-      expect(result.codeBody).toContain('Scene_Map.prototype.start')
-      expect(result.rawSource).toBe(content)
+    expect(result).toMatchObject({
+      meta: { name: 'ArrowIIFE', description: 'Arrow IIFE Plugin' },
+      parameters: [{ name: 'debug', type: 'boolean' }],
+      rawSource: content
     })
+    expect(result.codeBody).toContain('Scene_Map.prototype.start')
   })
+})
 
-  describe('plugin with no IIFE wrapping (top-level code)', () => {
-    it('parses plugin with bare top-level code', () => {
-      const content = `/*:
+describe('pluginParser edge cases: plugin with no IIFE wrapping (top-level code)', () => {
+  it('parses plugin with bare top-level code', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc Top Level Plugin
  * @author TopLevel
@@ -251,35 +251,35 @@ Scene_Title.prototype.drawGameTitle = function() {
     this.contents.drawText(text, x, y, maxWidth, 48, 'center');
 };`
 
-      const result = PluginParser.parsePlugin(content, 'TopLevelPlugin.js')
+    const result = PluginParser.parsePlugin(content, 'TopLevelPlugin.js')
 
-      expect(result.meta.name).toBe('TopLevelPlugin')
-      expect(result.meta.description).toBe('Top Level Plugin')
-      expect(result.parameters).toHaveLength(1)
-      expect(result.parameters[0].name).toBe('color')
-      expect(result.codeBody).toContain('var MyPlugin')
-      expect(result.codeBody).toContain('Scene_Title.prototype.drawGameTitle')
-      expect(result.rawSource).toBe(content)
+    expect(result).toMatchObject({
+      meta: { name: 'TopLevelPlugin', description: 'Top Level Plugin' },
+      parameters: [{ name: 'color' }],
+      rawSource: content
     })
+    expect(
+      missing(result.codeBody, ['var MyPlugin', 'Scene_Title.prototype.drawGameTitle'])
+    ).toStrictEqual([])
+  })
 
-    it('handles plugin with only a header and no code at all', () => {
-      const content = `/*:
+  it('handles plugin with only a header and no code at all', () => {
+    const content = `/*:
  * @target MZ
  * @plugindesc Empty Plugin
  * @author Nobody
  */`
-      const result = PluginParser.parsePlugin(content, 'EmptyPlugin.js')
+    const result = PluginParser.parsePlugin(content, 'EmptyPlugin.js')
 
-      expect(result.meta.name).toBe('EmptyPlugin')
-      expect(result.codeBody).toBe('')
-      expect(result.customCode).toBe('')
-      expect(result.rawSource).toBe(content)
-    })
+    expect(result.meta.name).toBe('EmptyPlugin')
+    expect(result.codeBody).toBe('')
+    expect(result.customCode).toBe('')
+    expect(result.rawSource).toBe(content)
   })
+})
 
-  describe('generateRawMode', () => {
-    it('preserves original code body while regenerating headers', () => {
-      const originalCode = `
+// A plugin's code after its header, kept verbatim by raw mode
+const RAW_MODE_CODE = `
 
 (() => {
     'use strict';
@@ -290,8 +290,8 @@ Scene_Title.prototype.drawGameTitle = function() {
     };
 })();`
 
-      const rawSource =
-        `/*:
+const RAW_MODE_SOURCE =
+  `/*:
  * @target MZ
  * @plugindesc Old description
  * @author OldAuthor
@@ -300,29 +300,9 @@ Scene_Title.prototype.drawGameTitle = function() {
  * @text Speed
  * @type number
  * @default 5
- */` + originalCode
+ */` + RAW_MODE_CODE
 
-      const plugin = PluginParser.parsePlugin(rawSource, 'TestPlugin.js')
-      const baseline = toBaseline(structuredClone(plugin))
-
-      // Modify the description (simulates user editing in UI)
-      plugin.meta.description = 'New description'
-      plugin.meta.author = 'NewAuthor'
-
-      const result = generateRawMode(plugin, baseline)
-
-      // Header should be regenerated with new values
-      expect(result).toContain('@plugindesc New description')
-      expect(result).toContain('@author NewAuthor')
-
-      // Code body should be preserved verbatim
-      expect(result).toContain('const MAGIC_NUMBER = 42;')
-      expect(result).toContain('Game_Actor.prototype.customMethod')
-      expect(result).toContain('return MAGIC_NUMBER;')
-    })
-
-    it('regenerates struct definition blocks', () => {
-      const rawSource = `/*:
+const STRUCT_SOURCE = `/*:
  * @target MZ
  * @plugindesc Struct test
  * @author Test
@@ -351,25 +331,7 @@ Scene_Title.prototype.drawGameTitle = function() {
     console.log(pos.x, pos.y);
 })();`
 
-      const plugin = PluginParser.parsePlugin(rawSource, 'StructTest.js')
-      const baseline = toBaseline(structuredClone(plugin))
-
-      // Modify struct name (simulates user editing)
-      plugin.structs[0].parameters[0].desc = 'X coordinate'
-
-      const result = generateRawMode(plugin, baseline)
-
-      // Should contain regenerated struct block
-      expect(result).toContain('/*~struct~Position:')
-      expect(result).toContain('@desc X coordinate')
-
-      // Code body preserved
-      expect(result).toContain("const params = PluginManager.parameters('StructTest')")
-      expect(result).toContain('console.log(pos.x, pos.y)')
-    })
-
-    it('preserves code body for plugins with no IIFE wrapping', () => {
-      const rawSource = `/*:
+const LEGACY_SOURCE = `/*:
  * @target MZ
  * @plugindesc Legacy plugin
  * @author LegacyAuthor
@@ -380,22 +342,70 @@ LegacyPlugin.doThing = function() {
     return 42;
 };`
 
-      const plugin = PluginParser.parsePlugin(rawSource, 'LegacyPlugin.js')
-      const baseline = toBaseline(structuredClone(plugin))
-      plugin.meta.description = 'Updated legacy plugin'
+describe('pluginParser edge cases: generateRawMode', () => {
+  it('preserves original code body while regenerating headers', () => {
+    const plugin = PluginParser.parsePlugin(RAW_MODE_SOURCE, 'TestPlugin.js')
+    const baseline = toBaseline(structuredClone(plugin))
 
-      const result = generateRawMode(plugin, baseline)
+    // Modify the description (simulates user editing in UI)
+    plugin.meta.description = 'New description'
+    plugin.meta.author = 'NewAuthor'
 
-      expect(result).toContain('@plugindesc Updated legacy plugin')
-      expect(result).toContain('var LegacyPlugin = {};')
-      expect(result).toContain('LegacyPlugin.doThing = function()')
-      expect(result).toContain('return 42;')
-    })
+    const result = generateRawMode(plugin, baseline)
+
+    expect(
+      missing(result, [
+        // Header should be regenerated with new values
+        '@plugindesc New description',
+        '@author NewAuthor',
+        // Code body should be preserved verbatim
+        'const MAGIC_NUMBER = 42;',
+        'Game_Actor.prototype.customMethod',
+        'return MAGIC_NUMBER;'
+      ])
+    ).toStrictEqual([])
+  })
+
+  it('regenerates struct definition blocks', () => {
+    const plugin = PluginParser.parsePlugin(STRUCT_SOURCE, 'StructTest.js')
+    const baseline = toBaseline(structuredClone(plugin))
+
+    // Modify struct name (simulates user editing)
+    Object.assign(plugin.structs.at(0)?.parameters.at(0) ?? {}, { desc: 'X coordinate' })
+
+    const result = generateRawMode(plugin, baseline)
+
+    expect(
+      missing(result, [
+        // Should contain regenerated struct block
+        '/*~struct~Position:',
+        '@desc X coordinate',
+        // Code body preserved
+        "const params = PluginManager.parameters('StructTest')",
+        'console.log(pos.x, pos.y)'
+      ])
+    ).toStrictEqual([])
+  })
+
+  it('preserves code body for plugins with no IIFE wrapping', () => {
+    const plugin = PluginParser.parsePlugin(LEGACY_SOURCE, 'LegacyPlugin.js')
+    const baseline = toBaseline(structuredClone(plugin))
+    plugin.meta.description = 'Updated legacy plugin'
+
+    const result = generateRawMode(plugin, baseline)
+
+    expect(
+      missing(result, [
+        '@plugindesc Updated legacy plugin',
+        'var LegacyPlugin = {};',
+        'LegacyPlugin.doThing = function()',
+        'return 42;'
+      ])
+    ).toStrictEqual([])
   })
 })
 
-describe('empty tags', () => {
-  const plugin = PluginParser.parsePlugin(`/*:
+const EMPTY_TAGS = `/*:
  * @plugindesc
  * @author
  * @url
@@ -449,39 +459,63 @@ describe('empty tags', () => {
  * @desc
  * @type number
  */
-`)
-  const param = (name: string) => plugin.parameters.find((p) => p.name === name)!
+`
+
+describe('empty tags', () => {
+  const plugin = PluginParser.parsePlugin(EMPTY_TAGS)
+  const param = (name: string): PluginParameter | undefined =>
+    plugin.parameters.find((p) => p.name === name)
 
   it('plugin tags without a value are empty, never the next line', () => {
-    expect(plugin.meta.description).toBe('')
-    expect(plugin.meta.author).toBe('')
-    expect(plugin.meta.url).toBe('')
-    expect(plugin.meta.target).toBe('MZ')
-    expect(plugin.meta.dependencies).toEqual([])
-    expect(plugin.meta.orderAfter).toEqual([])
-    expect(plugin.meta.orderBefore).toEqual([])
-    expect(plugin.meta.noteParams).toEqual([{ name: '', type: 'file' }])
+    const { description, author, url, target, dependencies, orderAfter, orderBefore, noteParams } =
+      plugin.meta
+
+    expect({
+      description,
+      author,
+      url,
+      target,
+      dependencies,
+      orderAfter,
+      orderBefore,
+      noteParams
+    }).toStrictEqual({
+      description: '',
+      author: '',
+      url: '',
+      target: 'MZ',
+      dependencies: [],
+      orderAfter: [],
+      orderBefore: [],
+      noteParams: [{ name: '', type: 'file' }]
+    })
   })
 
   it('parameter tags without a value are empty, never the next line', () => {
-    expect(plugin.parameters.map((p) => p.name)).toEqual(['p', 'q', 's'])
+    expect(plugin.parameters.map((p) => p.name)).toStrictEqual(['p', 'q', 's'])
     expect(param('p')).toMatchObject({ text: 'p', desc: '', type: 'number', default: '' })
-    expect(param('p').parent).toBeUndefined()
-    expect(param('p').dir).toBeUndefined()
     expect(param('q')).toMatchObject({ default: true })
-    expect(param('q').onLabel).toBeUndefined()
-    expect(param('q').offLabel).toBeUndefined()
-    expect(param('s').options).toEqual([
+    expect([
+      param('p')?.parent,
+      param('p')?.dir,
+      param('q')?.onLabel,
+      param('q')?.offLabel
+    ]).toStrictEqual([undefined, undefined, undefined, undefined])
+    expect(param('s')?.options).toStrictEqual([
       { value: '', text: '' },
       { value: '2', text: 'Two' }
     ])
   })
 
   it('command and argument tags without a value are empty, never the next line', () => {
-    expect(plugin.commands.map((c) => c.name)).toEqual(['c'])
-    expect(plugin.commands[0]).toMatchObject({ text: 'c', desc: '' })
-    expect(plugin.commands[0].args.map((a) => a.name)).toEqual(['a'])
-    expect(plugin.commands[0].args[0]).toMatchObject({ desc: '', type: 'number', default: '' })
+    expect(plugin.commands.map((c) => c.name)).toStrictEqual(['c'])
+    expect(plugin.commands.at(0)).toMatchObject({ text: 'c', desc: '' })
+    expect(plugin.commands.at(0)?.args.map((a) => a.name)).toStrictEqual(['a'])
+    expect(plugin.commands.at(0)?.args.at(0)).toMatchObject({
+      desc: '',
+      type: 'number',
+      default: ''
+    })
   })
 
   it('a blank comment line after the description adds no trailing space', () => {
@@ -512,9 +546,9 @@ describe('tags count only at the start of a line', () => {
       `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n * @text Label\n *\n${guardedHelp}\n */\n`
     )
 
-    expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
-    expect(plugin.commands).toEqual([])
-    expect(plugin.meta.dependencies).toEqual([])
+    expect(plugin.parameters.map((p) => [p.name, p.type])).toStrictEqual([['Label', 'string']])
+    expect(plugin.commands).toStrictEqual([])
+    expect(plugin.meta.dependencies).toStrictEqual([])
     expect(plugin.meta.help).toBe(helpText)
   })
 
@@ -523,9 +557,9 @@ describe('tags count only at the start of a line', () => {
       `/*:\n * @target MZ\n * @plugindesc x\n *\n * @param Label\n *\n * @command go\n * @text Go\n *\n${guardedHelp}\n */\n`
     )
 
-    expect(plugin.parameters.map((p) => [p.name, p.type])).toEqual([['Label', 'string']])
-    expect(plugin.commands.map((c) => [c.name, c.args.length])).toEqual([['go', 0]])
-    expect(plugin.meta.dependencies).toEqual([])
+    expect(plugin.parameters.map((p) => [p.name, p.type])).toStrictEqual([['Label', 'string']])
+    expect(plugin.commands.map((c) => [c.name, c.args.length])).toStrictEqual([['go', 0]])
+    expect(plugin.meta.dependencies).toStrictEqual([])
     expect(plugin.meta.help).toBe(helpText)
   })
 
@@ -546,12 +580,12 @@ describe('tags count only at the start of a line', () => {
 `)
 
     expect(plugin.meta.description).toBe('Set @param Hidden first')
-    expect(plugin.parameters.map((p) => [p.name, p.type, p.desc])).toEqual([
+    expect(plugin.parameters.map((p) => [p.name, p.type, p.desc])).toStrictEqual([
       ['A', 'string', 'Works like @param B, see @type number'],
       ['C', 'string', 'Read @help first']
     ])
     expect(plugin.meta.help).toBe('')
-    expect(plugin.commands.map((c) => [c.name, c.desc, c.args.length])).toEqual([
+    expect(plugin.commands.map((c) => [c.name, c.desc, c.args.length])).toStrictEqual([
       ['go', 'Runs @command stop and @arg x', 0]
     ])
   })
@@ -563,7 +597,7 @@ describe('tags count only at the start of a line', () => {
 
     expect(plugin.meta.description).toBe('Demo')
     expect(plugin.meta.help).toBe('Some help')
-    expect(plugin.parameters.map((p) => [p.name, p.type, p.default])).toEqual([
+    expect(plugin.parameters.map((p) => [p.name, p.type, p.default])).toStrictEqual([
       ['Speed', 'number', 3]
     ])
 
@@ -571,7 +605,7 @@ describe('tags count only at the start of a line', () => {
     const again = PluginParser.parsePlugin(generatePlugin(plugin))
 
     expect(again.meta.help).toBe('Some help')
-    expect(again.parameters.map((p) => p.name)).toEqual(['Speed'])
+    expect(again.parameters.map((p) => p.name)).toStrictEqual(['Speed'])
   })
 
   it('a localized header without a leading "*" reads the same way', () => {
@@ -579,6 +613,8 @@ describe('tags count only at the start of a line', () => {
       '/*:\n * @plugindesc x\n */\n/*:ja\n@plugindesc Demo\n@help\nSome help\n@param Speed\n*/\n'
     )
 
-    expect(plugin.meta.localizations?.ja).toEqual({ description: 'Demo', help: 'Some help' })
+    expect(plugin.meta.localizations).toStrictEqual({
+      ja: { description: 'Demo', help: 'Some help' }
+    })
   })
 })
