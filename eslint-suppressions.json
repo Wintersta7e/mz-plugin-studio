@@ -6610,67 +6610,6 @@
       "count": 1
     }
   },
-  "tests/unit/eslint-ipc-ban.test.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "no-console": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-array-sort": {
-      "count": 3
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    }
-  },
-  "tests/unit/evaluate-plugin.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 4
-    },
-    "no-console": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 3
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
   "tests/unit/export-formats.test.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 1
@@ -6827,14 +6766,6 @@
       "count": 1
     }
   },
-  "tests/unit/golden-range.test.ts": {
-    "vitest/prefer-each": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 7
-    }
-  },
   "tests/unit/injection.test.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
@@ -6871,62 +6802,6 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 18
-    }
-  },
-  "tests/unit/ipc-callers.test.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 12
-    },
-    "import-x/no-named-as-default-member": {
-      "count": 17
-    },
-    "no-console": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "sonarjs/no-misleading-array-reverse": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-sort": {
-      "count": 4
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 2
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 5
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 5
     }
   },
   "tests/unit/ipc-contract.test.ts": {

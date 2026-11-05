@@ -1,7 +1,7 @@
 // Raw IPC skips the sender, argument and file-access checks the two wrappers apply, so lint
 // refuses it in every source file except those wrappers.
 import { existsSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
 
@@ -12,13 +12,21 @@ const SYNTAX = 'no-restricted-syntax'
 
 const eslint = new ESLint({ cwd: ROOT })
 
-/** The restriction rules that report on `source` linted as the file at `filePath`. */
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
+
+/**
+The restriction rules that report on `source` linted as the file at `filePath`.
+*/
 async function restrictions(source: string, filePath: string): Promise<string[]> {
-  const [result] = await eslint.lintText(source, { filePath: join(ROOT, filePath) })
-  const ids = result.messages
+  const results = await eslint.lintText(source, { filePath: path.join(ROOT, filePath) })
+  const ids = results
+    .flatMap((result) => result.messages)
     .map((m) => m.ruleId)
     .filter((id): id is string => id === IMPORTS || id === SYNTAX)
-  return [...new Set(ids)].sort()
+  return [...new Set(ids)].toSorted(byCodeUnit)
 }
 
 const RENDERER_INVOKE = "import { ipcRenderer } from 'electron'\nipcRenderer.invoke('x')\n"
@@ -188,39 +196,52 @@ const CASES: { name: string; source: string; filePath: string; rules: string[] }
   }
 ]
 
-/** Every TypeScript source file under src/, relative to the repository root. */
+/**
+Every TypeScript source file under src/, relative to the repository root.
+*/
 function sourceFiles(): string[] {
-  return (readdirSync(join(ROOT, 'src'), { recursive: true }) as string[])
+  return readdirSync(path.join(ROOT, 'src'), { recursive: true, encoding: 'utf8' })
     .filter((p) => /\.tsx?$/.test(p))
     .map((p) => `src/${p.replaceAll('\\', '/')}`)
-    .sort()
+    .toSorted(byCodeUnit)
+}
+
+/**
+Reads `key` of `value` when it is an object, so the calculated config is read through `unknown`.
+*/
+function member(value: unknown, key: PropertyKey): unknown {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined
 }
 
 describe('raw IPC lint ban', () => {
   it.each(CASES)('reports $name', { timeout: 60_000 }, async ({ source, filePath, rules }) => {
-    expect(await restrictions(source, filePath)).toEqual(rules)
+    await expect(restrictions(source, filePath)).resolves.toStrictEqual(rules)
   })
 
   it.each(WRAPPERS)('allows raw IPC in %s', { timeout: 60_000 }, async (wrapper) => {
-    for (const source of [RENDERER_INVOKE, MAIN_HANDLE, WINDOW_SEND, TYPE_IMPORT]) {
-      expect(await restrictions(source, wrapper)).toEqual([])
-    }
+    const sources = [RENDERER_INVOKE, MAIN_HANDLE, WINDOW_SEND, TYPE_IMPORT]
+
+    await expect(
+      Promise.all(sources.map(async (source) => restrictions(source, wrapper)))
+    ).resolves.toStrictEqual([[], [], [], []])
   })
 
   it('exempts exactly the two wrappers among the source files', { timeout: 60_000 }, async () => {
     const files = sourceFiles()
     const exempt: string[] = []
     for (const file of files) {
-      const config = await eslint.calculateConfigForFile(join(ROOT, file))
-      const severity = (config?.rules?.[SYNTAX] as unknown[] | undefined)?.[0]
+      const config: unknown = await eslint.calculateConfigForFile(path.join(ROOT, file))
+      const severity = member(member(member(config, 'rules'), SYNTAX), 0)
       if (severity !== 2 && severity !== 'error') exempt.push(file)
     }
-    console.log(`ipc ban: files scanned ${files.length}, exempt ${exempt.length}`)
+    process.stdout.write(
+      `ipc ban: files scanned ${String(files.length)}, exempt ${String(exempt.length)}\n`
+    )
 
     expect(files.length).toBeGreaterThan(0)
 
-    for (const wrapper of WRAPPERS) expect(existsSync(join(ROOT, wrapper))).toBe(true)
+    expect(WRAPPERS.filter((wrapper) => !existsSync(path.join(ROOT, wrapper)))).toStrictEqual([])
 
-    expect(exempt).toEqual([...WRAPPERS].sort())
+    expect(exempt).toStrictEqual(WRAPPERS.toSorted(byCodeUnit))
   })
 })
