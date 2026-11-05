@@ -38,6 +38,16 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { eventType: 'change', slotFilter: 7 },
     { eventType: 'unequip', slotFilter: 7 }
   ],
+  'audio-bgm-control': [{ pan: null, functionName: 'playTheme' }],
+  'audio-crossfade': [
+    { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: null },
+    { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: 7 },
+    { newBgmPitch: null, functionName: 'crossfadeTheme' }
+  ],
+  'audio-se-player': [
+    { randomizePitch: true, pitchVariation: null },
+    { pan: null, functionName: 'playCursor' }
+  ],
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },

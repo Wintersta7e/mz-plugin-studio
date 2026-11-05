@@ -23,3 +23,16 @@ function customBgmControl() {
 // BGM Control Function: a,b
 function a,b() {
 }
+
+// ==== case: type-violating: pan=null,functionName="playTheme" {"operation":"play","volume":90,"pitch":100,"pan":null,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"filename":"Theme1","functionName":"playTheme"}
+// BGM Control Function: play
+function playTheme() {
+    // Play BGM with specified settings
+    const bgm = {
+        name: 'Theme1',
+        volume: 90,
+        pitch: 100,
+        pan: null
+    };
+    AudioManager.playBgm(bgm);
+}
