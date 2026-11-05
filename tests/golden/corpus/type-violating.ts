@@ -27,6 +27,17 @@ function everyField(id: string, value: (field: TemplateField) => unknown): Recor
 // A wrong-typed or null value in some fields, the base values in the rest. The three cases of
 // every template stop at the first field read, so these reach the branches and checks after it.
 const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
+  'actor-custom-property': [
+    { minValue: null },
+    { propertyName: 'level', maxValue: null },
+    { dataType: 'boolean', defaultValue: 7 },
+    { dataType: 'array', defaultValue: null }
+  ],
+  'actor-equipment-hook': [
+    { slotFilter: 7 },
+    { eventType: 'change', slotFilter: 7 },
+    { eventType: 'unequip', slotFilter: 7 }
+  ],
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
@@ -41,6 +52,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { positionY: null, opacity: null },
     { positionX: 'abc', width: ['a', 'b'], opacity: 'x' }
   ],
+  'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
+  'map-parallel-process': [
+    { updateInterval: '2' },
+    { activeCondition: 'switch', conditionId: '3' },
+    { activeCondition: 'variable', conditionValue: 'abc' }
+  ],
+  'map-transfer-hook': [{ filterMapId: '12', includeDirection: null }],
   'menu-command-addition': [
     { enableCondition: 'switch', switchId: null },
     { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' }
@@ -55,6 +73,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { optionType: 'select', choices: 42 }
   ],
   'menu-title-mod': [{ modType: 'hideCommand', hideTarget: 7 }, { commandName: null }],
+  'party-management': [
+    { minSize: '2' },
+    { maxSize: null },
+    { featureType: 'addRemoveHook', hookTiming: 7 },
+    { featureType: 'reserveParty', maxReserve: 'abc' },
+    { featureType: 'reserveParty', maxReserve: null }
+  ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
     { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
