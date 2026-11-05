@@ -1,7 +1,7 @@
 // The editor setup runs before the wrapper below can mount an editor
 import '../../lib/monaco-setup'
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
-import Editor, { type Monaco } from '@monaco-editor/react'
+import { Editor, type Monaco } from '@monaco-editor/react'
 import type { editor, IDisposable } from 'monaco-editor'
 import { Wand2 } from 'lucide-react'
 import { usePluginStore, useSettingsStore } from '../../stores'
@@ -10,26 +10,58 @@ import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
 import { RAW_MODE_READ_ONLY_NOTICE, useActiveRawMode } from '../../lib/raw-mode'
 
-export function CodeEditor() {
-  const customCode = usePluginStore((s) => s.plugin.customCode)
-  const setCustomCode = usePluginStore((s) => s.setCustomCode)
-  const [isTemplateOpen, setIsTemplateOpen] = useState(false)
-  const isRawMode = useActiveRawMode()
+/**
+Inserts `code` where the editor says: over the selection, after a blank line at the end of code
+already there, or as the whole text of an empty editor. Edits keep the undo stack.
+*/
+function insertIntoEditor(ed: editor.IStandaloneCodeEditor, code: string): void {
+  const selection = ed.getSelection()
+  const model = ed.getModel()
+  if (selection === null || model === null) return
 
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
-  const completionDisposableRef = useRef<IDisposable | null>(null)
+  if (!selection.isEmpty()) {
+    ed.executeEdits('template', [{ range: selection, text: code, forceMoveMarkers: true }])
+  } else if (model.getValue().trim() === '') {
+    const fullRange = model.getFullModelRange()
+    ed.executeEdits('template', [{ range: fullRange, text: code, forceMoveMarkers: true }])
+  } else {
+    const lastLine = model.getLineCount()
+    const lastCol = model.getLineMaxColumn(lastLine)
+    const range = {
+      startLineNumber: lastLine,
+      startColumn: lastCol,
+      endLineNumber: lastLine,
+      endColumn: lastCol
+    }
+    ed.executeEdits('template', [{ range, text: '\n\n' + code, forceMoveMarkers: true }])
+  }
+  ed.focus()
+}
 
+// The editor options the settings and raw mode ask for
+function useEditorOptions(isRawMode: boolean): editor.IStandaloneEditorConstructionOptions {
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
   const isEditorWordWrap = useSettingsStore((s) => s.editorWordWrap)
   const isEditorMinimap = useSettingsStore((s) => s.editorMinimap)
   const isEditorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
-  const theme = useSettingsStore((s) => s.theme)
+  return useMemo(
+    () => ({
+      readOnly: isRawMode,
+      minimap: { enabled: isEditorMinimap },
+      fontSize: editorFontSize,
+      lineNumbers: isEditorLineNumbers ? 'on' : 'off',
+      wordWrap: isEditorWordWrap ? 'on' : 'off',
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
+      padding: { top: 16, bottom: 16 }
+    }),
+    [isRawMode, isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
+  )
+}
 
-  const handleBeforeMount = useCallback((monaco: Monaco) => {
-    if (!completionDisposableRef.current) {
-      completionDisposableRef.current = registerMZCompletions(monaco)
-    }
-  }, [])
+// Registers the completion provider once and disposes it when the tab goes away
+function useCompletions(): (monaco: Monaco) => void {
+  const completionDisposableRef = useRef<IDisposable | null>(null)
 
   useEffect(() => {
     return () => {
@@ -38,101 +70,84 @@ export function CodeEditor() {
     }
   }, [])
 
+  return useCallback((monaco: Monaco) => {
+    completionDisposableRef.current ??= registerMZCompletions(monaco)
+  }, [])
+}
+
+function CodeEditorHeader({
+  isRawMode,
+  onOpenTemplates
+}: Readonly<{ isRawMode: boolean; onOpenTemplates: () => void }>) {
+  const notice = isRawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined
+  return (
+    <div className="flex items-start justify-between p-4 pb-2">
+      <div>
+        <h2 className="text-lg font-semibold">Custom Code</h2>
+        <p className="text-sm text-muted-foreground">
+          Write your custom plugin implementation here. This code will be placed inside the
+          plugin&apos;s IIFE after the auto-generated parameter parsing and command registration.
+        </p>
+      </div>
+      {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
+      <span title={notice} className="inline-flex shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenTemplates}
+          data-testid="template-inserter-open"
+          disabled={isRawMode}
+          title={notice}
+          className="shrink-0 gap-2"
+        >
+          <Wand2 className="h-4 w-4" />
+          Insert Template
+        </Button>
+      </span>
+    </div>
+  )
+}
+
+export function CodeEditor() {
+  const customCode = usePluginStore((s) => s.plugin.customCode) ?? ''
+  const setCustomCode = usePluginStore((s) => s.setCustomCode)
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false)
+  const isRawMode = useActiveRawMode()
+  const theme = useSettingsStore((s) => s.theme)
+  const editorOptions = useEditorOptions(isRawMode)
+  const handleBeforeMount = useCompletions()
+
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+
   const handleMount = useCallback((ed: editor.IStandaloneCodeEditor) => {
     editorRef.current = ed
   }, [])
 
   const handleChange = useCallback(
-    (value: string | undefined) => {
-      setCustomCode(value || '')
+    (value = '') => {
+      setCustomCode(value)
     },
     [setCustomCode]
   )
 
-  const editorOptions = useMemo(
-    () => ({
-      readOnly: isRawMode,
-      minimap: { enabled: isEditorMinimap },
-      fontSize: editorFontSize,
-      lineNumbers: isEditorLineNumbers ? ('on' as const) : ('off' as const),
-      wordWrap: isEditorWordWrap ? ('on' as const) : ('off' as const),
-      automaticLayout: true,
-      scrollBeyondLastLine: false,
-      padding: { top: 16, bottom: 16 }
-    }),
-    [isRawMode, isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
-  )
-
   const handleInsertTemplate = (code: string) => {
     const ed = editorRef.current
-    if (!ed) {
+    if (ed === null) {
       // Fallback: append to store value
-      setCustomCode((customCode?.trim() ? customCode + '\n\n' : '') + code)
+      setCustomCode((customCode.trim() === '' ? '' : customCode + '\n\n') + code)
       return
     }
-
-    const selection = ed.getSelection()
-    const model = ed.getModel()
-    if (!selection || !model) return
-
-    if (!selection.isEmpty()) {
-      // Replace selection
-      ed.executeEdits('template', [{ range: selection, text: code, forceMoveMarkers: true }])
-    } else if (model.getValue().trim()) {
-      // Append with newlines at end
-      const lastLine = model.getLineCount()
-      const lastCol = model.getLineMaxColumn(lastLine)
-      const range = {
-        startLineNumber: lastLine,
-        startColumn: lastCol,
-        endLineNumber: lastLine,
-        endColumn: lastCol
-      }
-      ed.executeEdits('template', [
-        {
-          range,
-          text: '\n\n' + code,
-          forceMoveMarkers: true
-        }
-      ])
-    } else {
-      // Replace empty content (use executeEdits to preserve undo stack)
-      const fullRange = model.getFullModelRange()
-      ed.executeEdits('template', [{ range: fullRange, text: code, forceMoveMarkers: true }])
-    }
-    ed.focus()
+    insertIntoEditor(ed, code)
   }
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header with Insert Template button */}
-      <div className="flex items-start justify-between p-4 pb-2">
-        <div>
-          <h2 className="text-lg font-semibold">Custom Code</h2>
-          <p className="text-sm text-muted-foreground">
-            Write your custom plugin implementation here. This code will be placed inside the
-            plugin&apos;s IIFE after the auto-generated parameter parsing and command registration.
-          </p>
-        </div>
-        {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
-        <span
-          title={isRawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
-          className="inline-flex shrink-0"
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsTemplateOpen(true)}
-            data-testid="template-inserter-open"
-            disabled={isRawMode}
-            title={isRawMode ? RAW_MODE_READ_ONLY_NOTICE : undefined}
-            className="shrink-0 gap-2"
-          >
-            <Wand2 className="h-4 w-4" />
-            Insert Template
-          </Button>
-        </span>
-      </div>
+      <CodeEditorHeader
+        isRawMode={isRawMode}
+        onOpenTemplates={() => {
+          setIsTemplateOpen(true)
+        }}
+      />
 
       {isRawMode && (
         <p className="px-4 pb-2 text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
@@ -143,7 +158,7 @@ export function CodeEditor() {
         <Editor
           height="100%"
           language="javascript"
-          value={customCode || ''}
+          value={customCode}
           theme={theme === 'dark' ? 'vs-dark' : 'vs'}
           beforeMount={handleBeforeMount}
           onMount={handleMount}
@@ -162,7 +177,9 @@ export function CodeEditor() {
       {/* Template Inserter Modal */}
       <TemplateInserter
         open={isTemplateOpen}
-        onClose={() => setIsTemplateOpen(false)}
+        onClose={() => {
+          setIsTemplateOpen(false)
+        }}
         onInsert={handleInsertTemplate}
         readOnly={isRawMode}
       />

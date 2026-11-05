@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
-import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { createEmptyPlugin, type NoteParam } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
@@ -207,5 +207,57 @@ describe('meta editor fields in the plugin code', () => {
     )
 
     expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Beta')
+  })
+})
+
+function openNoteParams(noteParams: NoteParam[]): void {
+  const empty = createEmptyPlugin()
+  act(() => {
+    usePluginStore.getState().openPlugin({ ...empty, meta: { ...empty.meta, noteParams } })
+  })
+}
+
+describe('meta editor note parameters', () => {
+  beforeEach(() => {
+    resetStores()
+    vi.stubGlobal('api', createFakeApi())
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps the fields of the rows after a deleted row', async () => {
+    expect.hasAssertions()
+
+    openNoteParams([
+      { name: 'First', type: 'file' },
+      { name: 'Second', type: 'file' }
+    ])
+    const events = userEvent.setup()
+    render(<MetaEditor />)
+    const second = screen.getByDisplayValue('Second')
+    // The row's delete button follows its tag name, type, directory and database fields
+    await events.click(screen.getByDisplayValue('First'))
+    await events.tab()
+    await events.tab()
+    await events.tab()
+    await events.tab()
+    await events.keyboard('{Enter}')
+
+    expect(usePluginStore.getState().plugin.meta.noteParams).toStrictEqual([
+      { name: 'Second', type: 'file' }
+    ])
+    expect(screen.getByDisplayValue('Second')).toBe(second)
+  })
+
+  it('shows None for a database stored as an empty text', () => {
+    expect.hasAssertions()
+
+    openNoteParams([{ name: 'Picture', type: 'file', data: '' }])
+    render(<MetaEditor />)
+
+    expect(screen.getByRole('combobox')).toHaveTextContent('None')
   })
 })

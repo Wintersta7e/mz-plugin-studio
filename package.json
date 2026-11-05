@@ -32,7 +32,7 @@
     "typecov:report": "node scripts/strictness-status.mjs --report typecov --node 55 --web 15 --test 549 --tools 0 --scripts 994 --e2e 21",
     "knip:report": "node scripts/strictness-status.mjs --report knip",
     "jscpd": "node node_modules/jscpd/run-jscpd.js",
-    "jscpd:report": "node scripts/strictness-status.mjs --report jscpd --clones 110 --duplicated-lines 1361",
+    "jscpd:report": "node scripts/strictness-status.mjs --report jscpd --clones 109 --duplicated-lines 1352",
     "start": "node node_modules/electron-vite/bin/electron-vite.js preview",
     "dev": "node node_modules/electron-vite/bin/electron-vite.js dev",
     "build": "npm run typecheck && node node_modules/electron-vite/bin/electron-vite.js build",

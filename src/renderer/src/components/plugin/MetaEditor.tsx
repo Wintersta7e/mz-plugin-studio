@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Sparkles, Plus, Trash2 } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -17,395 +17,14 @@ import {
 } from '../../lib/raw-mode'
 import { nonBlankLines, normalizeLines, useTypedText } from '../../lib/typed-text'
 
-export function MetaEditor() {
-  const meta = usePluginStore((s) => s.plugin.meta)
-  const updateMeta = usePluginStore((s) => s.updateMeta)
-  const dependencyReport = useProjectStore((s) => s.dependencyReport)
-  const [showPluginNames, setShowPluginNames] = useState(false)
-  const [dependenciesText, setDependenciesText] = useTypedText(
-    meta.dependencies.join('\n'),
-    normalizeLines
-  )
-  const [orderAfterText, setOrderAfterText] = useTypedText(
-    (meta.orderAfter || []).join('\n'),
-    normalizeLines
-  )
-  const [orderBeforeText, setOrderBeforeText] = useTypedText(
-    (meta.orderBefore || []).join('\n'),
-    normalizeLines
-  )
-  const [requiredAssetsText, setRequiredAssetsText] = useTypedText(
-    (meta.requiredAssets || []).join('\n'),
-    normalizeLines
-  )
-  // Raw mode keeps the file's language blocks, so their fields are read-only
-  const isRawMode = useActiveRawMode()
-  const localizedReadOnly = isRawMode
-    ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
-    : { readOnly: false }
-  // A plugin loaded from a file is saved back to that file, so its name stays the file's
-  const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
-  const nameReadOnly =
-    importedFrom !== undefined
-      ? {
-          readOnly: true,
-          title: `Loaded from ${importedFrom}: the plugin name is the file name, so it cannot be changed here.`
-        }
-      : { readOnly: false }
-  // A file with no main annotation block cannot take header changes in raw mode
-  const isHeaderReadOnly = useHeaderReadOnly()
-  const headerFieldset = {
-    disabled: isHeaderReadOnly,
-    title: isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
-  }
+// A file with no main annotation block cannot take header changes in raw mode
+type HeaderFieldset = Readonly<{ disabled: boolean; title: string | undefined }>
 
-  const updateLocalization = (lang: string, content: Partial<LocalizedContent>) => {
-    const currentLocalizations = meta.localizations || {}
-    const currentLang = currentLocalizations[lang] || {}
-    updateMeta({
-      localizations: {
-        ...currentLocalizations,
-        [lang]: { ...currentLang, ...content }
-      }
-    })
-  }
+type HeaderFieldsProps = Readonly<{ fieldset: HeaderFieldset }>
 
-  const getLocalization = (lang: string): LocalizedContent => {
-    return meta.localizations?.[lang] || { description: '', help: '' }
-  }
+const NO_LINES: readonly string[] = []
 
-  const handleAutoGenerateHelp = useCallback(async () => {
-    const currentHelp = meta.help
-
-    if (currentHelp && currentHelp.trim()) {
-      const answer = await window.api.dialog.message({
-        type: 'question',
-        title: 'Replace help text',
-        message: 'This will replace the existing help text. Continue?',
-        buttons: ['Cancel', 'Replace']
-      })
-      if (answer !== 1) return
-    }
-
-    const fullPlugin = usePluginStore.getState().plugin
-    const helpText = generateHelpText(fullPlugin)
-    updateMeta({ help: helpText })
-  }, [meta.help, updateMeta])
-
-  return (
-    <div className="space-y-4 p-4">
-      <h2 className="text-lg font-semibold">Plugin Metadata</h2>
-      {isHeaderReadOnly && (
-        <p className="text-sm text-muted-foreground">{RAW_MODE_HEADER_READ_ONLY_NOTICE}</p>
-      )}
-
-      <div className="grid gap-4">
-        <fieldset {...headerFieldset} className="grid min-w-0 gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Plugin Name</Label>
-              <Input
-                id="name"
-                data-testid="meta-name"
-                value={meta.name}
-                onChange={(e) => updateMeta({ name: e.target.value })}
-                placeholder="MyPlugin"
-                {...nameReadOnly}
-              />
-              {importedFrom !== undefined && (
-                <p className="text-xs text-muted-foreground">
-                  Loaded from {importedFrom}: the name is the file name. Export in the preview can
-                  write a copy under another file name, but if the plugin&apos;s code names itself,
-                  the copy&apos;s commands and parameters may not work in a game; Export asks first
-                  when they would not.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="version">Version</Label>
-              <Input
-                id="version"
-                value={meta.version}
-                onChange={(e) => updateMeta({ version: e.target.value })}
-                placeholder="1.0.0"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="author">Author</Label>
-            <Input
-              id="author"
-              value={meta.author}
-              onChange={(e) => updateMeta({ author: e.target.value })}
-              placeholder="Your name"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="url">URL</Label>
-            <Input
-              id="url"
-              value={meta.url}
-              onChange={(e) => updateMeta({ url: e.target.value })}
-              placeholder="https://example.com"
-            />
-          </div>
-        </fieldset>
-
-        {/* Localized Description and Help with Tabs */}
-        <div className="space-y-2">
-          <Label>Description & Help</Label>
-          <Tabs defaultValue="en" className="w-full">
-            <TabsList>
-              <TabsTrigger value="en">English</TabsTrigger>
-              <TabsTrigger value="ja">Japanese</TabsTrigger>
-              <TabsTrigger value="zh">Chinese</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="en" className="space-y-4">
-              <fieldset {...headerFieldset} className="min-w-0 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="description-en">Description</Label>
-                  <Textarea
-                    id="description-en"
-                    data-testid="meta-description"
-                    value={meta.description}
-                    onChange={(e) => updateMeta({ description: e.target.value })}
-                    placeholder="A brief description of your plugin"
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="help-en">Help Text</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                      onClick={handleAutoGenerateHelp}
-                      title="Auto-generate help text from plugin metadata"
-                    >
-                      <Sparkles className="mr-1 h-3 w-3" />
-                      Auto-generate
-                    </Button>
-                  </div>
-                  <Textarea
-                    id="help-en"
-                    value={meta.help}
-                    onChange={(e) => updateMeta({ help: e.target.value })}
-                    placeholder="Detailed help and usage instructions"
-                    rows={6}
-                    className="font-mono text-sm"
-                  />
-                </div>
-              </fieldset>
-            </TabsContent>
-
-            <TabsContent value="ja" className="space-y-4">
-              {isRawMode && (
-                <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="description-ja">Description (Japanese)</Label>
-                <Textarea
-                  id="description-ja"
-                  {...localizedReadOnly}
-                  value={getLocalization('ja').description || ''}
-                  onChange={(e) => updateLocalization('ja', { description: e.target.value })}
-                  placeholder="プラグインの説明"
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="help-ja">Help Text (Japanese)</Label>
-                <Textarea
-                  id="help-ja"
-                  {...localizedReadOnly}
-                  value={getLocalization('ja').help || ''}
-                  onChange={(e) => updateLocalization('ja', { help: e.target.value })}
-                  placeholder="詳細なヘルプと使用方法"
-                  rows={6}
-                  className="font-mono text-sm"
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="zh" className="space-y-4">
-              {isRawMode && (
-                <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="description-zh">Description (Chinese)</Label>
-                <Textarea
-                  id="description-zh"
-                  {...localizedReadOnly}
-                  value={getLocalization('zh').description || ''}
-                  onChange={(e) => updateLocalization('zh', { description: e.target.value })}
-                  placeholder="插件描述"
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="help-zh">Help Text (Chinese)</Label>
-                <Textarea
-                  id="help-zh"
-                  {...localizedReadOnly}
-                  value={getLocalization('zh').help || ''}
-                  onChange={(e) => updateLocalization('zh', { help: e.target.value })}
-                  placeholder="详细帮助和使用说明"
-                  rows={6}
-                  className="font-mono text-sm"
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <fieldset {...headerFieldset} className="grid min-w-0 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="dependencies">Dependencies (one per line)</Label>
-            <Textarea
-              id="dependencies"
-              value={dependenciesText}
-              onChange={(e) => {
-                setDependenciesText(e.target.value)
-                updateMeta({ dependencies: nonBlankLines(e.target.value) })
-              }}
-              placeholder="PluginName1&#10;PluginName2"
-              rows={3}
-              className="font-mono text-sm"
-            />
-            {dependencyReport && dependencyReport.pluginNames.length > 0 && (
-              <div className="text-xs text-muted-foreground">
-                <button
-                  type="button"
-                  className="hover:text-foreground underline decoration-dotted"
-                  onClick={() => setShowPluginNames(!showPluginNames)}
-                >
-                  {dependencyReport.pluginNames.length} project plugins available
-                </button>
-                {showPluginNames && (
-                  <div className="mt-1 max-h-32 overflow-y-auto rounded border border-border bg-muted/50 p-2 font-mono">
-                    {dependencyReport.pluginNames.map((name) => (
-                      <div key={name}>{name}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="orderAfter">Order After (one per line)</Label>
-            <Textarea
-              id="orderAfter"
-              value={orderAfterText}
-              onChange={(e) => {
-                setOrderAfterText(e.target.value)
-                updateMeta({ orderAfter: nonBlankLines(e.target.value) })
-              }}
-              placeholder="PluginName (plugins that must load before this one)"
-              rows={2}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">Plugins that must load before this one</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="orderBefore">Order Before (one per line)</Label>
-            <Textarea
-              id="orderBefore"
-              value={orderBeforeText}
-              onChange={(e) => {
-                setOrderBeforeText(e.target.value)
-                updateMeta({ orderBefore: nonBlankLines(e.target.value) })
-              }}
-              placeholder="PluginName (plugins that must load after this one)"
-              rows={2}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="requiredAssets">Required Assets (one per line)</Label>
-            <Textarea
-              id="requiredAssets"
-              value={requiredAssetsText}
-              onChange={(e) => {
-                setRequiredAssetsText(e.target.value)
-                updateMeta({ requiredAssets: nonBlankLines(e.target.value) })
-              }}
-              placeholder="img/pictures/title&#10;audio/bgm/theme"
-              rows={3}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Assets preserved during MZ&apos;s &quot;Exclude unused files&quot; deployment
-              (relative paths).
-            </p>
-          </div>
-
-          {/* Note Parameters for deployment */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Note Parameters (deployment)</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={() => {
-                  const current = meta.noteParams || []
-                  updateMeta({
-                    noteParams: [...current, { name: '', type: 'file' }]
-                  })
-                }}
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                Add
-              </Button>
-            </div>
-            {(meta.noteParams || []).length > 0 && (
-              <div className="space-y-3 rounded-md border border-border p-3">
-                {(meta.noteParams || []).map((np, index) => (
-                  <NoteParamRow
-                    key={index}
-                    noteParam={np}
-                    onUpdate={(updates) => {
-                      const current = [...(meta.noteParams || [])]
-                      current[index] = { ...current[index], ...updates }
-                      updateMeta({ noteParams: current })
-                    }}
-                    onDelete={() => {
-                      const current = [...(meta.noteParams || [])]
-                      current.splice(index, 1)
-                      updateMeta({ noteParams: current })
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Declares which notetags reference files for MZ deployment packaging
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="target">Target</Label>
-            <Input
-              id="target"
-              value={meta.target}
-              onChange={(e) => updateMeta({ target: e.target.value })}
-              placeholder="MZ"
-            />
-          </div>
-        </fieldset>
-      </div>
-    </div>
-  )
-}
+const NO_NOTE_PARAMS: readonly NoteParam[] = []
 
 const NOTE_DATA_OPTIONS = [
   'actors',
@@ -422,15 +41,319 @@ const NOTE_DATA_OPTIONS = [
   'maps'
 ]
 
-function NoteParamRow({
-  noteParam,
-  onUpdate,
-  onDelete
-}: {
+// Asks before replacing help text already there, then writes help made from the whole plugin
+async function autoGenerateHelp(): Promise<void> {
+  if (usePluginStore.getState().plugin.meta.help.trim() !== '') {
+    const answer = await globalThis.api.dialog.message({
+      type: 'question',
+      title: 'Replace help text',
+      message: 'This will replace the existing help text. Continue?',
+      buttons: ['Cancel', 'Replace']
+    })
+    if (answer !== 1) return
+  }
+  const { plugin, updateMeta } = usePluginStore.getState()
+  updateMeta({ help: generateHelpText(plugin) })
+}
+
+function updateLocalization(lang: string, content: Partial<LocalizedContent>): void {
+  const { plugin, updateMeta } = usePluginStore.getState()
+  const localizations = plugin.meta.localizations ?? {}
+  updateMeta({
+    localizations: { ...localizations, [lang]: { ...localizations[lang], ...content } }
+  })
+}
+
+// The database a note parameter names; an empty one shows as None, as the select has no empty item
+const selectedData = (data: string | undefined): string =>
+  data === undefined || data === '' ? 'none' : data
+
+const newRowKeys = (count: number): string[] =>
+  Array.from({ length: count }, () => crypto.randomUUID())
+
+/**
+One key per note parameter row that stays with its row when an earlier row is deleted. Rows
+added or removed elsewhere, such as by undo or by opening another plugin, fit the keys at the end.
+*/
+function useRowKeys(count: number): readonly [readonly string[], (keys: string[]) => void] {
+  const [keys, setKeys] = useState<readonly string[]>(() => newRowKeys(count))
+  if (keys.length !== count) {
+    setKeys(
+      keys.length > count ? keys.slice(0, count) : [...keys, ...newRowKeys(count - keys.length)]
+    )
+  }
+  return [keys, setKeys]
+}
+
+type MetaInputProps = Readonly<{
+  field: 'version' | 'author' | 'url' | 'target'
+  label: string
+  placeholder: string
+}>
+
+function MetaInput({ field, label, placeholder }: MetaInputProps) {
+  const value = usePluginStore((s) => s.plugin.meta[field])
+  const updateMeta = usePluginStore((s) => s.updateMeta)
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field}>{label}</Label>
+      <Input
+        id={field}
+        value={value}
+        onChange={(event) => {
+          updateMeta({ [field]: event.target.value })
+        }}
+        placeholder={placeholder}
+      />
+    </div>
+  )
+}
+
+function NameInput() {
+  const name = usePluginStore((s) => s.plugin.meta.name)
+  const updateMeta = usePluginStore((s) => s.updateMeta)
+  // A plugin loaded from a file is saved back to that file, so its name stays the file's
+  const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
+  const nameReadOnly =
+    importedFrom === undefined
+      ? { readOnly: false }
+      : {
+          readOnly: true,
+          title: `Loaded from ${importedFrom}: the plugin name is the file name, so it cannot be changed here.`
+        }
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="name">Plugin Name</Label>
+      <Input
+        id="name"
+        data-testid="meta-name"
+        value={name}
+        onChange={(event) => {
+          updateMeta({ name: event.target.value })
+        }}
+        placeholder="MyPlugin"
+        {...nameReadOnly}
+      />
+      {importedFrom !== undefined && (
+        <p className="text-xs text-muted-foreground">
+          Loaded from {importedFrom}: the name is the file name. Export in the preview can write a
+          copy under another file name, but if the plugin&apos;s code names itself, the copy&apos;s
+          commands and parameters may not work in a game; Export asks first when they would not.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function HeaderFields({ fieldset }: HeaderFieldsProps) {
+  return (
+    <fieldset {...fieldset} className="grid min-w-0 gap-4">
+      <div className="grid grid-cols-2 gap-4">
+        <NameInput />
+        <MetaInput field="version" label="Version" placeholder="1.0.0" />
+      </div>
+      <MetaInput field="author" label="Author" placeholder="Your name" />
+      <MetaInput field="url" label="URL" placeholder="https://example.com" />
+    </fieldset>
+  )
+}
+
+function EnglishTab({ fieldset }: HeaderFieldsProps) {
+  const description = usePluginStore((s) => s.plugin.meta.description)
+  const help = usePluginStore((s) => s.plugin.meta.help)
+  const updateMeta = usePluginStore((s) => s.updateMeta)
+  return (
+    <TabsContent value="en" className="space-y-4">
+      <fieldset {...fieldset} className="min-w-0 space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="description-en">Description</Label>
+          <Textarea
+            id="description-en"
+            data-testid="meta-description"
+            value={description}
+            onChange={(event) => {
+              updateMeta({ description: event.target.value })
+            }}
+            placeholder="A brief description of your plugin"
+            rows={2}
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="help-en">Help Text</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                void autoGenerateHelp()
+              }}
+              title="Auto-generate help text from plugin metadata"
+            >
+              <Sparkles className="mr-1 h-3 w-3" />
+              Auto-generate
+            </Button>
+          </div>
+          <Textarea
+            id="help-en"
+            value={help}
+            onChange={(event) => {
+              updateMeta({ help: event.target.value })
+            }}
+            placeholder="Detailed help and usage instructions"
+            rows={6}
+            className="font-mono text-sm"
+          />
+        </div>
+      </fieldset>
+    </TabsContent>
+  )
+}
+
+type LocalizedTabProps = Readonly<{
+  lang: string
+  language: string
+  descriptionPlaceholder: string
+  helpPlaceholder: string
+}>
+
+function LocalizedTab({
+  lang,
+  language,
+  descriptionPlaceholder,
+  helpPlaceholder
+}: LocalizedTabProps) {
+  const content = usePluginStore((s) => s.plugin.meta.localizations?.[lang])
+  // Raw mode keeps the file's language blocks, so their fields are read-only
+  const isRawMode = useActiveRawMode()
+  const readOnly = isRawMode
+    ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
+    : { readOnly: false }
+  return (
+    <TabsContent value={lang} className="space-y-4">
+      {isRawMode && <p className="text-sm text-muted-foreground">{RAW_MODE_READ_ONLY_NOTICE}</p>}
+      <div className="space-y-2">
+        <Label htmlFor={`description-${lang}`}>Description ({language})</Label>
+        <Textarea
+          id={`description-${lang}`}
+          {...readOnly}
+          value={content?.description ?? ''}
+          onChange={(event) => {
+            updateLocalization(lang, { description: event.target.value })
+          }}
+          placeholder={descriptionPlaceholder}
+          rows={2}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`help-${lang}`}>Help Text ({language})</Label>
+        <Textarea
+          id={`help-${lang}`}
+          {...readOnly}
+          value={content?.help ?? ''}
+          onChange={(event) => {
+            updateLocalization(lang, { help: event.target.value })
+          }}
+          placeholder={helpPlaceholder}
+          rows={6}
+          className="font-mono text-sm"
+        />
+      </div>
+    </TabsContent>
+  )
+}
+
+function LocalizedFields({ fieldset }: HeaderFieldsProps) {
+  return (
+    <div className="space-y-2">
+      <Label>Description & Help</Label>
+      <Tabs defaultValue="en" className="w-full">
+        <TabsList>
+          <TabsTrigger value="en">English</TabsTrigger>
+          <TabsTrigger value="ja">Japanese</TabsTrigger>
+          <TabsTrigger value="zh">Chinese</TabsTrigger>
+        </TabsList>
+        <EnglishTab fieldset={fieldset} />
+        <LocalizedTab
+          lang="ja"
+          language="Japanese"
+          descriptionPlaceholder="プラグインの説明"
+          helpPlaceholder="詳細なヘルプと使用方法"
+        />
+        <LocalizedTab
+          lang="zh"
+          language="Chinese"
+          descriptionPlaceholder="插件描述"
+          helpPlaceholder="详细帮助和使用说明"
+        />
+      </Tabs>
+    </div>
+  )
+}
+
+type LinesFieldProps = Readonly<{
+  field: 'dependencies' | 'orderAfter' | 'orderBefore' | 'requiredAssets'
+  label: string
+  placeholder: string
+  rows: number
+  children: ReactNode
+}>
+
+// A field of one entry per line; blank lines are not stored
+function LinesField({ field, label, placeholder, rows, children }: LinesFieldProps) {
+  const lines = usePluginStore((s) => s.plugin.meta[field]) ?? NO_LINES
+  const updateMeta = usePluginStore((s) => s.updateMeta)
+  const [text, setText] = useTypedText(lines.join('\n'), normalizeLines)
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field}>{label}</Label>
+      <Textarea
+        id={field}
+        value={text}
+        onChange={(event) => {
+          setText(event.target.value)
+          updateMeta({ [field]: nonBlankLines(event.target.value) })
+        }}
+        placeholder={placeholder}
+        rows={rows}
+        className="font-mono text-sm"
+      />
+      {children}
+    </div>
+  )
+}
+
+function ProjectPluginNames({ names }: Readonly<{ names: readonly string[] }>) {
+  const [showPluginNames, setShowPluginNames] = useState(false)
+  return (
+    <div className="text-xs text-muted-foreground">
+      <button
+        type="button"
+        className="hover:text-foreground underline decoration-dotted"
+        onClick={() => {
+          setShowPluginNames(!showPluginNames)
+        }}
+      >
+        {names.length} project plugins available
+      </button>
+      {showPluginNames && (
+        <div className="mt-1 max-h-32 overflow-y-auto rounded border border-border bg-muted/50 p-2 font-mono">
+          {names.map((name) => (
+            <div key={name}>{name}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type NoteParamRowProps = Readonly<{
   noteParam: NoteParam
   onUpdate: (updates: Partial<NoteParam>) => void
   onDelete: () => void
-}) {
+}>
+
+function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
   return (
     <div className="grid grid-cols-[1fr_auto] gap-2">
       <div className="grid grid-cols-2 gap-2">
@@ -438,7 +361,9 @@ function NoteParamRow({
           <Label className="text-xs">Tag Name</Label>
           <Input
             value={noteParam.name}
-            onChange={(e) => onUpdate({ name: e.target.value })}
+            onChange={(event) => {
+              onUpdate({ name: event.target.value })
+            }}
             placeholder="tagName"
             className="h-8 text-sm"
           />
@@ -447,7 +372,9 @@ function NoteParamRow({
           <Label className="text-xs">Type</Label>
           <Input
             value={noteParam.type}
-            onChange={(e) => onUpdate({ type: e.target.value })}
+            onChange={(event) => {
+              onUpdate({ type: event.target.value })
+            }}
             placeholder="file"
             className="h-8 text-sm"
           />
@@ -455,8 +382,10 @@ function NoteParamRow({
         <div className="space-y-1">
           <Label className="text-xs">Directory</Label>
           <Input
-            value={noteParam.dir || ''}
-            onChange={(e) => onUpdate({ dir: e.target.value || undefined })}
+            value={noteParam.dir ?? ''}
+            onChange={(event) => {
+              onUpdate({ dir: event.target.value || undefined })
+            }}
             placeholder="audio/bgm/"
             className="h-8 text-sm"
           />
@@ -464,8 +393,10 @@ function NoteParamRow({
         <div className="space-y-1">
           <Label className="text-xs">Database</Label>
           <Select
-            value={noteParam.data || 'none'}
-            onValueChange={(v) => onUpdate({ data: v === 'none' ? undefined : v })}
+            value={selectedData(noteParam.data)}
+            onValueChange={(value) => {
+              onUpdate({ data: value === 'none' ? undefined : value })
+            }}
           >
             <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Select..." />
@@ -485,6 +416,123 @@ function NoteParamRow({
         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
+      </div>
+    </div>
+  )
+}
+
+function NoteParamsField() {
+  const noteParams = usePluginStore((s) => s.plugin.meta.noteParams) ?? NO_NOTE_PARAMS
+  const updateMeta = usePluginStore((s) => s.updateMeta)
+  const [rowKeys, setRowKeys] = useRowKeys(noteParams.length)
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>Note Parameters (deployment)</Label>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={() => {
+            setRowKeys([...rowKeys, crypto.randomUUID()])
+            updateMeta({ noteParams: [...noteParams, { name: '', type: 'file' }] })
+          }}
+        >
+          <Plus className="mr-1 h-3 w-3" />
+          Add
+        </Button>
+      </div>
+      {noteParams.length > 0 && (
+        <div className="space-y-3 rounded-md border border-border p-3">
+          {noteParams.map((noteParam, index) => (
+            <NoteParamRow
+              key={rowKeys[index]}
+              noteParam={noteParam}
+              onUpdate={(updates) => {
+                updateMeta({
+                  noteParams: noteParams.map((row, at) =>
+                    at === index ? { ...row, ...updates } : row
+                  )
+                })
+              }}
+              onDelete={() => {
+                setRowKeys(rowKeys.toSpliced(index, 1))
+                updateMeta({ noteParams: noteParams.toSpliced(index, 1) })
+              }}
+            />
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Declares which notetags reference files for MZ deployment packaging
+      </p>
+    </div>
+  )
+}
+
+function DeploymentFields({ fieldset }: HeaderFieldsProps) {
+  const pluginNames = useProjectStore((s) => s.dependencyReport?.pluginNames) ?? NO_LINES
+  return (
+    <fieldset {...fieldset} className="grid min-w-0 gap-4">
+      <LinesField
+        field="dependencies"
+        label="Dependencies (one per line)"
+        placeholder={'PluginName1\nPluginName2'}
+        rows={3}
+      >
+        {pluginNames.length > 0 && <ProjectPluginNames names={pluginNames} />}
+      </LinesField>
+      <LinesField
+        field="orderAfter"
+        label="Order After (one per line)"
+        placeholder="PluginName (plugins that must load before this one)"
+        rows={2}
+      >
+        <p className="text-xs text-muted-foreground">Plugins that must load before this one</p>
+      </LinesField>
+      <LinesField
+        field="orderBefore"
+        label="Order Before (one per line)"
+        placeholder="PluginName (plugins that must load after this one)"
+        rows={2}
+      >
+        <p className="text-xs text-muted-foreground">Plugins that must load after this one</p>
+      </LinesField>
+      <LinesField
+        field="requiredAssets"
+        label="Required Assets (one per line)"
+        placeholder={'img/pictures/title\naudio/bgm/theme'}
+        rows={3}
+      >
+        <p className="text-xs text-muted-foreground">
+          Assets preserved during MZ&apos;s &quot;Exclude unused files&quot; deployment (relative
+          paths).
+        </p>
+      </LinesField>
+      <NoteParamsField />
+      <MetaInput field="target" label="Target" placeholder="MZ" />
+    </fieldset>
+  )
+}
+
+export function MetaEditor() {
+  const isHeaderReadOnly = useHeaderReadOnly()
+  const fieldset: HeaderFieldset = {
+    disabled: isHeaderReadOnly,
+    title: isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined
+  }
+
+  return (
+    <div className="space-y-4 p-4">
+      <h2 className="text-lg font-semibold">Plugin Metadata</h2>
+      {isHeaderReadOnly && (
+        <p className="text-sm text-muted-foreground">{RAW_MODE_HEADER_READ_ONLY_NOTICE}</p>
+      )}
+
+      <div className="grid gap-4">
+        <HeaderFields fieldset={fieldset} />
+        <LocalizedFields fieldset={fieldset} />
+        <DeploymentFields fieldset={fieldset} />
       </div>
     </div>
   )
