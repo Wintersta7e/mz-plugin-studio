@@ -556,9 +556,7 @@ const CODE_EVAL_SITES: Record<string, number> = {
 }
 const CODE_EVAL_DIRECTIVE = /^eslint-disable-next-line sonarjs\/code-eval -- \S/
 // Directives that predate the rule set; each leaves with its file's fix.
-const TRANSITIONAL_DIRECTIVES: { file: string; rule: string }[] = [
-  { file: 'src/main/services/projectParser.ts', rule: '@typescript-eslint/no-explicit-any' }
-]
+const TRANSITIONAL_DIRECTIVES: { file: string; rule: string }[] = []
 
 interface Directive {
   file: string

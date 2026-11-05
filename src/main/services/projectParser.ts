@@ -33,6 +33,18 @@ function numberOr(value: unknown, fallback: number): number {
 }
 
 /**
+The switches or variables named in System.json, by their place in its list; an unnamed one, or
+a list that is not a list, gives none.
+*/
+function namedIds(list: unknown): { id: number; name: string }[] {
+  if (!Array.isArray(list)) return []
+  const names: readonly unknown[] = list
+  return names
+    .map((name, index) => ({ id: index, name: text(name) }))
+    .filter((named) => named.id > 0 && named.name !== '')
+}
+
+/**
 The entries of a data file's list, its empty (`null`) slots left out. An entry that is not an
 object holds no fields; its id is the number it holds, or else its place in the list, the id
 RPG Maker MZ reads it by.
@@ -75,21 +87,17 @@ export class ProjectParser {
 
   static async parseProject(path: string): Promise<MZProject> {
     const systemContent = await readFile(join(path, 'data/System.json'), 'utf-8')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let system: any
+    let parsed: unknown
     try {
-      system = JSON.parse(systemContent)
+      parsed = JSON.parse(systemContent)
     } catch {
       throw new Error(`Failed to parse data/System.json — file may be corrupted or incomplete`)
     }
+    const system = isRecord(parsed) ? parsed : {}
 
     // Extract switches/variables directly from already-loaded system (avoids re-reading System.json)
-    const switches: MZSwitch[] = (system.switches || [])
-      .map((name: unknown, index: number) => ({ id: index, name: text(name) }))
-      .filter((s: MZSwitch) => s.id > 0 && s.name)
-    const variables: MZVariable[] = (system.variables || [])
-      .map((name: unknown, index: number) => ({ id: index, name: text(name) }))
-      .filter((v: MZVariable) => v.id > 0 && v.name)
+    const switches: MZSwitch[] = namedIds(system['switches'])
+    const variables: MZVariable[] = namedIds(system['variables'])
 
     const [
       actors,
@@ -123,7 +131,7 @@ export class ProjectParser {
 
     return {
       path,
-      gameTitle: system.gameTitle || 'Untitled',
+      gameTitle: text(system['gameTitle']) || 'Untitled',
       switches,
       variables,
       actors,

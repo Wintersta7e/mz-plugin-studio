@@ -226,3 +226,87 @@ describe('fields that are not of their type', () => {
     await expect(ProjectParser.getWeapons(project)).resolves.toStrictEqual([])
   })
 })
+
+// A System.json whose switch list, variable list or game title is not of its kind, or that holds
+// no object at all: the project opens with no switches or variables and the title "Untitled".
+describe('system data that is not of its kind', () => {
+  it.each([
+    ['a number', '5'],
+    ['text', '"ab"'],
+    ['an object', '{"1":"Door"}']
+  ])('reads switches and variables that are %s as none', async (_kind, list) => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'System.json': `{"gameTitle":"Fixture","switches":${list},"variables":${list}}`
+    })
+    const { gameTitle, switches, variables } = await ProjectParser.parseProject(project)
+
+    expect({ gameTitle, switches, variables }).toStrictEqual({
+      gameTitle: 'Fixture',
+      switches: [],
+      variables: []
+    })
+  })
+
+  it.each([
+    ['a number', '5'],
+    ['an object', '{"a":1}'],
+    ['a boolean', 'true'],
+    ['empty text', '""']
+  ])('reads a game title that is %s as Untitled', async (_kind, title) => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'System.json': `{"gameTitle":${title},"switches":["","Door"],"variables":[]}`
+    })
+    const { gameTitle, switches } = await ProjectParser.parseProject(project)
+
+    expect({ gameTitle, switches }).toStrictEqual({
+      gameTitle: 'Untitled',
+      switches: [{ id: 1, name: 'Door' }]
+    })
+  })
+
+  it.each([
+    ['null', 'null'],
+    ['a number', '5'],
+    ['a list', '[]']
+  ])('opens a project whose system data is %s with defaults', async (_kind, system) => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'System.json': system })
+    const { gameTitle, switches, variables } = await ProjectParser.parseProject(project)
+
+    expect({ gameTitle, switches, variables }).toStrictEqual({
+      gameTitle: 'Untitled',
+      switches: [],
+      variables: []
+    })
+  })
+
+  it('refuses system data that is not JSON', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'System.json': '{"gameTitle":' })
+
+    await expect(ProjectParser.parseProject(project)).rejects.toThrow(
+      'Failed to parse data/System.json'
+    )
+  })
+
+  it('reports a project whose system data is not JSON as not valid', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'System.json': '{"gameTitle":', 'Actors.json': '[]' })
+    await mkdir(path.join(project, 'js'))
+    await writeFile(path.join(project, 'js', 'plugins.js'), 'var $plugins = []')
+
+    const { valid, error } = await ProjectParser.validateProject(project)
+
+    expect({ valid, error: error?.startsWith('Failed to validate project: ') }).toStrictEqual({
+      valid: false,
+      error: true
+    })
+  })
+})

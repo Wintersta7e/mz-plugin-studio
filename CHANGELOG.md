@@ -9,6 +9,7 @@
 - Opening a plugin file whose header has a tag such as `@author` followed by a long run of spaces, or a project whose actor or item note has a long tag opened with `<` and never closed, no longer stalls the app.
 - The Project Data Browser opens a project whose data files hold a name that is not text, such as a number; before, the panel failed.
 - In the Project Data Browser, an actor or item whose note is not text, such as a number, no longer empties the whole actor or item list: that entry is shown with an empty note. An entry whose id is not a number now shows its place in the data file as its id, and a map whose parent map is not a number is read as having none.
+- A project whose System.json holds a switch or variable list that is not a list, such as a number, or holds `null` instead of the game's settings, now opens with those switches or variables left empty; before, the project failed to load. A game title that is not text, such as a number, now reads "Untitled".
 
 ## [1.8.1] - 2026-11-05
 
