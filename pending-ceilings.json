@@ -62,7 +62,6 @@
       "src/renderer/src/stores/templateStore.ts": 4,
       "src/renderer/src/stores/uiStore.ts": 2,
       "tests/dom/persisted-damage.test.ts": 4,
-      "tests/dom/persisted-downgrade.test.ts": 4,
       "tests/dom/persisted-load.test.ts": 25,
       "tests/dom/template-inserter.test.tsx": 1,
       "tests/golden/corpus/templates.ts": 3,

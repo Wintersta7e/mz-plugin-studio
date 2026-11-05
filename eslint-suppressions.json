@@ -3530,17 +3530,6 @@
       "count": 1
     }
   },
-  "tests/dom/diff-view.test.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    }
-  },
   "tests/dom/history-store.test.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 2
@@ -3564,53 +3553,6 @@
       "count": 2
     },
     "vitest/prefer-to-have-length": {
-      "count": 1
-    }
-  },
-  "tests/dom/meta-editor.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 11
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 1
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 2
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 5
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 3
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 3
-    },
-    "unicorn/prefer-global-this": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/require-mock-type-parameters": {
       "count": 1
     }
   },
@@ -3754,44 +3696,6 @@
     },
     "vitest/unbound-method": {
       "count": 1
-    }
-  },
-  "tests/dom/persisted-downgrade.test.ts": {
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 3
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 4
-    },
-    "no-console": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 10
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 6
-    },
-    "vitest/valid-expect": {
-      "count": 3
     }
   },
   "tests/dom/persisted-load.test.ts": {
