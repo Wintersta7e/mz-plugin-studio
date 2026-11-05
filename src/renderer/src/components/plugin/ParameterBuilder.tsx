@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -375,6 +375,27 @@ export function ParameterBuilder() {
     setDropTargetId(null)
   }, [])
 
+  // The keyboard path to the reorder a drop performs: one place up (-1) or down (+1). The
+  // control that asked for the move gets focus back once the new order is rendered, since
+  // re-inserting a moved card's node drops its focus.
+  const movedControlRef = useRef<HTMLElement | null>(null)
+  const handleMove = useCallback(
+    (id: string, offset: -1 | 1, control: HTMLElement) => {
+      if (isHeaderReadOnly) return
+      const params = usePluginStore.getState().plugin.parameters
+      const fromIndex = params.findIndex((p) => p.id === id)
+      const toIndex = fromIndex + offset
+      if (fromIndex === -1 || toIndex < 0 || toIndex >= params.length) return
+      movedControlRef.current = control
+      usePluginStore.getState().reorderParameters(fromIndex, toIndex)
+    },
+    [isHeaderReadOnly]
+  )
+  useLayoutEffect(() => {
+    movedControlRef.current?.focus()
+    movedControlRef.current = null
+  }, [parameters])
+
   // The selection toolbar and the row checkboxes stay outside the lock: selecting, exporting and
   // saving a preset only read
   const lock = {
@@ -503,43 +524,46 @@ export function ParameterBuilder() {
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <ScrollArea className="flex-1">
-          <div className="space-y-2 p-4">
+          <div className="p-4">
             {parameters.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <p>No parameters defined</p>
                 <p className="text-sm">Click &quot;Add Parameter&quot; to create one</p>
               </div>
             ) : (
-              parameters.map((param) => (
-                <MemoizedParamRow
-                  key={param.id}
-                  param={param}
-                  isExpanded={expandedId === param.id}
-                  isSelected={selectedIds.has(param.id)}
-                  readOnly={isHeaderReadOnly}
-                  isDragging={draggedId === param.id}
-                  isDropTarget={dropTargetId === param.id}
-                  anyDragging={draggedId !== null}
-                  toggleSelect={toggleSelect}
-                  setExpandedId={setExpandedId}
-                  updateParameter={updateParameter}
-                  removeParameter={removeParameter}
-                  setCustomCode={setCustomCode}
-                  setSelectedIds={setSelectedIds}
-                  handleDragStart={handleDragStart}
-                  handleDragEnd={handleDragEnd}
-                  handleDragOver={handleDragOver}
-                  handleDragLeave={handleDragLeave}
-                  handleDrop={handleDrop}
-                  structNames={structNames}
-                  structs={structs}
-                  paramNameMap={paramNameMap}
-                  switches={switches}
-                  variables={variables}
-                  actors={actors}
-                  items={items}
-                />
-              ))
+              <div role="list" aria-label="Parameters" className="space-y-2">
+                {parameters.map((param) => (
+                  <MemoizedParamRow
+                    key={param.id}
+                    param={param}
+                    isExpanded={expandedId === param.id}
+                    isSelected={selectedIds.has(param.id)}
+                    readOnly={isHeaderReadOnly}
+                    isDragging={draggedId === param.id}
+                    isDropTarget={dropTargetId === param.id}
+                    anyDragging={draggedId !== null}
+                    toggleSelect={toggleSelect}
+                    setExpandedId={setExpandedId}
+                    updateParameter={updateParameter}
+                    removeParameter={removeParameter}
+                    setCustomCode={setCustomCode}
+                    setSelectedIds={setSelectedIds}
+                    handleDragStart={handleDragStart}
+                    handleDragEnd={handleDragEnd}
+                    handleDragOver={handleDragOver}
+                    handleDragLeave={handleDragLeave}
+                    handleDrop={handleDrop}
+                    handleMove={handleMove}
+                    structNames={structNames}
+                    structs={structs}
+                    paramNameMap={paramNameMap}
+                    switches={switches}
+                    variables={variables}
+                    actors={actors}
+                    items={items}
+                  />
+                ))}
+              </div>
             )}
           </div>
         </ScrollArea>
@@ -688,6 +712,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDragOver,
   handleDragLeave,
   handleDrop,
+  handleMove,
   structNames,
   structs,
   paramNameMap,
@@ -714,6 +739,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   handleDragOver: (e: React.DragEvent, id: string) => void
   handleDragLeave: () => void
   handleDrop: (e: React.DragEvent, id: string) => void
+  handleMove: (id: string, offset: -1 | 1, control: HTMLElement) => void
   structNames: string[]
   structs: PluginStruct[]
   paramNameMap: ParamNameMap
@@ -772,6 +798,13 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
     [param.id, handleDrop]
   )
 
+  const onMove = useCallback(
+    (offset: -1 | 1, control: HTMLElement) => {
+      handleMove(param.id, offset, control)
+    },
+    [param.id, handleMove]
+  )
+
   const onToggleSelect = useCallback(() => toggleSelect(param.id), [param.id, toggleSelect])
   const onToggle = useCallback(
     () => setExpandedId((previous) => (previous === param.id ? null : param.id)),
@@ -779,7 +812,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
   )
 
   return (
-    <motion.div layout={anyDragging} transition={paramCardSpring}>
+    <motion.div role="listitem" layout={anyDragging} transition={paramCardSpring}>
       <ParameterCard
         param={param}
         expanded={isExpanded}
@@ -794,6 +827,7 @@ const MemoizedParamRow = memo(function MemoizedParamRow({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
+        onMove={onMove}
         isDragging={isDragging}
         isDropTarget={isDropTarget}
         structs={structNames}
@@ -825,6 +859,10 @@ interface ParameterCardProps {
   onDragOver: (e: React.DragEvent) => void
   onDragLeave: () => void
   onDrop: (e: React.DragEvent) => void
+  /**
+  Moves the card one place up (-1) or down (+1); `control` gets focus back after the move
+  */
+  onMove: (offset: -1 | 1, control: HTMLElement) => void
   isDragging: boolean
   isDropTarget: boolean
   structs: string[]
@@ -850,6 +888,7 @@ const ParameterCard = memo(function ParameterCard({
   onDragOver,
   onDragLeave,
   onDrop,
+  onMove,
   isDragging,
   isDropTarget,
   structs,
@@ -906,6 +945,9 @@ const ParameterCard = memo(function ParameterCard({
         isDragging && 'opacity-60 shadow-lg scale-[1.02] z-10 ring-2 ring-primary/50',
         isDropTarget && !isDragging && 'border-primary border-dashed bg-primary/5'
       )}
+      // The list item around the card carries its role; dragging is the mouse path to the
+      // reorder the move control below offers the keyboard
+      role="presentation"
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
@@ -914,7 +956,7 @@ const ParameterCard = memo(function ParameterCard({
       onDrop={onDrop}
     >
       {/* Header: the expand button's ::after covers the whole row, so a click anywhere on it
-          toggles the card; the checkbox and the delete button sit above that layer */}
+          toggles the card; the checkbox, the grip and the delete button sit above that layer */}
       <div className="relative flex cursor-pointer items-center gap-2 p-3">
         <input
           type="checkbox"
@@ -926,6 +968,26 @@ const ParameterCard = memo(function ParameterCard({
           onClick={(e) => e.stopPropagation()}
           className="relative z-10 h-4 w-4 rounded border-muted-foreground"
         />
+        {/* The grip drags the card; from the keyboard, Alt+ArrowUp/Down move it one place */}
+        <button
+          type="button"
+          aria-label={`Move ${param.text || param.name}`}
+          aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+          aria-disabled={readOnly}
+          onClick={(event) => {
+            // A mouse click (detail > 0) opens the card like the rest of the row; Enter and
+            // Space on the move control do not
+            if (event.detail > 0) onToggle()
+          }}
+          onKeyDown={(event) => {
+            if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return
+            event.preventDefault()
+            onMove(event.key === 'ArrowUp' ? -1 : 1, event.currentTarget)
+          }}
+          className="relative z-10 flex cursor-grab"
+        >
+          <GripVertical className="h-5 w-5 text-muted-foreground transition-colors hover:text-foreground" />
+        </button>
         <button
           type="button"
           aria-expanded={expanded}
@@ -933,7 +995,6 @@ const ParameterCard = memo(function ParameterCard({
           onClick={onToggle}
           className="flex flex-1 items-center gap-2 text-left after:absolute after:inset-0"
         >
-          <GripVertical className="relative z-10 h-5 w-5 cursor-grab text-muted-foreground transition-colors hover:text-foreground" />
           {expanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (

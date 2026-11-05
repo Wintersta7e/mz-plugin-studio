@@ -491,8 +491,8 @@ describe('header editors of an imported file with no main annotation block', () 
     render(<ParameterBuilder />)
     const message = screen.getByText('メッセージ').closest<HTMLElement>('[draggable]')!
 
-    // The row header holds two buttons: the first opens the row, the nameless second deletes it
-    const [expand, remove] = within(message).getAllByRole('button')
+    // The row header holds three buttons: move, open, and the nameless last one deletes the row
+    const [, expand, remove] = within(message).getAllByRole('button')
 
     expect(expand).toBeEnabled()
     expect(remove).toBeDisabled()
