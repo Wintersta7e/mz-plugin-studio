@@ -12,14 +12,14 @@ export type WindowPort = Pick<
   'minimize' | 'maximize' | 'unmaximize' | 'isMaximized' | 'close'
 >
 
-export interface MainDeps {
+export interface MainDependencies {
   dialog: DialogPort
-  getWindow: () => WindowPort | null
+  getWindow: () => WindowPort | undefined
   openLogFolder: () => Promise<void>
   setLogLevel: (level: 'debug' | 'info') => void
 }
 
-export function createInvokeHandlers(dependencies: MainDeps): InvokeHandlers {
+export function createInvokeHandlers(dependencies: MainDependencies): InvokeHandlers {
   return {
     ...createProjectHandlers(dependencies.dialog),
     ...pluginHandlers,
@@ -37,7 +37,7 @@ export function createInvokeHandlers(dependencies: MainDeps): InvokeHandlers {
   } satisfies InvokeHandlers
 }
 
-export function createSendListeners(dependencies: MainDeps): SendListeners {
+export function createSendListeners(dependencies: MainDependencies): SendListeners {
   return {
     'window-minimize': {
       check: () => [],
@@ -49,7 +49,7 @@ export function createSendListeners(dependencies: MainDeps): SendListeners {
       check: () => [],
       run: () => {
         const win = dependencies.getWindow()
-        if (win?.isMaximized()) {
+        if (win?.isMaximized() === true) {
           win.unmaximize()
         } else {
           win?.maximize()

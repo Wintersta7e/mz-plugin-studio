@@ -23,7 +23,7 @@ import { recordWriteGrant } from '../../src/main/file-access'
 import {
   loadPluginFile,
   readRawPlugin,
-  samePath,
+  isSamePath,
   savePluginFile,
   savePluginToPath
 } from '../../src/main/ipc/plugin'
@@ -393,12 +393,12 @@ describe('replacing a file', () => {
 
 describe('naming one file', () => {
   it('ignores case on win32', () => {
-    expect(samePath('C:\\P\\Foo.js', 'c:\\p\\FOO.JS', 'win32')).toBe(true)
+    expect(isSamePath('C:\\P\\Foo.js', 'c:\\p\\FOO.JS', 'win32')).toBe(true)
   })
 
   it('keeps case on posix', () => {
-    expect(samePath('/p/Foo.js', '/p/FOO.JS', 'linux')).toBe(false)
-    expect(samePath('/p/x/../Foo.js', '/p/Foo.js', 'linux')).toBe(true)
+    expect(isSamePath('/p/Foo.js', '/p/FOO.JS', 'linux')).toBe(false)
+    expect(isSamePath('/p/x/../Foo.js', '/p/Foo.js', 'linux')).toBe(true)
   })
 })
 

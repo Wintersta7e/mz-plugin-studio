@@ -5,7 +5,7 @@ import { pathToFileURL } from 'url'
 import log from 'electron-log/main'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
+import type { DialogPort, MainDependencies } from '../../src/main/ipc/handlers'
 import {
   createSenderCheck,
   handleAll,
@@ -33,9 +33,9 @@ const dialog = {
   showSaveDialog: vi.fn(),
   showMessageBox: vi.fn()
 }
-const deps: MainDeps = {
+const deps: MainDependencies = {
   dialog: dialog as unknown as DialogPort,
-  getWindow: vi.fn(() => null),
+  getWindow: vi.fn<MainDependencies['getWindow']>(),
   openLogFolder: vi.fn(async () => {}),
   setLogLevel: vi.fn()
 }
@@ -54,7 +54,7 @@ const bodies = [
 ]
 
 const appWindow = createFakeWindow(entryUrl)
-let window: FakeWindow | null = appWindow
+let window: FakeWindow | undefined = appWindow
 const ipc = createFakeRegistrar(appWindow.webContents.mainFrame)
 const isTrustedSender = createSenderCheck(() => window, { kind: 'file', path: entry })
 const invokeCount = handleAll(handlers, isTrustedSender, ipc.registrar)
@@ -67,7 +67,7 @@ const untrusted: { name: string; frame: () => FakeFrame | null }[] = [
   {
     name: 'no window',
     frame: () => {
-      window = null
+      window = undefined
       return appWindow.webContents.mainFrame
     }
   },
@@ -271,6 +271,17 @@ describe('ipc registration', () => {
     ])
 
     cases += 4
+  })
+
+  it('refuses a frame without a text address as one whose address cannot be read', () => {
+    const isTrusted = createSenderCheck(() => appWindow, { kind: 'file', path: entry })
+    vi.mocked(log.warn).mockClear()
+
+    expect(isTrusted({ senderFrame: {} })).toBe(false)
+    expect(isTrusted({ senderFrame: { url: 42 } })).toBe(false)
+    expect(log.warn).toHaveBeenCalledExactlyOnceWith(
+      `[ipc] Refused requests from a frame whose address cannot be read: the app page is ${entry}`
+    )
   })
 })
 

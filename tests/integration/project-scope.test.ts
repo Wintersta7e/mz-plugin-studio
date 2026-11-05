@@ -8,7 +8,7 @@ import { tmpdir } from 'os'
 import path, { dirname, join } from 'path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
-import type { DialogPort } from '../../src/main/ipc/handlers'
+import type { DialogPort, WindowPort } from '../../src/main/ipc/handlers'
 import {
   ACCESS_DENIED,
   INVOKE_CHANNELS,
@@ -135,7 +135,7 @@ describe('project scope', () => {
     const { createInvokeHandlers } = await import('../../src/main/ipc/handlers')
     const handlers = createInvokeHandlers({
       dialog: {} as DialogPort,
-      getWindow: () => null,
+      getWindow: (): WindowPort | undefined => undefined,
       openLogFolder: async () => {},
       setLogLevel: () => {}
     })

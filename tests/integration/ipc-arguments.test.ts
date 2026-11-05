@@ -6,7 +6,7 @@ import path, { join } from 'path'
 import log from 'electron-log/main'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { DialogPort, MainDeps, WindowPort } from '../../src/main/ipc/handlers'
+import type { DialogPort, MainDependencies, WindowPort } from '../../src/main/ipc/handlers'
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, type InvokeChannel, type SendChannel } from '../../src/shared/ipc-types'
 import { afterAllTests } from '../helpers/after-all-tests'
@@ -16,13 +16,13 @@ vi.mock('electron', () => ({ ipcMain: {} }))
 
 const showMessageBox = vi.fn(async (_options: unknown) => ({ response: 1 }))
 const showSaveDialog = vi.fn(async (_options: unknown) => ({ canceled: true, filePath: '' }))
-const deps: MainDeps = {
+const deps: MainDependencies = {
   dialog: {
     showOpenDialog: vi.fn(async () => ({ canceled: true, filePaths: [] })),
     showSaveDialog,
     showMessageBox
   } as unknown as DialogPort,
-  getWindow: () => null as WindowPort | null,
+  getWindow: (): WindowPort | undefined => undefined,
   openLogFolder: vi.fn(async () => {}),
   setLogLevel: vi.fn()
 }

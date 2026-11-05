@@ -9,7 +9,7 @@ import log from 'electron-log/main'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AccessClass } from '../../src/main/file-access'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { DialogPort, MainDeps, WindowPort } from '../../src/main/ipc/handlers'
+import type { DialogPort, MainDependencies, WindowPort } from '../../src/main/ipc/handlers'
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS, type InvokeChannel } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../helpers/fixture-project'
@@ -69,7 +69,7 @@ let project: string
 let tmp: string
 const dialogs = fakeDialog()
 const win = fakeWindow()
-const deps: MainDeps = {
+const deps: MainDependencies = {
   dialog: dialogs.dialog,
   getWindow: () => win as unknown as WindowPort,
   openLogFolder: vi.fn(async () => {}),

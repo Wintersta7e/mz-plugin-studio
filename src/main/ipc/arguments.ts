@@ -70,7 +70,10 @@ export function checkFilters(value: unknown): FileFilter[] | undefined {
       !Array.isArray(extensions) ||
       extensions.length === 0 ||
       extensions.length > MAX_FILTER_EXTENSIONS ||
-      !extensions.every((e): e is string => typeof e === 'string' && isFilterExtension(e))
+      !extensions.every(
+        (extension): extension is string =>
+          typeof extension === 'string' && isFilterExtension(extension)
+      )
     ) {
       return undefined
     }

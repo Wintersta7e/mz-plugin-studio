@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, readdir } from 'node:fs/promises'
-import path, { join, dirname } from 'node:path'
+import path from 'node:path'
 import log from 'electron-log/main'
 import { PluginParser } from '../services/pluginParser'
 import { compileCheck } from '../services/syntax-check'
@@ -21,7 +21,7 @@ import {
   assertSafeProjectPath
 } from '../../shared/path-safety'
 import { replaceFile } from '../atomic-write'
-import { assertWriteGranted, grantKey } from '../file-access'
+import { assertWriteGranted, grantKey, isFileNotFound } from '../file-access'
 import { checkSaveGuard, stringArg } from './arguments'
 import type { InvokeHandlers } from './registration'
 
@@ -35,7 +35,7 @@ export function sha256Hex(bytes: Uint8Array): string {
 /**
 Whether two paths name one file: case-insensitive on win32, as the write grants compare
 */
-export function samePath(
+export function isSamePath(
   a: string,
   b: string,
   platform: NodeJS.Platform = process.platform
@@ -51,7 +51,7 @@ async function readExisting(target: string): Promise<Buffer | null> {
   try {
     return await readFile(target)
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+    if (isFileNotFound(error)) return null
     throw error
   }
 }
@@ -81,23 +81,23 @@ async function writeGuarded(
       ...(syntaxError !== undefined && { syntaxError })
     })
     const base = guard.base
-    if (base !== null && samePath(base.path, target) && base.sha256 !== diskSha256) {
+    if (base !== null && isSamePath(base.path, target) && base.sha256 !== diskSha256) {
       return refuse('changed-on-disk')
     }
-    if (kind === 'project' && (base === null || !samePath(base.path, target))) {
+    if (kind === 'project' && (base === null || !isSamePath(base.path, target))) {
       return refuse('exists-unrelated')
     }
     if (
       problem !== null &&
       guard.overwriteBroken !== true &&
       // Only whether the file on disk compiles matters here, so a lossy decode is enough
-      compileCheck(disk.toString('utf-8'), filename) === null
+      compileCheck(disk.toString('utf8'), filename) === null
     ) {
       return refuse('would-break', problem)
     }
   }
-  if (disk === null) await mkdir(dirname(target), { recursive: true })
-  const bytes = Buffer.from(content, 'utf-8')
+  if (disk === null) await mkdir(path.dirname(target), { recursive: true })
+  const bytes = Buffer.from(content, 'utf8')
   await replaceFile(target, bytes, disk !== null)
   return {
     success: true,
@@ -156,19 +156,20 @@ Parses `js/plugins/<filename>` of a project, recording the file it came from
 export async function loadPluginFile(projectPath: string, filename: string): Promise<LoadedPlugin> {
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
-  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  const pluginPath = path.join(projectPath, 'js', 'plugins', filename)
   try {
     const { content, sha256 } = await readWithSha(pluginPath)
     const result = PluginParser.parsePlugin(content, filename)
     log.info(
-      `[plugin:load] ${filename} — params: ${result.parameters.length}, commands: ${result.commands.length}`
+      `[plugin:load] ${filename} — params: ${String(result.parameters.length)}, commands: ${String(result.commands.length)}`
     )
     return { plugin: { ...result, importedFrom: filename }, path: pluginPath, sha256 }
   } catch (error) {
     if (!(error instanceof NotUtf8Error))
       log.error(`[plugin:load] Failed to load ${filename}:`, error)
     throw new Error(
-      `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`
+      `Failed to load plugin "${filename}": ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     )
   }
 }
@@ -186,7 +187,7 @@ export async function savePluginFile(
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
   log.debug(`[plugin:save] ${filename} to ${projectPath}`)
-  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  const pluginPath = path.join(projectPath, 'js', 'plugins', filename)
   const result = await writeGuarded(pluginPath, content, guard, 'project')
   if (result.success) log.info(`[plugin:save] Saved ${filename} to ${pluginPath}`)
   return result
@@ -199,7 +200,7 @@ export async function readRawPlugin(projectPath: string, filename: string): Prom
   assertSafeProjectPath(projectPath)
   assertSafeFilename(filename)
   log.debug(`[plugin:read-raw] ${filename}`)
-  const pluginPath = join(projectPath, 'js', 'plugins', filename)
+  const pluginPath = path.join(projectPath, 'js', 'plugins', filename)
   return { ...(await readWithSha(pluginPath)), path: pluginPath }
 }
 
@@ -209,20 +210,22 @@ Reads the text of a file the user picked, or a tab's saved file
 export async function readFileByPath(filePath: string): Promise<string> {
   assertSafeFilePath(filePath)
   log.debug(`[plugin:read-by-path] ${filePath}`)
-  return (await readWithSha(filePath)).content
+  const { content } = await readWithSha(filePath)
+  return content
 }
 
 /**
 Parses plugin text the window holds; nothing is read from disk
 */
-export async function parsePluginText(content: string): Promise<PluginDefinition> {
+export function parsePluginText(content: string): PluginDefinition {
   log.debug('[plugin:parse] Parsing plugin content')
   try {
     return PluginParser.parsePlugin(content)
   } catch (error) {
     log.error('[plugin:parse] Failed to parse plugin:', error)
     throw new Error(
-      `Failed to parse plugin: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to parse plugin: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     )
   }
 }
@@ -232,11 +235,11 @@ The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none wh
 */
 export async function listPluginFiles(projectPath: string): Promise<string[]> {
   assertSafeProjectPath(projectPath)
-  const pluginsDir = join(projectPath, 'js', 'plugins')
+  const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
   try {
-    const files = await readdir(pluginsDir)
+    const files = await readdir(pluginsDirectory)
     const jsPlugins = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
-    log.debug(`[plugin:list] Found ${jsPlugins.length} plugins in ${projectPath}`)
+    log.debug(`[plugin:list] Found ${String(jsPlugins.length)} plugins in ${projectPath}`)
     return jsPlugins
   } catch {
     log.debug(`[plugin:list] No plugins directory at ${projectPath}`)
@@ -249,16 +252,16 @@ The load-order tags and prototype overrides of every plugin file in a project
 */
 export async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
   assertSafeProjectPath(projectPath)
-  const pluginsDir = join(projectPath, 'js', 'plugins')
+  const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
   try {
-    const files = await readdir(pluginsDir)
+    const files = await readdir(pluginsDirectory)
     const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
 
     // Read all plugin files in parallel for faster scanning (PERF-02)
     const results: ScannedPluginHeader[] = await Promise.all(
       jsFiles.map(async (file) => {
-        const filePath = join(pluginsDir, file)
-        const content = await readFile(filePath, 'utf-8')
+        const filePath = path.join(pluginsDirectory, file)
+        const content = await readFile(filePath, 'utf8')
 
         // Read the load-order tags as the importer does, so the analyzer and editor agree
         const { meta } = PluginParser.parsePlugin(content, file)
@@ -274,7 +277,7 @@ export async function scanPluginHeaders(projectPath: string): Promise<ScannedPlu
       })
     )
 
-    log.info(`[plugin:scan-headers] Scanned ${results.length} plugins in ${projectPath}`)
+    log.info(`[plugin:scan-headers] Scanned ${String(results.length)} plugins in ${projectPath}`)
     return results
   } catch (error) {
     log.error(`[plugin:scan-headers] Failed to scan ${projectPath}:`, error)

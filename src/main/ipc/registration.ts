@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
 import { authorize, type AccessClass } from '../file-access'
-import { samePath } from './plugin'
+import { isSamePath } from './plugin'
 import {
   INVOKE_CHANNELS,
   LOG_CHANNEL,
@@ -84,37 +84,46 @@ compared by its decoded path, so any percent-encoding of the same file matches. 
 sender is logged once with the page expected, so the log shows why the app answers nothing.
 */
 export function createSenderCheck(
-  getWindow: () => { webContents: { mainFrame: unknown } } | null,
+  getWindow: () => { webContents: { mainFrame: unknown } } | undefined,
   entry: RendererEntry,
   platform: NodeJS.Platform = process.platform
 ): SenderCheck {
   const expected = entry.kind === 'file' ? entry.path : entry.origin
   const logged = new Set<string>()
-  const refuse = (sender: string): false => {
+  /**
+  The sender a request is refused from, or undefined when it comes from the app's page
+  */
+  const refusedSender = (event: SenderEvent): string | undefined => {
+    let sender = 'a frame whose address cannot be read'
+    try {
+      const frame = event.senderFrame
+      if (frame === null) return 'no frame'
+      const url = new URL(
+        typeof frame === 'object' && 'url' in frame && typeof frame.url === 'string'
+          ? frame.url
+          : ''
+      )
+      // The address without its query or fragment, which may hold anything the page put there
+      sender = `${url.protocol}//${url.host}${url.pathname}`
+      if (frame !== getWindow()?.webContents.mainFrame) {
+        return `a frame other than the main frame at ${sender}`
+      }
+      if (entry.kind === 'dev-server') return url.origin === entry.origin ? undefined : sender
+      if (url.protocol !== 'file:') return sender
+      const file = fileURLToPath(url, { windows: platform === 'win32' })
+      return isSamePath(file, entry.path, platform) ? undefined : sender
+    } catch {
+      return sender
+    }
+  }
+  return (event) => {
+    const sender = refusedSender(event)
+    if (sender === undefined) return true
     if (!logged.has(sender) && logged.size < MAX_LOGGED_SENDERS) {
       logged.add(sender)
       log.warn(`[ipc] Refused requests from ${sender}: the app page is ${expected}`)
     }
     return false
-  }
-  return (event) => {
-    let sender = 'a frame whose address cannot be read'
-    try {
-      const frame = event.senderFrame
-      if (frame === null) return refuse('no frame')
-      const url = new URL((frame as { url: string }).url)
-      // The address without its query or fragment, which may hold anything the page put there
-      sender = `${url.protocol}//${url.host}${url.pathname}`
-      if (frame !== getWindow()?.webContents.mainFrame) {
-        return refuse(`a frame other than the main frame at ${sender}`)
-      }
-      if (entry.kind === 'dev-server') return url.origin === entry.origin || refuse(sender)
-      if (url.protocol !== 'file:') return refuse(sender)
-      const file = fileURLToPath(url, { windows: platform === 'win32' })
-      return samePath(file, entry.path, platform) || refuse(sender)
-    } catch {
-      return refuse(sender)
-    }
   }
 }
 
@@ -178,11 +187,10 @@ export function handleAll(
   registrar: Registrar = ipcMain
 ): number {
   let count = 0
-  const register = <C extends InvokeChannel>(channel: C): void => {
+  for (const channel of INVOKE_CHANNELS) {
     handle(channel, handlers[channel], isTrustedSender, registrar)
     count++
   }
-  INVOKE_CHANNELS.forEach(register)
   return count
 }
 
@@ -195,11 +203,10 @@ export function onAll(
   registrar: Registrar = ipcMain
 ): number {
   let count = 0
-  const register = <C extends SendChannel>(channel: C): void => {
+  for (const channel of SEND_CHANNELS) {
     on(channel, listeners[channel], isTrustedSender, registrar)
     count++
   }
-  SEND_CHANNELS.forEach(register)
   return count
 }
 
@@ -211,8 +218,6 @@ export interface LogChannelHost extends Registrar {
   removeAllListeners(channel: string): unknown
   removeHandler(channel: string): void
 }
-
-type LogListener = (event: SenderEvent, message: unknown) => void
 
 /**
 The fields of a log line the checks read
@@ -239,7 +244,7 @@ function isLogName(value: unknown): boolean {
     value === undefined ||
     (typeof value === 'string' &&
       value.length <= MAX_LOG_NAME &&
-      !(value in Object.prototype) &&
+      !Object.hasOwn(Object.prototype, value) &&
       value !== 'prototype')
   )
 }
@@ -286,7 +291,7 @@ export function routeLogChannel(
   isTrustedSender: SenderCheck,
   host: LogChannelHost = ipcMain
 ): void {
-  const forward = host.listeners(LOG_CHANNEL) as LogListener[]
+  const forward = host.listeners(LOG_CHANNEL).filter((listener) => typeof listener === 'function')
   if (forward.length === 0) {
     log.error(`[ipc] electron-log has no listener on ${LOG_CHANNEL}: page log lines are lost`)
   }
@@ -302,7 +307,7 @@ export function routeLogChannel(
       // Already logged; a throw from a listener would be an uncaught exception in main
       return
     }
-    for (const listener of forward) listener(event, raw[0])
+    for (const listener of forward) Reflect.apply(listener, undefined, [event, raw[0]])
   })
 }
 

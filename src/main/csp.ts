@@ -2,7 +2,7 @@
 // page may load only its own files; the dev server additionally needs inline scripts and eval for
 // hot reload, and its socket. Workers start from a blob so they inherit the page's policy.
 import type { Session } from 'electron'
-import { posix, win32 } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export function buildCsp({ devServer }: { devServer: boolean }): string {
@@ -35,11 +35,11 @@ export function isFileRequestAllowed(
   try {
     const isWindows = platform === 'win32'
     const target = fileURLToPath(url, { windows: isWindows })
-    const rel = isWindows
-      ? win32.relative(rendererRoot.toLowerCase(), target.toLowerCase())
-      : posix.relative(rendererRoot, target)
-    const path = isWindows ? win32 : posix
-    return rel.split(path.sep)[0] !== '..' && !path.isAbsolute(rel)
+    const relative = isWindows
+      ? path.win32.relative(rendererRoot.toLowerCase(), target.toLowerCase())
+      : path.posix.relative(rendererRoot, target)
+    const platformPath = isWindows ? path.win32 : path.posix
+    return relative.split(platformPath.sep)[0] !== '..' && !platformPath.isAbsolute(relative)
   } catch {
     return false
   }

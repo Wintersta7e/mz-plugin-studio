@@ -25,7 +25,7 @@ Whether the folder was chosen in the folder dialog or confirmed opening. A netwo
 was not is refused here, before anything looks it up: on Windows looking up a network path
 sends the user's credentials to its host, so only the folder dialog may lead there.
 */
-async function checkGrant(channel: string, projectPath: string): Promise<boolean> {
+async function hasGrant(channel: string, projectPath: string): Promise<boolean> {
   const isGranted = await isProjectRootGranted(projectPath)
   if (!isGranted && isUncText(projectPath)) {
     refuse(channel, projectPath, 'a network folder opens only when chosen with Open Project')
@@ -35,7 +35,7 @@ async function checkGrant(channel: string, projectPath: string): Promise<boolean
 
 export async function runProjectValidate(path: string): Promise<ProjectValidation> {
   assertSafeProjectPath(path)
-  await checkGrant('project:validate', path)
+  await hasGrant('project:validate', path)
   log.debug(`[project:validate] ${path}`)
   return ProjectParser.validateProject(path)
 }
@@ -45,13 +45,14 @@ export async function runProjectLoad(path: string): Promise<MZProject> {
   try {
     const result = await ProjectParser.parseProject(path)
     log.info(
-      `[project:load] "${result.gameTitle}" — ${result.actors.length} actors, ${result.items.length} items, ${result.maps.length} maps`
+      `[project:load] "${result.gameTitle}" — ${String(result.actors.length)} actors, ${String(result.items.length)} items, ${String(result.maps.length)} maps`
     )
     return result
   } catch (error) {
     log.error(`[project:load] Failed to load project at ${path}:`, error)
     throw new Error(
-      `Failed to load project: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to load project: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     )
   }
 }
@@ -61,7 +62,7 @@ Asks in a native message box whether to open a folder with no record of being ch
 folder dialog or confirmed; Cancel is both the Enter and the Esc button. Returns whether the
 user chose Open.
 */
-export async function confirmProjectOpen(
+export async function isOpenConfirmed(
   dialog: Pick<Dialog, 'showMessageBox'>,
   projectPath: string
 ): Promise<boolean> {
@@ -87,10 +88,10 @@ export async function loadGrantedProject(
   dialog: Pick<Dialog, 'showMessageBox'>,
   projectPath: string
 ): Promise<MZProject> {
-  const isGranted = await checkGrant('project:load', projectPath)
+  const isGranted = await hasGrant('project:load', projectPath)
   const validation = await ProjectParser.validateProject(projectPath)
   if (!validation.valid) refuse('project:load', projectPath, 'not an RPG Maker MZ project folder')
-  if (!isGranted && !(await confirmProjectOpen(dialog, projectPath))) {
+  if (!isGranted && !(await isOpenConfirmed(dialog, projectPath))) {
     refuse('project:load', projectPath, PROJECT_OPEN_CANCELLED)
   }
   await recordProjectRoot(projectPath)

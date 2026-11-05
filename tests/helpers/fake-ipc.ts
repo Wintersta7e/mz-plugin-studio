@@ -3,7 +3,7 @@
 import { resolve } from 'path'
 import { pathToFileURL } from 'url'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { DialogPort, MainDeps } from '../../src/main/ipc/handlers'
+import type { DialogPort, MainDependencies, WindowPort } from '../../src/main/ipc/handlers'
 import { createSenderCheck, handleAll, onAll } from '../../src/main/ipc/registration'
 import type { Registrar, SenderCheck, SenderEvent } from '../../src/main/ipc/registration'
 
@@ -79,9 +79,9 @@ export function createFakeRegistrar(defaultFrame: FakeFrame | null = null): Fake
 
 /** Main's handlers and listeners registered on a fresh stand-in, called from the app page, `dialog` answering the dialogs */
 export function registerMainHandlers(dialog: Partial<DialogPort> = {}): FakeRegistrar {
-  const deps: MainDeps = {
+  const deps: MainDependencies = {
     dialog: dialog as DialogPort,
-    getWindow: () => null,
+    getWindow: (): WindowPort | undefined => undefined,
     openLogFolder: async () => {},
     setLogLevel: () => {}
   }

@@ -19,7 +19,7 @@ const FLOORS = {
   // main.tsx); a file with lines that no directory owns fails the check. `global` is the whole
   // report.
   suite: {
-    'src/main': { lines: 93, branches: 93 },
+    'src/main': { lines: 94, branches: 93 },
     'src/preload': { lines: 44, branches: 0 },
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 88 },
