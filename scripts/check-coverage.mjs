@@ -41,7 +41,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/actor-party.ts`]: 80,
       [`${GENERATOR}/templates/audio-system.ts`]: 96,
       [`${GENERATOR}/templates/battle-system.ts`]: 94,
-      [`${GENERATOR}/templates/custom-window.ts`]: 94,
+      [`${GENERATOR}/templates/custom-window.ts`]: 97,
       [`${GENERATOR}/templates/database-ext.ts`]: 93,
       [`${GENERATOR}/templates/input-handler.ts`]: 100,
       [`${GENERATOR}/templates/map-events.ts`]: 94,

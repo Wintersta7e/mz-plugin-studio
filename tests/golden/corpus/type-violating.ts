@@ -27,6 +27,20 @@ function everyField(id: string, value: (field: TemplateField) => unknown): Recor
 // A wrong-typed or null value in some fields, the base values in the rest. The three cases of
 // every template stop at the first field read, so these reach the branches and checks after it.
 const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
+  'custom-window-basic': [
+    { width: null },
+    { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
+    { parentClass: 'Window_Command', width: ['a', 'b'], addToScene: 'Scene_Menu' }
+  ],
+  'gauge-window': [
+    { gaugeCount: '3', dataSource: 'variable', width: null, gaugeHeight: null },
+    { gaugeCount: 3, positionX: 'abc', gaugeHeight: ['a', 'b'] },
+    { gaugeCount: '3', gauge3Color2: 7 }
+  ],
+  'hud-overlay-window': [
+    { positionY: null, opacity: null },
+    { positionX: 'abc', width: ['a', 'b'], opacity: 'x' }
+  ],
   'menu-command-addition': [
     { enableCondition: 'switch', switchId: null },
     { requiresActor: 'yes', enableCondition: 'switch', switchId: 'abc' }
@@ -40,7 +54,13 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { optionType: 'select', choices: 'Low, High', persistToConfig: null },
     { optionType: 'select', choices: 42 }
   ],
-  'menu-title-mod': [{ modType: 'hideCommand', hideTarget: 7 }, { commandName: null }]
+  'menu-title-mod': [{ modType: 'hideCommand', hideTarget: 7 }, { commandName: null }],
+  'popup-notification-window': [
+    { defaultDuration: null, height: null },
+    { defaultDuration: 'abc', width: ['a', 'b'], position: 'center' },
+    { height: 'abc', position: 'bottom' },
+    { textColor: 7 }
+  ]
 }
 
 const partialCaseName = (changes: Record<string, unknown>): string =>
