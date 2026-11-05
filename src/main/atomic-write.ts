@@ -13,7 +13,8 @@ async function renameRetrying(from: string, to: string): Promise<void> {
   const start = Date.now()
   for (let wait = 10; ; wait = Math.min(wait + 10, 100)) {
     try {
-      return await rename(from, to)
+      await rename(from, to)
+      return
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code ?? ''
       if (!RENAME_LOCKED.has(code) || Date.now() - start >= RENAME_RETRY_MS) throw error
@@ -51,9 +52,9 @@ export async function replaceFile(
     }
     await renameRetrying(temp, dest)
   } catch (error) {
-    await rm(temp, { force: true }).catch((cleanup: unknown) =>
+    await rm(temp, { force: true }).catch((cleanup: unknown) => {
       log.warn('[atomic-write] could not remove temporary file', temp, cleanup)
-    )
+    })
     throw error
   }
 }

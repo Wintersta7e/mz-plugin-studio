@@ -490,7 +490,7 @@ export function createDialogHandlers(dialog: DialogPort): Pick<InvokeHandlers, D
     'dialog:message': {
       access: 'none',
       check: (raw) => [checkMessageOptions(raw[0])],
-      run: (options) => showMessageDialog(dialog, options)
+      run: async (options) => showMessageDialog(dialog, options)
     }
   }
 }

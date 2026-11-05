@@ -12,9 +12,9 @@ export function createWindowOpenHandler(
     try {
       const parsed = new URL(details.url)
       if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-        openExternal(parsed.href).catch((error: unknown) =>
+        openExternal(parsed.href).catch((error: unknown) => {
           log.warn('[window-open] Could not open link', error)
-        )
+        })
       }
     } catch {
       // Ignore malformed URLs

@@ -187,25 +187,25 @@ export class ProjectParser {
     }
   }
 
-  static getSkills = (p: string): Promise<MZSkill[]> =>
+  static getSkills = async (p: string): Promise<MZSkill[]> =>
     ProjectParser.loadDataArray(p, 'Skills.json')
-  static getWeapons = (p: string): Promise<MZWeapon[]> =>
+  static getWeapons = async (p: string): Promise<MZWeapon[]> =>
     ProjectParser.loadDataArray(p, 'Weapons.json')
-  static getArmors = (p: string): Promise<MZArmor[]> =>
+  static getArmors = async (p: string): Promise<MZArmor[]> =>
     ProjectParser.loadDataArray(p, 'Armors.json')
-  static getEnemies = (p: string): Promise<MZEnemy[]> =>
+  static getEnemies = async (p: string): Promise<MZEnemy[]> =>
     ProjectParser.loadDataArray(p, 'Enemies.json')
-  static getStates = (p: string): Promise<MZState[]> =>
+  static getStates = async (p: string): Promise<MZState[]> =>
     ProjectParser.loadDataArray(p, 'States.json')
-  static getAnimations = (p: string): Promise<MZAnimation[]> =>
+  static getAnimations = async (p: string): Promise<MZAnimation[]> =>
     ProjectParser.loadDataArray(p, 'Animations.json')
-  static getTilesets = (p: string): Promise<MZTileset[]> =>
+  static getTilesets = async (p: string): Promise<MZTileset[]> =>
     ProjectParser.loadDataArray(p, 'Tilesets.json')
-  static getCommonEvents = (p: string): Promise<MZCommonEvent[]> =>
+  static getCommonEvents = async (p: string): Promise<MZCommonEvent[]> =>
     ProjectParser.loadDataArray(p, 'CommonEvents.json')
-  static getClasses = (p: string): Promise<MZClass[]> =>
+  static getClasses = async (p: string): Promise<MZClass[]> =>
     ProjectParser.loadDataArray(p, 'Classes.json')
-  static getTroops = (p: string): Promise<MZTroop[]> =>
+  static getTroops = async (p: string): Promise<MZTroop[]> =>
     ProjectParser.loadDataArray(p, 'Troops.json')
 
   static parseNoteTags(note: string): Record<string, string> {

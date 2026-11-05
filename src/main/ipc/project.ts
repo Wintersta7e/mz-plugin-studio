@@ -115,7 +115,7 @@ export function createProjectHandlers(
         const [path] = strings('project:load', raw, 1)
         return [path]
       },
-      run: (path) => loadGrantedProject(dialog, path)
+      run: async (path) => loadGrantedProject(dialog, path)
     }
   }
 }

@@ -34,7 +34,7 @@ export function createInvokeHandlers(deps: MainDeps): InvokeHandlers {
     'log:open-folder': {
       access: 'none',
       check: () => [],
-      run: () => deps.openLogFolder()
+      run: async () => deps.openLogFolder()
     }
   } satisfies InvokeHandlers
 }

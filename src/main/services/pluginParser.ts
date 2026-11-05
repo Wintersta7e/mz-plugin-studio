@@ -104,7 +104,7 @@ export function matchPlugindesc(header: string): string | undefined {
  * a long word would re-read the rest of the word at every character.
  */
 export function matchScriptName(content: string): string | undefined {
-  return content.match(/\*\s+@plugindesc(?:|[\s\S]*?\b)(\w+)\.js/i)?.[1]
+  return /\*\s+@plugindesc(?:|[\s\S]*?\b)(\w+)\.js/i.exec(content)?.[1]
 }
 
 // Same result as text.replace(/\n\s*\*\s*/g, ' '), in linear time
@@ -235,7 +235,7 @@ export class PluginParser {
 
     for (const marker of customMarkers) {
       const match = workingCode.match(marker)
-      if (match && match.index !== undefined) {
+      if (match?.index !== undefined) {
         return workingCode.slice(match.index).trim()
       }
     }
@@ -289,12 +289,12 @@ export class PluginParser {
    */
   private static unwrapIIFE(code: string): string | null {
     // Check for IIFE opening pattern
-    const iifeOpen = code.match(/^\s*\(\s*(?:\(\s*\)\s*=>|function\s*\(\s*\))\s*\{/)
+    const iifeOpen = /^\s*\(\s*(?:\(\s*\)\s*=>|function\s*\(\s*\))\s*\{/.exec(code)
     if (!iifeOpen) return null
 
     // Check for IIFE closing pattern at the end
-    const iifeClose = code.match(/\}\s*\)\s*\(\s*\)\s*;?\s*$/)
-    if (!iifeClose || iifeClose.index === undefined) return null
+    const iifeClose = /\}\s*\)\s*\(\s*\)\s*;?\s*$/.exec(code)
+    if (iifeClose?.index === undefined) return null
 
     // Extract inner content between opening { and closing }
     const innerStart = iifeOpen[0].length
@@ -308,7 +308,7 @@ export class PluginParser {
     let minIndent = Infinity
     for (const line of lines) {
       if (line.trim().length === 0) continue
-      const indent = line.match(/^(\s*)/)?.[1].length ?? 0
+      const indent = /^(\s*)/.exec(line)?.[1].length ?? 0
       if (indent < minIndent) minIndent = indent
     }
     if (minIndent > 0 && minIndent < Infinity) {
@@ -356,7 +356,7 @@ export class PluginParser {
         if (braceCount === 0) {
           // Look for the closing );
           const rest = code.slice(i + 1)
-          const closeMatch = rest.match(/^\s*\)\s*;?/)
+          const closeMatch = /^\s*\)\s*;?/.exec(rest)
           if (closeMatch) {
             return i + 1 + closeMatch[0].length
           }
@@ -824,7 +824,7 @@ export class PluginParser {
       const baseNormalized = baseStr.toLowerCase()
 
       // Array of structs: struct<Name>[]
-      const structArrayMatch = baseStr.match(/^struct<(\w+)>$/i)
+      const structArrayMatch = /^struct<(\w+)>$/i.exec(baseStr)
       if (structArrayMatch) {
         return { type: 'array', arrayType: 'struct', structType: structArrayMatch[1] }
       }
@@ -835,7 +835,7 @@ export class PluginParser {
     }
 
     // Check for struct (non-array)
-    const structMatch = trimmed.match(/^struct<(\w+)>$/i)
+    const structMatch = /^struct<(\w+)>$/i.exec(trimmed)
     if (structMatch) {
       return { type: 'struct', structType: structMatch[1] }
     }

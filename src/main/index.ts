@@ -62,12 +62,12 @@ function createWindow(): void {
 
   // The page holds back its unload while any plugin is unsaved: ask before the window closes
   const win = mainWindow
-  win.webContents.on('will-prevent-unload', (event) =>
+  win.webContents.on('will-prevent-unload', (event) => {
     handleWillPreventUnload(event, (options) => dialog.showMessageBoxSync(win, options))
-  )
+  })
 
   mainWindow.webContents.setWindowOpenHandler(
-    createWindowOpenHandler((url) => shell.openExternal(url))
+    createWindowOpenHandler(async (url) => shell.openExternal(url))
   )
 
   if (devServerUrl) {
