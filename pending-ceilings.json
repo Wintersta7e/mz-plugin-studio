@@ -29,13 +29,10 @@
   "scripts": {
     "strict": {
       "scripts/ci-policy.mjs": 9,
-      "scripts/e2e-prepare.mjs": 2,
       "scripts/third-party-licenses.mjs": 6
     },
     "noImplicitAny": {
       "scripts/ci-policy.mjs": 57,
-      "scripts/e2e-prepare.mjs": 1,
-      "scripts/e2e-visual-update.mjs": 1,
       "scripts/third-party-licenses.mjs": 10
     },
     "exactOptionalPropertyTypes": {

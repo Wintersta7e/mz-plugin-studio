@@ -606,67 +606,6 @@
       "count": 6
     }
   },
-  "scripts/e2e-prepare.mjs": {
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 8
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/prefer-await": {
-      "count": 1
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-set-methods": {
-      "count": 1
-    },
-    "unicorn/prefer-top-level-await": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 11
-    }
-  },
-  "scripts/e2e-visual-update.mjs": {
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-top-level-side-effects": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
   "scripts/third-party-licenses.mjs": {
     "n/no-process-exit": {
       "count": 2
