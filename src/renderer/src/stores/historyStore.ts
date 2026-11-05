@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { PluginDefinition } from '../types/plugin'
-import { usePluginStore } from './pluginStore'
 
 /** Plugin snapshot stored in history — rawSource is always stripped to save memory (R3-07) */
 type HistoryPluginSnapshot = Omit<PluginDefinition, 'rawSource'> & { rawSource?: undefined }
@@ -33,8 +32,8 @@ interface HistoryState {
   activePluginId: string | null
 
   push: (plugin: PluginDefinition) => void
-  undo: () => HistoryPluginSnapshot | null
-  redo: () => HistoryPluginSnapshot | null
+  undo: (current: PluginDefinition) => HistoryPluginSnapshot | null
+  redo: (current: PluginDefinition) => HistoryPluginSnapshot | null
   clear: () => void
   /** Call when switching plugins to reset history for the new context */
   setActivePluginId: (id: string | null) => void
@@ -78,9 +77,8 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
   // The app records each state once edits pause, so the newest entry of `past` is the state
   // shown unless an edit is still waiting to be recorded
-  undo: () => {
+  undo: (current) => {
     const { past, future } = get()
-    const current = usePluginStore.getState().plugin
     const top = past[past.length - 1]
     const shown = top !== undefined && shows(top, current)
     const earlier = shown ? past.slice(0, -1) : past
@@ -92,13 +90,12 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     return previous.plugin
   },
 
-  redo: () => {
+  redo: (current) => {
     const { past, future } = get()
     if (future.length === 0) return null
 
     const next = future[0]
     const top = past[past.length - 1]
-    const current = usePluginStore.getState().plugin
     const unrecorded = top !== undefined && shows(top, current) ? [] : [entryOf(current)]
 
     set({ past: [...past, ...unrecorded, next], future: future.slice(1) })

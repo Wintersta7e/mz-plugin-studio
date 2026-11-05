@@ -265,7 +265,7 @@ function App() {
 
       switch (shortcut.key) {
         case 'ctrl+z': {
-          const prev = undo()
+          const prev = undo(usePluginStore.getState().plugin)
           if (prev) {
             isUndoRedoRef.current = true
             // Restore rawSource from current plugin since history strips it to save memory
@@ -275,7 +275,7 @@ function App() {
           break
         }
         case 'ctrl+shift+z': {
-          const next = redo()
+          const next = redo(usePluginStore.getState().plugin)
           if (next) {
             isUndoRedoRef.current = true
             const currentRawSource = usePluginStore.getState().plugin.rawSource

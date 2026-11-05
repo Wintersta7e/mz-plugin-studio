@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useHistoryStore } from '../../src/renderer/src/stores/historyStore'
 import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
-import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'
 
 function resetStores() {
   localStorage.clear()
@@ -15,16 +15,21 @@ function createPlugin(name: string) {
   return plugin
 }
 
+// The plugin the app shows now, which undo and redo step from.
+function shownPlugin(): PluginDefinition {
+  return usePluginStore.getState().plugin
+}
+
 /** One undo step, its result shown as the app shows it. */
 function undoShown() {
-  const result = useHistoryStore.getState().undo()
+  const result = useHistoryStore.getState().undo(shownPlugin())
   if (result) usePluginStore.getState().setPlugin(result)
   return result
 }
 
 /** One redo step, its result shown as the app shows it. */
 function redoShown() {
-  const result = useHistoryStore.getState().redo()
+  const result = useHistoryStore.getState().redo(shownPlugin())
   if (result) usePluginStore.getState().setPlugin(result)
   return result
 }
@@ -117,7 +122,7 @@ describe('historyStore', () => {
       // Set pluginV2 as current in pluginStore so undo captures it
       usePluginStore.getState().openPlugin(pluginV2)
 
-      const result = useHistoryStore.getState().undo()
+      const result = useHistoryStore.getState().undo(shownPlugin())
 
       expect(result?.id).toBe(pluginV1.id)
       expect(result?.meta?.description).toBe('')
@@ -133,13 +138,13 @@ describe('historyStore', () => {
       useHistoryStore.getState().push(pluginV1)
       usePluginStore.getState().openPlugin(pluginV2)
 
-      expect(useHistoryStore.getState().undo()?.meta.description).toBe('')
+      expect(useHistoryStore.getState().undo(shownPlugin())?.meta.description).toBe('')
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future[0].plugin.meta.description).toBe('v2')
     })
 
     it('returns null when past is empty', () => {
-      const result = useHistoryStore.getState().undo()
+      const result = useHistoryStore.getState().undo(shownPlugin())
 
       expect(result).toBeNull()
     })
@@ -149,7 +154,7 @@ describe('historyStore', () => {
       useHistoryStore.getState().push(plugin)
       usePluginStore.getState().openPlugin(plugin)
 
-      expect(useHistoryStore.getState().undo()).toBeNull()
+      expect(useHistoryStore.getState().undo(shownPlugin())).toBeNull()
       expect(useHistoryStore.getState().past).toHaveLength(1)
       expect(useHistoryStore.getState().future).toHaveLength(0)
     })
@@ -205,7 +210,7 @@ describe('historyStore', () => {
     })
 
     it('returns null when future is empty', () => {
-      const result = useHistoryStore.getState().redo()
+      const result = useHistoryStore.getState().redo(shownPlugin())
 
       expect(result).toBeNull()
     })
@@ -216,7 +221,7 @@ describe('historyStore', () => {
       const plugin = createPlugin('Alpha')
       useHistoryStore.getState().push(plugin)
       usePluginStore.getState().openPlugin(plugin)
-      useHistoryStore.getState().undo()
+      useHistoryStore.getState().undo(shownPlugin())
 
       expect(
         useHistoryStore.getState().past.length + useHistoryStore.getState().future.length
@@ -236,7 +241,7 @@ describe('historyStore', () => {
 
       useHistoryStore.getState().push(pluginA)
       usePluginStore.getState().openPlugin(pluginA)
-      useHistoryStore.getState().undo()
+      useHistoryStore.getState().undo(shownPlugin())
 
       expect(
         useHistoryStore.getState().past.length + useHistoryStore.getState().future.length
