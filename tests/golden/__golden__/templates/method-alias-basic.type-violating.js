@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"className":42,"methodName":42,"timing":7,"callOriginal":"yes"}
-// rejects: Method "42" not found on class "42"
+// rejects: Field "Class" must be text | Field "Method" must be text | Field "When to run your code" must be text | Field "Call original method" must be true or false
 // Alias: 42.42
 const _42_42 = 42.prototype.42;
 42.prototype.42 = function() {
@@ -22,7 +22,7 @@ null.prototype.null = function() {
 };
 
 // ==== case: type-violating: arrays {"className":["a","b"],"methodName":["a","b"],"timing":["a","b"],"callOriginal":["a","b"]}
-// rejects: Method "a,b" not found on class "a,b"
+// rejects: Field "Class" must be text | Field "Method" must be text | Field "When to run your code" must be text | Field "Call original method" must be true or false
 // Alias: a,b.a,b
 const _a,b_a,b = a,b.prototype.a,b;
 a,b.prototype.a,b = function() {

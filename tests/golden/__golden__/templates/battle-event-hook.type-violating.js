@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"eventType":7}
+// rejects: Field "Event" must be text
 // throws: TypeError
 
 // ==== case: type-violating: null {"eventType":null}
@@ -12,4 +13,5 @@ BattleManager.processVictory = function() {
 };
 
 // ==== case: type-violating: arrays {"eventType":["a","b"]}
+// rejects: Field "Event" must be text
 // throws: TypeError

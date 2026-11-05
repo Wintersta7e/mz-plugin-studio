@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"hookType":7,"stateId":42}
-// validation throws: TypeError
+// rejects: Field "Hook Type" must be text | Field "State ID (optional)" must be text
 
 
 // ==== case: type-violating: null {"hookType":null,"stateId":null}
@@ -21,5 +21,5 @@ Game_Battler.prototype.onStateAdded = function(stateId) {
 };
 
 // ==== case: type-violating: arrays {"hookType":["a","b"],"stateId":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Hook Type" must be text | Field "State ID (optional)" must be text
 

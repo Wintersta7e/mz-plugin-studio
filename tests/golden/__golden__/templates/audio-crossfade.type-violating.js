@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"crossfadeType":7,"newBgmFilename":42,"fadeFromSilenceBgm":42,"fadeOutDuration":"abc","fadeInDuration":"abc","newBgmVolume":"abc","newBgmPitch":"abc","wrapInFunction":"yes","functionName":42}
-// rejects: Function name must be a valid JavaScript identifier
+// rejects: Field "Crossfade Type" must be text | Field "New BGM Filename" must be text | Field "BGM Filename" must be text | Field "Fade Out Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "New BGM Volume" must be a number | Field "New BGM Pitch" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
 // Fade from Silence Function
 function 42() {
 }
@@ -34,7 +34,7 @@ function crossfadeBgm() {
 }
 
 // ==== case: type-violating: arrays {"crossfadeType":["a","b"],"newBgmFilename":["a","b"],"fadeFromSilenceBgm":["a","b"],"fadeOutDuration":["a","b"],"fadeInDuration":["a","b"],"newBgmVolume":["a","b"],"newBgmPitch":["a","b"],"wrapInFunction":["a","b"],"functionName":["a","b"]}
-// rejects: Function name must be a valid JavaScript identifier
+// rejects: Field "Crossfade Type" must be text | Field "New BGM Filename" must be text | Field "BGM Filename" must be text | Field "Fade Out Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "New BGM Volume" must be a number | Field "New BGM Pitch" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
 // Fade from Silence Function
 function a,b() {
 }

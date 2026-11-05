@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"propertyName":42,"dataType":7,"defaultValue":42,"minValue":42,"maxValue":42,"includeChange":"yes"}
-// validation throws: TypeError
+// rejects: Field "Property Name" must be text | Field "Data Type" must be text | Field "Default Value" must be text | Field "Minimum Value (for numbers)" must be text | Field "Maximum Value (for numbers)" must be text | Field "Include Change Method" must be true or false
 // throws: TypeError
 
 // ==== case: type-violating: null {"propertyName":null,"dataType":null,"defaultValue":null,"minValue":null,"maxValue":null,"includeChange":null}
@@ -30,5 +30,5 @@ Game_Actor.prototype.change = function(amount) {
 };
 
 // ==== case: type-violating: arrays {"propertyName":["a","b"],"dataType":["a","b"],"defaultValue":["a","b"],"minValue":["a","b"],"maxValue":["a","b"],"includeChange":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Property Name" must be text | Field "Data Type" must be text | Field "Default Value" must be text | Field "Minimum Value (for numbers)" must be text | Field "Maximum Value (for numbers)" must be text | Field "Include Change Method" must be true or false
 // throws: TypeError

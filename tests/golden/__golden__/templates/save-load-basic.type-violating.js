@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"dataName":42,"storageLocation":7,"dataType":7,"defaultValue":42}
-// validation throws: TypeError
+// rejects: Field "Data Property Name" must be text | Field "Storage Location" must be text | Field "Data Type" must be text | Field "Default Value" must be text
 // throws: TypeError
 
 // ==== case: type-violating: null {"dataName":null,"storageLocation":null,"dataType":null,"defaultValue":null}
@@ -34,5 +34,5 @@ Game_System.prototype.setValue = function(key, value) {
 };
 
 // ==== case: type-violating: arrays {"dataName":["a","b"],"storageLocation":["a","b"],"dataType":["a","b"],"defaultValue":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Data Property Name" must be text | Field "Storage Location" must be text | Field "Data Type" must be text | Field "Default Value" must be text
 // throws: TypeError

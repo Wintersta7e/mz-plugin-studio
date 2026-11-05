@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"eventType":7,"timing":7,"slotFilter":7}
+// rejects: Field "Event Type" must be text | Field "Timing" must be text | Field "Slot Filter (optional)" must be text
 // throws: TypeError
 
 // ==== case: type-violating: null {"eventType":null,"timing":null,"slotFilter":null}
@@ -42,4 +43,5 @@ Game_Actor.prototype.onAfterUnequip = function(slotId, item) {
 };
 
 // ==== case: type-violating: arrays {"eventType":["a","b"],"timing":["a","b"],"slotFilter":["a","b"]}
+// rejects: Field "Event Type" must be text | Field "Timing" must be text | Field "Slot Filter (optional)" must be text
 // throws: TypeError

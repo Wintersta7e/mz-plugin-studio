@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"functionName":42,"templateEventId":"abc","persistAcrossTransfer":"yes","maxSpawnedEvents":"abc"}
-// validation throws: TypeError
+// rejects: Field "Function Name" must be text | Field "Template Event ID" must be a number | Field "Persist Across Map Transfer" must be true or false | Field "Max Spawned Events" must be a number
 // Event Spawn System
 // Allows dynamic spawning of events at runtime
 
@@ -261,7 +261,7 @@
 })();
 
 // ==== case: type-violating: arrays {"functionName":["a","b"],"templateEventId":["a","b"],"persistAcrossTransfer":["a","b"],"maxSpawnedEvents":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Function Name" must be text | Field "Template Event ID" must be a number | Field "Persist Across Map Transfer" must be true or false | Field "Max Spawned Events" must be a number
 // Event Spawn System
 // Allows dynamic spawning of events at runtime
 

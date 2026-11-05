@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"sceneName":7,"hookPoint":7}
+// rejects: Field "Scene" must be text | Field "Hook Point" must be text
 // Hook: 7.7
 const _7_7 = 7.prototype.7;
 7.prototype.7 = function() {
@@ -19,6 +20,7 @@ null.prototype.null = function() {
 };
 
 // ==== case: type-violating: arrays {"sceneName":["a","b"],"hookPoint":["a","b"]}
+// rejects: Field "Scene" must be text | Field "Hook Point" must be text
 // Hook: a,b.a,b
 const _a,b_a,b = a,b.prototype.a,b;
 a,b.prototype.a,b = function() {

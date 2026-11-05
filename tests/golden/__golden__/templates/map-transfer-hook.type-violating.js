@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"timing":7,"filterMapId":42,"includeFadeInfo":"yes","includeDirection":"yes"}
-// validation throws: TypeError
+// rejects: Field "Timing" must be text | Field "Filter by Map ID (optional)" must be text | Field "Include Fade Information" must be true or false | Field "Include Direction Information" must be true or false
 // Map Transfer Hook
 // Execute custom code when transferring between maps
 
@@ -39,7 +39,7 @@
 })();
 
 // ==== case: type-violating: arrays {"timing":["a","b"],"filterMapId":["a","b"],"includeFadeInfo":["a","b"],"includeDirection":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Timing" must be text | Field "Filter by Map ID (optional)" must be text | Field "Include Fade Information" must be true or false | Field "Include Direction Information" must be true or false
 // Map Transfer Hook
 // Execute custom code when transferring between maps
 

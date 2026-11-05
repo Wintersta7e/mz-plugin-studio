@@ -4,7 +4,7 @@ Central registry for code generation templates
 */
 
 import log from 'electron-log/renderer'
-import type { CodeTemplate, TemplateCategory } from './types'
+import type { CodeTemplate, TemplateCategory, TemplateField } from './types'
 
 // Re-export all types
 export * from './types'
@@ -52,6 +52,17 @@ export function getTemplate(id: string): CodeTemplate | undefined {
   return templates.get(id)
 }
 
+// The JavaScript type a value of each field type holds, and how an error names it.
+const FIELD_KINDS: Record<TemplateField['type'], { type: string; name: string }> = {
+  text: { type: 'string', name: 'text' },
+  select: { type: 'string', name: 'text' },
+  'class-select': { type: 'string', name: 'text' },
+  'method-select': { type: 'string', name: 'text' },
+  'key-select': { type: 'string', name: 'text' },
+  number: { type: 'number', name: 'a number' },
+  boolean: { type: 'boolean', name: 'true or false' }
+}
+
 /**
 Validate template values without generating code
 @param templateId - The ID of the template
@@ -75,8 +86,19 @@ export function validateTemplateValues(
     }
   }
 
+  // A value of another type than its field is rejected here, before the template's own check
+  // reads it as the declared type
+  let hasWrongType = false
+  for (const field of template.fields) {
+    const value = values[field.id]
+    const kind = FIELD_KINDS[field.type]
+    if (value === undefined || value === null || typeof value === kind.type) continue
+    hasWrongType = true
+    errors.push(`Field "${field.label}" must be ${kind.name}`)
+  }
+
   // Run custom validator if present
-  if (template.validate) {
+  if (!hasWrongType && template.validate) {
     const customValidation = template.validate(values)
     errors.push(...customValidation.errors)
   }

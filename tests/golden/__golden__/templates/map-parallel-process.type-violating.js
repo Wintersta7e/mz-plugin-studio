@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"processName":42,"updateInterval":"abc","activeCondition":7,"conditionId":"abc","conditionValue":"abc","pauseInMenu":"yes","pauseInBattle":"yes"}
-// validation throws: TypeError
+// rejects: Field "Process Name" must be text | Field "Update Interval (frames)" must be a number | Field "Active Condition" must be text | Field "Switch/Variable ID" must be a number | Field "Variable Value" must be a number | Field "Pause in Menu" must be true or false | Field "Pause in Battle" must be true or false
 // throws: TypeError
 
 // ==== case: type-violating: null {"processName":null,"updateInterval":null,"activeCondition":null,"conditionId":null,"conditionValue":null,"pauseInMenu":null,"pauseInBattle":null}
@@ -61,5 +61,5 @@
 })();
 
 // ==== case: type-violating: arrays {"processName":["a","b"],"updateInterval":["a","b"],"activeCondition":["a","b"],"conditionId":["a","b"],"conditionValue":["a","b"],"pauseInMenu":["a","b"],"pauseInBattle":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Process Name" must be text | Field "Update Interval (frames)" must be a number | Field "Active Condition" must be text | Field "Switch/Variable ID" must be a number | Field "Variable Value" must be a number | Field "Pause in Menu" must be true or false | Field "Pause in Battle" must be true or false
 // throws: TypeError

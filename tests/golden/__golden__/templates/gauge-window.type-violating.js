@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"windowName":42,"gaugeCount":7,"gauge1Label":42,"gauge1Color1":42,"gauge1Color2":42,"gauge2Label":42,"gauge2Color1":42,"gauge2Color2":42,"gauge3Label":42,"gauge3Color1":42,"gauge3Color2":42,"positionX":"abc","positionY":"abc","width":"abc","gaugeHeight":"abc","showLabels":7,"showValues":7,"dataSource":7}
-// validation throws: TypeError
+// rejects: Field "Window Name" must be text | Field "Number of Gauges" must be text | Field "Gauge 1 Label" must be text | Field "Gauge 1 Color (Start)" must be text | Field "Gauge 1 Color (End)" must be text | Field "Gauge 2 Label" must be text | Field "Gauge 2 Color (Start)" must be text | Field "Gauge 2 Color (End)" must be text | Field "Gauge 3 Label" must be text | Field "Gauge 3 Color (Start)" must be text | Field "Gauge 3 Color (End)" must be text | Field "X Position" must be a number | Field "Y Position" must be a number | Field "Width" must be a number | Field "Gauge Height" must be a number | Field "Show Labels" must be text | Field "Show Values" must be text | Field "Data Source" must be text
 // throws: TypeError
 
 // ==== case: type-violating: null {"windowName":null,"gaugeCount":null,"gauge1Label":null,"gauge1Color1":null,"gauge1Color2":null,"gauge2Label":null,"gauge2Color1":null,"gauge2Color2":null,"gauge3Label":null,"gauge3Color1":null,"gauge3Color2":null,"positionX":null,"positionY":null,"width":null,"gaugeHeight":null,"showLabels":null,"showValues":null,"dataSource":null}
@@ -7,5 +7,5 @@
 // throws: TypeError
 
 // ==== case: type-violating: arrays {"windowName":["a","b"],"gaugeCount":["a","b"],"gauge1Label":["a","b"],"gauge1Color1":["a","b"],"gauge1Color2":["a","b"],"gauge2Label":["a","b"],"gauge2Color1":["a","b"],"gauge2Color2":["a","b"],"gauge3Label":["a","b"],"gauge3Color1":["a","b"],"gauge3Color2":["a","b"],"positionX":["a","b"],"positionY":["a","b"],"width":["a","b"],"gaugeHeight":["a","b"],"showLabels":["a","b"],"showValues":["a","b"],"dataSource":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Window Name" must be text | Field "Number of Gauges" must be text | Field "Gauge 1 Label" must be text | Field "Gauge 1 Color (Start)" must be text | Field "Gauge 1 Color (End)" must be text | Field "Gauge 2 Label" must be text | Field "Gauge 2 Color (Start)" must be text | Field "Gauge 2 Color (End)" must be text | Field "Gauge 3 Label" must be text | Field "Gauge 3 Color (Start)" must be text | Field "Gauge 3 Color (End)" must be text | Field "X Position" must be a number | Field "Y Position" must be a number | Field "Width" must be a number | Field "Gauge Height" must be a number | Field "Show Labels" must be text | Field "Show Values" must be text | Field "Data Source" must be text
 // throws: TypeError

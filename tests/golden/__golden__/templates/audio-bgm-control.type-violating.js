@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"operation":7,"filename":42,"volume":"abc","pitch":"abc","pan":"abc","fadeDuration":"abc","fadeInDuration":"abc","wrapInFunction":"yes","functionName":42}
-// rejects: Function name must be a valid JavaScript identifier
+// rejects: Field "Operation" must be text | Field "BGM Filename" must be text | Field "Volume" must be a number | Field "Pitch" must be a number | Field "Pan" must be a number | Field "Fade Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
 // BGM Control Function: 7
 function 42() {
 }
@@ -19,7 +19,7 @@ function customBgmControl() {
 }
 
 // ==== case: type-violating: arrays {"operation":["a","b"],"filename":["a","b"],"volume":["a","b"],"pitch":["a","b"],"pan":["a","b"],"fadeDuration":["a","b"],"fadeInDuration":["a","b"],"wrapInFunction":["a","b"],"functionName":["a","b"]}
-// rejects: Function name must be a valid JavaScript identifier
+// rejects: Field "Operation" must be text | Field "BGM Filename" must be text | Field "Volume" must be a number | Field "Pitch" must be a number | Field "Pan" must be a number | Field "Fade Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
 // BGM Control Function: a,b
 function a,b() {
 }

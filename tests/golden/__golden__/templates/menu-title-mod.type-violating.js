@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"modType":7,"commandName":42,"commandSymbol":42,"hideTarget":7}
+// rejects: Field "Modification Type" must be text | Field "Command Name" must be text | Field "Command Symbol" must be text | Field "Command to Hide" must be text
 
 
 // ==== case: type-violating: null {"modType":null,"commandName":null,"commandSymbol":null,"hideTarget":null}
@@ -28,4 +29,5 @@ Scene_Title.prototype.commandcustom = function() {
 };
 
 // ==== case: type-violating: arrays {"modType":["a","b"],"commandName":["a","b"],"commandSymbol":["a","b"],"hideTarget":["a","b"]}
+// rejects: Field "Modification Type" must be text | Field "Command Name" must be text | Field "Command Symbol" must be text | Field "Command to Hide" must be text
 

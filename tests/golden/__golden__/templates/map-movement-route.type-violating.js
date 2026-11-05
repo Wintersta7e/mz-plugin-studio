@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"functionName":42,"includeHelpers":"yes","waitForCompletion":"yes"}
-// validation throws: TypeError
+// rejects: Field "Function Name" must be text | Field "Include Helper Functions" must be true or false | Field "Wait for Completion Support" must be true or false
 // Custom Movement Route System
 // Create and apply movement routes to events programmatically
 
@@ -245,7 +245,7 @@
 })();
 
 // ==== case: type-violating: arrays {"functionName":["a","b"],"includeHelpers":["a","b"],"waitForCompletion":["a","b"]}
-// validation throws: TypeError
+// rejects: Field "Function Name" must be text | Field "Include Helper Functions" must be true or false | Field "Wait for Completion Support" must be true or false
 // Custom Movement Route System
 // Create and apply movement routes to events programmatically
 

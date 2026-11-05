@@ -36,7 +36,7 @@ const FLOORS = {
       [`${GENERATOR}/index.ts`]: 96,
       [`${GENERATOR}/escape.ts`]: 97,
       [`${GENERATOR}/class-registry.ts`]: 100,
-      [`${GENERATOR}/templates/index.ts`]: 85,
+      [`${GENERATOR}/templates/index.ts`]: 88,
       [`${GENERATOR}/templates/types.ts`]: 100,
       [`${GENERATOR}/templates/actor-party.ts`]: 80,
       [`${GENERATOR}/templates/audio-system.ts`]: 96,

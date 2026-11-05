@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"modifyType":7,"modifyValue":42,"condition":7}
+// rejects: Field "Modification Type" must be text | Field "Value" must be text | Field "Condition" must be text
 // Damage Modifier: Custom formula (for magical attacks)
 const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
 Game_Action.prototype.makeDamageValue = function(target, critical) {
@@ -24,6 +25,7 @@ Game_Action.prototype.makeDamageValue = function(target, critical) {
 };
 
 // ==== case: type-violating: arrays {"modifyType":["a","b"],"modifyValue":["a","b"],"condition":["a","b"]}
+// rejects: Field "Modification Type" must be text | Field "Value" must be text | Field "Condition" must be text
 // Damage Modifier: Custom formula (for magical attacks)
 const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
 Game_Action.prototype.makeDamageValue = function(target, critical) {

@@ -1,4 +1,5 @@
 // ==== case: type-violating: wrong types {"featureType":7,"maxSize":"abc","minSize":"abc","hookTiming":7,"maxReserve":"abc"}
+// rejects: Field "Feature Type" must be text | Field "Maximum Party Size" must be a number | Field "Minimum Party Size" must be a number | Field "Hook Timing" must be text | Field "Maximum Reserve Size" must be a number
 
 
 // ==== case: type-violating: null {"featureType":null,"maxSize":null,"minSize":null,"hookTiming":null,"maxReserve":null}
@@ -31,4 +32,5 @@ Game_Party.prototype.remainingSlots = function() {
 };
 
 // ==== case: type-violating: arrays {"featureType":["a","b"],"maxSize":["a","b"],"minSize":["a","b"],"hookTiming":["a","b"],"maxReserve":["a","b"]}
+// rejects: Field "Feature Type" must be text | Field "Maximum Party Size" must be a number | Field "Minimum Party Size" must be a number | Field "Hook Timing" must be text | Field "Maximum Reserve Size" must be a number
 

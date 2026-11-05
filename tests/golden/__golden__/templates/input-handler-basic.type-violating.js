@@ -1,5 +1,5 @@
 // ==== case: type-violating: wrong types {"keyName":7,"triggerType":7,"activeScene":7}
-// rejects: Unknown key: 7 | Invalid trigger type: 7 | Invalid scene: 7
+// rejects: Field "Key" must be text | Field "Trigger Type" must be text | Field "Active Scene" must be text
 // Input Handler: undefined key on 7
 // Triggers undefined
 
@@ -40,7 +40,7 @@ Scene_Map.prototype.updateCustomKeyInput = function() {
 };
 
 // ==== case: type-violating: arrays {"keyName":["a","b"],"triggerType":["a","b"],"activeScene":["a","b"]}
-// rejects: Unknown key: a,b | Invalid trigger type: a,b | Invalid scene: a,b
+// rejects: Field "Key" must be text | Field "Trigger Type" must be text | Field "Active Scene" must be text
 // Input Handler: undefined key on a,b
 // Triggers undefined
 
