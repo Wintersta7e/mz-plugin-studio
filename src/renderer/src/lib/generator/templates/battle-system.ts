@@ -1,12 +1,12 @@
 /**
- * Battle System Templates
- *
- * Templates for modifying RPG Maker MZ battle mechanics:
- * - Damage calculation modification
- * - Battle event hooks (victory, defeat, escape, etc.)
- * - State change hooks
- * - Action execution hooks
- */
+Battle System Templates
+
+Templates for modifying RPG Maker MZ battle mechanics:
+- Damage calculation modification
+- Battle event hooks (victory, defeat, escape, etc.)
+- State change hooks
+- Action execution hooks
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -14,38 +14,40 @@ import { isOneLineExpression } from '../escape'
 import { expectText, valueOr } from './values'
 
 /**
- * Helper to generate condition check code for damage modifiers
- */
-function generateConditionCheck(condition: unknown, varName = 'value'): string {
+Helper to generate condition check code for damage modifiers
+*/
+function generateConditionCheck(condition: unknown, variableName = 'value'): string {
   switch (condition) {
-    case 'critical':
-      return `    if (critical) {\n        ${varName} = `
-    case 'skill':
-      return `    if (this.isSkill()) {\n        ${varName} = `
-    case 'physical':
-      return `    if (this.isPhysical()) {\n        ${varName} = `
-    case 'magical':
-      return `    if (this.isMagical()) {\n        ${varName} = `
+    case 'critical': {
+      return `    if (critical) {\n        ${variableName} = `
+    }
+    case 'skill': {
+      return `    if (this.isSkill()) {\n        ${variableName} = `
+    }
+    case 'physical': {
+      return `    if (this.isPhysical()) {\n        ${variableName} = `
+    }
+    case 'magical': {
+      return `    if (this.isMagical()) {\n        ${variableName} = `
+    }
     case 'always':
-    default:
-      return `    ${varName} = `
+    default: {
+      return `    ${variableName} = `
+    }
   }
 }
 
 /**
- * Helper to close condition block if needed
- */
+Helper to close condition block if needed
+*/
 function closeConditionCheck(condition: unknown): string {
-  if (condition !== 'always') {
-    return '\n    }'
-  }
-  return ''
+  return condition === 'always' ? '' : '\n    }'
 }
 
 /**
- * Template 1: Damage Formula Modifier
- * Modifies damage calculation in battle with various options
- */
+Template 1: Damage Formula Modifier
+Modifies damage calculation in battle with various options
+*/
 const damageModifierTemplate: CodeTemplate = {
   id: 'battle-damage-modifier',
   category: 'battle-system',
@@ -128,18 +130,21 @@ const damageModifierTemplate: CodeTemplate = {
     let modificationCode: string
 
     switch (modifyType) {
-      case 'multiply':
+      case 'multiply': {
         // Healing skills produce negative value in MZ; Math.floor(-3.5) = -4
         // would over-heal by 1. Split on sign to keep healing symmetric.
         modificationCode = `value >= 0 ? Math.floor(value * ${modifyValue}) : Math.ceil(value * ${modifyValue});`
         break
-      case 'add':
+      }
+      case 'add': {
         modificationCode = `value + ${modifyValue};`
         break
+      }
       case 'custom':
-      default:
+      default: {
         modificationCode = `${modifyValue}; // Custom formula - edit as needed`
         break
+      }
     }
 
     lines.push(conditionStart + modificationCode + closeConditionCheck(condition))
@@ -158,15 +163,15 @@ const damageModifierTemplate: CodeTemplate = {
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
-        const num = parseFloat(String(modifyValue))
-        if (isNaN(num)) {
+        const number_ = Number.parseFloat(String(modifyValue))
+        if (Number.isNaN(number_)) {
           errors.push('Value must be a valid number for multiply/add operations')
-        } else if (String(num) !== expectText(modifyValue).trim()) {
+        } else if (String(number_) !== expectText(modifyValue).trim()) {
           // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
           errors.push(
             'Value must contain only numeric characters (digits, decimal point, minus sign)'
           )
-        } else if (modifyType === 'multiply' && num <= 0) {
+        } else if (modifyType === 'multiply' && number_ <= 0) {
           errors.push('Multiplier should be a positive number')
         }
       } else if (
@@ -188,9 +193,9 @@ const damageModifierTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Battle Event Hook
- * React to battle events (victory, defeat, escape, etc.)
- */
+Template 2: Battle Event Hook
+React to battle events (victory, defeat, escape, etc.)
+*/
 const battleEventTemplate: CodeTemplate = {
   id: 'battle-event-hook',
   category: 'battle-system',
@@ -293,9 +298,9 @@ const battleEventTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: State Change Hook
- * React when states are added or removed from battlers
- */
+Template 3: State Change Hook
+React when states are added or removed from battlers
+*/
 const stateHookTemplate: CodeTemplate = {
   id: 'battle-state-hook',
   category: 'battle-system',
@@ -400,11 +405,13 @@ const stateHookTemplate: CodeTemplate = {
     const hasStateId = Boolean(stateId)
 
     // Validate state ID if provided
-    if (hasStateId && expectText(stateId).trim() !== '') {
-      // The whole text is written as code: parseInt would pass anything after the digits.
-      if (!/^[1-9]\d*$/.test(expectText(stateId).trim())) {
-        errors.push('State ID must be a positive integer')
-      }
+    // The whole text is written as code: parseInt would pass anything after the digits.
+    if (
+      hasStateId &&
+      expectText(stateId).trim() !== '' &&
+      !/^[1-9]\d*$/.test(expectText(stateId).trim())
+    ) {
+      errors.push('State ID must be a positive integer')
     }
 
     return {
@@ -415,9 +422,9 @@ const stateHookTemplate: CodeTemplate = {
 }
 
 /**
- * Template 4: Action Execution Hook
- * React before or after battle actions execute
- */
+Template 4: Action Execution Hook
+React before or after battle actions execute
+*/
 const actionSequenceTemplate: CodeTemplate = {
   id: 'battle-action-hook',
   category: 'battle-system',
@@ -462,25 +469,30 @@ const actionSequenceTemplate: CodeTemplate = {
     let actionLabel = 'all actions'
 
     switch (actionType) {
-      case 'skill':
+      case 'skill': {
         actionCheck = 'this._action.isSkill()'
         actionLabel = 'skills'
         break
-      case 'item':
+      }
+      case 'item': {
         actionCheck = 'this._action.isItem()'
         actionLabel = 'items'
         break
-      case 'attack':
+      }
+      case 'attack': {
         actionCheck = 'this._action.isAttack()'
         actionLabel = 'normal attacks'
         break
-      case 'guard':
+      }
+      case 'guard': {
         actionCheck = 'this._action.isGuard()'
         actionLabel = 'guard actions'
         break
-      default:
+      }
+      default: {
         actionCheck = ''
         actionLabel = 'all actions'
+      }
     }
 
     const timingLabel = timing === 'before' ? 'Before' : 'After'

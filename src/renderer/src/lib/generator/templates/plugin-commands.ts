@@ -1,11 +1,11 @@
 /**
- * Plugin Command Templates
- *
- * Templates for creating RPG Maker MZ plugin commands:
- * - Basic plugin command registration with arguments
- * - Async command with interpreter wait
- * - Command with input validation and error handling
- */
+Plugin Command Templates
+
+Templates for creating RPG Maker MZ plugin commands:
+- Basic plugin command registration with arguments
+- Async command with interpreter wait
+- Command with input validation and error handling
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -14,26 +14,30 @@ import { JS_RESERVED } from '../index'
 import { definedOr, expectText, valueOr } from './values'
 
 /**
- * Helper to generate argument parsing code
- */
+Helper to generate argument parsing code
+*/
 function generateArgParsing(args: { name: string; type: unknown }[]): string[] {
   const lines: string[] = []
 
   for (const arg of args) {
     switch (arg.type) {
-      case 'number':
+      case 'number': {
         lines.push(`    const ${arg.name} = Number(args.${arg.name});`)
         break
-      case 'boolean':
+      }
+      case 'boolean': {
         lines.push(`    const ${arg.name} = args.${arg.name} === 'true';`)
         break
-      case 'json':
+      }
+      case 'json': {
         lines.push(`    const ${arg.name} = JSON.parse(args.${arg.name});`)
         break
+      }
       case 'string':
-      default:
+      default: {
         lines.push(`    const ${arg.name} = String(args.${arg.name});`)
         break
+      }
     }
   }
 
@@ -41,8 +45,8 @@ function generateArgParsing(args: { name: string; type: unknown }[]): string[] {
 }
 
 /**
- * Helper to generate argument info comment
- */
+Helper to generate argument info comment
+*/
 function generateArgComment(args: { name: string; type: unknown; desc: string }[]): string[] {
   if (args.length === 0) return []
 
@@ -98,9 +102,9 @@ function commandNameErrors(values: Record<string, unknown>, identifierError: str
 }
 
 /**
- * Template 1: Basic Plugin Command
- * Simple command registration with arguments
- */
+Template 1: Basic Plugin Command
+Simple command registration with arguments
+*/
 const basicCommandTemplate: CodeTemplate = {
   id: 'plugin-command-basic',
   category: 'plugin-command',
@@ -258,9 +262,9 @@ const basicCommandTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Async Command with Wait
- * Command that uses async/await with interpreter wait
- */
+Template 2: Async Command with Wait
+Command that uses async/await with interpreter wait
+*/
 const asyncCommandTemplate: CodeTemplate = {
   id: 'plugin-command-async',
   category: 'plugin-command',
@@ -314,15 +318,15 @@ const asyncCommandTemplate: CodeTemplate = {
     const waitType = valueOr(values['waitType'], 'callback')
     const waitDuration = valueOr(values['waitDuration'], 60)
 
-    const lines: string[] = []
+    const lines: string[] = [
+      `// Async Plugin Command: ${commandName}`,
+      '// This command pauses event execution until the async operation completes',
+      ''
+    ]
 
     // Header comment
-    lines.push(`// Async Plugin Command: ${commandName}`)
-    lines.push('// This command pauses event execution until the async operation completes')
-    lines.push('')
-
     switch (waitType) {
-      case 'setWaitMode':
+      case 'setWaitMode': {
         // setWaitMode approach - custom wait mode
         lines.push('// Custom wait mode for async operation')
         lines.push(
@@ -356,8 +360,9 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
         break
+      }
 
-      case 'waitCount':
+      case 'waitCount': {
         // Simple frame wait
         lines.push(
           `PluginManager.registerCommand('${escapeJSString(expectText(pluginName))}', '${escapeJSString(commandName)}', function(args) {`
@@ -376,9 +381,10 @@ const asyncCommandTemplate: CodeTemplate = {
         )
         lines.push('});')
         break
+      }
 
       case 'callback':
-      default:
+      default: {
         // Per-interpreter pending flag — storing on `this` (the Game_Interpreter
         // instance) is save-safe against parallel events and nested interpreters.
         // A module-scope flag would collide when two parallel events fire the
@@ -411,6 +417,7 @@ const asyncCommandTemplate: CodeTemplate = {
         lines.push('    }, 1000); // Example: 1 second delay')
         lines.push('});')
         break
+      }
     }
 
     return lines.join('\n')
@@ -437,9 +444,9 @@ const asyncCommandTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Command with Validation
- * Command with input validation and error handling
- */
+Template 3: Command with Validation
+Command with input validation and error handling
+*/
 const validatedCommandTemplate: CodeTemplate = {
   id: 'plugin-command-validated',
   category: 'plugin-command',
@@ -513,40 +520,43 @@ const validatedCommandTemplate: CodeTemplate = {
     // The check reads the name trimmed, so the code is written with the same text.
     const commandName = String(values['commandName'] ?? '').trim()
     const pluginName = values['pluginName']
-    const validateActorId = Boolean(values['validateActorId'])
-    const validateNumberRange = Boolean(values['validateNumberRange'])
+    const isValidateActorId = Boolean(values['validateActorId'])
+    const isValidateNumberRange = Boolean(values['validateNumberRange'])
     const minValue = definedOr(values['minValue'], 0)
     const maxValue = definedOr(values['maxValue'], 9999)
     const errorHandling = valueOr(values['errorHandling'], 'warning')
 
-    const lines: string[] = []
+    const lines: string[] = [
+      `// Plugin Command with Validation: ${commandName}`,
+      '// Includes input validation and error handling',
+      '',
+      '// Error handling helper'
+    ]
 
     // Header comment
-    lines.push(`// Plugin Command with Validation: ${commandName}`)
-    lines.push('// Includes input validation and error handling')
-    lines.push('')
-
     // Error handling helper
-    lines.push('// Error handling helper')
     switch (errorHandling) {
-      case 'silent':
+      case 'silent': {
         lines.push(`function ${commandName}_handleError(message) {`)
         lines.push(`    console.log('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
-      case 'throw':
+      }
+      case 'throw': {
         lines.push(`function ${commandName}_handleError(message) {`)
         lines.push(`    throw new Error('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('}')
         break
+      }
       case 'warning':
-      default:
+      default: {
         lines.push(`function ${commandName}_handleError(message) {`)
         lines.push(`    console.warn('[${escapeJSString(expectText(pluginName))}] ' + message);`)
         lines.push('    return false;')
         lines.push('}')
         break
+      }
     }
     lines.push('')
 
@@ -554,7 +564,7 @@ const validatedCommandTemplate: CodeTemplate = {
     lines.push('// Validation helper')
     lines.push(`function ${commandName}_validate(args) {`)
 
-    if (validateActorId) {
+    if (isValidateActorId) {
       lines.push('    // Validate actor ID')
       lines.push('    const actorId = Number(args.actorId);')
       lines.push('    if (isNaN(actorId) || actorId < 1) {')
@@ -566,7 +576,7 @@ const validatedCommandTemplate: CodeTemplate = {
       lines.push('')
     }
 
-    if (validateNumberRange) {
+    if (isValidateNumberRange) {
       lines.push('    // Validate number range')
       lines.push('    const value = Number(args.value);')
       lines.push('    if (isNaN(value)) {')
@@ -597,24 +607,24 @@ const validatedCommandTemplate: CodeTemplate = {
     lines.push('')
     lines.push('    // Parse validated arguments')
 
-    if (validateActorId) {
+    if (isValidateActorId) {
       lines.push('    const actorId = Number(args.actorId);')
       lines.push('    const actor = $gameActors.actor(actorId);')
     }
-    if (validateNumberRange) {
+    if (isValidateNumberRange) {
       lines.push('    const value = Number(args.value);')
     }
 
     lines.push('')
     lines.push('    // Your command logic here')
 
-    if (validateActorId && validateNumberRange) {
+    if (isValidateActorId && isValidateNumberRange) {
       lines.push('    // Example: Set a stat on the actor')
       lines.push(`    console.log('Setting value', value, 'on actor', actor.name());`)
       lines.push('    // actor.setHp(value);  // Uncomment and modify as needed')
-    } else if (validateActorId) {
+    } else if (isValidateActorId) {
       lines.push(`    console.log('Command executed for actor:', actor.name());`)
-    } else if (validateNumberRange) {
+    } else if (isValidateNumberRange) {
       lines.push(`    console.log('Command executed with value:', value);`)
     } else {
       lines.push(`    console.log('${escapeJSString(commandName)} executed');`)
@@ -627,14 +637,17 @@ const validatedCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors = commandNameErrors(values, 'Command name must be a valid identifier')
 
-    const validateNumberRange = Boolean(values['validateNumberRange'])
+    const isValidateNumberRange = Boolean(values['validateNumberRange'])
     const minValue = values['minValue']
     const maxValue = values['maxValue']
 
-    if (validateNumberRange) {
-      if (minValue !== undefined && maxValue !== undefined && Number(minValue) > Number(maxValue)) {
-        errors.push('Minimum value cannot be greater than maximum value')
-      }
+    if (
+      isValidateNumberRange &&
+      minValue !== undefined &&
+      maxValue !== undefined &&
+      Number(minValue) > Number(maxValue)
+    ) {
+      errors.push('Minimum value cannot be greater than maximum value')
     }
 
     return {

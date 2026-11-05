@@ -1,11 +1,11 @@
 /**
- * Audio System Templates
- *
- * Templates for RPG Maker MZ audio control:
- * - BGM playback control (play, stop, fade, save/restore)
- * - Sound effect player with pitch/volume/pan options
- * - Audio fade and crossfade effects
- */
+Audio System Templates
+
+Templates for RPG Maker MZ audio control:
+- BGM playback control (play, stop, fade, save/restore)
+- Sound effect player with pitch/volume/pan options
+- Audio fade and crossfade effects
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -30,9 +30,9 @@ function functionNameErrors(values: Record<string, unknown>): string[] {
 }
 
 /**
- * Template 1: BGM Control
- * Play, stop, fade, save/restore BGM
- */
+Template 1: BGM Control
+Play, stop, fade, save/restore BGM
+*/
 const bgmControlTemplate: CodeTemplate = {
   id: 'audio-bgm-control',
   category: 'audio-system',
@@ -128,7 +128,7 @@ const bgmControlTemplate: CodeTemplate = {
     const pan = String(providedOr(values['pan'], 0))
     const fadeDuration = String(providedOr(values['fadeDuration'], 1))
     const fadeInDuration = String(providedOr(values['fadeInDuration'], 1))
-    const wrapInFunction = values['wrapInFunction'] !== false
+    const isWrapInFunction = values['wrapInFunction'] !== false
     const functionName = String(valueOr(values['functionName'], 'customBgmControl'))
 
     const lines: string[] = []
@@ -137,7 +137,7 @@ const bgmControlTemplate: CodeTemplate = {
     let coreCode: string[] = []
 
     switch (operation) {
-      case 'play':
+      case 'play': {
         coreCode = [
           '// Play BGM with specified settings',
           'const bgm = {',
@@ -149,50 +149,56 @@ const bgmControlTemplate: CodeTemplate = {
           'AudioManager.playBgm(bgm);'
         ]
         break
+      }
 
-      case 'stop':
+      case 'stop': {
         coreCode = ['// Stop currently playing BGM', 'AudioManager.stopBgm();']
         break
+      }
 
-      case 'fadeOut':
+      case 'fadeOut': {
         coreCode = [
           '// Fade out BGM over specified duration',
           `const fadeOutDuration = ${fadeDuration}; // seconds`,
           'AudioManager.fadeOutBgm(fadeOutDuration);'
         ]
         break
+      }
 
-      case 'fadeIn':
+      case 'fadeIn': {
         coreCode = [
           '// Fade in BGM over specified duration',
           `const fadeInDuration = ${fadeInDuration}; // seconds`,
           'AudioManager.fadeInBgm(fadeInDuration);'
         ]
         break
+      }
 
-      case 'save':
+      case 'save': {
         coreCode = [
           '// Save current BGM for later restoration',
           '// The saved BGM can be restored with $gameSystem.replayBgm()',
           '$gameSystem.saveBgm();'
         ]
         break
+      }
 
-      case 'restore':
+      case 'restore': {
         coreCode = [
           '// Restore previously saved BGM',
           '// Make sure to call $gameSystem.saveBgm() first',
           '$gameSystem.replayBgm();'
         ]
         break
+      }
     }
 
-    if (wrapInFunction) {
+    if (isWrapInFunction) {
       lines.push(`// BGM Control Function: ${String(operation)}`)
       lines.push(`function ${functionName}() {`)
-      coreCode.forEach((line) => {
+      for (const line of coreCode) {
         lines.push(line ? `    ${line}` : '')
-      })
+      }
       lines.push('}')
     } else {
       lines.push(...coreCode)
@@ -239,9 +245,9 @@ const bgmControlTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Sound Effect Player
- * Play SE with pitch/volume/pan options
- */
+Template 2: Sound Effect Player
+Play SE with pitch/volume/pan options
+*/
 const sePlayerTemplate: CodeTemplate = {
   id: 'audio-se-player',
   category: 'audio-system',
@@ -314,9 +320,9 @@ const sePlayerTemplate: CodeTemplate = {
     const volume = String(providedOr(values['volume'], 90))
     const pitch = String(providedOr(values['pitch'], 100))
     const pan = String(providedOr(values['pan'], 0))
-    const wrapInFunction = values['wrapInFunction'] !== false
+    const isWrapInFunction = values['wrapInFunction'] !== false
     const functionName = String(valueOr(values['functionName'], 'playCustomSE'))
-    const randomizePitch = values['randomizePitch'] === true
+    const isRandomizePitch = values['randomizePitch'] === true
     const pitchVariation = String(providedOr(values['pitchVariation'], 10))
 
     const lines: string[] = []
@@ -324,7 +330,7 @@ const sePlayerTemplate: CodeTemplate = {
     // Generate core SE play code
     const coreCode: string[] = []
 
-    if (randomizePitch) {
+    if (isRandomizePitch) {
       coreCode.push('// Play SE with randomized pitch for variation')
       coreCode.push(`const basePitch = ${pitch};`)
       coreCode.push(`const variation = ${pitchVariation};`)
@@ -335,25 +341,23 @@ const sePlayerTemplate: CodeTemplate = {
       coreCode.push(`    name: '${escapeJSString(expectText(filename))}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push('    pitch: Math.max(50, Math.min(150, randomPitch)),')
-      coreCode.push(`    pan: ${pan}`)
-      coreCode.push('};')
     } else {
       coreCode.push('// Play sound effect')
       coreCode.push('const se = {')
       coreCode.push(`    name: '${escapeJSString(expectText(filename))}',`)
       coreCode.push(`    volume: ${volume},`)
       coreCode.push(`    pitch: ${pitch},`)
-      coreCode.push(`    pan: ${pan}`)
-      coreCode.push('};')
     }
+    coreCode.push(`    pan: ${pan}`)
+    coreCode.push('};')
     coreCode.push('AudioManager.playSe(se);')
 
-    if (wrapInFunction) {
+    if (isWrapInFunction) {
       lines.push(`// Sound Effect Function: ${escapeLineComment(expectText(filename))}`)
       lines.push(`function ${functionName}() {`)
-      coreCode.forEach((line) => {
+      for (const line of coreCode) {
         lines.push(line ? `    ${line}` : '')
-      })
+      }
       lines.push('}')
     } else {
       lines.push(...coreCode)
@@ -402,9 +406,9 @@ const sePlayerTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Audio Fade/Crossfade
- * Fade out current BGM and fade in new BGM
- */
+Template 3: Audio Fade/Crossfade
+Fade out current BGM and fade in new BGM
+*/
 const audioCrossfadeTemplate: CodeTemplate = {
   id: 'audio-crossfade',
   category: 'audio-system',
@@ -493,7 +497,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
     const fadeInDuration = String(providedOr(values['fadeInDuration'], 2))
     const newBgmVolume = String(providedOr(values['newBgmVolume'], 90))
     const newBgmPitch = String(providedOr(values['newBgmPitch'], 100))
-    const wrapInFunction = values['wrapInFunction'] !== false
+    const isWrapInFunction = values['wrapInFunction'] !== false
     const functionName = String(valueOr(values['functionName'], 'crossfadeBgm'))
 
     const lines: string[] = []
@@ -553,7 +557,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
         break
     }
 
-    if (wrapInFunction) {
+    if (isWrapInFunction) {
       const typeLabel =
         crossfadeType === 'crossfade'
           ? 'Crossfade'
@@ -562,9 +566,9 @@ const audioCrossfadeTemplate: CodeTemplate = {
             : 'Fade from Silence'
       lines.push(`// ${typeLabel} Function`)
       lines.push(`function ${functionName}() {`)
-      coreCode.forEach((line) => {
+      for (const line of coreCode) {
         lines.push(line ? `    ${line}` : '')
-      })
+      }
       lines.push('}')
     } else {
       lines.push(...coreCode)

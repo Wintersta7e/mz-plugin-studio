@@ -1,18 +1,18 @@
 /**
- * Input Handler Template
- *
- * Generates code for handling keyboard and gamepad input in RPG Maker MZ.
- * Supports key mapping registration, scene-specific handlers, and multiple trigger types.
- */
+Input Handler Template
+
+Generates code for handling keyboard and gamepad input in RPG Maker MZ.
+Supports key mapping registration, scene-specific handlers, and multiple trigger types.
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { expectText, valueOr } from './values'
 
 /**
- * Key code mappings for common keys
- * Used to register new key mappings with Input.keyMapper
- */
+Key code mappings for common keys
+Used to register new key mappings with Input.keyMapper
+*/
 const KEY_CODES: Record<string, number> = {
   q: 81,
   w: 87,
@@ -27,8 +27,8 @@ const KEY_CODES: Record<string, number> = {
 }
 
 /**
- * Display names for keys (for comments)
- */
+Display names for keys (for comments)
+*/
 const KEY_DISPLAY_NAMES: Record<string, string> = {
   q: 'Q',
   w: 'W',
@@ -43,8 +43,8 @@ const KEY_DISPLAY_NAMES: Record<string, string> = {
 }
 
 /**
- * Trigger type descriptions for comments
- */
+Trigger type descriptions for comments
+*/
 const TRIGGER_DESCRIPTIONS: Record<string, string> = {
   isTriggered: 'once when pressed',
   isPressed: 'while held down',
@@ -52,25 +52,23 @@ const TRIGGER_DESCRIPTIONS: Record<string, string> = {
 }
 
 /**
- * Generates input handler code for a specific scene
- */
+Generates input handler code for a specific scene
+*/
 function generateSceneHandler(keyName: string, triggerType: string, sceneName: string): string {
   const keyCode = KEY_CODES[keyName]
   const keyDisplayName = KEY_DISPLAY_NAMES[keyName]
   const triggerDesc = TRIGGER_DESCRIPTIONS[triggerType]
-  const lines: string[] = []
+  const lines: string[] = [
+    `// Input Handler: ${keyDisplayName} key on ${sceneName}`,
+    `// Triggers ${triggerDesc}`,
+    '',
+    '// Register the key mapping',
+    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`,
+    ''
+  ]
 
   // Header comment
-  lines.push(`// Input Handler: ${keyDisplayName} key on ${sceneName}`)
-  lines.push(`// Triggers ${triggerDesc}`)
-  lines.push('')
-
   // Register key mapping
-  lines.push('// Register the key mapping')
-  lines.push(
-    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`
-  )
-  lines.push('')
 
   // Alias the scene's update method
   const aliasName = `_${sceneName}_update`
@@ -93,25 +91,23 @@ function generateSceneHandler(keyName: string, triggerType: string, sceneName: s
 }
 
 /**
- * Generates a global input handler that works across all scenes
- */
+Generates a global input handler that works across all scenes
+*/
 function generateGlobalHandler(keyName: string, triggerType: string): string {
   const keyCode = KEY_CODES[keyName]
   const keyDisplayName = KEY_DISPLAY_NAMES[keyName]
   const triggerDesc = TRIGGER_DESCRIPTIONS[triggerType]
-  const lines: string[] = []
+  const lines: string[] = [
+    `// Global Input Handler: ${keyDisplayName} key (all scenes)`,
+    `// Triggers ${triggerDesc}`,
+    '',
+    '// Register the key mapping',
+    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`,
+    ''
+  ]
 
   // Header comment
-  lines.push(`// Global Input Handler: ${keyDisplayName} key (all scenes)`)
-  lines.push(`// Triggers ${triggerDesc}`)
-  lines.push('')
-
   // Register key mapping
-  lines.push('// Register the key mapping')
-  lines.push(
-    `Input.keyMapper[${keyCode}] = '${keyName}';  // ${keyCode} = ${keyDisplayName} key code`
-  )
-  lines.push('')
 
   // Use a key-specific method name so multiple plugins adding global handlers
   // don't clobber each other's Scene_Base.prototype.updateGlobalKeyInput.
@@ -198,9 +194,8 @@ const inputHandlerTemplate: CodeTemplate = {
     if (activeScene === 'all') {
       // The global handler calls a string method on the key name before it writes anything
       return generateGlobalHandler(expectText(keyName), triggerType)
-    } else {
-      return generateSceneHandler(String(keyName), triggerType, String(activeScene))
     }
+    return generateSceneHandler(String(keyName), triggerType, String(activeScene))
   },
   validate: (values) => {
     const errors: string[] = []

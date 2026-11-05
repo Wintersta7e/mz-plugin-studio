@@ -2615,23 +2615,11 @@
     "sonarjs/no-nested-conditional": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 4
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
-    },
-    "unicorn/no-for-each": {
-      "count": 3
-    },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
     "unicorn/prefer-math-abs": {
       "count": 2
     },
     "unicorn/switch-case-braces": {
-      "count": 9
+      "count": 3
     }
   },
   "src/renderer/src/lib/generator/templates/battle-system.ts": {
@@ -2653,29 +2641,11 @@
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
     "unicorn/no-useless-switch-case": {
       "count": 2
     },
     "unicorn/prefer-number-coercion": {
       "count": 1
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 2
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 13
     }
   },
   "src/renderer/src/lib/generator/templates/database-ext.ts": {
@@ -2698,25 +2668,16 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 7
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
+      "count": 1
     },
     "unicorn/no-immediate-mutation": {
       "count": 1
     },
-    "unicorn/no-unnecessary-string-trim": {
-      "count": 1
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 1
-    },
     "unicorn/prefer-string-raw": {
-      "count": 4
+      "count": 1
     },
     "unicorn/switch-case-braces": {
-      "count": 21
+      "count": 1
     }
   },
   "src/renderer/src/lib/generator/templates/input-handler.ts": {
@@ -2729,16 +2690,7 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
     "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 2
-    },
-    "unicorn/no-useless-else": {
       "count": 1
     },
     "unicorn/prefer-ternary": {
@@ -2787,18 +2739,6 @@
     "sonarjs/no-nested-conditional": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 9
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
     "unicorn/no-useless-switch-case": {
       "count": 1
     },
@@ -2806,13 +2746,10 @@
       "count": 2
     },
     "unicorn/prefer-hoisting-branch-code": {
-      "count": 5
+      "count": 1
     },
     "unicorn/prefer-ternary": {
       "count": 4
-    },
-    "unicorn/switch-case-braces": {
-      "count": 9
     }
   },
   "src/renderer/src/lib/generator/templates/method-alias.ts": {
@@ -2826,22 +2763,7 @@
       "count": 2
     },
     "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 3
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 13
-    },
-    "unicorn/switch-case-braces": {
-      "count": 5
     }
   },
   "src/renderer/src/lib/generator/templates/plugin-commands.ts": {
@@ -2857,26 +2779,11 @@
     "regexp/use-ignore-case": {
       "count": 3
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
     "unicorn/no-break-in-nested-loop": {
       "count": 4
     },
-    "unicorn/no-immediate-mutation": {
-      "count": 2
-    },
-    "unicorn/no-lonely-if": {
-      "count": 1
-    },
     "unicorn/no-useless-switch-case": {
       "count": 3
-    },
-    "unicorn/switch-case-braces": {
-      "count": 10
     }
   },
   "src/renderer/src/lib/generator/templates/save-load.ts": {
@@ -2901,27 +2808,7 @@
     "sonarjs/cognitive-complexity": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
     "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-string-trim": {
-      "count": 2
-    },
-    "unicorn/prefer-number-properties": {
-      "count": 1
-    },
-    "unicorn/prefer-switch": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 4
-    }
-  },
-  "src/renderer/src/lib/generator/templates/scene-hooks.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
     }
   },

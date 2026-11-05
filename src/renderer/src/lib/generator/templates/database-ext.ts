@@ -1,30 +1,30 @@
 /**
- * Database Extension Template - Notetag Parser
- *
- * Generates code for parsing custom notetags from RPG Maker MZ database entries.
- * Notetags are custom metadata added to the note field of database items.
- */
+Database Extension Template - Notetag Parser
+
+Generates code for parsing custom notetags from RPG Maker MZ database entries.
+Notetags are custom metadata added to the note field of database items.
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
 /**
- * Convert a string to camelCase
- * e.g., "CustomDamage" -> "customDamage"
- */
+Convert a string to camelCase
+e.g., "CustomDamage" -> "customDamage"
+*/
 function toCamelCase(value: unknown): string {
   const hasValue = Boolean(value)
   if (!hasValue) return ''
-  const str = expectText(value)
-  return str.charAt(0).toLowerCase() + str.slice(1)
+  const string_ = expectText(value)
+  return string_.charAt(0).toLowerCase() + string_.slice(1)
 }
 
 /**
- * Get the friendly name for a database type
- * e.g., "$dataItems" -> "Items"
- */
-function getDatabaseName(dbType: unknown): string {
+Get the friendly name for a database type
+e.g., "$dataItems" -> "Items"
+*/
+function getDatabaseName(databaseType: unknown): string {
   const names: Record<string, string> = {
     $dataActors: 'Actors',
     $dataClasses: 'Classes',
@@ -38,48 +38,57 @@ function getDatabaseName(dbType: unknown): string {
     $dataCommonEvents: 'CommonEvents',
     $dataMapInfos: 'MapInfos'
   }
-  return names[String(dbType)] || expectText(dbType).replace('$data', '')
+  return names[String(databaseType)] || expectText(databaseType).replace('$data', '')
 }
 
 /**
- * Generate the regex pattern based on tag format
- */
+Generate the regex pattern based on tag format
+*/
 function generateRegexPattern(tagName: string, tagFormat: unknown): string {
   switch (tagFormat) {
-    case 'simple':
-      return `/<${tagName}:\\s*(.+?)>/i`
-    case 'boolean':
+    case 'simple': {
+      return String.raw`/<${tagName}:\s*(.+?)>/i`
+    }
+    case 'boolean': {
       return `/<${tagName}>/i`
-    case 'keyValue':
-      return `/<${tagName}\\s+(\\w+):\\s*(.+?)>/gi`
-    case 'multiline':
-      return `/<${tagName}>([\\s\\S]*?)<\\/${tagName}>/i`
+    }
+    case 'keyValue': {
+      return String.raw`/<${tagName}\s+(\w+):\s*(.+?)>/gi`
+    }
+    case 'multiline': {
+      return String.raw`/<${tagName}>([\s\S]*?)<\/${tagName}>/i`
+    }
     default:
       return `/<${tagName}:\\s*(.+?)>/i`
   }
 }
 
 /**
- * Generate the value parsing code based on value type
- */
-function generateValueParser(valueType: unknown, matchVar: string): string {
+Generate the value parsing code based on value type
+*/
+function generateValueParser(valueType: unknown, matchVariable: string): string {
   switch (valueType) {
-    case 'number':
-      return `Number(${matchVar})`
-    case 'string':
-      return `String(${matchVar}).trim()`
-    case 'boolean':
-      return `${matchVar}.toLowerCase() === 'true'`
-    case 'array':
-      return `${matchVar}.split(',').map(s => s.trim())`
-    default:
-      return matchVar
+    case 'number': {
+      return `Number(${matchVariable})`
+    }
+    case 'string': {
+      return `String(${matchVariable}).trim()`
+    }
+    case 'boolean': {
+      return `${matchVariable}.toLowerCase() === 'true'`
+    }
+    case 'array': {
+      return `${matchVariable}.split(',').map(s => s.trim())`
+    }
+    default: {
+      return matchVariable
+    }
   }
 }
 
 /**
- * Generate the notetag parsing code
- */
+Generate the notetag parsing code
+*/
 function generateNotetagCode(
   databaseType: unknown,
   tagName: unknown,
@@ -88,42 +97,46 @@ function generateNotetagCode(
   propertyName: unknown,
   defaultValue: unknown
 ): string {
-  const dbName = getDatabaseName(databaseType)
+  const databaseName = getDatabaseName(databaseType)
   const hasPropertyName = Boolean(propertyName)
   // Only written into the code as text
-  const propName = String(hasPropertyName ? propertyName : toCamelCase(tagName))
+  const propertyName_ = String(hasPropertyName ? propertyName : toCamelCase(tagName))
   const methodName = `process${toPascalCase(tagName)}Notetags`
   const defaultLiteral = defaultLiteralOf(valueType, defaultValue)
   const lines: string[] = []
 
   // Header comment with usage example
   lines.push(`// Notetag Parser: ${String(tagName)}`)
-  lines.push(`// Database: ${dbName} (${String(databaseType)})`)
-  lines.push(`// Access via: item.meta.${propName}`)
+  lines.push(`// Database: ${databaseName} (${String(databaseType)})`)
+  lines.push(`// Access via: item.meta.${propertyName_}`)
   lines.push('//')
 
   // Add format-specific usage examples
   switch (tagFormat) {
-    case 'simple':
+    case 'simple': {
       lines.push(`// Usage: <${String(tagName)}: value>`)
       lines.push(`// Example: <${String(tagName)}: 50>`)
       break
-    case 'boolean':
+    }
+    case 'boolean': {
       lines.push(`// Usage: <${String(tagName)}>`)
       lines.push(`// Presence of tag = true, absence = false`)
       break
-    case 'keyValue':
+    }
+    case 'keyValue': {
       lines.push(`// Usage: <${String(tagName)} key: value>`)
       lines.push(`// Example: <${String(tagName)} fire: 50>`)
       lines.push(`// Multiple tags allowed per entry`)
       break
-    case 'multiline':
+    }
+    case 'multiline': {
       lines.push(`// Usage: <${String(tagName)}>content</${String(tagName)}>`)
       lines.push(`// Example:`)
       lines.push(`// <${String(tagName)}>`)
       lines.push(`// Multi-line content here`)
       lines.push(`// </${String(tagName)}>`)
       break
+    }
   }
   lines.push('')
 
@@ -141,57 +154,61 @@ function generateNotetagCode(
   lines.push(`DataManager.${methodName} = function(database) {`)
 
   switch (tagFormat) {
-    case 'boolean':
+    case 'boolean': {
       lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
       lines.push('    for (const item of database) {')
       lines.push('        if (item) {')
-      lines.push(`            item.meta.${propName} = regex.test(item.note);`)
+      lines.push(`            item.meta.${propertyName_} = regex.test(item.note);`)
       lines.push('        }')
       lines.push('    }')
       break
+    }
 
-    case 'simple':
+    case 'simple': {
       lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
       lines.push('    for (const item of database) {')
       lines.push('        if (item) {')
-      lines.push(`            item.meta.${propName} = ${defaultLiteral};`)
+      lines.push(`            item.meta.${propertyName_} = ${defaultLiteral};`)
       lines.push('            const match = item.note.match(regex);')
       lines.push('            if (match) {')
       lines.push(
-        `                item.meta.${propName} = ${generateValueParser(valueType, 'match[1]')};`
+        `                item.meta.${propertyName_} = ${generateValueParser(valueType, 'match[1]')};`
       )
       lines.push('            }')
       lines.push('        }')
       lines.push('    }')
       break
+    }
 
-    case 'keyValue':
+    case 'keyValue': {
       lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
       lines.push('    for (const item of database) {')
       lines.push('        if (item) {')
-      lines.push(`            item.meta.${propName} = {};`)
+      lines.push(`            item.meta.${propertyName_} = {};`)
       lines.push('            let match;')
       lines.push('            while ((match = regex.exec(item.note)) !== null) {')
       lines.push('                const key = match[1];')
       lines.push(`                const value = ${generateValueParser(valueType, 'match[2]')};`)
-      lines.push(`                item.meta.${propName}[key] = value;`)
+      lines.push(`                item.meta.${propertyName_}[key] = value;`)
       lines.push('            }')
       lines.push('        }')
       lines.push('    }')
       break
+    }
 
-    case 'multiline':
+    case 'multiline': {
       lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
       lines.push('    for (const item of database) {')
       lines.push('        if (item) {')
-      lines.push(`            item.meta.${propName} = ${defaultLiteral};`)
+      lines.push(`            item.meta.${propertyName_} = ${defaultLiteral};`)
       lines.push('            const match = item.note.match(regex);')
       lines.push('            if (match) {')
-      lines.push(`                item.meta.${propName} = match[1].trim();`)
+      lines.push(`                item.meta.${propertyName_} = match[1].trim();`)
       lines.push('            }')
       lines.push('        }')
       lines.push('    }')
       break
+    }
   }
 
   lines.push('};')
@@ -199,7 +216,7 @@ function generateNotetagCode(
   return lines.join('\n')
 }
 
-const databaseExtTemplate: CodeTemplate = {
+const databaseExtensionTemplate: CodeTemplate = {
   id: 'database-ext-notetag',
   category: 'database-ext',
   name: 'Notetag Parser',
@@ -330,21 +347,24 @@ const databaseExtTemplate: CodeTemplate = {
       const valueType = values['valueType']
 
       switch (valueType) {
-        case 'number':
-          if (isNaN(Number(defaultValue))) {
+        case 'number': {
+          if (Number.isNaN(Number(defaultValue))) {
             errors.push('Default value for number type must be a valid number')
           }
           break
-        case 'boolean':
+        }
+        case 'boolean': {
           if (!['true', 'false'].includes(expectText(defaultValue).toLowerCase())) {
             errors.push('Default value for boolean type must be true or false')
           }
           break
-        case 'array':
-          if (!expectText(defaultValue).trim().startsWith('[')) {
+        }
+        case 'array': {
+          if (!expectText(defaultValue).trimStart().startsWith('[')) {
             errors.push('Default value for array type should be in JSON format starting with [')
           }
           break
+        }
       }
     }
 
@@ -356,6 +376,6 @@ const databaseExtTemplate: CodeTemplate = {
 }
 
 // Register the template when this module loads
-registerTemplate(databaseExtTemplate)
+registerTemplate(databaseExtensionTemplate)
 
-export { databaseExtTemplate }
+export { databaseExtensionTemplate as databaseExtTemplate }

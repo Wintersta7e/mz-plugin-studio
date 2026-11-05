@@ -1,7 +1,7 @@
 /**
- * Scene Hooks Template
- * Provides templates for hooking into RPG Maker MZ scene lifecycle methods
- */
+Scene Hooks Template
+Provides templates for hooking into RPG Maker MZ scene lifecycle methods
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'

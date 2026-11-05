@@ -1,11 +1,11 @@
 /**
- * Message System Templates
- *
- * Templates for modifying RPG Maker MZ message and text systems:
- * - Custom text escape codes (like \C[n], \V[n])
- * - Message window appearance modifications
- * - Choice window handling and styling
- */
+Message System Templates
+
+Templates for modifying RPG Maker MZ message and text systems:
+- Custom text escape codes (like \C[n], \V[n])
+- Message window appearance modifications
+- Choice window handling and styling
+*/
 
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
@@ -13,9 +13,9 @@ import { escapeJSString, isOneLineExpression } from '../escape'
 import { definedOr, expectText, valueOr } from './values'
 
 /**
- * Template 1: Custom Text Code
- * Add a new escape code for message text processing
- */
+Template 1: Custom Text Code
+Add a new escape code for message text processing
+*/
 const customTextCodeTemplate: CodeTemplate = {
   id: 'message-custom-text-code',
   category: 'message-system',
@@ -101,21 +101,18 @@ const customTextCodeTemplate: CodeTemplate = {
         )
         lines.push('        param = parseInt(param);')
         lines.push(`        // Return the replacement text based on the parameter`)
-        lines.push(`        return ${String(replacementText)};`)
-        lines.push('    });')
       } else {
         lines.push(`    // Process \\${escapeChar} codes`)
         // Negative lookahead (?![A-Za-z]) prevents \X from matching \XY, \XX, etc.
         // — MZ escape codes are case-sensitive single letters, so a longer
         // identifier should not be hijacked by a shorter prefix code.
         lines.push(String.raw`    text = text.replace(/\x1b${escapeChar}(?![A-Za-z])/gi, () => {`)
-        lines.push(`        return ${String(replacementText)};`)
-        lines.push('    });')
       }
+      lines.push(`        return ${String(replacementText)};`)
+      lines.push('    });')
 
       lines.push('')
       lines.push('    return text;')
-      lines.push('};')
     } else {
       // Effect-type escape code (processed during drawing)
       lines.push(`// Custom Text Code: \\${escapeChar}${hasParameter ? '[n]' : ''}`)
@@ -135,7 +132,7 @@ const customTextCodeTemplate: CodeTemplate = {
 
       // Generate effect code based on type
       switch (effectType) {
-        case 'color':
+        case 'color': {
           lines.push('        // Change text color')
           if (hasParameter) {
             lines.push('        this.changeTextColor(ColorManager.textColor(param));')
@@ -143,7 +140,8 @@ const customTextCodeTemplate: CodeTemplate = {
             lines.push('        this.changeTextColor(ColorManager.textColor(0));')
           }
           break
-        case 'size':
+        }
+        case 'size': {
           lines.push('        // Change font size')
           if (hasParameter) {
             lines.push('        this.contents.fontSize = param;')
@@ -151,7 +149,8 @@ const customTextCodeTemplate: CodeTemplate = {
             lines.push('        this.contents.fontSize = $gameSystem.mainFontSize();')
           }
           break
-        case 'icon':
+        }
+        case 'icon': {
           lines.push('        // Draw an icon')
           if (hasParameter) {
             lines.push('        this.processDrawIcon(param, textState);')
@@ -159,8 +158,9 @@ const customTextCodeTemplate: CodeTemplate = {
             lines.push('        this.processDrawIcon(0, textState);')
           }
           break
+        }
         case 'custom':
-        default:
+        default: {
           lines.push('        // Custom effect - add your code here')
           if (hasParameter) {
             lines.push("        console.log('Custom code with param:', param);")
@@ -168,13 +168,14 @@ const customTextCodeTemplate: CodeTemplate = {
             lines.push("        console.log('Custom code triggered');")
           }
           break
+        }
       }
 
       lines.push('    } else {')
       lines.push('        _Window_Message_processEscapeCharacter.call(this, code, textState);')
       lines.push('    }')
-      lines.push('};')
     }
+    lines.push('};')
 
     return lines.join('\n')
   },
@@ -218,10 +219,10 @@ const customTextCodeTemplate: CodeTemplate = {
 }
 
 /**
- * Template 2: Message Window Mod
- * Modify message window appearance (position, size, background)
- */
-const messageWindowModTemplate: CodeTemplate = {
+Template 2: Message Window Mod
+Modify message window appearance (position, size, background)
+*/
+const messageWindowModuleTemplate: CodeTemplate = {
   id: 'message-window-mod',
   category: 'message-system',
   name: 'Message Window Mod',
@@ -343,10 +344,10 @@ const messageWindowModTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = valueOr(values['modType'], 'position')
+    const moduleType = valueOr(values['modType'], 'position')
     const lines: string[] = []
 
-    switch (modType) {
+    switch (moduleType) {
       case 'position': {
         const positionType = valueOr(values['positionType'], 'top')
         const customX = valueOr(values['customX'], 0)
@@ -364,7 +365,6 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('    _Window_Message_updatePlacement.call(this);')
           lines.push(`    this.x = ${String(customX)};`)
           lines.push(`    this.y = ${String(customY)};`)
-          lines.push('};')
         } else {
           lines.push('Window_Message.prototype.updatePlacement = function() {')
           lines.push('    const goldWindow = this._goldWindow;')
@@ -386,14 +386,14 @@ const messageWindowModTemplate: CodeTemplate = {
             '        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;'
           )
           lines.push('    }')
-          lines.push('};')
         }
+        lines.push('};')
         break
       }
 
       case 'size': {
         const windowWidth = valueOr(values['windowWidth'], 816)
-        const numLines = valueOr(values['numLines'], 4)
+        const numberLines = valueOr(values['numLines'], 4)
 
         lines.push('// Message Window Size Modification')
         lines.push('// Changes the dimensions of the message window')
@@ -405,7 +405,7 @@ const messageWindowModTemplate: CodeTemplate = {
         lines.push('Scene_Message.prototype.messageWindowRect = function() {')
         lines.push('    const rect = _Scene_Message_messageWindowRect.call(this);')
         lines.push(`    rect.width = ${String(windowWidth)};`)
-        lines.push(`    rect.height = this.calcWindowHeight(${String(numLines)}, false) + 8;`)
+        lines.push(`    rect.height = this.calcWindowHeight(${String(numberLines)}, false) + 8;`)
         lines.push('    rect.x = (Graphics.boxWidth - rect.width) / 2;')
         lines.push('    return rect;')
         lines.push('};')
@@ -435,7 +435,6 @@ const messageWindowModTemplate: CodeTemplate = {
             `        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, '${escapeJSString(expectText(bgColor))}');`
           )
           lines.push('    }')
-          lines.push('};')
         } else {
           const bgValue = bgType === 'window' ? 0 : bgType === 'dim' ? 1 : 2
           lines.push('// Override the background type for all messages')
@@ -445,8 +444,8 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('Window_Message.prototype.setBackgroundType = function(type) {')
           lines.push(`    // Force background type: ${String(bgType)}`)
           lines.push(`    _Window_Message_setBackgroundType.call(this, ${bgValue});`)
-          lines.push('};')
         }
+        lines.push('};')
         break
       }
 
@@ -505,11 +504,11 @@ const messageWindowModTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values['modType']
+    const moduleType = values['modType']
 
-    if (modType === 'size') {
+    if (moduleType === 'size') {
       const windowWidth = values['windowWidth']
-      const numLines = values['numLines']
+      const numberLines = values['numLines']
 
       if (windowWidth !== undefined && Number(windowWidth) <= 0) {
         errors.push('Window width must be a positive number')
@@ -517,22 +516,20 @@ const messageWindowModTemplate: CodeTemplate = {
       if (windowWidth !== undefined && Number(windowWidth) > 1920) {
         errors.push('Window width exceeds maximum screen width (1920)')
       }
-      if (numLines !== undefined && (Number(numLines) < 1 || Number(numLines) > 10)) {
+      if (numberLines !== undefined && (Number(numberLines) < 1 || Number(numberLines) > 10)) {
         errors.push('Visible lines must be between 1 and 10')
       }
     }
 
-    if (modType === 'opacity') {
+    if (moduleType === 'opacity') {
       const opacityValue = values['opacityValue']
       if (opacityValue !== undefined && (Number(opacityValue) < 0 || Number(opacityValue) > 255)) {
         errors.push('Opacity must be between 0 and 255')
       }
     }
 
-    if (modType === 'background' && values['bgType'] === 'custom') {
-      if (!values['bgColor']) {
-        errors.push('Background color is required for custom background')
-      }
+    if (moduleType === 'background' && values['bgType'] === 'custom' && !values['bgColor']) {
+      errors.push('Background color is required for custom background')
     }
 
     return {
@@ -543,9 +540,9 @@ const messageWindowModTemplate: CodeTemplate = {
 }
 
 /**
- * Template 3: Choice Handler
- * Custom choice window handling and styling
- */
+Template 3: Choice Handler
+Custom choice window handling and styling
+*/
 const choiceHandlerTemplate: CodeTemplate = {
   id: 'message-choice-handler',
   category: 'message-system',
@@ -648,10 +645,10 @@ const choiceHandlerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modType = valueOr(values['modType'], 'position')
+    const moduleType = valueOr(values['modType'], 'position')
     const lines: string[] = []
 
-    switch (modType) {
+    switch (moduleType) {
       case 'position': {
         const choicePosition = valueOr(values['choicePosition'], 'center')
 
@@ -667,22 +664,25 @@ const choiceHandlerTemplate: CodeTemplate = {
         lines.push('')
 
         switch (choicePosition) {
-          case 'center':
+          case 'center': {
             lines.push('    // Center on screen')
             lines.push('    this.x = (Graphics.boxWidth - this.width) / 2;')
             lines.push('    this.y = (Graphics.boxHeight - this.height) / 2;')
             break
-          case 'left':
+          }
+          case 'left': {
             lines.push('    // Left side, aligned with message')
             lines.push('    this.x = messageWindow.x;')
             break
-          case 'above':
+          }
+          case 'above': {
             lines.push('    // Above message window')
             lines.push('    this.x = (Graphics.boxWidth - this.width) / 2;')
             lines.push('    this.y = messageWindow.y - this.height;')
             lines.push('    if (this.y < 0) this.y = 0;')
             break
-          case 'below':
+          }
+          case 'below': {
             lines.push('    // Below message window')
             lines.push('    this.x = (Graphics.boxWidth - this.width) / 2;')
             lines.push('    this.y = messageWindow.y + messageWindow.height;')
@@ -690,9 +690,11 @@ const choiceHandlerTemplate: CodeTemplate = {
             lines.push('        this.y = Graphics.boxHeight - this.height;')
             lines.push('    }')
             break
-          default:
+          }
+          default: {
             lines.push('    // Right side (default)')
             lines.push('    this.x = messageWindow.x + messageWindow.width - this.width;')
+          }
         }
 
         lines.push('};')
@@ -700,14 +702,14 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
 
       case 'columns': {
-        const numColumns = valueOr(values['numColumns'], 2)
+        const numberColumns = valueOr(values['numColumns'], 2)
         const choiceWidth = valueOr(values['choiceWidth'], 400)
 
         lines.push('// Choice Window Column Layout')
-        lines.push(`// Displays choices in ${String(numColumns)} column(s)`)
+        lines.push(`// Displays choices in ${String(numberColumns)} column(s)`)
         lines.push('')
         lines.push('Window_ChoiceList.prototype.maxCols = function() {')
-        lines.push(`    return ${String(numColumns)};`)
+        lines.push(`    return ${String(numberColumns)};`)
         lines.push('};')
         lines.push('')
         lines.push('Window_ChoiceList.prototype.windowWidth = function() {')
@@ -778,14 +780,14 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
 
       case 'behavior': {
-        const wrapAround = Boolean(values['wrapAround'])
-        const rememberChoice = Boolean(values['rememberChoice'])
+        const isWrapAround = Boolean(values['wrapAround'])
+        const isRememberChoice = Boolean(values['rememberChoice'])
 
         lines.push('// Choice Window Selection Behavior')
         lines.push('// Customizes how choice selection works')
         lines.push('')
 
-        if (!wrapAround) {
+        if (!isWrapAround) {
           lines.push('// Disable wrap-around selection')
           lines.push('Window_ChoiceList.prototype.cursorDown = function(wrap) {')
           lines.push('    const index = this.index();')
@@ -806,7 +808,7 @@ const choiceHandlerTemplate: CodeTemplate = {
           lines.push('')
         }
 
-        if (rememberChoice) {
+        if (isRememberChoice) {
           lines.push('// Remember last selected choice')
           lines.push('(function() {')
           lines.push('    let _lastChoiceIndex = 0;')
@@ -831,7 +833,7 @@ const choiceHandlerTemplate: CodeTemplate = {
         }
 
         // If neither option is selected, generate a placeholder
-        if (wrapAround && !rememberChoice) {
+        if (isWrapAround && !isRememberChoice) {
           lines.push('// Default behavior - wrap-around enabled')
           lines.push('// No modifications needed for default wrapping behavior')
         }
@@ -844,13 +846,13 @@ const choiceHandlerTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const modType = values['modType']
+    const moduleType = values['modType']
 
-    if (modType === 'columns') {
-      const numColumns = values['numColumns']
+    if (moduleType === 'columns') {
+      const numberColumns = values['numColumns']
       const choiceWidth = values['choiceWidth']
 
-      if (numColumns !== undefined && (Number(numColumns) < 1 || Number(numColumns) > 4)) {
+      if (numberColumns !== undefined && (Number(numberColumns) < 1 || Number(numberColumns) > 4)) {
         errors.push('Number of columns must be between 1 and 4')
       }
       if (choiceWidth !== undefined && Number(choiceWidth) <= 0) {
@@ -858,7 +860,7 @@ const choiceHandlerTemplate: CodeTemplate = {
       }
     }
 
-    if (modType === 'style') {
+    if (moduleType === 'style') {
       const highlightColor = values['highlightColor']
       const normalColor = values['normalColor']
       const disabledColor = values['disabledColor']
@@ -896,7 +898,11 @@ const choiceHandlerTemplate: CodeTemplate = {
 
 // Register all templates when this module loads
 registerTemplate(customTextCodeTemplate)
-registerTemplate(messageWindowModTemplate)
+registerTemplate(messageWindowModuleTemplate)
 registerTemplate(choiceHandlerTemplate)
 
-export { customTextCodeTemplate, messageWindowModTemplate, choiceHandlerTemplate }
+export {
+  customTextCodeTemplate,
+  messageWindowModuleTemplate as messageWindowModTemplate,
+  choiceHandlerTemplate
+}
