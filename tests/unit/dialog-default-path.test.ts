@@ -1,14 +1,26 @@
 // Where each file dialog opens: the folder the renderer suggests when it is safe and still there,
 // else the folder the same kind of dialog last chose while it is still there, else the app's own
 // default. The folder check is awaited, so a slow drive never holds up the main process.
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'path'
+import type {
+  MessageBoxReturnValue,
+  OpenDialogOptions,
+  OpenDialogReturnValue,
+  SaveDialogOptions,
+  SaveDialogReturnValue
+} from 'electron'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
   checkDialogFolder,
+  createDialogHandlers,
   dialogKind,
   resolveDialogDefaultPath,
   type DialogDefaultRequest
 } from '../../src/main/ipc/dialog'
+import type { Handler } from '../../src/main/ipc/registration'
+import type { InvokeChannel } from '../../src/shared/ipc-types'
 
 let rows = 0
 
@@ -254,5 +266,106 @@ describe('dialog folders kept across restarts', () => {
     rows++
 
     expect(checkDialogFolder(folder, path[platform])).toBe(kept ? folder : undefined)
+  })
+})
+
+/**
+Runs the handler on `raw` after its argument check, as the IPC registration does
+*/
+async function invoke<C extends InvokeChannel>(handler: Handler<C>, raw: unknown): Promise<void> {
+  await handler.run(...handler.check([raw]))
+}
+
+/**
+The options of every dialog the channel showed for `raw`, each dialog cancelled
+*/
+async function shown(
+  channel: 'dialog:save-file' | 'dialog:open-folder' | 'dialog:open-file',
+  raw: unknown
+): Promise<unknown[]> {
+  const showOpenDialog = vi
+    .fn<(options: OpenDialogOptions) => Promise<OpenDialogReturnValue>>()
+    .mockResolvedValue({ canceled: true, filePaths: [] })
+  const showSaveDialog = vi
+    .fn<(options: SaveDialogOptions) => Promise<SaveDialogReturnValue>>()
+    .mockResolvedValue({ canceled: true, filePath: '' })
+  const showMessageBox = vi
+    .fn<() => Promise<MessageBoxReturnValue>>()
+    .mockResolvedValue({ response: 0, checkboxChecked: false })
+  const handlers = createDialogHandlers({ showOpenDialog, showSaveDialog, showMessageBox })
+  await invoke(handlers[channel], raw)
+  return [...showOpenDialog.mock.calls, ...showSaveDialog.mock.calls].map(([options]) => options)
+}
+
+describe('the options each dialog opens with', () => {
+  // Through the handlers, with no project open and no folder chosen before: the whole options
+  // object the dialog receives, for a renderer default path that is absent, kept and dropped
+  const JS = [{ name: 'JavaScript', extensions: ['js'] }]
+  const SAVE = { filters: JS, properties: ['showOverwriteConfirmation'] }
+  const FOLDER = { properties: ['openDirectory'], title: 'Select RPG Maker MZ Project Folder' }
+  const FILE = { properties: ['openFile'], filters: JS }
+
+  it('save: no default path without one from the renderer', async () => {
+    expect.assertions(1)
+    await expect(shown('dialog:save-file', {})).resolves.toStrictEqual([SAVE])
+  })
+
+  it('save: a file name or a full path from the renderer is the default path', async () => {
+    expect.assertions(2)
+
+    const full = path.join(tmpdir(), 'MyPlugin.js')
+
+    await expect(shown('dialog:save-file', { defaultPath: 'MyPlugin.js' })).resolves.toStrictEqual([
+      { defaultPath: 'MyPlugin.js', ...SAVE }
+    ])
+    await expect(shown('dialog:save-file', { defaultPath: full })).resolves.toStrictEqual([
+      { defaultPath: full, ...SAVE }
+    ])
+  })
+
+  it.each([
+    ['a network path', '\\\\host\\share\\MyPlugin.js'],
+    ['a relative path', '../MyPlugin.js'],
+    ['a file type that cannot be saved', 'MyPlugin.exe'],
+    ['a value that is not text', 5]
+  ])('save: %s from the renderer is dropped', async (_label, defaultPath) => {
+    expect.assertions(1)
+    await expect(shown('dialog:save-file', { defaultPath })).resolves.toStrictEqual([SAVE])
+  })
+
+  it('folder: no default path without one from the renderer', async () => {
+    expect.assertions(1)
+    await expect(shown('dialog:open-folder', {})).resolves.toStrictEqual([FOLDER])
+  })
+
+  it("folder: the renderer's project opens the dialog in its parent folder", async () => {
+    expect.assertions(1)
+
+    const parent = await mkdtemp(path.join(tmpdir(), 'dialog-options-'))
+    try {
+      await expect(
+        shown('dialog:open-folder', { defaultPath: path.join(parent, 'Proj') })
+      ).resolves.toStrictEqual([{ defaultPath: parent, ...FOLDER }])
+    } finally {
+      await rm(parent, { recursive: true, force: true })
+    }
+  })
+
+  it.each([
+    ['a relative path', 'Games/Proj'],
+    ['a network path', '\\\\host\\share\\Proj'],
+    ['a value that is not text', 5]
+  ])('folder: %s from the renderer is dropped', async (_label, defaultPath) => {
+    expect.assertions(1)
+    await expect(shown('dialog:open-folder', { defaultPath })).resolves.toStrictEqual([FOLDER])
+  })
+
+  it.each([
+    ['absent', {}],
+    ['a full path', { defaultPath: path.join(tmpdir(), 'MyPlugin.js') }],
+    ['a network path', { defaultPath: '\\\\host\\share\\MyPlugin.js' }]
+  ])('file: a renderer default path %s never reaches the dialog', async (_label, raw) => {
+    expect.assertions(1)
+    await expect(shown('dialog:open-file', raw)).resolves.toStrictEqual([FILE])
   })
 })
