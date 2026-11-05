@@ -56,7 +56,6 @@
   "test": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/components/plugin/TypeFields.tsx": 1,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 1,
@@ -203,7 +202,6 @@
   "web": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/components/plugin/TypeFields.tsx": 1,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 1

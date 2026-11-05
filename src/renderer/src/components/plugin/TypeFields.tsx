@@ -43,6 +43,33 @@ const COMPACT: Sizes = {
 }
 
 /**
+The types an array element can have, in the order its picker lists them
+*/
+const ARRAY_ELEMENT_TYPES: readonly { value: ParamType; label: string }[] = [
+  { value: 'string', label: 'String' },
+  { value: 'number', label: 'Number' },
+  { value: 'boolean', label: 'Boolean' },
+  { value: 'note', label: 'Note (Multiline)' },
+  { value: 'select', label: 'Select/Combo' },
+  { value: 'variable', label: 'Variable' },
+  { value: 'switch', label: 'Switch' },
+  { value: 'actor', label: 'Actor' },
+  { value: 'class', label: 'Class' },
+  { value: 'skill', label: 'Skill' },
+  { value: 'item', label: 'Item' },
+  { value: 'weapon', label: 'Weapon' },
+  { value: 'armor', label: 'Armor' },
+  { value: 'enemy', label: 'Enemy' },
+  { value: 'troop', label: 'Troop' },
+  { value: 'state', label: 'State' },
+  { value: 'animation', label: 'Animation' },
+  { value: 'tileset', label: 'Tileset' },
+  { value: 'common_event', label: 'Common Event' },
+  { value: 'file', label: 'File' },
+  { value: 'struct', label: 'Struct' }
+]
+
+/**
 The fields a parameter, command argument or struct field needs for its type to be written:
 the options of a select or combo, the struct of a struct, the element type of an array.
 */
@@ -53,7 +80,7 @@ export function TypeFields({
   structDefaults,
   compact = false,
   className
-}: TypeFieldsProps) {
+}: Readonly<TypeFieldsProps>) {
   const sizes = compact ? COMPACT : FULL
 
   if (param.type === 'select' || param.type === 'combo') {
@@ -61,24 +88,27 @@ export function TypeFields({
   }
 
   if (param.type === 'struct') {
-    const structDef = param.structType
-      ? structDefaults?.find((s) => s.name === param.structType)
-      : undefined
+    const structDefinition =
+      param.structType === undefined || param.structType === ''
+        ? undefined
+        : structDefaults?.find((s) => s.name === param.structType)
     return (
       <div className={cn('space-y-3', className)}>
         <StructPicker
           value={param.structType}
           structNames={structNames}
           sizes={sizes}
-          onPick={(value) =>
+          onPick={(value) => {
             onUpdate(structDefaults ? { structType: value, default: '' } : { structType: value })
-          }
+          }}
         />
-        {structDef && (
+        {structDefinition && (
           <StructDefaultEditor
-            struct={structDef}
+            struct={structDefinition}
             value={typeof param.default === 'string' ? param.default : ''}
-            onChange={(jsonString) => onUpdate({ default: jsonString })}
+            onChange={(jsonString) => {
+              onUpdate({ default: jsonString })
+            }}
           />
         )}
       </div>
@@ -87,73 +117,86 @@ export function TypeFields({
 
   if (param.type === 'array') {
     return (
-      <div className={cn('grid grid-cols-2', sizes.gap, className)}>
-        <div className={sizes.field}>
-          <Label className={sizes.label}>Array Element Type</Label>
-          <Select
-            value={param.arrayType || 'string'}
-            onValueChange={(value) => onUpdate({ arrayType: value as ParamType })}
-          >
-            <SelectTrigger className={sizes.trigger}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="string">String</SelectItem>
-              <SelectItem value="number">Number</SelectItem>
-              <SelectItem value="boolean">Boolean</SelectItem>
-              <SelectItem value="note">Note (Multiline)</SelectItem>
-              <SelectItem value="select">Select/Combo</SelectItem>
-              <SelectItem value="variable">Variable</SelectItem>
-              <SelectItem value="switch">Switch</SelectItem>
-              <SelectItem value="actor">Actor</SelectItem>
-              <SelectItem value="class">Class</SelectItem>
-              <SelectItem value="skill">Skill</SelectItem>
-              <SelectItem value="item">Item</SelectItem>
-              <SelectItem value="weapon">Weapon</SelectItem>
-              <SelectItem value="armor">Armor</SelectItem>
-              <SelectItem value="enemy">Enemy</SelectItem>
-              <SelectItem value="troop">Troop</SelectItem>
-              <SelectItem value="state">State</SelectItem>
-              <SelectItem value="animation">Animation</SelectItem>
-              <SelectItem value="tileset">Tileset</SelectItem>
-              <SelectItem value="common_event">Common Event</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="struct">Struct</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* If array of structs, show struct type selector */}
-        {param.arrayType === 'struct' && (
-          <StructPicker
-            value={param.structType}
-            structNames={structNames}
-            sizes={sizes}
-            onPick={(value) => onUpdate({ structType: value })}
-          />
-        )}
-      </div>
+      <ArrayTypeFields
+        param={param}
+        onUpdate={onUpdate}
+        structNames={structNames}
+        sizes={sizes}
+        className={className}
+      />
     )
   }
 
   return null
 }
 
+function ArrayTypeFields({
+  param,
+  onUpdate,
+  structNames,
+  sizes,
+  className
+}: Readonly<{
+  param: PluginParameter
+  onUpdate: (updates: Partial<PluginParameter>) => void
+  structNames: string[]
+  sizes: Sizes
+  className: string | undefined
+}>) {
+  return (
+    <div className={cn('grid grid-cols-2', sizes.gap, className)}>
+      <div className={sizes.field}>
+        <Label className={sizes.label}>Array Element Type</Label>
+        <Select
+          value={param.arrayType ?? 'string'}
+          onValueChange={(value) => {
+            const picked = ARRAY_ELEMENT_TYPES.find((option) => option.value === value)
+            if (picked) onUpdate({ arrayType: picked.value })
+          }}
+        >
+          <SelectTrigger className={sizes.trigger}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ARRAY_ELEMENT_TYPES.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* If array of structs, show struct type selector */}
+      {param.arrayType === 'struct' && (
+        <StructPicker
+          value={param.structType}
+          structNames={structNames}
+          sizes={sizes}
+          onPick={(value) => {
+            onUpdate({ structType: value })
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
 function StructPicker({
-  value,
+  value = '',
   structNames,
   sizes,
   onPick
-}: {
+}: Readonly<{
   value: string | undefined
   structNames: string[]
   sizes: Sizes
   onPick: (value: string) => void
-}) {
+}>) {
   return (
     <div className={sizes.field}>
       <Label className={sizes.label}>Struct Type</Label>
-      <Select value={value || ''} onValueChange={onPick}>
+      <Select value={value} onValueChange={onPick}>
         <SelectTrigger className={sizes.trigger}>
           <SelectValue placeholder="Select struct..." />
         </SelectTrigger>
@@ -177,12 +220,12 @@ function OptionsEditor({
   onUpdate,
   sizes,
   className
-}: {
+}: Readonly<{
   param: PluginParameter
   onUpdate: (updates: Partial<PluginParameter>) => void
   sizes: Sizes
-  className?: string
-}) {
+  className: string | undefined
+}>) {
   const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
 
   return (
@@ -192,9 +235,9 @@ function OptionsEditor({
       </Label>
       <Textarea
         value={optionsTyped}
-        onChange={(e) => {
-          setOptionsTyped(e.target.value)
-          onUpdate({ options: parseOptions(e.target.value) })
+        onChange={(event) => {
+          setOptionsTyped(event.target.value)
+          onUpdate({ options: parseOptions(event.target.value) })
         }}
         placeholder={'option1|Option 1\noption2|Option 2'}
         rows={sizes.rows}

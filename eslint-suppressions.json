@@ -1766,77 +1766,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/components/plugin/ParameterBuilder.tsx": {
-    "@eslint-react/use-state": {
-      "count": 2
-    },
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 25
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-misused-promises": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 5
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 7
-    },
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 22
-    },
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 1
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 3
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 28
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/prefer-dom-node-remove": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
-      "count": 3
-    },
-    "unicorn/prefer-global-this": {
-      "count": 15
-    },
-    "unicorn/prefer-spread": {
-      "count": 1
-    }
-  },
   "src/renderer/src/components/plugin/PluginBrowser.tsx": {
     "@eslint-react/dom-no-missing-button-type": {
       "count": 2
@@ -2044,29 +1973,6 @@
     },
     "unicorn/prefer-switch": {
       "count": 1
-    }
-  },
-  "src/renderer/src/components/plugin/TypeFields.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 3
-    },
-    "unicorn/name-replacements": {
-      "count": 2
     }
   },
   "src/renderer/src/components/preview/CodePreview.tsx": {
