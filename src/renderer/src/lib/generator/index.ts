@@ -1287,7 +1287,7 @@ function formatJSDefault(value: string | number | boolean, type: ParamType): str
 // strict mode) and `params`/`args` (declared by the generated code itself).
 // Suffixing with `_` is safer than prefixing because it preserves the visible
 // name in generated code.
-const JS_RESERVED: ReadonlySet<string> = new Set([
+export const JS_RESERVED: ReadonlySet<string> = new Set([
   'break',
   'case',
   'catch',

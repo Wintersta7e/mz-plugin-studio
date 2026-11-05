@@ -10,6 +10,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString } from '../escape'
+import { JS_RESERVED } from '../index'
 
 /**
  * Helper to generate argument parsing code
@@ -49,6 +50,30 @@ function generateArgComment(args: Array<{ name: string; type: string; desc: stri
     lines.push(`//   ${arg.name} (${arg.type}) - ${arg.desc}`)
   }
   return lines
+}
+
+// Globals the command's own code calls on each argument (String, Number, JSON.parse,
+// console.log): an argument declared as `const <name>` with one of these names hides it
+const COMMAND_GLOBALS: ReadonlySet<string> = new Set(['String', 'Number', 'JSON', 'console'])
+
+// The argument names the command cannot declare, and a name both arguments share; compared
+// trimmed, as the code is written with them trimmed
+function argNameErrors(values: Record<string, unknown>): string[] {
+  const names = [values['arg1Name'], values['arg2Name']].map((name) =>
+    typeof name === 'string' ? name.trim() : ''
+  )
+  const errors: string[] = []
+  for (const [index, name] of names.entries()) {
+    if (JS_RESERVED.has(name) || COMMAND_GLOBALS.has(name)) {
+      errors.push(
+        `Argument ${index + 1} name "${name}" is reserved in JavaScript or used by the command's own code`
+      )
+    }
+  }
+  if (names[0] !== '' && names[0] === names[1]) {
+    errors.push('Argument 1 and argument 2 need different names')
+  }
+  return errors
 }
 
 /**
@@ -201,6 +226,8 @@ const basicCommandTemplate: CodeTemplate = {
     if (arg2Name && arg2Name.trim() && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(arg2Name.trim())) {
       errors.push('Argument 2 name must be a valid identifier')
     }
+
+    errors.push(...argNameErrors(values))
 
     return {
       valid: errors.length === 0,

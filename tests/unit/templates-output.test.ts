@@ -19,8 +19,10 @@ import '../../src/renderer/src/lib/generator/templates/message-system'
 
 import {
   getTemplate,
-  getTemplateDefaults
+  getTemplateDefaults,
+  validateTemplateValues
 } from '../../src/renderer/src/lib/generator/templates/index'
+import { compileCheck } from '../../src/main/services/syntax-check'
 
 describe('save-load template', () => {
   it('injects a warning comment when storageLocation is Game_Actors', () => {
@@ -182,5 +184,56 @@ describe('plugin-commands async callback', () => {
     expect(out).toMatch(/interpreter\[_LoadDataPendingKey\]/)
     // Old module-scope pattern must NOT appear
     expect(out).not.toMatch(/^let _LoadDataPending = false/m)
+  })
+})
+
+// The basic command's code as it runs, inside the plugin's strict-mode wrapper
+function basicCommandCode(values: Record<string, unknown>): string {
+  const template = getTemplate('plugin-command-basic')
+  if (template === undefined) throw new Error('plugin-command-basic is not registered')
+  return `'use strict';\n${template.generate(values)}`
+}
+
+describe('plugin-command-basic argument names', () => {
+  const base = {
+    commandName: 'Sample',
+    pluginName: 'Sample',
+    arg1Type: 'string',
+    arg2Type: 'number'
+  }
+
+  it.each([
+    ['x', 'x'],
+    ['x', ' x '],
+    ['args', 'y'],
+    ['class', 'y'],
+    ['y', 'let'],
+    ['eval', 'y'],
+    ['String', 'y'],
+    ['y', 'Number'],
+    ['JSON', 'y'],
+    ['console', 'y'],
+    ['params', 'y']
+  ])('rejects the names %j and %j', (arg1Name, arg2Name) => {
+    const verdict = validateTemplateValues('plugin-command-basic', { ...base, arg1Name, arg2Name })
+
+    expect(verdict.valid).toBe(false)
+  })
+
+  it('accepts two other names, and their code compiles', () => {
+    const values = { ...base, arg1Name: 'target', arg2Name: 'amount' }
+
+    expect(validateTemplateValues('plugin-command-basic', values).valid).toBe(true)
+    expect(compileCheck(basicCommandCode(values), 'plugin.js')).toBeNull()
+  })
+
+  it.each([
+    ['x', 'x'],
+    ['args', 'y'],
+    ['class', 'y']
+  ])('makes code that does not compile from the names %j and %j', (arg1Name, arg2Name) => {
+    const code = basicCommandCode({ ...base, arg1Name, arg2Name })
+
+    expect(compileCheck(code, 'plugin.js')).not.toBeNull()
   })
 })

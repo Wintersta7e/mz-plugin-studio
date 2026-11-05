@@ -372,6 +372,7 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 });
 
 // ==== case: arg1Name=console {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"console"}
+// rejects: Argument 1 name "console" is reserved in JavaScript or used by the command's own code
 // Plugin Command: Sample
 // Arguments:
 //   console (string) - First argument
@@ -384,7 +385,7 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 });
 
 // ==== case: arg1Name=my-arg,arg2Name=my-arg {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"my-arg","arg2Name":"my-arg"}
-// rejects: Argument 1 name must be a valid identifier | Argument 2 name must be a valid identifier
+// rejects: Argument 1 name must be a valid identifier | Argument 2 name must be a valid identifier | Argument 1 and argument 2 need different names
 // Plugin Command: Sample
 // Arguments:
 //   my-arg (string) - First argument
