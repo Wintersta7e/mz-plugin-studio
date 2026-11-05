@@ -2781,12 +2781,6 @@
     }
   },
   "src/renderer/src/lib/generator/templates/message-system.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 15
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 39
-    },
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
     },
@@ -2794,7 +2788,7 @@
       "count": 2
     },
     "complexity": {
-      "count": 5
+      "count": 2
     },
     "max-lines-per-function": {
       "count": 3
@@ -2804,9 +2798,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 4
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 10
     },
     "sonarjs/no-nested-conditional": {
       "count": 1

@@ -55,3 +55,10 @@ values are kept.
 export function providedOr(value: unknown, fallback: unknown): unknown {
   return value === undefined ? fallback : value
 }
+
+/**
+A template value, or the fallback when the value is unset (`undefined` or `null`).
+*/
+export function definedOr(value: unknown, fallback: unknown): unknown {
+  return value ?? fallback
+}
