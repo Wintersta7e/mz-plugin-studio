@@ -547,17 +547,6 @@
       "count": 1
     }
   },
-  "electron.vite.config.ts": {
-    "@typescript-eslint/no-deprecated": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
   "scripts/check-coverage.mjs": {
     "n/no-process-exit": {
       "count": 3
