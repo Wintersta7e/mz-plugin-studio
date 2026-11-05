@@ -283,6 +283,53 @@ const TAG_VALUE_CASES: [string, string][] = [
   ['param-tag-upper-case-tab', block('@param p', '@TEXT\tLabel', '@DEFAULT\tTrue')]
 ]
 
+// A struct block for `Fixture_Pair` in the language after the opener's colon.
+const structBlock = (lang: string, label: string): string =>
+  `/*~struct~Fixture_Pair:${lang}\n * @param left\n * @text ${label}\n */\n`
+
+const STRUCT_HEADER = block('@param pair', '@type struct<Fixture_Pair>')
+
+// Settings the parser reads past the tag lines: a one-line parameter, an option list, struct
+// blocks without a bare one, a second bare header and command code without a closing parenthesis.
+const SETTINGS_CASES: [string, string][] = [
+  [
+    'param-one-line-settings',
+    block('@param Fixture_Compact @text Compact label @type number @default 3 @min 1', '@max 9')
+  ],
+  [
+    'param-options-with-and-without-values',
+    block(
+      '@param choice',
+      '@type select',
+      '@option First',
+      '@value one',
+      '@option Second',
+      '@option Third',
+      '@value three',
+      '@default one'
+    )
+  ],
+  [
+    'struct-english-block-without-bare-block',
+    STRUCT_HEADER + structBlock('ja', 'Translated label') + structBlock('en', 'English label')
+  ],
+  [
+    'struct-first-block-without-bare-or-english',
+    STRUCT_HEADER + structBlock('ja', 'First label') + structBlock('fr', 'Second label')
+  ],
+  [
+    'language-second-bare-block-ignored',
+    block('@plugindesc Main description', '@target MZ') +
+      block('@plugindesc Second bare description', '@help', 'Second bare help')
+  ],
+  [
+    'command-code-block-without-closing-parenthesis',
+    WRAPPER_HEADER +
+      "PluginManager.registerCommand('Fixture_Pattern', 'run', () => {\n  const value = 1\n}\n" +
+      'const after = 2\n'
+  ]
+]
+
 const named =
   (filename: string) =>
   ([name, source]: [string, string]): ParserPatternCase => ({ name, filename, source })
@@ -297,7 +344,8 @@ export const parserPatternCases: readonly ParserPatternCase[] = [
     ...ASSET_CASES,
     ...PARAMETER_CASES,
     ...COMMAND_CASES,
-    ...TAG_VALUE_CASES
+    ...TAG_VALUE_CASES,
+    ...SETTINGS_CASES
   ].map(named(FILENAME)),
   ...SCRIPT_NAME_CASES.map(named(''))
 ]

@@ -1,0 +1,47 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "choice",
+      "text": "choice",
+      "desc": "",
+      "type": "select",
+      "default": "one",
+      "options": [
+        {
+          "value": "one",
+          "text": "First"
+        },
+        {
+          "value": "Second",
+          "text": "Second"
+        },
+        {
+          "value": "three",
+          "text": "Third"
+        }
+      ]
+    }
+  ],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @param choice\n * @type select\n * @option First\n * @value one\n * @option Second\n * @option Third\n * @value three\n * @default one\n */\n"
+}

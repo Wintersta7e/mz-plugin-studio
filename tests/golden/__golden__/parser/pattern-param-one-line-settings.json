@@ -1,0 +1,35 @@
+{
+  "id": "<id:1>",
+  "meta": {
+    "name": "Fixture_Pattern",
+    "version": "1.0.0",
+    "author": "",
+    "description": "",
+    "help": "",
+    "url": "",
+    "target": "",
+    "dependencies": [],
+    "orderAfter": [],
+    "orderBefore": [],
+    "noteParams": [],
+    "requiredAssets": [],
+    "localizations": {}
+  },
+  "parameters": [
+    {
+      "id": "<id:2>",
+      "name": "Fixture_Compact",
+      "text": "Compact label",
+      "desc": "",
+      "type": "number",
+      "default": 3,
+      "min": 1,
+      "max": 9
+    }
+  ],
+  "commands": [],
+  "structs": [],
+  "codeBody": "",
+  "customCode": "",
+  "rawSource": "/*:\n * @param Fixture_Compact @text Compact label @type number @default 3 @min 1\n * @max 9\n */\n"
+}
