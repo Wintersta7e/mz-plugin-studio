@@ -358,7 +358,8 @@ describe('custom text code replacement', () => {
 // The engine's window background, as RPG Maker MZ defines it: a Window background makes the frame
 // opaque, Dim and Transparent make it clear, and only Dim shows the dimmer sprite, made on first
 // use. A choice list sets its background each time it starts, a message window each message.
-// A bitmap records the colours filled into it since it was last cleared. The message scene's
+// The dimmer sprite sits 4 pixels left of the window, its bitmap 8 pixels wider than the window.
+// A bitmap records the rects filled into it since it was last cleared. The message scene's
 // window rect is as wide as the screen and 4 text lines high: 36 pixels a line, 12 of padding
 // above and below, and 8 more.
 const WINDOW_ENGINE = `
@@ -380,9 +381,15 @@ Scene_Message.prototype.messageWindowRect = function () {
   const wy = 0;
   return new Rectangle(wx, wy, ww, wh);
 };
-var Bitmap = function () { this.fills = []; };
+var Bitmap = function (width, height) {
+  this.width = width;
+  this.height = height;
+  this.fills = [];
+};
 Bitmap.prototype.clear = function () { this.fills = []; };
-Bitmap.prototype.fillRect = function (x, y, width, height, color) { this.fills.push(color); };
+Bitmap.prototype.fillRect = function (x, y, width, height, color) {
+  this.fills.push({ x: x, y: y, width: width, height: height, color: color });
+};
 var Window_Base = function () {};
 Window_Base.prototype.setBackgroundType = function (type) {
   if (type === 0) {
@@ -398,7 +405,7 @@ Window_Base.prototype.setBackgroundType = function (type) {
 };
 Window_Base.prototype.showBackgroundDimmer = function () {
   if (!this._dimmerSprite) {
-    this._dimmerSprite = { bitmap: new Bitmap(), visible: false };
+    this._dimmerSprite = { x: -4, bitmap: new Bitmap(this.width + 8, this.height), visible: false };
   }
   this._dimmerSprite.visible = true;
 };
@@ -464,7 +471,19 @@ describe('custom message background colour', () => {
 
     expect(shown).toMatchObject({
       opacity: 0,
-      _dimmerSprite: { visible: true, bitmap: { fills: ['rgba(0, 0, 64, 0.8)'] } }
+      _dimmerSprite: { visible: true, bitmap: { fills: [{ color: 'rgba(0, 0, 64, 0.8)' }] } }
+    })
+  })
+
+  it('fills the whole dimmer, which reaches 4 pixels past each side of the window', () => {
+    const shown = windowAfter(
+      'message-window-mod',
+      { modType: 'background', bgType: 'custom' },
+      'var shown = new Window_Message(); shown.width = 600; shown.height = 180; shown.updateBackground();'
+    )
+
+    expect(shown).toMatchObject({
+      _dimmerSprite: { bitmap: { fills: [{ x: 0, y: 0, width: 608, height: 180 }] } }
     })
   })
 })

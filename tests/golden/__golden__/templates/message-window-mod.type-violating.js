@@ -71,7 +71,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'rgba(0, 0, 0, 0.6)');
     }
 };
 

@@ -432,7 +432,7 @@ const messageWindowModTemplate: CodeTemplate = {
           lines.push('    if (this._dimmerSprite) {')
           lines.push('        this._dimmerSprite.bitmap.clear();')
           lines.push(
-            `        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, '${escapeJSString(expectText(bgColor))}');`
+            `        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, '${escapeJSString(expectText(bgColor))}');`
           )
           lines.push('    }')
           lines.push('};')

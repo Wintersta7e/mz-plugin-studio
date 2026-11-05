@@ -14,6 +14,7 @@
 - In the Custom Text Code template, a code set to replace itself with text now does so in message text. Before, the code was never found, so its replacement never showed.
 - In the Choice Handler template's style mode, the Window Opacity setting now holds each time choices are shown. Before, the choice window's own background setting replaced it as soon as the choices appeared.
 - In the Message Window Mod template's background mode, the Custom color now fills the message window's background for every message. Before, it showed only on messages set to a Dim background.
+- In the Message Window Mod template's background mode, the Custom color now covers the whole message window, as the Dim background does. Before, it stopped 4 pixels short of the window's right edge.
 
 ## [1.8.1] - 2026-11-05
 

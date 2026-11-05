@@ -280,7 +280,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'rgba(0, 0, 0, 0.6)');
     }
 };
 
@@ -297,7 +297,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'rgba(0, 0, 0, 0.6)');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'rgba(0, 0, 0, 0.6)');
     }
 };
 
@@ -437,7 +437,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */ globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */ globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -453,7 +453,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\u2028globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -469,7 +469,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\u2029globalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -485,7 +485,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X */\nglobalThis.__pwn = 1; /* Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X */\nglobalThis.__pwn = 1; /* Y');
     }
 };
 
@@ -501,7 +501,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X\' + (globalThis.__pwn = 1) + \'Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X\' + (globalThis.__pwn = 1) + \'Y');
     }
 };
 
@@ -517,7 +517,7 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X" + (globalThis.__pwn = 1) + "Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X" + (globalThis.__pwn = 1) + "Y');
     }
 };
 
@@ -533,6 +533,6 @@ Window_Message.prototype.updateBackground = function() {
     this.showBackgroundDimmer();
     if (this._dimmerSprite) {
         this._dimmerSprite.bitmap.clear();
-        this._dimmerSprite.bitmap.fillRect(0, 0, this.width, this.height, 'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y');
+        this._dimmerSprite.bitmap.fillRect(0, 0, this._dimmerSprite.bitmap.width, this._dimmerSprite.bitmap.height, 'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y');
     }
 };
