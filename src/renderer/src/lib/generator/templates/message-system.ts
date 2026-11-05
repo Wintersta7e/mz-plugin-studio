@@ -10,6 +10,7 @@
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString, isOneLineExpression } from '../escape'
+import { valueOr } from './values'
 
 /**
  * Template 1: Custom Text Code
@@ -386,6 +387,7 @@ const messageWindowModTemplate: CodeTemplate = {
 
       case 'size': {
         const windowWidth = (values['windowWidth'] as number) || 816
+        const windowHeight = valueOr(values['windowHeight'], 180)
         const numLines = (values['numLines'] as number) || 4
 
         lines.push('// Message Window Size Modification')
@@ -406,6 +408,7 @@ const messageWindowModTemplate: CodeTemplate = {
         lines.push('Scene_Message.prototype.messageWindowRect = function() {')
         lines.push('    const rect = _Scene_Message_messageWindowRect.call(this);')
         lines.push(`    rect.width = ${windowWidth};`)
+        lines.push(`    rect.height = ${String(windowHeight)};`)
         lines.push('    rect.x = (Graphics.boxWidth - rect.width) / 2;')
         lines.push('    return rect;')
         lines.push('};')

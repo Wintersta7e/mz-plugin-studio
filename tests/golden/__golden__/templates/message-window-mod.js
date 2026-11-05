@@ -43,6 +43,7 @@ const _Scene_Message_messageWindowRect = Scene_Message.prototype.messageWindowRe
 Scene_Message.prototype.messageWindowRect = function() {
     const rect = _Scene_Message_messageWindowRect.call(this);
     rect.width = 816;
+    rect.height = 180;
     rect.x = (Graphics.boxWidth - rect.width) / 2;
     return rect;
 };

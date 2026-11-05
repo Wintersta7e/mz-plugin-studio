@@ -17,7 +17,10 @@ import '../../src/renderer/src/lib/generator/templates/battle-system'
 import '../../src/renderer/src/lib/generator/templates/plugin-commands'
 import '../../src/renderer/src/lib/generator/templates/message-system'
 
-import { getTemplate } from '../../src/renderer/src/lib/generator/templates/index'
+import {
+  getTemplate,
+  getTemplateDefaults
+} from '../../src/renderer/src/lib/generator/templates/index'
 
 describe('save-load template', () => {
   it('injects a warning comment when storageLocation is Game_Actors', () => {
@@ -139,6 +142,29 @@ describe('message-system custom escape code', () => {
 
     // Word boundary prevents \X from matching \XY, \XX, etc.
     expect(out).toMatch(/\/\\\\X\(\?!\[A-Za-z\]\)\/gi/)
+  })
+})
+
+// The message window template's size mode, from its defaults with the given values
+function sizeCode(values: Record<string, unknown>): string {
+  const template = getTemplate('message-window-mod')
+  if (template === undefined) throw new Error('message-window-mod is not registered')
+  return template.generate({
+    ...getTemplateDefaults('message-window-mod'),
+    modType: 'size',
+    ...values
+  })
+}
+
+describe('message-system window size', () => {
+  it('sets the window height it is given', () => {
+    const out = sizeCode({ windowHeight: 300 })
+
+    expect(out).toContain('    rect.width = 816;\n    rect.height = 300;\n')
+  })
+
+  it('sets the default height when none is given', () => {
+    expect(sizeCode({ windowHeight: undefined })).toContain('    rect.height = 180;\n')
   })
 })
 

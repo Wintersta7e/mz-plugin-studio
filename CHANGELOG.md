@@ -6,6 +6,7 @@
 
 - In the template dialog, a field that holds a value of the wrong kind, such as a number in a text field or a list, is listed as an error on that field, instead of the template's check failing without a message.
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
+- In the Message Window Mod template's size mode, the Window Height setting now sets the message window's height. Before, it was ignored.
 
 ## [1.8.1] - 2026-11-05
 
