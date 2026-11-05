@@ -104,6 +104,33 @@ export function matchPlugindesc(header: string): string | undefined {
 }
 
 /**
+A tag with its value: `index` where its line starts, `end` at the line break after the value.
+*/
+interface TagValue {
+  index: number
+  end: number
+  value: string
+}
+
+// The rest of a line up to its line break; fails on `\r`, `\u2028`, `\u2029` or no break
+const VALUE_TO_LINE_BREAK = /.*(?=\n)/y
+
+function nextTagValue(header: string, start: RegExp): TagValue | undefined {
+  for (let m = start.exec(header); m !== null; m = start.exec(header)) {
+    VALUE_TO_LINE_BREAK.lastIndex = start.lastIndex
+    const value = VALUE_TO_LINE_BREAK.exec(header)
+    if (value !== null) {
+      return { index: m.index, end: VALUE_TO_LINE_BREAK.lastIndex, value: value[0] }
+    }
+  }
+  return undefined
+}
+
+function tagValueStart(tag: string): RegExp {
+  return tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*`, 'gi')
+}
+
+/**
 Same result as content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1], in linear time: a
 name is tried right after the tag and then only where a word starts, since a name tried inside
 a long word would re-read the rest of the word at every character.
@@ -408,21 +435,21 @@ export class PluginParser {
     }
 
     // Parse @author
-    const authorMatch = header.match(tagRegex(String.raw`author(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
-    if (authorMatch) {
-      meta.author = authorMatch[1].trim()
+    const author = this.matchTagValue(header, 'author')
+    if (author !== undefined) {
+      meta.author = author.trim()
     }
 
     // Parse @target
-    const targetMatch = header.match(tagRegex(String.raw`target(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
-    if (targetMatch) {
-      meta.target = targetMatch[1].trim()
+    const target = this.matchTagValue(header, 'target')
+    if (target !== undefined) {
+      meta.target = target.trim()
     }
 
     // Parse @url
-    const urlMatch = header.match(tagRegex(String.raw`url(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'i'))
-    if (urlMatch) {
-      meta.url = urlMatch[1].trim()
+    const url = this.matchTagValue(header, 'url')
+    if (url !== undefined) {
+      meta.url = url.trim()
     }
 
     // Parse @help
@@ -436,27 +463,23 @@ export class PluginParser {
     }
 
     // Parse @base (dependencies)
-    const baseMatches = header.matchAll(tagRegex(String.raw`base(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi'))
+    const baseMatches = this.matchTagValues(header, 'base')
     for (const match of baseMatches) {
-      const value = match[1].trim()
+      const value = match.value.trim()
       if (value) meta.dependencies.push(value)
     }
 
     // Parse @orderAfter (same pattern as @base)
-    const orderMatches = header.matchAll(
-      tagRegex(String.raw`orderAfter(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi')
-    )
+    const orderMatches = this.matchTagValues(header, 'orderAfter')
     for (const match of orderMatches) {
-      const value = match[1].trim()
+      const value = match.value.trim()
       if (value) meta.orderAfter.push(value)
     }
 
     // Parse @orderBefore (same pattern as @orderAfter)
-    const orderBeforeMatches = header.matchAll(
-      tagRegex(String.raw`orderBefore(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi')
-    )
+    const orderBeforeMatches = this.matchTagValues(header, 'orderBefore')
     for (const match of orderBeforeMatches) {
-      const value = match[1].trim()
+      const value = match.value.trim()
       if (value) meta.orderBefore.push(value)
     }
 
@@ -472,19 +495,17 @@ export class PluginParser {
 
     // Parse @noteParam groups
     // Each @noteParam starts a new group; subsequent @noteType/@noteDir/@noteData/@noteRequire belong to it
-    const noteParamMatches = [
-      ...header.matchAll(tagRegex(String.raw`noteParam(?!\S)[^\S\r\n]*(.*?)(?=\n)`, 'gi'))
-    ]
+    const noteParamMatches = this.matchTagValues(header, 'noteParam')
     for (let index = 0; index < noteParamMatches.length; index++) {
       const npMatch = noteParamMatches[index]
       // Get the text between this @noteParam and the next one (or end of header)
-      const startIndex = npMatch.index + npMatch[0].length
+      const startIndex = npMatch.end
       const endIndex =
         index + 1 < noteParamMatches.length ? noteParamMatches[index + 1].index : header.length
       const groupBlock = header.slice(startIndex, endIndex)
 
       const noteParam: NoteParam = {
-        name: npMatch[1].trim(),
+        name: npMatch.value.trim(),
         type: 'file'
       }
 
@@ -781,6 +802,28 @@ export class PluginParser {
   private static tagValue(block: string, tag: string): string | null {
     const match = block.match(tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i'))
     return match ? match[1].trim() : null
+  }
+
+  /**
+  Same result as header.match(/<line start>@<tag>(?!\S)[^\S\r\n]*(.*?)(?=\n)/i)?.[1], in linear
+  time: the spaces after the tag are read once instead of once per space given back to the value.
+  Unlike tagValue, a value needs a line break after it.
+  */
+  static matchTagValue(header: string, tag: string): string | undefined {
+    return nextTagValue(header, tagValueStart(tag))?.value
+  }
+
+  /**
+  Same results as header.matchAll(/<line start>@<tag>(?!\S)[^\S\r\n]*(.*?)(?=\n)/gi) (index, end
+  of the match, group 1), in linear time, as matchTagValue reads them.
+  */
+  static matchTagValues(header: string, tag: string): TagValue[] {
+    const start = tagValueStart(tag)
+    const values: TagValue[] = []
+    for (let v = nextTagValue(header, start); v !== undefined; v = nextTagValue(header, start)) {
+      values.push(v)
+    }
+    return values
   }
 
   /**

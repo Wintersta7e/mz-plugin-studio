@@ -35,6 +35,9 @@ describe('parse time after a custom-code marker', () => {
 
 const RAMP = [1, 2, 4, 8, 16, 32, 64, 100].map((k) => k * 1024)
 
+// Tags whose value runs to the line break; the legs leave none after the spaces
+const TAG_VALUE_TAGS = ['author', 'target', 'url', 'base', 'orderAfter', 'orderBefore', 'noteParam']
+
 const LEGS: [string, (size: number) => string][] = [
   ['help', (size) => '/*:\n * @help' + '\n '.repeat(size / 2) + '\n */\n'],
   [
@@ -51,7 +54,11 @@ const LEGS: [string, (size: number) => string][] = [
     'language plugindesc',
     (size) => '/*:\n * @plugindesc x\n */\n/*:ja\n * @plugindesc x' + '\n'.repeat(size) + 'y\n */\n'
   ],
-  ['word run', (size) => "/*:\n * @plugindesc x\n */\nconst D = '" + 'a'.repeat(size) + "';\n"]
+  ['word run', (size) => "/*:\n * @plugindesc x\n */\nconst D = '" + 'a'.repeat(size) + "';\n"],
+  ...TAG_VALUE_TAGS.map((tag): [string, (size: number) => string] => [
+    tag,
+    (size) => `/*:\n * @${tag}` + ' '.repeat(size) + 'x*/'
+  ])
 ]
 
 describe('parse time of help text and tag values', () => {
@@ -128,6 +135,11 @@ const oldPlugindesc = (header: string): string | undefined =>
 const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
 const oldScriptName = (content: string): string | undefined =>
   content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1]
+// Tag values run to the line break: built from the tag as the parser built them. `\u{2028}` is
+// whitespace for the spaces before the value but ends the value, like `\r`.
+const oldTagValue = (tag: string, flags: string): RegExp =>
+  new RegExp(String.raw`${LINE}@${tag}(?!\S)[^\S\r\n]*(.*?)(?=\n)`, flags)
+const TAG_VALUE_PIECES = [' ', '\t', '\n', '\r', '\u{2028}', 'a', '@', '*', '/']
 
 describe('linear-time help and tag readers match the regular expressions they replace', () => {
   it('help text, any header', () => {
@@ -194,4 +206,38 @@ describe('linear-time help and tag readers match the regular expressions they re
       matchScriptName
     )
   })
+})
+
+describe('linear-time tag value readers match the regular expressions they replace', () => {
+  it.each(['author', 'target', 'url'])('%s value, first tag with a line break', (tag) => {
+    expect.hasAssertions()
+
+    checkEquivalence(
+      `${tag} value`,
+      strings([...TAG_VALUE_PIECES, tag], 6),
+      (s) => oldTagValue(tag, 'i').exec(s)?.at(1),
+      (s) => PluginParser.matchTagValue(s, tag)
+    )
+  })
+
+  it.each(['base', 'orderAfter', 'orderBefore', 'noteParam'])(
+    '%s values, every tag with a line break',
+    (tag) => {
+      expect.hasAssertions()
+
+      checkEquivalence(
+        `${tag} values`,
+        strings([...TAG_VALUE_PIECES, tag], 6),
+        (s) =>
+          JSON.stringify(
+            s
+              .matchAll(oldTagValue(tag, 'gi'))
+              .map((m) => [m.index, m.index + m[0].length, m.at(1)])
+              .toArray()
+          ),
+        (s) =>
+          JSON.stringify(PluginParser.matchTagValues(s, tag).map((v) => [v.index, v.end, v.value]))
+      )
+    }
+  )
 })
