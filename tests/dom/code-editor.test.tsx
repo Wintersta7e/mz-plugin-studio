@@ -12,17 +12,24 @@ import { monacoStub } from '../setup/monaco-stub'
 import { resetStores } from './support/reset-stores'
 
 const SE_ID = 'audio-se-player'
-const SE_CODE = getTemplate(SE_ID)!.generate({ ...getTemplateDefaults(SE_ID), filename: 'Cursor9' })
+const seCode = (): string => {
+  const template = getTemplate(SE_ID)
+  if (template === undefined) throw new Error(`no template ${SE_ID}`)
+  return template.generate({ ...getTemplateDefaults(SE_ID), filename: 'Cursor9' })
+}
+const SE_CODE = seCode()
 
-beforeEach(resetStores)
+// The editor stub at a position on the screen; the tab's editor renders before the preview's
+const editorAt = (index: number): HTMLTextAreaElement => {
+  const element = screen.getAllByTestId('monaco-editor').at(index)
+  if (!(element instanceof HTMLTextAreaElement))
+    throw new TypeError(`no editor at ${String(index)}`)
+  return element
+}
+const editor = (): HTMLTextAreaElement => editorAt(0)
+const preview = (): string => editorAt(1).value
 
-// The tab's editor renders before the preview's
-const editor = (): HTMLTextAreaElement =>
-  screen.getAllByTestId('monaco-editor')[0] as HTMLTextAreaElement
-const preview = (): string =>
-  (screen.getAllByTestId('monaco-editor')[1] as HTMLTextAreaElement).value
-
-function renderTab(customCode = ''): UserEvent {
+function openCodeTab(customCode = ''): UserEvent {
   usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), customCode })
   const user = userEvent.setup()
   render(
@@ -34,12 +41,14 @@ function renderTab(customCode = ''): UserEvent {
   return user
 }
 
-/** Inserts the Sound Effect Player template playing Cursor9; the dialog closes. */
-async function insertSoundEffect(user: UserEvent): Promise<void> {
+// Inserts the Sound Effect Player template playing Cursor9; the dialog closes.
+const insertSoundEffect = async (user: UserEvent): Promise<void> => {
   await user.click(screen.getByRole('button', { name: /Insert Template/ }))
   // The dialog moves focus to its search box shortly after it opens
   const search = screen.getByPlaceholderText(/search/i)
-  await waitFor(() => expect(search).toHaveFocus())
+  await waitFor(() => {
+    expect(search).toHaveFocus()
+  })
   await user.type(search, 'Sound Effect')
   await user.click(screen.getByRole('button', { name: /^Sound Effect Player/ }))
   await user.type(screen.getByLabelText(/SE Filename/), 'Cursor9')
@@ -49,28 +58,40 @@ async function insertSoundEffect(user: UserEvent): Promise<void> {
 }
 
 describe('code tab', () => {
+  beforeEach(resetStores)
+
   it('writes typed code into the plugin code', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCodeTab()
     await user.type(editor(), '// mine')
-    await waitFor(() => expect(preview()).toContain('// mine'))
+    await waitFor(() => {
+      expect(preview()).toContain('// mine')
+    })
   })
 
   it('fills an empty editor with the inserted template', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCodeTab()
     await insertSoundEffect(user)
 
     expect(editor()).toHaveValue(SE_CODE)
   })
 
   it('appends the template after a blank line to code already there', async () => {
-    const user = renderTab('const a = 1;')
+    expect.hasAssertions()
+
+    const user = openCodeTab('const a = 1;')
     await insertSoundEffect(user)
 
     expect(editor()).toHaveValue('const a = 1;\n\n' + SE_CODE)
   })
 
   it('replaces the selected code with the template', async () => {
-    const user = renderTab('const a = 1;\nconst b = 2;')
+    expect.hasAssertions()
+
+    const user = openCodeTab('const a = 1;\nconst b = 2;')
     // Drag across the whole second line
     await user.pointer([
       { target: editor(), offset: 13, keys: '[MouseLeft>]' },
@@ -85,10 +106,10 @@ describe('code tab', () => {
   it('registers one completion provider while the tab is shown', () => {
     const { unmount } = render(<CodeEditor />)
 
-    expect(monacoStub.providers).toEqual([{ language: 'javascript', disposed: false }])
+    expect(monacoStub.providers).toStrictEqual([{ language: 'javascript', disposed: false }])
 
     unmount()
 
-    expect(monacoStub.providers).toEqual([{ language: 'javascript', disposed: true }])
+    expect(monacoStub.providers).toStrictEqual([{ language: 'javascript', disposed: true }])
   })
 })

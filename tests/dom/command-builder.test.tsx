@@ -15,76 +15,108 @@ import {
 } from '../../src/renderer/src/types/plugin'
 import { resetStores } from './support/reset-stores'
 
-beforeEach(resetStores)
+// The generated plugin code the preview shows
+const preview = (): string => {
+  const editor = screen.getByTestId('monaco-editor')
+  if (!(editor instanceof HTMLTextAreaElement)) throw new TypeError('the preview is no text area')
+  return editor.value
+}
+
+// Waits until the preview holds every line given
+const previewHolds = async (...lines: string[]): Promise<void> => {
+  await waitFor(() => {
+    expect(lines.filter((line) => !preview().includes(line))).toStrictEqual([])
+  })
+}
+
+// Waits until the preview no longer holds the text
+const previewDrops = async (text: string): Promise<void> => {
+  await waitFor(() => {
+    expect(preview()).not.toContain(text)
+  })
+}
+
+// The buttons of a command card's header and of an argument row have no names. With one command
+// open, the buttons without a name are, in screen order, the command's delete button, then each
+// argument row's details and delete buttons.
+const COMMAND_DELETE = 0
+const ARGUMENT_DETAILS = 1
+const ARGUMENT_DELETE = 2
+const namelessButton = (position: number): HTMLElement => {
+  const button = screen.getAllByRole('button', { name: '' }).at(position)
+  if (button === undefined) throw new Error(`no button without a name at ${String(position)}`)
+  return button
+}
+
+// The select showing `text`; a select's label names no target, so it has no accessible name
+const combobox = (text: string): HTMLElement => {
+  const select = screen.getAllByRole('combobox').find((c) => c.textContent === text)
+  if (select === undefined) throw new Error(`no select shows ${text}`)
+  return select
+}
+
+function openCommandTab(structs: PluginStruct[] = []): UserEvent {
+  usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), structs })
+  const user = userEvent.setup()
+  render(
+    <>
+      <CommandBuilder />
+      <CodePreview />
+    </>
+  )
+  return user
+}
+
+async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
+  await user.clear(field)
+  await user.type(field, text)
+}
+
+async function pick(user: UserEvent, current: string, option: string): Promise<void> {
+  await user.click(combobox(current))
+  await user.click(await screen.findByRole('option', { name: option }))
+}
+
+// Adds a command with an argument named `mode` of the type `type`, and shows its details
+async function addArgument(user: UserEvent, type: string): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Add Command' }))
+  await user.click(screen.getByRole('button', { name: 'Add Argument' }))
+  await retype(user, screen.getByPlaceholderText('argName'), 'mode')
+  await pick(user, 'String', type)
+  await user.click(namelessButton(ARGUMENT_DETAILS))
+}
 
 describe('command skeleton', () => {
+  beforeEach(resetStores)
+
   it.each(["Show$'", 'Show$`', 'Show$&', "It's", 'A\\B'])(
     'renaming a command to %s changes only its skeleton in the plugin code',
     (name) => {
-      const cmd = { ...createEmptyCommand(), name: 'Show' }
+      const command = { ...createEmptyCommand(), name: 'Show' }
       const rest = '\n\nfunction tick() { return 1; }\n'
       usePluginStore.getState().openPlugin({
         ...createEmptyPlugin(),
-        commands: [cmd],
-        customCode: generateCommandSkeleton(cmd) + rest
+        commands: [command],
+        customCode: generateCommandSkeleton(command) + rest
       })
       render(<CommandBuilder />)
-      fireEvent.click(screen.getByText(cmd.text))
+      fireEvent.click(screen.getByText(command.text))
       fireEvent.change(screen.getByDisplayValue('Show'), { target: { value: name } })
 
       expect(usePluginStore.getState().plugin.customCode).toBe(
-        generateCommandSkeleton({ ...cmd, name }) + rest
+        generateCommandSkeleton({ ...command, name }) + rest
       )
     }
   )
 })
 
 describe('command annotations', () => {
-  /** The generated plugin code the preview shows. */
-  const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
-
-  /** The row of the argument whose name field holds `name`; its buttons have no names. */
-  const argRow = (name: string): HTMLElement =>
-    screen.getByDisplayValue(name).closest<HTMLElement>('.rounded')!
-
-  /** The select showing `text`; a select's label names no target, so it has no accessible name. */
-  const combobox = (text: string): HTMLElement =>
-    screen.getAllByRole('combobox').find((c) => c.textContent === text)!
-
-  function renderTab(structs: PluginStruct[] = []): UserEvent {
-    usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), structs })
-    const user = userEvent.setup()
-    render(
-      <>
-        <CommandBuilder />
-        <CodePreview />
-      </>
-    )
-    return user
-  }
-
-  async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
-    await user.clear(field)
-    await user.type(field, text)
-  }
-
-  async function pick(user: UserEvent, current: string, option: string): Promise<void> {
-    await user.click(combobox(current))
-    await user.click(await screen.findByRole('option', { name: option }))
-  }
-
-  /** Adds a command with an argument named `mode` of the type `type`, and shows its details. */
-  async function addArgument(user: UserEvent, type: string): Promise<void> {
-    await user.click(screen.getByRole('button', { name: 'Add Command' }))
-    await user.click(screen.getByRole('button', { name: 'Add Argument' }))
-    await retype(user, screen.getByPlaceholderText('argName'), 'mode')
-    await pick(user, 'String', type)
-    // The first button of an argument row shows its details
-    await user.click(argRow('mode').querySelector('button')!)
-  }
+  beforeEach(resetStores)
 
   it('writes a new command and its number argument, and drops them when deleted', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCommandTab()
 
     expect(screen.getByText('No commands defined')).toBeInTheDocument()
 
@@ -93,55 +125,45 @@ describe('command annotations', () => {
     expect(screen.queryByText('No commands defined')).not.toBeInTheDocument()
 
     await retype(user, screen.getByPlaceholderText('myCommand'), 'showBanner')
-    await waitFor(() => expect(preview()).toContain(' * @command showBanner\n'))
+    await previewHolds(' * @command showBanner\n')
 
     await user.click(screen.getByRole('button', { name: 'Add Argument' }))
     await retype(user, screen.getByPlaceholderText('argName'), 'count')
-    await waitFor(() => expect(preview()).toContain(' * @arg count\n'))
+    await previewHolds(' * @arg count\n')
 
     await user.click(screen.getByRole('combobox'))
     await user.click(await screen.findByRole('option', { name: 'Number' }))
-    // The first button of an argument row shows its details
-    await user.click(argRow('count').querySelector('button')!)
+    await user.click(namelessButton(ARGUMENT_DETAILS))
     await user.type(screen.getByPlaceholderText('No min'), '1')
-    await waitFor(() => {
-      expect(preview()).toContain(' * @type number\n')
-      expect(preview()).toContain(' * @min 1\n')
-    })
+    await previewHolds(' * @type number\n', ' * @min 1\n')
 
-    // The last button of an argument row deletes it
-    const argButtons = argRow('count').querySelectorAll('button')
-    await user.click(argButtons[argButtons.length - 1])
-    await waitFor(() => expect(preview()).not.toContain('@arg count'))
+    await user.click(namelessButton(ARGUMENT_DELETE))
+    await previewDrops('@arg count')
 
     expect(preview()).toContain(' * @command showBanner\n')
 
-    // The command header holds one button, which deletes the command
-    const header = screen.getByText('(0 args)').closest<HTMLElement>('.cursor-pointer')!
-    await user.click(header.querySelector('button')!)
-    await waitFor(() => expect(preview()).not.toContain('@command showBanner'))
+    await user.click(namelessButton(COMMAND_DELETE))
+    await previewDrops('@command showBanner')
 
     expect(screen.getByText('No commands defined')).toBeInTheDocument()
   })
 
   it('writes the typed options of a select argument with their values', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCommandTab()
     await addArgument(user, 'Select')
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|A')
-    await waitFor(() => {
-      expect(preview()).toContain(' * @type select\n')
-      expect(preview()).toContain(' * @option A\n * @value a\n')
-    })
+    await previewHolds(' * @type select\n', ' * @option A\n * @value a\n')
   })
 
   it('writes the typed options of a combo argument with their values', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCommandTab()
     await addArgument(user, 'Combo')
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|A')
-    await waitFor(() => {
-      expect(preview()).toContain(' * @type combo\n')
-      expect(preview()).toContain(' * @option A\n * @value a\n')
-    })
+    await previewHolds(' * @type combo\n', ' * @option A\n * @value a\n')
   })
 
   it.each([
@@ -150,32 +172,38 @@ describe('command annotations', () => {
     ['Location', 'location'],
     ['Icon', 'icon']
   ])('writes an argument of type %s as @type %s', async (label, type) => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCommandTab()
     await addArgument(user, label)
-    await waitFor(() =>
-      expect(preview()).toContain(` * @arg mode\n * @text New Parameter\n * @type ${type}\n`)
-    )
+    await previewHolds(` * @arg mode\n * @text New Parameter\n * @type ${type}\n`)
   })
 
   it('writes a struct argument as the struct type it picks', async () => {
-    const user = renderTab([{ ...createEmptyStruct(), name: 'Point' }])
+    expect.hasAssertions()
+
+    const user = openCommandTab([{ ...createEmptyStruct(), name: 'Point' }])
     await addArgument(user, 'Struct')
     await pick(user, 'Select struct...', 'Point')
-    await waitFor(() => expect(preview()).toContain(' * @type struct<Point>\n'))
+    await previewHolds(' * @type struct<Point>\n')
   })
 
   it('writes an array argument as an array of the element type it picks', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openCommandTab()
     await addArgument(user, 'Array')
     await pick(user, 'String', 'Number')
-    await waitFor(() => expect(preview()).toContain(' * @type number[]\n'))
+    await previewHolds(' * @type number[]\n')
   })
 
   it('writes an array argument of structs as an array of the struct type it picks', async () => {
-    const user = renderTab([{ ...createEmptyStruct(), name: 'Point' }])
+    expect.hasAssertions()
+
+    const user = openCommandTab([{ ...createEmptyStruct(), name: 'Point' }])
     await addArgument(user, 'Array')
     await pick(user, 'String', 'Struct')
     await pick(user, 'Select struct...', 'Point')
-    await waitFor(() => expect(preview()).toContain(' * @type struct<Point>[]\n'))
+    await previewHolds(' * @type struct<Point>[]\n')
   })
 })

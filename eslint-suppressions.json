@@ -3616,32 +3616,6 @@
       "count": 18
     }
   },
-  "tests/dom/code-editor.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
   "tests/dom/code-preview.test.tsx": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 40
@@ -3729,47 +3703,6 @@
     },
     "vitest/require-top-level-describe": {
       "count": 2
-    }
-  },
-  "tests/dom/command-builder.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 8
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 9
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 3
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 7
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
     }
   },
   "tests/dom/diff-view.test.tsx": {
