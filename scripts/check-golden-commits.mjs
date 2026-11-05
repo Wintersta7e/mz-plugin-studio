@@ -1,5 +1,6 @@
 // Checks the golden-file rules over a range of commits, from the repository root:
-//   - a commit that changes src/ adds no golden file and no case to an existing golden;
+//   - a commit that changes src/ adds no golden file and no case to an existing golden (a case
+//     header that only loses fields is the same case, not an added one);
 //   - a commit that changes no src/ file deletes no golden line;
 //   - a changed user-visible golden (generated output) comes with a CHANGELOG.md change,
 //     unless a commit that changes no src/ file only adds whole cases (or index lines) to it.
@@ -19,6 +20,7 @@ import { pathToFileURL } from 'node:url'
 const GOLDEN = 'tests/golden/__golden__/'
 const USER_VISIBLE = ['templates/', 'generator/', 'raw-mode/', 'mzparams/'].map((d) => GOLDEN + d)
 const CASE_HEADER = '+// ==== case:'
+const REMOVED_CASE_HEADER = '-// ==== case:'
 const NO_COMMIT = /^0+$/
 const MAX_SUBJECT = 72
 const CO_AUTHOR_KEY = 'Co-Authored-By'
@@ -145,11 +147,78 @@ function changedPaths(sha) {
 }
 
 /**
-@typedef {{ headers: number, deleted: number }} GoldenLines
+@typedef {{ added: string[], removed: string[], deleted: number }} GoldenLines
 */
 
 /**
-Added case headers and deleted lines per golden file of a commit.
+The fields of a JSON object, in order; undefined when the text is not one.
+@param {string} text
+*/
+function jsonFields(text) {
+  /**
+  @type {unknown}
+  */
+  let value
+  try {
+    value = JSON.parse(text)
+  } catch {
+    // Not JSON: a brace inside the case name, the object starts at a later one.
+  }
+  /**
+  @type {Map<string, unknown> | undefined}
+  */
+  const fields =
+    typeof value === 'object' && value !== null ? new Map(Object.entries(value)) : undefined
+  return fields
+}
+
+/**
+A case header's name and the fields of the JSON object that ends it; undefined when none ends it.
+@param {string} line a case header line of a diff, its change mark included
+*/
+function parseHeader(line) {
+  const text = line.slice(CASE_HEADER.length + 1)
+  /**
+  @type {{ name: string, fields: Map<string, unknown> } | undefined}
+  */
+  let header
+  for (const { index } of text.matchAll(/ \{/g)) {
+    const fields = jsonFields(text.slice(index + 1))
+    if (fields === undefined) continue
+    header = { name: text.slice(0, index), fields }
+    break
+  }
+  return header
+}
+
+/**
+How many added case headers each pair with a deleted one of the same file that names the same
+case and holds the same fields, in order, minus one or more: a field that only left the case.
+@param {string[]} removed
+@param {string[]} added
+*/
+function fieldLosses(removed, added) {
+  const unpaired = removed.map((line) => parseHeader(line))
+  let paired = 0
+  for (const line of added) {
+    const after = parseHeader(line)
+    const index = unpaired.findIndex((before) => {
+      if (before === undefined || after === undefined || before.name !== after.name) return false
+      const kept = [...before.fields].filter(([key]) => after.fields.has(key))
+      return (
+        kept.length < before.fields.size &&
+        JSON.stringify(kept) === JSON.stringify([...after.fields])
+      )
+    })
+    if (index === -1) continue
+    unpaired.splice(index, 1)
+    paired++
+  }
+  return paired
+}
+
+/**
+Added and deleted case headers, and the count of deleted lines, per golden file of a commit.
 @param {string} sha
 */
 function goldenLines(sha) {
@@ -175,13 +244,14 @@ function goldenLines(sha) {
       if (line.startsWith('--- a/') || line.startsWith('+++ b/')) {
         file = line.slice(6).replace(/\t$/, '')
       } else if (line.startsWith('@@')) {
-        hunk = files.get(file) ?? { headers: 0, deleted: 0 }
+        hunk = files.get(file) ?? { added: [], removed: [], deleted: 0 }
         files.set(file, hunk)
       }
     } else if (line.startsWith(CASE_HEADER)) {
-      hunk.headers++
+      hunk.added.push(line)
     } else if (line.startsWith('-')) {
       hunk.deleted++
+      if (line.startsWith(REMOVED_CASE_HEADER)) hunk.removed.push(line)
     }
   }
   return files
@@ -321,9 +391,15 @@ function checkGoldens(sha, counts, fail) {
   if (touchesSource) counts.src++
   const scope = { sha, touchesSource, touchesChangelog, counts, fail }
   for (const change of golden) {
-    const { headers, deleted } = lines.get(change.file) ?? { headers: 0, deleted: 0 }
-    checkSourceGolden(scope, change, headers)
-    checkExistingGolden(scope, change, deleted)
+    const { added, removed, deleted } = lines.get(change.file) ?? {
+      added: [],
+      removed: [],
+      deleted: 0
+    }
+    // A src commit that drops a field rewrites each header naming it; no case is added or lost.
+    const lost = touchesSource ? fieldLosses(removed, added) : 0
+    checkSourceGolden(scope, change, added.length - lost)
+    checkExistingGolden(scope, change, deleted - lost)
   }
 }
 
