@@ -4,21 +4,31 @@
 import { describe, it, expect, vi } from 'vitest'
 import log from 'electron-log/main'
 
-vi.mock('electron', () => ({
+vi.mock<Record<'app' | 'ipcMain', unknown>>(import('electron'), () => ({
   // The app never becomes ready, so only what the entry runs on import is exercised
-  app: { whenReady: () => new Promise(() => {}), on: vi.fn() },
-  ipcMain: { handle: vi.fn(), on: vi.fn() }
+  app: {
+    whenReady: vi
+      .fn<() => Promise<undefined>>()
+      .mockReturnValue(Promise.withResolvers<undefined>().promise),
+    on: vi.fn<() => void>()
+  },
+  ipcMain: { handle: vi.fn<() => void>(), on: vi.fn<() => void>() }
 }))
-vi.mock('@electron-toolkit/utils', () => ({
-  electronApp: {},
-  optimizer: {},
-  is: { dev: false }
-}))
+vi.mock<Record<'electronApp' | 'optimizer' | 'is', unknown>>(
+  import('@electron-toolkit/utils'),
+  () => ({
+    electronApp: {},
+    optimizer: {},
+    is: { dev: false }
+  })
+)
 
 describe('main entry logging', () => {
   it('initialises electron-log once, without its page script', async () => {
+    expect.hasAssertions()
+
     await import('../../src/main/index')
 
-    expect(vi.mocked(log.initialize).mock.calls).toEqual([[{ preload: false }]])
+    expect(vi.mocked(log.initialize).mock.calls).toStrictEqual([[{ preload: false }]])
   })
 })
