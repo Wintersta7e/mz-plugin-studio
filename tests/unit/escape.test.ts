@@ -14,40 +14,40 @@ import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
 const BLOCK_INPUTS = ['*/', '**/', '*/*/', 'a*/b', '*\\/', '', '/*', '*']
 const LINE_INPUTS = ['a\nb', 'a\r\nb', 'a\rb', 'a\u{2028}b', 'a\u{2029}b', '\r\n\r\n', '']
+const LINE_BREAK = /[\n\r\u{2028}\u{2029}]/u
 
-describe('escapeBlockComment', () => {
+describe(escapeBlockComment, () => {
   it('leaves no comment end and gives the same text when applied twice', () => {
-    console.log(`escape inputs checked: ${BLOCK_INPUTS.length} ${JSON.stringify(BLOCK_INPUTS)}`)
+    process.stdout.write(
+      `escape inputs checked: ${String(BLOCK_INPUTS.length)} ${JSON.stringify(BLOCK_INPUTS)}\n`
+    )
 
     expect(BLOCK_INPUTS.length).toBeGreaterThan(0)
 
-    for (const input of BLOCK_INPUTS) {
-      const once = escapeBlockComment(input)
+    const once = BLOCK_INPUTS.map((input) => escapeBlockComment(input))
 
-      expect(once, input).not.toContain('*/')
-      expect(escapeBlockComment(once), input).toBe(once)
-    }
+    expect(once.filter((text) => text.includes('*/'))).toStrictEqual([])
+    expect(once.map((text) => escapeBlockComment(text))).toStrictEqual(once)
   })
 })
 
-describe('escapeLineComment', () => {
+describe(escapeLineComment, () => {
   it('leaves no line break and gives the same text when applied twice', () => {
-    console.log(`escape inputs checked: ${LINE_INPUTS.length} ${JSON.stringify(LINE_INPUTS)}`)
+    process.stdout.write(
+      `escape inputs checked: ${String(LINE_INPUTS.length)} ${JSON.stringify(LINE_INPUTS)}\n`
+    )
 
     expect(LINE_INPUTS.length).toBeGreaterThan(0)
 
-    for (const input of LINE_INPUTS) {
-      const once = escapeLineComment(input)
+    const once = LINE_INPUTS.map((input) => escapeLineComment(input))
 
-      expect(once, JSON.stringify(input)).not.toMatch(/[\r\n\u2028\u2029]/)
-      expect(escapeLineComment(once), JSON.stringify(input)).toBe(once)
-    }
-
+    expect(once.filter((text) => LINE_BREAK.test(text))).toStrictEqual([])
+    expect(once.map((text) => escapeLineComment(text))).toStrictEqual(once)
     expect(escapeLineComment('a\r\nb')).toBe('a b')
   })
 })
 
-describe('annotationText', () => {
+describe(annotationText, () => {
   it('writes each line break as one space and keeps the comment open', () => {
     expect(annotationText('a\nb')).toBe('a b')
     expect(annotationText('a\r\nb')).toBe('a b')
@@ -61,26 +61,29 @@ describe('annotationText', () => {
   })
 })
 
-describe('JS string escapes', () => {
+describe('the JS string escapes', () => {
   it('evaluate back to the text they escape', () => {
     const literals: [string, (s: string) => string][] = [
       ['single', (s) => `'${escapeJSString(s)}'`],
       ['double', (s) => `"${escapeJSDoubleQuote(s)}"`]
     ]
-    console.log(`escape inputs checked: ${LINE_INPUTS.length * literals.length}`)
-    for (const input of LINE_INPUTS) {
-      for (const [quote, literal] of literals) {
-        const result = evaluatePlugin(`globalThis.__value = ${literal(input)};`, {
-          mode: 'generator'
-        })
+    process.stdout.write(`escape inputs checked: ${String(LINE_INPUTS.length * literals.length)}\n`)
+    const cases = LINE_INPUTS.flatMap((input) =>
+      literals.map(([quote, literal]) => ({
+        label: `${quote} ${JSON.stringify(input)}`,
+        input,
+        source: literal(input)
+      }))
+    )
+    const evaluated = cases.map(({ label, source }) => {
+      const result = evaluatePlugin(`globalThis.__value = ${source};`, { mode: 'generator' })
+      const { __value: value } = result.context ?? {}
+      return [label, LINE_BREAK.test(source), result.compileProblem ?? 'compiles', value]
+    })
 
-        expect(literal(input), `${quote} ${JSON.stringify(input)}`).not.toMatch(
-          /[\r\n\u2028\u2029]/
-        )
-        expect(result.compileProblem, `${quote} ${JSON.stringify(input)}`).toBeNull()
-        expect(result.context?.__value, `${quote} ${JSON.stringify(input)}`).toBe(input)
-      }
-    }
+    expect(evaluated).toStrictEqual(
+      cases.map(({ label, input }) => [label, false, 'compiles', input])
+    )
   })
 })
 
@@ -106,18 +109,22 @@ const NOT_EXPRESSIONS = [
   'a\u{2028}b'
 ]
 
-describe('isOneLineExpression', () => {
+describe(isOneLineExpression, () => {
   it('accepts expressions that compile and refuses text that ends them early', () => {
-    console.log(`expression inputs checked: ${EXPRESSIONS.length + NOT_EXPRESSIONS.length}`)
+    process.stdout.write(
+      `expression inputs checked: ${String(EXPRESSIONS.length + NOT_EXPRESSIONS.length)}\n`
+    )
 
     expect(EXPRESSIONS.length * NOT_EXPRESSIONS.length).toBeGreaterThan(0)
-
-    for (const text of EXPRESSIONS) {
-      expect(isOneLineExpression(text), text).toBe(true)
-      expect(compileCheck(`globalThis.__value = ${text};`, 'plugin.js'), text).toBeNull()
-    }
-    for (const text of NOT_EXPRESSIONS) {
-      expect(isOneLineExpression(text), JSON.stringify(text)).toBe(false)
-    }
+    expect(
+      EXPRESSIONS.map((text) => [
+        text,
+        isOneLineExpression(text),
+        compileCheck(`globalThis.__value = ${text};`, 'plugin.js') ?? 'compiles'
+      ])
+    ).toStrictEqual(EXPRESSIONS.map((text) => [text, true, 'compiles']))
+    expect(
+      NOT_EXPRESSIONS.map((text) => [JSON.stringify(text), isOneLineExpression(text)])
+    ).toStrictEqual(NOT_EXPRESSIONS.map((text) => [JSON.stringify(text), false]))
   })
 })
