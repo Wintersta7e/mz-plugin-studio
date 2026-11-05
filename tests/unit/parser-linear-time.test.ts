@@ -1,5 +1,6 @@
 // Parse time of the custom-code marker patterns on a long run of spaces after the marker,
-// and of help text and tag values on long runs of spaces or blank lines.
+// of help text and tag values on long runs of spaces or blank lines, and of a wrapper close
+// followed by a long run of spaces.
 import { describe, it, expect } from 'vitest'
 import {
   PluginParser,
@@ -55,6 +56,10 @@ const LEGS: [string, (size: number) => string][] = [
     (size) => '/*:\n * @plugindesc x\n */\n/*:ja\n * @plugindesc x' + '\n'.repeat(size) + 'y\n */\n'
   ],
   ['word run', (size) => "/*:\n * @plugindesc x\n */\nconst D = '" + 'a'.repeat(size) + "';\n"],
+  [
+    'wrapper close',
+    (size) => '/*:\n * @plugindesc x\n */\n(() => {\n})()' + ' '.repeat(size) + 'x'
+  ],
   ...TAG_VALUE_TAGS.map((tag): [string, (size: number) => string] => [
     tag,
     (size) => `/*:\n * @${tag}` + ' '.repeat(size) + 'x*/'
@@ -135,6 +140,11 @@ const oldPlugindesc = (header: string): string | undefined =>
 const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
 const oldScriptName = (content: string): string | undefined =>
   content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1]
+// The earlier pattern, compiled from its source text: kept only as the reference and run on
+// inputs of at most a few characters, where its slow backtracking costs nothing.
+const previousPattern = (source: string, flags = ''): RegExp => new RegExp(source, flags)
+const oldWrapperClose = (code: string): number | undefined =>
+  previousPattern(String.raw`\}\s*\)\s*\(\s*\)\s*;?\s*$`).exec(code)?.index
 // Tag values run to the line break: built from the tag as the parser built them. `\u{2028}` is
 // whitespace for the spaces before the value but ends the value, like `\r`.
 const oldTagValue = (tag: string, flags: string): RegExp =>
@@ -204,6 +214,17 @@ describe('linear-time help and tag readers match the regular expressions they re
       strings(['* @plugindesc', '*', ' ', 'a', '_', '.js', '.', '\n'], 5),
       oldScriptName,
       matchScriptName
+    )
+  })
+
+  it('wrapper close at the end of the code', () => {
+    expect.hasAssertions()
+
+    checkEquivalence(
+      'wrapper close',
+      strings([' ', '\t', '\n', 'a', ';', ')', '}', '('], 7),
+      oldWrapperClose,
+      (s) => PluginParser.matchWrapperClose(s)
     )
   })
 })

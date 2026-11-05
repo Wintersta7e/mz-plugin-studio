@@ -317,6 +317,15 @@ export class PluginParser {
   }
 
   /**
+  Same result as code.match(/\}\s*\)\s*\(\s*\)\s*;?\s*$/)?.index (where `})()` closes a wrapper
+  at the end of the code), in linear time: trailing whitespace is trimmed instead of matched,
+  since two whitespace runs around the optional `;` re-read a long run at every split.
+  */
+  static matchWrapperClose(code: string): number | undefined {
+    return /\}\s*\)\s*\(\s*\)\s*;?$/.exec(code.trimEnd())?.index
+  }
+
+  /**
   Unwrap an IIFE wrapper, returning the inner content.
   Handles: (() => { ... })(); and (function() { ... })();
   Returns null if the code is not wrapped in an IIFE.
@@ -327,12 +336,11 @@ export class PluginParser {
     if (!iifeOpen) return null
 
     // Check for IIFE closing pattern at the end
-    const iifeClose = /\}\s*\)\s*\(\s*\)\s*;?\s*$/.exec(code)
-    if (iifeClose?.index === undefined) return null
+    const innerEnd = this.matchWrapperClose(code)
+    if (innerEnd === undefined) return null
 
     // Extract inner content between opening { and closing }
     const innerStart = iifeOpen[0].length
-    const innerEnd = iifeClose.index
     if (innerEnd <= innerStart) return null
 
     const inner = code.slice(innerStart, innerEnd)

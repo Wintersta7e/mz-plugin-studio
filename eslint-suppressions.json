@@ -1157,9 +1157,6 @@
     "regexp/no-empty-alternative": {
       "count": 1
     },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
     "regexp/no-unused-capturing-group": {
       "count": 1
     },
