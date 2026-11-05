@@ -20,6 +20,13 @@ import type {
   MZTroop
 } from '../../shared/types/mz'
 
+/**
+A name read from a data file: text as written, anything else (a number, a list, null) as empty.
+*/
+function nameText(name: unknown): string {
+  return typeof name === 'string' ? name : ''
+}
+
 export class ProjectParser {
   static async validateProject(path: string): Promise<{ valid: boolean; error?: string }> {
     try {
@@ -56,10 +63,10 @@ export class ProjectParser {
 
     // Extract switches/variables directly from already-loaded system (avoids re-reading System.json)
     const switches: MZSwitch[] = (system.switches || [])
-      .map((name: string | null, index: number) => ({ id: index, name: name || '' }))
+      .map((name: unknown, index: number) => ({ id: index, name: nameText(name) }))
       .filter((s: MZSwitch) => s.id > 0 && s.name)
     const variables: MZVariable[] = (system.variables || [])
-      .map((name: string | null, index: number) => ({ id: index, name: name || '' }))
+      .map((name: unknown, index: number) => ({ id: index, name: nameText(name) }))
       .filter((v: MZVariable) => v.id > 0 && v.name)
 
     const [
@@ -122,7 +129,7 @@ export class ProjectParser {
       const data: ({ id: number; name: string } | null)[] = JSON.parse(content)
       return data
         .filter((d): d is { id: number; name: string } => d !== null)
-        .map((d) => ({ id: d.id, name: d.name }))
+        .map((d) => ({ id: d.id, name: nameText(d.name) }))
     } catch (error) {
       // Projects may leave out data files they do not use
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -143,7 +150,7 @@ export class ProjectParser {
         .filter((a: MZActor | null) => a !== null)
         .map((a: MZActor) => ({
           id: a.id,
-          name: a.name,
+          name: nameText(a.name),
           note: a.note || '',
           noteTags: this.parseNoteTags(a.note || '')
         }))
@@ -161,7 +168,7 @@ export class ProjectParser {
         .filter((index: MZItem | null) => index !== null)
         .map((index: MZItem) => ({
           id: index.id,
-          name: index.name,
+          name: nameText(index.name),
           note: index.note || '',
           noteTags: this.parseNoteTags(index.note || '')
         }))
@@ -179,7 +186,7 @@ export class ProjectParser {
         .filter((m: MZMapInfo | null) => m !== null)
         .map((m: MZMapInfo) => ({
           id: m.id,
-          name: m.name,
+          name: nameText(m.name),
           parentId: m.parentId || 0
         }))
     } catch {

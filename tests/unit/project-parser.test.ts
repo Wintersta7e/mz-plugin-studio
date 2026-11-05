@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { describe, it, expect, onTestFinished } from 'vitest'
 import { ProjectParser } from '../../src/main/services/projectParser'
 
 describe('parseNoteTags', () => {
@@ -66,5 +69,80 @@ describe('parseNoteTags', () => {
     ['a space as the name', '< >', { ' ': 'true' }]
   ])('reads %s', (_shape, note, tags) => {
     expect(ProjectParser.parseNoteTags(note)).toStrictEqual(tags)
+  })
+})
+
+// A project folder holding the given data files as written, removed when the test ends.
+async function projectWith(files: Record<string, string>): Promise<string> {
+  const project = await mkdtemp(path.join(tmpdir(), 'project-parser-'))
+  onTestFinished(async () => {
+    await rm(project, { recursive: true, force: true })
+  })
+  await mkdir(path.join(project, 'data'))
+  for (const [file, json] of Object.entries(files)) {
+    await writeFile(path.join(project, 'data', file), json)
+  }
+  return project
+}
+
+// Data files whose entries hold a name that is not text: each entry keeps its id and place with
+// an empty name, and a switch or variable without a text name is left out like an unnamed one.
+describe('names that are not text', () => {
+  it('reads an actor name that is a number as empty', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'Actors.json': '[null,{"id":1,"name":5,"note":"x"},{"id":2,"name":"Hero","note":""}]'
+    })
+
+    await expect(ProjectParser.getActors(project)).resolves.toStrictEqual([
+      { id: 1, name: '', note: 'x', noteTags: {} },
+      { id: 2, name: 'Hero', note: '', noteTags: {} }
+    ])
+  })
+
+  it('reads an item name that is a boolean as empty', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'Items.json': '[null,{"id":1,"name":true,"note":""}]' })
+
+    await expect(ProjectParser.getItems(project)).resolves.toStrictEqual([
+      { id: 1, name: '', note: '', noteTags: {} }
+    ])
+  })
+
+  it('reads a map name that is null as empty', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'MapInfos.json': '[null,{"id":1,"name":null,"parentId":0}]'
+    })
+
+    await expect(ProjectParser.getMaps(project)).resolves.toStrictEqual([
+      { id: 1, name: '', parentId: 0 }
+    ])
+  })
+
+  it('reads a skill name that is a list as empty', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({ 'Skills.json': '[null,{"id":1,"name":["Fire"]}]' })
+
+    await expect(ProjectParser.getSkills(project)).resolves.toStrictEqual([{ id: 1, name: '' }])
+  })
+
+  it('leaves out switches and variables whose name is not text', async () => {
+    expect.hasAssertions()
+
+    const project = await projectWith({
+      'System.json':
+        '{"gameTitle":"Fixture","switches":["",5,"Door"],"variables":["",{"a":1},"Gold"]}'
+    })
+    const { switches, variables } = await ProjectParser.parseProject(project)
+
+    expect({ switches, variables }).toStrictEqual({
+      switches: [{ id: 2, name: 'Door' }],
+      variables: [{ id: 2, name: 'Gold' }]
+    })
   })
 })

@@ -1154,13 +1154,13 @@
       "count": 1
     },
     "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 5
+      "count": 3
     },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 1
     },
     "@typescript-eslint/strict-boolean-expressions": {
-      "count": 5
+      "count": 3
     },
     "sonarjs/public-static-readonly": {
       "count": 10

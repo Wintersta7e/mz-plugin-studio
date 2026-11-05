@@ -7,6 +7,7 @@
 - In the template dialog, a field that holds a value of the wrong kind, such as a number in a text field or a list, is listed as an error on that field, instead of the template's check failing without a message.
 - A saved note group whose folder, data or required field holds a value of the wrong type, such as a number for the folder, no longer stops the plugin code from being written: that field is left out and named in the report of saved data that could not be restored.
 - Opening a plugin file whose header has a tag such as `@author` followed by a long run of spaces, or a project whose actor or item note has a long tag opened with `<` and never closed, no longer stalls the app.
+- The Project Data Browser opens a project whose data files hold a name that is not text, such as a number; before, the panel failed.
 
 ## [1.8.1] - 2026-11-05
 
