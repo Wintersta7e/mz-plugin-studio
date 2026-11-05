@@ -1,6 +1,6 @@
 // The project data browser lists the open project's named game data by section, copies an
 // entry's ID, and closes from its header.
-import { act, cleanup, render, screen, within } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProjectBrowser } from '../../src/renderer/src/components/project/ProjectBrowser'
@@ -8,13 +8,14 @@ import { useProjectStore } from '../../src/renderer/src/stores'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
-/** The header's close button, the only button beside the panel title. */
-const closeButton = (): HTMLElement =>
-  within(
-    screen.getByRole('heading', { name: 'Project Data' }).closest('.border-b') as HTMLElement
-  ).getByRole('button')
+// The header's close button, the only button beside the panel title and the one without a name
+const closeButton = (): HTMLElement => screen.getByRole('button', { name: '' })
 
-/** Opens the sample project with two named switches, one unnamed, and one actor. */
+// Which of `texts` the panel shows
+const shownOf = (texts: string[]): string[] =>
+  texts.filter((text) => screen.queryByText(text) !== null)
+
+// Opens the sample project with two named switches, one unnamed, and one actor
 function openProject(): void {
   const project = {
     ...sampleProject(),
@@ -34,14 +35,18 @@ function openProject(): void {
 describe('project data browser', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
   })
 
-  afterEach(cleanup)
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
   it('with no project open it says so, and its close button closes it', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    const onClose = vi.fn()
+    const onClose = vi.fn<() => void>()
     render(<ProjectBrowser onClose={onClose} />)
 
     expect(screen.getByText('No project loaded')).toBeInTheDocument()
@@ -52,19 +57,21 @@ describe('project data browser', () => {
   })
 
   it('lists named entries under their section titles', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     openProject()
-    render(<ProjectBrowser onClose={() => {}} />)
+    render(<ProjectBrowser onClose={vi.fn<() => void>()} />)
 
     expect(screen.getByText('Sample Game')).toBeInTheDocument()
 
     const switches = screen.getByRole('button', { name: /^Switches/ })
 
     expect(switches).toHaveTextContent('Switches2')
-    expect(screen.getByText('Door Open')).toBeInTheDocument()
-    expect(screen.getByText('Boss Beaten')).toBeInTheDocument()
-    expect(screen.queryByText('2:')).not.toBeInTheDocument()
-    expect(screen.queryByText('Alpha')).not.toBeInTheDocument()
+    expect(shownOf(['Door Open', 'Boss Beaten', '2:', 'Alpha'])).toStrictEqual([
+      'Door Open',
+      'Boss Beaten'
+    ])
 
     await user.click(screen.getByRole('button', { name: /^Actors/ }))
 
@@ -75,18 +82,22 @@ describe('project data browser', () => {
     expect(screen.getByText('No named variables')).toBeInTheDocument()
   })
 
-  it('Copy ID puts the entry ID on the clipboard', async () => {
+  it('copy ID puts the entry ID on the clipboard', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     openProject()
-    render(<ProjectBrowser onClose={() => {}} />)
+    render(<ProjectBrowser onClose={vi.fn<() => void>()} />)
     await user.click(screen.getByRole('button', { name: 'Copy ID 3' }))
 
-    expect(await navigator.clipboard.readText()).toBe('3')
+    await expect(navigator.clipboard.readText()).resolves.toBe('3')
   })
 
   it('the close button closes it', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    const onClose = vi.fn()
+    const onClose = vi.fn<() => void>()
     openProject()
     render(<ProjectBrowser onClose={onClose} />)
     await user.click(closeButton())

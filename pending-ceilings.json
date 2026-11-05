@@ -102,8 +102,6 @@
       "src/renderer/src/stores/persist.ts": 1,
       "src/renderer/src/stores/pluginStore.ts": 2,
       "tests/dom/history-store.test.ts": 11,
-      "tests/dom/persisted-restore.test.ts": 6,
-      "tests/dom/plugin-browser.test.tsx": 3,
       "tests/dom/plugin-store.test.ts": 49,
       "tests/dom/raw-mode-controls.test.tsx": 18,
       "tests/dom/raw-mode-save-paths.test.tsx": 3,
