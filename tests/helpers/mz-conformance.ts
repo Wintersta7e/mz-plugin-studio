@@ -2,8 +2,7 @@
 // `MzRuntime`, and reports where the plugin does not behave as RPG Maker MZ's rules say: it
 // must load, register its commands under its own file name, run them with the interpreter as
 // `this`, and read each stored parameter and argument as its header declares it.
-import { parse } from 'acorn'
-import type { AnyNode } from 'acorn'
+import { parse, type AnyNode } from 'acorn'
 import { Script } from 'node:vm'
 import {
   generatePlugin,
@@ -14,12 +13,13 @@ import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
-import { ID_BASED_PARAM_TYPES, toBaseline } from '../../src/shared/types/plugin'
-import type {
-  ParamType,
-  PluginDefinition,
-  PluginParameter,
-  PluginStruct
+import {
+  ID_BASED_PARAM_TYPES,
+  toBaseline,
+  type ParamType,
+  type PluginDefinition,
+  type PluginParameter,
+  type PluginStruct
 } from '../../src/shared/types/plugin'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import { EDITS, fixturePlugins, loadFixture } from '../golden/corpus/raw-mode'
@@ -27,12 +27,16 @@ import type { MzRuntime } from './mz-runtime'
 
 export interface ConformanceCase {
   id: string
-  /** The file the app saves the plugin to, and so the name MZ knows it by. */
+  /**
+  The file the app saves the plugin to, and so the name MZ knows it by.
+  */
   fileName: string
   code: string
   kind: 'generated' | 'raw-mode'
   definition: PluginDefinition
-  /** The entry's own plugin name, when it is not a file name and the case runs under another. */
+  /**
+  The entry's own plugin name, when it is not a file name and the case runs under another.
+  */
   renamedFrom?: string
   /**
   A corpus entry with hostile text in every field, its parameter types included: what its
@@ -64,11 +68,15 @@ export interface ConformanceFinding {
   detail: string
 }
 
-/** A generated plugin loaded under another file name, and what it lost there. */
+/**
+A generated plugin loaded under another file name, and what it lost there.
+*/
 export interface RenameResult {
   caseId: string
   rename: 'case-swap' | 'other-name'
-  /** The file name it was loaded under. */
+  /**
+  The file name it was loaded under.
+  */
   fileName: string
   hasCommands: boolean
   hasParameters: boolean
@@ -79,7 +87,9 @@ export interface RenameResult {
 export interface ConformanceReport {
   findings: ConformanceFinding[]
   renames: RenameResult[]
-  /** What each case did, line by line: identical traces mean identical behaviour. */
+  /**
+  What each case did, line by line: identical traces mean identical behaviour.
+  */
   traces: Record<string, string[]>
   counts: {
     plugins: number
@@ -90,15 +100,25 @@ export interface ConformanceReport {
     commands: number
     values: number
     types: Set<string>
-    /** What the rules below leave out, each counted where it applies. */
+    /**
+    What the rules below leave out, each counted where it applies.
+    */
     exempt: {
-      /** Commands whose name the app refuses, so header and code need not agree on it. */
+      /**
+      Commands whose name the app refuses, so header and code need not agree on it.
+      */
       commandNames: number
-      /** Values of hostile entries, not compared. */
+      /**
+      Values of hostile entries, not compared.
+      */
       hostileValues: number
-      /** Parameters raw mode added to a file with no main block, which no header can declare. */
+      /**
+      Parameters raw mode added to a file with no main block, which no header can declare.
+      */
       noMainBlock: number
-      /** Raw-mode cases loaded under the name the file's own code reads its parameters with. */
+      /**
+      Raw-mode cases loaded under the name the file's own code reads its parameters with.
+      */
       ownName: number
     }
   }
@@ -121,19 +141,24 @@ export function conformanceCases(): ConformanceCase[] {
   const cases: ConformanceCase[] = []
   let renamed = 0
   for (const entry of GENERATOR_ENTRIES) {
-    let def = entry.def
+    let definition = entry.def
     let renamedFrom: string | undefined
-    if (isPluginNameRefused(def)) {
-      renamedFrom = def.meta.name
-      const { importedFrom: _importedFrom, ...rest } = def
-      def = { ...rest, meta: { ...def.meta, name: `Hostile_${++renamed}` } }
+    if (isPluginNameRefused(definition)) {
+      renamedFrom = definition.meta.name
+      renamed += 1
+      const plain: PluginDefinition = {
+        ...definition,
+        meta: { ...definition.meta, name: `Hostile_${String(renamed)}` }
+      }
+      delete plain.importedFrom
+      definition = plain
     }
     cases.push({
       id: `generator:${entry.name}`,
-      fileName: saveFileName(def),
-      code: generatePlugin(def),
+      fileName: saveFileName(definition),
+      code: generatePlugin(definition),
       kind: 'generated',
-      definition: def,
+      definition,
       ...(renamedFrom !== undefined && { renamedFrom }),
       ...(entry.name.startsWith('hostile-') && { hostile: true })
     })
@@ -141,13 +166,13 @@ export function conformanceCases(): ConformanceCase[] {
   for (const file of fixturePlugins()) {
     const opened = loadFixture(file)
     for (const edit of EDITS) {
-      const def = edit.apply(opened)
+      const definition = edit.apply(opened)
       cases.push({
         id: `raw-mode:${file.replace(/\.js$/, '')}.${edit.name}`,
         fileName: file,
-        code: generateRawMode(def, toBaseline(opened)),
+        code: generateRawMode(definition, toBaseline(opened)),
         kind: 'raw-mode',
-        definition: def
+        definition
       })
     }
   }
@@ -164,40 +189,41 @@ const isNumeric = (type: ParamType | undefined): boolean =>
 const isJson = (type: ParamType): boolean =>
   type === 'struct' || type === 'array' || type === 'location'
 
-/** The header's `@default` text, as the editor stores it for a value the user never changed. */
-const defaultText = (param: PluginParameter): string => String(param.default ?? '')
+/**
+The header's `@default` text, as the editor stores it for a value the user never changed.
+*/
+const defaultText = (param: PluginParameter): string => String(param.default)
 
 function structValue(name: string | undefined, structs: readonly PluginStruct[]): string {
   const fields = structs.find((s) => s.name === name)?.parameters ?? []
   return JSON.stringify(Object.fromEntries(fields.map((f) => [f.name, `${f.name} value`])))
 }
 
-/** A value the user set: empty for text, zero for numbers, the other boolean, filled JSON. */
-function editedValue(param: PluginParameter, structs: readonly PluginStruct[]): string {
-  if (isNumeric(param.type)) return '0'
-  switch (param.type) {
-    case 'boolean': {
-      return defaultText(param) === 'true' ? 'false' : 'true'
-    }
-    case 'struct': {
-      return structValue(param.structType, structs)
-    }
-    case 'location': {
-      return '{"mapId":"2","x":"3","y":"4"}'
-    }
-    case 'array': {
-      if (param.arrayType === 'struct') {
-        const item = structValue(param.structType, structs)
-        return JSON.stringify([item, item])
-      }
-      if (isNumeric(param.arrayType)) return '["4","5"]'
-      if (param.arrayType === 'boolean') return '["true","false"]'
-      return '["a","b"]'
-    }
-    default: {
-      return ''
-    }
+function editedArray(param: PluginParameter, structs: readonly PluginStruct[]): string {
+  if (param.arrayType === 'struct') {
+    const item = structValue(param.structType, structs)
+    return JSON.stringify([item, item])
   }
+  if (isNumeric(param.arrayType)) return '["4","5"]'
+  if (param.arrayType === 'boolean') return '["true","false"]'
+  return '["a","b"]'
+}
+
+type ValueOf = (param: PluginParameter, structs: readonly PluginStruct[]) => string
+
+// The edited value of each type that has one other than empty text
+const EDITED: Partial<Record<ParamType, ValueOf>> = {
+  boolean: (param) => (defaultText(param) === 'true' ? 'false' : 'true'),
+  struct: (param, structs) => structValue(param.structType, structs),
+  location: () => '{"mapId":"2","x":"3","y":"4"}',
+  array: editedArray
+}
+
+/**
+A value the user set: empty for text, zero for numbers, the other boolean, filled JSON.
+*/
+function editedValue(param: PluginParameter, structs: readonly PluginStruct[]): string {
+  return isNumeric(param.type) ? '0' : (EDITED[param.type]?.(param, structs) ?? '')
 }
 
 function valueSet(
@@ -211,11 +237,11 @@ function valueSet(
   // A default that does not read as its type is the annotation check's finding; here the
   // editor is taken to store nothing for it
   return Object.fromEntries(
-    params.filter((p) => readsAsType(p, defaultText(p))).map((p) => [p.name, defaultText(p)])
+    params.filter((p) => canReadAsType(p, defaultText(p))).map((p) => [p.name, defaultText(p)])
   )
 }
 
-function readsAsType(param: PluginParameter, text: string): boolean {
+function canReadAsType(param: PluginParameter, text: string): boolean {
   if (text === '') return true
   try {
     readAs(param, text)
@@ -225,28 +251,45 @@ function readsAsType(param: PluginParameter, text: string): boolean {
   }
 }
 
-/** A stored string read by its declared type. */
+const readStructItem = (item: unknown): unknown => JSON.parse(String(item)) as unknown
+const readBooleanItem = (item: unknown): unknown => item === 'true'
+
+/**
+How each item of an array of `arrayType` is read; undefined when the items stay as stored.
+*/
+function itemReader(arrayType: ParamType | undefined): ((item: unknown) => unknown) | undefined {
+  if (arrayType === 'struct') return readStructItem
+  if (isNumeric(arrayType)) return Number
+  if (arrayType === 'boolean') return readBooleanItem
+  return undefined
+}
+
+function readArray(param: PluginParameter, text: string): unknown {
+  const parsed: unknown = JSON.parse(text)
+  const readItem = itemReader(param.arrayType)
+  if (readItem === undefined) return parsed
+  if (!Array.isArray(parsed)) throw new TypeError(`${text} is not a JSON array`)
+  const items: unknown[] = parsed
+  return items.map((item) => readItem(item))
+}
+
+type ReadOf = (param: PluginParameter, text: string) => unknown
+
+// The reading of each type other than plain text
+const READ: Partial<Record<ParamType, ReadOf>> = {
+  boolean: (_param, text) => text === 'true',
+  struct: (_param, text) => JSON.parse(text) as unknown,
+  location: (_param, text) => JSON.parse(text) as unknown,
+  array: readArray
+}
+
+/**
+A stored string read by its declared type.
+*/
 function readAs(param: PluginParameter, text: string): unknown {
   if (isNumeric(param.type)) return Number(text)
-  switch (param.type) {
-    case 'boolean': {
-      return text === 'true'
-    }
-    case 'struct':
-    case 'location': {
-      return JSON.parse(text)
-    }
-    case 'array': {
-      const items = JSON.parse(text) as string[]
-      if (param.arrayType === 'struct') return items.map((s) => JSON.parse(s) as unknown)
-      if (isNumeric(param.arrayType)) return items.map(Number)
-      if (param.arrayType === 'boolean') return items.map((v) => v === 'true')
-      return items
-    }
-    default: {
-      return text
-    }
-  }
+  const read = READ[param.type]
+  return read === undefined ? text : read(param, text)
 }
 
 // What a number or JSON value left empty means: not set, so the default; with no default
@@ -285,11 +328,17 @@ const RAW_MODE_REGIONS: readonly [string, string][] = [
 export interface Observation {
   code: string
   insertions: { at: number; text: string }[]
-  /** Keys the observed constants read, in order. */
+  /**
+  Keys the observed constants read, in order.
+  */
   parameterKeys: string[]
-  /** Command names the observed code registers, in order. */
+  /**
+  Command names the observed code registers, in order.
+  */
   commandNames: string[]
 }
+
+const isList = (value: unknown): value is readonly unknown[] => Array.isArray(value)
 
 const isNode = (value: unknown): value is AnyNode =>
   typeof value === 'object' &&
@@ -298,50 +347,62 @@ const isNode = (value: unknown): value is AnyNode =>
 
 function children(node: AnyNode): AnyNode[] {
   const found: AnyNode[] = []
-  for (const value of Object.values(node)) {
-    if (Array.isArray(value)) found.push(...value.filter(isNode))
+  const values: unknown[] = Object.values(node)
+  for (const value of values) {
+    if (isList(value)) found.push(...value.filter(isNode))
     else if (isNode(value)) found.push(value)
   }
   return found
 }
 
-/** The key of the first `<object>['key']` read in `node`, when `object` is a name `accepts`. */
-function readKey(node: AnyNode, accepts: (object: string) => boolean): string | null {
+/**
+The key of the first `<object>['key']` read in `node`, when `object` is a name `accepts`.
+*/
+function readKey(node: AnyNode, isAccepted: (object: string) => boolean): string | null {
   if (
     node.type === 'MemberExpression' &&
     node.computed &&
     node.object.type === 'Identifier' &&
-    accepts(node.object.name) &&
+    isAccepted(node.object.name) &&
     node.property.type === 'Literal' &&
     typeof node.property.value === 'string'
   ) {
     return node.property.value
   }
   for (const child of children(node)) {
-    const key = readKey(child, accepts)
+    const key = readKey(child, isAccepted)
     if (key !== null) return key
   }
   return null
 }
 
-/** `const name = …<object>['key']…` declarations among `statements`. */
+/**
+`const name = …<object>['key']…` declarations among `statements`.
+*/
 function readingConstants(
   statements: readonly AnyNode[],
-  accepts: (object: string) => boolean,
-  inScope: (node: AnyNode) => boolean
+  isAccepted: (object: string) => boolean,
+  isInScope: (node: AnyNode) => boolean
 ): { name: string; key: string; end: number }[] {
   const found: { name: string; key: string; end: number }[] = []
   for (const statement of statements) {
-    if (statement.type !== 'VariableDeclaration' || statement.kind !== 'const') continue
-    if (!inScope(statement)) continue
+    if (
+      statement.type !== 'VariableDeclaration' ||
+      statement.kind !== 'const' ||
+      !isInScope(statement)
+    )
+      continue
     for (const declarator of statement.declarations) {
-      if (declarator.id.type !== 'Identifier' || declarator.init == null) continue
-      const key = readKey(declarator.init, accepts)
+      if (declarator.id.type !== 'Identifier' || !declarator.init) continue
+      const key = readKey(declarator.init, isAccepted)
       if (key !== null) found.push({ name: declarator.id.name, key, end: statement.end })
     }
   }
   return found
 }
+
+const recordedConstant = (constant: { name: string; key: string }): string =>
+  `[${JSON.stringify(constant.key)}, typeof ${constant.name}, ${constant.name}]`
 
 const record = (
   where: string,
@@ -349,7 +410,52 @@ const record = (
   constants: { name: string; key: string }[]
 ): string =>
   `;globalThis.${OBSERVED}.push([${JSON.stringify(where)}, ${JSON.stringify(command)}, this, ` +
-  `JSON.stringify([${constants.map((c) => `[${JSON.stringify(c.key)}, typeof ${c.name}, ${c.name}]`).join(', ')}])]);`
+  `JSON.stringify([${constants.map((constant) => recordedConstant(constant)).join(', ')}])]);`
+
+/**
+The object and method names of a call `<object>.<method>(…)` or `<object>[<method>](…)`, when
+both are plain names.
+*/
+function calleeNames(
+  node: AnyNode
+): { object: string; method: string; isComputed: boolean } | null {
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'MemberExpression' ||
+    node.callee.object.type !== 'Identifier' ||
+    node.callee.property.type !== 'Identifier'
+  ) {
+    return null
+  }
+  return {
+    object: node.callee.object.name,
+    method: node.callee.property.name,
+    isComputed: node.callee.computed
+  }
+}
+
+/**
+The name and body of a `PluginManager.registerCommand(…, 'name', function () {…})` call.
+*/
+function registeredCommand(node: AnyNode): { name: string; body: AnyNode[]; end: number } | null {
+  if (node.type !== 'CallExpression') return null
+  const callee = calleeNames(node)
+  if (
+    callee?.object !== 'PluginManager' ||
+    callee.method !== 'registerCommand' ||
+    callee.isComputed
+  ) {
+    return null
+  }
+  const name = node.arguments.at(1)
+  const callback = node.arguments.at(2)
+  return name?.type === 'Literal' &&
+    typeof name.value === 'string' &&
+    (callback?.type === 'FunctionExpression' || callback?.type === 'ArrowFunctionExpression') &&
+    callback.body.type === 'BlockStatement'
+    ? { name: name.value, body: callback.body.body, end: callback.body.end }
+    : null
+}
 
 /**
 Inserts statements that record what the plugin computed: after its parameter constants, and
@@ -366,44 +472,29 @@ export function observe(code: string, kind: ConformanceCase['kind']): Observatio
   } else {
     regions.push([0, code.length])
   }
-  const inScope = (node: AnyNode): boolean =>
+  const isInScope = (node: AnyNode): boolean =>
     regions.some(([start, end]) => node.start >= start && node.end <= end)
-  const parameterObject = (name: string): boolean => kind === 'raw-mode' || name === 'params'
+  const isParameterObject = (name: string): boolean => kind === 'raw-mode' || name === 'params'
   const observation: Observation = { code, insertions: [], parameterKeys: [], commandNames: [] }
 
   const visit = (node: AnyNode): void => {
-    if (
-      node.type === 'CallExpression' &&
-      node.callee.type === 'MemberExpression' &&
-      !node.callee.computed &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'PluginManager' &&
-      node.callee.property.type === 'Identifier' &&
-      node.callee.property.name === 'registerCommand' &&
-      inScope(node)
-    ) {
-      const [, name, callback] = node.arguments
-      if (
-        name?.type === 'Literal' &&
-        typeof name.value === 'string' &&
-        (callback?.type === 'FunctionExpression' || callback?.type === 'ArrowFunctionExpression') &&
-        callback.body.type === 'BlockStatement'
-      ) {
-        const constants = readingConstants(callback.body.body, (o) => o === 'args', inScope)
-        observation.commandNames.push(name.value)
-        observation.insertions.push({
-          at: callback.body.end - 1,
-          text: record('command', name.value, constants)
-        })
-        return
-      }
+    const command = isInScope(node) ? registeredCommand(node) : null
+    if (command !== null) {
+      const constants = readingConstants(command.body, (o) => o === 'args', isInScope)
+      observation.commandNames.push(command.name)
+      observation.insertions.push({
+        at: command.end - 1,
+        text: record('command', command.name, constants)
+      })
+      return
     }
     if (node.type === 'Program' || node.type === 'BlockStatement') {
-      const constants = readingConstants(node.body, parameterObject, inScope)
-      if (constants.length > 0) {
+      const constants = readingConstants(node.body, isParameterObject, isInScope)
+      const last = constants.at(-1)
+      if (last !== undefined) {
         observation.parameterKeys.push(...constants.map((c) => c.key))
         observation.insertions.push({
-          at: constants[constants.length - 1].end,
+          at: last.end,
           text: record('parameters', null, constants)
         })
       }
@@ -413,18 +504,22 @@ export function observe(code: string, kind: ConformanceCase['kind']): Observatio
   visit(parse(code, { ecmaVersion: 'latest', sourceType: 'script' }))
 
   let observed = code
-  for (const { at, text } of [...observation.insertions].sort((a, b) => b.at - a.at)) {
+  const latestFirst = observation.insertions.toSorted((a, b) => b.at - a.at)
+  for (const { at, text } of latestFirst) {
     observed = observed.slice(0, at) + text + observed.slice(at)
   }
   observation.code = observed
   return observation
 }
 
-/** The observed code with every inserted statement taken out again. */
+/**
+The observed code with every inserted statement taken out again.
+*/
 export function unobserve(observation: Observation): string {
   // In ascending order each statement starts at its own offset once those before it are gone
   let code = observation.code
-  for (const { at, text } of [...observation.insertions].sort((a, b) => a.at - b.at)) {
+  const earliestFirst = observation.insertions.toSorted((a, b) => a.at - b.at)
+  for (const { at, text } of earliestFirst) {
     code = code.slice(0, at) + code.slice(at + text.length)
   }
   return code
@@ -437,14 +532,17 @@ type Recorded = [string, string | null, unknown, string]
 interface LoadedCase {
   runtime: MzRuntime
   errors: string[]
-  /** Observed parameter constants: [key, typeof, value]. */
+  /**
+  Observed parameter constants: [key, typeof, value].
+  */
   parameters: [string, string, unknown][]
 }
 
 const stemOf = (fileName: string): string => fileName.replace(/\.js$/i, '')
 const swapCase = (text: string): string =>
-  [...text].map((c) => (c === c.toLowerCase() ? c.toUpperCase() : c.toLowerCase())).join('')
-const show = (value: unknown): string => JSON.stringify(value) ?? 'undefined'
+  Array.from(text, (c) => (c === c.toLowerCase() ? c.toUpperCase() : c.toLowerCase())).join('')
+const show = (value: unknown): string => (value === undefined ? 'undefined' : JSON.stringify(value))
+const commandKey = (stem: string, name: string): string => show(`${stem}:${name}`)
 const UNDECLARED_COMMAND = 'UndeclaredCommand'
 
 /**
@@ -454,12 +552,14 @@ function isPluginNameRefused(definition: PluginDefinition): boolean {
   return validatePlugin(definition).errors.some((error) => error.startsWith('Plugin name must be'))
 }
 
-/** Command names `validatePlugin` refuses as not being identifiers. */
-export function refusedCommandNames(def: PluginDefinition): Set<string> {
-  const errors = new Set(validatePlugin(def).errors)
+/**
+Command names `validatePlugin` refuses as not being identifiers.
+*/
+export function refusedCommandNames(definition: PluginDefinition): Set<string> {
+  const errors = new Set(validatePlugin(definition).errors)
   return new Set(
-    def.commands
-      .map((cmd) => cmd.name)
+    definition.commands
+      .map((command) => command.name)
       .filter((name) => errors.has(`Invalid command name: ${name} (must be valid identifier)`))
   )
 }
@@ -481,17 +581,11 @@ function ownParametersName(code: string): string | null {
     ) {
       literals.set(node.id.name, node.init.value)
     }
-    if (
-      argument === null &&
-      node.type === 'CallExpression' &&
-      node.callee.type === 'MemberExpression' &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'PluginManager' &&
-      node.callee.property.type === 'Identifier' &&
-      node.callee.property.name === 'parameters' &&
-      node.arguments[0] !== undefined
-    ) {
-      argument = node.arguments[0]
+    if (argument === null && node.type === 'CallExpression' && node.arguments.length > 0) {
+      const callee = calleeNames(node)
+      if (callee?.object === 'PluginManager' && callee.method === 'parameters') {
+        argument = node.arguments.at(0) ?? null
+      }
     }
     for (const child of children(node)) visit(child)
   }
@@ -502,9 +596,43 @@ function ownParametersName(code: string): string | null {
   return null
 }
 
-function recorded(runtime: MzRuntime): Recorded[] {
-  return runtime.context[OBSERVED] as Recorded[]
+const isRecorded = (value: unknown): value is Recorded =>
+  isList(value) &&
+  value.length === 4 &&
+  typeof value[0] === 'string' &&
+  (value[1] === null || typeof value[1] === 'string') &&
+  typeof value[3] === 'string'
+
+const isObservedConstant = (value: unknown): value is [string, string, unknown] =>
+  isList(value) &&
+  value.length === 3 &&
+  typeof value[0] === 'string' &&
+  typeof value[1] === 'string'
+
+/**
+A copy of `value`, a list each of whose items `isItem` accepts; throws on any other shape.
+*/
+function listOf<T>(value: unknown, isItem: (item: unknown) => item is T, what: string): T[] {
+  if (!isList(value)) throw new TypeError(`${what} is not a list`)
+  const items: T[] = []
+  for (const item of value) {
+    if (!isItem(item)) throw new TypeError(`${what} holds a malformed item`)
+    items.push(item)
+  }
+  return items
 }
+
+/**
+The calls the observed code recorded so far.
+*/
+const recorded = (runtime: MzRuntime): Recorded[] =>
+  listOf(runtime.context[OBSERVED], isRecorded, OBSERVED)
+
+/**
+The constants one recorded call observed: [key, typeof, value].
+*/
+const observedConstants = (json: string): [string, string, unknown][] =>
+  listOf(JSON.parse(json), isObservedConstant, json)
 
 function loadCase(
   createRuntime: () => MzRuntime,
@@ -522,12 +650,14 @@ function loadCase(
   const observed = recorded(runtime).filter(([where]) => where === 'parameters')
   return {
     runtime,
-    errors: report.errors.map((e) => `${e.name}: ${e.message}`),
-    parameters: observed.flatMap(([, , , json]) => JSON.parse(json) as [string, string, unknown][])
+    errors: report.errors.map((error) => `${error.name}: ${error.message}`),
+    parameters: observed.flatMap((call) => observedConstants(call[3]))
   }
 }
 
-/** Runs a command; a command that throws was found and ran. */
+/**
+Runs a command; a command that throws was found and ran.
+*/
 function run(
   loaded: LoadedCase,
   stem: string,
@@ -545,31 +675,69 @@ function run(
 }
 
 class CaseRun {
-  readonly trace: string[] = []
-  /** Keys read by code no header can declare: raw mode's additions to a file with no main block. */
-  undeclaredKeysExempt = false
   private readonly exempted = new Set<string>()
-  constructor(
-    readonly c: ConformanceCase,
-    readonly report: ConformanceReport,
-    private readonly seen: Set<string>
-  ) {}
+  private readonly seen: Set<string>
+  readonly trace: string[] = []
+  /**
+  Keys read by code no header can declare: raw mode's additions to a file with no main block.
+  */
+  undeclaredKeysExempt = false
+  readonly c: ConformanceCase
+  readonly report: ConformanceReport
 
-  /** Counts one exemption of `what` under `rule`, once per case. */
+  constructor(c: ConformanceCase, report: ConformanceReport, seen: Set<string>) {
+    this.c = c
+    this.report = report
+    this.seen = seen
+  }
+
+  private undeclaredKey(where: string, key: string): void {
+    if (this.undeclaredKeysExempt) {
+      this.exempt('noMainBlock', key)
+      return
+    }
+    this.addFinding(
+      'header-code-differ',
+      `${where} reads ${show(key)}, which the header does not declare`
+    )
+  }
+
+  private compareValue(
+    where: string,
+    set: ValueSetName,
+    param: PluginParameter,
+    storedText: string | undefined,
+    [type, value]: [string, unknown]
+  ): void {
+    this.report.counts.values++
+    this.report.counts.types.add(param.type)
+    const expected = expectedValue(param, storedText)
+    if (type === typeof expected && show(value) === show(expected)) return
+    const what = `${where}: expected ${show(expected)}, read ${type} ${show(value)}`
+    if (set === 'absent') this.addFinding('header-code-differ', `default of ${what}`)
+    else if (expected === '' && storedText === '') this.addFinding('empty-string-replaced', what)
+    else this.addFinding('value', `${set}: ${what}`)
+  }
+
+  /**
+  Counts one exemption of `what` under `rule`, once per case.
+  */
   exempt(rule: keyof ConformanceReport['counts']['exempt'], what: string): void {
     if (this.exempted.has(`${rule}|${what}`)) return
     this.exempted.add(`${rule}|${what}`)
     this.report.counts.exempt[rule]++
   }
 
-  find(kind: ConformanceKind, detail: string): void {
+  addFinding(kind: ConformanceKind, detail: string): void {
     const key = `${this.c.id}|${kind}|${detail}`
     if (this.seen.has(key)) return
     this.seen.add(key)
     this.report.findings.push({ caseId: this.c.id, kind, detail })
   }
 
-  /** Compares observed constants with what the header declares for `stored`. */
+  /**
+  Compares observed constants with what the header declares for `stored`.
+  */
   compare(
     where: string,
     set: ValueSetName,
@@ -581,29 +749,82 @@ class CaseRun {
       const param = declared.find((p) => p.name === key)
       this.trace.push(`${set} ${where} ${show(key)} ${type} ${show(value)}`)
       if (param === undefined) {
-        if (this.undeclaredKeysExempt) {
-          this.exempt('noMainBlock', key)
-          continue
-        }
-        this.find(
-          'header-code-differ',
-          `${where} reads ${show(key)}, which the header does not declare`
-        )
+        this.undeclaredKey(where, key)
         continue
       }
       if (this.c.hostile === true) {
         this.exempt('hostileValues', `${where} ${key}`)
         continue
       }
-      this.report.counts.values++
-      this.report.counts.types.add(param.type)
-      const expected = expectedValue(param, stored[key])
-      if (type === typeof expected && show(value) === show(expected)) continue
-      const what = `${where} ${show(key)}: expected ${show(expected)}, read ${type} ${show(value)}`
-      if (set === 'absent') this.find('header-code-differ', `default of ${what}`)
-      else if (stored[key] === '' && expected === '') this.find('empty-string-replaced', what)
-      else this.find('value', `${set}: ${what}`)
+      this.compareValue(`${where} ${show(key)}`, set, param, stored[key], [type, value])
     }
+  }
+}
+
+interface CommandHeader {
+  name: string
+  args: readonly PluginParameter[]
+}
+
+/**
+One load of a case under one value set, as its commands run against it.
+*/
+interface SetLoad {
+  run_: CaseRun
+  loaded: LoadedCase
+  stem: string
+  set: ValueSetName
+  structs: readonly PluginStruct[]
+}
+
+/**
+Command names the app refuses, as the header line holds them, and which header names belong
+to no accepted command.
+*/
+function refusedHeaderNames(definition: PluginDefinition): {
+  refused: Set<string>
+  isReadOfRefused: (name: string) => boolean
+} {
+  const refused = new Set([...refusedCommandNames(definition)].map((name) => annotationText(name)))
+  const accepted = new Set(
+    definition.commands
+      .map((command) => annotationText(command.name))
+      .filter((n) => !refused.has(n))
+  )
+  return { refused, isReadOfRefused: (name) => refused.size > 0 && !accepted.has(name) }
+}
+
+function runGeneratedCommand(
+  load: SetLoad,
+  command: CommandHeader,
+  observation: Observation,
+  isReadOfRefused: (name: string) => boolean
+): void {
+  const { run_, loaded, stem, set } = load
+  const args = valueSet(set, command.args, load.structs)
+  const result = run(loaded, stem, command.name, args)
+  run_.trace.push(`${set} run ${show(command.name)} ${String(result.ran)}`)
+  if (!result.ran) {
+    if (observation.commandNames.includes(command.name)) {
+      run_.addFinding('command-keys', `${commandKey(stem, command.name)} is not registered`)
+    } else if (isReadOfRefused(command.name)) {
+      run_.exempt('commandNames', `header ${command.name}`)
+    } else {
+      run_.addFinding(
+        'header-code-differ',
+        `header declares ${show(command.name)}, which the code does not register`
+      )
+    }
+    return
+  }
+  run_.report.counts.commands++
+  for (const call of result.calls) {
+    const isInterpreter = call[2] === loaded.runtime.interpreter
+    run_.trace.push(`${set} this ${show(command.name)} ${String(isInterpreter)}`)
+    if (!isInterpreter)
+      run_.addFinding('callback-this', `${show(command.name)} runs without the interpreter as this`)
+    const observed = observedConstants(call[3])
+    run_.compare(`argument of ${show(command.name)}`, set, command.args, args, observed)
   }
 }
 
@@ -612,21 +833,17 @@ function runGenerated(createRuntime: () => MzRuntime, run_: CaseRun): void {
   const header = PluginParser.parsePlugin(c.code, c.fileName)
   const observation = observe(c.code, c.kind)
   const stem = stemOf(c.fileName)
-  const declaredCommands = new Set(header.commands.map((cmd) => cmd.name))
+  const declaredCommands = new Set(header.commands.map((command) => command.name))
   // A command name the app refuses (validatePlugin's identifier rule) is read from the header in
   // a way MZ's own reading is not known to share, so neither it nor its header reading is
   // compared: the header names that belong to no accepted command. Names are compared as the
   // header line holds them, which is also what the code registers.
-  const refused = new Set([...refusedCommandNames(c.definition)].map(annotationText))
-  const accepted = new Set(
-    c.definition.commands.map((cmd) => annotationText(cmd.name)).filter((n) => !refused.has(n))
-  )
-  const readOfRefused = (name: string): boolean => refused.size > 0 && !accepted.has(name)
+  const { refused, isReadOfRefused } = refusedHeaderNames(c.definition)
   for (const name of observation.commandNames) {
     if (refused.has(name)) {
       run_.exempt('commandNames', name)
     } else if (!declaredCommands.has(name)) {
-      run_.find(
+      run_.addFinding(
         'header-code-differ',
         `code registers ${show(name)}, which the header does not declare`
       )
@@ -636,48 +853,29 @@ function runGenerated(createRuntime: () => MzRuntime, run_: CaseRun): void {
     const stored = valueSet(set, header.parameters, header.structs)
     const loaded = loadCase(createRuntime, stem, observation.code, stored)
     report.counts.loads++
-    for (const error of loaded.errors) run_.find('load-error', error)
+    for (const error of loaded.errors) run_.addFinding('load-error', error)
     run_.compare('parameter', set, header.parameters, stored, loaded.parameters)
+    const load: SetLoad = { run_, loaded, stem, set, structs: header.structs }
     for (const command of header.commands) {
-      const args = valueSet(set, command.args, header.structs)
-      const result = run(loaded, stem, command.name, args)
-      run_.trace.push(`${set} run ${show(command.name)} ${result.ran}`)
-      if (!result.ran) {
-        if (observation.commandNames.includes(command.name)) {
-          run_.find('command-keys', `${show(`${stem}:${command.name}`)} is not registered`)
-        } else if (readOfRefused(command.name)) {
-          run_.exempt('commandNames', `header ${command.name}`)
-        } else {
-          run_.find(
-            'header-code-differ',
-            `header declares ${show(command.name)}, which the code does not register`
-          )
-        }
-        continue
-      }
-      report.counts.commands++
-      for (const [, , self, json] of result.calls) {
-        const isInterpreter = self === loaded.runtime.interpreter
-        run_.trace.push(`${set} this ${show(command.name)} ${isInterpreter}`)
-        if (!isInterpreter)
-          run_.find('callback-this', `${show(command.name)} runs without the interpreter as this`)
-        const observed = JSON.parse(json) as [string, string, unknown][]
-        run_.compare(`argument of ${show(command.name)}`, set, command.args, args, observed)
-      }
+      runGeneratedCommand(load, command, observation, isReadOfRefused)
     }
     const undeclared = run(loaded, stem, UNDECLARED_COMMAND, {})
-    if (undeclared.ran) run_.find('command-keys', `${show(UNDECLARED_COMMAND)} ran`)
+    if (undeclared.ran) run_.addFinding('command-keys', `${show(UNDECLARED_COMMAND)} ran`)
   }
   renames(createRuntime, run_, observation, header)
 }
 
-/** A value of `param` that differs from what an absent key reads. */
+/**
+A value of `param` that differs from what an absent key reads.
+*/
 function distinctValue(param: PluginParameter, structs: readonly PluginStruct[]): string {
   if (isNumeric(param.type)) return '7'
   if (param.type === 'boolean') return param.default === true ? 'false' : 'true'
   if (isJson(param.type)) return editedValue(param, structs)
   return 'distinct'
 }
+
+const readsOf = (loaded: LoadedCase): string => show(loaded.parameters)
 
 /**
 Loads the plugin under its case-swapped file name and under another name, and records
@@ -697,14 +895,13 @@ function renames(
       .filter((p) => observation.parameterKeys.includes(p.name))
       .map((p) => [p.name, distinctValue(p, header.structs)])
   )
-  const reads = (loaded: LoadedCase): string => show(loaded.parameters)
   const runs = (loaded: LoadedCase, as: string): string[] =>
     observation.commandNames.filter((name) => run(loaded, as, name, {}).ran)
   const proper = loadCase(createRuntime, stem, observation.code, stored)
   const unset = loadCase(createRuntime, stem, observation.code, {})
   report.counts.loads += 2
   const hasParameters = observation.parameterKeys.length > 0
-  if (hasParameters && reads(proper) === reads(unset)) {
+  if (hasParameters && readsOf(proper) === readsOf(unset)) {
     throw new Error(
       `${c.id}: stored parameters read the same as none; the rename check cannot tell`
     )
@@ -726,10 +923,37 @@ function renames(
       hasCommands,
       hasParameters,
       commandsLost: ranProperly.some((name) => !ran.includes(name)),
-      parametersLost: hasParameters && reads(loaded) !== reads(proper)
+      parametersLost: hasParameters && readsOf(loaded) !== readsOf(proper)
     }
     report.renames.push(result)
     run_.trace.push(`rename ${rename} ${show(result)}`)
+  }
+}
+
+function runRawModeCommands(
+  load: SetLoad,
+  commands: readonly CommandHeader[],
+  ran: Set<string>
+): void {
+  const { run_, loaded, stem, set } = load
+  for (const command of commands) {
+    const args = valueSet(set, command.args, load.structs)
+    const result = run(loaded, stem, command.name, args)
+    run_.trace.push(`${set} run ${show(command.name)} ${String(result.ran)}`)
+    if (result.ran) {
+      ran.add(command.name)
+      run_.report.counts.commands++
+    }
+    for (const call of result.calls) {
+      if (call[2] !== loaded.runtime.interpreter) {
+        run_.addFinding(
+          'callback-this',
+          `${show(command.name)} runs without the interpreter as this`
+        )
+      }
+      const observed = observedConstants(call[3])
+      run_.compare(`argument of ${show(command.name)}`, set, command.args, args, observed)
+    }
   }
 }
 
@@ -756,42 +980,35 @@ function runRawMode(
     const stored = valueSet(set, header.parameters, header.structs)
     const loaded = loadCase(createRuntime, loadName, observation.code, stored)
     report.counts.loads++
-    for (const error of loaded.errors) run_.find('load-error', error)
+    for (const error of loaded.errors) run_.addFinding('load-error', error)
     run_.compare('added parameter', set, header.parameters, stored, loaded.parameters)
     // An added command the header could not declare (no main block) is still run by its name
     const undeclared = observation.commandNames
-      .filter((name) => header.commands.every((cmd) => cmd.name !== name))
-      .map((name) => ({ name, args: [] as PluginParameter[] }))
-    for (const command of [...header.commands, ...undeclared]) {
-      const args = valueSet(set, command.args, header.structs)
-      const result = run(loaded, stem, command.name, args)
-      run_.trace.push(`${set} run ${show(command.name)} ${result.ran}`)
-      if (result.ran) {
-        ran.add(command.name)
-        report.counts.commands++
-      }
-      for (const [, , self, json] of result.calls) {
-        if (self !== loaded.runtime.interpreter) {
-          run_.find('callback-this', `${show(command.name)} runs without the interpreter as this`)
-        }
-        const observed = JSON.parse(json) as [string, string, unknown][]
-        run_.compare(`argument of ${show(command.name)}`, set, command.args, args, observed)
-      }
-    }
+      .filter((name) => header.commands.every((command) => command.name !== name))
+      .map((name): CommandHeader => ({ name, args: [] }))
+    const load: SetLoad = { run_, loaded, stem, set, structs: header.structs }
+    runRawModeCommands(load, [...header.commands, ...undeclared], ran)
   }
-  const declared = new Set(header.commands.map((cmd) => cmd.name))
-  for (const name of ranUnedited ?? []) {
+  const declared = new Set(header.commands.map((command) => command.name))
+  const ranBefore = ranUnedited ?? new Set<string>()
+  for (const name of ranBefore) {
     if (declared.has(name) && !ran.has(name)) {
-      run_.find('command-keys', `${show(`${stem}:${name}`)} ran before the edit and no longer does`)
+      run_.addFinding(
+        'command-keys',
+        `${commandKey(stem, name)} ran before the edit and no longer does`
+      )
     }
   }
   for (const name of observation.commandNames) {
-    if (!ran.has(name)) run_.find('command-keys', `added ${show(`${stem}:${name}`)} does not run`)
+    if (!ran.has(name))
+      run_.addFinding('command-keys', `added ${commandKey(stem, name)} does not run`)
   }
   return ran
 }
 
-/** Runs every case on a fresh runtime per load and reports what does not conform. */
+/**
+Runs every case on a fresh runtime per load and reports what does not conform.
+*/
 export function runConformance(
   createRuntime: () => MzRuntime,
   cases: readonly ConformanceCase[]

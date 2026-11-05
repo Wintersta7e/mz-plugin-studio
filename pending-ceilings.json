@@ -143,8 +143,6 @@
       "tests/golden/corpus/templates.ts": 5,
       "tests/golden/generator.test.ts": 2,
       "tests/golden/persisted.test.ts": 2,
-      "tests/helpers/annotation-rules.ts": 5,
-      "tests/helpers/mz-conformance.ts": 1,
       "tests/integration/ci-policy-fuses.test.ts": 2,
       "tests/integration/dialog-memory.test.ts": 1,
       "tests/integration/ipc-arguments.test.ts": 1,
@@ -182,10 +180,6 @@
       "tests/unit/test-layout.test.ts": 5,
       "tests/unit/workflows.test.ts": 4,
       "tools/analyze-plugins.ts": 14
-    },
-    "erasableSyntaxOnly": {
-      "tests/helpers/mz-conformance.ts": 3,
-      "tests/unit/monaco-setup.test.ts": 2
     }
   },
   "tools": {
