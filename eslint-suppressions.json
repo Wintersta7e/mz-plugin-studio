@@ -353,57 +353,6 @@
       "count": 1
     }
   },
-  "e2e/global-setup.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "e2e/global-teardown.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 2
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 5
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-unnecessary-array-flat-map": {
-      "count": 1
-    },
-    "unicorn/prefer-set-methods": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "e2e/playwright.config.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 1
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
   "e2e/release-smoke.e2e.ts": {
     "@typescript-eslint/dot-notation": {
       "count": 7
@@ -481,20 +430,6 @@
       "count": 7
     }
   },
-  "e2e/reporter.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
   "e2e/visual/app-states.e2e.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 2
@@ -531,20 +466,6 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
-    }
-  },
-  "e2e/visual/inventory.e2e.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "playwright/no-conditional-in-test": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
     }
   },
   "src/main/services/pluginParser.ts": {

@@ -3,9 +3,11 @@ import { defineConfig } from '@playwright/test'
 
 // The visual project exists only where E2E_VISUAL_IMAGE=1: in the pinned Linux image, where the CI
 // job and `npm run e2e:visual:update` set it, as the baselines are pixel-exact only there
-const isVisual = process.platform === 'linux' && process.env['E2E_VISUAL_IMAGE'] === '1'
+const { CI: ci = '', E2E_VISUAL_IMAGE: visualImage } = process.env
+const isVisual = process.platform === 'linux' && visualImage === '1'
 const isSelectsVisual = process.argv.some(
-  (arg, i, all) => arg === '--project=visual' || (arg === '--project' && all[i + 1] === 'visual')
+  (arg, index, all) =>
+    arg === '--project=visual' || (arg === '--project' && all[index + 1] === 'visual')
 )
 if (isSelectsVisual && !isVisual) {
   throw new Error(
@@ -20,7 +22,7 @@ export default defineConfig({
   testMatch: '**/*.e2e.ts',
   workers: 1,
   retries: 0,
-  forbidOnly: !!process.env.CI,
+  forbidOnly: ci !== '',
   updateSnapshots: 'none',
   snapshotPathTemplate: '{testDir}/__screenshots__/{platform}/{arg}{ext}',
   expect: { toHaveScreenshot: { maxDiffPixels: 0, threshold: 0 } },

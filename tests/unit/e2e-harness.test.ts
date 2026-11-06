@@ -229,7 +229,7 @@ async function verdict(tests: TestCase[]): Promise<FullResult['status'] | undefi
   const suite = { allTests: () => tests }
   if (!isConfig(config) || !isSuite(suite)) throw new Error('the fake run has no test list')
   reporter.onBegin(config, suite)
-  const result = await reporter.onEnd({ status: 'passed', startTime: new Date(0), duration: 0 })
+  const result = await reporter.onEnd()
   return result?.status
 }
 
@@ -310,9 +310,13 @@ describe('e2e harness', () => {
     const config = read(CONFIG)
 
     expect(
-      ['retries: 0', 'workers: 1', 'forbidOnly: !!process.env.CI', "'./reporter.ts'"].filter(
-        (setting) => !config.includes(setting)
-      )
+      [
+        'retries: 0',
+        'workers: 1',
+        "CI: ci = ''",
+        "forbidOnly: ci !== ''",
+        "'./reporter.ts'"
+      ].filter((setting) => !config.includes(setting))
     ).toStrictEqual([])
 
     const e2e = valueAt(readJson('package.json'), 'scripts', 'e2e')
