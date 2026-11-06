@@ -1410,38 +1410,8 @@
     }
   },
   "src/renderer/src/lib/exportFormats.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-plus-operands": {
-      "count": 4
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 5
-    },
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    },
     "unicorn/filename-case": {
       "count": 1
-    },
-    "unicorn/prefer-single-call": {
-      "count": 35
     }
   },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
@@ -1640,46 +1610,6 @@
       "count": 1
     },
     "unicorn/no-immediate-mutation": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/param-io.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "complexity": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-break-in-nested-loop": {
-      "count": 6
-    },
-    "unicorn/no-for-each": {
-      "count": 1
-    },
-    "unicorn/prefer-number-is-safe-integer": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/plugin-output.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/prefer-default-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
       "count": 1
     }
   },

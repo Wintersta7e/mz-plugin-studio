@@ -33,9 +33,9 @@ Raw mode is on for an imported plugin unless the user turned it off.
 */
 export function isRawMode(
   plugin: Pick<PluginDefinition, 'importedFrom'>,
-  choice: boolean | undefined
+  isChosen = true
 ): boolean {
-  return isImported(plugin) && (choice ?? true)
+  return isImported(plugin) && isChosen
 }
 
 /**
@@ -78,7 +78,9 @@ export function loadedSource(
   plugin: Pick<PluginDefinition, 'rawSource'>,
   baseline: PluginBaseline | null
 ): { rawSource: string; baseline: PluginBaseline } | null {
-  return plugin.rawSource && baseline !== null ? { rawSource: plugin.rawSource, baseline } : null
+  return baseline === null || plugin.rawSource === undefined || plugin.rawSource === ''
+    ? null
+    : { rawSource: plugin.rawSource, baseline }
 }
 
 /**
@@ -86,10 +88,10 @@ The code a save writes, or why raw mode cannot save it.
 */
 export function generatePluginOutput(
   plugin: PluginDefinition,
-  rawMode: boolean,
+  isRaw: boolean,
   baseline: PluginBaseline | null
 ): PluginOutput {
-  if (!rawMode) return { ok: true, code: generatePlugin(plugin) }
+  if (!isRaw) return { ok: true, code: generatePlugin(plugin) }
   const source = loadedSource(plugin, baseline)
   if (source === null) {
     return {
