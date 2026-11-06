@@ -75,3 +75,47 @@ Game_Action.prototype.makeDamageValue = function(target, critical) {
 
     return value;
 };
+
+// ==== case: type-violating: condition="critical",modifyValue="abc" {"modifyType":"multiply","condition":"critical","modifyValue":"abc"}
+// rejects: Value must be a valid number for multiply/add operations
+// Damage Modifier: Multiply by abc (on critical hits)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    if (critical) {
+        value = value >= 0 ? Math.floor(value * abc) : Math.ceil(value * abc);
+    }
+
+    return value;
+};
+
+// ==== case: type-violating: condition="skill",modifyValue="-1" {"modifyType":"multiply","condition":"skill","modifyValue":"-1"}
+// rejects: Multiplier should be a positive number
+// Damage Modifier: Multiply by -1 (for skills only)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    if (this.isSkill()) {
+        value = value >= 0 ? Math.floor(value * -1) : Math.ceil(value * -1);
+    }
+
+    return value;
+};
+
+// ==== case: type-violating: condition="physical" {"modifyType":"multiply","condition":"physical","modifyValue":"1.5"}
+// Damage Modifier: Multiply by 1.5 (for physical attacks)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    if (this.isPhysical()) {
+        value = value >= 0 ? Math.floor(value * 1.5) : Math.ceil(value * 1.5);
+    }
+
+    return value;
+};

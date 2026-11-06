@@ -267,3 +267,50 @@ DataManager.processSampleNotetags = function(database) {
         }
     }
 };
+
+// ==== case: type-violating: tagName="1bad",tagFormat="other",propertyName="9x" {"tagFormat":"other","valueType":"number","databaseType":"$dataActors","tagName":"1bad","propertyName":"9x"}
+// rejects: Field "Tag Format" must be one of its choices | Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores | Property Name must be a valid JavaScript identifier
+// Notetag Parser: 1bad
+// Database: Actors ($dataActors)
+// Access via: item.meta.9x
+//
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.process1badNotetags(object);
+    }
+};
+
+DataManager.process1badNotetags = function(database) {
+};
+
+// ==== case: type-violating: valueType="string",defaultValue="abc" {"tagFormat":"simple","valueType":"string","databaseType":"$dataActors","tagName":"Sample","defaultValue":"abc"}
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = 'abc';
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = String(match[1]).trim();
+            }
+        }
+    }
+};

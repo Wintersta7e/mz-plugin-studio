@@ -54,7 +54,10 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'battle-damage-modifier': [
     { condition: null },
     { modifyType: 'custom', condition: null },
-    { modifyType: 'add', modifyValue: '2;x', condition: null }
+    { modifyType: 'add', modifyValue: '2;x', condition: null },
+    { condition: 'critical', modifyValue: 'abc' },
+    { condition: 'skill', modifyValue: '-1' },
+    { condition: 'physical' }
   ],
   'battle-event-hook': [{ eventType: 'start' }],
   'battle-state-hook': [{ hookType: null, stateId: '3' }],
@@ -92,11 +95,14 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { valueType: 'array', defaultValue: '1, 2', propertyName: null },
     { tagFormat: 7 },
     { valueType: 7 },
-    { valueType: 'number', defaultValue: 'abc' }
+    { valueType: 'number', defaultValue: 'abc' },
+    { tagName: '1bad', tagFormat: 'other', propertyName: '9x' },
+    { valueType: 'string', defaultValue: 'abc' }
   ],
   'input-handler-basic': [
     { activeScene: 'all', triggerType: null },
-    { activeScene: 'all', keyName: null }
+    { activeScene: 'all', keyName: null },
+    { keyName: 'zz', triggerType: 'isHeld', activeScene: 'Scene_Title' }
   ],
   'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
   'map-parallel-process': [
@@ -182,7 +188,7 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'nameBox', nameBoxPosition: 'left', positionType: null },
     { modType: 'size', windowWidth: 2000, numLines: null }
   ],
-  'method-alias-basic': [{ timing: null }],
+  'method-alias-basic': [{ timing: null }, { timing: 'replace' }, { methodName: 'noSuchMethod' }],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },
@@ -235,7 +241,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { dataType: 'object', defaultValue: '[]' },
     { dataType: 'array', defaultValue: '{}' },
     { dataType: 'number', defaultValue: 'abc' },
-    { dataType: 'boolean', defaultValue: 'yes' }
+    { dataType: 'boolean', defaultValue: 'yes' },
+    { storageLocation: 'Game_Actors', dataName: '1x' },
+    { storageLocation: 'Game_Map', dataType: 'string', defaultValue: 'abc' }
   ],
   'sprite-custom-class': [
     { width: null },

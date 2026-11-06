@@ -44,3 +44,28 @@ Scene_Map.prototype.start = function() {
     
     return result;
 };
+
+// ==== case: type-violating: timing="replace" {"timing":"replace","callOriginal":true,"className":"Scene_Map","methodName":"start"}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    // Your code here (replacing original, but still calling it)
+    
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // More of your code here
+    
+    return result;
+};
+
+// ==== case: type-violating: methodName="noSuchMethod" {"timing":"after","callOriginal":true,"className":"Scene_Map","methodName":"noSuchMethod"}
+// rejects: Method "noSuchMethod" not found on class "Scene_Map"
+// Alias: Scene_Map.noSuchMethod
+const _Scene_Map_noSuchMethod = Scene_Map.prototype.noSuchMethod;
+Scene_Map.prototype.noSuchMethod = function() {
+    const result = _Scene_Map_noSuchMethod.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};
