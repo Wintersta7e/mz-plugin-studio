@@ -1540,7 +1540,7 @@
       "count": 1
     }
   },
-  "src/renderer/src/lib/generator/templates/database-ext.ts": {
+  "src/renderer/src/lib/generator/templates/database-extension.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 4
     },
@@ -1551,9 +1551,6 @@
       "count": 1
     },
     "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
       "count": 1
     },
     "unicorn/no-immediate-mutation": {
