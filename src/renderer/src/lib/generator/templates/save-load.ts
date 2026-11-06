@@ -170,10 +170,13 @@ function dataNameErrors(dataName: unknown): string[] {
 }
 
 /**
-The errors of a default value that is set, checked against its data type. A value of another type
-than text throws `TypeError` where a string method is called on it.
+The errors of a default value that is set, checked against its data type. An object, array or
+boolean default is read as text, so a default of another type has an invalid format.
 */
 function defaultValueErrors(dataType: unknown, defaultValue: unknown): string[] {
+  const typesReadAsText: readonly unknown[] = ['object', 'array', 'boolean']
+  const isReadAsText = typesReadAsText.includes(dataType)
+  if (isReadAsText && typeof defaultValue !== 'string') return ['Invalid default value format']
   switch (dataType) {
     case 'object': {
       return expectText(defaultValue).trimStart().startsWith('{')
@@ -288,11 +291,7 @@ const saveLoadTemplate: CodeTemplate = {
     const hasDefaultValue = Boolean(defaultValue)
     const hasDataType = Boolean(dataType)
     if (hasDefaultValue && hasDataType) {
-      try {
-        errors.push(...defaultValueErrors(dataType, defaultValue))
-      } catch {
-        errors.push('Invalid default value format')
-      }
+      errors.push(...defaultValueErrors(dataType, defaultValue))
     }
 
     return {

@@ -63,6 +63,24 @@ describe('save-load template', () => {
 
     expect(out).not.toMatch(/WARNING/i)
   })
+
+  it('lists a default that is not text as an invalid format for the types read as text', () => {
+    // The template's own check, called directly: the shared check rejects a wrong type before it
+    const validate = getTemplate('save-load-basic')?.validate
+
+    expect(validate).toBeDefined()
+
+    for (const dataType of ['object', 'array', 'boolean']) {
+      const result = validate?.({ dataName: 'questData', dataType, defaultValue: 5 })
+
+      expect(result).toStrictEqual({ valid: false, errors: ['Invalid default value format'] })
+    }
+
+    // A number default is converted, not read as text
+    const numberResult = validate?.({ dataName: 'questData', dataType: 'number', defaultValue: 5 })
+
+    expect(numberResult).toStrictEqual({ valid: true, errors: [] })
+  })
 })
 
 describe('input-handler template (global scene)', () => {
