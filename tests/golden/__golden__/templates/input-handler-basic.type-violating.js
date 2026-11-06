@@ -85,3 +85,24 @@ Scene_Base.prototype.updateGlobalKeyInput_Q = function() {
 // ==== case: type-violating: activeScene="all",keyName=null {"triggerType":"isTriggered","activeScene":"all","keyName":null}
 // rejects: Field "Key" is required
 // throws: TypeError
+
+// ==== case: type-violating: keyName="zz",triggerType="isHeld",activeScene="Scene_Title" {"triggerType":"isHeld","activeScene":"Scene_Title","keyName":"zz"}
+// rejects: Field "Key" must be one of its choices | Field "Trigger Type" must be one of its choices | Field "Active Scene" must be one of its choices | Unknown key: zz | Invalid trigger type: isHeld | Invalid scene: Scene_Title
+// Input Handler: undefined key on Scene_Title
+// Triggers undefined
+
+// Register the key mapping
+Input.keyMapper[undefined] = 'zz';  // undefined = undefined key code
+
+const _Scene_Title_update = Scene_Title.prototype.update;
+Scene_Title.prototype.update = function() {
+    _Scene_Title_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Title.prototype.updateCustomKeyInput = function() {
+    if (Input.isHeld('zz')) {
+        // Your code here - runs when undefined is pressed
+        console.log('undefined key pressed!');
+    }
+};

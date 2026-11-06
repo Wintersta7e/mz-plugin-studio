@@ -44,7 +44,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'audio-crossfade': [
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: null },
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: 7 },
-    { newBgmPitch: null, functionName: 'crossfadeTheme' }
+    { newBgmPitch: null, functionName: 'crossfadeTheme' },
+    { crossfadeType: 'fadeToSilence', fadeOutDuration: null }
   ],
   'audio-se-player': [
     { randomizePitch: true, pitchVariation: null },
@@ -53,7 +54,10 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'battle-damage-modifier': [
     { condition: null },
     { modifyType: 'custom', condition: null },
-    { modifyType: 'add', modifyValue: '2;x', condition: null }
+    { modifyType: 'add', modifyValue: '2;x', condition: null },
+    { condition: 'critical', modifyValue: 'abc' },
+    { condition: 'skill', modifyValue: '-1' },
+    { condition: 'physical' }
   ],
   'battle-event-hook': [{ eventType: 'start' }],
   'battle-state-hook': [{ hookType: null, stateId: '3' }],
@@ -91,11 +95,14 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { valueType: 'array', defaultValue: '1, 2', propertyName: null },
     { tagFormat: 7 },
     { valueType: 7 },
-    { valueType: 'number', defaultValue: 'abc' }
+    { valueType: 'number', defaultValue: 'abc' },
+    { tagName: '1bad', tagFormat: 'other', propertyName: '9x' },
+    { valueType: 'string', defaultValue: 'abc' }
   ],
   'input-handler-basic': [
     { activeScene: 'all', triggerType: null },
-    { activeScene: 'all', keyName: null }
+    { activeScene: 'all', keyName: null },
+    { keyName: 'zz', triggerType: 'isHeld', activeScene: 'Scene_Title' }
   ],
   'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
   'map-parallel-process': [
@@ -145,12 +152,27 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'message-choice-handler': [
     { modType: 'columns', numColumns: null, choiceWidth: null },
     { modType: 'style', highlightColor: null, windowOpacity: null },
-    { modType: 'behavior', wrapAround: null, rememberChoice: null }
+    { modType: 'behavior', wrapAround: null, rememberChoice: null },
+    { choicePosition: 'left', numColumns: null },
+    { choicePosition: 'above', numColumns: null },
+    { choicePosition: 'below', numColumns: null },
+    { choicePosition: 'right', numColumns: null },
+    {
+      modType: 'style',
+      highlightColor: 40,
+      normalColor: 40,
+      disabledColor: 40,
+      windowOpacity: 300,
+      choiceWidth: null
+    }
   ],
   'message-custom-text-code': [
     { hasParameter: null, effectType: null },
     { codeType: null, replacementText: null },
-    { codeType: 'effect', hasParameter: null, effectType: null }
+    { codeType: 'effect', hasParameter: null, effectType: null },
+    { codeType: 'effect', effectType: 'size', hasParameter: null },
+    { codeType: 'effect', effectType: 'icon', replacementText: null },
+    { codeType: 'effect', effectType: 'custom', replacementText: null }
   ],
   'message-window-mod': [
     { positionType: 'custom', customX: null, customY: 'abc' },
@@ -159,9 +181,14 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'background', bgType: 'custom', bgColor: null },
     { modType: 'background', bgType: 'custom', bgColor: 42 },
     { modType: 'opacity', opacityValue: null },
-    { modType: 'nameBox', nameBoxPosition: null }
+    { modType: 'nameBox', nameBoxPosition: null },
+    { positionType: 'middle', customX: null },
+    { positionType: 'bottom', customY: null },
+    { modType: 'nameBox', nameBoxPosition: 'right', positionType: null },
+    { modType: 'nameBox', nameBoxPosition: 'left', positionType: null },
+    { modType: 'size', windowWidth: 2000, numLines: null }
   ],
-  'method-alias-basic': [{ timing: null }],
+  'method-alias-basic': [{ timing: null }, { timing: 'replace' }, { methodName: 'noSuchMethod' }],
   'party-management': [
     { minSize: '2' },
     { maxSize: null },
@@ -182,13 +209,24 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { arg1Name: 'target', arg2Name: 42 },
     { commandName: ' ', pluginName: null },
     { commandName: '1st', arg1Type: null },
-    { pluginName: ' ', arg2Type: null }
+    { pluginName: ' ', arg2Type: null },
+    {
+      commandName: null,
+      arg1Name: 'target',
+      arg1Type: 'number',
+      arg2Name: 'data',
+      arg2Type: 'json'
+    },
+    { commandName: 42, arg1Name: 'flag', arg1Type: 'boolean' }
   ],
   'plugin-command-validated': [
     { errorHandling: 'silent', pluginName: 42 },
     { errorHandling: 'throw', pluginName: null },
     { minValue: null, maxValue: 'abc' },
-    { minValue: 5, maxValue: null }
+    { minValue: 5, maxValue: null },
+    { validateNumberRange: null },
+    { validateActorId: null },
+    { validateActorId: null, validateNumberRange: null }
   ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
@@ -203,7 +241,9 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { dataType: 'object', defaultValue: '[]' },
     { dataType: 'array', defaultValue: '{}' },
     { dataType: 'number', defaultValue: 'abc' },
-    { dataType: 'boolean', defaultValue: 'yes' }
+    { dataType: 'boolean', defaultValue: 'yes' },
+    { storageLocation: 'Game_Actors', dataName: '1x' },
+    { storageLocation: 'Game_Map', dataType: 'string', defaultValue: 'abc' }
   ],
   'sprite-custom-class': [
     { width: null },

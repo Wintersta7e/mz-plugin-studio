@@ -42,9 +42,14 @@ function getDatabaseName(databaseType: unknown): string {
 }
 
 /**
+The notetag formats the template writes a parser for.
+*/
+type TagFormat = 'simple' | 'boolean' | 'keyValue' | 'multiline'
+
+/**
 Generate the regex pattern based on tag format
 */
-function generateRegexPattern(tagName: string, tagFormat: unknown): string {
+function generateRegexPattern(tagName: string, tagFormat: TagFormat): string {
   switch (tagFormat) {
     case 'simple': {
       return String.raw`/<${tagName}:\s*(.+?)>/i`
@@ -58,8 +63,6 @@ function generateRegexPattern(tagName: string, tagFormat: unknown): string {
     case 'multiline': {
       return String.raw`/<${tagName}>([\s\S]*?)<\/${tagName}>/i`
     }
-    default:
-      return `/<${tagName}:\\s*(.+?)>/i`
   }
 }
 
@@ -103,117 +106,190 @@ function generateNotetagCode(
   const propertyName_ = String(hasPropertyName ? propertyName : toCamelCase(tagName))
   const methodName = `process${toPascalCase(tagName)}Notetags`
   const defaultLiteral = defaultLiteralOf(valueType, defaultValue)
-  const lines: string[] = []
+  const tagText = String(tagName)
 
-  // Header comment with usage example
-  lines.push(`// Notetag Parser: ${String(tagName)}`)
-  lines.push(`// Database: ${databaseName} (${String(databaseType)})`)
-  lines.push(`// Access via: item.meta.${propertyName_}`)
-  lines.push('//')
+  return [
+    // Header comment with usage example
+    `// Notetag Parser: ${tagText}`,
+    `// Database: ${databaseName} (${String(databaseType)})`,
+    `// Access via: item.meta.${propertyName_}`,
+    '//',
+    ...usageLines(tagFormat, tagText),
+    '',
+    // DataManager.onLoad alias
+    'const _DataManager_onLoad = DataManager.onLoad;',
+    'DataManager.onLoad = function(object) {',
+    '    _DataManager_onLoad.call(this, object);',
+    `    if (object === ${String(databaseType)}) {`,
+    `        this.${methodName}(object);`,
+    '    }',
+    '};',
+    '',
+    // Generate the processing method based on tag format
+    `DataManager.${methodName} = function(database) {`,
+    ...processingLines(tagFormat, tagText, propertyName_, valueType, defaultLiteral),
+    '};'
+  ].join('\n')
+}
 
-  // Add format-specific usage examples
+/**
+The format-specific usage examples of the header; other formats have none.
+*/
+function usageLines(tagFormat: unknown, tagText: string): string[] {
   switch (tagFormat) {
     case 'simple': {
-      lines.push(`// Usage: <${String(tagName)}: value>`)
-      lines.push(`// Example: <${String(tagName)}: 50>`)
-      break
+      return [`// Usage: <${tagText}: value>`, `// Example: <${tagText}: 50>`]
     }
     case 'boolean': {
-      lines.push(`// Usage: <${String(tagName)}>`)
-      lines.push(`// Presence of tag = true, absence = false`)
-      break
+      return [`// Usage: <${tagText}>`, `// Presence of tag = true, absence = false`]
     }
     case 'keyValue': {
-      lines.push(`// Usage: <${String(tagName)} key: value>`)
-      lines.push(`// Example: <${String(tagName)} fire: 50>`)
-      lines.push(`// Multiple tags allowed per entry`)
-      break
+      return [
+        `// Usage: <${tagText} key: value>`,
+        `// Example: <${tagText} fire: 50>`,
+        `// Multiple tags allowed per entry`
+      ]
     }
     case 'multiline': {
-      lines.push(`// Usage: <${String(tagName)}>content</${String(tagName)}>`)
-      lines.push(`// Example:`)
-      lines.push(`// <${String(tagName)}>`)
-      lines.push(`// Multi-line content here`)
-      lines.push(`// </${String(tagName)}>`)
-      break
+      return [
+        `// Usage: <${tagText}>content</${tagText}>`,
+        `// Example:`,
+        `// <${tagText}>`,
+        `// Multi-line content here`,
+        `// </${tagText}>`
+      ]
+    }
+    default: {
+      return []
     }
   }
-  lines.push('')
+}
 
-  // DataManager.onLoad alias
-  lines.push('const _DataManager_onLoad = DataManager.onLoad;')
-  lines.push('DataManager.onLoad = function(object) {')
-  lines.push('    _DataManager_onLoad.call(this, object);')
-  lines.push(`    if (object === ${String(databaseType)}) {`)
-  lines.push(`        this.${methodName}(object);`)
-  lines.push('    }')
-  lines.push('};')
-  lines.push('')
-
-  // Generate the processing method based on tag format
-  lines.push(`DataManager.${methodName} = function(database) {`)
-
+/**
+The body of the processing method for a tag format; other formats have an empty body.
+*/
+function processingLines(
+  tagFormat: unknown,
+  tagText: string,
+  propertyName: string,
+  valueType: unknown,
+  defaultLiteral: string
+): string[] {
   switch (tagFormat) {
     case 'boolean': {
-      lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
-      lines.push('    for (const item of database) {')
-      lines.push('        if (item) {')
-      lines.push(`            item.meta.${propertyName_} = regex.test(item.note);`)
-      lines.push('        }')
-      lines.push('    }')
-      break
+      return [
+        `    const regex = ${generateRegexPattern(tagText, 'boolean')};`,
+        '    for (const item of database) {',
+        '        if (item) {',
+        `            item.meta.${propertyName} = regex.test(item.note);`,
+        '        }',
+        '    }'
+      ]
     }
 
     case 'simple': {
-      lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
-      lines.push('    for (const item of database) {')
-      lines.push('        if (item) {')
-      lines.push(`            item.meta.${propertyName_} = ${defaultLiteral};`)
-      lines.push('            const match = item.note.match(regex);')
-      lines.push('            if (match) {')
-      lines.push(
-        `                item.meta.${propertyName_} = ${generateValueParser(valueType, 'match[1]')};`
-      )
-      lines.push('            }')
-      lines.push('        }')
-      lines.push('    }')
-      break
+      return [
+        `    const regex = ${generateRegexPattern(tagText, 'simple')};`,
+        '    for (const item of database) {',
+        '        if (item) {',
+        `            item.meta.${propertyName} = ${defaultLiteral};`,
+        '            const match = item.note.match(regex);',
+        '            if (match) {',
+        `                item.meta.${propertyName} = ${generateValueParser(valueType, 'match[1]')};`,
+        '            }',
+        '        }',
+        '    }'
+      ]
     }
 
     case 'keyValue': {
-      lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
-      lines.push('    for (const item of database) {')
-      lines.push('        if (item) {')
-      lines.push(`            item.meta.${propertyName_} = {};`)
-      lines.push('            let match;')
-      lines.push('            while ((match = regex.exec(item.note)) !== null) {')
-      lines.push('                const key = match[1];')
-      lines.push(`                const value = ${generateValueParser(valueType, 'match[2]')};`)
-      lines.push(`                item.meta.${propertyName_}[key] = value;`)
-      lines.push('            }')
-      lines.push('        }')
-      lines.push('    }')
-      break
+      return [
+        `    const regex = ${generateRegexPattern(tagText, 'keyValue')};`,
+        '    for (const item of database) {',
+        '        if (item) {',
+        `            item.meta.${propertyName} = {};`,
+        '            let match;',
+        '            while ((match = regex.exec(item.note)) !== null) {',
+        '                const key = match[1];',
+        `                const value = ${generateValueParser(valueType, 'match[2]')};`,
+        `                item.meta.${propertyName}[key] = value;`,
+        '            }',
+        '        }',
+        '    }'
+      ]
     }
 
     case 'multiline': {
-      lines.push(`    const regex = ${generateRegexPattern(String(tagName), tagFormat)};`)
-      lines.push('    for (const item of database) {')
-      lines.push('        if (item) {')
-      lines.push(`            item.meta.${propertyName_} = ${defaultLiteral};`)
-      lines.push('            const match = item.note.match(regex);')
-      lines.push('            if (match) {')
-      lines.push(`                item.meta.${propertyName_} = match[1].trim();`)
-      lines.push('            }')
-      lines.push('        }')
-      lines.push('    }')
-      break
+      return [
+        `    const regex = ${generateRegexPattern(tagText, 'multiline')};`,
+        '    for (const item of database) {',
+        '        if (item) {',
+        `            item.meta.${propertyName} = ${defaultLiteral};`,
+        '            const match = item.note.match(regex);',
+        '            if (match) {',
+        `                item.meta.${propertyName} = match[1].trim();`,
+        '            }',
+        '        }',
+        '    }'
+      ]
+    }
+
+    default: {
+      return []
     }
   }
+}
 
-  lines.push('};')
+/**
+The errors of a tag name that is set: letters, digits and underscores, not starting with a digit,
+and a name the database entries already use is warned about.
+*/
+function tagNameErrors(tagName: unknown): string[] {
+  const errors: string[] = []
 
-  return lines.join('\n')
+  // Check for valid tag name (letters, numbers, underscores)
+  if (!/^[a-z_]\w*$/i.test(String(tagName))) {
+    errors.push(
+      'Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores'
+    )
+  }
+
+  // Check for reserved/common names that might conflict
+  const reservedNames = ['note', 'meta', 'id', 'name', 'description', 'iconIndex', 'price']
+  if (reservedNames.includes(expectText(tagName).toLowerCase())) {
+    errors.push(
+      `"${String(tagName)}" may conflict with existing properties. Consider a more unique name.`
+    )
+  }
+
+  return errors
+}
+
+/**
+The errors of a default value that is set, checked against its value type. A value of another type
+than text throws `TypeError` where a string method is called on it.
+*/
+function defaultValueErrors(valueType: unknown, defaultValue: unknown): string[] {
+  switch (valueType) {
+    case 'number': {
+      return Number.isNaN(Number(defaultValue))
+        ? ['Default value for number type must be a valid number']
+        : []
+    }
+    case 'boolean': {
+      return ['true', 'false'].includes(expectText(defaultValue).toLowerCase())
+        ? []
+        : ['Default value for boolean type must be true or false']
+    }
+    case 'array': {
+      return expectText(defaultValue).trimStart().startsWith('[')
+        ? []
+        : ['Default value for array type should be in JSON format starting with [']
+    }
+    default: {
+      return []
+    }
+  }
 }
 
 const databaseExtensionTemplate: CodeTemplate = {
@@ -314,58 +390,26 @@ const databaseExtensionTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // Validate tag name
-    if (values['tagName']) {
-      const tagName: unknown = values['tagName']
-
-      // Check for valid tag name (letters, numbers, underscores)
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(String(tagName))) {
-        errors.push(
-          'Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores'
-        )
-      }
-
-      // Check for reserved/common names that might conflict
-      const reservedNames = ['note', 'meta', 'id', 'name', 'description', 'iconIndex', 'price']
-      if (reservedNames.includes(expectText(tagName).toLowerCase())) {
-        errors.push(
-          `"${String(tagName)}" may conflict with existing properties. Consider a more unique name.`
-        )
-      }
+    const tagName: unknown = values['tagName']
+    const hasTagName = Boolean(tagName)
+    if (hasTagName) {
+      errors.push(...tagNameErrors(tagName))
     }
 
     // Validate property name if provided
-    if (values['propertyName']) {
-      const propertyName: unknown = values['propertyName']
-      if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(propertyName))) {
-        errors.push('Property Name must be a valid JavaScript identifier')
-      }
+    const propertyName: unknown = values['propertyName']
+    const hasPropertyName = Boolean(propertyName)
+    if (hasPropertyName && !/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
+      errors.push('Property Name must be a valid JavaScript identifier')
     }
 
     // Validate default value format based on value type
-    if (values['defaultValue'] && values['valueType']) {
-      const defaultValue = values['defaultValue']
-      const valueType = values['valueType']
-
-      switch (valueType) {
-        case 'number': {
-          if (Number.isNaN(Number(defaultValue))) {
-            errors.push('Default value for number type must be a valid number')
-          }
-          break
-        }
-        case 'boolean': {
-          if (!['true', 'false'].includes(expectText(defaultValue).toLowerCase())) {
-            errors.push('Default value for boolean type must be true or false')
-          }
-          break
-        }
-        case 'array': {
-          if (!expectText(defaultValue).trimStart().startsWith('[')) {
-            errors.push('Default value for array type should be in JSON format starting with [')
-          }
-          break
-        }
-      }
+    const defaultValue = values['defaultValue']
+    const valueType = values['valueType']
+    const hasDefaultValue = Boolean(defaultValue)
+    const hasValueType = Boolean(valueType)
+    if (hasDefaultValue && hasValueType) {
+      errors.push(...defaultValueErrors(valueType, defaultValue))
     }
 
     return {
@@ -377,5 +421,3 @@ const databaseExtensionTemplate: CodeTemplate = {
 
 // Register the template when this module loads
 registerTemplate(databaseExtensionTemplate)
-
-export { databaseExtensionTemplate as databaseExtTemplate }

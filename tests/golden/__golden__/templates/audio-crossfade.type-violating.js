@@ -91,3 +91,11 @@ function crossfadeTheme() {
         AudioManager.fadeInBgm(fadeInDuration);
     }, fadeOutDuration * 1000);
 }
+
+// ==== case: type-violating: crossfadeType="fadeToSilence",fadeOutDuration=null {"crossfadeType":"fadeToSilence","fadeOutDuration":null,"fadeInDuration":2,"newBgmVolume":90,"newBgmPitch":100,"wrapInFunction":true,"newBgmFilename":"Theme2"}
+// Fade to Silence Function
+function crossfadeBgm() {
+    // Fade current BGM to silence
+    const fadeOutDuration = null; // seconds
+    AudioManager.fadeOutBgm(fadeOutDuration);
+}

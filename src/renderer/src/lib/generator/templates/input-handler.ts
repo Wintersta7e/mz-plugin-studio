@@ -27,6 +27,15 @@ const KEY_CODES: Record<string, number> = {
 }
 
 /**
+Whether a key has a key code. Every key code is above 0 and every inherited property is an object,
+so a key with a value here is one with a truthy value.
+*/
+function isKnownKey(keyName: unknown): boolean {
+  const keyCodes: Partial<Record<string, number>> = KEY_CODES
+  return keyCodes[String(keyName)] !== undefined
+}
+
+/**
 Display names for keys (for comments)
 */
 const KEY_DISPLAY_NAMES: Record<string, string> = {
@@ -191,28 +200,32 @@ const inputHandlerTemplate: CodeTemplate = {
     const triggerType = String(valueOr(values['triggerType'], 'isTriggered'))
     const activeScene = valueOr(values['activeScene'], 'Scene_Map')
 
-    if (activeScene === 'all') {
-      // The global handler calls a string method on the key name before it writes anything
-      return generateGlobalHandler(expectText(keyName), triggerType)
-    }
-    return generateSceneHandler(String(keyName), triggerType, String(activeScene))
+    // The global handler calls a string method on the key name before it writes anything
+    return activeScene === 'all'
+      ? generateGlobalHandler(expectText(keyName), triggerType)
+      : generateSceneHandler(String(keyName), triggerType, String(activeScene))
   },
   validate: (values) => {
     const errors: string[] = []
 
     const keyName: unknown = values['keyName']
-    if (values['keyName'] && !KEY_CODES[String(keyName)]) {
-      errors.push(`Unknown key: ${values['keyName']}`)
+    const hasKeyName = Boolean(keyName)
+    if (hasKeyName && !isKnownKey(keyName)) {
+      errors.push(`Unknown key: ${String(keyName)}`)
     }
 
+    const triggerType: unknown = values['triggerType']
+    const hasTriggerType = Boolean(triggerType)
     const validTriggers: readonly unknown[] = ['isTriggered', 'isPressed', 'isRepeated']
-    if (values['triggerType'] && !validTriggers.includes(values['triggerType'])) {
-      errors.push(`Invalid trigger type: ${values['triggerType']}`)
+    if (hasTriggerType && !validTriggers.includes(triggerType)) {
+      errors.push(`Invalid trigger type: ${String(triggerType)}`)
     }
 
+    const activeScene: unknown = values['activeScene']
+    const hasActiveScene = Boolean(activeScene)
     const validScenes: readonly unknown[] = ['Scene_Map', 'Scene_Battle', 'Scene_Menu', 'all']
-    if (values['activeScene'] && !validScenes.includes(values['activeScene'])) {
-      errors.push(`Invalid scene: ${values['activeScene']}`)
+    if (hasActiveScene && !validScenes.includes(activeScene)) {
+      errors.push(`Invalid scene: ${String(activeScene)}`)
     }
 
     return {
@@ -224,5 +237,3 @@ const inputHandlerTemplate: CodeTemplate = {
 
 // Register the template when this module loads
 registerTemplate(inputHandlerTemplate)
-
-export { inputHandlerTemplate }

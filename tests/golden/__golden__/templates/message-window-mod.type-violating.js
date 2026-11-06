@@ -109,3 +109,72 @@ Window_NameBox.prototype.updatePlacement = function() {
     // Center the name box above the message window
     this.x = messageWindow.x + (messageWindow.width - this.width) / 2;
 };
+
+// ==== case: type-violating: positionType="middle",customX=null {"modType":"position","positionType":"middle","customX":null,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// Message Window Position Modification
+// Changes the default position of the message window
+
+Window_Message.prototype.updatePlacement = function() {
+    const goldWindow = this._goldWindow;
+    this._positionType = $gameMessage.positionType();
+    // Force middle position
+    this.y = (Graphics.boxHeight - this.height) / 2;
+    if (goldWindow) {
+        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;
+    }
+};
+
+// ==== case: type-violating: positionType="bottom",customY=null {"modType":"position","positionType":"bottom","customX":0,"customY":null,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// Message Window Position Modification
+// Changes the default position of the message window
+
+Window_Message.prototype.updatePlacement = function() {
+    const goldWindow = this._goldWindow;
+    this._positionType = $gameMessage.positionType();
+    // Force bottom position (default)
+    this.y = Graphics.boxHeight - this.height;
+    if (goldWindow) {
+        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;
+    }
+};
+
+// ==== case: type-violating: modType="nameBox",nameBoxPosition="right",positionType=null {"modType":"nameBox","positionType":null,"customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"right"}
+// Name Box Position Modification
+// Changes where the speaker name appears relative to the message window
+
+const _Window_NameBox_updatePlacement = Window_NameBox.prototype.updatePlacement;
+Window_NameBox.prototype.updatePlacement = function() {
+    _Window_NameBox_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Position name box on the right
+    this.x = messageWindow.x + messageWindow.width - this.width;
+};
+
+// ==== case: type-violating: modType="nameBox",nameBoxPosition="left",positionType=null {"modType":"nameBox","positionType":null,"customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"left"}
+// Name Box Position Modification
+// Changes where the speaker name appears relative to the message window
+
+const _Window_NameBox_updatePlacement = Window_NameBox.prototype.updatePlacement;
+Window_NameBox.prototype.updatePlacement = function() {
+    _Window_NameBox_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Position name box on the left (default)
+    this.x = messageWindow.x;
+};
+
+// ==== case: type-violating: modType="size",windowWidth=2000,numLines=null {"modType":"size","positionType":"top","customX":0,"customY":0,"windowWidth":2000,"numLines":null,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// rejects: Window width exceeds maximum screen width (1920) | Visible lines must be between 1 and 10
+// Message Window Size Modification
+// Changes the dimensions of the message window
+
+// Update the message window rect to use new dimensions
+const _Scene_Message_messageWindowRect = Scene_Message.prototype.messageWindowRect;
+Scene_Message.prototype.messageWindowRect = function() {
+    const rect = _Scene_Message_messageWindowRect.call(this);
+    rect.width = 2000;
+    rect.height = this.calcWindowHeight(4, false) + 8;
+    rect.x = (Graphics.boxWidth - rect.width) / 2;
+    return rect;
+};

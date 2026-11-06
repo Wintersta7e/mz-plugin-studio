@@ -58,3 +58,47 @@ Window_Message.prototype.processEscapeCharacter = function(code, textState) {
         _Window_Message_processEscapeCharacter.call(this, code, textState);
     }
 };
+
+// ==== case: type-violating: codeType="effect",effectType="size",hasParameter=null {"hasParameter":null,"codeType":"effect","effectType":"size","replacementText":"$gameParty.gold()","escapeChar":"Sample"}
+// Custom Text Code: \SAMPLE
+// Applies a visual effect during text drawing
+
+const _Window_Message_processEscapeCharacter = Window_Message.prototype.processEscapeCharacter;
+Window_Message.prototype.processEscapeCharacter = function(code, textState) {
+    if (code === 'SAMPLE') {
+        // Change font size
+        this.contents.fontSize = $gameSystem.mainFontSize();
+    } else {
+        _Window_Message_processEscapeCharacter.call(this, code, textState);
+    }
+};
+
+// ==== case: type-violating: codeType="effect",effectType="icon",replacementText=null {"hasParameter":true,"codeType":"effect","effectType":"icon","replacementText":null,"escapeChar":"Sample"}
+// Custom Text Code: \SAMPLE[n]
+// Applies a visual effect during text drawing
+
+const _Window_Message_processEscapeCharacter = Window_Message.prototype.processEscapeCharacter;
+Window_Message.prototype.processEscapeCharacter = function(code, textState) {
+    if (code === 'SAMPLE') {
+        const param = this.obtainEscapeParam(textState);
+        // Draw an icon
+        this.processDrawIcon(param, textState);
+    } else {
+        _Window_Message_processEscapeCharacter.call(this, code, textState);
+    }
+};
+
+// ==== case: type-violating: codeType="effect",effectType="custom",replacementText=null {"hasParameter":true,"codeType":"effect","effectType":"custom","replacementText":null,"escapeChar":"Sample"}
+// Custom Text Code: \SAMPLE[n]
+// Applies a visual effect during text drawing
+
+const _Window_Message_processEscapeCharacter = Window_Message.prototype.processEscapeCharacter;
+Window_Message.prototype.processEscapeCharacter = function(code, textState) {
+    if (code === 'SAMPLE') {
+        const param = this.obtainEscapeParam(textState);
+        // Custom effect - add your code here
+        console.log('Custom code with param:', param);
+    } else {
+        _Window_Message_processEscapeCharacter.call(this, code, textState);
+    }
+};

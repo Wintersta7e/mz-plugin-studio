@@ -69,5 +69,3 @@ ${sceneName}.prototype.${hookPoint} = function() {
 }
 
 registerTemplate(sceneHooksTemplate)
-
-export { sceneHooksTemplate }

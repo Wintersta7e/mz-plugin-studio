@@ -192,3 +192,65 @@ Game_System.prototype.setSample = function(value) {
 Game_System.prototype.toggleSample = function() {
     this.Sample = !this.Sample;
 };
+
+// ==== case: type-violating: storageLocation="Game_Actors",dataName="1x" {"storageLocation":"Game_Actors","dataType":"object","dataName":"1x"}
+// rejects: Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)
+// Custom Save Data: 1x
+// Storage: $gameactors
+// Type: object
+//
+// ⚠  WARNING: Game_Actors is a CONTAINER — DataManager does not
+//    round-trip properties set on the container itself. Data written
+//    here in initialize() will be lost on save reload. Move persistent
+//    data to Game_System, or store per-actor data on Game_Actor objects.
+
+const _Game_Actors_initialize = Game_Actors.prototype.initialize;
+Game_Actors.prototype.initialize = function() {
+    _Game_Actors_initialize.call(this);
+    this.1x = {};
+};
+
+// Getter: $gameactors.get1x()
+Game_Actors.prototype.get1x = function() {
+    return this.1x;
+};
+
+// Setter: $gameactors.set1x(value)
+Game_Actors.prototype.set1x = function(value) {
+    this.1x = value;
+};
+
+// Get a property from the 1x object
+Game_Actors.prototype.get1xValue = function(key) {
+    return this.1x[key];
+};
+
+// Set a property on the 1x object
+Game_Actors.prototype.set1xValue = function(key, value) {
+    this.1x[key] = value;
+};
+
+// ==== case: type-violating: storageLocation="Game_Map",dataType="string",defaultValue="abc" {"storageLocation":"Game_Map","dataType":"string","dataName":"Sample","defaultValue":"abc"}
+// Custom Save Data: Sample
+// Storage: $gamemap
+// Type: string
+//
+// ⚠  WARNING: Game_Map is reinitialized on every map transfer.
+//    Data written here will be lost whenever the player changes maps.
+//    Use Game_System if you need data to survive across maps.
+
+const _Game_Map_initialize = Game_Map.prototype.initialize;
+Game_Map.prototype.initialize = function() {
+    _Game_Map_initialize.call(this);
+    this.Sample = 'abc';
+};
+
+// Getter: $gamemap.getSample()
+Game_Map.prototype.getSample = function() {
+    return this.Sample;
+};
+
+// Setter: $gamemap.setSample(value)
+Game_Map.prototype.setSample = function(value) {
+    this.Sample = value;
+};

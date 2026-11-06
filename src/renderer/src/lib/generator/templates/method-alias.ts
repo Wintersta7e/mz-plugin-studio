@@ -35,7 +35,7 @@ function generateAliasCode(
   className: string,
   methodName: string,
   timing: unknown,
-  callOriginal: boolean,
+  isCallOriginal: boolean,
   params: string[]
 ): string {
   const aliasName = getAliasName(className, methodName)
@@ -81,7 +81,7 @@ function generateAliasCode(
     }
 
     case 'replace': {
-      if (callOriginal) {
+      if (isCallOriginal) {
         lines.push('    // Your code here (replacing original, but still calling it)')
         lines.push(' '.repeat(4))
         lines.push(`    const result = ${aliasName}.apply(this, arguments);`)
@@ -189,10 +189,14 @@ const methodAliasTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // Verify the method exists on the class
-    if (values['className'] && values['methodName']) {
-      const methodInfo = methodInfoOf(values['className'], values['methodName'])
+    const className = values['className']
+    const methodName = values['methodName']
+    const hasClassName = Boolean(className)
+    const hasMethodName = Boolean(methodName)
+    if (hasClassName && hasMethodName) {
+      const methodInfo = methodInfoOf(className, methodName)
       if (!methodInfo) {
-        errors.push(`Method "${values['methodName']}" not found on class "${values['className']}"`)
+        errors.push(`Method "${String(methodName)}" not found on class "${String(className)}"`)
       }
     }
 
@@ -205,5 +209,3 @@ const methodAliasTemplate: CodeTemplate = {
 
 // Register the template when this module loads
 registerTemplate(methodAliasTemplate)
-
-export { methodAliasTemplate }

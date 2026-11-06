@@ -119,3 +119,105 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
     console.log('Setting value', value, 'on actor', actor.name());
     // actor.setHp(value);  // Uncomment and modify as needed
 });
+
+// ==== case: type-violating: validateNumberRange=null {"validateActorId":true,"validateNumberRange":null,"minValue":0,"maxValue":9999,"errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}
+// Plugin Command with Validation: Sample
+// Includes input validation and error handling
+
+// Error handling helper
+function Sample_handleError(message) {
+    console.warn('[Sample] ' + message);
+    return false;
+}
+
+// Validation helper
+function Sample_validate(args) {
+    // Validate actor ID
+    const actorId = Number(args.actorId);
+    if (isNaN(actorId) || actorId < 1) {
+        return Sample_handleError('Invalid actor ID: ' + args.actorId);
+    }
+    if (!$dataActors[actorId]) {
+        return Sample_handleError('Actor not found: ' + actorId);
+    }
+
+    return true; // All validations passed
+}
+
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Run validation
+    if (!Sample_validate(args)) {
+        return; // Validation failed
+    }
+
+    // Parse validated arguments
+    const actorId = Number(args.actorId);
+    const actor = $gameActors.actor(actorId);
+
+    // Your command logic here
+    console.log('Command executed for actor:', actor.name());
+});
+
+// ==== case: type-violating: validateActorId=null {"validateActorId":null,"validateNumberRange":true,"minValue":0,"maxValue":9999,"errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}
+// Plugin Command with Validation: Sample
+// Includes input validation and error handling
+
+// Error handling helper
+function Sample_handleError(message) {
+    console.warn('[Sample] ' + message);
+    return false;
+}
+
+// Validation helper
+function Sample_validate(args) {
+    // Validate number range
+    const value = Number(args.value);
+    if (isNaN(value)) {
+        return Sample_handleError('Value must be a number: ' + args.value);
+    }
+    if (value < 0 || value > 9999) {
+        return Sample_handleError('Value out of range (0-9999): ' + value);
+    }
+
+    return true; // All validations passed
+}
+
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Run validation
+    if (!Sample_validate(args)) {
+        return; // Validation failed
+    }
+
+    // Parse validated arguments
+    const value = Number(args.value);
+
+    // Your command logic here
+    console.log('Command executed with value:', value);
+});
+
+// ==== case: type-violating: validateActorId=null,validateNumberRange=null {"validateActorId":null,"validateNumberRange":null,"minValue":0,"maxValue":9999,"errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}
+// Plugin Command with Validation: Sample
+// Includes input validation and error handling
+
+// Error handling helper
+function Sample_handleError(message) {
+    console.warn('[Sample] ' + message);
+    return false;
+}
+
+// Validation helper
+function Sample_validate(args) {
+    return true; // All validations passed
+}
+
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Run validation
+    if (!Sample_validate(args)) {
+        return; // Validation failed
+    }
+
+    // Parse validated arguments
+
+    // Your command logic here
+    console.log('Sample executed');
+});

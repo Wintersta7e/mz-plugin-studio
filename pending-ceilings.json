@@ -34,7 +34,6 @@
     "noUncheckedIndexedAccess": {
       "src/renderer/src/lib/conflict-detector.ts": 2,
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
-      "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
       "src/renderer/src/lib/shortcuts.ts": 1,
       "tests/dom/history-store.test.ts": 11,
       "tests/golden/corpus/generator.ts": 8,
@@ -62,7 +61,6 @@
     "noUncheckedIndexedAccess": {
       "src/renderer/src/lib/conflict-detector.ts": 2,
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
-      "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
       "src/renderer/src/lib/shortcuts.ts": 1
     }
   }

@@ -25,8 +25,101 @@ The error for a function name the code is wrapped in that is not a JavaScript id
 function functionNameErrors(values: Record<string, unknown>): string[] {
   const hasFunctionName = Boolean(values['wrapInFunction']) && Boolean(values['functionName'])
   if (!hasFunctionName) return []
-  const isIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(String(values['functionName']))
+  const isIdentifier = /^[a-z_$][\w$]*$/i.test(String(values['functionName']))
   return isIdentifier ? [] : ['Function name must be a valid JavaScript identifier']
+}
+
+/**
+The error for a set number outside `min`..`max`; an unset value is not checked.
+*/
+function rangeErrors(value: unknown, min: number, max: number, message: string): string[] {
+  if (value === undefined) return []
+  const number = Number(value)
+  return number < min || number > max ? [message] : []
+}
+
+/**
+The errors for a sound's volume, pitch and pan, in that order.
+*/
+function soundRangeErrors(values: Record<string, unknown>): string[] {
+  return [
+    ...rangeErrors(values['volume'], 0, 100, 'Volume must be between 0 and 100'),
+    ...rangeErrors(values['pitch'], 50, 150, 'Pitch must be between 50 and 150'),
+    ...rangeErrors(values['pan'], -100, 100, 'Pan must be between -100 and 100')
+  ]
+}
+
+/**
+The settings a crossfade reads to build its code, each already printed as text.
+*/
+interface CrossfadeSettings {
+  fadeOutDuration: string
+  fadeInDuration: string
+  newBgmVolume: string
+  newBgmPitch: string
+}
+
+/**
+The crossfade code: fade the current BGM out, then play the new one and fade it in.
+*/
+function crossfadeLines(settings: CrossfadeSettings, newBgmFilename: unknown): string[] {
+  return [
+    '// Crossfade: Fade out current BGM, then play and fade in new BGM',
+    `const fadeOutDuration = ${settings.fadeOutDuration}; // seconds`,
+    `const fadeInDuration = ${settings.fadeInDuration}; // seconds`,
+    '',
+    '// Define the new BGM settings',
+    'const newBgm = {',
+    `    name: '${bgmNameText(newBgmFilename, 'NEW_BGM_NAME')}',`,
+    `    volume: ${settings.newBgmVolume},`,
+    `    pitch: ${settings.newBgmPitch},`,
+    '    pan: 0',
+    '};',
+    '',
+    '// Fade out current BGM',
+    'AudioManager.fadeOutBgm(fadeOutDuration);',
+    '',
+    '// Schedule the new BGM to play after fade out completes',
+    'setTimeout(function() {',
+    '    // Play new BGM, then fade it in from silence',
+    '    AudioManager.playBgm(newBgm);',
+    '    // Fade in to target volume',
+    '    AudioManager.fadeInBgm(fadeInDuration);',
+    '}, fadeOutDuration * 1000);'
+  ]
+}
+
+/**
+The fade-from-silence code: play the BGM, then fade it in.
+*/
+function fadeFromSilenceLines(settings: CrossfadeSettings, fadeFromSilenceBgm: unknown): string[] {
+  return [
+    '// Fade in BGM from silence',
+    `const fadeInDuration = ${settings.fadeInDuration}; // seconds`,
+    '',
+    '// Define the BGM settings',
+    'const bgm = {',
+    `    name: '${bgmNameText(fadeFromSilenceBgm, 'BGM_NAME')}',`,
+    `    volume: ${settings.newBgmVolume},`,
+    `    pitch: ${settings.newBgmPitch},`,
+    '    pan: 0',
+    '};',
+    '',
+    '// Start playing, then fade in from silence',
+    'AudioManager.playBgm(bgm);',
+    '',
+    '// Fade in to target volume',
+    'AudioManager.fadeInBgm(fadeInDuration);'
+  ]
+}
+
+/**
+The label of a crossfade type in the comment above its function.
+*/
+function crossfadeTypeLabel(crossfadeType: unknown): string {
+  if (crossfadeType === 'crossfade') return 'Crossfade'
+  if (crossfadeType === 'fadeToSilence') return 'Fade to Silence'
+  return 'Fade from Silence'
 }
 
 /**
@@ -191,6 +284,10 @@ const bgmControlTemplate: CodeTemplate = {
         ]
         break
       }
+
+      default: {
+        break
+      }
     }
 
     if (isWrapInFunction) {
@@ -209,32 +306,13 @@ const bgmControlTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
     const operation = values['operation']
+    const hasFilename = Boolean(values['filename'])
 
-    if (operation === 'play' && !values['filename']) {
+    if (operation === 'play' && !hasFilename) {
       errors.push('BGM filename is required for Play operation')
     }
 
-    if (values['volume'] !== undefined) {
-      const volume = Number(values['volume'])
-      if (volume < 0 || volume > 100) {
-        errors.push('Volume must be between 0 and 100')
-      }
-    }
-
-    if (values['pitch'] !== undefined) {
-      const pitch = Number(values['pitch'])
-      if (pitch < 50 || pitch > 150) {
-        errors.push('Pitch must be between 50 and 150')
-      }
-    }
-
-    if (values['pan'] !== undefined) {
-      const pan = Number(values['pan'])
-      if (pan < -100 || pan > 100) {
-        errors.push('Pan must be between -100 and 100')
-      }
-    }
-
+    errors.push(...soundRangeErrors(values))
     errors.push(...functionNameErrors(values))
 
     return {
@@ -366,37 +444,11 @@ const sePlayerTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors: string[] = []
-
-    if (values['volume'] !== undefined) {
-      const volume = Number(values['volume'])
-      if (volume < 0 || volume > 100) {
-        errors.push('Volume must be between 0 and 100')
-      }
-    }
-
-    if (values['pitch'] !== undefined) {
-      const pitch = Number(values['pitch'])
-      if (pitch < 50 || pitch > 150) {
-        errors.push('Pitch must be between 50 and 150')
-      }
-    }
-
-    if (values['pan'] !== undefined) {
-      const pan = Number(values['pan'])
-      if (pan < -100 || pan > 100) {
-        errors.push('Pan must be between -100 and 100')
-      }
-    }
-
-    errors.push(...functionNameErrors(values))
-
-    if (values['pitchVariation'] !== undefined) {
-      const pitchVariation = Number(values['pitchVariation'])
-      if (pitchVariation < 0 || pitchVariation > 50) {
-        errors.push('Pitch variation should be between 0 and 50')
-      }
-    }
+    const errors = [
+      ...soundRangeErrors(values),
+      ...functionNameErrors(values),
+      ...rangeErrors(values['pitchVariation'], 0, 50, 'Pitch variation should be between 0 and 50')
+    ]
 
     return {
       valid: errors.length === 0,
@@ -501,70 +553,38 @@ const audioCrossfadeTemplate: CodeTemplate = {
     const functionName = String(valueOr(values['functionName'], 'crossfadeBgm'))
 
     const lines: string[] = []
+    const settings = { fadeOutDuration, fadeInDuration, newBgmVolume, newBgmPitch }
 
     // Generate core crossfade code based on type
-    const coreCode: string[] = []
+    let coreCode: string[] = []
 
     switch (crossfadeType) {
-      case 'crossfade':
-        coreCode.push('// Crossfade: Fade out current BGM, then play and fade in new BGM')
-        coreCode.push(`const fadeOutDuration = ${fadeOutDuration}; // seconds`)
-        coreCode.push(`const fadeInDuration = ${fadeInDuration}; // seconds`)
-        coreCode.push('')
-        coreCode.push('// Define the new BGM settings')
-        coreCode.push('const newBgm = {')
-        coreCode.push(`    name: '${bgmNameText(newBgmFilename, 'NEW_BGM_NAME')}',`)
-        coreCode.push(`    volume: ${newBgmVolume},`)
-        coreCode.push(`    pitch: ${newBgmPitch},`)
-        coreCode.push('    pan: 0')
-        coreCode.push('};')
-        coreCode.push('')
-        coreCode.push('// Fade out current BGM')
-        coreCode.push('AudioManager.fadeOutBgm(fadeOutDuration);')
-        coreCode.push('')
-        coreCode.push('// Schedule the new BGM to play after fade out completes')
-        coreCode.push('setTimeout(function() {')
-        coreCode.push('    // Play new BGM, then fade it in from silence')
-        coreCode.push('    AudioManager.playBgm(newBgm);')
-        coreCode.push('    // Fade in to target volume')
-        coreCode.push('    AudioManager.fadeInBgm(fadeInDuration);')
-        coreCode.push('}, fadeOutDuration * 1000);')
+      case 'crossfade': {
+        coreCode = crossfadeLines(settings, newBgmFilename)
         break
+      }
 
-      case 'fadeToSilence':
-        coreCode.push('// Fade current BGM to silence')
-        coreCode.push(`const fadeOutDuration = ${fadeOutDuration}; // seconds`)
-        coreCode.push('AudioManager.fadeOutBgm(fadeOutDuration);')
+      case 'fadeToSilence': {
+        coreCode = [
+          '// Fade current BGM to silence',
+          `const fadeOutDuration = ${fadeOutDuration}; // seconds`,
+          'AudioManager.fadeOutBgm(fadeOutDuration);'
+        ]
         break
+      }
 
-      case 'fadeFromSilence':
-        coreCode.push('// Fade in BGM from silence')
-        coreCode.push(`const fadeInDuration = ${fadeInDuration}; // seconds`)
-        coreCode.push('')
-        coreCode.push('// Define the BGM settings')
-        coreCode.push('const bgm = {')
-        coreCode.push(`    name: '${bgmNameText(fadeFromSilenceBgm, 'BGM_NAME')}',`)
-        coreCode.push(`    volume: ${newBgmVolume},`)
-        coreCode.push(`    pitch: ${newBgmPitch},`)
-        coreCode.push('    pan: 0')
-        coreCode.push('};')
-        coreCode.push('')
-        coreCode.push('// Start playing, then fade in from silence')
-        coreCode.push('AudioManager.playBgm(bgm);')
-        coreCode.push('')
-        coreCode.push('// Fade in to target volume')
-        coreCode.push('AudioManager.fadeInBgm(fadeInDuration);')
+      case 'fadeFromSilence': {
+        coreCode = fadeFromSilenceLines(settings, fadeFromSilenceBgm)
         break
+      }
+
+      default: {
+        break
+      }
     }
 
     if (isWrapInFunction) {
-      const typeLabel =
-        crossfadeType === 'crossfade'
-          ? 'Crossfade'
-          : crossfadeType === 'fadeToSilence'
-            ? 'Fade to Silence'
-            : 'Fade from Silence'
-      lines.push(`// ${typeLabel} Function`)
+      lines.push(`// ${crossfadeTypeLabel(crossfadeType)} Function`)
       lines.push(`function ${functionName}() {`)
       for (const line of coreCode) {
         lines.push(line ? `    ${line}` : '')
@@ -579,45 +599,35 @@ const audioCrossfadeTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
     const crossfadeType = values['crossfadeType']
+    const hasNewBgmFilename = Boolean(values['newBgmFilename'])
+    const hasFadeFromSilenceBgm = Boolean(values['fadeFromSilenceBgm'])
 
     // Validate BGM filename based on crossfade type
-    if (crossfadeType === 'crossfade' && !values['newBgmFilename']) {
+    if (crossfadeType === 'crossfade' && !hasNewBgmFilename) {
       errors.push('New BGM filename is required for crossfade')
     }
 
-    if (crossfadeType === 'fadeFromSilence' && !values['fadeFromSilenceBgm']) {
+    if (crossfadeType === 'fadeFromSilence' && !hasFadeFromSilenceBgm) {
       errors.push('BGM filename is required for fade from silence')
     }
 
-    // Validate durations
-    if (values['fadeOutDuration'] !== undefined) {
-      const duration = Number(values['fadeOutDuration'])
-      if (duration < 0 || duration > 60) {
-        errors.push('Fade out duration must be between 0 and 60 seconds')
-      }
-    }
-
-    if (values['fadeInDuration'] !== undefined) {
-      const duration = Number(values['fadeInDuration'])
-      if (duration < 0 || duration > 60) {
-        errors.push('Fade in duration must be between 0 and 60 seconds')
-      }
-    }
-
-    // Validate volume and pitch
-    if (values['newBgmVolume'] !== undefined) {
-      const volume = Number(values['newBgmVolume'])
-      if (volume < 0 || volume > 100) {
-        errors.push('Volume must be between 0 and 100')
-      }
-    }
-
-    if (values['newBgmPitch'] !== undefined) {
-      const pitch = Number(values['newBgmPitch'])
-      if (pitch < 50 || pitch > 150) {
-        errors.push('Pitch must be between 50 and 150')
-      }
-    }
+    // Validate durations, then volume and pitch
+    errors.push(
+      ...rangeErrors(
+        values['fadeOutDuration'],
+        0,
+        60,
+        'Fade out duration must be between 0 and 60 seconds'
+      ),
+      ...rangeErrors(
+        values['fadeInDuration'],
+        0,
+        60,
+        'Fade in duration must be between 0 and 60 seconds'
+      ),
+      ...rangeErrors(values['newBgmVolume'], 0, 100, 'Volume must be between 0 and 100'),
+      ...rangeErrors(values['newBgmPitch'], 50, 150, 'Pitch must be between 50 and 150')
+    )
 
     // Validate function name
     errors.push(...functionNameErrors(values))
@@ -633,5 +643,3 @@ const audioCrossfadeTemplate: CodeTemplate = {
 registerTemplate(bgmControlTemplate)
 registerTemplate(sePlayerTemplate)
 registerTemplate(audioCrossfadeTemplate)
-
-export { bgmControlTemplate, sePlayerTemplate, audioCrossfadeTemplate }
