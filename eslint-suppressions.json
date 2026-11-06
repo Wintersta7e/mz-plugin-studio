@@ -1514,29 +1514,6 @@
       "count": 2
     }
   },
-  "src/renderer/src/lib/generator/templates/audio-system.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    },
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/prefer-math-abs": {
-      "count": 2
-    },
-    "unicorn/switch-case-braces": {
-      "count": 3
-    }
-  },
   "src/renderer/src/lib/generator/templates/battle-system.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 2

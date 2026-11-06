@@ -24,10 +24,10 @@ const FLOORS = {
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 89 },
     'src/renderer/src/lib': { lines: 96, branches: 88 },
-    [GENERATOR]: { lines: 98, branches: 95 },
+    [GENERATOR]: { lines: 99, branches: 96 },
     'src/renderer/src/components': { lines: 92, branches: 85 },
     'src/renderer/src': { lines: 82, branches: 79 },
-    global: { lines: 95, branches: 90 }
+    global: { lines: 95, branches: 91 }
   },
   golden: {
     // Every generator file, the category modules under templates/ included: a new one needs its
@@ -39,7 +39,7 @@ const FLOORS = {
       [`${GENERATOR}/templates/index.ts`]: 92,
       [`${GENERATOR}/templates/types.ts`]: 100,
       [`${GENERATOR}/templates/actor-party.ts`]: 100,
-      [`${GENERATOR}/templates/audio-system.ts`]: 96,
+      [`${GENERATOR}/templates/audio-system.ts`]: 100,
       [`${GENERATOR}/templates/battle-system.ts`]: 94,
       [`${GENERATOR}/templates/custom-window.ts`]: 100,
       [`${GENERATOR}/templates/database-ext.ts`]: 99,
