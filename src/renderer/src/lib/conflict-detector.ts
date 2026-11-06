@@ -12,7 +12,7 @@ export { extractOverrides } from '../../../shared/override-extractor'
 
 // --- Types ---
 
-export interface PluginConflict {
+interface PluginConflict {
   method: string // "Game_Actor.prototype.setup"
   plugins: string[] // ["PluginA", "PluginB"] in load order
   severity: 'warning' | 'info'
@@ -35,7 +35,7 @@ Detect conflicts between plugins that override the same methods.
 */
 export function detectConflicts(
   headers: { filename: string; name: string; overrides: string[] }[],
-  mzClasses: Record<string, { popularity?: number }>
+  mzClasses: Readonly<Partial<Record<string, { popularity?: number }>>>
 ): ConflictReport {
   // Step 1: Build map of method → plugin names (preserving load order)
   const methodMap = new Map<string, string[]>()
@@ -60,9 +60,7 @@ export function detectConflicts(
     if (plugins.length < 2) continue
 
     // Split on .prototype. to get className and methodName
-    const parts = method.split('.prototype.')
-    const className = parts[0]
-    const methodName = parts[1] ?? method
+    const [className = method, methodName = method] = method.split('.prototype.', 2)
 
     // Severity based on class popularity
     const popularity = mzClasses[className]?.popularity ?? 0

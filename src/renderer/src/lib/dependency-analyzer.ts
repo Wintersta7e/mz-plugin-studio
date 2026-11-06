@@ -43,7 +43,7 @@ export function buildDependencyGraph(headers: ScannedPluginHeader[]): Dependency
         continue
       }
 
-      const targetEdges = edges.get(target) || []
+      const targetEdges = edges.get(target) ?? []
       if (targetEdges.includes(header.name)) {
         continue
       }
@@ -61,21 +61,32 @@ Validate the dependency graph and return a full report
 */
 export function validateDependencies(headers: ScannedPluginHeader[]): DependencyReport {
   const graph = buildDependencyGraph(headers)
-  const issues: DependencyIssue[] = []
+  const issues: DependencyIssue[] = [
+    ...duplicateIssues(headers),
+    ...headers.flatMap((header) => missingIssues(header, graph)),
+    ...detectCycles(graph),
+    ...loadOrderIssues(headers, graph)
+  ]
 
-  // Build position index for load order checking
-  const positionIndex = new Map<string, number>()
-  for (const [index, header] of headers.entries()) {
-    positionIndex.set(header.name, index)
+  return {
+    issues,
+    health: healthOf(issues),
+    loadOrder: headers.map((h) => h.name),
+    pluginNames: headers.map((h) => h.name) // Same as loadOrder; kept for backward compat
   }
+}
 
-  // 1. Detect duplicate plugin names
+/**
+1. Plugin names that more than one file declares
+*/
+function duplicateIssues(headers: ScannedPluginHeader[]): DependencyIssue[] {
   const nameCounts = new Map<string, string[]>()
   for (const header of headers) {
-    const existing = nameCounts.get(header.name) || []
+    const existing = nameCounts.get(header.name) ?? []
     existing.push(header.filename)
     nameCounts.set(header.name, existing)
   }
+  const issues: DependencyIssue[] = []
   for (const [name, filenames] of nameCounts) {
     if (filenames.length > 1) {
       issues.push({
@@ -87,52 +98,66 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
       })
     }
   }
+  return issues
+}
 
-  // 2. Detect missing dependencies
-  for (const header of headers) {
-    // @base = hard dependency (error if missing)
-    for (const dependency of header.base) {
-      if (!graph.plugins.has(dependency)) {
-        issues.push({
-          type: 'missing',
-          severity: 'error',
-          pluginName: header.name,
-          message: `"${header.name}" requires "${dependency}" but it was not found in the project`
-        })
-      }
-    }
-    // @orderAfter = soft load order hint (warning if missing)
-    for (const dependency of header.orderAfter) {
-      if (!graph.plugins.has(dependency) && !header.base.includes(dependency)) {
-        issues.push({
-          type: 'missing',
-          severity: 'warning',
-          pluginName: header.name,
-          message: `"${header.name}" should load after "${dependency}" but it was not found in the project`
-        })
-      }
-    }
-    // @orderBefore = soft load order hint (warning if target missing)
-    for (const dependency of header.orderBefore) {
-      if (!graph.plugins.has(dependency)) {
-        issues.push({
-          type: 'missing',
-          severity: 'warning',
-          pluginName: header.name,
-          message: `"${header.name}" should load before "${dependency}" but it was not found in the project`
-        })
-      }
+/**
+2. Dependencies of one plugin that are not in the project
+*/
+function missingIssues(header: ScannedPluginHeader, graph: DependencyGraph): DependencyIssue[] {
+  const issues: DependencyIssue[] = []
+  // @base = hard dependency (error if missing)
+  for (const dependency of header.base) {
+    if (!graph.plugins.has(dependency)) {
+      issues.push({
+        type: 'missing',
+        severity: 'error',
+        pluginName: header.name,
+        message: `"${header.name}" requires "${dependency}" but it was not found in the project`
+      })
     }
   }
+  // @orderAfter = soft load order hint (warning if missing)
+  for (const dependency of header.orderAfter) {
+    if (!graph.plugins.has(dependency) && !header.base.includes(dependency)) {
+      issues.push({
+        type: 'missing',
+        severity: 'warning',
+        pluginName: header.name,
+        message: `"${header.name}" should load after "${dependency}" but it was not found in the project`
+      })
+    }
+  }
+  // @orderBefore = soft load order hint (warning if target missing)
+  for (const dependency of header.orderBefore) {
+    if (!graph.plugins.has(dependency)) {
+      issues.push({
+        type: 'missing',
+        severity: 'warning',
+        pluginName: header.name,
+        message: `"${header.name}" should load before "${dependency}" but it was not found in the project`
+      })
+    }
+  }
+  return issues
+}
 
-  // 3. Detect circular dependencies
-  issues.push(...detectCycles(graph))
-
-  // 4. Detect load order violations (uses graph edges which include reverse @orderBefore)
+/**
+4. Plugins that load before one they depend on (graph edges include reverse @orderBefore)
+*/
+function loadOrderIssues(
+  headers: ScannedPluginHeader[],
+  graph: DependencyGraph
+): DependencyIssue[] {
+  const positionIndex = new Map<string, number>()
+  for (const [index, header] of headers.entries()) {
+    positionIndex.set(header.name, index)
+  }
+  const issues: DependencyIssue[] = []
   for (const header of headers) {
     const myPos = positionIndex.get(header.name)
     if (myPos === undefined) continue
-    const allDependencies = [...new Set(graph.edges.get(header.name) || [])]
+    const allDependencies = [...new Set(graph.edges.get(header.name))]
     for (const dependency of allDependencies) {
       const dependencyPos = positionIndex.get(dependency)
       if (dependencyPos !== undefined && dependencyPos > myPos) {
@@ -141,27 +166,22 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
           severity: 'warning',
           pluginName: header.name,
           message: `"${header.name}" depends on "${dependency}" but loads before it`,
-          details: `${header.name} is at position ${myPos + 1}, ${dependency} is at position ${dependencyPos + 1}`
+          details: `${header.name} is at position ${String(myPos + 1)}, ${dependency} is at position ${String(dependencyPos + 1)}`
         })
       }
     }
   }
+  return issues
+}
 
-  // Determine health
-  const hasErrors = issues.some((index) => index.severity === 'error')
-  const hasWarnings = issues.some((index) => index.severity === 'warning')
-  const health = hasErrors ? 'errors' : hasWarnings ? 'warnings' : 'healthy'
-
-  return {
-    issues,
-    health,
-    loadOrder: headers.map((h) => h.name),
-    pluginNames: headers.map((h) => h.name) // Same as loadOrder; kept for backward compat
-  }
+function healthOf(issues: DependencyIssue[]): DependencyReport['health'] {
+  if (issues.some((issue) => issue.severity === 'error')) return 'errors'
+  if (issues.some((issue) => issue.severity === 'warning')) return 'warnings'
+  return 'healthy'
 }
 
 /**
-Detect circular dependencies using DFS with three-color marking
+3. Circular dependencies, found by DFS with three-color marking
 */
 function detectCycles(graph: DependencyGraph): DependencyIssue[] {
   const issues: DependencyIssue[] = []
@@ -177,7 +197,8 @@ function detectCycles(graph: DependencyGraph): DependencyIssue[] {
 
   function dfs(node: string): void {
     color.set(node, GRAY)
-    for (const dependency of graph.edges.get(node) || []) {
+    const dependencies = graph.edges.get(node) ?? []
+    for (const dependency of dependencies) {
       if (!graph.plugins.has(dependency)) continue // skip missing (handled elsewhere)
       if (color.get(dependency) === GRAY) {
         // Found cycle - reconstruct path

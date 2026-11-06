@@ -23,7 +23,7 @@ const FLOORS = {
     'src/preload': { lines: 44, branches: 0 },
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 89 },
-    'src/renderer/src/lib': { lines: 96, branches: 88 },
+    'src/renderer/src/lib': { lines: 96, branches: 89 },
     [GENERATOR]: { lines: 98, branches: 95 },
     'src/renderer/src/components': { lines: 92, branches: 85 },
     'src/renderer/src': { lines: 82, branches: 79 },

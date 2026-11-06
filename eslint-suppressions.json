@@ -1412,34 +1412,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/lib/conflict-detector.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/dependency-analyzer.ts": {
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 4
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    }
-  },
   "src/renderer/src/lib/exportFormats.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 2
