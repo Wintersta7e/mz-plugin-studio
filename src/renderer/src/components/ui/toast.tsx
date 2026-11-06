@@ -28,37 +28,72 @@ const progressColors: Record<ToastType, string> = {
 
 const toastSpring = { type: 'spring' as const, stiffness: 400, damping: 30 }
 
+/**
+The bar that shrinks over the toast's lifetime; it stops while the toast is held
+*/
+function ToastProgress({
+  type,
+  duration,
+  paused
+}: Readonly<{ type: ToastType; duration: number; paused: boolean }>): React.ReactElement {
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-0.5 overflow-hidden rounded-b-lg">
+      <div
+        className={cn('h-full', progressColors[type])}
+        style={{
+          animationName: 'progress-shrink',
+          animationDuration: `${String(duration)}ms`,
+          animationTimingFunction: 'linear',
+          animationFillMode: 'forwards',
+          animationPlayState: paused ? 'paused' : 'running'
+        }}
+      />
+    </div>
+  )
+}
+
+type HoldReason = 'pointer' | 'focus'
+
+/**
+The countdown waits while the pointer is over the toast or focus is inside it
+*/
+function useCountdownHold(id: string): Readonly<{
+  paused: boolean
+  hold: (reason: HoldReason, isHolding: boolean) => void
+}> {
+  const pause = useToastStore((s) => s.pause)
+  const resume = useToastStore((s) => s.resume)
+  const holdsRef = useRef({ pointer: false, focus: false })
+  const [paused, setPaused] = useState(false)
+
+  const hold = (reason: HoldReason, isHolding: boolean): void => {
+    const wasHeld = holdsRef.current.pointer || holdsRef.current.focus
+    holdsRef.current[reason] = isHolding
+    const isHeld = holdsRef.current.pointer || holdsRef.current.focus
+    if (isHeld === wasHeld) return
+    if (isHeld) pause(id)
+    else resume(id)
+    setPaused(isHeld)
+  }
+  return { paused, hold }
+}
+
 function ToastItem({
   id,
   type,
   message,
   duration,
   action
-}: {
+}: Readonly<{
   id: string
   type: ToastType
   message: string
   duration: number
-  createdAt: number
   action?: ToastAction
-}): React.ReactElement {
+}>): React.ReactElement {
   const dismiss = useToastStore((s) => s.dismiss)
-  const pause = useToastStore((s) => s.pause)
-  const resume = useToastStore((s) => s.resume)
   const Icon = icons[type]
-  // The countdown waits while the pointer is over the toast or focus is inside it
-  const holds = useRef({ pointer: false, focus: false })
-  const [paused, setPaused] = useState(false)
-
-  const hold = (reason: 'pointer' | 'focus', on: boolean): void => {
-    const was = holds.current.pointer || holds.current.focus
-    holds.current[reason] = on
-    const now = holds.current.pointer || holds.current.focus
-    if (now === was) return
-    if (now) pause(id)
-    else resume(id)
-    setPaused(now)
-  }
+  const { paused, hold } = useCountdownHold(id)
 
   return (
     <motion.div
@@ -66,11 +101,17 @@ function ToastItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: 80, scale: 0.95 }}
       transition={toastSpring}
-      onPointerEnter={() => hold('pointer', true)}
-      onPointerLeave={() => hold('pointer', false)}
-      onFocus={() => hold('focus', true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) hold('focus', false)
+      onPointerEnter={() => {
+        hold('pointer', true)
+      }}
+      onPointerLeave={() => {
+        hold('pointer', false)
+      }}
+      onFocus={() => {
+        hold('focus', true)
+      }}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) hold('focus', false)
       }}
       className={cn(
         'pointer-events-auto relative flex items-start gap-3 rounded-lg border border-border border-l-4 bg-card p-3 pr-8 shadow-lg',
@@ -94,26 +135,16 @@ function ToastItem({
         )}
       </div>
       <button
-        onClick={() => dismiss(id)}
+        type="button"
+        onClick={() => {
+          dismiss(id)
+        }}
         aria-label="Dismiss notification"
         className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:text-foreground"
       >
         <X className="h-3 w-3" />
       </button>
-      {duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 overflow-hidden rounded-b-lg">
-          <div
-            className={cn('h-full', progressColors[type])}
-            style={{
-              animationName: 'progress-shrink',
-              animationDuration: `${duration}ms`,
-              animationTimingFunction: 'linear',
-              animationFillMode: 'forwards',
-              animationPlayState: paused ? 'paused' : 'running'
-            }}
-          />
-        </div>
-      )}
+      {duration > 0 && <ToastProgress type={type} duration={duration} paused={paused} />}
     </motion.div>
   )
 }
