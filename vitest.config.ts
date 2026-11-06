@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import path from 'node:path'
 import react from '@vitejs/plugin-react'
 
 const mocks = 'tests/setup/mocks.ts'
@@ -13,7 +13,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src/renderer/src')
+      '@': path.resolve(__dirname, 'src/renderer/src')
     }
   },
   test: {

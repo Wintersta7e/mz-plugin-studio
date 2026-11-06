@@ -58,13 +58,5 @@
     "vitest/require-top-level-describe": {
       "count": 1
     }
-  },
-  "vitest.config.ts": {
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    }
   }
 }
