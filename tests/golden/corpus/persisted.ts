@@ -1,14 +1,19 @@
 /// <reference types="vite/client" />
 // Every store that saves itself to localStorage, and a populated state for each: what a user
 // who has worked in the app for a while has saved. Names and paths are synthetic.
-import { fileURLToPath } from 'url'
-import { toBaseline } from '../../../src/shared/types/plugin'
-import type { PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
+import { fileURLToPath } from 'node:url'
+import {
+  toBaseline,
+  type PluginDefinition,
+  type PluginParameter
+} from '../../../src/shared/types/plugin'
 import { FROZEN_TIME } from './normalise'
 
 export interface PersistedStore {
   key: string
-  /** Absolute path, so a test can import the module afresh after `vi.resetModules()`. */
+  /**
+  Absolute path, so a test can import the module afresh after `vi.resetModules()`.
+  */
   modulePath: string
   exportName: string
 }
@@ -19,13 +24,19 @@ interface PersistApi {
 
 const hasPersist = (value: unknown): value is PersistApi =>
   typeof value === 'function' &&
-  typeof (value as Partial<PersistApi>).persist?.getOptions === 'function'
+  'persist' in value &&
+  typeof value.persist === 'object' &&
+  value.persist !== null &&
+  'getOptions' in value.persist &&
+  typeof value.persist.getOptions === 'function'
 
 const modules = import.meta.glob<Record<string, unknown>>('../../../src/renderer/src/stores/*.ts', {
   eager: true
 })
 
-/** Store hooks with a persist name, from the module that defines each (not the barrel). */
+/**
+Store hooks with a persist name, from the module that defines each (not the barrel).
+*/
 export function persistedStores(): PersistedStore[] {
   const stores: PersistedStore[] = []
   for (const [path, exports] of Object.entries(modules)) {
@@ -36,7 +47,7 @@ export function persistedStores(): PersistedStore[] {
       stores.push({ key, modulePath: fileURLToPath(new URL(path, import.meta.url)), exportName })
     }
   }
-  return stores.sort((a, b) => a.key.localeCompare(b.key))
+  return stores.toSorted((a, b) => a.key.localeCompare(b.key))
 }
 
 const ROOT = '/fixture/mz-project'
@@ -49,7 +60,7 @@ const clearedNumber = (id: string, name: string): PluginParameter => ({
   desc: 'Cleared minimum.',
   type: 'number',
   default: 5,
-  min: Number.NaN,
+  min: NaN,
   max: 10
 })
 
@@ -129,7 +140,9 @@ const unsaved: PluginDefinition = {
 
 const RECENT = Date.parse(FROZEN_TIME)
 
-/** Per store key, the state a test sets before reading what the store saved. */
+/**
+Per store key, the state a test sets before reading what the store saved.
+*/
 export const POPULATED: Record<string, Record<string, unknown>> = {
   'mz-plugin-studio-plugin': {
     plugin: imported,

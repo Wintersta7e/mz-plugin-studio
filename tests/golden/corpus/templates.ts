@@ -6,26 +6,31 @@ import {
   getAllTemplates,
   getTemplate,
   getTemplateDefaults,
-  validateTemplateValues
-} from '../../../src/renderer/src/lib/generator/templates/index'
-import type {
-  CodeTemplate,
-  TemplateField
+  validateTemplateValues,
+  type CodeTemplate,
+  type TemplateField
 } from '../../../src/renderer/src/lib/generator/templates/index'
 import {
   getClassesGrouped,
   getClassMethods
 } from '../../../src/renderer/src/lib/generator/class-registry'
 import { ALL_PAYLOADS } from '../../helpers/hostile'
-import { oneLine } from './normalise'
+import { byCodeUnit, oneLine } from './normalise'
 
 // Each template module registers itself when loaded.
-import.meta.glob('../../../src/renderer/src/lib/generator/templates/*.ts', { eager: true })
+const TEMPLATE_MODULES = import.meta.glob(
+  '../../../src/renderer/src/lib/generator/templates/*.ts',
+  {
+    eager: true
+  }
+)
 
 export interface TemplateCase {
   name: string
   values: Record<string, unknown>
-  /** Payload name when one field holds hostile text, else null. */
+  /**
+  Payload name when one field holds hostile text, else null.
+  */
   hostile: string | null
 }
 
@@ -40,6 +45,7 @@ const HAND_VALUES: Record<string, Record<string, unknown>> = {
 }
 
 const THREE_GAUGES = { gaugeCount: '3' }
+const CUSTOM_BACKGROUND = { modType: 'background', bgType: 'custom' }
 
 // Values of other fields under which a text field reaches the output. Under the base values
 // these fields are left out or converted (to a number, a boolean, parsed JSON), so their
@@ -59,7 +65,7 @@ export const ENABLING_VALUES: Record<string, Record<string, Record<string, unkno
     defaultValue: { optionType: 'volume' },
     choices: { optionType: 'select' }
   },
-  'message-window-mod': { bgColor: { modType: 'background', bgType: 'custom' } },
+  'message-window-mod': { bgColor: CUSTOM_BACKGROUND },
   'save-load-basic': { defaultValue: { dataType: 'string' } },
   'sprite-custom-class': { fillColor: { useBitmap: 'filled' } },
   'sprite-frame-animation': { targetClass: { animationType: 'mixin' } }
@@ -87,8 +93,8 @@ const COMBINED_CASES: Record<string, Record<string, unknown>[]> = {
   'message-window-mod': [
     { modType: 'background', bgType: 'window' },
     { modType: 'background', bgType: 'transparent' },
-    ENABLING_VALUES['message-window-mod'].bgColor,
-    { ...ENABLING_VALUES['message-window-mod'].bgColor, bgColor: '' },
+    CUSTOM_BACKGROUND,
+    { ...CUSTOM_BACKGROUND, bgColor: '' },
     { modType: 'nameBox', nameBoxPosition: 'left' },
     { modType: 'nameBox', nameBoxPosition: 'right' }
   ],
@@ -124,54 +130,74 @@ function template(id: string): CodeTemplate {
 const isEmpty = (value: unknown): boolean => value === undefined || value === ''
 
 export function templateIds(): string[] {
+  if (Object.keys(TEMPLATE_MODULES).length === 0) throw new Error('no template module loaded')
   return getAllTemplates()
     .map((t) => t.id)
-    .sort()
+    .toSorted(byCodeUnit)
 }
 
 function genericValue(field: TemplateField): unknown {
   switch (field.type) {
-    case 'select':
+    case 'select': {
       return field.options?.[0]?.value
-    case 'number':
+    }
+    case 'number': {
       return 1
-    case 'class-select':
+    }
+    case 'class-select': {
       return BASE_CLASS
-    case 'method-select':
+    }
+    case 'method-select': {
       return BASE_METHOD
-    case 'boolean':
+    }
+    case 'boolean': {
       return false
-    default:
+    }
+    case 'key-select':
+    case 'text': {
       return 'Sample'
+    }
   }
 }
 
-/** Defaults plus a value for every empty required field; the one owner of base values. */
+/**
+Defaults plus a value for every empty required field; the one owner of base values.
+*/
 export function baseValues(id: string): Record<string, unknown> {
   const values: Record<string, unknown> = { ...getTemplateDefaults(id), ...HAND_VALUES[id] }
   for (const field of template(id).fields) {
-    if (field.required && isEmpty(values[field.id])) values[field.id] = genericValue(field)
+    if (field.required === true && isEmpty(values[field.id])) values[field.id] = genericValue(field)
   }
   return values
 }
 
 function variants(field: TemplateField, base: Record<string, unknown>): [string, unknown][] {
   switch (field.type) {
-    case 'select':
+    case 'select': {
       return (field.options ?? []).map((o) => [o.value, o.value])
-    case 'boolean':
+    }
+    case 'boolean': {
       return [[String(base[field.id] !== true), base[field.id] !== true]]
-    case 'class-select':
-      return Object.values(getClassesGrouped())
-        .filter((group) => group.length > 0)
-        .map((group) => [group[0].name, group[0].name])
-    case 'method-select':
-      return getClassMethods(String(base.className ?? BASE_CLASS)).map((m) => [m.name, m.name])
-    case 'text':
-      return field.required ? [] : [['empty', '']]
-    default:
+    }
+    case 'class-select': {
+      return Object.values(getClassesGrouped()).flatMap((group): [string, unknown][] => {
+        const first = group.at(0)
+        return first === undefined ? [] : [[first.name, first.name]]
+      })
+    }
+    case 'method-select': {
+      const { className } = base
+      const shown = typeof className === 'string' ? className : BASE_CLASS
+      return getClassMethods(shown).map((m) => [m.name, m.name])
+    }
+    case 'text': {
+      return field.required === true ? [] : [['empty', '']]
+    }
+    case 'key-select':
+    case 'number': {
       // A cleared number input reads as 0 (`Number('')`), so a number field is never empty.
       return []
+    }
   }
 }
 
@@ -194,11 +220,14 @@ export function templateCases(id: string): TemplateCase[] {
       })
     }
   }
-  for (const changes of COMBINED_CASES[id] ?? []) {
+  const combinedCases = COMBINED_CASES[id] ?? []
+  for (const changes of combinedCases) {
     cases.push({ name: caseName(changes), values: { ...base, ...changes }, hostile: null })
   }
-  for (const field of fields.filter((f) => f.type === 'text')) {
-    const enabling = ENABLING_VALUES[id]?.[field.id]
+  const enablingFields = new Map(Object.entries(ENABLING_VALUES[id] ?? {}))
+  for (const field of fields) {
+    if (field.type !== 'text') continue
+    const enabling = enablingFields.get(field.id)
     const contexts: Record<string, unknown>[] = enabling === undefined ? [{}] : [{}, enabling]
     for (const changes of contexts) {
       for (const payload of ALL_PAYLOADS) {
@@ -243,7 +272,9 @@ export function renderCases(id: string, cases: TemplateCase[]): string {
   return cases.map((c) => renderCase(id, c)).join('\n\n') + '\n'
 }
 
-/** Every case of one template as the golden file's text. */
+/**
+Every case of one template as the golden file's text.
+*/
 export function renderTemplateCases(id: string): string {
   return renderCases(id, templateCases(id))
 }

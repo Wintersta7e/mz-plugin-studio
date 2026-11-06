@@ -1,11 +1,13 @@
 // A parameter export as the released version wrote it, and the plugin it is imported into.
 // Between them the parameters set every parameter field, one number field the user cleared
 // (NaN, written as null) and a description that closes a comment and spans two lines.
-import { resolve } from 'path'
+import path from 'node:path'
 import type { PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
 
-/** The export fixture, resolved from the repository root like the other fixture helpers. */
-export const V160_FIXTURE = resolve(process.cwd(), 'tests/fixtures/mzparams/v1.6.0.mzparams')
+/**
+The export fixture, resolved from the repository root like the other fixture helpers.
+*/
+export const V160_FIXTURE = path.resolve(process.cwd(), 'tests/fixtures/mzparams/v1.6.0.mzparams')
 
 export const V160_SOURCE = 'Fixture_Params'
 
@@ -17,9 +19,9 @@ export const V160_PARAMS: PluginParameter[] = [
     desc: 'All limits cleared.',
     type: 'number',
     default: 5,
-    min: Number.NaN,
-    max: Number.NaN,
-    decimals: Number.NaN
+    min: NaN,
+    max: NaN,
+    decimals: NaN
   },
   {
     id: 'count',
@@ -86,7 +88,9 @@ export const V160_PARAMS: PluginParameter[] = [
   }
 ]
 
-/** The plugin the exported parameters are imported into. */
+/**
+The plugin the exported parameters are imported into.
+*/
 export const MZPARAMS_HOST: PluginDefinition = {
   id: 'mzparams-host',
   meta: {

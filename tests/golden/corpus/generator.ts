@@ -22,12 +22,19 @@ import {
   isRawMode
 } from '../../../src/renderer/src/lib/plugin-output'
 import { PluginParser } from '../../../src/main/services/pluginParser'
-import { ALL_PARAM_TYPES, toBaseline } from '../../../src/shared/types/plugin'
-import type { ParamType, PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
+import {
+  ALL_PARAM_TYPES,
+  toBaseline,
+  type ParamType,
+  type PluginDefinition,
+  type PluginParameter
+} from '../../../src/shared/types/plugin'
 import { COMMENT_PAYLOADS } from '../../helpers/hostile'
 import { oneLine } from './normalise'
 
-/** Every property required, through nested objects and array items. */
+/**
+Every property required, through nested objects and array items.
+*/
 export type HostileComplete<T> = T extends (infer U)[]
   ? HostileComplete<U>[]
   : T extends object
@@ -73,12 +80,12 @@ function hostileParameter(
 }
 
 /**
- * One of everything, every string leaf carrying `payload` except a parameter's `type` and
- * `arrayType`. Each `text` differs from its `name` and each option `value` from its `text`,
- * because the generator emits `@text` and `@value` only then. The parameter slots use
- * different types so that each type-specific annotation is emitted somewhere; the command
- * has a second argument because only a select or combo argument emits its options.
- */
+One of everything, every string leaf carrying `payload` except a parameter's `type` and
+`arrayType`. Each `text` differs from its `name` and each option `value` from its `text`,
+because the generator emits `@text` and `@value` only then. The parameter slots use
+different types so that each type-specific annotation is emitted somewhere; the command
+has a second argument because only a select or combo argument emits its options.
+*/
 export function hostileDefinition(payload: string): HostileDefinition {
   return {
     id: payload,
@@ -118,9 +125,11 @@ export function hostileDefinition(payload: string): HostileDefinition {
 const PARAMETER_LISTS = new Set(['parameters', 'args'])
 const EXEMPT_KEYS = new Set(['type', 'arrayType'])
 
-/** Counts string leaves, and those carrying `payload`; a parameter's type keys are exempt. */
+/**
+Counts string leaves, and those carrying `payload`; a parameter's type keys are exempt.
+*/
 export function countHostileLeaves(
-  def: unknown,
+  definition: unknown,
   payload: string
 ): { holding: number; total: number } {
   const counts = { holding: 0, total: 0 }
@@ -131,17 +140,46 @@ export function countHostileLeaves(
     } else if (Array.isArray(value)) {
       for (const item of value) visit(item, key)
     } else if (typeof value === 'object' && value !== null) {
-      const parameter = PARAMETER_LISTS.has(key)
+      const isParameter = PARAMETER_LISTS.has(key)
       for (const [k, v] of Object.entries(value)) {
-        if (!(parameter && EXEMPT_KEYS.has(k))) visit(v, k)
+        if (!(isParameter && EXEMPT_KEYS.has(k))) visit(v, k)
       }
     }
   }
-  visit(def, '')
+  visit(definition, '')
   return counts
 }
 
 // --- Full coverage ---------------------------------------------------------------------
+
+// What each type sets beyond the shared fields; a database type not listed takes the default 1.
+const TYPED_FIELDS: Partial<Record<ParamType, Partial<PluginParameter>>> = {
+  number: { default: 3, min: 0, max: 10, decimals: 1 },
+  boolean: { default: true, onLabel: 'Yes', offLabel: 'No' },
+  select: {
+    default: 'first',
+    options: [
+      { value: 'first', text: 'First' },
+      { value: 'second', text: 'Second' }
+    ]
+  },
+  combo: {
+    default: 'first',
+    options: [
+      { value: 'first', text: 'First' },
+      { value: 'second', text: 'Second' }
+    ]
+  },
+  struct: { structType: 'T', default: '{"x":"1"}' },
+  array: { arrayType: 'number', default: '["1","2"]' },
+  file: { dir: 'img/pictures/', default: 'Fixture_Picture' },
+  string: { default: '' },
+  note: { default: '"Line"' },
+  text: { default: '' },
+  hidden: { default: '' },
+  color: { default: '' },
+  location: { default: '' }
+}
 
 function typedParameter(type: ParamType, prefix: string): PluginParameter {
   const param: PluginParameter = {
@@ -152,40 +190,10 @@ function typedParameter(type: ParamType, prefix: string): PluginParameter {
     type,
     default: ''
   }
-  switch (type) {
-    case 'number':
-      return { ...param, default: 3, min: 0, max: 10, decimals: 1 }
-    case 'boolean':
-      return { ...param, default: true, onLabel: 'Yes', offLabel: 'No' }
-    case 'select':
-    case 'combo':
-      return {
-        ...param,
-        default: 'first',
-        options: [
-          { value: 'first', text: 'First' },
-          { value: 'second', text: 'Second' }
-        ]
-      }
-    case 'struct':
-      return { ...param, structType: 'T', default: '{"x":"1"}' }
-    case 'array':
-      return { ...param, arrayType: 'number', default: '["1","2"]' }
-    case 'file':
-      return { ...param, dir: 'img/pictures/', default: 'Fixture_Picture' }
-    case 'string':
-    case 'note':
-    case 'text':
-    case 'hidden':
-    case 'color':
-    case 'location':
-      return { ...param, default: type === 'note' ? '"Line"' : '' }
-    default:
-      return { ...param, default: 1 }
-  }
+  return { ...param, ...structuredClone(TYPED_FIELDS[type] ?? { default: 1 }) }
 }
 
-const TYPES = [...ALL_PARAM_TYPES] as ParamType[]
+const TYPES = [...ALL_PARAM_TYPES].filter((type): type is ParamType => ALL_PARAM_TYPES.has(type))
 
 const allParamTypes: PluginDefinition = {
   id: 'all-param-types',
@@ -509,49 +517,56 @@ function saveSections(definition: PluginDefinition): [string, string][] {
   ]
 }
 
-function row(name: string, change: (def: PluginDefinition) => void): GeneratorEntry {
-  const def = rowBase()
-  change(def)
-  return { name, def }
+// The item at `index`, which every row's base definition holds
+function itemAt<T>(items: readonly T[], index: number): T {
+  const item = items.at(index)
+  if (item === undefined) throw new Error(`no item at ${String(index)}`)
+  return item
+}
+
+function row(name: string, change: (definition: PluginDefinition) => void): GeneratorEntry {
+  const definition = rowBase()
+  change(definition)
+  return { name, def: definition }
 }
 
 export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   { name: 'all-param-types', def: allParamTypes },
   { name: 'meta-full', def: metaFull },
   { name: 'fixture-generated', def: fixtureGenerated },
-  row('desc-block-comment', (def) => {
-    def.meta.description = 'a */ b'
+  row('desc-block-comment', (definition) => {
+    definition.meta.description = 'a */ b'
   }),
-  row('param-desc-block-comment', (def) => {
-    def.parameters[0].desc = 'x */ y'
+  row('param-desc-block-comment', (definition) => {
+    itemAt(definition.parameters, 0).desc = 'x */ y'
   }),
-  row('struct-default-block-comment', (def) => {
-    def.parameters[1].default = '{"a":"*/"}'
+  row('struct-default-block-comment', (definition) => {
+    itemAt(definition.parameters, 1).default = '{"a":"*/"}'
   }),
-  row('command-name-u2028', (def) => {
-    def.commands[0].name = 'A\u2028B'
+  row('command-name-u2028', (definition) => {
+    itemAt(definition.commands, 0).name = 'A\u{2028}B'
   }),
-  row('param-name-lf', (def) => {
-    def.parameters[0].name = 'a\nb'
+  row('param-name-lf', (definition) => {
+    itemAt(definition.parameters, 0).name = 'a\nb'
   }),
-  row('default-lf', (def) => {
-    def.parameters[0].default = 'l1\nl2'
+  row('default-lf', (definition) => {
+    itemAt(definition.parameters, 0).default = 'l1\nl2'
   }),
-  row('desc-lf', (def) => {
-    def.parameters[0].desc = 'd1\nd2'
-    def.commands[0].text = 't1\nt2'
+  row('desc-lf', (definition) => {
+    itemAt(definition.parameters, 0).desc = 'd1\nd2'
+    itemAt(definition.commands, 0).text = 't1\nt2'
   }),
-  row('help-tag-line', (def) => {
-    def.meta.help = 'Usage:\n@param injected\n@type number\nEnd'
+  row('help-tag-line', (definition) => {
+    definition.meta.help = 'Usage:\n@param injected\n@type number\nEnd'
   }),
-  row('dts-description-block-comment', (def) => {
-    def.parameters[0].desc = 'x */ declare const injected: 1; /* y'
+  row('dts-description-block-comment', (definition) => {
+    itemAt(definition.parameters, 0).desc = 'x */ declare const injected: 1; /* y'
   }),
-  row('localization-key-comment', (def) => {
-    def.meta.localizations = { 'ja */ x': { description: 'Localized description' } }
+  row('localization-key-comment', (definition) => {
+    definition.meta.localizations = { 'ja */ x': { description: 'Localized description' } }
   }),
-  row('custom-code', (def) => {
-    def.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
+  row('custom-code', (definition) => {
+    definition.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
   }),
   ...COMMENT_PAYLOADS.map((p) => ({ name: `hostile-${p.name}`, def: hostileDefinition(p.text) })),
   { name: 'hostile-control', def: hostileDefinition('Safe') },
@@ -561,14 +576,18 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
 // A header-only source, so raw mode regenerates the annotation block around nothing else.
 const HEADER_ONLY_SOURCE = '/*:\n * @target MZ\n */\n'
 
-/** An opened HEADER_ONLY_SOURCE file whose code already handled the parameters and commands. */
-function headerOnlyRawMode(def: PluginDefinition): string {
-  const opened = PluginParser.parsePlugin(HEADER_ONLY_SOURCE, `${def.meta.name}.js`)
-  const baseline = { ...toBaseline(def), meta: opened.meta, structs: [] }
-  return generateRawMode({ ...def, rawSource: HEADER_ONLY_SOURCE }, baseline)
+/**
+An opened HEADER_ONLY_SOURCE file whose code already handled the parameters and commands.
+*/
+function headerOnlyRawMode(definition: PluginDefinition): string {
+  const opened = PluginParser.parsePlugin(HEADER_ONLY_SOURCE, `${definition.meta.name}.js`)
+  const baseline = { ...toBaseline(definition), meta: opened.meta, structs: [] }
+  return generateRawMode({ ...definition, rawSource: HEADER_ONLY_SOURCE }, baseline)
 }
 
-/** Every export format of one entry, one `// ==== case:` section each. */
+/**
+Every export format of one entry, one `// ==== case:` section each.
+*/
 export function renderExports(entry: GeneratorEntry): string {
   const { def } = entry
   const sections: [string, string][] = [
