@@ -1629,20 +1629,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/lib/generator/templates/plugin-commands.ts": {
-    "@typescript-eslint/no-base-to-string": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "unicorn/no-break-in-nested-loop": {
-      "count": 4
-    },
-    "unicorn/no-useless-switch-case": {
-      "count": 3
-    }
-  },
   "src/renderer/src/lib/generator/templates/save-load.ts": {
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 3
