@@ -2,7 +2,7 @@
 // compiling file, imported files come back byte for byte (also after a restart), and a save over
 // a file the tab does not know asks first and asks again when the file changed meanwhile.
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
 import type { ElectronApplication } from '@playwright/test'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
@@ -11,10 +11,12 @@ import {
   assertDialogsDrained,
   dialogCalls,
   expect,
+  field,
   launchTwin,
   loadFixtureProject,
   newPlugin,
   mtimeNs,
+  only,
   openFromBrowser,
   openProject,
   pluginsDirectory,
@@ -29,15 +31,29 @@ import {
   test
 } from '../fixtures/app'
 
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
+
+/**
+True once the app closed, false when it is still open after the bound
+*/
+async function didCloseWithin(app: ElectronApplication): Promise<boolean> {
+  try {
+    await app.waitForEvent('close', { timeout: TEARDOWN_BOUND_MS })
+    return true
+  } catch {
+    return false
+  }
+}
+
 /**
 Closes the window the way a user does, so the app quits, failing when it is not gone within the
 bound. Unlike `app.close()`, this keeps the app reachable while a prompt holds the close back.
 */
 async function closeWithin(app: ElectronApplication): Promise<void> {
-  const closed = app.waitForEvent('close', { timeout: TEARDOWN_BOUND_MS }).then(
-    () => true,
-    () => false
-  )
+  const closed = didCloseWithin(app)
   await app.evaluate(({ BrowserWindow }) => {
     for (const window of BrowserWindow.getAllWindows()) window.close()
   })
@@ -47,20 +63,23 @@ async function closeWithin(app: ElectronApplication): Promise<void> {
 
   // A prompt nobody expected holds the close back: name it
   await assertDialogsDrained(app)
-  throw new Error(`the app did not close within ${TEARDOWN_BOUND_MS} ms`)
+  throw new Error(`the app did not close within ${String(TEARDOWN_BOUND_MS)} ms`)
 }
 
-interface Box {
-  buttons?: string[]
-  defaultId?: number
-  cancelId?: number
+/**
+The options of every message box main showed so far, as it was asked
+*/
+async function boxes(app: ElectronApplication): Promise<unknown[]> {
+  const calls = await dialogCalls(app)
+  return calls.filter(({ method }) => method === 'showMessageBox').map(({ options }) => options)
 }
 
-/** Every message box main showed so far, as it was asked */
-async function boxes(app: ElectronApplication): Promise<Box[]> {
-  return (await dialogCalls(app))
-    .filter(({ method }) => method === 'showMessageBox')
-    .map(({ options }) => options as Box)
+/**
+How many message boxes main showed so far
+*/
+async function boxCount(app: ElectronApplication): Promise<number> {
+  const shown = await boxes(app)
+  return shown.length
 }
 
 test('saves a new plugin with one parameter into the project', async ({ twin }) => {
@@ -74,19 +93,20 @@ test('saves a new plugin with one parameter into the project', async ({ twin }) 
   await save(page)
 
   await expect
-    .poll(() => readdirSync(pluginsDirectory(project)).sort())
-    .toEqual([...before, 'NewPlugin.js'].sort())
-  const text = readFileSync(join(pluginsDirectory(project), 'NewPlugin.js'), 'utf8')
+    .poll(() => readdirSync(pluginsDirectory(project)).toSorted(byCodeUnit))
+    .toEqual([...before, 'NewPlugin.js'].toSorted(byCodeUnit))
+  const text = readFileSync(path.join(pluginsDirectory(project), 'NewPlugin.js'), 'utf8')
   expect(compileCheck(text, 'NewPlugin.js')).toBeNull()
   const main = findAnnotationBlocks(text).filter(({ kind }) => kind === 'main')
   expect(main).toHaveLength(1)
-  const body = text.slice(main[0]?.start, main[0]?.end)
-  const params = [...body.matchAll(/@param[ \t]+\S/g)]
+  const { start, end } = only(main)
+  const body = text.slice(start, end)
+  const params = body.matchAll(/@param[ \t]+\S/g).toArray()
   expect(params).toHaveLength(1)
-  expect(body.slice(params[0]?.index)).toMatch(/@type[ \t]+\S/)
+  expect(body.slice(only(params).index)).toMatch(/@type[ \t]+\S/)
   // The page's own log line about the save reaches main's log through the checked channel, as a
   // dated info line like main's own
-  const log = join(twin.userDataDir, 'logs', 'main.log')
+  const log = path.join(twin.userDataDir, 'logs', 'main.log')
   await expect
     .poll(() => readFileSync(log, 'utf8'))
     .toMatch(/^\[\d{4}-\d\d-\d\d [\d:.]+\] \[info\] +\[save\] Saved .*NewPlugin\.js$/m)
@@ -100,9 +120,10 @@ test('saves imported LF, CRLF and BOM plugins byte-identical', async ({ twin }) 
 
   for (const file of ['Fixture_HandWritten.js', 'Fixture_HandWritten_CRLF.js', 'Fixture_Bom.js']) {
     await openFromBrowser(page, file)
-    const target = join(pluginsDirectory(project), file)
+    const target = path.join(pluginsDirectory(project), file)
     await saveAndWaitForWrite(page, target)
-    expect(readFileSync(target).equals(readFileSync(fixturePath('js', 'plugins', file)))).toBe(true)
+    const tracked = readFileSync(fixturePath('js', 'plugins', file))
+    expect(readFileSync(target).equals(tracked)).toBe(true)
   }
   await assertDialogsDrained(app)
 })
@@ -120,12 +141,13 @@ test('saves an imported plugin byte-identical after a relaunch', async ({ twin }
   const { app, page } = await launchTwin({ userDataDir: twin.userDataDir })
   try {
     await stubDialogs(app)
-    await expect.poll(() => tabNames(page)).toEqual(tabs)
+    await expect.poll(async () => tabNames(page)).toEqual(tabs)
     await openProject(app, page, project)
 
-    const target = join(pluginsDirectory(project), file)
+    const target = path.join(pluginsDirectory(project), file)
     await saveAndWaitForWrite(page, target)
-    expect(readFileSync(target).equals(readFileSync(fixturePath('js', 'plugins', file)))).toBe(true)
+    const tracked = readFileSync(fixturePath('js', 'plugins', file))
+    expect(readFileSync(target).equals(tracked)).toBe(true)
     await assertDialogsDrained(app)
   } finally {
     // Before the first launch's teardown deletes the profile this one runs on
@@ -138,7 +160,7 @@ test('asks before overwriting a different file and re-checks after the prompt', 
 }) => {
   const { app, page } = twin
   const project = await loadFixtureProject(app, page)
-  const target = join(pluginsDirectory(project), 'Fixture_Bom.js')
+  const target = path.join(pluginsDirectory(project), 'Fixture_Bom.js')
   const original = readFileSync(target)
 
   await newPlugin(page)
@@ -148,10 +170,10 @@ test('asks before overwriting a different file and re-checks after the prompt', 
   // Buttons are [Cancel, Overwrite]: the tab is new, so no reload is offered
   await queueDialog(app, 'showMessageBox', 'cancel')
   await save(page)
-  await expect.poll(async () => (await boxes(app)).length).toBe(1)
+  await expect.poll(async () => boxCount(app)).toBe(1)
   const [first] = await boxes(app)
-  expect(first?.buttons).toHaveLength(2)
-  expect(first?.defaultId).toBe(first?.cancelId)
+  expect(field(first, 'buttons')).toHaveLength(2)
+  expect(field(first, 'defaultId')).toBe(field(first, 'cancelId'))
   await settle(page)
   expect(readFileSync(target).equals(original)).toBe(true)
 
@@ -160,10 +182,11 @@ test('asks before overwriting a different file and re-checks after the prompt', 
   await queueDialog(app, 'showMessageBox', 1, { path: target, content: changed })
   await queueDialog(app, 'showMessageBox', 'cancel')
   await save(page)
-  await expect.poll(async () => (await boxes(app)).length).toBe(3)
-  for (const box of (await boxes(app)).slice(1)) {
-    expect(box.buttons).toHaveLength(2)
-    expect(box.defaultId).toBe(box.cancelId)
+  await expect.poll(async () => boxCount(app)).toBe(3)
+  const [, ...again] = await boxes(app)
+  for (const box of again) {
+    expect(field(box, 'buttons')).toHaveLength(2)
+    expect(field(box, 'defaultId')).toBe(field(box, 'cancelId'))
   }
   await settle(page)
   expect(readFileSync(target, 'utf8')).toBe(changed)

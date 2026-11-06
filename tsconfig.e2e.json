@@ -5,8 +5,6 @@
   "compilerOptions": {
     "composite": true,
     "types": ["node"],
-    "allowJs": true,
-    "noPropertyAccessFromIndexSignature": false,
-    "noUncheckedIndexedAccess": false
+    "allowJs": true
   }
 }

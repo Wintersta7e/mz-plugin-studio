@@ -168,6 +168,17 @@ export function field(value: unknown, key: string): unknown {
 }
 
 /**
+The one item of `items`; throws when it holds none or more than one
+*/
+export function only<T>(items: readonly T[]): T {
+  const [item, ...rest] = items
+  if (item === undefined || rest.length > 0) {
+    throw new Error(`expected one item, got ${String(items.length)}`)
+  }
+  return item
+}
+
+/**
 Reads the manifest `npm run e2e:prepare` writes, from the repository root
 */
 export function readArtifacts(): Artifacts {

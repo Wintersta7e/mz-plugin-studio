@@ -1,60 +1,94 @@
 // The HTML sanitizer inside the bundled code editor: the copy the lockfile pins, at a release no
 // older than package.json declares, and still rendering the editor's hover text
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { expect, newPlugin, test } from '../fixtures/app'
+import path from 'node:path'
+import { expect, field, isRecord, newPlugin, test } from '../fixtures/app'
 
 const ROOT = process.cwd()
 
-interface Lockfile {
-  packages: Record<string, { version?: string }>
+/**
+The numbers of `major.minor.patch`, or undefined for any other text
+*/
+function versionParts(text: string): [number, number, number] | undefined {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(text)
+  return match === null ? undefined : [Number(match[1]), Number(match[2]), Number(match[3])]
 }
 
-/** `^A.B.C`: the same major, and minor.patch at or above B.C */
-function satisfiesCaret(version: string, range: string): boolean {
-  const parts = (text: string): number[] | undefined =>
-    /^(\d+)\.(\d+)\.(\d+)$/.exec(text)?.slice(1, 4).map(Number)
-  const have = parts(version)
-  const want = range.startsWith('^') ? parts(range.slice(1)) : undefined
+/**
+`^A.B.C`: the same major, and minor.patch at or above B.C
+*/
+function isCaretMatch(version: string, range: string): boolean {
+  const have = versionParts(version)
+  const want = range.startsWith('^') ? versionParts(range.slice(1)) : undefined
   if (!have || !want) return false
-  const [major, minor, patch] = have as [number, number, number]
-  const [wantMajor, wantMinor, wantPatch] = want as [number, number, number]
+  const [major, minor, patch] = have
+  const [wantMajor, wantMinor, wantPatch] = want
   return major === wantMajor && (minor > wantMinor || (minor === wantMinor && patch >= wantPatch))
 }
 
+/**
+`value` when it is a string, else undefined
+*/
+function text(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+/**
+The parsed JSON of a file under the repository root
+*/
+function readRootJson(file: string): unknown {
+  const parsed: unknown = JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
+  return parsed
+}
+
+/**
+The sanitizer's top-level lockfile version, the lockfile's nested copies of it, and the range
+package.json declares
+*/
+function sanitizerPins(): {
+  locked: string | undefined
+  nested: string[]
+  declared: string | undefined
+} {
+  const packages = field(readRootJson('package-lock.json'), 'packages')
+  const manifest = readRootJson('package.json')
+  return {
+    locked: text(field(field(packages, 'node_modules/dompurify'), 'version')),
+    nested: (isRecord(packages) ? Object.keys(packages) : []).filter((key) =>
+      key.endsWith('/node_modules/dompurify')
+    ),
+    declared: text(field(field(manifest, 'devDependencies'), 'dompurify'))
+  }
+}
+
 test('bundles the sanitizer the lockfile pins, at the declared release', () => {
-  const rendererDir = join(ROOT, 'out', 'renderer')
-  const scripts = (readdirSync(rendererDir, { recursive: true }) as string[]).filter((file) =>
-    file.endsWith('.js')
+  const rendererDirectory = path.join(ROOT, 'out', 'renderer')
+  const scripts = readdirSync(rendererDirectory, { encoding: 'utf8', recursive: true }).filter(
+    (file) => file.endsWith('.js')
   )
   // Every copy keeps its licence header in the built script, version included
   const bundled = scripts.flatMap((file) =>
-    [...readFileSync(join(rendererDir, file), 'utf8').matchAll(/@license DOMPurify (\S+)/g)].map(
-      (match) => ({ file, version: match[1] })
-    )
+    readFileSync(path.join(rendererDirectory, file), 'utf8')
+      .matchAll(/@license DOMPurify (\S+)/g)
+      .map((match) => ({ file, version: match[1] }))
+      .toArray()
   )
-  const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8')) as Lockfile
-  const locked = lock.packages['node_modules/dompurify']?.version
-  const nested = Object.keys(lock.packages).filter((path) =>
-    path.endsWith('/node_modules/dompurify')
-  )
-  const manifest = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
-    devDependencies?: Record<string, string>
-  }
-  const declared = manifest.devDependencies?.['dompurify']
+  const { locked, nested, declared } = sanitizerPins()
+  const copies = bundled.map(({ file, version }) => `${String(version)} (${file})`).join(', ')
   process.stdout.write(
-    `e2e sanitizer: scripts ${scripts.length}; bundled ` +
-      `${bundled.map(({ file, version }) => `${version} (${file})`).join(', ') || 'none'}; ` +
-      `lockfile ${locked ?? 'none'}; nested ${nested.length}; package.json ${declared ?? 'none'}\n`
+    `e2e sanitizer: scripts ${String(scripts.length)}; bundled ${copies || 'none'}; ` +
+      `lockfile ${locked ?? 'none'}; nested ${String(nested.length)}; package.json ${declared ?? 'none'}\n`
   )
   // Every leg is read, so one failing run shows them all
   expect.soft(bundled.length, 'bundled copies').toBeGreaterThan(0)
   expect.soft([...new Set(bundled.map(({ version }) => version))]).toEqual([locked])
   expect.soft(nested, 'nested lockfile copies').toEqual([])
   expect.soft(declared, 'package.json devDependencies.dompurify').toBeDefined()
-  expect
-    .soft(satisfiesCaret(locked ?? '', declared ?? ''), `${locked} satisfies ${declared}`)
-    .toBe(true)
+  // The last leg: a hard check reads the same and ends the test either way
+  expect(
+    isCaretMatch(locked ?? '', declared ?? ''),
+    `${String(locked)} satisfies ${String(declared)}`
+  ).toBe(true)
 })
 
 test('renders the hover text of a documented function', async ({ twin }) => {

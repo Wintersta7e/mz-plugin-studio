@@ -1,13 +1,4 @@
 {
-  "e2e": {
-    "noPropertyAccessFromIndexSignature": {
-      "e2e/flows/dialog-default-path.e2e.ts": 4
-    },
-    "noUncheckedIndexedAccess": {
-      "e2e/flows/dialog-default-path.e2e.ts": 4,
-      "e2e/release-smoke.e2e.ts": 2
-    }
-  },
   "test": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,

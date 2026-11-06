@@ -348,11 +348,11 @@ async function runScriptedSession(page: Page, projectPath: string): Promise<void
   // A category whose first template inserts with its default values
   const ui = { state: { lastTemplateCategory: 'map-events' }, version: 0 }
   await page.evaluate(
-    ([project, view]) => {
+    ({ project, view }) => {
       localStorage.setItem('mz-plugin-studio-project', project)
       localStorage.setItem('mz-plugin-studio-ui', view)
     },
-    [JSON.stringify(store), JSON.stringify(ui)]
+    { project: JSON.stringify(store), view: JSON.stringify(ui) }
   )
   await reloadWindow(page)
 
