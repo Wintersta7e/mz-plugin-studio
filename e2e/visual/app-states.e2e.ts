@@ -1,10 +1,13 @@
 // One screenshot per app state and theme, compared pixel for pixel with the Linux baselines. Every
 // test starts a fresh app; parts that differ between runs are masked, and a temp path anywhere
 // outside a mask fails the test instead of the comparison.
-import { dirname } from 'node:path'
+import path from 'node:path'
 import type { Page } from '@playwright/test'
 import {
+  allowUnload,
   expect,
+  field,
+  isRecord,
   type LaunchedApp,
   loadFixtureProject,
   newPlugin,
@@ -28,36 +31,45 @@ const MASKS = [
 // the guide layer, which happens or not depending on timing: either frame is final
 const PREVIEW_GUIDES = '[data-testid="code-preview"] .core-guide'
 
-/** Writes the light theme into the persisted settings and reloads the window */
+/**
+Writes the light theme into the persisted settings and reloads the window
+*/
 async function useLightTheme({ app, page }: LaunchedApp): Promise<void> {
   const stored = await page.evaluate((key) => localStorage.getItem(key), SETTINGS_KEY)
   // A fresh profile has stored no settings yet: the app reads absent fields as their defaults
-  const settings = (stored === null ? { state: {}, version: 0 } : JSON.parse(stored)) as {
-    state: { theme?: Theme }
-  }
-  settings.state.theme = 'light'
-  await page.evaluate(([key, value]) => localStorage.setItem(key, value), [
-    SETTINGS_KEY,
-    JSON.stringify(settings)
-  ] as const)
-  await app.evaluate(({ BrowserWindow }) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.on('will-prevent-unload', (event) => event.preventDefault())
-    }
-  })
+  const parsed: unknown = stored === null ? { state: {}, version: 0 } : JSON.parse(stored)
+  const settings = isRecord(parsed) ? parsed : {}
+  const state = field(settings, 'state')
+  const light = { ...settings, state: { ...(isRecord(state) && state), theme: 'light' } }
+  await page.evaluate(
+    ({ key, value }) => {
+      localStorage.setItem(key, value)
+    },
+    { key: SETTINGS_KEY, value: JSON.stringify(light) }
+  )
+  await allowUnload(app)
   await page.reload()
   await page.waitForLoadState('domcontentloaded')
+}
+
+/**
+Switches a fresh app, which starts dark, to `theme`
+*/
+async function applyTheme(twin: LaunchedApp, theme: Theme): Promise<void> {
+  if (theme === 'light') await useLightTheme(twin)
 }
 
 // States showing a new plugin's generated code
 const PREVIEW_STATES = new Set<State>(['metadata', 'parameters', 'commands', 'code'])
 
-/** Drives the app into `state`; returns the temp directories it shows paths of */
+/**
+Drives the app into `state`; returns the temp directories it shows paths of
+*/
 async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
   const { app, page } = twin
   if (state === 'welcome') return []
   const project = await loadFixtureProject(app, page, 'Fixture Game')
-  const shown = [dirname(project)]
+  const shown = [path.dirname(project)]
   switch (state) {
     case 'metadata': {
       await newPlugin(page)
@@ -117,17 +129,25 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
 }
 
 /**
+The masks of a state's screenshot
+*/
+function masksFor(state: State): string[] {
+  return PREVIEW_STATES.has(state) ? [...MASKS, PREVIEW_GUIDES] : MASKS
+}
+
+/**
 Marks every element whose own text or value contains one of `paths`, then lists the elements
 holding one that no mask covers.
 */
-async function markTempPaths(
+async function markTemporaryPaths(
   page: Page,
   paths: string[]
 ): Promise<{ scanned: number; marked: number; unmasked: string[] }> {
   return page.evaluate(
-    ([paths, masks, mark]) => {
-      const holds = (text: string | null | undefined): boolean =>
-        paths.some((path) => text?.includes(path) === true)
+    ({ temporary, masks, mark }) => {
+      const { document, HTMLInputElement, HTMLTextAreaElement, Node } = globalThis
+      const hasPath = (text: string | null | undefined): boolean =>
+        temporary.some((known) => text?.includes(known) === true)
       const own = (element: Element): string =>
         [...element.childNodes]
           .filter((node) => node.nodeType === Node.TEXT_NODE)
@@ -138,7 +158,7 @@ async function markTempPaths(
           ? element.value
           : undefined
       const elements = [...document.querySelectorAll('*')]
-      const found = elements.filter((element) => holds(own(element)) || holds(value(element)))
+      const found = elements.filter((element) => hasPath(own(element)) || hasPath(value(element)))
       for (const element of found) element.setAttribute(mark, '')
       const unmasked = found
         .filter((element) => element.closest(masks.join(',')) === null)
@@ -148,7 +168,7 @@ async function markTempPaths(
         )
       return { scanned: elements.length, marked: found.length, unmasked }
     },
-    [paths, MASKS, TEMP_MARK] as const
+    { temporary: paths, masks: MASKS, mark: TEMP_MARK }
   )
 }
 
@@ -160,7 +180,7 @@ for (const theme of THEMES) {
         BrowserWindow.getAllWindows().map((window) => window.getContentSize())
       )
       expect(sizes).toEqual([[1400, 900]])
-      if (theme === 'light') await useLightTheme(twin)
+      await applyTheme(twin, theme)
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
 
       const paths = [runRoot(), ...(await enter(twin, state))]
@@ -168,19 +188,21 @@ for (const theme of THEMES) {
       // Onto the title bar, off every control, so no hover state or tooltip is captured
       await page.mouse.move(700, 12)
       await expect(page.getByTestId('toast-viewport').locator(':scope > *')).toHaveCount(0)
-      await page.evaluate(() => document.fonts.ready)
+      await page.evaluate(async () => {
+        await globalThis.document.fonts.ready
+      })
 
-      const { scanned, marked, unmasked } = await markTempPaths(page, paths)
+      const { scanned, marked, unmasked } = await markTemporaryPaths(page, paths)
       process.stdout.write(
-        `visual: ${state}-${theme} elements scanned ${scanned}, temp paths masked ${marked}\n`
+        `visual: ${state}-${theme} elements scanned ${String(scanned)}, temp paths masked ${String(marked)}\n`
       )
       expect(scanned).toBeGreaterThan(0)
       expect(unmasked, 'elements showing a temp path outside every mask').toEqual([])
-      const masks = PREVIEW_STATES.has(state) ? [...MASKS, PREVIEW_GUIDES] : MASKS
       await expect(page).toHaveScreenshot(snapshotName(state, theme), {
-        mask: masks.map((selector) => page.locator(selector))
+        mask: masksFor(state).map((selector) => page.locator(selector))
       })
-      expect((await markTempPaths(page, paths)).unmasked).toEqual([])
+      const after = await markTemporaryPaths(page, paths)
+      expect(after.unmasked).toEqual([])
       expect(twin.pageErrors).toEqual([])
     })
   }

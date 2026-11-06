@@ -8,6 +8,7 @@ import { compileCheck } from '../../src/main/services/syntax-check'
 import { fixturePath } from '../../tests/helpers/fixture-project'
 import { PERSISTED_KEYS, readV160Payloads } from '../../tests/helpers/persist-v160'
 import {
+  allowUnload,
   assertDialogsDrained,
   dialogCalls,
   expect,
@@ -90,13 +91,7 @@ async function restoreCapturedProfile({ app, page, pageErrors }: LaunchedApp): P
   await page.evaluate((pairs) => {
     for (const [key, value] of pairs) localStorage.setItem(key, value)
   }, entries)
-  await app.evaluate(({ BrowserWindow }) => {
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.on('will-prevent-unload', (event) => {
-        event.preventDefault()
-      })
-    }
-  })
+  await allowUnload(app)
   await page.reload()
 
   const tabs = capturedState(payloads['mz-plugin-studio-plugin'])

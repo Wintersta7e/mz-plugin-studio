@@ -437,6 +437,19 @@ export const pluginsDirectory = (project: string): string => path.join(project, 
 export const mtimeNs = (file: string): bigint => statSync(file, { bigint: true }).mtimeNs
 
 /**
+Lets every window unload without the unsaved-changes prompt, so a reload goes through
+*/
+export async function allowUnload(app: ElectronApplication): Promise<void> {
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.on('will-prevent-unload', (event) => {
+        event.preventDefault()
+      })
+    }
+  })
+}
+
+/**
 Waits until the renderer has handled every reply main sent before now: replies travel in
 order, so the answer to a later round trip arrives after them. The app drops a save shortcut
 pressed while an earlier save is still running.

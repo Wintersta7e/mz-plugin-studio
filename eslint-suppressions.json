@@ -1,42 +1,4 @@
 {
-  "e2e/visual/app-states.e2e.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "playwright/no-conditional-in-test": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/isolated-functions": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-await-expression-member": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
   "src/main/services/pluginParser.ts": {
     "unicorn/filename-case": {
       "count": 1
