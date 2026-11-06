@@ -557,92 +557,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/App.tsx": {
-    "@eslint-react/dom-no-missing-button-type": {
-      "count": 5
-    },
-    "@eslint-react/naming-convention-ref-name": {
-      "count": 1
-    },
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 14
-    },
-    "@typescript-eslint/no-deprecated": {
-      "count": 1
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-invalid-void-type": {
-      "count": 1
-    },
-    "@typescript-eslint/no-misused-promises": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 4
-    },
-    "complexity": {
-      "count": 2
-    },
-    "jsx-a11y/no-static-element-interactions": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "react-hooks/refs": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/dom-node-dataset": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/prefer-await": {
-      "count": 2
-    },
-    "unicorn/prefer-global-this": {
-      "count": 5
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/switch-case-braces": {
-      "count": 7
-    }
-  },
   "src/renderer/src/components/analysis/AnalysisView.tsx": {
     "@eslint-react/dom-no-missing-button-type": {
       "count": 2
@@ -1630,26 +1544,6 @@
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
-    }
-  },
-  "src/renderer/src/main.tsx": {
-    "@eslint-react/dom-no-missing-button-type": {
-      "count": 1
-    },
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "import-x/no-named-as-default-member": {
-      "count": 2
-    },
-    "sonarjs/function-return-type": {
-      "count": 1
-    },
-    "unicorn/consistent-class-member-order": {
-      "count": 1
     }
   },
   "src/renderer/src/stores/historyStore.ts": {
