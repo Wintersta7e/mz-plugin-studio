@@ -1440,29 +1440,8 @@
     "unicorn/filename-case": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 9
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 9
-    },
-    "unicorn/no-immediate-mutation": {
-      "count": 1
-    },
-    "unicorn/prefer-continue": {
-      "count": 2
-    },
     "unicorn/prefer-single-call": {
-      "count": 54
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 3
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 2
+      "count": 35
     }
   },
   "src/renderer/src/lib/generator/templates/audio-system.ts": {
@@ -1680,26 +1659,14 @@
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
     "unicorn/no-break-in-nested-loop": {
       "count": 6
     },
     "unicorn/no-for-each": {
-      "count": 2
+      "count": 1
     },
     "unicorn/prefer-number-is-safe-integer": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    },
-    "unicorn/switch-case-braces": {
-      "count": 7
     }
   },
   "src/renderer/src/lib/plugin-output.ts": {
@@ -1707,12 +1674,6 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
-    "unicorn/no-negated-array-predicate": {
       "count": 1
     },
     "unicorn/prefer-default-parameters": {
@@ -1720,9 +1681,6 @@
     },
     "unicorn/prefer-simple-condition-first": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
     }
   },
   "src/renderer/src/main.tsx": {

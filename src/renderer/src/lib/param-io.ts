@@ -3,7 +3,9 @@ import { ALL_PARAM_TYPES, firstFreeName } from '../types/plugin'
 import { pathText } from '../stores/persist'
 import type { FieldLabels, FieldPath } from '../stores/persist'
 
-/** File format for .mzparams export */
+/**
+File format for .mzparams export
+*/
 export interface ParameterExport {
   version: 1
   source: string
@@ -11,7 +13,9 @@ export interface ParameterExport {
   parameters: PluginParameter[]
 }
 
-/** Serialize selected parameters for export */
+/**
+Serialize selected parameters for export
+*/
 export function serializeParams(params: PluginParameter[], sourceName: string): string {
   const data: ParameterExport = {
     version: 1,
@@ -34,32 +38,34 @@ function isParamType(value: unknown): value is ParamType {
   return typeof value === 'string' && ALL_PARAM_TYPES.has(value)
 }
 
-/** Options that are `{ value, text }` strings; other elements and keys are named in `dropped`. */
+/**
+Options that are `{ value, text }` strings; other elements and keys are named in `dropped`.
+*/
 function checkOptions(elements: unknown[], dropped: FieldPath[]): SelectOption[] {
   const options: SelectOption[] = []
-  elements.forEach((element, i) => {
+  for (const [index, element] of elements.entries()) {
     if (
       !isRecord(element) ||
       typeof element['value'] !== 'string' ||
       typeof element['text'] !== 'string'
     ) {
-      dropped.push([{ key: 'options' }, { index: i }])
-      return
+      dropped.push([{ key: 'options' }, { index: index }])
+      continue
     }
     options.push({ value: element['value'], text: element['text'] })
     for (const key of Object.keys(element)) {
       if (key !== 'value' && key !== 'text')
-        dropped.push([{ key: 'options' }, { index: i }, { key }])
+        dropped.push([{ key: 'options' }, { index: index }, { key }])
     }
-  })
+  }
   return options
 }
 
 /**
- * Checks the shape of one parameter read from a file: a field of the wrong type falls back or is
- * left out, and is named in `dropped` with every unknown key. Content is not checked; the
- * generator escapes what it writes. The caller assigns `id`.
- */
+Checks the shape of one parameter read from a file: a field of the wrong type falls back or is
+left out, and is named in `dropped` with every unknown key. Content is not checked; the
+generator escapes what it writes. The caller assigns `id`.
+*/
 function checkParameterShape(value: unknown): ParameterShape {
   if (!isRecord(value) || typeof value['name'] !== 'string') return { ok: false, reason: 'shape' }
   if (!isParamType(value['type'])) return { ok: false, reason: 'type' }
@@ -88,46 +94,53 @@ function checkParameterShape(value: unknown): ParameterShape {
       case 'text':
       case 'desc':
       case 'type':
-      case 'default':
+      case 'default': {
         break
+      }
       case 'min':
       case 'max':
-      case 'decimals':
+      case 'decimals': {
         if (typeof field === 'number') parameter[key] = field
         else if (field !== null) dropped.push([{ key }])
         break
+      }
       case 'structType':
       case 'dir':
       case 'parent':
       case 'rawType':
       case 'onLabel':
-      case 'offLabel':
+      case 'offLabel': {
         if (typeof field === 'string') parameter[key] = field
         else if (field !== null) dropped.push([{ key }])
         break
-      case 'arrayType':
+      }
+      case 'arrayType': {
         if (isParamType(field)) parameter.arrayType = field
         else if (field !== null) dropped.push([{ key }])
         break
-      case 'require':
+      }
+      case 'require': {
         if (typeof field === 'boolean') parameter.require = field
         else if (field !== null) dropped.push([{ key }])
         break
-      case 'options':
+      }
+      case 'options': {
         if (Array.isArray(field)) parameter.options = checkOptions(field, dropped)
         else dropped.push([{ key }])
         break
-      default:
+      }
+      default: {
         dropped.push([{ key }])
+      }
     }
   }
   return { ok: true, parameter, dropped }
 }
 
 /**
- * A parameter from saved app state through the same shape check, keeping its id (a new one if it
- * has none); each field left out is named through `drop`.
- */
+A parameter from saved app state through the same shape check, keeping its id (a new one if it
+has none); each field left out is named through `drop`.
+*/
 export function checkSavedParameter(
   value: unknown,
   drop: (path: FieldPath) => void
@@ -139,7 +152,9 @@ export function checkSavedParameter(
   return { id, ...shape.parameter }
 }
 
-/** Words for the keys `checkSavedParameter` names, for every store that saves parameters. */
+/**
+Words for the keys `checkSavedParameter` names, for every store that saves parameters.
+*/
 export const PARAMETER_LABELS: FieldLabels = {
   text: 'display name',
   desc: 'description',
@@ -156,7 +171,9 @@ export type ParamImportResult =
     }
   | { success: false; reason: 'not-json' | 'not-mzparams' | 'newer-version' }
 
-/** Deserialize imported parameters from .mzparams content */
+/**
+Deserialize imported parameters from .mzparams content
+*/
 export function deserializeParams(content: string): ParamImportResult {
   let data: unknown
   try {
