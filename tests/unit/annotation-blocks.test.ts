@@ -1,8 +1,7 @@
 // The annotation block finder: which comment blocks of a plugin file are its main block, its
 // language blocks and its struct blocks, with their offsets in the text as given.
 import { describe, expect, it } from 'vitest'
-import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
-import type { AnnotationBlock } from '../../src/shared/annotation-blocks'
+import { type AnnotationBlock, findAnnotationBlocks } from '../../src/shared/annotation-blocks'
 
 type Shape = Pick<AnnotationBlock, 'kind' | 'lang' | 'structName' | 'opener'>
 
@@ -68,22 +67,20 @@ const CASES: [string, string, Shape[]][] = [
   ]
 ]
 
-describe('findAnnotationBlocks', () => {
-  for (const [name, source, expected] of CASES) {
-    it(name, () => {
-      expect(shapes(source)).toEqual(expected)
-    })
-  }
+describe(findAnnotationBlocks, () => {
+  it.each(CASES)('%s', (_name, source, expected) => {
+    expect(shapes(source)).toStrictEqual(expected)
+  })
 
   it('each block runs from its opener to the first closing marker after it', () => {
     const source = '\u{FEFF}/*:\n * @plugindesc A\n */\r\n\r\n/*:ja\r\n * x\r\n */\r\n' + CODE
     const blocks = findAnnotationBlocks(source)
 
-    expect(blocks.map((b) => source.slice(b.start, b.end))).toEqual([
+    expect(blocks.map((b) => source.slice(b.start, b.end))).toStrictEqual([
       '/*:\n * @plugindesc A\n */',
       '/*:ja\r\n * x\r\n */'
     ])
-    expect(blocks[0].start).toBe(1)
+    expect(blocks.at(0)?.start).toBe(1)
   })
 
   it('offsets in a CRLF text point at the same blocks as in its LF copy', () => {
@@ -92,12 +89,12 @@ describe('findAnnotationBlocks', () => {
     const slices = (text: string): string[] =>
       findAnnotationBlocks(text).map((b) => text.slice(b.start, b.end).replaceAll('\r\n', '\n'))
 
-    expect(slices(crlf)).toEqual(slices(lf))
-    expect(findAnnotationBlocks(crlf)[1].start).toBe(crlf.indexOf('/*~'))
+    expect(slices(crlf)).toStrictEqual(slices(lf))
+    expect(findAnnotationBlocks(crlf).at(1)?.start).toBe(crlf.indexOf('/*~'))
   })
 
   it('prints its case count', () => {
-    console.log(`annotation blocks: cases ${CASES.length + 2}`)
+    process.stdout.write(`annotation blocks: cases ${String(CASES.length + 2)}\n`)
 
     expect(CASES.length).toBeGreaterThan(0)
   })

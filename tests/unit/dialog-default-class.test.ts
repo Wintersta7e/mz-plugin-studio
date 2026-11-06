@@ -12,14 +12,22 @@ import { afterAllTests } from '../helpers/after-all-tests'
 
 const { fsSpies, spyOnFunctions } = vi.hoisted(() => {
   const fsSpies: { name: string; calls: () => number }[] = []
-  /** The module with each of its functions wrapped in a spy, as both its exports and its default */
+  // Lower-case members are functions; upper-case ones are classes, kept as they are
+  const isFunctionName = (key: string): boolean => /^[a-z]/.test(key)
+  /**
+  The module with each of its functions wrapped in a spy, as both its exports and its default
+  */
   function spyOnFunctions(label: string, module: Record<string, unknown>): Record<string, unknown> {
     const wrapped: Record<string, unknown> = {}
     for (const [key, member] of Object.entries(module)) {
       if (key === 'default') continue
-      // Lower-case members are functions; upper-case ones are classes, kept as they are
-      if (typeof member === 'function' && /^[a-z]/.test(key)) {
-        const spy = vi.fn(member as (...args: unknown[]) => unknown)
+      if (typeof member === 'function' && isFunctionName(key)) {
+        const spy = vi.fn<(...args: unknown[]) => unknown>(function (
+          this: unknown,
+          ...args: unknown[]
+        ): unknown {
+          return Reflect.apply(member, this, args)
+        })
         fsSpies.push({ name: `${label}.${key}`, calls: () => spy.mock.calls.length })
         wrapped[key] = spy
       } else {
@@ -31,10 +39,12 @@ const { fsSpies, spyOnFunctions } = vi.hoisted(() => {
   return { fsSpies, spyOnFunctions }
 })
 
-vi.mock('fs', async (importOriginal) => spyOnFunctions('fs', await importOriginal()))
-vi.mock('node:fs', async (importOriginal) => spyOnFunctions('node:fs', await importOriginal()))
-vi.mock('fs/promises', async (importOriginal) =>
-  spyOnFunctions('fs/promises', await importOriginal())
+// One mock per module: the runner treats `fs` and `node:fs` as the same module
+vi.mock(import('node:fs'), async (importOriginal) =>
+  spyOnFunctions('node:fs', await importOriginal())
+)
+vi.mock(import('node:fs/promises'), async (importOriginal) =>
+  spyOnFunctions('node:fs/promises', await importOriginal())
 )
 
 type Platform = 'posix' | 'win32'
@@ -107,42 +117,48 @@ const SAVE_ROWS: SaveRow[] = [
   { input: 7, platforms: BOTH, kept: false }
 ]
 
-let rows = 0
+const counted = { rows: 0 }
 
 describe('dialog default path', () => {
   // How many rows the tests below ran, and that none of them touched a file.
   afterAll(
     afterAllTests(() => {
-      console.log(`dialog default rows ${rows}`)
+      process.stdout.write(`dialog default rows ${String(counted.rows)}\n`)
       const touched = fsSpies.filter((spy) => spy.calls() > 0).map((spy) => spy.name)
       return [
-        ...(rows === 0 ? ['no row ran'] : []),
+        ...(counted.rows === 0 ? ['no row ran'] : []),
         ...(fsSpies.length === 0 ? ['no file function is watched'] : []),
         ...touched.map((name) => `${name} was called`)
       ]
     })
   )
 
-  for (const row of CLASS_ROWS) {
-    for (const platform of row.platforms) {
-      it(`classifies ${JSON.stringify(row.input)} as ${row.expected} (${platform})`, () => {
-        rows++
+  const classCases = CLASS_ROWS.flatMap((row) =>
+    row.platforms.map((platform): [string, Row, Platform] => [
+      `classifies ${JSON.stringify(row.input)} as ${String(row.expected)} (${platform})`,
+      row,
+      platform
+    ])
+  )
 
-        expect(classifyDialogDefault(row.input, PATH_RULES[platform])).toBe(row.expected)
-      })
-    }
-  }
+  it.each(classCases)('%s', (_title, row, platform) => {
+    counted.rows++
 
-  for (const row of SAVE_ROWS) {
-    for (const platform of row.platforms) {
-      const verb = row.kept ? 'keeps' : 'drops'
+    expect(classifyDialogDefault(row.input, PATH_RULES[platform])).toBe(row.expected)
+  })
 
-      it(`save dialog ${verb} ${JSON.stringify(row.input)} (${platform})`, () => {
-        rows++
-        const expected = row.kept ? row.input : undefined
+  const saveCases = SAVE_ROWS.flatMap((row) =>
+    row.platforms.map((platform): [string, SaveRow, Platform] => [
+      `save dialog ${row.kept ? 'keeps' : 'drops'} ${JSON.stringify(row.input)} (${platform})`,
+      row,
+      platform
+    ])
+  )
 
-        expect(checkSaveDefaultPath(row.input, PATH_RULES[platform])).toBe(expected)
-      })
-    }
-  }
+  it.each(saveCases)('%s', (_title, row, platform) => {
+    counted.rows++
+    const expected = row.kept ? row.input : undefined
+
+    expect(checkSaveDefaultPath(row.input, PATH_RULES[platform])).toBe(expected)
+  })
 })

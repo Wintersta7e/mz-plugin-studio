@@ -12,7 +12,7 @@ describe('vitest config', () => {
   })
 
   it('fails every run on a skipped test through the skip counter', () => {
-    expect(config.test?.reporters).toEqual(['default', './tests/setup/no-skips-reporter.ts'])
+    expect(config.test?.reporters).toStrictEqual(['default', './tests/setup/no-skips-reporter.ts'])
   })
 
   it('shuffles the tests of every project', () => {
@@ -33,7 +33,7 @@ describe('vitest config', () => {
 
   it('every project fails a test on unexpected console output', () => {
     const projects = config.test?.projects ?? []
-    console.log(`projects ${projects.length}`)
+    process.stdout.write(`projects ${String(projects.length)}\n`)
 
     expect(projects.length).toBeGreaterThan(0)
 

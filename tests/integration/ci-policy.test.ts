@@ -292,6 +292,21 @@ describe('ci-policy runtime-deps', () => {
     expect(status).toBe(1)
   })
 
+  it.each([
+    ['a local export list', "export { // was from 'commented-dep'\n  local\n}\nconst local = 1\n"],
+    [
+      'a clause no pattern reads',
+      "import { // from 'commented-dep'\n  'a-b' as ab\n} from './local'\n"
+    ]
+  ])('never reads the source from a line comment inside %s', (_shape, source) => {
+    const dependencies = { 'commented-dep': '1.0.0', f: '1.0.0', g: '1.0.0' }
+    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+
+    expect(lines(out)).toContain('value imports 2: f, g')
+    expect(lines(out)).toContain('unclassified imports 1: src/main/x.ts:1')
+    expect(status).toBe(1)
+  })
+
   it('passes on the repository tree', () => {
     const { status, out } = runPolicy(['runtime-deps'])
     const lineStarting = (prefix: string) => lines(out).find((line) => line.startsWith(prefix))

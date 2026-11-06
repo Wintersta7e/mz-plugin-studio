@@ -5,8 +5,13 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // Mock electron-log/renderer before template files (which import it transitively)
-vi.mock('electron-log/renderer', () => ({
-  default: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
+vi.mock<Record<'default', unknown>>(import('electron-log/renderer'), () => ({
+  default: {
+    warn: vi.fn<() => void>(),
+    info: vi.fn<() => void>(),
+    error: vi.fn<() => void>(),
+    debug: vi.fn<() => void>()
+  }
 }))
 
 // Side-effect imports register each template into the shared registry
@@ -26,9 +31,15 @@ import {
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 
+function templateOf(id: string): NonNullable<ReturnType<typeof getTemplate>> {
+  const template = getTemplate(id)
+  if (template === undefined) throw new Error(`Missing template: ${id}`)
+  return template
+}
+
 describe('save-load template', () => {
   it('injects a warning comment when storageLocation is Game_Actors', () => {
-    const tpl = getTemplate('save-load-basic')!
+    const tpl = templateOf('save-load-basic')
     const out = tpl.generate({
       dataName: 'partyBuffs',
       storageLocation: 'Game_Actors',
@@ -41,7 +52,7 @@ describe('save-load template', () => {
   })
 
   it('injects a warning comment when storageLocation is Game_Map', () => {
-    const tpl = getTemplate('save-load-basic')!
+    const tpl = templateOf('save-load-basic')
     const out = tpl.generate({
       dataName: 'mapFlags',
       storageLocation: 'Game_Map',
@@ -53,7 +64,7 @@ describe('save-load template', () => {
   })
 
   it('does not inject warning for Game_System (save-persistent)', () => {
-    const tpl = getTemplate('save-load-basic')!
+    const tpl = templateOf('save-load-basic')
     const out = tpl.generate({
       dataName: 'questData',
       storageLocation: 'Game_System',
@@ -67,7 +78,7 @@ describe('save-load template', () => {
 
 describe('input-handler template (global scene)', () => {
   it('uses a key-scoped method name to avoid cross-plugin collision', () => {
-    const tpl = getTemplate('input-handler-basic')!
+    const tpl = templateOf('input-handler-basic')
     const out = tpl.generate({
       keyName: 'q',
       triggerType: 'isTriggered',
@@ -81,7 +92,7 @@ describe('input-handler template (global scene)', () => {
   })
 
   it('uses a key-scoped alias name for the Scene_Base.update hook', () => {
-    const tpl = getTemplate('input-handler-basic')!
+    const tpl = templateOf('input-handler-basic')
     const out = tpl.generate({
       keyName: 'tab',
       triggerType: 'isTriggered',
@@ -94,7 +105,7 @@ describe('input-handler template (global scene)', () => {
 
 describe('method-alias template', () => {
   it('emits a strong warning when replace-without-call is chosen', () => {
-    const tpl = getTemplate('method-alias-basic')!
+    const tpl = templateOf('method-alias-basic')
     const out = tpl.generate({
       className: 'Game_Battler',
       methodName: 'canMove',
@@ -108,7 +119,7 @@ describe('method-alias template', () => {
   })
 
   it('does not emit warning for normal aliases', () => {
-    const tpl = getTemplate('method-alias-basic')!
+    const tpl = templateOf('method-alias-basic')
     const out = tpl.generate({
       className: 'Scene_Map',
       methodName: 'update',
@@ -122,7 +133,7 @@ describe('method-alias template', () => {
 
 describe('battle-system damage modifier', () => {
   it('generates sign-preserving multiplication for damage modifier', () => {
-    const tpl = getTemplate('battle-damage-modifier')!
+    const tpl = templateOf('battle-damage-modifier')
     const out = tpl.generate({
       modifyType: 'multiply',
       modifyValue: 1.5,
@@ -136,7 +147,7 @@ describe('battle-system damage modifier', () => {
 
 describe('message-system custom escape code', () => {
   it('adds negative lookahead on no-parameter replace regex', () => {
-    const tpl = getTemplate('message-custom-text-code')!
+    const tpl = templateOf('message-custom-text-code')
     const out = tpl.generate({
       escapeChar: 'X',
       codeType: 'replace',
@@ -151,7 +162,7 @@ describe('message-system custom escape code', () => {
 
 describe('plugin-commands async callback', () => {
   it('uses per-interpreter pending state (not module-scope flag)', () => {
-    const tpl = getTemplate('plugin-command-async')!
+    const tpl = templateOf('plugin-command-async')
     const out = tpl.generate({
       commandName: 'LoadData',
       pluginName: 'MyPlugin',

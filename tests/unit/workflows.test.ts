@@ -1,21 +1,36 @@
 // Invariants of the CI and release workflows, read with the fixed-shape workflow reader.
 import { readFileSync, readdirSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { indexOfRun, readJobs as readWorkflow, runs } from '../helpers/workflow-reader'
-import type { Job, Step } from '../helpers/workflow-reader'
+import {
+  indexOfRun,
+  readJobs as readWorkflow,
+  runs,
+  type Job,
+  type Step
+} from '../helpers/workflow-reader'
+
+const join = (...parts: string[]): string => path.join(...parts)
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const WORKFLOWS = join(ROOT, '.github/workflows')
 const readJobs = (file: string): Job[] => readWorkflow(join(WORKFLOWS, file))
 
-const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts as Record<
-  string,
-  string
->
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+const packageData: unknown = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
+const packageScripts = isRecord(packageData) ? Reflect.get(packageData, 'scripts') : undefined
+const scripts = isRecord(packageScripts) ? packageScripts : {}
 
-const files = readdirSync(WORKFLOWS).sort()
+function scriptOf(name: string): string {
+  const script = scripts[name]
+  if (typeof script !== 'string') throw new TypeError(`Missing package script: ${name}`)
+  return script
+}
+
+const files = readdirSync(WORKFLOWS).toSorted((a, b) => a.localeCompare(b))
 const ciText = readFileSync(join(WORKFLOWS, 'ci.yml'), 'utf8')
 const jobs = readJobs('ci.yml')
 const byId = new Map(jobs.map((job) => [job.id, job]))
@@ -30,12 +45,14 @@ function jobOf(id: string): Job {
 const isSetupNode = (step: Step): boolean =>
   (step.keys.get('uses') ?? '').startsWith('actions/setup-node@')
 
-describe('CI workflow', () => {
+describe('ci workflow: inventory', () => {
   it('reads every job and step of every workflow', () => {
     const all = files.map((file) => readJobs(file))
     const jobCount = all.reduce((sum, each) => sum + each.length, 0)
     const stepCount = all.flat().reduce((sum, job) => sum + job.steps.length, 0)
-    console.log(`workflows: files ${files.length}, jobs ${jobCount}, steps ${stepCount}`)
+    process.stdout.write(
+      `workflows: files ${String(files.length)}, jobs ${String(jobCount)}, steps ${String(stepCount)}\n`
+    )
 
     expect(files.length).toBeGreaterThan(0)
     expect(jobCount).toBeGreaterThan(0)
@@ -43,7 +60,7 @@ describe('CI workflow', () => {
   })
 
   it('holds only the CI and release workflows', () => {
-    expect(files).toEqual(['ci.yml', 'release.yml'])
+    expect(files).toStrictEqual(['ci.yml', 'release.yml'])
   })
 
   it('the aggregate test job always runs and needs every other job', () => {
@@ -58,13 +75,15 @@ describe('CI workflow', () => {
     const needed = (needs?.[1] ?? '').split(',').map((id) => id.trim())
     const others = jobs.map((job) => job.id).filter((id) => id !== 'test')
 
-    expect([...needed].sort()).toEqual([...others].sort())
+    expect(needed.toSorted((a, b) => a.localeCompare(b))).toStrictEqual(
+      others.toSorted((a, b) => a.localeCompare(b))
+    )
   })
 
   it('every job has a timeout and a pinned runner image', () => {
     for (const job of jobs) {
-      expect(job.keys.get('timeout-minutes'), job.id).toMatch(/^\d+$/)
-      expect(['ubuntu-24.04', 'windows-2025'], job.id).toContain(job.keys.get('runs-on'))
+      expect(job.keys.get('timeout-minutes')).toMatch(/^\d+$/)
+      expect(['ubuntu-24.04', 'windows-2025']).toContain(job.keys.get('runs-on'))
     }
   })
 
@@ -77,7 +96,7 @@ describe('CI workflow', () => {
   })
 
   it('every setup-node reads the Node version from package.json engines', () => {
-    const setups = steps.filter(isSetupNode)
+    const setups = steps.filter((step) => isSetupNode(step))
 
     expect(setups).toHaveLength(jobs.length)
 
@@ -89,15 +108,19 @@ describe('CI workflow', () => {
 
   it('the static and unit jobs never fetch the Electron binary', () => {
     for (const id of ['static', 'unit']) {
-      expect(runs(jobOf(id)).join('\n'), id).not.toMatch(/electron\/install\.js/)
+      expect(runs(jobOf(id)).join('\n')).not.toMatch(/electron\/install\.js/)
     }
   })
+})
 
+describe('ci workflow: execution', () => {
   it('static then unit run every command of npm run check, in its order', () => {
     const ciRuns = [...jobOf('static').steps, ...jobOf('unit').steps]
       .flatMap((step) => step.run)
       .filter((line) => line.startsWith('npm run '))
-    const checkRuns = scripts.check.split('&&').map((command) => command.trim())
+    const checkRuns = scriptOf('check')
+      .split('&&')
+      .map((command) => command.trim())
 
     expect(checkRuns.length).toBeGreaterThan(0)
 
@@ -105,7 +128,7 @@ describe('CI workflow', () => {
     for (const command of checkRuns) {
       const at = ciRuns.indexOf(command, from)
 
-      expect(at, `${command} after ${ciRuns[from - 1] ?? 'the start'}`).toBeGreaterThanOrEqual(0)
+      expect(at).toBeGreaterThanOrEqual(0)
 
       from = at + 1
     }
@@ -114,11 +137,12 @@ describe('CI workflow', () => {
   })
 
   it('the unit job runs the golden project once besides the full suite, with coverage', () => {
-    const golden = runs(jobOf('unit')).filter((line) =>
-      (scripts[/^npm run ([\w:-]+)$/.exec(line)?.[1] ?? ''] ?? '').includes('--project golden')
-    )
+    const golden = runs(jobOf('unit')).filter((line) => {
+      const scriptName = /^npm run ([\w:-]+)$/.exec(line)?.at(1)
+      return scriptName !== undefined && scriptOf(scriptName).includes('--project golden')
+    })
 
-    expect(golden).toEqual(['npm run test:golden:coverage'])
+    expect(golden).toStrictEqual(['npm run test:golden:coverage'])
   })
 
   it('the golden-commit rules run on every static run', () => {
@@ -127,7 +151,7 @@ describe('CI workflow', () => {
     )
 
     expect(golden).toHaveLength(1)
-    expect(golden[0].keys.has('if')).toBe(false)
+    expect(golden.at(0)?.keys.has('if')).toBe(false)
   })
 
   it('the strictness status measures the pushed range from its base, on a full clone', () => {
@@ -186,24 +210,31 @@ function stepNamed(job: Job, name: string): Step {
   return step
 }
 
-describe('Release workflow', () => {
+describe('release workflow: preparation', () => {
   it('waits for CI, builds, then publishes', () => {
-    expect(releaseJobs.map((job) => job.id)).toEqual(['ci', 'build', 'publish'])
+    expect(releaseJobs.map((job) => job.id)).toStrictEqual(['ci', 'build', 'publish'])
     expect(releaseText).toMatch(/^permissions:\n {2}contents: read$/m)
 
     for (const job of releaseJobs) {
-      expect(job.keys.get('timeout-minutes'), job.id).toMatch(/^\d+$/)
-      expect(['ubuntu-24.04', 'windows-2025'], job.id).toContain(job.keys.get('runs-on'))
+      expect(job.keys.get('timeout-minutes')).toMatch(/^\d+$/)
+      expect(['ubuntu-24.04', 'windows-2025']).toContain(job.keys.get('runs-on'))
     }
   })
 
   it("the ci job runs no project code and waits on the commit's own CI run", () => {
     const job = releaseJob('ci')
 
-    expect(job.keys.has('uses')).toBe(false)
-    expect(job.steps.filter((step) => step.keys.has('uses'))).toEqual([])
-    expect(permissionsOf(job)).toEqual(['actions: read'])
-    expect(job.nested.get('permissions')?.[0]).toMatch(/ # \S/)
+    expect({
+      reusable: job.keys.has('uses'),
+      actionSteps: job.steps.filter((step) => step.keys.has('uses')),
+      permissions: permissionsOf(job),
+      permissionComment: / # \S/.test(job.nested.get('permissions')?.at(0) ?? '')
+    }).toStrictEqual({
+      reusable: false,
+      actionSteps: [],
+      permissions: ['actions: read'],
+      permissionComment: true
+    })
 
     const run = runs(job).join('\n')
 
@@ -214,25 +245,8 @@ describe('Release workflow', () => {
 
   it('the build job packages the exe and checks it with read-only rights', () => {
     const job = releaseJob('build')
-
-    expect(job.keys.get('needs')).toBe('ci')
-    expect(job.keys.get('runs-on')).toBe('windows-2025')
-    expect(permissionsOf(job)).toEqual(['contents: read'])
-
-    const setups = job.steps.filter(isSetupNode)
-
-    expect(setups).toHaveLength(1)
-    expect(setups[0].nested).toContain('node-version-file: package.json')
-    expect(setups[0].nested).toContain('package-manager-cache: false')
-    expect(
-      job.steps.flatMap((step) => step.nested).filter((line) => line.startsWith('cache:'))
-    ).toEqual([])
-    expect(releaseText).not.toMatch(/\bnode-version:/)
-
+    const setups = job.steps.filter((step) => isSetupNode(step))
     const installs = runs(job).filter((line) => /\bnpm ci\b/.test(line))
-
-    expect(installs).toEqual(['npm ci --ignore-scripts'])
-
     const pack = indexOfRun(job, /^npm run package:win$/)
     const policy = indexOfRun(job, /^node scripts\/ci-policy\.mjs package /)
     const fuses = indexOfRun(
@@ -241,13 +255,45 @@ describe('Release workflow', () => {
     )
     const upload = job.steps.indexOf(stepNamed(job, 'Upload portable exe'))
 
-    expect(pack).toBeGreaterThanOrEqual(0)
-    expect(policy).toBeGreaterThan(pack)
-    expect(fuses).toBeGreaterThan(policy)
-    expect(stepNamed(job, 'Fuse wire')).toBe(job.steps[fuses])
-    expect(upload).toBeGreaterThan(fuses)
+    expect({
+      needs: job.keys.get('needs'),
+      runner: job.keys.get('runs-on'),
+      permissions: permissionsOf(job)
+    }).toStrictEqual({ needs: 'ci', runner: 'windows-2025', permissions: ['contents: read'] })
+    expect({
+      setupCount: setups.length,
+      nodeFile: setups.at(0)?.nested.includes('node-version-file: package.json'),
+      cacheDisabled: setups.at(0)?.nested.includes('package-manager-cache: false'),
+      cacheLines: job.steps
+        .flatMap((step) => step.nested)
+        .filter((line) => line.startsWith('cache:')),
+      nodeVersionInRelease: /\bnode-version:/.test(releaseText),
+      installs
+    }).toStrictEqual({
+      setupCount: 1,
+      nodeFile: true,
+      cacheDisabled: true,
+      cacheLines: [],
+      nodeVersionInRelease: false,
+      installs: ['npm ci --ignore-scripts']
+    })
+    expect({
+      packFound: pack >= 0,
+      policyAfterPack: policy > pack,
+      fusesAfterPolicy: fuses > policy,
+      fuseStepMatches: stepNamed(job, 'Fuse wire') === job.steps.at(fuses),
+      uploadAfterFuses: upload > fuses
+    }).toStrictEqual({
+      packFound: true,
+      policyAfterPack: true,
+      fusesAfterPolicy: true,
+      fuseStepMatches: true,
+      uploadAfterFuses: true
+    })
   })
+})
 
+describe('release workflow: publishing', () => {
   it('only the publish job can write, and only on a pushed v tag', () => {
     const job = releaseJob('publish')
 
@@ -257,7 +303,7 @@ describe('Release workflow', () => {
 
     const writers = releaseJobs.filter((each) => permissionsOf(each).includes('contents: write'))
 
-    expect(writers.map((each) => each.id)).toEqual(['publish'])
+    expect(writers.map((each) => each.id)).toStrictEqual(['publish'])
     expect(job.nested.get('permissions')?.[0]).toMatch(/ # \S/)
   })
 
@@ -268,7 +314,7 @@ describe('Release workflow', () => {
     ])
 
     expect(lines.length).toBeGreaterThan(0)
-    expect(lines.filter((line) => /\bnpm\b|\bnpx\b|\bnode /.test(line))).toEqual([])
+    expect(lines.filter((line) => /\bnpm\b|\bnpx\b|\bnode /.test(line))).toStrictEqual([])
   })
 
   it('an empty changelog section fails the release instead of shipping fallback notes', () => {
@@ -276,7 +322,7 @@ describe('Release workflow', () => {
     const notes = stepNamed(job, 'Extract changelog').run
 
     expect(notes).toContain('exit 1')
-    expect(notes.filter((line) => /^echo .*>\s*release-notes\.md/.test(line))).toEqual([])
+    expect(notes.filter((line) => /^echo .*>\s*release-notes\.md/.test(line))).toStrictEqual([])
     expect(notes.join('\n')).not.toContain('for details')
 
     const publish = stepNamed(job, 'Publish release').run

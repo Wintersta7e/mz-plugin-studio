@@ -2,7 +2,7 @@
 // code: which comment, string or code position holds it, and what hostile text there does when
 // the code runs in a sealed context.
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import path from 'node:path'
 import { afterAll, describe, it, expect } from 'vitest'
 import {
   getTemplate,
@@ -11,9 +11,8 @@ import {
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { ENABLING_VALUES, baseValues, templateCases, templateIds } from '../golden/corpus/templates'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import { ALL_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
-import { contextsOf, isContained } from '../helpers/js-context'
-import type { JsContext } from '../helpers/js-context'
+import { ALL_PAYLOADS, PREFIX_PAYLOADS, SENTINEL, type Payload } from '../helpers/hostile'
+import { contextsOf, isContained, type JsContext } from '../helpers/js-context'
 
 const FIELDS = 'src/renderer/src/components/plugin/TemplateFields.tsx'
 const MARKER = 'QQ7QQ'
@@ -29,28 +28,44 @@ const CONTEXTS: JsContext[] = [
   'code'
 ]
 
-// The source of the function `name`, up to the next top-level function
+type Template = NonNullable<ReturnType<typeof getTemplate>>
+
+/**
+The template of an id the corpus lists; throws for an unknown id.
+*/
+function templateOf(id: string): Template {
+  const template = getTemplate(id)
+  if (template === undefined) throw new Error(`no template ${id}`)
+  return template
+}
+
+/**
+The source of the function `name`, up to the next top-level function
+*/
 function functionSource(source: string, name: string): string {
   const start = source.indexOf(`function ${name}(`)
   const end = source.indexOf('\nfunction ', start + 1)
   return source.slice(start, end === -1 ? source.length : end)
 }
 
-/** Each field control's type, and those that store the typed text as it is. */
+/**
+Each field control's type, and those that store the typed text as it is.
+*/
 function fieldRenderers(): { types: string[]; free: string[] } {
-  const source = readFileSync(resolve(FIELDS), 'utf8')
+  const source = readFileSync(path.resolve(FIELDS), 'utf8')
   const table = source.slice(source.indexOf('const FIELD_CONTROLS = {'))
   const rows = Array.from(
     table.slice(0, table.indexOf('}')).matchAll(/^ +'?([\w-]+)'?: (\w+),?$/gm),
     ([, type = '', control = '']) => ({ type, control })
   )
-  const types = rows.map((row) => row.type)
-  const free = rows
-    .filter((row) =>
-      functionSource(source, row.control).includes('onChange(field.id, event.target.value)')
-    )
-    .map((row) => row.type)
-  return { types, free }
+  return {
+    types: rows.map((row) => row.type),
+    free: rows
+      .filter((row) =>
+        functionSource(source, row.control).includes('onChange(field.id, event.target.value)')
+      )
+      .map((row) => row.type)
+  }
 }
 
 // Fields whose text is rewritten before it is written out (`sanitizeWindowName`,
@@ -61,26 +76,30 @@ const identifierOnly = (text: string): string =>
     .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 const upperCase = (text: string): string => text.toUpperCase()
-const TRANSFORMED: Record<string, (text: string) => string> = {
-  'custom-window-basic.windowName': identifierOnly,
-  'gauge-window.windowName': identifierOnly,
-  'hud-overlay-window.windowName': identifierOnly,
-  'popup-notification-window.windowName': identifierOnly,
-  'sprite-custom-class.spriteName': identifierOnly,
-  'sprite-frame-animation.spriteName': identifierOnly,
-  'message-custom-text-code.escapeChar': upperCase
-}
+const TRANSFORMED = new Map<string, (text: string) => string>([
+  ['custom-window-basic.windowName', identifierOnly],
+  ['gauge-window.windowName', identifierOnly],
+  ['hud-overlay-window.windowName', identifierOnly],
+  ['popup-notification-window.windowName', identifierOnly],
+  ['sprite-custom-class.spriteName', identifierOnly],
+  ['sprite-frame-animation.spriteName', identifierOnly],
+  ['message-custom-text-code.escapeChar', upperCase]
+])
 
-/** `needle` as it reads inside rewritten field text; no payload starts with it. */
+/**
+`needle` as it reads inside rewritten field text; no payload starts with it.
+*/
 function needleFor(key: string, needle: string): string {
-  const transform = TRANSFORMED[key]
+  const transform = TRANSFORMED.get(key)
   return transform === undefined ? needle : transform(`X${needle}`).slice(1)
 }
 
 interface ValueSet {
   label: string
   values: Record<string, unknown>
-  /** The code generated with the marker in the field. */
+  /**
+  The code generated with the marker in the field.
+  */
   code: string
 }
 
@@ -88,16 +107,24 @@ interface FieldCase {
   id: string
   field: string
   key: string
-  /** Base values, and base plus the field's enabling values, each kept when the field is emitted. */
+  /**
+  Base values, and base plus the field's enabling values, each kept when the field is emitted.
+  */
   valueSets: ValueSet[]
 }
+
+const ENABLING = new Map(
+  Object.entries(ENABLING_VALUES).map(([id, byField]) => [id, new Map(Object.entries(byField))])
+)
 
 function fieldCases(free: string[]): FieldCase[] {
   const cases: FieldCase[] = []
   for (const id of templateIds()) {
-    for (const field of getTemplate(id)!.fields.filter((f) => free.includes(f.type))) {
+    const template = templateOf(id)
+    for (const field of template.fields) {
+      if (!free.includes(field.type)) continue
       const key = `${id}.${field.id}`
-      const enabling = ENABLING_VALUES[id]?.[field.id]
+      const enabling = ENABLING.get(id)?.get(field.id)
       const candidates = [{ label: '', values: baseValues(id) }]
       if (enabling !== undefined) {
         const label = Object.entries(enabling)
@@ -108,7 +135,7 @@ function fieldCases(free: string[]): FieldCase[] {
       const valueSets = candidates
         .map((set) => ({
           ...set,
-          code: getTemplate(id)!.generate({ ...set.values, [field.id]: MARKER })
+          code: template.generate({ ...set.values, [field.id]: MARKER })
         }))
         .filter((set) => set.code.includes(needleFor(key, MARKER)))
       cases.push({ id, field: field.id, key, valueSets })
@@ -119,18 +146,24 @@ function fieldCases(free: string[]): FieldCase[] {
 
 // A field written as code under another field's value that the corpus gives no hostile cases:
 // the custom damage formula.
-const PREFIX_VALUES: Record<string, { label: string; values: Record<string, unknown> }> = {
-  'battle-damage-modifier.modifyValue': {
-    label: ' with modifyType=custom',
-    values: { ...baseValues('battle-damage-modifier'), modifyType: 'custom' }
-  }
-}
+const PREFIX_VALUES = new Map<string, { label: string; values: Record<string, unknown> }>([
+  [
+    'battle-damage-modifier.modifyValue',
+    {
+      label: ' with modifyType=custom',
+      values: { ...baseValues('battle-damage-modifier'), modifyType: 'custom' }
+    }
+  ]
+])
 
 type Outcome = 'rejected' | 'contained' | 'throws' | 'ran' | 'escaped'
+type Tally = Record<Outcome, number>
+
+const emptyTally = (): Tally => ({ rejected: 0, contained: 0, throws: 0, ran: 0, escaped: 0 })
 
 function outcomeOf(id: string, key: string, values: Record<string, unknown>): Outcome {
   if (!validateTemplateValues(id, values).valid) return 'rejected'
-  const code = getTemplate(id)!.generate(values)
+  const code = templateOf(id).generate(values)
   const result = evaluatePlugin(code, { mode: 'template' })
   if (result.compileProblem !== null) return 'throws'
   if (result.sentinel) return 'ran'
@@ -157,19 +190,121 @@ const { types, free } = fieldRenderers()
 const cases = fieldCases(free)
 const contextsByKey = new Map(
   cases.map((c) => {
-    const found = new Set<JsContext>()
-    for (const { code } of c.valueSets) {
-      for (const context of contextsOf(code, needleFor(c.key, MARKER))) found.add(context)
-    }
+    const needle = needleFor(c.key, MARKER)
+    const found = new Set(c.valueSets.flatMap(({ code }) => contextsOf(code, needle)))
     return [c.key, found] as const
   })
 )
 
+// The keys of the fields whose marker lands in `context`
+const landingIn = (context: JsContext): string[] =>
+  cases.filter((c) => contextsByKey.get(c.key)?.has(context) === true).map((c) => c.key)
+
+// ` (a, b)` for a list that is not empty
+const parenthesized = (items: string[]): string =>
+  items.length > 0 ? ` (${items.join(', ')})` : ''
+
+/**
+How many fields land in each context, and the fields whose marker the code never holds.
+*/
+function contextCounts(): { counts: Map<JsContext, number>; notEmitted: string[] } {
+  const counts = new Map(CONTEXTS.map((context) => [context, 0]))
+  const notEmitted: string[] = []
+  for (const c of cases) {
+    const found = contextsByKey.get(c.key) ?? new Set<JsContext>()
+    for (const context of found) counts.set(context, (counts.get(context) ?? 0) + 1)
+    if (found.size === 0) notEmitted.push(c.key)
+  }
+  return { counts, notEmitted }
+}
+
+/**
+Runs a payload in a field under a value set: counts its outcome in `found.tally`, and lists it in
+`found.table` unless it was rejected or contained.
+*/
+function runPayload(
+  c: FieldCase,
+  set: { label: string; values: Record<string, unknown> },
+  payload: Payload,
+  found: { tally: Tally; table: Record<string, Outcome> }
+): Outcome {
+  const outcome = outcomeOf(c.id, c.key, { ...set.values, [c.field]: payload.text })
+  found.tally[outcome]++
+  if (outcome !== 'rejected' && outcome !== 'contained') {
+    found.table[`${c.key}${set.label}: ${payload.name}`] = outcome
+  }
+  return outcome
+}
+
+/**
+Every payload in every free-text field: how often each outcome came, the cases neither rejected
+nor contained, and each field's outcomes in order.
+*/
+function payloadOutcomes(): {
+  tally: Tally
+  table: Record<string, Outcome>
+  outcomes: Map<string, Outcome[]>
+} {
+  const tally = emptyTally()
+  const table: Record<string, Outcome> = {}
+  const outcomes = new Map<string, Outcome[]>()
+  for (const c of cases) {
+    const fieldOutcomes: Outcome[] = []
+    for (const set of c.valueSets) {
+      for (const payload of ALL_PAYLOADS)
+        fieldOutcomes.push(runPayload(c, set, payload, { tally, table }))
+    }
+    if (fieldOutcomes.length > 0) outcomes.set(c.key, fieldOutcomes)
+  }
+  return { tally, table, outcomes }
+}
+
+/**
+Every prefix payload in every free-text field, also under the field's extra value set: how often
+each outcome came per payload, and the cases neither rejected nor contained.
+*/
+function prefixOutcomes(): {
+  tallies: { payload: Payload; tally: Tally }[]
+  table: Record<string, Outcome>
+} {
+  const tallies = PREFIX_PAYLOADS.map((payload) => ({ payload, tally: emptyTally() }))
+  const table: Record<string, Outcome> = {}
+  for (const c of cases) {
+    const extra = PREFIX_VALUES.get(c.key)
+    const valueSets = extra === undefined ? c.valueSets : [...c.valueSets, extra]
+    for (const set of valueSets) {
+      for (const { payload, tally } of tallies) runPayload(c, set, payload, { tally, table })
+    }
+  }
+  return { tallies, table }
+}
+
+/**
+The fields a payload passes: any outcome but a rejection, or for a field reduced to an identifier,
+any outcome but a rejection or containment. A field without outcomes counts as passing.
+*/
+function passingFields(
+  keys: string[],
+  sanitized: string[],
+  outcomes: Map<string, Outcome[]>
+): string[] {
+  return keys.filter(
+    (key) =>
+      outcomes
+        .get(key)
+        ?.some((o) => o !== 'rejected' && !(o === 'contained' && sanitized.includes(key))) !== false
+  )
+}
+
+const tallyText = (tally: Tally): string =>
+  `rejected ${String(tally.rejected)}, contained ${String(tally.contained)}, ` +
+  `throws ${String(tally.throws)}, ran ${String(tally.ran)}, escaped ${String(tally.escaped)}`
+
 describe('template field text', () => {
   it('names the field types whose text reaches the generated code', () => {
-    console.log(
-      `free-text field types: ${free.join(', ')}; fields ${cases.length} over ` +
-        `${templateIds().length} templates (renderers scanned: ${types.join(', ')})`
+    process.stdout.write(
+      `free-text field types: ${free.join(', ')}; fields ${String(cases.length)} over ` +
+        `${String(templateIds().length)} templates (renderers scanned: ${types.join(', ')})\n`
     )
 
     expect(types.length).toBeGreaterThan(0)
@@ -177,128 +312,84 @@ describe('template field text', () => {
   })
 
   it('names the context each free-text field lands in', () => {
-    const counts = Object.fromEntries(CONTEXTS.map((c) => [c, 0])) as Record<JsContext, number>
-    const notEmitted: string[] = []
-    for (const c of cases) {
-      const found = contextsByKey.get(c.key)!
-      for (const context of found) counts[context]++
-      if (found.size === 0) notEmitted.push(c.key)
-    }
-    console.log(
-      `template contexts: ${CONTEXTS.map((c) => `${c} ${counts[c]}`).join(', ')}; ` +
-        `not emitted ${notEmitted.length}${notEmitted.length > 0 ? ` (${notEmitted.join(', ')})` : ''}`
+    const { counts, notEmitted } = contextCounts()
+    const countsText = CONTEXTS.map((c) => `${c} ${String(counts.get(c) ?? 0)}`).join(', ')
+    process.stdout.write(
+      `template contexts: ${countsText}; ` +
+        `not emitted ${String(notEmitted.length)}${parenthesized(notEmitted)}\n`
     )
 
-    expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBeGreaterThan(0)
-    expect(notEmitted).toEqual([])
-    expect(counts).toEqual(CONTEXT_COUNTS)
+    expect(counts.values().reduce((a, b) => a + b, 0)).toBeGreaterThan(0)
+    expect(notEmitted).toStrictEqual([])
+    expect(Object.fromEntries(counts)).toStrictEqual(CONTEXT_COUNTS)
   })
 
   it('template field text stays inside its comment, string or position', () => {
-    const tally: Record<Outcome, number> = {
-      rejected: 0,
-      contained: 0,
-      throws: 0,
-      ran: 0,
-      escaped: 0
-    }
-    const table: Record<string, Outcome> = {}
-    const outcomes: Record<string, Outcome[]> = {}
-    for (const c of cases) {
-      for (const { label, values } of c.valueSets) {
-        for (const payload of ALL_PAYLOADS) {
-          const outcome = outcomeOf(c.id, c.key, { ...values, [c.field]: payload.text })
-          tally[outcome]++
-          if (outcome !== 'rejected' && outcome !== 'contained') {
-            table[`${c.key}${label}: ${payload.name}`] = outcome
-          }
-          ;(outcomes[c.key] ??= []).push(outcome)
-        }
-      }
-    }
+    const { tally, table, outcomes } = payloadOutcomes()
     const total = Object.values(tally).reduce((a, b) => a + b, 0)
-    console.log(
-      `template payload cases: ${total}; rejected ${tally.rejected}, contained ${tally.contained}, ` +
-        `throws ${tally.throws}, ran ${tally.ran}, escaped ${tally.escaped}`
-    )
+    process.stdout.write(`template payload cases: ${String(total)}; ${tallyText(tally)}\n`)
 
     expect(total).toBeGreaterThan(0)
-    expect(table).toEqual({})
+    expect(table).toStrictEqual({})
 
     // Text written as code or read as a pattern fails its field's check for every payload; text
     // reduced to an identifier before it is written may instead pass and stay contained.
-    const landingIn = (context: JsContext): string[] =>
-      cases.filter((c) => contextsByKey.get(c.key)!.has(context)).map((c) => c.key)
     const code = landingIn('code')
     const regex = landingIn('regex')
-    const sanitized = code.filter((key) => key in TRANSFORMED)
-    const passing = [...code, ...regex].filter((key) =>
-      outcomes[key].some((o) => o !== 'rejected' && !(sanitized.includes(key) && o === 'contained'))
-    )
-    console.log(
-      `code-position fields ${code.length}, pattern fields ${regex.length}, ` +
-        `passing a payload ${passing.length}; sanitized to identifiers: ${sanitized.join(', ')}`
+    const sanitized = code.filter((key) => TRANSFORMED.has(key))
+    const passing = passingFields([...code, ...regex], sanitized, outcomes)
+    process.stdout.write(
+      `code-position fields ${String(code.length)}, pattern fields ${String(regex.length)}, ` +
+        `passing a payload ${String(passing.length)}; sanitized to identifiers: ${sanitized.join(', ')}\n`
     )
 
-    expect(code.length).toBeGreaterThan(0)
-    expect(regex.length).toBeGreaterThan(0)
-    expect(passing).toEqual([])
+    expect({ code: code.length > 0, regex: regex.length > 0 }).toStrictEqual({
+      code: true,
+      regex: true
+    })
+    expect(passing).toStrictEqual([])
     // Each rewritten field is rejected by its own check for every payload.
-    expect(Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, outcomes[key]]))).toEqual(
-      Object.fromEntries(Object.keys(TRANSFORMED).map((key) => [key, EVERY.map(() => 'rejected')]))
+    expect(
+      Object.fromEntries(TRANSFORMED.keys().map((key) => [key, outcomes.get(key)]))
+    ).toStrictEqual(
+      Object.fromEntries(TRANSFORMED.keys().map((key) => [key, EVERY.map(() => 'rejected')]))
     )
   })
 
   // A check that reads a word or a number at the start of the text passes the line break and the
   // code after it.
   it('text that starts like a valid value stays inside its comment, string or position', () => {
-    const tallies = Object.fromEntries(
-      PREFIX_PAYLOADS.map((p) => [
-        p.name,
-        { rejected: 0, contained: 0, throws: 0, ran: 0, escaped: 0 } as Record<Outcome, number>
-      ])
+    const { tallies, table } = prefixOutcomes()
+    process.stdout.write(
+      [
+        ...tallies.map(
+          ({ payload, tally }) => `prefix payload ${payload.name}: ${tallyText(tally)}`
+        ),
+        ...Object.entries(table).map(([key, outcome]) => `  ${key}: ${outcome}`),
+        ''
+      ].join('\n')
     )
-    const table: Record<string, Outcome> = {}
-    for (const c of cases) {
-      const extra = PREFIX_VALUES[c.key]
-      for (const { label, values } of extra === undefined ? c.valueSets : [...c.valueSets, extra]) {
-        for (const payload of PREFIX_PAYLOADS) {
-          const outcome = outcomeOf(c.id, c.key, { ...values, [c.field]: payload.text })
-          tallies[payload.name][outcome]++
-          if (outcome !== 'rejected' && outcome !== 'contained') {
-            table[`${c.key}${label}: ${payload.name}`] = outcome
-          }
-        }
-      }
-    }
-    for (const [name, tally] of Object.entries(tallies)) {
-      console.log(
-        `prefix payload ${name}: rejected ${tally.rejected}, contained ${tally.contained}, ` +
-          `throws ${tally.throws}, ran ${tally.ran}, escaped ${tally.escaped}`
-      )
-    }
-    for (const [key, outcome] of Object.entries(table)) console.log(`  ${key}: ${outcome}`)
-    const ran = Object.values(tallies).reduce((sum, t) => sum + t.ran, 0)
+    const ran = tallies.reduce((sum, { tally }) => sum + tally.ran, 0)
 
-    expect(Object.values(tallies).every((t) => t.rejected + t.contained > 0)).toBe(true)
+    expect(tallies.every(({ tally }) => tally.rejected + tally.contained > 0)).toBe(true)
     expect(ran).toBe(0)
-    expect(table).toEqual({})
+    expect(table).toStrictEqual({})
   })
 
   // The dialog opens a template with its defaults and shows no code until they pass; a required
   // field without a default fails by design.
   it('names the templates whose defaults fail their own checks', () => {
     const ids = templateIds()
-    const failing = Object.fromEntries(
-      ids
-        .map((id) => [id, validateTemplateValues(id, getTemplateDefaults(id)).errors] as const)
-        .filter(([, errors]) => errors.length > 0)
+    const failing = ids
+      .map((id) => [id, validateTemplateValues(id, getTemplateDefaults(id)).errors] as const)
+      .filter(([, errors]) => errors.length > 0)
+    process.stdout.write(
+      [
+        `template defaults passing their own checks: ${String(ids.length - failing.length)}/${String(ids.length)}`,
+        ...failing.map(([id, errors]) => `  ${id}: ${errors.join(' | ')}`),
+        ''
+      ].join('\n')
     )
-    console.log(
-      `template defaults passing their own checks: ${ids.length - Object.keys(failing).length}/${ids.length}`
-    )
-    for (const [id, errors] of Object.entries(failing))
-      console.log(`  ${id}: ${errors.join(' | ')}`)
 
     expect(ids.length).toBeGreaterThan(0)
   })
@@ -316,53 +407,73 @@ const LINE_TERMINATORS: [string, string][] = [
 ]
 const accepted = { cases: 0, rejected: 0 }
 
-function acceptedTextFailures(id: string, fieldId: string): string[] {
+// A field value as the text it holds; empty for none
+const textOf = (value: unknown): string =>
+  typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+    ? String(value)
+    : ''
+
+type ValueCase = ReturnType<typeof templateCases>[number]
+
+// The field's text with each payload written after it and each line break before and after it
+const variantsOf = (text: string): [string, string][] => [
+  ...ALL_PAYLOADS.map((p): [string, string] => [`after ${p.name}`, text + p.text.slice(1)]),
+  ...LINE_TERMINATORS.flatMap(([name, lb]): [string, string][] => [
+    [`${name} before`, lb + text],
+    [`${name} after`, text + lb]
+  ])
+]
+
+/**
+The variants of the field's text under one value set that its check accepts and that do not stay
+in place.
+*/
+function setFailures(id: string, fieldId: string, set: ValueCase): string[] {
   const failures: string[] = []
-  const valueSets = templateCases(id).filter((c) => c.hostile === null)
-  for (const field of getTemplate(id)!.fields.filter((f) => f.id === fieldId)) {
-    const key = `${id}.${field.id}`
-    for (const set of valueSets.filter((c) => !c.name.startsWith(`${field.id}=`))) {
-      const text = String(set.values[field.id] ?? '') || '1'
-      const variants: [string, string][] = [
-        ...ALL_PAYLOADS.map((p): [string, string] => [`after ${p.name}`, text + p.text.slice(1)]),
-        ...LINE_TERMINATORS.flatMap(([name, lb]): [string, string][] => [
-          [`${name} before`, lb + text],
-          [`${name} after`, text + lb]
-        ])
-      ]
-      for (const [name, value] of variants) {
-        const values = { ...set.values, [field.id]: value }
-        accepted.cases++
-        if (!validateTemplateValues(id, values).valid) {
-          accepted.rejected++
-          continue
-        }
-        const code = getTemplate(id)!.generate(values)
-        const result = evaluatePlugin(code, { mode: 'template' })
-        const isClean = result.compileProblem === null && result.threw === null && !result.sentinel
-        if (!isClean || !isContained(code, needleFor(key, INJECTED))) {
-          failures.push(`${key} under ${set.name}: ${name}`)
-        }
-      }
+  const template = templateOf(id)
+  const key = `${id}.${fieldId}`
+  const text = textOf(set.values[fieldId]) || '1'
+  for (const [name, value] of variantsOf(text)) {
+    const values = { ...set.values, [fieldId]: value }
+    accepted.cases++
+    if (!validateTemplateValues(id, values).valid) {
+      accepted.rejected++
+      continue
+    }
+    const code = template.generate(values)
+    const result = evaluatePlugin(code, { mode: 'template' })
+    const isClean = result.compileProblem === null && result.threw === null && !result.sentinel
+    if (!isClean || !isContained(code, needleFor(key, INJECTED))) {
+      failures.push(`${key} under ${set.name}: ${name}`)
     }
   }
   return failures
 }
 
+function acceptedTextFailures(id: string, fieldId: string): string[] {
+  const valueSets = templateCases(id).filter((c) => c.hostile === null)
+  return templateOf(id)
+    .fields.filter((field) => field.id === fieldId)
+    .flatMap((field) =>
+      valueSets
+        .filter((set) => !set.name.startsWith(`${field.id}=`))
+        .flatMap((set) => setFailures(id, field.id, set))
+    )
+}
+
 describe('accepted template field text', () => {
   afterAll(() => {
-    console.log(
-      `accepted-text cases: ${accepted.cases}; rejected ${accepted.rejected}, ` +
-        `accepted and in place ${accepted.cases - accepted.rejected}`
+    process.stdout.write(
+      `accepted-text cases: ${String(accepted.cases)}; rejected ${String(accepted.rejected)}, ` +
+        `accepted and in place ${String(accepted.cases - accepted.rejected)}\n`
     )
-
-    expect(accepted.cases).toBeGreaterThan(0)
+    if (accepted.cases === 0) throw new Error('accepted-text cases: none ran')
   })
 
   // One test per field: all fields of a template together run past the test timeout when the
   // suite runs with coverage.
   const fields = templateIds().flatMap((id) =>
-    getTemplate(id)!
+    templateOf(id)
       .fields.filter((f) => free.includes(f.type))
       .map((f) => [id, f.id] as const)
   )
@@ -375,7 +486,7 @@ describe('accepted template field text', () => {
   it.each(fields)(
     'stays in place with a payload or line break added (%s.%s)',
     (id, fieldId) => {
-      expect(acceptedTextFailures(id, fieldId)).toEqual([])
+      expect(acceptedTextFailures(id, fieldId)).toStrictEqual([])
     },
     ACCEPTED_TEXT_TIMEOUT_MS
   )

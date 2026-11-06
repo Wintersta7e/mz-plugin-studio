@@ -7,7 +7,9 @@ import {
 } from '../../src/renderer/src/lib/select-options'
 import type { SelectOption } from '../../src/renderer/src/types/plugin'
 
-/** Every string of `alphabet` up to `max` characters long. */
+/**
+Every string of `alphabet` up to `max` characters long.
+*/
 function strings(alphabet: string[], max: number): string[] {
   let level = ['']
   const all: string[] = []
@@ -41,33 +43,32 @@ const HOSTILE: SelectOption[][] = [
 
 describe('select options text', () => {
   it('reads back every option list it writes', () => {
-    for (const value of parts) {
-      for (const text of labels) {
-        const opts = [{ value, text }]
+    const lists = [...parts.flatMap((value) => labels.map((text) => [{ value, text }])), ...HOSTILE]
 
-        expect(parseOptions(optionsText(opts)), JSON.stringify(opts)).toEqual(opts)
-      }
-    }
-    for (const opts of HOSTILE) expect(parseOptions(optionsText(opts))).toEqual(opts)
+    expect(lists.map((options) => parseOptions(optionsText(options)))).toStrictEqual(lists)
   })
 
   it('reads a line without an escaped "|" as value and label split at the first "|"', () => {
-    expect(parseOptions('v|l')).toEqual([{ value: 'v', text: 'l' }])
-    expect(parseOptions('l')).toEqual([{ value: 'l', text: 'l' }])
-    expect(parseOptions('a|b|c')).toEqual([{ value: 'a', text: 'b|c' }])
-    expect(parseOptions(' a | b ')).toEqual([{ value: 'a', text: 'b' }])
-    expect(parseOptions('a|')).toEqual([{ value: 'a', text: 'a' }])
-    expect(parseOptions('C:\\games|Games')).toEqual([{ value: 'C:\\games', text: 'Games' }])
+    expect(
+      ['v|l', 'l', 'a|b|c', ' a | b ', 'a|', 'C:\\games|Games'].map((line) => parseOptions(line))
+    ).toStrictEqual([
+      [{ value: 'v', text: 'l' }],
+      [{ value: 'l', text: 'l' }],
+      [{ value: 'a', text: 'b|c' }],
+      [{ value: 'a', text: 'b' }],
+      [{ value: 'a', text: 'a' }],
+      [{ value: 'C:\\games', text: 'Games' }]
+    ])
   })
 
   it('reads "\\|" as a "|" inside the value', () => {
-    expect(parseOptions('A\\|B')).toEqual([{ value: 'A|B', text: 'A|B' }])
-    expect(parseOptions('a\\|b|Label')).toEqual([{ value: 'a|b', text: 'Label' }])
-    expect(parseOptions('dir\\\\|Folder')).toEqual([{ value: 'dir\\', text: 'Folder' }])
+    expect(parseOptions('A\\|B')).toStrictEqual([{ value: 'A|B', text: 'A|B' }])
+    expect(parseOptions('a\\|b|Label')).toStrictEqual([{ value: 'a|b', text: 'Label' }])
+    expect(parseOptions('dir\\\\|Folder')).toStrictEqual([{ value: 'dir\\', text: 'Folder' }])
   })
 
   it('skips blank and whitespace-only lines', () => {
-    expect(parseOptions('a\n\n  \n\t\nb')).toEqual([
+    expect(parseOptions('a\n\n  \n\t\nb')).toStrictEqual([
       { value: 'a', text: 'a' },
       { value: 'b', text: 'b' }
     ])
@@ -86,8 +87,8 @@ describe('select options text', () => {
   })
 
   it('leaves the text it writes unchanged when that text is read back and written again', () => {
-    for (const opts of HOSTILE) {
-      expect(normalizeOptions(optionsText(opts))).toBe(optionsText(opts))
+    for (const options of HOSTILE) {
+      expect(normalizeOptions(optionsText(options))).toBe(optionsText(options))
     }
   })
 })

@@ -47,14 +47,17 @@ const FAILING: [{ subject: string; body: string }, string][] = [
 
 describe('commit message rules', () => {
   it('passes a subject of at most 72 characters with no trailer or an allowed co-author', () => {
-    for (const message of PASSING) expect(messageProblems(message), message.body).toEqual([])
+    expect(PASSING.map((message) => [message.body, messageProblems(message)])).toStrictEqual(
+      PASSING.map((message) => [message.body, []])
+    )
   })
 
   it('names each long subject, foreign trailer and unknown co-author', () => {
-    for (const [message, problem] of FAILING) {
-      expect(messageProblems(message), message.body).toEqual([problem])
-    }
-    console.log(`commit message cases ${PASSING.length + FAILING.length}`)
+    expect(FAILING.map(([message]) => [message.body, messageProblems(message)])).toStrictEqual(
+      FAILING.map(([message, problem]) => [message.body, [problem]])
+    )
+
+    process.stdout.write(`commit message cases ${String(PASSING.length + FAILING.length)}\n`)
 
     expect(PASSING.length + FAILING.length).toBeGreaterThan(0)
   })

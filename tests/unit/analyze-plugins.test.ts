@@ -13,7 +13,7 @@ import {
 
 // ── detectIIFEStyle ────────────────────────────────────────────────────────
 
-describe('detectIIFEStyle', () => {
+describe(detectIIFEStyle, () => {
   it('detects arrow IIFE', () => {
     expect(detectIIFEStyle('(() => {\n  // code\n})();')).toBe('arrow')
   })
@@ -42,7 +42,7 @@ describe('detectIIFEStyle', () => {
 
 // ── detectParamLoading ─────────────────────────────────────────────────────
 
-describe('detectParamLoading', () => {
+describe(detectParamLoading, () => {
   it('detects standard PluginManager.parameters', () => {
     const code = "const params = PluginManager.parameters('MyPlugin');"
 
@@ -87,13 +87,13 @@ describe('detectUseStrict', () => {
 
 // ── extractAliases ─────────────────────────────────────────────────────────
 
-describe('extractAliases', () => {
+describe(extractAliases, () => {
   it('finds const alias', () => {
     const code = 'const _Game_Map_setup = Game_Map.prototype.setup;'
     const result = extractAliases(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ style: 'const', className: 'Game_Map', methodName: 'setup' })
+    expect(result[0]).toStrictEqual({ style: 'const', className: 'Game_Map', methodName: 'setup' })
   })
 
   it('finds var alias', () => {
@@ -101,7 +101,7 @@ describe('extractAliases', () => {
     const result = extractAliases(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ style: 'var', className: 'Scene_Boot', methodName: 'start' })
+    expect(result[0]).toStrictEqual({ style: 'var', className: 'Scene_Boot', methodName: 'start' })
   })
 
   it('finds let alias', () => {
@@ -109,7 +109,11 @@ describe('extractAliases', () => {
     const result = extractAliases(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ style: 'let', className: 'Window_Base', methodName: 'update' })
+    expect(result[0]).toStrictEqual({
+      style: 'let',
+      className: 'Window_Base',
+      methodName: 'update'
+    })
   })
 
   it('finds multiple aliases', () => {
@@ -135,13 +139,13 @@ describe('extractAliases', () => {
 
 // ── extractMethodOverrides ─────────────────────────────────────────────────
 
-describe('extractMethodOverrides', () => {
+describe(extractMethodOverrides, () => {
   it('finds prototype method override', () => {
     const code = 'Game_Map.prototype.setup = function() {'
     const result = extractMethodOverrides(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ className: 'Game_Map', methodName: 'setup' })
+    expect(result[0]).toStrictEqual({ className: 'Game_Map', methodName: 'setup' })
   })
 
   it('finds multiple overrides', () => {
@@ -168,17 +172,17 @@ describe('extractMethodOverrides', () => {
 
 // ── extractRegisterCommands ────────────────────────────────────────────────
 
-describe('extractRegisterCommands', () => {
+describe(extractRegisterCommands, () => {
   it('finds PluginManager.registerCommand', () => {
     const code = "PluginManager.registerCommand(pluginName, 'showDialog', args => {});"
 
-    expect(extractRegisterCommands(code)).toEqual(['showDialog'])
+    expect(extractRegisterCommands(code)).toStrictEqual(['showDialog'])
   })
 
   it('finds PluginManagerEx.registerCommand', () => {
     const code = 'PluginManagerEx.registerCommand(document.currentScript, "doThing", args => {});'
 
-    expect(extractRegisterCommands(code)).toEqual(['doThing'])
+    expect(extractRegisterCommands(code)).toStrictEqual(['doThing'])
   })
 
   it('finds multiple commands', () => {
@@ -187,7 +191,7 @@ describe('extractRegisterCommands', () => {
       PluginManager.registerCommand(name, 'cmd2', () => {});
     `
 
-    expect(extractRegisterCommands(code)).toEqual(['cmd1', 'cmd2'])
+    expect(extractRegisterCommands(code)).toStrictEqual(['cmd1', 'cmd2'])
   })
 
   it('returns empty for no commands', () => {
@@ -197,7 +201,7 @@ describe('extractRegisterCommands', () => {
 
 // ── extractParamTypes ──────────────────────────────────────────────────────
 
-describe('extractParamTypes', () => {
+describe(extractParamTypes, () => {
   it('extracts @type declarations', () => {
     const code = `
       * @type number
@@ -205,20 +209,20 @@ describe('extractParamTypes', () => {
       * @type select
     `
 
-    expect(extractParamTypes(code)).toEqual(['number', 'boolean', 'select'])
+    expect(extractParamTypes(code)).toStrictEqual(['number', 'boolean', 'select'])
   })
 
   it('lowercases types', () => {
     const code = '* @type Number'
 
-    expect(extractParamTypes(code)).toEqual(['number'])
+    expect(extractParamTypes(code)).toStrictEqual(['number'])
   })
 
   it('handles struct types', () => {
     const code = '* @type struct<CustomStruct>'
 
     // Matches 'struct' from @type struct
-    expect(extractParamTypes(code)).toEqual(['struct'])
+    expect(extractParamTypes(code)).toStrictEqual(['struct'])
   })
 
   it('returns empty for no types', () => {
@@ -228,7 +232,7 @@ describe('extractParamTypes', () => {
 
 // ── detectNoteTagPattern ───────────────────────────────────────────────────
 
-describe('detectNoteTagPattern', () => {
+describe(detectNoteTagPattern, () => {
   it('detects meta bracket access', () => {
     const code = "const val = event.meta['CustomTag'];"
 
@@ -272,13 +276,13 @@ describe('detectNoteTagPattern', () => {
 
 // ── detectNewClasses ───────────────────────────────────────────────────────
 
-describe('detectNewClasses', () => {
+describe(detectNewClasses, () => {
   it('detects function constructor class', () => {
     const code = 'function Window_Custom() { this.initialize(...arguments); }'
     const result = detectNewClasses(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ name: 'Window_Custom', style: 'function' })
+    expect(result[0]).toStrictEqual({ name: 'Window_Custom', style: 'function' })
   })
 
   it('detects ES6 class extends', () => {
@@ -286,7 +290,7 @@ describe('detectNewClasses', () => {
     const result = detectNewClasses(code)
 
     expect(result).toHaveLength(1)
-    expect(result[0]).toEqual({ name: 'Scene_Custom', style: 'es6_extends' })
+    expect(result[0]).toStrictEqual({ name: 'Scene_Custom', style: 'es6_extends' })
   })
 
   it('detects Game_, Sprite_, Spriteset_ prefixed classes', () => {

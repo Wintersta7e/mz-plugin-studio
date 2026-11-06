@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { userMessage } from '../../src/renderer/src/lib/utils'
 
-describe('userMessage', () => {
+describe(userMessage, () => {
   it('removes the prefix Electron adds to an error from main', () => {
     const error = new Error(
       "Error invoking remote method 'project:load': Error: data folder unreadable"

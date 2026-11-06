@@ -5,31 +5,52 @@
 import { describe, it, expect } from 'vitest'
 import { Script, createContext } from 'node:vm'
 import { PluginParser } from '../../src/main/services/pluginParser'
-import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import type { PluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import { createEmptyParameter, createEmptyStruct, toBaseline } from '../../src/shared/types/plugin'
-import type { PluginDefinition, PluginParameter } from '../../src/shared/types/plugin'
+import { generatePluginOutput, type PluginOutput } from '../../src/renderer/src/lib/plugin-output'
+import {
+  createEmptyParameter,
+  createEmptyStruct,
+  toBaseline,
+  type PluginDefinition,
+  type PluginParameter
+} from '../../src/shared/types/plugin'
 import { EDITS, loadFixture } from '../golden/corpus/raw-mode'
 
 const HEADER =
   '/*:\n * @target MZ\n * @plugindesc Probe\n * @param A\n * @type number\n * @default 1\n */\n'
 
-const open = (source: string, file = 'P.js'): PluginDefinition => ({
-  ...PluginParser.parsePlugin(source, file),
-  importedFrom: file
+const ARROW_IIFE =
+  "(() => {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n})();\n"
+const FUNCTION_IIFE =
+  "(function() {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n}());\n"
+const SPEED_DECLARED =
+  "(() => {\n    'use strict';\n    const params = PluginManager.parameters('P');\n" +
+  "    const a = Number(params['A'] || 1);\n    const speed = 4; // walking speed used below\n})();\n"
+const JSON_IDIOM =
+  "(() => {\n    'use strict';\n    const pluginName = 'P';\n" +
+  '    const params = JSON.parse(JSON.stringify(PluginManager.parameters(pluginName), (k, v) => {\n' +
+  '        try { return JSON.parse(v); } catch { return v; }\n    }));\n' +
+  '    window.__speed = params.A;\n})();\n'
+const CALL_ON_NEXT_LINE =
+  "(() => {\n    'use strict';\n    var params =\n        PluginManager.parameters('P');\n" +
+  "    window.__a = params['A'];\n})();\n"
+
+const open = (source: string): PluginDefinition => ({
+  ...PluginParser.parsePlugin(source, 'P.js'),
+  importedFrom: 'P.js'
 })
 
-const addParam = (def: PluginDefinition, name: string): PluginDefinition => ({
-  ...def,
+const addParam = (plugin: PluginDefinition, name: string): PluginDefinition => ({
+  ...plugin,
   parameters: [
-    ...def.parameters,
+    ...plugin.parameters,
     { id: `p-${name}`, name, text: name, desc: '', type: 'number', default: 2 }
   ]
 })
 
-const addCommand = (def: PluginDefinition, name: string): PluginDefinition => ({
-  ...def,
-  commands: [...def.commands, { id: `c-${name}`, name, text: name, desc: '', args: [] }]
+// Adds the command Go
+const addCommand = (plugin: PluginDefinition): PluginDefinition => ({
+  ...plugin,
+  commands: [...plugin.commands, { id: 'c-Go', name: 'Go', text: 'Go', desc: '', args: [] }]
 })
 
 const field = (name: string): PluginParameter => ({ ...createEmptyParameter(), name })
@@ -48,13 +69,15 @@ interface Loaded {
   read: string[]
 }
 
-/** Runs the scripts in order in one new context, as MZ loads plugins; throws what one throws. */
+/**
+Runs the scripts in order in one new context, as MZ loads plugins; throws what one throws.
+*/
 function load(...scripts: string[]): Loaded {
   const registered: string[] = []
   const read: string[] = []
   const context = createContext({
     window: {},
-    Game_Player: class {},
+    Game_Player: { prototype: {} },
     PluginManager: {
       parameters: () =>
         new Proxy(
@@ -62,7 +85,6 @@ function load(...scripts: string[]): Loaded {
           {
             get: (_target, key) => {
               read.push(String(key))
-              return undefined
             }
           }
         ),
@@ -71,77 +93,69 @@ function load(...scripts: string[]): Loaded {
       }
     }
   })
-  scripts.forEach((code, i) => {
+  for (const [index, code] of scripts.entries()) {
     // eslint-disable-next-line sonarjs/code-eval -- runs each generated plugin in a fresh test context
-    new Script(code, { filename: `plugin${i}.js` }).runInContext(context)
-  })
+    new Script(code, { filename: `plugin${String(index)}.js` }).runInContext(context)
+  }
   return { registered, read }
 }
 
+// Saves the edit and loads the saved file
+const run = (edited: PluginDefinition, opened: PluginDefinition): Loaded =>
+  load(save(edited, opened))
+
 const blockCount = (code: string): number => code.split('/*:\n').length - 1
+
+function editNamed(name: string): (typeof EDITS)[number] {
+  const edit = EDITS.find((candidate) => candidate.name === name)
+  if (edit === undefined) throw new Error(`no ${name} edit`)
+  return edit
+}
 
 describe('raw mode adds code where the file can run it', () => {
   it('registers a command added to an arrow-function IIFE', () => {
-    const opened = open(
-      HEADER +
-        "(() => {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n})();\n"
-    )
+    const opened = open(HEADER + ARROW_IIFE)
 
-    expect(load(save(addCommand(opened, 'Go'), opened)).registered).toEqual(['Go'])
+    expect(run(addCommand(opened), opened).registered).toStrictEqual(['Go'])
   })
 
   it('registers a command added to a function IIFE closed with }());', () => {
-    const opened = open(
-      HEADER +
-        "(function() {\n    'use strict';\n    const PLUGIN_NAME = 'P';\n    const params = PluginManager.parameters(PLUGIN_NAME);\n    const a = Number(params['A'] || 1);\n}());\n"
-    )
+    const opened = open(HEADER + FUNCTION_IIFE)
 
-    expect(load(save(addCommand(opened, 'Go'), opened)).registered).toEqual(['Go'])
+    expect(run(addCommand(opened), opened).registered).toStrictEqual(['Go'])
   })
 
-  for (const [shape, line] of [
+  it.each([
     ['a quote that pairs up again', `    const quote = (s) => s.replace(/'/g, "\\\\'");\n`],
     ['an unpaired quote', "    const parts = (s) => s.split(/'/).length;\n"]
-  ]) {
-    it(`reads a parameter added after a regex literal holding ${shape}`, () => {
-      const opened = open(
-        HEADER +
-          "(() => {\n    'use strict';\n" +
-          line +
-          "    const params = PluginManager.parameters('P');\n    const a = Number(params['A'] || 1);\n})();\n"
-      )
-
-      expect(load(save(addParam(opened, 'B'), opened)).read).toContain('B')
-    })
-  }
-
-  it('reads an added parameter whose name the file already declares', () => {
+  ])('reads a parameter added after a regex literal holding %s', (_shape, line) => {
     const opened = open(
       HEADER +
-        "(() => {\n    'use strict';\n    const params = PluginManager.parameters('P');\n" +
-        "    const a = Number(params['A'] || 1);\n    const speed = 4; // walking speed used below\n})();\n"
+        "(() => {\n    'use strict';\n" +
+        line +
+        "    const params = PluginManager.parameters('P');\n    const a = Number(params['A'] || 1);\n})();\n"
     )
 
-    expect(load(save(addParam(opened, 'Speed'), opened)).read).toContain('Speed')
+    expect(run(addParam(opened, 'B'), opened).read).toContain('B')
+  })
+
+  it('reads an added parameter whose name the file already declares', () => {
+    const opened = open(HEADER + SPEED_DECLARED)
+
+    expect(run(addParam(opened, 'Speed'), opened).read).toContain('Speed')
   })
 
   it('reads two added parameters whose names map to one identifier', () => {
     const opened = open(
       HEADER + "(() => {\n    const params = PluginManager.parameters('P');\n})();\n"
     )
-    const read = load(save(addParam(addParam(opened, 'Speed'), 'speed'), opened)).read
+    const { read } = run(addParam(addParam(opened, 'Speed'), 'speed'), opened)
 
-    expect(read).toEqual(expect.arrayContaining(['Speed', 'speed']))
+    expect(read).toStrictEqual(expect.arrayContaining(['Speed', 'speed']))
   })
 
   it('reuses parameters read through the JSON.parse(JSON.stringify(...)) idiom', () => {
-    const opened = open(
-      HEADER +
-        "(() => {\n    'use strict';\n    const pluginName = 'P';\n" +
-        '    const params = JSON.parse(JSON.stringify(PluginManager.parameters(pluginName), (k, v) => {\n' +
-        '        try { return JSON.parse(v); } catch { return v; }\n    }));\n' +
-        '    window.__speed = params.A;\n})();\n'
-    )
+    const opened = open(HEADER + JSON_IDIOM)
     const code = save(addParam(opened, 'Jump'), opened)
 
     expect(() => load(code)).not.toThrow()
@@ -149,13 +163,9 @@ describe('raw mode adds code where the file can run it', () => {
   })
 
   it('reads a parameter added after a declaration whose call is on the next line', () => {
-    const opened = open(
-      HEADER +
-        "(() => {\n    'use strict';\n    var params =\n        PluginManager.parameters('P');\n" +
-        "    window.__a = params['A'];\n})();\n"
-    )
+    const opened = open(HEADER + CALL_ON_NEXT_LINE)
 
-    expect(load(save(addParam(opened, 'Jump'), opened)).read).toContain('Jump')
+    expect(run(addParam(opened, 'Jump'), opened).read).toContain('Jump')
   })
 
   it("reads a parameter added to a file with a top-level 'use strict' before its block", () => {
@@ -185,9 +195,7 @@ describe('raw mode adds code where the file can run it', () => {
 
   it('keeps parameters added to a plugin without an IIFE out of the global scope', () => {
     const opened = { ...loadFixture('Fixture_NoIife.js'), importedFrom: 'Fixture_NoIife.js' }
-    const edit = EDITS.find((e) => e.name === 'param-added')
-    if (edit === undefined) throw new Error('no param-added edit')
-    const code = save(edit.apply(opened), opened)
+    const code = save(editNamed('param-added').apply(opened), opened)
 
     expect(() => load(code, 'var addedParam = 1;')).not.toThrow()
   })
@@ -195,33 +203,32 @@ describe('raw mode adds code where the file can run it', () => {
 
 describe('raw mode refuses what it cannot place or would not load', () => {
   const unparsable = HEADER + '(() => {\n    const x = ;\n})();\n'
+  const unparsableBody = unparsable.slice(unparsable.indexOf('(() =>'))
 
   it('refuses code additions to a file that is not valid JavaScript', () => {
     const opened = open(unparsable)
-    for (const edited of [addParam(opened, 'B'), addCommand(opened, 'Go')]) {
-      const out = output(edited, opened)
-
-      expect(out.ok).toBe(false)
-
-      if (out.ok) continue
-
-      expect(out.refusal).toBe('unparsable-source')
-      expect(out.message).toContain('P.js')
-      expect(out.message).toContain('Unexpected token (9:14)')
+    const refused = {
+      ok: false,
+      refusal: 'unparsable-source',
+      message: expect.stringMatching(/P\.js[\s\S]*Unexpected token \(9:14\)/) as unknown
     }
+
+    expect(
+      [addParam(opened, 'B'), addCommand(opened)].map((edited) => output(edited, opened))
+    ).toStrictEqual([refused, refused])
   })
 
   it('still saves an unedited or header-only edit of such a file', () => {
     const opened = open(unparsable)
 
-    expect(output(opened, opened)).toEqual({ ok: true, code: unparsable })
+    expect(output(opened, opened)).toStrictEqual({ ok: true, code: unparsable })
 
     const described = { ...opened, meta: { ...opened.meta, description: 'Edited description' } }
     const out = output(described, opened)
     const code = out.ok ? out.code : ''
 
     expect(code).toContain(' * @plugindesc Edited description\n')
-    expect(code.endsWith(unparsable.slice(unparsable.indexOf('(() =>')))).toBe(true)
+    expect(code.endsWith(unparsableBody)).toBe(true)
   })
 
   it('refuses an output that is not valid JavaScript', () => {
@@ -231,18 +238,16 @@ describe('raw mode refuses what it cannot place or would not load', () => {
         '(() => {\n    const help = `\n/*~struct~Pos:\n * @param x\n * @type number\n */\n`;\n})();\n'
     )
 
-    expect(opened.structs.map((s) => s.name)).toEqual(['Pos'])
+    expect(opened.structs.map((s) => s.name)).toStrictEqual(['Pos'])
 
     const edited = structuredClone(opened)
-    edited.structs[0].parameters[0].desc = 'a`b'
-    const out = output(edited, opened)
+    Object.assign(edited.structs.at(0)?.parameters.at(0) ?? {}, { desc: 'a`b' })
 
-    expect(out.ok).toBe(false)
-
-    if (out.ok) return
-
-    expect(out.refusal).toBe('invalid-output')
-    expect(out.message).toContain('P.js')
+    expect(output(edited, opened)).toStrictEqual({
+      ok: false,
+      refusal: 'invalid-output',
+      message: expect.stringContaining('P.js') as unknown
+    })
   })
 
   describe('two structs of one name', () => {

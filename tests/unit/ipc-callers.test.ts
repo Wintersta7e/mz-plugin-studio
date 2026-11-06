@@ -2,10 +2,13 @@
 // an uncalled member is a channel the page can use that the app itself never needs.
 import { describe, it, expect, vi } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
-import ts from 'typescript'
-import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
-import type { MainDependencies } from '../../src/main/ipc/handlers'
+import path from 'node:path'
+import * as ts from 'typescript'
+import {
+  createInvokeHandlers,
+  createSendListeners,
+  type MainDependencies
+} from '../../src/main/ipc/handlers'
 import {
   EVENT_CHANNELS,
   INVOKE_CHANNELS,
@@ -14,52 +17,74 @@ import {
 } from '../../src/shared/ipc-types'
 
 // Recorded by the mock itself: call history is cleared before each test, the import runs once
-const exposed = vi.hoisted(() => ({ api: undefined as unknown }))
+const exposed = vi.hoisted((): { api: unknown } => ({ api: undefined }))
 
-vi.mock('electron', () => ({
+vi.mock<Record<'contextBridge' | 'ipcRenderer', unknown>>(import('electron'), () => ({
   contextBridge: {
-    exposeInMainWorld: vi.fn((key: string, value: unknown) => {
+    exposeInMainWorld: vi.fn<(key: string, value: unknown) => void>((key, value) => {
       if (key === 'api') exposed.api = value
     })
   },
-  ipcRenderer: { invoke: vi.fn(), send: vi.fn(), on: vi.fn(), removeListener: vi.fn() }
+  ipcRenderer: {
+    invoke: vi.fn<() => void>(),
+    send: vi.fn<() => void>(),
+    on: vi.fn<() => void>(),
+    removeListener: vi.fn<() => void>()
+  }
 }))
 
 await import('../../src/preload/index')
 
-/** Members exposed without a renderer caller on purpose; every entry must stay uncalled */
+/**
+Members exposed without a renderer caller on purpose; every entry must stay uncalled
+*/
 const ALLOW_UNCALLED: readonly string[] = []
 
-const RENDERER = join(process.cwd(), 'src/renderer/src')
-const MAIN = join(process.cwd(), 'src/main')
+const RENDERER = path.join(process.cwd(), 'src/renderer/src')
+const MAIN = path.join(process.cwd(), 'src/main')
+
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null
+}
 
 function exposedMembers(): string[] {
-  const api = (exposed.api ?? {}) as Record<string, Record<string, unknown>>
-  return Object.entries(api).flatMap(([namespace, members]) =>
-    Object.entries(members)
-      .filter(([, value]) => typeof value === 'function')
-      .map(([key]) => `${namespace}.${key}`)
-  )
+  const { api } = exposed
+  if (!isObject(api)) return []
+  return Object.keys(api).flatMap((namespace) => {
+    const members: unknown = Reflect.get(api, namespace)
+    return isObject(members)
+      ? Object.keys(members)
+          .filter((key) => typeof Reflect.get(members, key) === 'function')
+          .map((key) => `${namespace}.${key}`)
+      : []
+  })
 }
 
 function rendererFiles(): string[] {
-  return (readdirSync(RENDERER, { recursive: true }) as string[])
+  return readdirSync(RENDERER, { recursive: true, encoding: 'utf8' })
     .filter((p) => /\.tsx?$/.test(p))
-    .map((p) => join(RENDERER, p))
+    .map((p) => path.join(RENDERER, p))
 }
 
 function mainFiles(): string[] {
-  return (readdirSync(MAIN, { recursive: true }) as string[])
+  return readdirSync(MAIN, { recursive: true, encoding: 'utf8' })
     .filter((p) => p.endsWith('.ts'))
-    .map((p) => join(MAIN, p))
+    .map((p) => path.join(MAIN, p))
 }
 
-/** Channels named by `emit(target, IPC_CHANNELS.<X> | '<literal>', ...)` calls in `files` */
+/**
+Channels named by `emit(target, IPC_CHANNELS.<X> | '<literal>', ...)` calls in `files`
+*/
 function emittedChannels(files: string[]): Set<string> {
-  const constants: Record<string, string> = IPC_CHANNELS
+  const constants: ReadonlyMap<string, string> = new Map(Object.entries(IPC_CHANNELS))
   const emitted = new Set<string>()
   for (const file of files) {
-    const sf = ts.createSourceFile(file, readFileSync(file, 'utf-8'), ts.ScriptTarget.Latest, true)
+    const sf = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true)
     const visit = (node: ts.Node): void => {
       if (
         ts.isCallExpression(node) &&
@@ -67,16 +92,16 @@ function emittedChannels(files: string[]): Set<string> {
         node.expression.text === 'emit' &&
         node.arguments.length >= 2
       ) {
-        const channel = node.arguments[1]
-        if (ts.isStringLiteral(channel)) emitted.add(channel.text)
-        if (
+        const channel = node.arguments.at(1)
+        if (channel !== undefined && ts.isStringLiteral(channel)) emitted.add(channel.text)
+        const named =
+          channel !== undefined &&
           ts.isPropertyAccessExpression(channel) &&
           ts.isIdentifier(channel.expression) &&
-          channel.expression.text === 'IPC_CHANNELS' &&
-          constants[channel.name.text] !== undefined
-        ) {
-          emitted.add(constants[channel.name.text])
-        }
+          channel.expression.text === 'IPC_CHANNELS'
+            ? constants.get(channel.name.text)
+            : undefined
+        if (named !== undefined) emitted.add(named)
       }
       ts.forEachChild(node, visit)
     }
@@ -85,24 +110,33 @@ function emittedChannels(files: string[]): Set<string> {
   return emitted
 }
 
-const fakeDeps = {
-  dialog: {},
-  getWindow: () => null,
-  openLogFolder: async () => {},
-  setLogLevel: () => {}
-} as unknown as MainDependencies
-
 // The renderer reaches the preload's `api` through either name of the global object
 const GLOBALS = new Set(['window', 'globalThis'])
 
-/** `window.api.<namespace>.<key>` uses, keyed by member, with each site as file:line */
+/**
+Stands in for the dependencies that do work: building the handler and listener maps calls none of them
+*/
+function unused(): never {
+  throw new Error('a main dependency was called while listing channels')
+}
+
+const fakeDependencies: MainDependencies = {
+  dialog: { showOpenDialog: unused, showSaveDialog: unused, showMessageBox: unused },
+  getWindow: unused,
+  openLogFolder: unused,
+  setLogLevel: unused
+}
+
+/**
+`window.api.<namespace>.<key>` uses, keyed by member, with each site as file:line
+*/
 function rendererCallers(files: string[]): Map<string, string[]> {
   const callers = new Map<string, string[]>()
   for (const file of files) {
     const kind = file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
     const sf = ts.createSourceFile(
       file,
-      readFileSync(file, 'utf-8'),
+      readFileSync(file, 'utf8'),
       ts.ScriptTarget.Latest,
       true,
       kind
@@ -119,7 +153,7 @@ function rendererCallers(files: string[]): Map<string, string[]> {
         const member = `${node.expression.name.text}.${node.name.text}`
         const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1
         const sites = callers.get(member) ?? []
-        sites.push(`${relative(process.cwd(), file)}:${line}`)
+        sites.push(`${path.relative(process.cwd(), file)}:${String(line)}`)
         callers.set(member, sites)
       }
       ts.forEachChild(node, visit)
@@ -138,33 +172,35 @@ describe('ipc callers', () => {
     const uncalled = members.filter((m) => !callers.has(m) && !ALLOW_UNCALLED.includes(m))
     const staleAllowed = ALLOW_UNCALLED.filter((m) => !members.includes(m) || callers.has(m))
 
-    console.log(
-      `ipc callers: members ${members.length}, called ${called.length}, ` +
-        `renderer files scanned ${files.length}, allow-listed ${ALLOW_UNCALLED.length}`
+    process.stdout.write(
+      `ipc callers: members ${String(members.length)}, called ${String(called.length)}, ` +
+        `renderer files scanned ${String(files.length)}, ` +
+        `allow-listed ${String(ALLOW_UNCALLED.length)}\n`
     )
 
     expect(members.length).toBeGreaterThan(0)
     expect(files.length).toBeGreaterThan(0)
-    expect(uncalled).toEqual([])
-    expect(staleAllowed).toEqual([])
+    expect(uncalled).toStrictEqual([])
+    expect(staleAllowed).toStrictEqual([])
   })
 
   it('gives every channel a main handler, listener or emitter', () => {
-    const handlers = Object.keys(createInvokeHandlers(fakeDeps))
-    const listeners = Object.keys(createSendListeners(fakeDeps))
+    const handlers = Object.keys(createInvokeHandlers(fakeDependencies))
+    const listeners = Object.keys(createSendListeners(fakeDependencies))
     const files = mainFiles()
     const emitted = emittedChannels(files)
     const emitters = EVENT_CHANNELS.filter((c) => emitted.has(c))
 
-    console.log(
-      `handlers ${handlers.length}/${INVOKE_CHANNELS.length}, ` +
-        `listeners ${listeners.length}/${SEND_CHANNELS.length}, ` +
-        `emitters ${emitters.length}/${EVENT_CHANNELS.length}, main files scanned ${files.length}`
+    process.stdout.write(
+      `handlers ${String(handlers.length)}/${String(INVOKE_CHANNELS.length)}, ` +
+        `listeners ${String(listeners.length)}/${String(SEND_CHANNELS.length)}, ` +
+        `emitters ${String(emitters.length)}/${String(EVENT_CHANNELS.length)}, ` +
+        `main files scanned ${String(files.length)}\n`
     )
 
     expect(files.length).toBeGreaterThan(0)
-    expect(handlers.sort()).toEqual([...INVOKE_CHANNELS].sort())
-    expect(listeners.sort()).toEqual([...SEND_CHANNELS].sort())
-    expect(emitters).toEqual([...EVENT_CHANNELS])
+    expect(handlers.toSorted(byCodeUnit)).toStrictEqual(INVOKE_CHANNELS.toSorted(byCodeUnit))
+    expect(listeners.toSorted(byCodeUnit)).toStrictEqual(SEND_CHANNELS.toSorted(byCodeUnit))
+    expect(emitters).toStrictEqual([...EVENT_CHANNELS])
   })
 })

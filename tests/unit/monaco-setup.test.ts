@@ -3,20 +3,27 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
-  config: vi.fn(),
+  config: vi.fn<(options: unknown) => void>(),
   editorWorkerUrl: './assets/editor.worker-a1.js',
   tsWorkerUrl: './assets/ts.worker-b2.js'
 }))
 
-vi.mock('monaco-editor/editor', () => ({ editor: { name: 'editor namespace' }, languages: {} }))
-vi.mock('monaco-editor/features/register.all', () => ({}))
-vi.mock('monaco-editor/languages/definitions/javascript/register', () => ({}))
-vi.mock('monaco-editor/languages/features/typescript/register', () => ({}))
-vi.mock('monaco-editor/editor/editor.worker?worker&url', () => ({ default: h.editorWorkerUrl }))
-vi.mock('monaco-editor/languages/features/typescript/ts.worker?worker&url', () => ({
+vi.mock<Record<'editor' | 'languages', unknown>>(import('monaco-editor/editor'), () => ({
+  editor: { name: 'editor namespace' },
+  languages: {}
+}))
+vi.mock(import('monaco-editor/features/register.all'), () => ({}))
+vi.mock(import('monaco-editor/languages/definitions/javascript/register'), () => ({}))
+vi.mock(import('monaco-editor/languages/features/typescript/register'), () => ({}))
+vi.mock(import('monaco-editor/editor/editor.worker?worker&url'), () => ({
+  default: h.editorWorkerUrl
+}))
+vi.mock(import('monaco-editor/languages/features/typescript/ts.worker?worker&url'), () => ({
   default: h.tsWorkerUrl
 }))
-vi.mock('@monaco-editor/react', () => ({ loader: { config: h.config } }))
+vi.mock<Record<'loader', unknown>>(import('@monaco-editor/react'), () => ({
+  loader: { config: h.config }
+}))
 
 const PAGE = 'file:///app/out/renderer/index.html'
 
@@ -40,39 +47,47 @@ function getWorker(label: string): FakeWorker {
   return environment.getWorker('', label)
 }
 
-beforeAll(async () => {
-  vi.stubGlobal('self', scope)
-  vi.stubGlobal('Worker', FakeWorker)
-  vi.stubGlobal('location', { href: PAGE })
-  vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
-    const url = `blob:test/${blobs.size}`
-    blobs.set(url, blob as Blob)
-    return url
-  })
-  await import('../../src/renderer/src/lib/monaco-setup')
-  // Vitest clears call records before each test
-  configCalls.push(...h.config.mock.calls)
-})
-
-afterAll(() => {
-  vi.unstubAllGlobals()
-  vi.restoreAllMocks()
-})
-
-beforeEach(() => {
-  vi.unstubAllEnvs()
-})
-
 describe('code editor setup', () => {
+  beforeAll(async () => {
+    vi.stubGlobal('self', scope)
+    vi.stubGlobal('Worker', FakeWorker)
+    vi.stubGlobal('location', { href: PAGE })
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+      if (!(blob instanceof Blob)) throw new TypeError('the setup made an object URL of a non-blob')
+      const url = `blob:test/${String(blobs.size)}`
+      blobs.set(url, blob)
+      return url
+    })
+    await import('../../src/renderer/src/lib/monaco-setup')
+    // Vitest clears call records before each test
+    configCalls.push(...h.config.mock.calls)
+  })
+
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
   it('hands the bundled editor to the React wrapper', async () => {
+    expect.hasAssertions()
+
     const monaco = await import('monaco-editor/editor')
+    const options = configCalls.at(0)?.at(0)
 
     expect(configCalls).toHaveLength(1)
-    expect(configCalls[0]?.[0]).toEqual({ monaco })
-    expect((configCalls[0]?.[0] as { monaco: unknown }).monaco).toBe(monaco)
+    expect(options).toStrictEqual({ monaco })
+    expect(typeof options === 'object' && options !== null && Reflect.get(options, 'monaco')).toBe(
+      monaco
+    )
   })
 
   it('starts each built worker as a classic worker from a blob', async () => {
+    expect.hasAssertions()
+
     vi.stubEnv('DEV', false)
     const cases: [string, string][] = [
       ['typescript', h.tsWorkerUrl],
@@ -80,30 +95,32 @@ describe('code editor setup', () => {
       ['css', h.editorWorkerUrl],
       ['editorWorkerService', h.editorWorkerUrl]
     ]
-    for (const [label, url] of cases) {
-      const worker = getWorker(label)
+    // Per label: the worker's options and the source of the blob it starts from
+    const started = await Promise.all(
+      cases.map(async ([label]) => {
+        const worker = getWorker(label)
+        return [label, worker.options, await blobs.get(worker.url)?.text()]
+      })
+    )
+    process.stdout.write(`monaco setup: built worker labels ${String(cases.length)}\n`)
 
-      expect(worker.options, label).toBeUndefined()
-
-      const blob = blobs.get(worker.url)
-
-      expect(blob, `${label}: a blob URL`).toBeDefined()
-
-      const absolute = new URL(url, PAGE).href
-
-      expect(await blob?.text(), label).toBe(`importScripts(${JSON.stringify(absolute)});`)
-    }
-    console.log(`monaco setup: built worker labels ${cases.length}`)
+    expect(started).toStrictEqual(
+      cases.map(([label, url]) => [
+        label,
+        undefined,
+        `importScripts(${JSON.stringify(new URL(url, PAGE).href)});`
+      ])
+    )
   })
 
   it('starts module workers from their URL under the dev server', () => {
     vi.stubEnv('DEV', true)
     const ts = getWorker('typescript')
 
-    expect([ts.url, ts.options]).toEqual([h.tsWorkerUrl, { type: 'module' }])
+    expect([ts.url, ts.options]).toStrictEqual([h.tsWorkerUrl, { type: 'module' }])
 
     const editor = getWorker('css')
 
-    expect([editor.url, editor.options]).toEqual([h.editorWorkerUrl, { type: 'module' }])
+    expect([editor.url, editor.options]).toStrictEqual([h.editorWorkerUrl, { type: 'module' }])
   })
 })

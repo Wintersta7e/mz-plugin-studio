@@ -2,9 +2,9 @@
 // filter that keeps the page's `file:` requests inside the renderer folder
 import { describe, expect, it } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import * as ts from 'typescript'
 import type { Session } from 'electron'
 import {
   DEV_SERVER_CSP,
@@ -15,9 +15,9 @@ import {
 } from '../../src/main/csp'
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const SRC = join(ROOT, 'src')
-const MODULE = join(SRC, 'main', 'csp.ts')
-const INDEX = join(SRC, 'main', 'index.ts')
+const SRC = path.join(ROOT, 'src')
+const MODULE = path.join(SRC, 'main', 'csp.ts')
+const INDEX = path.join(SRC, 'main', 'index.ts')
 
 // A policy string starts with its default-src directive
 const POLICY_MARK = 'default-src'
@@ -42,22 +42,36 @@ const FILTER_CASES: [string, string, NodeJS.Platform, boolean][] = [
   ['not a url', '/app/out/renderer', 'linux', false]
 ]
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name)
-    return entry.isDirectory() ? sourceFiles(path) : [path]
+function sourceFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name)
+    return entry.isDirectory() ? sourceFiles(file) : file
   })
 }
 
-type Listener = (
-  details: { url: string },
-  callback: (response: { cancel: boolean }) => void
-) => void
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
 
-/** A session whose request hook records its filter and listener */
+/**
+True for a value carrying the request hook that `installFileRequestFilter` calls
+*/
+function hasRequestHook(value: unknown): value is Session {
+  return typeof value === 'object' && value !== null && 'webRequest' in value
+}
+
+/**
+A session whose request hook records its filter and listener
+*/
 function fakeSession() {
+  type Listener = (
+    details: { url: string },
+    callback: (response: { cancel: boolean }) => void
+  ) => void
+
   const recorded: { filter?: unknown; listener?: Listener } = {}
-  const session = {
+  const session: unknown = {
     webRequest: {
       onBeforeRequest(filter: unknown, listener: Listener) {
         recorded.filter = filter
@@ -65,92 +79,118 @@ function fakeSession() {
       }
     }
   }
-  return { session: session as unknown as Session, recorded }
+  if (!hasRequestHook(session)) throw new Error('the fake session has no request hook')
+  return { session, recorded }
 }
 
-describe('Content Security Policy module', () => {
+describe('the Content Security Policy module', () => {
   it('builds the production and dev-server policies exactly', () => {
     expect(PRODUCTION_CSP).toBe(PRODUCTION)
     expect(DEV_SERVER_CSP).toBe(DEV_SERVER)
-    expect(buildCsp({ devServer: false })).toBe(PRODUCTION_CSP)
-    expect(buildCsp({ devServer: true })).toBe(DEV_SERVER_CSP)
+    expect([buildCsp({ devServer: false }), buildCsp({ devServer: true })]).toStrictEqual([
+      PRODUCTION_CSP,
+      DEV_SERVER_CSP
+    ])
+    // Both deny by default and name no remote source of any kind
+    expect(
+      [PRODUCTION_CSP, DEV_SERVER_CSP].filter(
+        (policy) =>
+          !policy.includes("default-src 'none'") ||
+          policy.includes('https:') ||
+          policy.includes('http:')
+      )
+    ).toStrictEqual([])
 
-    for (const policy of [PRODUCTION_CSP, DEV_SERVER_CSP]) {
-      expect(policy).toContain("default-src 'none'")
-      // No remote source of any kind
-      expect(policy).not.toContain('https:')
-      expect(policy).not.toContain('http:')
-    }
-    const workerSrc = PRODUCTION_CSP.split('; ').find((d) => d.startsWith('worker-src'))
+    const workerSource = PRODUCTION_CSP.split('; ').find((d) => d.startsWith('worker-src'))
 
-    expect(workerSrc).toBe('worker-src blob:')
+    expect(workerSource).toBe('worker-src blob:')
 
-    console.log('csp: strings 2')
+    process.stdout.write('csp: strings 2\n')
   })
 
   it('runs nothing at import and imports only types from electron', () => {
     const source = ts.createSourceFile(MODULE, readFileSync(MODULE, 'utf8'), ts.ScriptTarget.Latest)
     const statements = [...source.statements]
-    console.log(`csp module: statements checked ${statements.length}`)
+    process.stdout.write(`csp module: statements checked ${String(statements.length)}\n`)
 
     expect(statements.length).toBeGreaterThan(0)
 
-    for (const statement of statements) {
-      const text = statement.getText(source)
-      if (ts.isImportDeclaration(statement)) {
-        const from = (statement.moduleSpecifier as ts.StringLiteral).text
-        if (from === 'electron') expect(text, 'a runtime electron import').toMatch(/^import type /)
-        continue
-      }
+    const runtimeElectronImports = statements
+      .filter((statement): statement is ts.ImportDeclaration => ts.isImportDeclaration(statement))
+      .filter(
+        ({ moduleSpecifier }) =>
+          ts.isStringLiteral(moduleSpecifier) && moduleSpecifier.text === 'electron'
+      )
+      .map((statement) => statement.getText(source))
+      .filter((text) => !text.startsWith('import type '))
 
-      // Declarations only: no statement that runs on import
-      expect(
-        ts.isFunctionDeclaration(statement) ||
-          ts.isVariableStatement(statement) ||
-          ts.isInterfaceDeclaration(statement) ||
-          ts.isTypeAliasDeclaration(statement),
-        `a statement that runs on import: ${text}`
-      ).toBe(true)
-    }
+    expect(runtimeElectronImports).toStrictEqual([])
+
+    // Declarations only: no statement that runs on import
+    const running = statements
+      .filter(
+        (statement) =>
+          !ts.isImportDeclaration(statement) &&
+          !ts.isFunctionDeclaration(statement) &&
+          !ts.isVariableStatement(statement) &&
+          !ts.isInterfaceDeclaration(statement) &&
+          !ts.isTypeAliasDeclaration(statement)
+      )
+      .map((statement) => statement.getText(source))
+
+    expect(running).toStrictEqual([])
   })
 
   it('is the only source file holding a policy string', () => {
     const files = sourceFiles(SRC)
     const holders = files
       .filter((file) => readFileSync(file, 'utf8').includes(POLICY_MARK))
-      .map((file) => relative(ROOT, file).replaceAll('\\', '/'))
-    console.log(`csp: files scanned ${files.length}, holders ${holders.length}`)
+      .map((file) => path.relative(ROOT, file).replaceAll('\\', '/'))
+    process.stdout.write(
+      `csp: files scanned ${String(files.length)}, holders ${String(holders.length)}\n`
+    )
 
     expect(files.length).toBeGreaterThan(0)
-    expect(holders).toEqual(['src/main/csp.ts'])
+    expect(holders).toStrictEqual(['src/main/csp.ts'])
 
-    const imports = [...readFileSync(INDEX, 'utf8').matchAll(/import \{([^}]*)\} from '\.\/csp'/g)]
-    const names = imports.flatMap((match) => match[1].split(',').map((name) => name.trim()))
+    const imports = readFileSync(INDEX, 'utf8')
+      .matchAll(/import \{([^}]*)\} from '\.\/csp'/g)
+      .toArray()
+    const names = imports.flatMap(([, list = '']) => list.split(',').map((name) => name.trim()))
 
-    expect(names.sort()).toEqual(['DEV_SERVER_CSP', 'PRODUCTION_CSP', 'installFileRequestFilter'])
+    expect(names.toSorted(byCodeUnit)).toStrictEqual([
+      'DEV_SERVER_CSP',
+      'PRODUCTION_CSP',
+      'installFileRequestFilter'
+    ])
   })
 })
 
 describe('file request filter', () => {
   it('allows only paths inside the renderer folder', () => {
-    for (const [url, root, platform, allowed] of FILTER_CASES) {
-      expect(isFileRequestAllowed(url, root, platform), `${platform} ${url} under ${root}`).toBe(
-        allowed
-      )
-    }
-    console.log(`csp: filter cases ${FILTER_CASES.length}`)
+    const wrong = FILTER_CASES.filter(
+      ([url, root, platform, allowed]) => isFileRequestAllowed(url, root, platform) !== allowed
+    ).map(([url, root, platform]) => `${platform} ${url} under ${root}`)
+
+    expect(wrong).toStrictEqual([])
+
+    process.stdout.write(`csp: filter cases ${String(FILTER_CASES.length)}\n`)
   })
 
   it('cancels every file request the predicate rejects', () => {
     const { session, recorded } = fakeSession()
     installFileRequestFilter(session, '/app/out/renderer')
 
-    expect(recorded.filter).toEqual({ urls: ['file://*/*'] })
+    expect(recorded.filter).toStrictEqual({ urls: ['file://*/*'] })
 
     const answers: { cancel: boolean }[] = []
-    recorded.listener?.({ url: 'file:///app/out/renderer/index.html' }, (r) => answers.push(r))
-    recorded.listener?.({ url: 'file:///etc/passwd' }, (r) => answers.push(r))
+    recorded.listener?.({ url: 'file:///app/out/renderer/index.html' }, (response) => {
+      answers.push(response)
+    })
+    recorded.listener?.({ url: 'file:///etc/passwd' }, (response) => {
+      answers.push(response)
+    })
 
-    expect(answers).toEqual([{ cancel: false }, { cancel: true }])
+    expect(answers).toStrictEqual([{ cancel: false }, { cancel: true }])
   })
 })

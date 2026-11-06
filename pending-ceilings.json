@@ -12,30 +12,12 @@
       "e2e/release-smoke.e2e.ts": 2
     }
   },
-  "scripts": {
-    "strict": {
-      "scripts/ci-policy.mjs": 9
-    },
-    "noImplicitAny": {
-      "scripts/ci-policy.mjs": 57
-    },
-    "exactOptionalPropertyTypes": {
-      "tsconfig.scripts.json": 1
-    },
-    "noPropertyAccessFromIndexSignature": {
-      "scripts/ci-policy.mjs": 1
-    }
-  },
   "test": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "tests/dom/history-store.test.ts": 2,
-      "tests/integration/check-coverage.test.ts": 1,
-      "tests/unit/generator.test.ts": 2,
-      "tests/unit/mz-annotations.test.ts": 1,
-      "tests/unit/round-trip.test.ts": 2,
-      "tests/unit/validation.test.ts": 1
+      "tests/integration/check-coverage.test.ts": 1
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
@@ -48,17 +30,7 @@
       "tests/integration/mz-runtime-conformance.test.ts": 10,
       "tests/integration/project-scope.test.ts": 3,
       "tests/integration/release-ci-gate.test.ts": 1,
-      "tests/unit/docs-sync.test.ts": 1,
-      "tests/unit/e2e-harness.test.ts": 2,
-      "tests/unit/escape.test.ts": 1,
-      "tests/unit/evaluate-plugin.test.ts": 5,
-      "tests/unit/export-formats.test.ts": 2,
-      "tests/unit/injection.test.ts": 4,
-      "tests/unit/package-scripts.test.ts": 12,
-      "tests/unit/pluginParser-edge-cases.test.ts": 1,
-      "tests/unit/static-scope.test.ts": 5,
-      "tests/unit/template-store.test.ts": 5,
-      "tests/unit/workflows.test.ts": 1
+      "tests/unit/static-scope.test.ts": 5
     },
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,
@@ -81,32 +53,8 @@
       "tests/integration/plugin-load.test.ts": 1,
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
-      "tests/unit/annotation-blocks.test.ts": 2,
-      "tests/unit/button-cursor.test.ts": 2,
-      "tests/unit/conflict-detector.test.ts": 13,
-      "tests/unit/csp.test.ts": 1,
-      "tests/unit/dependency-analyzer.test.ts": 8,
       "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/docs-sync.test.ts": 5,
-      "tests/unit/e2e-harness.test.ts": 13,
-      "tests/unit/eslint-ipc-ban.test.ts": 1,
-      "tests/unit/export-formats.test.ts": 5,
-      "tests/unit/fixture-set.test.ts": 5,
-      "tests/unit/generator.test.ts": 7,
-      "tests/unit/injection.test.ts": 32,
-      "tests/unit/ipc-callers.test.ts": 3,
-      "tests/unit/mz-annotations.test.ts": 30,
-      "tests/unit/package-scripts.test.ts": 19,
-      "tests/unit/param-io.test.ts": 21,
-      "tests/unit/pluginParser-edge-cases.test.ts": 11,
-      "tests/unit/pluginParser.test.ts": 96,
-      "tests/unit/preload-ipc.test.ts": 1,
-      "tests/unit/raw-mode-insertion.test.ts": 2,
-      "tests/unit/round-trip.test.ts": 5,
-      "tests/unit/static-scope.test.ts": 1,
-      "tests/unit/template-injection.test.ts": 2,
-      "tests/unit/test-layout.test.ts": 5,
-      "tests/unit/workflows.test.ts": 4
+      "tests/unit/static-scope.test.ts": 1
     }
   },
   "web": {

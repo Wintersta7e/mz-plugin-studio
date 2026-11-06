@@ -13,10 +13,15 @@ type Platform = 'posix' | 'win32'
 
 interface Row {
   fn: (input: string, pathImpl?: PlatformPath) => void
-  input: string
+  /**
+  A string, or undefined for input that is not one
+  */
+  input: string | undefined
   platform: Platform
   today: 'accept' | 'reject'
-  /** Part of the error message, for rows that reject */
+  /**
+  Part of the error message, for rows that reject
+  */
   error?: string | RegExp
 }
 
@@ -398,53 +403,79 @@ const ROWS: Row[] = [
 
   // Input that is not a usable path: the guard's own error, never a TypeError from path
   ...(['posix', 'win32'] as const).flatMap((platform) =>
-    [assertSafeFilePath, assertSafeFilename, assertSafeProjectPath].flatMap((fn) =>
-      ['', 'a\0.js', undefined as unknown as string].map(
-        (input): Row => ({ fn, input, platform, today: 'reject', error: /^Invalid/ })
+    [assertSafeFilePath, assertSafeFilename, assertSafeProjectPath].flatMap((guard) =>
+      ['', 'a\0.js', undefined].map(
+        (input): Row => ({ fn: guard, input, platform, today: 'reject', error: /^Invalid/ })
       )
     )
   )
 ]
 
+/**
+How a row's call ends, in the terms the row states: whether it threw, whether that was a TypeError
+from path rather than the guard's own error, and whether the message holds the row's error part.
+The input goes through Reflect.apply because a row may hold input that is not a string.
+*/
+function outcome(row: Row): { today: Row['today']; typeError: boolean; message: boolean } {
+  try {
+    Reflect.apply(row.fn, undefined, [row.input, PATH_RULES[row.platform]])
+    return { today: 'accept', typeError: false, message: true }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const wanted = row.error
+    return {
+      today: 'reject',
+      typeError: error instanceof TypeError,
+      message:
+        wanted === undefined ||
+        (typeof wanted === 'string' ? message.includes(wanted) : wanted.test(message))
+    }
+  }
+}
+
+const ROW_CASES = ROWS.map((row): [string, Row] => [
+  `${row.fn.name} ${row.today}s ${JSON.stringify(row.input)} (${row.platform})`,
+  row
+])
+
 describe('path guard', () => {
   it('has rows for every platform it checks', () => {
     const posix = ROWS.filter((row) => row.platform === 'posix').length
     const win32 = ROWS.filter((row) => row.platform === 'win32').length
-    console.log(`path guard rows: ${ROWS.length} (posix ${posix}, win32 ${win32})`)
+    process.stdout.write(
+      `path guard rows: ${String(ROWS.length)} (posix ${String(posix)}, win32 ${String(win32)})\n`
+    )
 
     expect(posix).toBeGreaterThan(0)
     expect(win32).toBeGreaterThan(0)
   })
 
-  for (const row of ROWS) {
-    it(`${row.fn.name} ${row.today}s ${JSON.stringify(row.input)} (${row.platform})`, () => {
-      const call = (): void => row.fn(row.input, PATH_RULES[row.platform])
-      if (row.today === 'accept') {
-        expect(call).not.toThrow()
-      } else {
-        expect(call).toThrow(row.error)
-        expect(call).not.toThrow(TypeError)
-      }
-    })
-  }
+  it.each(ROW_CASES)('%s', (_title, row) => {
+    expect(outcome(row)).toStrictEqual({ today: row.today, typeError: false, message: true })
+  })
 })
+
+const NETWORK_ROWS: [string, boolean][] = [
+  ['\\\\host\\share', true],
+  ['//host/share/Proj', true],
+  ['\\/host/share', true],
+  ['\\\\?\\C:\\Games', true],
+  ['\\\\.\\pipe\\x', true],
+  ['C:\\Games\\Proj', false],
+  ['/work/Proj', false],
+  ['\\Games\\Proj', false],
+  ['Synthetic.js', false]
+]
 
 // Looking up a network path sends the user's Windows credentials, so main checks the text first
 describe('network path text', () => {
-  const rows: [string, boolean][] = [
-    ['\\\\host\\share', true],
-    ['//host/share/Proj', true],
-    ['\\/host/share', true],
-    ['\\\\?\\C:\\Games', true],
-    ['\\\\.\\pipe\\x', true],
-    ['C:\\Games\\Proj', false],
-    ['/work/Proj', false],
-    ['\\Games\\Proj', false],
-    ['Synthetic.js', false]
-  ]
-  for (const [input, network] of rows) {
-    it(`reads ${JSON.stringify(input)} as ${network ? 'a network or device path' : 'local'}`, () => {
-      expect(isUncText(input)).toBe(network)
-    })
-  }
+  it.each(
+    NETWORK_ROWS.map(([input, network]): [string, string, boolean] => [
+      `reads ${JSON.stringify(input)} as ${network ? 'a network or device path' : 'local'}`,
+      input,
+      network
+    ])
+  )('%s', (_title, input, network) => {
+    expect(isUncText(input)).toBe(network)
+  })
 })

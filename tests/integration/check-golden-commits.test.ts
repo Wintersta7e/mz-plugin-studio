@@ -149,6 +149,57 @@ describe('golden commit check', () => {
     })
   })
 
+  it('passes a src commit whose case headers only lose fields', () => {
+    const repository = makeRepo()
+    const golden = `${GOLDEN}/templates/a.js`
+    write(
+      repository.dir,
+      golden,
+      '// ==== case: odd: two words {"a":1,"b":[2],"c":" {"}\nlet a\n\n' +
+        '// ==== case: base {"a":1,"b":[2],"d":null}\nlet b\n'
+    )
+    commit(repository.dir, 'test: add a golden')
+    write(repository.dir, 'src/a.ts', 'export const a = 1\n')
+    write(repository.dir, 'CHANGELOG.md', '- Dropped a field\n')
+    write(
+      repository.dir,
+      golden,
+      '// ==== case: odd: two words {"a":1,"c":" {"}\nlet a\n\n// ==== case: base {"a":1}\nlet b\n'
+    )
+    commit(repository.dir, 'feat: drop a field')
+
+    expect(check(repository.dir, [`${repository.base}..HEAD`])).toStrictEqual({
+      status: 0,
+      lines: [counts(2, 1, 0, 0, 0, 0)]
+    })
+  })
+
+  const HEADER_CHANGES: [title: string, before: string, after: string][] = [
+    ['loses a field and changes another value', 'one {"a":1,"b":2}', 'one {"a":3}'],
+    ['gains a field', 'one {"a":1}', 'one {"a":1,"b":2}'],
+    ['loses a field under another case name', 'one {"a":1,"b":2}', 'two {"a":1}'],
+    ['loses a field of a nested value', 'one {"a":{"x":1,"y":2}}', 'one {"a":{"x":1}}']
+  ]
+
+  it.each(HEADER_CHANGES)('fails a src commit whose case header %s', (_, before, after) => {
+    const repository = makeRepo()
+    const golden = `${GOLDEN}/templates/a.js`
+    write(repository.dir, golden, `// ==== case: ${before}\nlet a\n`)
+    commit(repository.dir, 'test: add a golden')
+    write(repository.dir, 'src/a.ts', 'export const a = 1\n')
+    write(repository.dir, 'CHANGELOG.md', '- Changed a case\n')
+    write(repository.dir, golden, `// ==== case: ${after}\nlet a\n`)
+    const sha = commit(repository.dir, 'feat: change a case header')
+
+    expect(check(repository.dir, [`${repository.base}..HEAD`])).toStrictEqual({
+      status: 1,
+      lines: [
+        counts(2, 1, 0, 1, 0, 0),
+        `FAIL ${short(sha)} case header added in src commit: ${golden}`
+      ]
+    })
+  })
+
   it('fails a test-only commit that deletes a golden line', () => {
     const { dir, base } = makeRepo()
     write(dir, `${GOLDEN}/parser/p.json`, '{\n  "a": 1\n}\n')

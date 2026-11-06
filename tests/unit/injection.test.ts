@@ -10,22 +10,25 @@ import {
   validatePlugin
 } from '../../src/renderer/src/lib/generator/index'
 import { parameterConstant } from '../helpers/generated-names'
-import type {
-  LocalizedContent,
-  NoteParam,
-  ParamType,
-  PluginCommand,
-  PluginDefinition,
-  PluginMeta,
-  PluginParameter,
-  PluginStruct,
-  SelectOption
+import {
+  toBaseline,
+  type LocalizedContent,
+  type NoteParam,
+  type PluginCommand,
+  type PluginDefinition,
+  type PluginMeta,
+  type PluginParameter,
+  type PluginStruct,
+  type SelectOption
 } from '../../src/shared/types/plugin'
-import { toBaseline } from '../../src/shared/types/plugin'
-import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import type { EvaluationResult } from '../helpers/evaluate-plugin'
-import { ALL_PAYLOADS, COMMENT_PAYLOADS, PREFIX_PAYLOADS, SENTINEL } from '../helpers/hostile'
-import type { Payload } from '../helpers/hostile'
+import { evaluatePlugin, type EvaluationResult } from '../helpers/evaluate-plugin'
+import {
+  ALL_PAYLOADS,
+  COMMENT_PAYLOADS,
+  PREFIX_PAYLOADS,
+  SENTINEL,
+  type Payload
+} from '../helpers/hostile'
 import { contextsOf, isContained } from '../helpers/js-context'
 
 const INJECTED = `globalThis.${SENTINEL}`
@@ -40,19 +43,34 @@ function outcomeOf(result: EvaluationResult): Outcome {
 
 describe('js-context', () => {
   it('names the context each occurrence of the needle starts in', () => {
-    expect(contextsOf('// a NEEDLE\nb()', 'NEEDLE')).toEqual(['line-comment'])
-    expect(contextsOf('a(/* NEEDLE */)', 'NEEDLE')).toEqual(['block-comment'])
-    expect(contextsOf("const a = 'x NEEDLE'", 'NEEDLE')).toEqual(['single-quote'])
-    expect(contextsOf('const a = `x NEEDLE`', 'NEEDLE')).toEqual(['template-literal'])
-    expect(contextsOf('const NEEDLE = 1', 'NEEDLE')).toEqual(['code'])
-    expect(contextsOf('/* NEEDLE */ NEEDLE()', 'NEEDLE')).toEqual(['block-comment', 'code'])
-    expect(isContained('// NEEDLE\nconst a = "NEEDLE"', 'NEEDLE')).toBe(true)
-    expect(isContained('/* x */ NEEDLE /* y */', 'NEEDLE')).toBe(false)
+    const sources = [
+      '// a NEEDLE\nb()',
+      'a(/* NEEDLE */)',
+      "const a = 'x NEEDLE'",
+      'const a = `x NEEDLE`',
+      'const NEEDLE = 1',
+      '/* NEEDLE */ NEEDLE()'
+    ]
+
+    expect(sources.map((source) => contextsOf(source, 'NEEDLE'))).toStrictEqual([
+      ['line-comment'],
+      ['block-comment'],
+      ['single-quote'],
+      ['template-literal'],
+      ['code'],
+      ['block-comment', 'code']
+    ])
+    expect([
+      isContained('// NEEDLE\nconst a = "NEEDLE"', 'NEEDLE'),
+      isContained('/* x */ NEEDLE /* y */', 'NEEDLE')
+    ]).toStrictEqual([true, false])
   })
 })
 
 type Setter<T> = (target: T, text: string) => void
-/** A string key's setter, or why the key holds no text of its own. */
+/**
+A string key's setter, or why the key holds no text of its own.
+*/
 type FieldUse<T> = Setter<T> | 'not-string' | { code: string }
 
 const definitionFields = {
@@ -140,7 +158,8 @@ const parameterFields = {
     p.desc = t
   },
   type: (p, t) => {
-    p.type = t as ParamType
+    // Raw text where the type says ParamType, as a file opened from disk can hold
+    Object.assign(p, { type: t })
   },
   default: (p, t) => {
     p.default = t
@@ -157,7 +176,7 @@ const parameterFields = {
   arrayType: (p, t) => {
     p.type = 'array'
     p.default = ''
-    p.arrayType = t as ParamType
+    Object.assign(p, { arrayType: t })
   },
   dir: (p, t) => {
     p.type = 'file'
@@ -235,7 +254,9 @@ function fixtureParameter(name: string): PluginParameter {
   }
 }
 
-/** A definition using every emitted annotation once, all text plain. */
+/**
+A definition using every emitted annotation once, all text plain.
+*/
 function cleanDefinition(): PluginDefinition {
   return {
     id: 'fixture-matrix',
@@ -276,50 +297,71 @@ function cleanDefinition(): PluginDefinition {
 
 interface FieldRow {
   field: string
-  set: (def: PluginDefinition, text: string) => void
+  set: (definition: PluginDefinition, text: string) => void
 }
 
 function rowsOf<T>(
   owner: string,
   fields: Record<string, FieldUse<T>>,
-  target: (def: PluginDefinition) => T
+  target: (definition: PluginDefinition) => T
 ): FieldRow[] {
-  return Object.entries(fields).flatMap(([key, setter]) =>
-    typeof setter === 'function'
-      ? [
-          {
-            field: `${owner}.${key}`,
-            set: (def: PluginDefinition, text: string) => setter(target(def), text)
-          }
-        ]
-      : []
-  )
+  return Object.entries(fields)
+    .filter((entry): entry is [string, Setter<T>] => typeof entry[1] === 'function')
+    .map(([key, setter]) => ({
+      field: `${owner}.${key}`,
+      set: (definition: PluginDefinition, text: string) => {
+        setter(target(definition), text)
+      }
+    }))
 }
 
-/** The option of a select parameter, so that both `@option` and `@value` are emitted. */
+/**
+The option of a select parameter, so that both `@option` and `@value` are emitted.
+*/
 function optionOf(param: PluginParameter): SelectOption {
+  const option = { value: 'fixture-value', text: 'Fixture option' }
   param.type = 'select'
-  param.options = [{ value: 'fixture-value', text: 'Fixture option' }]
-  return param.options[0]
+  param.options = [option]
+  return option
 }
 
-const PARAMETER_OWNERS: [string, (def: PluginDefinition) => PluginParameter][] = [
-  ['parameter', (def) => def.parameters[0]],
-  ['argument', (def) => def.commands[0].args[0]],
-  ['struct field', (def) => def.structs[0].parameters[0]]
+/**
+The first item: the clean definition has one of each list the rows edit.
+*/
+function firstOf<T>(items: readonly T[]): T {
+  const item = items.at(0)
+  if (item === undefined) throw new Error('the clean definition lacks an item the test edits')
+  return item
+}
+
+/**
+The clean definition's `ja` localization.
+*/
+function japanese(definition: PluginDefinition): LocalizedContent {
+  const content = new Map(Object.entries(definition.meta.localizations ?? {})).get('ja')
+  if (content === undefined) throw new Error('the clean definition lacks its ja localization')
+  return content
+}
+
+const PARAMETER_OWNERS: [string, (definition: PluginDefinition) => PluginParameter][] = [
+  ['parameter', (definition) => firstOf(definition.parameters)],
+  ['argument', (definition) => firstOf(firstOf(definition.commands).args)],
+  ['struct field', (definition) => firstOf(firstOf(definition.structs).parameters)]
 ]
 
 const FIELD_ROWS: FieldRow[] = [
-  ...rowsOf('definition', definitionFields, (def) => def),
-  ...rowsOf('meta', metaFields, (def) => def.meta),
-  ...rowsOf('note param', noteParamFields, (def) => def.meta.noteParams![0]),
+  ...rowsOf('definition', definitionFields, (definition) => definition),
+  ...rowsOf('meta', metaFields, (definition) => definition.meta),
+  ...rowsOf('note param', noteParamFields, (definition) =>
+    firstOf(definition.meta.noteParams ?? [])
+  ),
   ...PARAMETER_OWNERS.flatMap(([owner, target]) => [
     ...rowsOf(owner, parameterFields, target),
-    ...rowsOf(`${owner} option`, optionFields, (def) => optionOf(target(def)))
+    ...rowsOf(`${owner} option`, optionFields, (definition) => optionOf(target(definition)))
   ]),
-  ...rowsOf('command', commandFields, (def) => def.commands[0]),
-  ...rowsOf('struct', structFields, (def) => def.structs[0]),
-  ...rowsOf('localization', localizationFields, (def) => def.meta.localizations!.ja)
+  ...rowsOf('command', commandFields, (definition) => firstOf(definition.commands)),
+  ...rowsOf('struct', structFields, (definition) => firstOf(definition.structs)),
+  ...rowsOf('localization', localizationFields, (definition) => japanese(definition))
 ]
 
 // An imported file: the clean definition's comment blocks and a body that reads the parameters
@@ -334,14 +376,14 @@ function rawSource(): string {
   )
 }
 
-const ENTRIES: [string, (def: PluginDefinition) => string][] = [
-  ['generatePlugin', (def) => generatePlugin(def)],
+const ENTRIES: [string, (definition: PluginDefinition) => string][] = [
+  ['generatePlugin', (definition) => generatePlugin(definition)],
   [
     'generateRawMode',
-    (def) =>
+    (definition) =>
       generateRawMode(
-        { ...def, rawSource: rawSource() },
-        toBaseline({ ...def, parameters: [], commands: [] })
+        { ...definition, rawSource: rawSource() },
+        toBaseline({ ...definition, parameters: [], commands: [] })
       )
   ]
 ]
@@ -357,9 +399,9 @@ function runMatrix(payloads: readonly Payload[] = ALL_PAYLOADS): MatrixCase[] {
   for (const row of FIELD_ROWS) {
     for (const payload of payloads) {
       for (const [entry, generate] of ENTRIES) {
-        const def = cleanDefinition()
-        row.set(def, payload.text)
-        const code = generate(def)
+        const definition = cleanDefinition()
+        row.set(definition, payload.text)
+        const code = generate(definition)
         cases.push({
           label: `${row.field} / ${payload.name} / ${entry}`,
           outcome: outcomeOf(evaluatePlugin(code, { mode: 'generator' })),
@@ -368,9 +410,9 @@ function runMatrix(payloads: readonly Payload[] = ALL_PAYLOADS): MatrixCase[] {
       }
     }
   }
-  console.log(
-    `injection matrix: fields ${FIELD_ROWS.length}, payloads ${payloads.length}, ` +
-      `entries ${ENTRIES.length}, cases ${cases.length}`
+  process.stdout.write(
+    `injection matrix: fields ${String(FIELD_ROWS.length)}, payloads ${String(payloads.length)}, ` +
+      `entries ${String(ENTRIES.length)}, cases ${String(cases.length)}\n`
   )
   return cases
 }
@@ -387,7 +429,7 @@ describe('generated plugin annotations', () => {
 
     const notClean = runMatrix().filter((c) => c.outcome !== 'clean' || !c.contained)
 
-    expect(notClean.map((c) => c.label)).toEqual([])
+    expect(notClean.map((c) => c.label)).toStrictEqual([])
   })
 
   it(
@@ -399,11 +441,11 @@ describe('generated plugin annotations', () => {
         const cases = runMatrix([payload])
         const count = (outcome: Outcome): number =>
           cases.filter((c) => c.outcome === outcome).length
-        console.log(
-          `prefix payload ${payload.name}: cases ${cases.length}, contained ` +
-            `${cases.filter((c) => c.outcome === 'clean' && c.contained).length}, ` +
-            `does not compile ${count('does not compile')}, throws ${count('throws')}, ` +
-            `ran ${count('runs the text')}`
+        process.stdout.write(
+          `prefix payload ${payload.name}: cases ${String(cases.length)}, contained ` +
+            `${String(cases.filter((c) => c.outcome === 'clean' && c.contained).length)}, ` +
+            `does not compile ${String(count('does not compile'))}, ` +
+            `throws ${String(count('throws'))}, ran ${String(count('runs the text'))}\n`
         )
 
         expect(cases.length).toBeGreaterThan(0)
@@ -413,7 +455,7 @@ describe('generated plugin annotations', () => {
         )
       }
 
-      expect(notClean).toEqual([])
+      expect(notClean).toStrictEqual([])
     }
   )
 })
@@ -462,31 +504,33 @@ describe('snippet comments', () => {
     const results = Object.entries(runSnippets())
 
     expect(results).toHaveLength(SNIPPETS.length * SNIPPET_NAMES.length)
-    expect(results.filter(([, result]) => result !== 'clean, contained')).toEqual([])
+    expect(results.filter(([, result]) => result !== 'clean, contained')).toStrictEqual([])
   })
 })
 
 describe('localization keys', () => {
   it('a localization key MZ cannot read is left out and reported', () => {
-    const def = cleanDefinition()
-    def.meta.localizations = { 'ja */ x': { description: 'd' }, ja: { description: 'kept' } }
-    const output = generatePlugin(def)
+    const definition = cleanDefinition()
+    definition.meta.localizations = { 'ja */ x': { description: 'd' }, ja: { description: 'kept' } }
+    const output = generatePlugin(definition)
 
-    expect(output.split('\n').filter((line) => line.startsWith('/*:ja'))).toEqual(['/*:ja'])
-    expect(output).not.toContain('ja */ x')
-    expect(output).not.toContain('ja *\\/ x')
-    expect(output).toContain(' * @plugindesc kept')
+    expect(output.split('\n').filter((line) => line.startsWith('/*:ja'))).toStrictEqual(['/*:ja'])
+    expect(
+      ['ja */ x', 'ja *\\/ x', ' * @plugindesc kept'].map((text) => output.includes(text))
+    ).toStrictEqual([false, false, true])
 
-    const { errors, warnings } = validatePlugin(def)
+    const { errors, warnings } = validatePlugin(definition)
 
     expect(errors).toContain(
       'Localization "ja */ x" is left out: a language code may contain only letters and underscores.'
     )
-    expect(warnings.filter((w) => w.includes('ja */ x'))).toEqual([])
+    expect(warnings.filter((w) => w.includes('ja */ x'))).toStrictEqual([])
   })
 })
 
-/** The text after `@default ` in the annotation block of the parameter `name`. */
+/**
+The text after `@default ` in the annotation block of the parameter `name`.
+*/
 function annotatedDefault(code: string, name: string): string {
   const lines = code.split('\n')
   const start = lines.indexOf(` * @param ${name}`)
@@ -497,80 +541,125 @@ function annotatedDefault(code: string, name: string): string {
   return line.slice(' * @default '.length)
 }
 
-/** Generates `def` with code that stores `expression` of the first parameter, then runs it. */
-function runDefault(def: PluginDefinition, expression: (name: string) => string): unknown {
-  def.customCode = `globalThis.__value = ${expression(parameterConstant(def.parameters[0].name))};`
-  const result = evaluatePlugin(generatePlugin(def), { mode: 'generator' })
+/**
+Generates `definition` with code that stores `expression` of the first parameter, then runs it.
+*/
+function runDefault(definition: PluginDefinition, expression: (name: string) => string): unknown {
+  definition.customCode = `globalThis.__value = ${expression(parameterConstant(firstOf(definition.parameters).name))};`
+  const result = evaluatePlugin(generatePlugin(definition), { mode: 'generator' })
 
   expect(result).toMatchObject({ compileProblem: null, threw: null, sentinel: false })
 
-  return result.context?.__value
+  const { __value: value } = result.context ?? {}
+  return value
 }
 
 describe('parameter defaults', () => {
   it('the code fallback of a text default is the text after @default', () => {
-    const def = cleanDefinition()
-    def.parameters[0].default = 'x */ y'
-    const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
+    const definition = cleanDefinition()
+    firstOf(definition.parameters).default = 'x */ y'
+    const annotated = annotatedDefault(
+      generatePlugin(definition),
+      firstOf(definition.parameters).name
+    )
 
-    expect(runDefault(def, (name) => name)).toBe(annotated)
+    expect(runDefault(definition, (name) => name)).toBe(annotated)
     expect(annotated).toBe('x *\\/ y')
   })
 
   it('the code fallback of a struct default decodes to the @default JSON', () => {
-    const def = cleanDefinition()
-    Object.assign(def.parameters[0], { type: 'struct', structType: 'FixtureStruct' })
-    def.parameters[0].default = '{"a":"*/"}'
-    const annotated = annotatedDefault(generatePlugin(def), def.parameters[0].name)
-    const stored = runDefault(def, (name) => `JSON.stringify(${name})`)
+    const definition = cleanDefinition()
+    Object.assign(firstOf(definition.parameters), { type: 'struct', structType: 'FixtureStruct' })
+    firstOf(definition.parameters).default = '{"a":"*/"}'
+    const annotated = annotatedDefault(
+      generatePlugin(definition),
+      firstOf(definition.parameters).name
+    )
+    const stored = runDefault(definition, (name) => `JSON.stringify(${name})`)
 
-    expect(JSON.parse(String(stored))).toEqual({ a: '*/' })
-    expect(JSON.parse(annotated)).toEqual({ a: '*/' })
+    expect(JSON.parse(String(stored))).toStrictEqual({ a: '*/' })
+    expect(JSON.parse(annotated)).toStrictEqual({ a: '*/' })
   })
 })
 
-/** The warnings `change` adds to those of the clean definition. */
-function addedWarnings(change: (def: PluginDefinition) => void): string[] {
+/**
+The warnings `change` adds to those of the clean definition.
+*/
+function addedWarnings(change: (definition: PluginDefinition) => void): string[] {
   const before = new Set(validatePlugin(cleanDefinition()).warnings)
-  const def = cleanDefinition()
-  change(def)
-  return validatePlugin(def).warnings.filter((w) => !before.has(w))
+  const definition = cleanDefinition()
+  change(definition)
+  return validatePlugin(definition).warnings.filter((w) => !before.has(w))
 }
 
 const escapedWarning = (field: string): string =>
   String.raw`${field}: "*/" is written as "*\/" so it cannot end the comment.`
 
+/**
+Fields whose comment end the generator writes escaped, each with the name its warning gives.
+*/
+const ESCAPED_FIELDS: [string, (definition: PluginDefinition) => void, string][] = [
+  [
+    'the plugin description',
+    (definition) => {
+      definition.meta.description = 'a */ b'
+    },
+    'Plugin @plugindesc'
+  ],
+  [
+    'a command argument label',
+    (definition) => {
+      firstOf(firstOf(definition.commands).args).text = 'a */ b'
+    },
+    'Command "FixtureCommand" argument "FixtureArg" @text'
+  ],
+  [
+    'a struct field description',
+    (definition) => {
+      firstOf(firstOf(definition.structs).parameters).desc = 'a */ b'
+    },
+    'Struct "FixtureStruct" field "FixtureField" @desc'
+  ],
+  [
+    'translated help, once for two lines',
+    (definition) => {
+      japanese(definition).help = 'one\na */ b\nc */ d'
+    },
+    'Localization "ja" @help'
+  ]
+]
+
 describe('validatePlugin warnings', () => {
   it('names the field whose "*/" is written escaped', () => {
-    const added = addedWarnings((def) => {
-      def.parameters[0].desc = 'a */ b'
+    const added = addedWarnings((definition) => {
+      firstOf(definition.parameters).desc = 'a */ b'
     })
 
-    expect(added).toEqual([escapedWarning('Parameter "FixtureParam" @desc')])
+    expect(added).toStrictEqual([escapedWarning('Parameter "FixtureParam" @desc')])
   })
 
   it('an "@" word inside a description or help line adds no warning', () => {
-    const added = addedWarnings((def) => {
-      def.parameters[0].desc = 'see @param here'
-      def.commands[0].desc = 'see @note here'
-      def.meta.help = 'Read @help and @type first'
+    const added = addedWarnings((definition) => {
+      firstOf(definition.parameters).desc = 'see @param here'
+      firstOf(definition.commands).desc = 'see @note here'
+      definition.meta.help = 'Read @help and @type first'
     })
 
-    expect(added).toEqual([])
+    expect(added).toStrictEqual([])
   })
 
-  it.each<[string, (def: PluginDefinition) => void, string]>([
+  it.each<[string, (definition: PluginDefinition) => void, string]>([
     [
       'a parameter',
-      (def) => {
-        def.parameters[0].name = 'Speed @type number'
+      (definition) => {
+        firstOf(definition.parameters).name = 'Speed @type number'
       },
       'Parameter "Speed @type number" @param'
     ],
     [
       'a struct field',
-      (def) => {
-        def.structs[0].parameters[0].name = 'Size @default 3'
+      (definition) => {
+        firstOf(firstOf(definition.structs).parameters).name = 'Size @default 3'
       },
       'Struct "FixtureStruct" field "Size @default 3" @param'
     ]
@@ -581,66 +670,37 @@ describe('validatePlugin warnings', () => {
   })
 
   it('an "@" in a parameter name that is not a setting tag adds no warning about it', () => {
-    const added = addedWarnings((def) => {
-      def.parameters[0].name = 'Speed@home'
-      def.commands[0].name = 'Run @type number'
-      def.commands[0].args[0].name = 'Arg @type number'
+    const added = addedWarnings((definition) => {
+      firstOf(definition.parameters).name = 'Speed@home'
+      firstOf(definition.commands).name = 'Run @type number'
+      firstOf(firstOf(definition.commands).args).name = 'Arg @type number'
     })
 
-    expect(added.filter((w) => w.includes('setting tag'))).toEqual([])
+    expect(added.filter((w) => w.includes('setting tag'))).toStrictEqual([])
   })
 
-  it.each<[string, (def: PluginDefinition) => void, string]>([
+  it.each<[string, (definition: PluginDefinition) => void, string]>([
     [
       'plugin help, indented',
-      (def) => {
-        def.meta.help = 'Usage\n  @param injected\nEnd'
+      (definition) => {
+        definition.meta.help = 'Usage\n  @param injected\nEnd'
       },
       'Plugin @help'
     ],
     [
       'translated help, once for two lines',
-      (def) => {
-        def.meta.localizations!.ja.help = 'one\n@param injected\n@type number'
+      (definition) => {
+        japanese(definition).help = 'one\n@param injected\n@type number'
       },
       'Localization "ja" @help'
     ]
   ])('names %s with a line starting with "@"', (_, change, field) => {
-    expect(addedWarnings(change)).toEqual([
+    expect(addedWarnings(change)).toStrictEqual([
       `${field}: a line starting with "@" is written with an invisible zero-width space before the "@", so RPG Maker MZ shows it as help text instead of reading it as an annotation tag.`
     ])
   })
 
-  it.each<[string, (def: PluginDefinition) => void, string]>([
-    [
-      'the plugin description',
-      (def) => {
-        def.meta.description = 'a */ b'
-      },
-      'Plugin @plugindesc'
-    ],
-    [
-      'a command argument label',
-      (def) => {
-        def.commands[0].args[0].text = 'a */ b'
-      },
-      'Command "FixtureCommand" argument "FixtureArg" @text'
-    ],
-    [
-      'a struct field description',
-      (def) => {
-        def.structs[0].parameters[0].desc = 'a */ b'
-      },
-      'Struct "FixtureStruct" field "FixtureField" @desc'
-    ],
-    [
-      'translated help, once for two lines',
-      (def) => {
-        def.meta.localizations!.ja.help = 'one\na */ b\nc */ d'
-      },
-      'Localization "ja" @help'
-    ]
-  ])('names %s', (_, change, field) => {
-    expect(addedWarnings(change)).toEqual([escapedWarning(field)])
+  it.each(ESCAPED_FIELDS)('names %s', (_, change, field) => {
+    expect(addedWarnings(change)).toStrictEqual([escapedWarning(field)])
   })
 })

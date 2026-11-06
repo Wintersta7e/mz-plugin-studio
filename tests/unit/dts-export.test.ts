@@ -1,7 +1,7 @@
 // The .d.ts export parsed by the TypeScript compiler: text from a description must stay inside
 // its JSDoc comment, so the declarations are the ones a plain description produces.
 import { describe, it, expect } from 'vitest'
-import ts from 'typescript'
+import * as ts from 'typescript'
 import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
 import type { PluginDefinition, PluginParameter } from '../../src/shared/types/plugin'
 
@@ -32,6 +32,17 @@ function definition(desc: string): PluginDefinition {
   }
 }
 
+/**
+The names a statement declares other than a module: each variable, else its one name or ''
+*/
+function namesOf(s: ts.Statement, sf: ts.SourceFile): string[] {
+  if (ts.isVariableStatement(s)) {
+    return s.declarationList.declarations.map((d) => d.name.getText(sf))
+  }
+  const name = ts.isDeclarationStatement(s) ? ts.getNameOfDeclaration(s) : undefined
+  return [name === undefined ? '' : name.getText(sf)]
+}
+
 function declarationsOf(statements: readonly ts.Statement[], sf: ts.SourceFile): string[] {
   return statements.flatMap((s) => {
     const kind = ts.SyntaxKind[s.kind]
@@ -39,15 +50,13 @@ function declarationsOf(statements: readonly ts.Statement[], sf: ts.SourceFile):
       const body = s.body !== undefined && ts.isModuleBlock(s.body) ? s.body.statements : []
       return [`${kind} ${s.name.getText(sf)}`, ...declarationsOf(body, sf)]
     }
-    if (ts.isVariableStatement(s)) {
-      return s.declarationList.declarations.map((d) => `${kind} ${d.name.getText(sf)}`)
-    }
-    const name = ts.getNameOfDeclaration(s as ts.DeclarationStatement)
-    return [`${kind} ${name === undefined ? '' : name.getText(sf)}`]
+    return namesOf(s, sf).map((name) => `${kind} ${name}`)
   })
 }
 
-/** Syntax diagnostics and declarations of a declaration file, parsed in memory. */
+/**
+Syntax diagnostics and declarations of a declaration file, parsed in memory.
+*/
 function parse(text: string): { diagnostics: string[]; declarations: string[] } {
   const options: ts.CompilerOptions = { noLib: true, noResolve: true, types: [] }
   const sf = ts.createSourceFile(FILE, text, ts.ScriptTarget.Latest, true)
@@ -64,12 +73,12 @@ function parse(text: string): { diagnostics: string[]; declarations: string[] } 
   }
 }
 
-describe('generateTypeDeclaration', () => {
+describe(generateTypeDeclaration, () => {
   it('a description holding "*/" stays inside its JSDoc comment', () => {
     const clean = parse(generateTypeDeclaration(definition('Plain description')))
 
-    expect(clean.diagnostics).toEqual([])
-    expect(clean.declarations).toEqual([
+    expect(clean.diagnostics).toStrictEqual([])
+    expect(clean.declarations).toStrictEqual([
       'ModuleDeclaration Fixture_Types',
       'InterfaceDeclaration Parameters',
       'InterfaceDeclaration MoveArgs'
@@ -79,7 +88,7 @@ describe('generateTypeDeclaration', () => {
       generateTypeDeclaration(definition('x */ declare const injected: 1; /* y'))
     )
 
-    expect(hostile.diagnostics).toEqual([])
-    expect(hostile.declarations).toEqual(clean.declarations)
+    expect(hostile.diagnostics).toStrictEqual([])
+    expect(hostile.declarations).toStrictEqual(clean.declarations)
   })
 })

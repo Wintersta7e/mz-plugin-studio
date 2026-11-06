@@ -9,17 +9,30 @@ import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import {
   ANNOTATION_RULES,
+  type AnnotationRule,
   annotationBlocks,
   checkAnnotations,
   scopeFor
 } from '../helpers/annotation-rules'
-import type { AnnotationRule } from '../helpers/annotation-rules'
-import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance'
+import {
+  type ConformanceCase,
+  conformanceCases,
+  refusedCommandNames
+} from '../helpers/mz-conformance'
 
-/** Case and rule pairs that fail today; each must fail, and every other pair must hold. */
+/**
+Case and rule pairs that fail today; each must fail, and every other pair must hold.
+*/
 const KNOWN_NONCONFORMING: Record<string, AnnotationRule[]> = {}
 
-const fixtureGenerated = GENERATOR_ENTRIES.find((e) => e.name === 'fixture-generated')!.def
+function generatorEntry(name: string): (typeof GENERATOR_ENTRIES)[number]['def'] {
+  const found = GENERATOR_ENTRIES.find((entry) => entry.name === name)
+  if (found === undefined) throw new Error(`no generator entry ${name}`)
+
+  return found.def
+}
+
+const fixtureGenerated = generatorEntry('fixture-generated')
 const fixtureCode = generatePlugin(fixtureGenerated)
 
 const rulesOf = (code: string): AnnotationRule[] => [
@@ -30,31 +43,32 @@ const rulesOf = (code: string): AnnotationRule[] => [
   )
 ]
 
-/** `code` with `from` replaced once, failing when `from` is not there. */
-function changed(code: string, from: string, to: string): string {
-  expect(code).toContain(from)
+/**
+The fixture plugin with `from` replaced once, failing when `from` is not there.
+*/
+function changed(from: string, to: string): string {
+  expect(fixtureCode).toContain(from)
 
-  return code.replace(from, to)
+  return fixtureCode.replace(from, () => to)
 }
 
 const STRUCT_BLOCK = /\/\*~struct~Point:[\s\S]*?\*\//
 
 const BROKEN: Record<AnnotationRule, () => string> = {
-  'block-line': () => changed(fixtureCode, ' * @desc Frames between', '   @desc Frames between'),
-  'empty-tag': () => changed(fixtureCode, ' * @desc Frames between two updates.', ' * @desc'),
-  'type-known': () => changed(fixtureCode, ' * @type number', ' * @type numbr'),
+  'block-line': () => changed(' * @desc Frames between', '   @desc Frames between'),
+  'empty-tag': () => changed(' * @desc Frames between two updates.', ' * @desc'),
+  'type-known': () => changed(' * @type number', ' * @type numbr'),
   'struct-block': () => {
     const block = STRUCT_BLOCK.exec(fixtureCode)
 
     expect(block).not.toBeNull()
 
-    return `${fixtureCode}\n${block![0]}\n`
+    return `${fixtureCode}\n${block?.[0] ?? ''}\n`
   },
-  parent: () => changed(fixtureCode, ' * @type string\n', ' * @type string\n * @parent Nope\n'),
-  'default-parses': () => changed(fixtureCode, ' * @default 5', ' * @default abc'),
+  parent: () => changed(' * @type string\n', ' * @type string\n * @parent Nope\n'),
+  'default-parses': () => changed(' * @default 5', ' * @default abc'),
   'help-round-trip': () =>
     changed(
-      fixtureCode,
       ' * Generated from a fixed definition.\n',
       ' * Generated from a fixed definition.\n * @param injected\n'
     )
@@ -64,43 +78,45 @@ describe('annotation rules', () => {
   it('report nothing on the unchanged plugin', () => {
     expect(
       checkAnnotations(fixtureCode, { rules: ANNOTATION_RULES, definition: fixtureGenerated })
-    ).toEqual([])
+    ).toStrictEqual([])
   })
 
-  for (const rule of ANNOTATION_RULES) {
-    it(`report ${rule} on a plugin broken for it, and nothing else`, () => {
-      expect(rulesOf(BROKEN[rule]())).toEqual([rule])
-    })
-  }
+  it.each(ANNOTATION_RULES)('report %s on a plugin broken for it, and nothing else', (rule) => {
+    expect(rulesOf(BROKEN[rule]())).toStrictEqual([rule])
+  })
 })
 
 const cases = conformanceCases()
 
 describe('every generated and raw-mode plugin header', () => {
-  for (const c of cases) {
+  const rows = cases.map((c): [string, ConformanceCase, AnnotationRule[]] => {
     const listed = KNOWN_NONCONFORMING[c.id] ?? []
 
-    it(`${c.id}${listed.length > 0 ? ' (fails today)' : ''}`, () => {
-      const findings = checkAnnotations(c.code, scopeFor(c))
-      for (const rule of ANNOTATION_RULES) {
-        const details = findings
-          .filter((f) => f.rule === rule)
-          .map((f) => `${f.block}:${f.line} ${f.detail}`)
-        if (listed.includes(rule)) expect(details, `${rule} expected to fail`).not.toEqual([])
-        else expect(details, rule).toEqual([])
-      }
-    })
-  }
+    return [`${c.id}${listed.length > 0 ? ' (fails today)' : ''}`, c, listed]
+  })
+
+  it.each(rows)('%s', (_title, c, listed) => {
+    const findings = checkAnnotations(c.code, scopeFor(c))
+    const detailsOf = (rule: AnnotationRule): string[] =>
+      findings.filter((f) => f.rule === rule).map((f) => `${f.block}:${String(f.line)} ${f.detail}`)
+    const unlisted = ANNOTATION_RULES.filter((rule) => !listed.includes(rule))
+
+    // a listed rule that holds is reported by name, as is every finding of an unlisted rule
+    expect(listed.filter((rule) => detailsOf(rule).length === 0)).toStrictEqual([])
+    expect(Object.fromEntries(unlisted.map((rule) => [rule, detailsOf(rule)]))).toStrictEqual(
+      Object.fromEntries(unlisted.map((rule) => [rule, []]))
+    )
+  })
 
   it('reads every case and lists only cases that exist', () => {
     const generated = cases.filter((c) => c.kind === 'generated').length
     const blocks = cases.flatMap((c) => annotationBlocks(c.code))
     const lines = blocks.reduce((sum, b) => sum + b.lines.length, 0)
     const known = Object.values(KNOWN_NONCONFORMING).flat().length
-    console.log(
-      `annotation rules: plugins ${cases.length} (generated ${generated}, ` +
-        `raw-mode ${cases.length - generated}), blocks ${blocks.length}, lines ${lines}, ` +
-        `rules ${ANNOTATION_RULES.length}, known ${known}`
+    process.stdout.write(
+      `annotation rules: plugins ${String(cases.length)} (generated ${String(generated)}, ` +
+        `raw-mode ${String(cases.length - generated)}), blocks ${String(blocks.length)}, ` +
+        `lines ${String(lines)}, rules ${String(ANNOTATION_RULES.length)}, known ${String(known)}\n`
     )
     // Each rule that leaves something out says how much: hostile entries carry their payload in
     // types, parents and defaults, and raw mode keeps what the imported file declared, so both
@@ -108,10 +124,11 @@ describe('every generated and raw-mode plugin header', () => {
     // compared when the header is read back
     const full = cases.filter((c) => scopeFor(c).rules.length === ANNOTATION_RULES.length)
     const refused = full.reduce((sum, c) => sum + refusedCommandNames(c.definition).size, 0)
-    console.log(
+    process.stdout.write(
       `annotation rules exempt: comment text only for hostile ` +
-        `${cases.filter((c) => c.hostile === true).length} and raw-mode ` +
-        `${cases.filter((c) => c.kind === 'raw-mode').length}, refused command names ${refused}`
+        `${String(cases.filter((c) => c.hostile === true).length)} and raw-mode ` +
+        `${String(cases.filter((c) => c.kind === 'raw-mode').length)}, ` +
+        `refused command names ${String(refused)}\n`
     )
 
     expect(cases.length).toBeGreaterThan(0)
@@ -119,16 +136,16 @@ describe('every generated and raw-mode plugin header', () => {
 
     const ids = new Set(cases.map((c) => c.id))
 
-    expect(Object.keys(KNOWN_NONCONFORMING).filter((id) => !ids.has(id))).toEqual([])
+    expect(Object.keys(KNOWN_NONCONFORMING).filter((id) => !ids.has(id))).toStrictEqual([])
   })
 })
 
 describe('a help line starting with "@"', () => {
   it('read back and written again keeps exactly one zero-width space', () => {
-    const def = GENERATOR_ENTRIES.find((e) => e.name === 'help-tag-line')!.def
-    const code = generatePlugin(def)
-    const help = PluginParser.parsePlugin(code, `${def.meta.name}.js`).meta.help
-    const again = generatePlugin({ ...def, meta: { ...def.meta, help } })
+    const definition = generatorEntry('help-tag-line')
+    const code = generatePlugin(definition)
+    const help = PluginParser.parsePlugin(code, `${definition.meta.name}.js`).meta.help
+    const again = generatePlugin({ ...definition, meta: { ...definition.meta, help } })
     const zwsp = String.fromCodePoint(0x20_0b)
 
     expect(code).toContain(` * ${zwsp}@param injected\n`)

@@ -2,10 +2,19 @@
 // components, App or Testing Library, and every test file sits in one of four folders.
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { ESLint } from 'eslint'
-import eslintConfig from '../../eslint.config.mjs'
 import { TEST_DIRS } from '../helpers/test-directories'
+
+const join = (...parts: string[]): string => path.join(...parts)
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+const member = (record: Record<string, unknown>, key: string): unknown => Reflect.get(record, key)
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item: unknown) => typeof item === 'string')
+const configPath = pathToFileURL(join(process.cwd(), 'eslint.config.mjs')).href
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
 const ROUTED_GROUPS = [
@@ -42,66 +51,85 @@ function globToSource(glob: string): string {
   return prefix + escapeRegex(rest) + suffix
 }
 
-const ROUTED = new RegExp(`^(?:${ROUTED_GROUPS.map(globToSource).join('|')})$`)
+const ROUTED = new RegExp(`^(?:${ROUTED_GROUPS.map((group) => globToSource(group)).join('|')})$`)
 
 const SPECIFIER_PATTERNS = [
-  /\bfrom\s+['"]([^'"]+)['"]/g,
-  /\bimport\s+['"]([^'"]+)['"]/g,
-  /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g,
-  /\brequire\(\s*['"]([^'"]+)['"]\s*\)/g,
-  /\bvi\.mock\(\s*['"]([^'"]+)['"]/g
+  /\bfrom\s+['"][^'"]+['"]/g,
+  /\bimport\s+['"][^'"]+['"]/g,
+  /\bimport\(\s*['"][^'"]+['"]\s*\)/g,
+  /\brequire\(\s*['"][^'"]+['"]\s*\)/g,
+  /\bvi\.mock\(\s*['"][^'"]+['"]/g
 ]
 
-const ENV_PRAGMA = '@vitest-' + 'environment'
-const MODULE_ONLY_SYNTAX = 'import' + '.meta'
+const ENV_PRAGMA = ['@vitest-', 'environment'].join('')
+const MODULE_ONLY_SYNTAX = ['import', '.meta'].join('')
 
 const TESTS_ROOT = join(process.cwd(), 'tests')
 
-const allFiles = (readdirSync(TESTS_ROOT, { recursive: true }) as string[])
-  .map((p) => p.replaceAll('\\', '/'))
-  .filter((p) => /\.(ts|tsx)$/.test(p))
-const testFiles = allFiles.filter((p) => /\.test\.(ts|tsx)$/.test(p))
-const read = (rel: string): string => readFileSync(join(TESTS_ROOT, rel), 'utf8')
+const allFiles = readdirSync(TESTS_ROOT, { recursive: true })
+  .map((entry) => (typeof entry === 'string' ? entry : entry.toString('utf8')))
+  .map((entry) => entry.replaceAll('\\', '/'))
+  .filter((p) => /\.(?:ts|tsx)$/.test(p))
+const testFiles = allFiles.filter((p) => /\.test\.(?:ts|tsx)$/.test(p))
+const read = (relative: string): string => readFileSync(join(TESTS_ROOT, relative), 'utf8')
 
 function specifiers(source: string): string[] {
   const found: string[] = []
   for (const pattern of SPECIFIER_PATTERNS) {
-    for (const m of source.matchAll(pattern)) found.push(m[1])
+    for (const match of source.matchAll(pattern)) {
+      const specifier = /['"]([^'"]+)['"]/.exec(match[0])?.at(1)
+      if (specifier === undefined) throw new Error('Import match has no specifier')
+      found.push(specifier)
+    }
   }
   return found
 }
 
+function routedImports(): { importsScanned: number; routedOutsideDom: string[] } {
+  let importsScanned = 0
+  const routedOutsideDom: string[] = []
+  for (const file of allFiles) {
+    if (DOM_BOUND_DIRS.has(file.split('/', 1).at(0) ?? '')) continue
+    const imports = specifiers(read(file))
+    for (const spec of imports) {
+      importsScanned++
+      if (ROUTED.test(spec)) routedOutsideDom.push(`${file}: ${spec}`)
+    }
+  }
+  return { importsScanned, routedOutsideDom }
+}
+
+function fileCounts(): {
+  counts: Record<(typeof TEST_DIRS)[number], number>
+  misplaced: string[]
+} {
+  const counts = { unit: 0, integration: 0, dom: 0, golden: 0 }
+  const misplaced: string[] = []
+  for (const file of testFiles) {
+    const first = file.split('/', 1).at(0)
+    const category = TEST_DIRS.find((directory) => directory === first)
+    if (category === undefined) misplaced.push(file)
+    else counts[category]++
+  }
+  return { counts, misplaced }
+}
+
 describe('test layout', () => {
   it('places every test file in unit, integration, dom or golden', () => {
-    const counts = { unit: 0, integration: 0, dom: 0, golden: 0 }
-    const misplaced: string[] = []
-    for (const file of testFiles) {
-      const first = file.split('/', 1)[0]
-      if ((TEST_DIRS as readonly string[]).includes(first)) counts[first as keyof typeof counts]++
-      else misplaced.push(file)
-    }
-    const fixtureTests = testFiles.filter((f) => f.startsWith('fixtures/'))
+    const { counts, misplaced } = fileCounts()
+    const fixtureTests = testFiles.filter((file) => file.startsWith('fixtures/'))
+    const { importsScanned, routedOutsideDom } = routedImports()
 
-    let importsScanned = 0
-    const routedOutsideDom: string[] = []
-    for (const file of allFiles) {
-      if (DOM_BOUND_DIRS.has(file.split('/', 1)[0])) continue
-      for (const spec of specifiers(read(file))) {
-        importsScanned++
-        if (ROUTED.test(spec)) routedOutsideDom.push(`${file}: ${spec}`)
-      }
-    }
-
-    console.log(
-      `test layout: files ${testFiles.length} (unit ${counts.unit}, integration ${counts.integration}, ` +
-        `dom ${counts.dom}, golden ${counts.golden}); imports scanned ${importsScanned}`
+    process.stdout.write(
+      `test layout: files ${String(testFiles.length)} (unit ${String(counts.unit)}, integration ${String(counts.integration)}, ` +
+        `dom ${String(counts.dom)}, golden ${String(counts.golden)}); imports scanned ${String(importsScanned)}\n`
     )
 
     expect(testFiles.length).toBeGreaterThan(0)
     expect(importsScanned).toBeGreaterThan(0)
-    expect(misplaced).toEqual([])
-    expect(fixtureTests).toEqual([])
-    expect(routedOutsideDom).toEqual([])
+    expect(misplaced).toStrictEqual([])
+    expect(fixtureTests).toStrictEqual([])
+    expect(routedOutsideDom).toStrictEqual([])
   })
 
   // Skipped, todo and expected-to-fail tests are counted from the run itself, by
@@ -111,37 +139,51 @@ describe('test layout', () => {
     const helperModuleSyntax = allFiles.filter(
       (f) => f.startsWith('helpers/') && read(f).includes(MODULE_ONLY_SYNTAX)
     )
-    console.log(
-      `test layout: environment pragmas ${pragmas.length}, ` +
-        `module-only syntax in shared helpers ${helperModuleSyntax.length}`
+    process.stdout.write(
+      `test layout: environment pragmas ${String(pragmas.length)}, ` +
+        `module-only syntax in shared helpers ${String(helperModuleSyntax.length)}\n`
     )
 
-    expect(pragmas).toEqual([])
-    expect(helperModuleSyntax).toEqual([])
+    expect(pragmas).toStrictEqual([])
+    expect(helperModuleSyntax).toStrictEqual([])
   })
 
-  it('mirrors the routed list in the ESLint routing block', () => {
-    interface Block {
-      files?: string[]
-      ignores?: string[]
-      rules?: Record<string, unknown>
-    }
-    const block = (eslintConfig as Block[]).find(
-      (b) =>
-        b.rules?.['no-restricted-imports'] !== undefined &&
-        (b.files ?? []).some((f) => f.startsWith('tests/'))
-    )
+  it('mirrors the routed list in the ESLint routing block', async () => {
+    expect.assertions(4)
+
+    const moduleValue: unknown = await import(configPath)
+    const config = isRecord(moduleValue) ? member(moduleValue, 'default') : undefined
+    const blocks: unknown[] = Array.isArray(config) ? config : []
+    const block = blocks.find((candidate) => {
+      if (!isRecord(candidate)) return false
+      const rules = member(candidate, 'rules')
+      const files = member(candidate, 'files')
+      return (
+        isRecord(rules) &&
+        rules['no-restricted-imports'] !== undefined &&
+        isStringArray(files) &&
+        files.some((file) => file.startsWith('tests/'))
+      )
+    })
 
     expect(block).toBeDefined()
-    expect(block!.ignores).toEqual(['tests/dom/**', 'tests/golden/**'])
+    expect(isRecord(block) ? member(block, 'ignores') : undefined).toStrictEqual([
+      'tests/dom/**',
+      'tests/golden/**'
+    ])
 
-    const [, options] = block!.rules!['no-restricted-imports'] as [
-      string,
-      { patterns: { group: string[] }[] }
-    ]
+    const blockRules = isRecord(block) ? member(block, 'rules') : undefined
+    const rules = isRecord(blockRules) ? blockRules : {}
+    const restriction = rules['no-restricted-imports']
+    const options: unknown = Array.isArray(restriction) ? restriction.at(1) : undefined
+    const patterns = isRecord(options) ? member(options, 'patterns') : undefined
+    const firstPattern: unknown = Array.isArray(patterns) ? patterns.at(0) : undefined
+    const group = isRecord(firstPattern) ? member(firstPattern, 'group') : undefined
 
-    expect(options.patterns).toHaveLength(1)
-    expect([...options.patterns[0].group].sort()).toEqual([...ROUTED_GROUPS].sort())
+    expect(patterns).toHaveLength(1)
+    expect(
+      isStringArray(group) ? group.toSorted((a, b) => a.localeCompare(b)) : group
+    ).toStrictEqual([...ROUTED_GROUPS].toSorted((a, b) => a.localeCompare(b)))
   })
 
   it('reports routed imports outside the DOM folders', { timeout: 60_000 }, async () => {
@@ -152,12 +194,14 @@ describe('test layout', () => {
     ]
     const eslint = new ESLint({ cwd: process.cwd() })
     const routedMessages = async (source: string, filePath: string): Promise<number> => {
-      const [result] = await eslint.lintText(source, { filePath: join(process.cwd(), filePath) })
+      const results = await eslint.lintText(source, { filePath: join(process.cwd(), filePath) })
+      const result = results.at(0)
+      if (result === undefined) throw new Error('ESLint returned no result')
       return result.messages.filter((m) => m.ruleId === 'no-restricted-imports').length
     }
     for (const source of sources) {
-      expect(await routedMessages(source, 'tests/unit/test-layout.test.ts')).toBe(1)
-      expect(await routedMessages(source, 'tests/dom/app-close.test.tsx')).toBe(0)
+      await expect(routedMessages(source, 'tests/unit/test-layout.test.ts')).resolves.toBe(1)
+      await expect(routedMessages(source, 'tests/dom/app-close.test.tsx')).resolves.toBe(0)
     }
   })
 })

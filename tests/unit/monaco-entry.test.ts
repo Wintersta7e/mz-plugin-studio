@@ -3,13 +3,13 @@
 // every other source file imports the editor's types only, and its notices ship
 import { describe, expect, it } from 'vitest'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { dirname, join, relative, resolve } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import * as ts from 'typescript'
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const SRC = join(ROOT, 'src')
-const RENDERER = join(SRC, 'renderer/src')
+const SRC = path.join(ROOT, 'src')
+const RENDERER = path.join(SRC, 'renderer/src')
 const SETUP_NAME = 'monaco-setup'
 const ENTRY = 'src/renderer/src/main.tsx'
 const SETUP = 'src/renderer/src/lib/monaco-setup.ts'
@@ -19,49 +19,61 @@ const HOSTS = [
   'src/renderer/src/components/preview/DiffView.tsx'
 ]
 const NOTICES_MARK = 'THIRD-PARTY SOFTWARE NOTICES AND INFORMATION'
+const SOURCE_FILE = /\.tsx?$/
 
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) return sourceFiles(path)
-    return /\.(ts|tsx)$/.test(entry.name) ? [path] : []
-  })
+function sourceFiles(): string[] {
+  return readdirSync(SRC, { withFileTypes: true, recursive: true })
+    .filter((entry) => entry.isFile() && SOURCE_FILE.test(entry.name))
+    .map((entry) => path.join(entry.parentPath, entry.name))
 }
 
-const rel = (file: string): string => relative(ROOT, file).replaceAll('\\', '/')
+const relativePath = (file: string): string => path.relative(ROOT, file).replaceAll('\\', '/')
+
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
 
 function parse(file: string): ts.SourceFile {
   return ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)
 }
 
-/** Import and re-export declarations with their specifier and whether they carry values */
+const specifier = (node: ts.Expression): string => (ts.isStringLiteral(node) ? node.text : '')
+
+/**
+Import and re-export declarations with their specifier and whether they carry values
+*/
 function imports(source: ts.SourceFile): { from: string; value: boolean }[] {
   return source.statements.flatMap((statement) => {
     if (ts.isImportDeclaration(statement)) {
-      const from = (statement.moduleSpecifier as ts.StringLiteral).text
-      return [{ from, value: !statement.importClause?.isTypeOnly }]
+      const isValue = statement.importClause?.phaseModifier !== ts.SyntaxKind.TypeKeyword
+      return [{ from: specifier(statement.moduleSpecifier), value: isValue }]
     }
-    if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) {
-      const from = (statement.moduleSpecifier as ts.StringLiteral).text
-      return [{ from, value: !statement.isTypeOnly }]
-    }
-    return []
+    return ts.isExportDeclaration(statement) && statement.moduleSpecifier !== undefined
+      ? [{ from: specifier(statement.moduleSpecifier), value: !statement.isTypeOnly }]
+      : []
   })
 }
 
 const isLocal = (from: string): boolean => from.startsWith('.') || from.startsWith('@/')
 
-/** The source file a relative or `@/` specifier names, if it is one */
+/**
+The source file a relative or `@/` specifier names, if it is one
+*/
 function resolveSource(importer: string, from: string): string | undefined {
   if (!isLocal(from)) return undefined
   const base = from.startsWith('@/')
-    ? join(RENDERER, from.slice(2))
-    : resolve(dirname(importer), from)
-  const candidates = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map((ext) => base + ext)
-  return candidates.find((file) => /\.(ts|tsx)$/.test(file) && existsSync(file))
+    ? path.join(RENDERER, from.slice(2))
+    : path.resolve(path.dirname(importer), from)
+  const candidates = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map(
+    (extension) => base + extension
+  )
+  return candidates.find((file) => SOURCE_FILE.test(file) && existsSync(file))
 }
 
-/** Every source file and package the entry reaches through value imports; `import()` is not one */
+/**
+Every source file and package the entry reaches through value imports; `import()` is not one
+*/
 function staticGraph(entry: string): { files: Set<string>; packages: Set<string> } {
   const files = new Set<string>()
   const packages = new Set<string>()
@@ -69,7 +81,8 @@ function staticGraph(entry: string): { files: Set<string>; packages: Set<string>
   for (let file = pending.pop(); file !== undefined; file = pending.pop()) {
     if (files.has(file)) continue
     files.add(file)
-    for (const { from, value } of imports(parse(file))) {
+    const declarations = imports(parse(file))
+    for (const { from, value } of declarations) {
       if (!value) continue
       const target = resolveSource(file, from)
       if (target !== undefined) pending.push(target)
@@ -82,55 +95,68 @@ function staticGraph(entry: string): { files: Set<string>; packages: Set<string>
 const isEditorPackage = (from: string): boolean =>
   from === 'monaco-editor' || from.startsWith('monaco-editor/')
 
+/**
+A member of a value parsed from JSON; undefined when the value holds no such member.
+*/
+function member(value: unknown, key: string): unknown {
+  return typeof value === 'object' && value !== null ? Reflect.get(value, key) : undefined
+}
+
 describe('code editor entry', () => {
   it('is imported first by each editor host and nowhere else', () => {
-    const files = sourceFiles(SRC)
+    const files = sourceFiles()
     const importers = files.filter(
-      (file) => rel(file) !== SETUP && readFileSync(file, 'utf8').includes(SETUP_NAME)
+      (file) => relativePath(file) !== SETUP && readFileSync(file, 'utf8').includes(SETUP_NAME)
     )
-    console.log(`monaco entry: src files scanned ${files.length}, importers ${importers.length}`)
+    process.stdout.write(
+      `monaco entry: src files scanned ${String(files.length)}, ` +
+        `importers ${String(importers.length)}\n`
+    )
 
     expect(files.length).toBeGreaterThan(0)
-    expect(importers.map(rel).sort()).toEqual([...HOSTS].sort())
-    expect(readFileSync(join(ROOT, SETUP), 'utf8')).not.toContain(SETUP_NAME)
+    expect(importers.map((file) => relativePath(file)).toSorted(byCodeUnit)).toStrictEqual(
+      HOSTS.toSorted(byCodeUnit)
+    )
+    expect(readFileSync(path.join(ROOT, SETUP), 'utf8')).not.toContain(SETUP_NAME)
 
-    for (const host of HOSTS) {
-      const first = imports(parse(join(ROOT, host)))[0]?.from ?? ''
+    const firstImports = HOSTS.map((host) => {
+      const first = imports(parse(path.join(ROOT, host))).at(0)?.from ?? ''
+      return [host, resolveSource(path.join(ROOT, host), first)]
+    })
 
-      expect(resolveSource(join(ROOT, host), first), host).toBe(join(ROOT, SETUP))
-    }
+    expect(firstImports).toStrictEqual(HOSTS.map((host) => [host, path.join(ROOT, SETUP)]))
   })
 
   it('is not reached from the renderer entry through static imports', () => {
-    const { files, packages } = staticGraph(join(ROOT, ENTRY))
-    console.log(`monaco entry: files reached statically ${files.size}, packages ${packages.size}`)
+    const { files, packages } = staticGraph(path.join(ROOT, ENTRY))
+    process.stdout.write(
+      `monaco entry: files reached statically ${String(files.size)}, ` +
+        `packages ${String(packages.size)}\n`
+    )
 
-    expect(files.has(join(ROOT, 'src/renderer/src/App.tsx'))).toBe(true)
-    expect([SETUP, ...HOSTS].filter((file) => files.has(join(ROOT, file)))).toEqual([])
+    expect(files.has(path.join(ROOT, 'src/renderer/src/App.tsx'))).toBe(true)
+    expect([SETUP, ...HOSTS].filter((file) => files.has(path.join(ROOT, file)))).toStrictEqual([])
 
     const editorPackages = [...packages].filter(
       (from) => isEditorPackage(from) || from === '@monaco-editor/react'
     )
 
-    expect(editorPackages).toEqual([])
+    expect(editorPackages).toStrictEqual([])
   })
 
   it('keeps every other editor import type-only', () => {
-    const valueImporters = sourceFiles(SRC).filter((file) =>
+    const valueImporters = sourceFiles().filter((file) =>
       imports(parse(file)).some(({ from, value }) => value && isEditorPackage(from))
     )
 
-    expect(valueImporters.map(rel)).toEqual([SETUP])
+    expect(valueImporters.map((file) => relativePath(file))).toStrictEqual([SETUP])
   })
 
   it('bundles the editor as a build-time package and ships its notices', () => {
-    const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
-      dependencies?: Record<string, string>
-      devDependencies?: Record<string, string>
-    }
+    const manifest: unknown = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 
-    expect(pkg.devDependencies?.['monaco-editor']).toBeDefined()
-    expect(pkg.dependencies?.['monaco-editor']).toBeUndefined()
-    expect(readFileSync(join(ROOT, 'THIRD_PARTY_LICENSES.md'), 'utf8')).toContain(NOTICES_MARK)
+    expect(member(member(manifest, 'devDependencies'), 'monaco-editor')).toBeDefined()
+    expect(member(member(manifest, 'dependencies'), 'monaco-editor')).toBeUndefined()
+    expect(readFileSync(path.join(ROOT, 'THIRD_PARTY_LICENSES.md'), 'utf8')).toContain(NOTICES_MARK)
   })
 })

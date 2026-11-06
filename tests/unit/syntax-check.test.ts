@@ -7,12 +7,13 @@ import { compileCheck } from '../../src/main/services/syntax-check'
 // Valid code the compiler runs out of stack on (V8 stops near 500 nested function expressions)
 const DEEP = '(function(){'.repeat(600) + '})()'.repeat(600)
 
-describe('compileCheck', () => {
+describe(compileCheck, () => {
   it('compiles without running the code', () => {
-    const scope = globalThis as { __compileOnlySentinel?: number }
-
     expect(compileCheck('globalThis.__compileOnlySentinel = 1', 'Probe.js')).toBeNull()
-    expect(scope.__compileOnlySentinel).toBeUndefined()
+
+    const sentinel: unknown = Reflect.get(globalThis, '__compileOnlySentinel')
+
+    expect(sentinel).toBeUndefined()
   })
 
   it('names the line of a syntax error', () => {

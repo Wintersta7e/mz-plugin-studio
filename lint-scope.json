@@ -307,7 +307,6 @@
         "tests/unit/evaluate-plugin.test.ts",
         "tests/unit/fixture-set.test.ts",
         "tests/unit/injection.test.ts",
-        "tests/unit/ipc-callers.test.ts",
         "tests/unit/package-scripts.test.ts",
         "tests/unit/param-io.test.ts",
         "tests/unit/plugin-output.test.ts",
@@ -509,7 +508,7 @@
         "tests/integration/ignore-rules.test.ts",
         "tests/integration/release-ci-gate.test.ts",
         "tests/integration/strictness-status.test.ts",
-        "tests/unit/docs-sync.test.ts",
+        "tests/unit/documentation-sync.test.ts",
         "tests/unit/e2e-harness.test.ts",
         "tests/unit/package-scripts.test.ts",
         "tests/unit/static-scope.test.ts"
