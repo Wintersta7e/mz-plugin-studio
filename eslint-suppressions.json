@@ -1,87 +1,4 @@
 {
-  "e2e/fixtures/app.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 1
-    },
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/only-throw-error": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 4
-    },
-    "@typescript-eslint/require-await": {
-      "count": 3
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 6
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 6
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 1
-    },
-    "sonarjs/no-nested-assignment": {
-      "count": 1
-    },
-    "sonarjs/no-unenclosed-multiline-block": {
-      "count": 1
-    },
-    "sonarjs/void-use": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/isolated-functions": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 10
-    },
-    "unicorn/no-return-array-push": {
-      "count": 5
-    },
-    "unicorn/no-unnecessary-array-flat-map": {
-      "count": 2
-    },
-    "unicorn/no-useless-spread": {
-      "count": 1
-    },
-    "unicorn/no-useless-undefined": {
-      "count": 2
-    },
-    "unicorn/prefer-at": {
-      "count": 2
-    },
-    "unicorn/prefer-await": {
-      "count": 5
-    },
-    "unicorn/prefer-global-this": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 19
-    }
-  },
   "e2e/flows/boot.e2e.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
@@ -132,47 +49,6 @@
       "count": 1
     }
   },
-  "e2e/flows/boundary.e2e.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 7
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 8
-    },
-    "playwright/expect-expect": {
-      "count": 1
-    },
-    "playwright/no-conditional-in-test": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/isolated-functions": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/prefer-await": {
-      "count": 2
-    },
-    "unicorn/prefer-global-this": {
-      "count": 5
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-then-catch": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    }
-  },
   "e2e/flows/close.e2e.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
@@ -201,9 +77,6 @@
       "count": 1
     },
     "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
       "count": 1
     },
     "unicorn/no-await-expression-member": {
@@ -254,29 +127,6 @@
       "count": 1
     }
   },
-  "e2e/flows/harness.e2e.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "playwright/no-conditional-in-test": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/isolated-functions": {
-      "count": 4
-    },
-    "unicorn/no-await-expression-member": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 4
-    }
-  },
   "e2e/flows/profile.e2e.ts": {
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
@@ -291,9 +141,6 @@
       "count": 1
     },
     "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
       "count": 1
     },
     "unicorn/no-await-expression-member": {
@@ -324,9 +171,6 @@
     },
     "unicorn/max-nested-calls": {
       "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 1
     },
     "unicorn/no-array-sort": {
       "count": 2

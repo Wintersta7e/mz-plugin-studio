@@ -6,7 +6,6 @@
     "composite": true,
     "types": ["node"],
     "allowJs": true,
-    "exactOptionalPropertyTypes": false,
     "noPropertyAccessFromIndexSignature": false,
     "noUncheckedIndexedAccess": false
   }

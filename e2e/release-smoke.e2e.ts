@@ -8,7 +8,16 @@ import { pathToFileURL } from 'node:url'
 import type { Page } from '@playwright/test'
 import { PRODUCTION_CSP } from '../src/main/csp'
 import { readV160Payloads } from '../tests/helpers/persist-v160'
-import { expect, newPlugin, projectTitle, readArtifacts, test, type Cdp } from './fixtures/app'
+import {
+  expect,
+  field,
+  isList,
+  newPlugin,
+  projectTitle,
+  readArtifacts,
+  test,
+  type Cdp
+} from './fixtures/app'
 
 interface TargetTree {
   page: string
@@ -203,15 +212,15 @@ function readReleaseFuses(executable: string): { status: number | null; output: 
 
 /** Attaches to the app window's target; workers below it attach on their own once watched */
 async function attachPage(cdp: Cdp): Promise<TargetTree> {
-  const { targetInfos } = await cdp.send<{ targetInfos: { targetId: string; type: string }[] }>(
-    'Target.getTargets'
-  )
-  const pages = targetInfos.filter(({ type }) => type === 'page')
+  const { targetInfos } = await cdp.send('Target.getTargets')
+  const targets = isList(targetInfos) ? targetInfos : []
+  const pages = targets.filter((target) => field(target, 'type') === 'page')
   expect(pages).toHaveLength(1)
-  const { sessionId: page } = await cdp.send<{ sessionId: string }>('Target.attachToTarget', {
-    targetId: pages[0]?.targetId,
+  const { sessionId: page } = await cdp.send('Target.attachToTarget', {
+    targetId: field(pages.at(0), 'targetId'),
     flatten: true
   })
+  if (typeof page !== 'string') throw new TypeError('Target.attachToTarget answered no session')
   const sessions = new Set([page])
   const preparers: ((session: string) => Promise<unknown>)[] = []
   const autoAttach = { autoAttach: true, flatten: true, waitForDebuggerOnStart: false }

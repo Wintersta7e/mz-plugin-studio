@@ -17,7 +17,7 @@ import {
   mtimeNs,
   openFromBrowser,
   openProject,
-  pluginsDir,
+  pluginsDirectory,
   queueDialog,
   save,
   saveAndWaitForWrite,
@@ -66,7 +66,7 @@ async function boxes(app: ElectronApplication): Promise<Box[]> {
 test('saves a new plugin with one parameter into the project', async ({ twin }) => {
   const { app, page } = twin
   const project = await loadFixtureProject(app, page)
-  const before = readdirSync(pluginsDir(project))
+  const before = readdirSync(pluginsDirectory(project))
 
   await newPlugin(page)
   await page.getByTestId('editor-tab-parameters').click()
@@ -74,9 +74,9 @@ test('saves a new plugin with one parameter into the project', async ({ twin }) 
   await save(page)
 
   await expect
-    .poll(() => readdirSync(pluginsDir(project)).sort())
+    .poll(() => readdirSync(pluginsDirectory(project)).sort())
     .toEqual([...before, 'NewPlugin.js'].sort())
-  const text = readFileSync(join(pluginsDir(project), 'NewPlugin.js'), 'utf8')
+  const text = readFileSync(join(pluginsDirectory(project), 'NewPlugin.js'), 'utf8')
   expect(compileCheck(text, 'NewPlugin.js')).toBeNull()
   const main = findAnnotationBlocks(text).filter(({ kind }) => kind === 'main')
   expect(main).toHaveLength(1)
@@ -100,7 +100,7 @@ test('saves imported LF, CRLF and BOM plugins byte-identical', async ({ twin }) 
 
   for (const file of ['Fixture_HandWritten.js', 'Fixture_HandWritten_CRLF.js', 'Fixture_Bom.js']) {
     await openFromBrowser(page, file)
-    const target = join(pluginsDir(project), file)
+    const target = join(pluginsDirectory(project), file)
     await saveAndWaitForWrite(page, target)
     expect(readFileSync(target).equals(readFileSync(fixturePath('js', 'plugins', file)))).toBe(true)
   }
@@ -123,7 +123,7 @@ test('saves an imported plugin byte-identical after a relaunch', async ({ twin }
     await expect.poll(() => tabNames(page)).toEqual(tabs)
     await openProject(app, page, project)
 
-    const target = join(pluginsDir(project), file)
+    const target = join(pluginsDirectory(project), file)
     await saveAndWaitForWrite(page, target)
     expect(readFileSync(target).equals(readFileSync(fixturePath('js', 'plugins', file)))).toBe(true)
     await assertDialogsDrained(app)
@@ -138,7 +138,7 @@ test('asks before overwriting a different file and re-checks after the prompt', 
 }) => {
   const { app, page } = twin
   const project = await loadFixtureProject(app, page)
-  const target = join(pluginsDir(project), 'Fixture_Bom.js')
+  const target = join(pluginsDirectory(project), 'Fixture_Bom.js')
   const original = readFileSync(target)
 
   await newPlugin(page)

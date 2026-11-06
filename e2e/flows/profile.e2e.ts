@@ -14,7 +14,7 @@ import {
   fixtureProjectFor,
   mtimeNs,
   openProject,
-  pluginsDir,
+  pluginsDirectory,
   queueDialog,
   save,
   saveAndWaitForWrite,
@@ -109,7 +109,7 @@ async function reload(page: Page): Promise<void> {
 }
 
 const target = (project: string, plugin: CapturedPlugin): string =>
-  join(pluginsDir(project), `${plugin.meta.name}.js`)
+  join(pluginsDirectory(project), `${plugin.meta.name}.js`)
 
 const tracked = (plugin: CapturedPlugin): Buffer =>
   readFileSync(fixturePath('js', 'plugins', `${plugin.meta.name}.js`))

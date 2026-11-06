@@ -11,7 +11,7 @@ import {
   launchTwin,
   loadFixtureProject,
   newPlugin,
-  pluginsDir,
+  pluginsDirectory,
   queueDialog,
   settle,
   stubDialogs,
@@ -77,6 +77,6 @@ test('exports a plugin from the plugins folder of the open project', async ({ tw
   await expect.poll(async () => (await shown(app, 'showSaveDialog')).length).toBe(1)
   const [save] = await shown(app, 'showSaveDialog')
   process.stdout.write(`e2e save-file default: ${String(save.defaultPath)}\n`)
-  expect(save.defaultPath).toBe(join(pluginsDir(project), 'Synthetic_Export.js'))
+  expect(save.defaultPath).toBe(join(pluginsDirectory(project), 'Synthetic_Export.js'))
   await assertDialogsDrained(app)
 })

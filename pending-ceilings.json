@@ -1,8 +1,5 @@
 {
   "e2e": {
-    "exactOptionalPropertyTypes": {
-      "e2e/fixtures/app.ts": 2
-    },
     "noPropertyAccessFromIndexSignature": {
       "e2e/flows/dialog-default-path.e2e.ts": 4
     },

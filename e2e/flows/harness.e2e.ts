@@ -1,10 +1,10 @@
 // The harness's own guarantees: a native dialog nobody answered fails the test, queued answers
 // are given as the test asked, and an app holding unsaved work still shuts down in time.
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import path from 'node:path'
+import type { ElectronApplication } from '@playwright/test'
 import {
   assertDialogsDrained,
-  type AppWindow,
   dialogCalls,
   expect,
   queueDialog,
@@ -13,6 +13,15 @@ import {
   TEARDOWN_BOUND_MS,
   test
 } from '../fixtures/app'
+
+/**
+The app's process id, failing when it has none
+*/
+function pidOf(app: ElectronApplication): number {
+  const { pid } = app.process()
+  if (pid === undefined) throw new Error('the app process has no pid')
+  return pid
+}
 
 const isRunning = (pid: number): boolean => {
   try {
@@ -25,9 +34,7 @@ const isRunning = (pid: number): boolean => {
 
 test('fails a dialog call on an empty queue, naming the method', async ({ twin }) => {
   const { app, page } = twin
-  const call = page.evaluate(() =>
-    (window as unknown as AppWindow).api.dialog.message({ message: 'unanswered' })
-  )
+  const call = page.evaluate(async () => globalThis.api.dialog.message({ message: 'unanswered' }))
   await expect(call).rejects.toThrow('e2e dialog stub: empty queue for showMessageBox')
   await expect(assertDialogsDrained(app)).rejects.toThrow('showMessageBox')
   // Each failure is reported once
@@ -36,7 +43,7 @@ test('fails a dialog call on an empty queue, naming the method', async ({ twin }
 
 test('answers message boxes from their queue as asked', async ({ twin }) => {
   const { app, page } = twin
-  const written = join(runRoot(), 'written-before-answer.txt')
+  const written = path.join(runRoot(), 'written-before-answer.txt')
   const buttons = ['Discard', 'Cancel']
   await queueDialog(app, 'showMessageBox', 'cancel', { path: written, content: 'changed on disk' })
   await queueDialog(app, 'showMessageBox', 'confirm')
@@ -44,9 +51,9 @@ test('answers message boxes from their queue as asked', async ({ twin }) => {
 
   const answers = await page.evaluate(
     async (options) => [
-      await (window as unknown as AppWindow).api.dialog.message(options),
-      await (window as unknown as AppWindow).api.dialog.message(options),
-      await (window as unknown as AppWindow).api.dialog.message(options)
+      await globalThis.api.dialog.message(options),
+      await globalThis.api.dialog.message(options),
+      await globalThis.api.dialog.message(options)
     ],
     { message: 'queued', buttons }
   )
@@ -72,13 +79,15 @@ test('tears down an app with unsaved work within the bound', async ({ twin }) =>
     for (const window of BrowserWindow.getAllWindows()) window.close()
   })
   await expect
-    .poll(async () => (await dialogCalls(app)).map(({ method }) => method))
+    .poll(async () => {
+      const calls = await dialogCalls(app)
+      return calls.map(({ method }) => method)
+    })
     .toEqual(['showMessageBoxSync'])
   expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
   await expect(page.getByTestId('meta-name')).toHaveValue('UnsavedWork')
 
-  const { pid } = app.process()
-  if (pid === undefined) throw new Error('the app process has no pid')
+  const pid = pidOf(app)
   const started = Date.now()
   await teardown(app)
   expect(Date.now() - started).toBeLessThan(TEARDOWN_BOUND_MS)
