@@ -146,12 +146,27 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   'message-choice-handler': [
     { modType: 'columns', numColumns: null, choiceWidth: null },
     { modType: 'style', highlightColor: null, windowOpacity: null },
-    { modType: 'behavior', wrapAround: null, rememberChoice: null }
+    { modType: 'behavior', wrapAround: null, rememberChoice: null },
+    { choicePosition: 'left', numColumns: null },
+    { choicePosition: 'above', numColumns: null },
+    { choicePosition: 'below', numColumns: null },
+    { choicePosition: 'right', numColumns: null },
+    {
+      modType: 'style',
+      highlightColor: 40,
+      normalColor: 40,
+      disabledColor: 40,
+      windowOpacity: 300,
+      choiceWidth: null
+    }
   ],
   'message-custom-text-code': [
     { hasParameter: null, effectType: null },
     { codeType: null, replacementText: null },
-    { codeType: 'effect', hasParameter: null, effectType: null }
+    { codeType: 'effect', hasParameter: null, effectType: null },
+    { codeType: 'effect', effectType: 'size', hasParameter: null },
+    { codeType: 'effect', effectType: 'icon', replacementText: null },
+    { codeType: 'effect', effectType: 'custom', replacementText: null }
   ],
   'message-window-mod': [
     { positionType: 'custom', customX: null, customY: 'abc' },
@@ -160,7 +175,12 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { modType: 'background', bgType: 'custom', bgColor: null },
     { modType: 'background', bgType: 'custom', bgColor: 42 },
     { modType: 'opacity', opacityValue: null },
-    { modType: 'nameBox', nameBoxPosition: null }
+    { modType: 'nameBox', nameBoxPosition: null },
+    { positionType: 'middle', customX: null },
+    { positionType: 'bottom', customY: null },
+    { modType: 'nameBox', nameBoxPosition: 'right', positionType: null },
+    { modType: 'nameBox', nameBoxPosition: 'left', positionType: null },
+    { modType: 'size', windowWidth: 2000, numLines: null }
   ],
   'method-alias-basic': [{ timing: null }],
   'party-management': [

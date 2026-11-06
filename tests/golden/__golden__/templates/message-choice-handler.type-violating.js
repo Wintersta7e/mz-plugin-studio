@@ -102,3 +102,103 @@ Window_ChoiceList.prototype.cursorUp = function(wrap) {
     }
 };
 
+
+// ==== case: type-violating: choicePosition="left",numColumns=null {"modType":"position","choicePosition":"left","numColumns":null,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Left side, aligned with message
+    this.x = messageWindow.x;
+};
+
+// ==== case: type-violating: choicePosition="above",numColumns=null {"modType":"position","choicePosition":"above","numColumns":null,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Above message window
+    this.x = (Graphics.boxWidth - this.width) / 2;
+    this.y = messageWindow.y - this.height;
+    if (this.y < 0) this.y = 0;
+};
+
+// ==== case: type-violating: choicePosition="below",numColumns=null {"modType":"position","choicePosition":"below","numColumns":null,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Below message window
+    this.x = (Graphics.boxWidth - this.width) / 2;
+    this.y = messageWindow.y + messageWindow.height;
+    if (this.y + this.height > Graphics.boxHeight) {
+        this.y = Graphics.boxHeight - this.height;
+    }
+};
+
+// ==== case: type-violating: choicePosition="right",numColumns=null {"modType":"position","choicePosition":"right","numColumns":null,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Right side (default)
+    this.x = messageWindow.x + messageWindow.width - this.width;
+};
+
+// ==== case: type-violating: modType="style",highlightColor=40,normalColor=40,disabledColor=40,windowOpacity=300,choiceWidth=null {"modType":"style","choicePosition":"center","numColumns":2,"choiceWidth":null,"highlightColor":40,"normalColor":40,"disabledColor":40,"windowOpacity":300,"wrapAround":true,"rememberChoice":false}
+// rejects: Highlight color index must be between 0 and 31 | Normal text color index must be between 0 and 31 | Disabled color index must be between 0 and 31 | Window opacity must be between 0 and 255
+// Choice Window Visual Style
+// Customizes colors and appearance of the choice window
+
+// Custom colors for choice items
+Window_ChoiceList.prototype.drawItem = function(index) {
+    const rect = this.itemLineRect(index);
+    const choiceName = this.commandName(index);
+    const isEnabled = this.isCommandEnabled(index);
+    const isSelected = index === this.index();
+
+    // Determine text color based on state
+    if (!isEnabled) {
+        this.changeTextColor(ColorManager.textColor(40));
+    } else if (isSelected) {
+        this.changeTextColor(ColorManager.textColor(40));
+    } else {
+        this.changeTextColor(ColorManager.textColor(40));
+    }
+
+    this.drawText(choiceName, rect.x, rect.y, rect.width, 'left');
+    this.resetTextColor();
+};
+
+// Redraw on selection change to update colors
+const _Window_ChoiceList_select = Window_ChoiceList.prototype.select;
+Window_ChoiceList.prototype.select = function(index) {
+    const lastIndex = this.index();
+    _Window_ChoiceList_select.call(this, index);
+    if (lastIndex !== index) {
+        this.refresh();
+    }
+};
+
+// Set window opacity
+const _Window_ChoiceList_updateBackground = Window_ChoiceList.prototype.updateBackground;
+Window_ChoiceList.prototype.updateBackground = function() {
+    _Window_ChoiceList_updateBackground.call(this);
+    this.opacity = 300;
+};
