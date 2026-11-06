@@ -189,6 +189,12 @@ const oldTagValue = (tag: string, flags: string): RegExp =>
   new RegExp(String.raw`${LINE}@${tag}(?!\S)[^\S\r\n]*(.*?)(?=\n)`, flags)
 const TAG_VALUE_PIECES = [' ', '\t', '\n', '\r', '\u{2028}', 'a', '@', '*', '/']
 
+// Timeouts at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
+// One to two and a half million generated strings, each read by both readers.
+const ENUMERATION_TIMEOUT_MS = 15_000
+// About a million generated strings, every value of each listed and serialized by both readers.
+const ALL_VALUES_TIMEOUT_MS = 20_000
+
 describe('linear-time help and tag readers match the regular expressions they replace', () => {
   it('help text, any header', () => {
     expect.hasAssertions()
@@ -267,29 +273,37 @@ describe('linear-time help and tag readers match the regular expressions they re
     )
   })
 
-  it('wrapper close at the end of the code', () => {
-    expect.hasAssertions()
+  it(
+    'wrapper close at the end of the code',
+    () => {
+      expect.hasAssertions()
 
-    checkEquivalence(
-      'wrapper close',
-      strings([' ', '\t', '\n', 'a', ';', ')', '}', '('], 7),
-      oldWrapperClose,
-      (s) => PluginParser.matchWrapperClose(s)
-    )
-  })
+      checkEquivalence(
+        'wrapper close',
+        strings([' ', '\t', '\n', 'a', ';', ')', '}', '('], 7),
+        oldWrapperClose,
+        (s) => PluginParser.matchWrapperClose(s)
+      )
+    },
+    ENUMERATION_TIMEOUT_MS
+  )
 })
 
 describe('linear-time tag value readers match the regular expressions they replace', () => {
-  it.each(['author', 'target', 'url'])('%s value, first tag with a line break', (tag) => {
-    expect.hasAssertions()
+  it.each(['author', 'target', 'url'])(
+    '%s value, first tag with a line break',
+    (tag) => {
+      expect.hasAssertions()
 
-    checkEquivalence(
-      `${tag} value`,
-      strings([...TAG_VALUE_PIECES, tag], 6),
-      (s) => oldTagValue(tag, 'i').exec(s)?.at(1),
-      (s) => PluginParser.matchTagValue(s, tag)
-    )
-  })
+      checkEquivalence(
+        `${tag} value`,
+        strings([...TAG_VALUE_PIECES, tag], 6),
+        (s) => oldTagValue(tag, 'i').exec(s)?.at(1),
+        (s) => PluginParser.matchTagValue(s, tag)
+      )
+    },
+    ENUMERATION_TIMEOUT_MS
+  )
 
   it.each(['base', 'orderAfter', 'orderBefore', 'noteParam'])(
     '%s values, every tag with a line break',
@@ -309,7 +323,8 @@ describe('linear-time tag value readers match the regular expressions they repla
         (s) =>
           JSON.stringify(PluginParser.matchTagValues(s, tag).map((v) => [v.index, v.end, v.value]))
       )
-    }
+    },
+    ALL_VALUES_TIMEOUT_MS
   )
 })
 

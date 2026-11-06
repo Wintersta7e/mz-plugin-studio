@@ -224,7 +224,7 @@ describe('strictness status: frozen counts', () => {
     expect(result.status).toBe(0)
   })
 
-  it('(b) passes when the frozen count falls', () => {
+  it('(b) passes when the frozen count falls', { timeout: SPAWN_TIMEOUT_MS }, () => {
     const result = status(makeRepository({ 'eslint-suppressions.json': suppressions(1) }))
 
     expect(result.out).toContain('(parent 2, delta -1)')
@@ -248,14 +248,18 @@ describe('strictness status: frozen counts', () => {
     expect(status(directory).status).toBe(0)
   })
 
-  it('(e) passes a rise that comes with a new version of an imported lint package', () => {
-    const directory = makeRepository({
-      'eslint-suppressions.json': suppressions(3),
-      'package.json': packageJson('1.0.1')
-    })
+  it(
+    '(e) passes a rise that comes with a new version of an imported lint package',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const directory = makeRepository({
+        'eslint-suppressions.json': suppressions(3),
+        'package.json': packageJson('1.0.1')
+      })
 
-    expect(status(directory).status).toBe(0)
-  })
+      expect(status(directory).status).toBe(0)
+    }
+  )
 })
 
 describe('strictness status: suppressions file', () => {
@@ -263,7 +267,7 @@ describe('strictness status: suppressions file', () => {
 
   afterAll(finishDescribe)
 
-  it('(g) fails without a suppressions file', () => {
+  it('(g) fails without a suppressions file', { timeout: SPAWN_TIMEOUT_MS }, () => {
     expect(status(makeRepository({}, ['eslint-suppressions.json'])).status).toBe(1)
   })
 
@@ -387,15 +391,19 @@ describe('strictness status: pending ceilings', () => {
     }
   )
 
-  it('(af) fails a ceiling held as one total rather than per file', () => {
-    const total = '{"web":{"noPropertyAccessFromIndexSignature":1}}'
-    const result = status(makeRepository({ 'pending-ceilings.json': total }))
+  it(
+    '(af) fails a ceiling held as one total rather than per file',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const total = '{"web":{"noPropertyAccessFromIndexSignature":1}}'
+      const result = status(makeRepository({ 'pending-ceilings.json': total }))
 
-    expect(result.out).toContain(
-      'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
-    )
-    expect(result.status).toBe(1)
-  })
+      expect(result.out).toContain(
+        'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
+      )
+      expect(result.status).toBe(1)
+    }
+  )
 
   it('(x) fails a ceiling for a flag that is not pending', () => {
     const stale = ceilings({ ...WEB_CEILING, node: { noUncheckedIndexedAccess: { 'a.ts': 3 } } })
@@ -436,30 +444,38 @@ describe('strictness status: measured base', () => {
 
   afterAll(finishDescribe)
 
-  it('(j) measures uncommitted changes against HEAD, not its parent', () => {
-    const config = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
-    const directory = makeRepository({
-      'eslint-suppressions.json': suppressions(3),
-      'eslint.config.mjs': config
-    })
-    write(directory, { 'eslint-suppressions.json': suppressions(4) })
-    const result = status(directory)
+  it(
+    '(j) measures uncommitted changes against HEAD, not its parent',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const config = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
+      const directory = makeRepository({
+        'eslint-suppressions.json': suppressions(3),
+        'eslint.config.mjs': config
+      })
+      write(directory, { 'eslint-suppressions.json': suppressions(4) })
+      const result = status(directory)
 
-    expect(result.out).toContain('(parent 3, delta +1)')
-    expect(result.status).toBe(1)
-  })
+      expect(result.out).toContain('(parent 3, delta +1)')
+      expect(result.status).toBe(1)
+    }
+  )
 
-  it('(k) passes an uncommitted rise that comes with an uncommitted lint config change', () => {
-    const directory = makeRepository({})
-    write(directory, {
-      'eslint-suppressions.json': suppressions(3),
-      'eslint.config.mjs': "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
-    })
-    const result = status(directory)
+  it(
+    '(k) passes an uncommitted rise that comes with an uncommitted lint config change',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const directory = makeRepository({})
+      write(directory, {
+        'eslint-suppressions.json': suppressions(3),
+        'eslint.config.mjs': "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
+      })
+      const result = status(directory)
 
-    expect(result.out).toContain('(parent 2, delta +1)')
-    expect(result.status).toBe(0)
-  })
+      expect(result.out).toContain('(parent 2, delta +1)')
+      expect(result.status).toBe(0)
+    }
+  )
 
   it('(z) measures a clean tree against the base CI names, so a later commit hides no rise', () => {
     const directory = makeRepository({ 'eslint-suppressions.json': suppressions(50) })
@@ -496,22 +512,30 @@ describe('strictness status: base suppressions', () => {
 
   afterAll(finishDescribe)
 
-  it('(ab) fails a rise in one entry that a fall in another hides from the total', () => {
-    const swapped = { 'index.ts': { 'no-var': { count: 1 }, 'no-eval': { count: 1 } } }
-    const result = status(makeRepository({ 'eslint-suppressions.json': JSON.stringify(swapped) }))
+  it(
+    '(ab) fails a rise in one entry that a fall in another hides from the total',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const swapped = { 'index.ts': { 'no-var': { count: 1 }, 'no-eval': { count: 1 } } }
+      const result = status(makeRepository({ 'eslint-suppressions.json': JSON.stringify(swapped) }))
 
-    expect(result.out).toContain('(parent 2, delta 0)')
-    expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
-    expect(result.status).toBe(1)
-  })
+      expect(result.out).toContain('(parent 2, delta 0)')
+      expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
+      expect(result.status).toBe(1)
+    }
+  )
 
-  it('(ak) counts a base without a suppressions file as zero entries, passing a lint change', () => {
-    const result = sinceBaseWithoutSuppressions({ 'eslint.config.mjs': ALL_RULES_CONFIG })
+  it(
+    '(ak) counts a base without a suppressions file as zero entries, passing a lint change',
+    { timeout: SPAWN_TIMEOUT_MS },
+    () => {
+      const result = sinceBaseWithoutSuppressions({ 'eslint.config.mjs': ALL_RULES_CONFIG })
 
-    expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
-    expect(result.out).toContain('(parent 0, delta +2)')
-    expect(result.status).toBe(0)
-  })
+      expect(result.out).toContain('has no eslint-suppressions.json; its entries count as zero')
+      expect(result.out).toContain('(parent 0, delta +2)')
+      expect(result.status).toBe(0)
+    }
+  )
 
   it(
     '(al) fails the rises over a base without a suppressions file and no lint change',

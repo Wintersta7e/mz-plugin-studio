@@ -16,6 +16,18 @@ const isList = (value: unknown): value is unknown[] => Array.isArray(value)
 const isStringArray = (value: unknown): value is string[] =>
   isList(value) && value.every((item) => typeof item === 'string')
 const configPath = pathToFileURL(join(process.cwd(), 'eslint.config.mjs')).href
+// The ESLint config block that restricts imports in test files.
+const isTestRoutingBlock = (candidate: unknown): boolean => {
+  if (!isRecord(candidate)) return false
+  const rules = member(candidate, 'rules')
+  const files = member(candidate, 'files')
+  return (
+    isRecord(rules) &&
+    rules['no-restricted-imports'] !== undefined &&
+    isStringArray(files) &&
+    files.some((file) => file.startsWith('tests/'))
+  )
+}
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
 const ROUTED_GROUPS = [
@@ -34,6 +46,10 @@ const ROUTED_GROUPS = [
 ]
 
 const DOM_BOUND_DIRS = new Set(['dom', 'golden'])
+
+// Timeout at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
+// Importing the ESLint config loads every lint plugin it names.
+const CONFIG_IMPORT_TIMEOUT_MS = 15_000
 
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -149,43 +165,37 @@ describe('test layout', () => {
     expect(helperModuleSyntax).toStrictEqual([])
   })
 
-  it('mirrors the routed list in the ESLint routing block', async () => {
-    expect.assertions(4)
+  it(
+    'mirrors the routed list in the ESLint routing block',
+    async () => {
+      expect.assertions(4)
 
-    const moduleValue: unknown = await import(configPath)
-    const config = isRecord(moduleValue) ? member(moduleValue, 'default') : undefined
-    const blocks: unknown[] = Array.isArray(config) ? config : []
-    const block = blocks.find((candidate) => {
-      if (!isRecord(candidate)) return false
-      const rules = member(candidate, 'rules')
-      const files = member(candidate, 'files')
-      return (
-        isRecord(rules) &&
-        rules['no-restricted-imports'] !== undefined &&
-        isStringArray(files) &&
-        files.some((file) => file.startsWith('tests/'))
-      )
-    })
+      const moduleValue: unknown = await import(configPath)
+      const config = isRecord(moduleValue) ? member(moduleValue, 'default') : undefined
+      const blocks: unknown[] = Array.isArray(config) ? config : []
+      const block = blocks.find((candidate) => isTestRoutingBlock(candidate))
 
-    expect(block).toBeDefined()
-    expect(isRecord(block) ? member(block, 'ignores') : undefined).toStrictEqual([
-      'tests/dom/**',
-      'tests/golden/**'
-    ])
+      expect(block).toBeDefined()
+      expect(isRecord(block) ? member(block, 'ignores') : undefined).toStrictEqual([
+        'tests/dom/**',
+        'tests/golden/**'
+      ])
 
-    const blockRules = isRecord(block) ? member(block, 'rules') : undefined
-    const rules = isRecord(blockRules) ? blockRules : {}
-    const restriction = rules['no-restricted-imports']
-    const options = isList(restriction) ? restriction.at(1) : undefined
-    const patterns = isRecord(options) ? member(options, 'patterns') : undefined
-    const firstPattern = isList(patterns) ? patterns.at(0) : undefined
-    const group = isRecord(firstPattern) ? member(firstPattern, 'group') : undefined
+      const blockRules = isRecord(block) ? member(block, 'rules') : undefined
+      const rules = isRecord(blockRules) ? blockRules : {}
+      const restriction = rules['no-restricted-imports']
+      const options = isList(restriction) ? restriction.at(1) : undefined
+      const patterns = isRecord(options) ? member(options, 'patterns') : undefined
+      const firstPattern = isList(patterns) ? patterns.at(0) : undefined
+      const group = isRecord(firstPattern) ? member(firstPattern, 'group') : undefined
 
-    expect(patterns).toHaveLength(1)
-    expect(
-      isStringArray(group) ? group.toSorted((a, b) => a.localeCompare(b)) : group
-    ).toStrictEqual([...ROUTED_GROUPS].toSorted((a, b) => a.localeCompare(b)))
-  })
+      expect(patterns).toHaveLength(1)
+      expect(
+        isStringArray(group) ? group.toSorted((a, b) => a.localeCompare(b)) : group
+      ).toStrictEqual([...ROUTED_GROUPS].toSorted((a, b) => a.localeCompare(b)))
+    },
+    CONFIG_IMPORT_TIMEOUT_MS
+  )
 
   it('reports routed imports outside the DOM folders', { timeout: 60_000 }, async () => {
     const q = "'"
