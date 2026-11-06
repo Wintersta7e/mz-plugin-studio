@@ -41,7 +41,6 @@
   },
   "test": {
     "exactOptionalPropertyTypes": {
-      "src/renderer/src/App.tsx": 2,
       "src/renderer/src/lib/raw-mode.ts": 1,
       "tests/dom/app-shell.test.tsx": 1,
       "tests/dom/history-store.test.ts": 2,
@@ -83,7 +82,6 @@
       "tests/unit/workflows.test.ts": 1
     },
     "noUncheckedIndexedAccess": {
-      "src/renderer/src/App.tsx": 1,
       "src/renderer/src/lib/conflict-detector.ts": 2,
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
@@ -169,11 +167,9 @@
   },
   "web": {
     "exactOptionalPropertyTypes": {
-      "src/renderer/src/App.tsx": 2,
       "src/renderer/src/lib/raw-mode.ts": 1
     },
     "noUncheckedIndexedAccess": {
-      "src/renderer/src/App.tsx": 1,
       "src/renderer/src/lib/conflict-detector.ts": 2,
       "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,

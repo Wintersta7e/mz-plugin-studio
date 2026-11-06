@@ -29,7 +29,7 @@
     "knip": "node node_modules/knip/bin/knip.js --treat-config-hints-as-errors",
     "knip:production": "node node_modules/knip/bin/knip.js --production --treat-config-hints-as-errors --max-issues 87 --reporter symbols --reporter ./scripts/knip-scanned.mjs",
     "strictness:status": "node scripts/strictness-status.mjs",
-    "typecov:report": "node scripts/strictness-status.mjs --report typecov --node 0 --web 5 --test 484 --tools 0 --scripts 994 --e2e 19",
+    "typecov:report": "node scripts/strictness-status.mjs --report typecov --node 0 --web 4 --test 483 --tools 0 --scripts 994 --e2e 19",
     "knip:report": "node scripts/strictness-status.mjs --report knip",
     "jscpd": "node node_modules/jscpd/run-jscpd.js",
     "jscpd:report": "node scripts/strictness-status.mjs --report jscpd --clones 80 --duplicated-lines 893",
