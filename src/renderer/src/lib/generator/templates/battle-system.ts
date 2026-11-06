@@ -11,7 +11,7 @@ Templates for modifying RPG Maker MZ battle mechanics:
 import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { isOneLineExpression } from '../escape'
-import { expectText, valueOr } from './values'
+import { definedOr, expectText, valueOr } from './values'
 
 /**
 Helper to generate condition check code for damage modifiers
@@ -30,11 +30,78 @@ function generateConditionCheck(condition: unknown, variableName = 'value'): str
     case 'magical': {
       return `    if (this.isMagical()) {\n        ${variableName} = `
     }
-    case 'always':
     default: {
       return `    ${variableName} = `
     }
   }
+}
+
+/**
+The header's label for a damage condition. Any other value is labelled as magical attacks.
+*/
+function conditionLabelOf(condition: unknown): string {
+  switch (condition) {
+    case 'always': {
+      return 'always'
+    }
+    case 'critical': {
+      return 'on critical hits'
+    }
+    case 'skill': {
+      return 'for skills only'
+    }
+    case 'physical': {
+      return 'for physical attacks'
+    }
+    default: {
+      return 'for magical attacks'
+    }
+  }
+}
+
+/**
+The header's label for a damage modification. Any other type is labelled as a custom formula.
+*/
+function typeLabelOf(modifyType: unknown, modifyValue: string): string {
+  switch (modifyType) {
+    case 'multiply': {
+      return `Multiply by ${modifyValue}`
+    }
+    case 'add': {
+      return `Add ${modifyValue}`
+    }
+    default: {
+      return 'Custom formula'
+    }
+  }
+}
+
+/**
+Whether `parseFloat` reads a number from the text: after white space, it starts with a decimal
+literal or `Infinity`, signed or not.
+*/
+function hasLeadingNumber(text: string): boolean {
+  return /^\s*[+-]?(?:Infinity|\.?\d)/.test(text)
+}
+
+/**
+The errors of a multiply or add value, which must be the text of a number. Text that `parseFloat`
+reads in full is a number's own text, so `Number` reads the same number from it.
+*/
+function numberValueErrors(modifyType: unknown, modifyValue: unknown): string[] {
+  if (!hasLeadingNumber(String(modifyValue))) {
+    return ['Value must be a valid number for multiply/add operations']
+  }
+  const text = expectText(modifyValue).trim()
+  const number_ = Number(text)
+  if (String(number_) !== text) {
+    // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
+    return ['Value must contain only numeric characters (digits, decimal point, minus sign)']
+  }
+  if (modifyType === 'multiply' && number_ <= 0) {
+    return ['Multiplier should be a positive number']
+  }
+  return []
 }
 
 /**
@@ -94,36 +161,21 @@ const damageModifierTemplate: CodeTemplate = {
   generate: (values): string => {
     const modifyType = valueOr(values['modifyType'], 'multiply')
     // The check reads the value trimmed, so the code is written with the same text.
-    const modifyValue = String(values['modifyValue'] ?? '').trim()
+    const modifyValue = String(definedOr(values['modifyValue'], '')).trim()
     const condition = valueOr(values['condition'], 'always')
 
-    const lines: string[] = []
-
     // Header comment
-    const conditionLabel =
-      condition === 'always'
-        ? 'always'
-        : condition === 'critical'
-          ? 'on critical hits'
-          : condition === 'skill'
-            ? 'for skills only'
-            : condition === 'physical'
-              ? 'for physical attacks'
-              : 'for magical attacks'
+    const conditionLabel = conditionLabelOf(condition)
+    const typeLabel = typeLabelOf(modifyType, modifyValue)
 
-    const typeLabel =
-      modifyType === 'multiply'
-        ? `Multiply by ${modifyValue}`
-        : modifyType === 'add'
-          ? `Add ${modifyValue}`
-          : 'Custom formula'
-
-    lines.push(`// Damage Modifier: ${typeLabel} (${conditionLabel})`)
-    lines.push('const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;')
-    lines.push('Game_Action.prototype.makeDamageValue = function(target, critical) {')
-    lines.push('    let value = _Game_Action_makeDamageValue.call(this, target, critical);')
-    lines.push('')
-    lines.push('    // Apply damage modification')
+    const lines: string[] = [
+      `// Damage Modifier: ${typeLabel} (${conditionLabel})`,
+      'const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;',
+      'Game_Action.prototype.makeDamageValue = function(target, critical) {',
+      '    let value = _Game_Action_makeDamageValue.call(this, target, critical);',
+      '',
+      '    // Apply damage modification'
+    ]
 
     // Generate the modification code based on type and condition
     const conditionStart = generateConditionCheck(condition)
@@ -140,7 +192,6 @@ const damageModifierTemplate: CodeTemplate = {
         modificationCode = `value + ${modifyValue};`
         break
       }
-      case 'custom':
       default: {
         modificationCode = `${modifyValue}; // Custom formula - edit as needed`
         break
@@ -157,23 +208,14 @@ const damageModifierTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    if (values['modifyValue']) {
+    const hasModifyValue = Boolean(values['modifyValue'])
+    if (hasModifyValue) {
       const modifyType = values['modifyType']
       const modifyValue: unknown = values['modifyValue']
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
-        const number_ = Number.parseFloat(String(modifyValue))
-        if (Number.isNaN(number_)) {
-          errors.push('Value must be a valid number for multiply/add operations')
-        } else if (String(number_) !== expectText(modifyValue).trim()) {
-          // Reject values with non-numeric trailing chars (e.g., "1.5;alert(1)")
-          errors.push(
-            'Value must contain only numeric characters (digits, decimal point, minus sign)'
-          )
-        } else if (modifyType === 'multiply' && number_ <= 0) {
-          errors.push('Multiplier should be a positive number')
-        }
+        errors.push(...numberValueErrors(modifyType, modifyValue))
       } else if (
         // Only text reaches here: an unset or empty value is skipped above, a value of another type
         // is rejected before this check runs. Such a value passes, as the expression check passes a
@@ -232,7 +274,7 @@ const battleEventTemplate: CodeTemplate = {
       timing: 'before' | 'after'
     }
 
-    const eventMappings: Record<string, EventMapping> = {
+    const eventMappings: Partial<Record<string, EventMapping>> = {
       victory: {
         method: 'processVictory',
         aliasName: '_BattleManager_processVictory',
@@ -272,6 +314,8 @@ const battleEventTemplate: CodeTemplate = {
     }
 
     const mapping = eventMappings[String(eventType)]
+    // An event with no mapping fails here, where reading its comment would fail
+    if (mapping === undefined) throw new TypeError(`No battle event ${String(eventType)}`)
 
     lines.push(`// ${mapping.comment}`)
     lines.push(`const ${mapping.aliasName} = BattleManager.${mapping.method};`)
@@ -331,10 +375,10 @@ const stateHookTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const hookType = valueOr(values['hookType'], 'add')
-    const stateId = String(values['stateId'] ?? '').trim()
+    const stateId = String(definedOr(values['stateId'], '')).trim()
     const lines: string[] = []
 
-    const hasStateFilter = stateId && stateId.trim() !== ''
+    const hasStateFilter = stateId !== ''
 
     // Generate state add hook
     if (hookType === 'add' || hookType === 'both') {
@@ -465,8 +509,8 @@ const actionSequenceTemplate: CodeTemplate = {
     const lines: string[] = []
 
     // Determine action type check
-    let actionCheck = ''
-    let actionLabel = 'all actions'
+    let actionCheck: string
+    let actionLabel: string
 
     switch (actionType) {
       case 'skill': {
@@ -539,5 +583,3 @@ registerTemplate(damageModifierTemplate)
 registerTemplate(battleEventTemplate)
 registerTemplate(stateHookTemplate)
 registerTemplate(actionSequenceTemplate)
-
-export { damageModifierTemplate, battleEventTemplate, stateHookTemplate, actionSequenceTemplate }

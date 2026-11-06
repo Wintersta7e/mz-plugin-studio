@@ -23,111 +23,182 @@ function generateSaveLoadCode(
   const dataName = String(name)
   const aliasName = `_${storageLocation}_initialize`
   const defaultLiteral = defaultLiteralOf(dataType, defaultValue)
-  const lines: string[] = [`// Custom Save Data: ${dataName}`]
 
-  // Header comment
-  lines.push(`// Storage: $${storageLocation.replace('Game_', 'game').toLowerCase()}`)
-  lines.push(`// Type: ${String(dataType)}`)
+  return [
+    `// Custom Save Data: ${dataName}`,
+    // Header comment
+    `// Storage: $${storageLocation.replace('Game_', 'game').toLowerCase()}`,
+    `// Type: ${String(dataType)}`,
+    ...storageWarningLines(storageLocation),
+    '',
+    // Store original initialize reference
+    `const ${aliasName} = ${storageLocation}.prototype.initialize;`,
+    // Alias initialize to add custom property
+    `${storageLocation}.prototype.initialize = function() {`,
+    `    ${aliasName}.call(this);`,
+    `    this.${dataName} = ${defaultLiteral};`,
+    '};',
+    '',
+    // Generate getter method
+    `// Getter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.get${pascalName}()`,
+    `${storageLocation}.prototype.get${pascalName} = function() {`,
+    `    return this.${dataName};`,
+    '};',
+    '',
+    // Generate setter method
+    `// Setter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.set${pascalName}(value)`,
+    `${storageLocation}.prototype.set${pascalName} = function(value) {`,
+    `    this.${dataName} = value;`,
+    '};',
+    // Add type-specific helper methods
+    ...typeHelperLines(dataType, storageLocation, dataName, pascalName)
+  ].join('\n')
+}
 
-  // Warn at generation time for storage locations that don't reliably persist.
+/**
+The warning for a storage location that does not keep its data across a save or a map change.
+*/
+function storageWarningLines(storageLocation: string): string[] {
   if (storageLocation === 'Game_Actors') {
-    lines.push('//')
-    lines.push('// ⚠  WARNING: Game_Actors is a CONTAINER — DataManager does not')
-    lines.push('//    round-trip properties set on the container itself. Data written')
-    lines.push('//    here in initialize() will be lost on save reload. Move persistent')
-    lines.push('//    data to Game_System, or store per-actor data on Game_Actor objects.')
-  } else if (storageLocation === 'Game_Map') {
-    lines.push('//')
-    lines.push('// ⚠  WARNING: Game_Map is reinitialized on every map transfer.')
-    lines.push('//    Data written here will be lost whenever the player changes maps.')
-    lines.push('//    Use Game_System if you need data to survive across maps.')
+    return [
+      '//',
+      '// ⚠  WARNING: Game_Actors is a CONTAINER — DataManager does not',
+      '//    round-trip properties set on the container itself. Data written',
+      '//    here in initialize() will be lost on save reload. Move persistent',
+      '//    data to Game_System, or store per-actor data on Game_Actor objects.'
+    ]
   }
-  lines.push('')
+  if (storageLocation === 'Game_Map') {
+    return [
+      '//',
+      '// ⚠  WARNING: Game_Map is reinitialized on every map transfer.',
+      '//    Data written here will be lost whenever the player changes maps.',
+      '//    Use Game_System if you need data to survive across maps.'
+    ]
+  }
+  return []
+}
 
-  // Store original initialize reference
-  lines.push(`const ${aliasName} = ${storageLocation}.prototype.initialize;`)
-
-  // Alias initialize to add custom property
-  lines.push(`${storageLocation}.prototype.initialize = function() {`)
-  lines.push(`    ${aliasName}.call(this);`)
-  lines.push(`    this.${dataName} = ${defaultLiteral};`)
-  lines.push('};')
-  lines.push('')
-
-  // Generate getter method
-  lines.push(
-    `// Getter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.get${pascalName}()`
-  )
-  lines.push(`${storageLocation}.prototype.get${pascalName} = function() {`)
-  lines.push(`    return this.${dataName};`)
-  lines.push('};')
-  lines.push('')
-
-  // Generate setter method
-  lines.push(
-    `// Setter: $${storageLocation.replace('Game_', 'game').toLowerCase()}.set${pascalName}(value)`
-  )
-  lines.push(`${storageLocation}.prototype.set${pascalName} = function(value) {`)
-  lines.push(`    this.${dataName} = value;`)
-  lines.push('};')
-
-  // Add type-specific helper methods
+/**
+The helper methods of a data type; other types have none.
+*/
+function typeHelperLines(
+  dataType: unknown,
+  storageLocation: string,
+  dataName: string,
+  pascalName: string
+): string[] {
   switch (dataType) {
     case 'object': {
-      lines.push('')
-      lines.push(`// Get a property from the ${dataName} object`)
-      lines.push(`${storageLocation}.prototype.get${pascalName}Value = function(key) {`)
-      lines.push(`    return this.${dataName}[key];`)
-      lines.push('};')
-      lines.push('')
-      lines.push(`// Set a property on the ${dataName} object`)
-      lines.push(`${storageLocation}.prototype.set${pascalName}Value = function(key, value) {`)
-      lines.push(`    this.${dataName}[key] = value;`)
-      lines.push('};')
-
-      break
+      return [
+        '',
+        `// Get a property from the ${dataName} object`,
+        `${storageLocation}.prototype.get${pascalName}Value = function(key) {`,
+        `    return this.${dataName}[key];`,
+        '};',
+        '',
+        `// Set a property on the ${dataName} object`,
+        `${storageLocation}.prototype.set${pascalName}Value = function(key, value) {`,
+        `    this.${dataName}[key] = value;`,
+        '};'
+      ]
     }
     case 'array': {
-      lines.push('')
-      lines.push(`// Add an item to the ${dataName} array`)
-      lines.push(`${storageLocation}.prototype.add${pascalName}Item = function(item) {`)
-      lines.push(`    this.${dataName}.push(item);`)
-      lines.push('};')
-      lines.push('')
-      lines.push(`// Remove an item from the ${dataName} array by index`)
-      lines.push(`${storageLocation}.prototype.remove${pascalName}Item = function(index) {`)
-      lines.push(`    this.${dataName}.splice(index, 1);`)
-      lines.push('};')
-      lines.push('')
-      lines.push(`// Clear all items from the ${dataName} array`)
-      lines.push(`${storageLocation}.prototype.clear${pascalName} = function() {`)
-      lines.push(`    this.${dataName} = [];`)
-      lines.push('};')
-
-      break
+      return [
+        '',
+        `// Add an item to the ${dataName} array`,
+        `${storageLocation}.prototype.add${pascalName}Item = function(item) {`,
+        `    this.${dataName}.push(item);`,
+        '};',
+        '',
+        `// Remove an item from the ${dataName} array by index`,
+        `${storageLocation}.prototype.remove${pascalName}Item = function(index) {`,
+        `    this.${dataName}.splice(index, 1);`,
+        '};',
+        '',
+        `// Clear all items from the ${dataName} array`,
+        `${storageLocation}.prototype.clear${pascalName} = function() {`,
+        `    this.${dataName} = [];`,
+        '};'
+      ]
     }
     case 'number': {
-      lines.push('')
-      lines.push(`// Add to the ${dataName} value`)
-      lines.push(`${storageLocation}.prototype.add${pascalName} = function(amount) {`)
-      lines.push(`    this.${dataName} += amount;`)
-      lines.push('};')
-
-      break
+      return [
+        '',
+        `// Add to the ${dataName} value`,
+        `${storageLocation}.prototype.add${pascalName} = function(amount) {`,
+        `    this.${dataName} += amount;`,
+        '};'
+      ]
     }
     case 'boolean': {
-      lines.push('')
-      lines.push(`// Toggle the ${dataName} value`)
-      lines.push(`${storageLocation}.prototype.toggle${pascalName} = function() {`)
-      lines.push(`    this.${dataName} = !this.${dataName};`)
-      lines.push('};')
-
-      break
+      return [
+        '',
+        `// Toggle the ${dataName} value`,
+        `${storageLocation}.prototype.toggle${pascalName} = function() {`,
+        `    this.${dataName} = !this.${dataName};`,
+        '};'
+      ]
     }
-    // No default
+    default: {
+      return []
+    }
+  }
+}
+
+/**
+The errors of a data property name that is set: it must be a JavaScript identifier, and a name the
+storage classes already use is warned about.
+*/
+function dataNameErrors(dataName: unknown): string[] {
+  const errors: string[] = []
+
+  // Check for valid JavaScript identifier
+  if (!/^[a-z_$][\w$]*$/i.test(String(dataName))) {
+    errors.push('Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
   }
 
-  return lines.join('\n')
+  // Warn about reserved words
+  const reservedWords = ['initialize', 'update', 'create', 'setup', 'clear', 'data', 'save', 'load']
+  if (reservedWords.includes(expectText(dataName).toLowerCase())) {
+    errors.push(
+      `"${String(dataName)}" may conflict with existing methods. Consider a more specific name.`
+    )
+  }
+
+  return errors
+}
+
+/**
+The errors of a default value that is set, checked against its data type. A value of another type
+than text throws `TypeError` where a string method is called on it.
+*/
+function defaultValueErrors(dataType: unknown, defaultValue: unknown): string[] {
+  switch (dataType) {
+    case 'object': {
+      return expectText(defaultValue).trimStart().startsWith('{')
+        ? []
+        : ['Default value for object should be JSON format starting with {']
+    }
+    case 'array': {
+      return expectText(defaultValue).trimStart().startsWith('[')
+        ? []
+        : ['Default value for array should be JSON format starting with [']
+    }
+    case 'number': {
+      return Number.isNaN(Number(defaultValue))
+        ? ['Default value for number must be a valid number']
+        : []
+    }
+    case 'boolean': {
+      return ['true', 'false'].includes(expectText(defaultValue).toLowerCase())
+        ? []
+        : ['Default value for boolean must be true or false']
+    }
+    default: {
+      return []
+    }
+  }
 }
 
 const saveLoadTemplate: CodeTemplate = {
@@ -205,70 +276,20 @@ const saveLoadTemplate: CodeTemplate = {
   validate: (values) => {
     const errors: string[] = []
 
-    if (values['dataName']) {
-      const dataName: unknown = values['dataName']
-
-      // Check for valid JavaScript identifier
-      if (!/^[a-z_$][\w$]*$/i.test(String(dataName))) {
-        errors.push(
-          'Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)'
-        )
-      }
-
-      // Warn about reserved words
-      const reservedWords = [
-        'initialize',
-        'update',
-        'create',
-        'setup',
-        'clear',
-        'data',
-        'save',
-        'load'
-      ]
-      if (reservedWords.includes(expectText(dataName).toLowerCase())) {
-        errors.push(
-          `"${String(dataName)}" may conflict with existing methods. Consider a more specific name.`
-        )
-      }
+    const dataName: unknown = values['dataName']
+    const hasDataName = Boolean(dataName)
+    if (hasDataName) {
+      errors.push(...dataNameErrors(dataName))
     }
 
     // Validate default value format based on type
-    if (values['defaultValue'] && values['dataType']) {
-      const defaultValue = values['defaultValue']
-      const dataType = values['dataType']
-      const hasDefaultValue = Boolean(defaultValue)
-
+    const defaultValue = values['defaultValue']
+    const dataType = values['dataType']
+    const hasDefaultValue = Boolean(defaultValue)
+    const hasDataType = Boolean(dataType)
+    if (hasDefaultValue && hasDataType) {
       try {
-        switch (dataType) {
-          case 'object': {
-            if (hasDefaultValue && !expectText(defaultValue).trimStart().startsWith('{')) {
-              errors.push('Default value for object should be JSON format starting with {')
-            }
-            break
-          }
-          case 'array': {
-            if (hasDefaultValue && !expectText(defaultValue).trimStart().startsWith('[')) {
-              errors.push('Default value for array should be JSON format starting with [')
-            }
-            break
-          }
-          case 'number': {
-            if (hasDefaultValue && Number.isNaN(Number(defaultValue))) {
-              errors.push('Default value for number must be a valid number')
-            }
-            break
-          }
-          case 'boolean': {
-            if (
-              hasDefaultValue &&
-              !['true', 'false'].includes(expectText(defaultValue).toLowerCase())
-            ) {
-              errors.push('Default value for boolean must be true or false')
-            }
-            break
-          }
-        }
+        errors.push(...defaultValueErrors(dataType, defaultValue))
       } catch {
         errors.push('Invalid default value format')
       }
@@ -283,5 +304,3 @@ const saveLoadTemplate: CodeTemplate = {
 
 // Register the template when this module loads
 registerTemplate(saveLoadTemplate)
-
-export { saveLoadTemplate }
