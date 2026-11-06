@@ -1,21 +1,27 @@
 // The packaged app as it boots: window, log, Content Security Policy, profile location and the
 // renderer's isolation. None of these exist in the unpackaged development build.
 import { readdirSync, readFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
-import type { WebContents, WebPreferences } from 'electron'
+import path from 'node:path'
 import { PRODUCTION_CSP } from '../../src/main/csp'
 import { DEFAULT_WINDOW_SIZE } from '../../src/main/window-size'
-import { expect, isWithin, runRoot, test } from '../fixtures/app'
+import { expect, field, isWithin, runRoot, test } from '../fixtures/app'
 
-const { version } = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
-  version: string
+const MANIFEST = path.join(process.cwd(), 'package.json')
+const manifest: unknown = JSON.parse(readFileSync(MANIFEST, 'utf8'))
+const version = String(field(manifest, 'version'))
+
+function byCodeUnit(left: string, right: string): number {
+  if (left === right) return 0
+  return left < right ? -1 : 1
 }
 
-/** The text of every main.log below the profile directory */
-function mainLogs(userDataDir: string): string {
-  return (readdirSync(userDataDir, { recursive: true }) as string[])
-    .filter((file) => basename(file) === 'main.log')
-    .map((file) => readFileSync(join(userDataDir, file), 'utf8'))
+/**
+The text of every main.log below the profile directory
+*/
+function mainLogs(userDataDirectory: string): string {
+  return readdirSync(userDataDirectory, { encoding: 'utf8', recursive: true })
+    .filter((file) => path.basename(file) === 'main.log')
+    .map((file) => readFileSync(path.join(userDataDirectory, file), 'utf8'))
     .join('\n')
 }
 
@@ -32,7 +38,7 @@ test('boots the packaged app hardened with the production policy', async ({ twin
     Math.min(DEFAULT_WINDOW_SIZE.height, workArea.height)
   ]
   process.stdout.write(
-    `e2e window: work area ${workArea.width}x${workArea.height}, content ${state.windows.map((size) => size.join('x')).join(', ')}\n`
+    `e2e window: work area ${String(workArea.width)}x${String(workArea.height)}, content ${state.windows.map((size) => size.join('x')).join(', ')}\n`
   )
   expect(state).toEqual({ packaged: true, windows: [expected] })
   await expect
@@ -54,26 +60,35 @@ test('boots the packaged app hardened with the production policy', async ({ twin
     ['Content-Security-Policy', PRODUCTION_CSP]
   ])
 
-  const blocked = await page.evaluate(async () => {
-    const directives: string[] = []
-    const both = new Promise<void>((resolve) =>
+  const { directives, ...ran } = await page.evaluate(async () => {
+    const { document } = globalThis
+    const seen: string[] = []
+    const both = new Promise<void>((resolve) => {
       document.addEventListener('securitypolicyviolation', (event) => {
-        directives.push(event.effectiveDirective)
-        if (directives.length === 2) resolve()
+        seen.push(event.effectiveDirective)
+        if (seen.length === 2) resolve()
       })
-    )
+    })
     const script = document.createElement('script')
     script.textContent = 'window.e2eInlineRan = true'
     document.head.append(script)
-    setTimeout('window.e2eStringRan = true', 0)
+    // Code from a string, in a task the page scheduled (the evaluated callback itself may eval):
+    // the policy refuses it and the page's eval throws
+    setTimeout(() => {
+      try {
+        globalThis.eval('window.e2eStringRan = true')
+      } catch {
+        // The violation event records the refusal
+      }
+    }, 0)
     await Promise.race([both, new Promise((resolve) => setTimeout(resolve, 5000))])
     return {
-      directives: directives.sort(),
-      inlineRan: 'e2eInlineRan' in window,
-      stringRan: 'e2eStringRan' in window
+      directives: seen,
+      inlineRan: 'e2eInlineRan' in globalThis,
+      stringRan: 'e2eStringRan' in globalThis
     }
   })
-  expect(blocked).toEqual({
+  expect({ directives: directives.toSorted(byCodeUnit), ...ran }).toEqual({
     directives: ['script-src', 'script-src-elem'],
     inlineRan: false,
     stringRan: false
@@ -97,10 +112,13 @@ test('keeps the window sandboxed and blocks navigation and new windows', async (
   const preferences = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows().map((window) => {
       // Present at runtime, absent from Electron's type declarations
-      const contents = window.webContents as WebContents & {
-        getLastWebPreferences(): WebPreferences | null
-      }
-      const { sandbox, contextIsolation, nodeIntegration } = contents.getLastWebPreferences() ?? {}
+      const read: unknown = Reflect.get(window.webContents, 'getLastWebPreferences')
+      const last: unknown =
+        typeof read === 'function' ? Reflect.apply(read, window.webContents, []) : undefined
+      const values = typeof last === 'object' && last !== null ? last : {}
+      const sandbox: unknown = Reflect.get(values, 'sandbox')
+      const contextIsolation: unknown = Reflect.get(values, 'contextIsolation')
+      const nodeIntegration: unknown = Reflect.get(values, 'nodeIntegration')
       return { sandbox, contextIsolation, nodeIntegration }
     })
   )
@@ -110,19 +128,22 @@ test('keeps the window sandboxed and blocks navigation and new windows', async (
   await app.evaluate(({ BrowserWindow }) => {
     const prevented: boolean[] = []
     Reflect.set(globalThis, 'e2eNavigations', prevented)
-    for (const window of BrowserWindow.getAllWindows())
-      window.webContents.on('will-navigate', (event) => prevented.push(event.defaultPrevented))
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.on('will-navigate', (event) => {
+        prevented.push(event.defaultPrevented)
+      })
+    }
   })
   const url = page.url()
   await page.evaluate(() => {
-    location.assign('https://example.invalid/')
+    globalThis.location.assign('https://example.invalid/')
   })
   await expect
-    .poll(() => app.evaluate(() => Reflect.get(globalThis, 'e2eNavigations')))
+    .poll(async () => app.evaluate((): unknown => Reflect.get(globalThis, 'e2eNavigations')))
     .toEqual([true])
   expect(page.url()).toBe(url)
 
-  expect(await page.evaluate(() => window.open('about:blank') === null)).toBe(true)
+  expect(await page.evaluate(() => globalThis.open('about:blank') === null)).toBe(true)
   expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(1)
   expect(app.windows()).toHaveLength(1)
 })
