@@ -5,9 +5,9 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import path from 'node:path'
 
-const SCRIPT = resolve(process.cwd(), 'scripts/check-coverage.mjs')
+const SCRIPT = path.resolve(process.cwd(), 'scripts/check-coverage.mjs')
 // No user or system git configuration reaches the throwaway repositories.
 const ENV = { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
 const DIRS = [
@@ -40,17 +40,20 @@ interface Run {
 const full: Entry = { lines: { covered: 10, total: 10 }, branches: { covered: 10, total: 10 } }
 const repos: string[] = []
 
-/** A repository tracking one source file per directory in `dirs`, plus each path in `extra`. */
-function makeRepo(dirs: string[] = DIRS, extra: string[] = []): string {
-  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'check-coverage-')))
-  repos.push(dir)
-  execFileSync('git', ['init', '-q'], { cwd: dir, env: ENV })
-  for (const path of [...dirs.map((source) => `${source}/file.ts`), ...extra]) {
-    mkdirSync(dirname(join(dir, path)), { recursive: true })
-    writeFileSync(join(dir, path), 'export {}\n')
+/**
+A repository tracking one source file per directory in `directories`, plus each path in `extra`.
+*/
+function makeRepository(directories: string[] = DIRS, extra: string[] = []): string {
+  const created = mkdtempSync(path.join(tmpdir(), 'check-coverage-'))
+  const directory = realpathSync(created)
+  repos.push(directory)
+  execFileSync('git', ['init', '-q'], { cwd: directory, env: ENV })
+  for (const file of [...directories.map((source) => `${source}/file.ts`), ...extra]) {
+    mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
+    writeFileSync(path.join(directory, file), 'export {}\n')
   }
-  execFileSync('git', ['add', '.'], { cwd: dir, env: ENV })
-  return dir
+  execFileSync('git', ['add', '.'], { cwd: directory, env: ENV })
+  return directory
 }
 
 /**
@@ -58,44 +61,47 @@ Writes a summary with one entry per directory (`full` unless overridden) plus on
 `extra`, and runs the check.
 */
 function check(
-  dir: string,
+  directory: string,
   entries: Record<string, Entry> = {},
-  dirs: string[] = DIRS,
+  directories: string[] = DIRS,
   extra: Record<string, Entry> = {}
 ): Run {
   const summary: Record<string, Entry> = {}
   const total = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
-  const paths = dirs.map((source): [string, Entry] => [
+  const paths = directories.map((source): [string, Entry] => [
     `${source}/file.ts`,
     entries[source] ?? full
   ])
-  for (const [path, entry] of [...paths, ...Object.entries(extra)]) {
-    summary[join(dir, path)] = entry
+  for (const [file, entry] of [...paths, ...Object.entries(extra)]) {
+    summary[path.join(directory, file)] = entry
     total.lines.covered += entry.lines.covered
     total.lines.total += entry.lines.total
     total.branches.covered += entry.branches?.covered ?? 0
     total.branches.total += entry.branches?.total ?? 0
   }
-  const path = join(dir, 'coverage/coverage-summary.json')
-  mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, JSON.stringify({ total, ...summary }))
+  const summaryFile = path.join(directory, 'coverage/coverage-summary.json')
+  mkdirSync(path.dirname(summaryFile), { recursive: true })
+  writeFileSync(summaryFile, JSON.stringify({ total, ...summary }))
   const result = spawnSync(process.execPath, [SCRIPT, 'suite'], {
-    cwd: dir,
+    cwd: directory,
     env: ENV,
     encoding: 'utf8'
   })
   return { status: result.status, lines: result.stdout.split('\n').filter((l) => l !== '') }
 }
 
-/** The line or branch floor the check prints for `dir`. */
-function printedFloor(run: Run, dir: string, kind: 'lines' | 'branches'): number {
-  const line = run.lines.find((l) => l.startsWith(`coverage floor ${dir}:`))
+/**
+The line or branch floor the check prints for `directory`.
+*/
+function printedFloor(run: Run, directory: string, kind: 'lines' | 'branches'): number {
+  const line = run.lines.find((l) => l.startsWith(`coverage floor ${directory}:`))
   const match = new RegExp(String.raw`${kind} [\d.]+% \(floor (\d+)%\)`).exec(line ?? '')
-  if (match === null) throw new Error(`no ${kind} floor for ${dir}`)
+  if (match === null) throw new Error(`no ${kind} floor for ${directory}`)
   return Number(match[1])
 }
 
-const branchFloor = (run: Run, dir: string): number => printedFloor(run, dir, 'branches')
+const branchFloor = (run: Run, directory: string): number =>
+  printedFloor(run, directory, 'branches')
 
 // Counts half a point above `floor` (on it at 100), `weight` times 200 lines or branches.
 const halfAbove = (floor: number, weight = 1): Counts => ({
@@ -134,12 +140,12 @@ function atFloors(run: Run): Record<string, Entry> {
 
 // Writes a golden summary holding `entries` by repository path and runs the golden check.
 function checkGolden(repository: string, entries: Record<string, Entry>): Run {
-  const path = join(repository, 'coverage/golden/coverage-summary.json')
-  mkdirSync(dirname(path), { recursive: true })
+  const summaryFile = path.join(repository, 'coverage/golden/coverage-summary.json')
+  mkdirSync(path.dirname(summaryFile), { recursive: true })
   const summary = Object.fromEntries(
-    Object.entries(entries).map(([file, entry]) => [join(repository, file), entry])
+    Object.entries(entries).map(([file, entry]) => [path.join(repository, file), entry])
   )
-  writeFileSync(path, JSON.stringify({ total: full, ...summary }))
+  writeFileSync(summaryFile, JSON.stringify({ total: full, ...summary }))
   const result = spawnSync(process.execPath, [SCRIPT, 'golden'], {
     cwd: repository,
     env: ENV,
@@ -148,24 +154,31 @@ function checkGolden(repository: string, entries: Record<string, Entry>): Run {
   return { status: result.status, lines: result.stdout.split('\n').filter((line) => line !== '') }
 }
 
-afterEach(() => {
-  for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
+function removeRepositories(): void {
+  for (const directory of repos.splice(0)) rmSync(directory, { recursive: true, force: true })
+}
 
-describe('check-coverage suite', () => {
+// Counts exactly on `floor` percent of `total`
+function countsAtFloor(floor: number, total: number): Counts {
+  return { covered: Math.ceil((floor * total) / 100), total }
+}
+
+describe('check-coverage suite: passing runs', () => {
+  afterEach(removeRepositories)
+
   it('passes with every directory at its floors and prints both figures per directory', () => {
-    const repository = makeRepo()
+    const repository = makeRepository()
     const run = check(repository, atFloors(check(repository)))
 
     expect(run.status).toBe(0)
 
-    for (const dir of [...DIRS, 'global']) {
-      const files = dir === 'global' ? DIRS.length : 1
+    for (const directory of [...DIRS, 'global']) {
+      const files = directory === 'global' ? DIRS.length : 1
 
       expect(run.lines).toContainEqual(
         expect.stringMatching(
           new RegExp(
-            String.raw`^coverage floor ${dir}: lines [\d.]+% \(floor \d+%\), ` +
+            String.raw`^coverage floor ${directory}: lines [\d.]+% \(floor \d+%\), ` +
               String.raw`branches [\d.]+% \(floor \d+%\), files ${files}$`
           )
         )
@@ -174,8 +187,8 @@ describe('check-coverage suite', () => {
   })
 
   it('passes with branch coverage exactly at a floor', () => {
-    const dir = makeRepo()
-    const floors = check(dir)
+    const directory = makeRepository()
+    const floors = check(directory)
     const floor = branchFloor(floors, 'src/main')
 
     expect(floor).toBeGreaterThan(0)
@@ -185,11 +198,46 @@ describe('check-coverage suite', () => {
       branches: { covered: floor, total: 100 }
     }
 
-    expect(check(dir, { ...atFloors(floors), 'src/main': atFloor }).status).toBe(0)
+    expect(check(directory, { ...atFloors(floors), 'src/main': atFloor }).status).toBe(0)
   })
 
+  it('prints each floor with its measured value and slack', () => {
+    const directory = makeRepository()
+    const floors = check(directory)
+    const lineFloor = printedFloor(floors, 'src/main', 'lines')
+    const branches = branchFloor(floors, 'src/main')
+    const measured: Entry = {
+      lines: { covered: 80, total: 100 },
+      branches: { covered: 905, total: 1000 }
+    }
+    const run = check(directory, { 'src/main': measured })
+
+    expect(run.lines).toContain(
+      `floor src/main lines: measured 80.00%, floor ${String(lineFloor)}%, ` +
+        `slack ${(80 - lineFloor).toFixed(2)}%`
+    )
+    expect(run.lines).toContain(
+      `floor src/main branches: measured 90.50%, floor ${String(branches)}%, ` +
+        `slack ${(90.5 - branches).toFixed(2)}%`
+    )
+
+    const slackLines = run.lines.filter((l) => l.startsWith('floor '))
+    for (const line of slackLines) {
+      expect(line).toMatch(
+        /^floor \S+ (lines|branches): measured [\d.]+%, floor \d+%, slack -?[\d.]+%$/
+      )
+    }
+
+    // Two floors per directory and two for the whole report.
+    expect(slackLines).toHaveLength((DIRS.length + 1) * 2)
+  })
+})
+
+describe('check-coverage suite: floors', () => {
+  afterEach(removeRepositories)
+
   it('fails a floor a whole point or more below its measured value, naming the floor to write', () => {
-    const repository = makeRepo()
+    const repository = makeRepository()
     const floors = check(repository)
     const base = atFloors(floors)
     const floor = printedFloor(floors, 'src/main', 'lines')
@@ -209,14 +257,14 @@ describe('check-coverage suite', () => {
   })
 
   it('fails when one directory has branch coverage below its floor', () => {
-    const dir = makeRepo()
-    const floors = check(dir)
+    const directory = makeRepository()
+    const floors = check(directory)
     const floor = branchFloor(floors, 'src/main')
     const below: Entry = {
       lines: halfAbove(printedFloor(floors, 'src/main', 'lines')),
       branches: { covered: floor - 1, total: 100 }
     }
-    const run = check(dir, { ...atFloors(floors), 'src/main': below })
+    const run = check(directory, { ...atFloors(floors), 'src/main': below })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
@@ -230,37 +278,45 @@ describe('check-coverage suite', () => {
   })
 
   it('fails when any directory has line coverage below its floor', () => {
-    const dir = makeRepo()
-    const floors = check(dir)
+    const directory = makeRepository()
+    const floors = check(directory)
     const base = atFloors(floors)
 
-    expect(check(dir, base).status).toBe(0)
+    expect(check(directory, base).status).toBe(0)
 
-    for (const source of DIRS) {
+    const results = DIRS.map((source) => {
       const floor = printedFloor(floors, source, 'lines')
-
-      expect(floor, source).toBeGreaterThan(0)
-
       const below: Entry = {
         lines: { covered: floor - 1, total: 100 },
         branches: halfAbove(branchFloor(floors, source))
       }
+      return {
+        source,
+        floorAboveZero: floor > 0,
+        status: check(directory, { ...base, [source]: below }).status
+      }
+    })
+    process.stdout.write(`line floors checked ${String(DIRS.length)}\n`)
 
-      expect(check(dir, { ...base, [source]: below }).status, source).toBe(1)
-    }
-    console.log(`line floors checked ${DIRS.length}`)
+    expect(results).toStrictEqual(
+      DIRS.map((source) => ({ source, floorAboveZero: true, status: 1 }))
+    )
   })
+})
+
+describe('check-coverage suite: missing figures and owners', () => {
+  afterEach(removeRepositories)
 
   it('fails when a summary entry has no branch figures', () => {
-    const run = check(makeRepo(), { 'src/shared': { lines: { covered: 10, total: 10 } } })
+    const run = check(makeRepository(), { 'src/shared': { lines: { covered: 10, total: 10 } } })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain('coverage summary entry without branches: src/shared/file.ts')
   })
 
   it('fails when a directory has no reported file', () => {
-    const dirs = DIRS.filter((d) => d !== 'src/renderer/src/components')
-    const run = check(makeRepo(dirs), {}, dirs)
+    const directories = DIRS.filter((d) => d !== 'src/renderer/src/components')
+    const run = check(makeRepository(directories), {}, directories)
 
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
@@ -281,25 +337,21 @@ describe('check-coverage suite', () => {
       'src/renderer/src/lib/generator': [4742, 2029],
       'src/renderer/src/components': [1433, 1299]
     }
-    const dirs = Object.keys(weights)
-    const dir = makeRepo(dirs, [APP])
-    const floors = check(dir, {}, dirs, { [APP]: full })
-    const atFloor = (floor: number, total: number): Counts => ({
-      covered: Math.ceil((floor * total) / 100),
-      total
-    })
+    const directories = Object.keys(weights)
+    const directory = makeRepository(directories, [APP])
+    const floors = check(directory, {}, directories, { [APP]: full })
     const entries: Record<string, Entry> = {}
     for (const [source, [lines, branches]] of Object.entries(weights)) {
       entries[source] = {
-        lines: atFloor(printedFloor(floors, source, 'lines'), lines),
-        branches: atFloor(branchFloor(floors, source), branches)
+        lines: countsAtFloor(printedFloor(floors, source, 'lines'), lines),
+        branches: countsAtFloor(branchFloor(floors, source), branches)
       }
     }
     const uncovered: Entry = {
       lines: { covered: 0, total: 179 },
       branches: { covered: 0, total: 90 }
     }
-    const run = check(dir, entries, dirs, { [APP]: uncovered })
+    const run = check(directory, entries, directories, { [APP]: uncovered })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContainEqual(
@@ -309,8 +361,8 @@ describe('check-coverage suite', () => {
 
   it('fails when a tracked file with lines has no owning directory', () => {
     const stray = 'src/tools/file.ts'
-    const dir = makeRepo(DIRS, [stray])
-    const run = check(dir, {}, DIRS, { [stray]: full })
+    const directory = makeRepository(DIRS, [stray])
+    const run = check(directory, {}, DIRS, { [stray]: full })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain(`coverage file without a floor directory: ${stray}`)
@@ -318,51 +370,28 @@ describe('check-coverage suite', () => {
     // A file with no lines (a type-only module) needs no owner.
     const empty: Entry = { lines: { covered: 0, total: 0 }, branches: { covered: 0, total: 0 } }
 
-    expect(check(dir, atFloors(run), DIRS, { [stray]: empty }).status).toBe(0)
-  })
-
-  it('prints each floor with its measured value and slack', () => {
-    const dir = makeRepo()
-    const floors = check(dir)
-    const lineFloor = printedFloor(floors, 'src/main', 'lines')
-    const branches = branchFloor(floors, 'src/main')
-    const measured: Entry = {
-      lines: { covered: 80, total: 100 },
-      branches: { covered: 905, total: 1000 }
-    }
-    const run = check(dir, { 'src/main': measured })
-
-    expect(run.lines).toContain(
-      `floor src/main lines: measured 80.00%, floor ${lineFloor}%, ` +
-        `slack ${(80 - lineFloor).toFixed(2)}%`
-    )
-    expect(run.lines).toContain(
-      `floor src/main branches: measured 90.50%, floor ${branches}%, ` +
-        `slack ${(90.5 - branches).toFixed(2)}%`
-    )
-
-    const slackLines = run.lines.filter((l) => l.startsWith('floor '))
-    for (const line of slackLines) {
-      expect(line).toMatch(
-        /^floor \S+ (lines|branches): measured [\d.]+%, floor \d+%, slack -?[\d.]+%$/
-      )
-    }
-
-    // Two floors per directory and two for the whole report.
-    expect(slackLines).toHaveLength((DIRS.length + 1) * 2)
+    expect(check(directory, atFloors(run), DIRS, { [stray]: empty }).status).toBe(0)
   })
 })
 
 describe('check-coverage golden', () => {
+  afterEach(removeRepositories)
+
   it('prints each generator file floor with its measured value and slack', () => {
     const index = 'src/renderer/src/lib/generator/index.ts'
-    const dir = makeRepo([], [index])
-    const path = join(dir, 'coverage/golden/coverage-summary.json')
-    mkdirSync(dirname(path), { recursive: true })
-    const entry: Entry = { lines: { covered: 95, total: 100 }, branches: full.branches }
-    writeFileSync(path, JSON.stringify({ total: entry, [join(dir, index)]: entry }))
+    const directory = makeRepository([], [index])
+    const summaryFile = path.join(directory, 'coverage/golden/coverage-summary.json')
+    mkdirSync(path.dirname(summaryFile), { recursive: true })
+    const entry: Entry = {
+      lines: { covered: 95, total: 100 },
+      branches: { covered: 10, total: 10 }
+    }
+    writeFileSync(
+      summaryFile,
+      JSON.stringify({ total: entry, [path.join(directory, index)]: entry })
+    )
     const result = spawnSync(process.execPath, [SCRIPT, 'golden'], {
-      cwd: dir,
+      cwd: directory,
       env: ENV,
       encoding: 'utf8'
     })
@@ -377,13 +406,13 @@ describe('check-coverage golden', () => {
 
     expect(floor).toBeGreaterThan(0)
     expect(lines).toContain(
-      `floor ${index} lines: measured 95.00%, floor ${floor}%, slack ${(95 - floor).toFixed(2)}%`
+      `floor ${index} lines: measured 95.00%, floor ${String(floor)}%, slack ${(95 - floor).toFixed(2)}%`
     )
   })
 
   it('fails a generator file a whole point or more above its floor, naming the floor to write', () => {
     const index = 'src/renderer/src/lib/generator/index.ts'
-    const repository = makeRepo([], [index])
+    const repository = makeRepository([], [index])
     const floors = new Map(
       checkGolden(repository, {}).lines.flatMap((line): [string, number][] => {
         const match = /^golden coverage (\S+): missing \(floor (\d+)%\)$/.exec(line)

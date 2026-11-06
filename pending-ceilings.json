@@ -16,13 +16,11 @@
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
       "src/renderer/src/lib/raw-mode.ts": 1,
-      "tests/dom/history-store.test.ts": 2,
-      "tests/integration/check-coverage.test.ts": 1
+      "tests/dom/history-store.test.ts": 2
     },
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
       "tests/golden/corpus/templates.ts": 3,
-      "tests/integration/ci-policy-needs.test.ts": 2,
       "tests/integration/dialog-memory.test.ts": 19,
       "tests/integration/ipc-channels.test.ts": 1,
       "tests/integration/ipc-registration.test.ts": 1,
@@ -43,7 +41,6 @@
       "tests/golden/corpus/templates.ts": 5,
       "tests/golden/generator.test.ts": 2,
       "tests/golden/persisted.test.ts": 2,
-      "tests/integration/ci-policy-fuses.test.ts": 2,
       "tests/integration/dialog-memory.test.ts": 1,
       "tests/integration/ipc-arguments.test.ts": 1,
       "tests/integration/ipc-channels.test.ts": 1,

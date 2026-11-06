@@ -3,23 +3,21 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
-const MAJOR = Number(process.versions.node.split('.', 1)[0])
+const MAJOR_NUMBER = Number(process.versions.node.split('.', 1)[0])
+const MAJOR = String(MAJOR_NUMBER)
+const NEXT_MAJOR = String(MAJOR_NUMBER + 1)
 
-const tempDirs: string[] = []
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
+const temporaryDirectories: string[] = []
 
 // A project root with package.json, the @types/node manifest and, optionally, a fake electron
 // package whose binary is this Node (it answers `-p process.versions.node` like Electron does).
 function project(options: { engines?: string; types: string; electron?: string }): string {
-  const dir = mkdtempSync(join(tmpdir(), 'ci-policy-toolchain-'))
-  tempDirs.push(dir)
+  const root = mkdtempSync(path.join(tmpdir(), 'ci-policy-toolchain-'))
+  temporaryDirectories.push(root)
   const files: Record<string, string> = {
     'package.json': JSON.stringify(
       options.engines === undefined
@@ -32,11 +30,11 @@ function project(options: { engines?: string; types: string; electron?: string }
     files['node_modules/electron/package.json'] = JSON.stringify({ main: 'index.js' })
     files['node_modules/electron/index.js'] = options.electron
   }
-  for (const [path, content] of Object.entries(files)) {
-    mkdirSync(dirname(join(dir, path)), { recursive: true })
-    writeFileSync(join(dir, path), content)
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+    writeFileSync(path.join(root, file), content)
   }
-  return dir
+  return root
 }
 
 function toolchain(cwd: string, args: string[] = []): { status: number | null; out: string } {
@@ -50,6 +48,12 @@ function toolchain(cwd: string, args: string[] = []): { status: number | null; o
 const FAKE_ELECTRON = 'module.exports = process.execPath\n'
 
 describe('ci-policy toolchain', () => {
+  afterEach(() => {
+    for (const directory of temporaryDirectories.splice(0)) {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   it('passes when Node and its type definitions match the engines major', () => {
     const { status, out } = toolchain(project({ engines: `^${MAJOR}.0.0`, types: `${MAJOR}.1.0` }))
 
@@ -76,7 +80,7 @@ describe('ci-policy toolchain', () => {
 
   it('fails when the type definitions are for another major', () => {
     const { status, out } = toolchain(
-      project({ engines: `^${MAJOR}.0.0`, types: `${MAJOR + 1}.0.0` })
+      project({ engines: `^${MAJOR}.0.0`, types: `${NEXT_MAJOR}.0.0` })
     )
 
     expect(out).toContain('@types/node')
@@ -85,7 +89,7 @@ describe('ci-policy toolchain', () => {
 
   it('fails when the running Node is outside engines', () => {
     const { status, out } = toolchain(
-      project({ engines: `^${MAJOR + 1}.0.0`, types: `${MAJOR + 1}.0.0` })
+      project({ engines: `^${NEXT_MAJOR}.0.0`, types: `${NEXT_MAJOR}.0.0` })
     )
 
     expect(out).toContain(`FAIL node ${process.version}`)
@@ -93,24 +97,24 @@ describe('ci-policy toolchain', () => {
   })
 
   it('with --electron, reads the Node version Electron bundles', () => {
-    const dir = project({
+    const directory = project({
       engines: `^${MAJOR}.0.0`,
       types: `${MAJOR}.1.0`,
       electron: FAKE_ELECTRON
     })
-    const { status, out } = toolchain(dir, ['--electron'])
+    const { status, out } = toolchain(directory, ['--electron'])
 
     expect(out).toContain(`ci-policy toolchain: electron node ${process.versions.node}\n`)
     expect(status).toBe(0)
   })
 
   it('with --electron, fails when the electron package cannot be loaded', () => {
-    const dir = project({
+    const directory = project({
       engines: `^${MAJOR}.0.0`,
       types: `${MAJOR}.1.0`,
       electron: "throw new Error('Electron failed to install correctly')\n"
     })
-    const { status, out } = toolchain(dir, ['--electron'])
+    const { status, out } = toolchain(directory, ['--electron'])
 
     expect(out).toContain('electron')
     expect(status).toBe(1)

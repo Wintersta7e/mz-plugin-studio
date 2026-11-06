@@ -3,24 +3,20 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 
-const tempDirs: string[] = []
-
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
+const temporaryDirectories: string[] = []
 
 // A directory holding osv-scanner.toml with this text, or no file when text is undefined
-function configDir(text: string | undefined): string {
-  const dir = mkdtempSync(join(tmpdir(), 'ci-policy-osv-'))
-  tempDirs.push(dir)
-  if (text !== undefined) writeFileSync(join(dir, 'osv-scanner.toml'), text)
-  return dir
+function configDirectory(text: string | undefined): string {
+  const directory = mkdtempSync(path.join(tmpdir(), 'ci-policy-osv-'))
+  temporaryDirectories.push(directory)
+  if (text !== undefined) writeFileSync(path.join(directory, 'osv-scanner.toml'), text)
+  return directory
 }
 
 function osvIgnores(cwd: string): { status: number | null; out: string } {
@@ -40,8 +36,14 @@ const ID = 'id = "GHSA-xxxx-xxxx-xxxx"'
 const REASON = 'reason = "Not reachable: the affected function is never called."'
 
 describe('ci-policy osv-ignores', () => {
+  afterEach(() => {
+    for (const directory of temporaryDirectories.splice(0)) {
+      rmSync(directory, { recursive: true, force: true })
+    }
+  })
+
   it('passes a comment-only file as zero entries', () => {
-    const { status, out } = osvIgnores(configDir('# no ignores\n# none at all\n'))
+    const { status, out } = osvIgnores(configDirectory('# no ignores\n# none at all\n'))
 
     expect(out).toContain('ci-policy osv-ignores: entries 0\n')
     expect(out).toContain('ci-policy osv-ignores: nearest expiry none\n')
@@ -50,7 +52,9 @@ describe('ci-policy osv-ignores', () => {
 
   it('passes an entry that expires in 30 days', () => {
     const until = daysAhead(30)
-    const { status, out } = osvIgnores(configDir(entry([ID, `ignoreUntil = ${until}`, REASON])))
+    const { status, out } = osvIgnores(
+      configDirectory(entry([ID, `ignoreUntil = ${until}`, REASON]))
+    )
 
     expect(out).toContain('ci-policy osv-ignores: entries 1\n')
     expect(out).toContain(`ci-policy osv-ignores: nearest expiry ${until}\n`)
@@ -59,14 +63,14 @@ describe('ci-policy osv-ignores', () => {
 
   it('accepts an expiry with a UTC time', () => {
     const until = `${daysAhead(30)}T12:00:00Z`
+    const text = entry([ID, `ignoreUntil = ${until}`, REASON])
 
-    expect(osvIgnores(configDir(entry([ID, `ignoreUntil = ${until}`, REASON]))).status).toBe(0)
+    expect(osvIgnores(configDirectory(text)).status).toBe(0)
   })
 
   it('fails an entry that expires in 120 days', () => {
-    const { status, out } = osvIgnores(
-      configDir(entry([ID, `ignoreUntil = ${daysAhead(120)}`, REASON]))
-    )
+    const text = entry([ID, `ignoreUntil = ${daysAhead(120)}`, REASON])
+    const { status, out } = osvIgnores(configDirectory(text))
 
     expect(out).toContain('ci-policy osv-ignores: FAILED')
     expect(status).toBe(1)
@@ -75,11 +79,12 @@ describe('ci-policy osv-ignores', () => {
   it('fails an empty reason', () => {
     const text = entry([ID, `ignoreUntil = ${daysAhead(30)}`, 'reason = ""'])
 
-    expect(osvIgnores(configDir(text)).status).toBe(1)
+    expect(osvIgnores(configDirectory(text)).status).toBe(1)
   })
 
   it('fails a missing reason', () => {
-    const { status, out } = osvIgnores(configDir(entry([ID, `ignoreUntil = ${daysAhead(30)}`])))
+    const text = entry([ID, `ignoreUntil = ${daysAhead(30)}`])
+    const { status, out } = osvIgnores(configDirectory(text))
 
     expect(out).toContain('reason')
     expect(status).toBe(1)
@@ -88,17 +93,17 @@ describe('ci-policy osv-ignores', () => {
   it('fails an extra key', () => {
     const text = entry([ID, `ignoreUntil = ${daysAhead(30)}`, REASON, 'effectiveUntil = 1'])
 
-    expect(osvIgnores(configDir(text)).status).toBe(1)
+    expect(osvIgnores(configDirectory(text)).status).toBe(1)
   })
 
   it('fails an unknown table', () => {
     const text = `[[PackageOverrides]]\nname = "x"\nignore = true\n`
 
-    expect(osvIgnores(configDir(text)).status).toBe(1)
+    expect(osvIgnores(configDirectory(text)).status).toBe(1)
   })
 
   it('fails when the file is missing', () => {
-    const { status, out } = osvIgnores(configDir(undefined))
+    const { status, out } = osvIgnores(configDirectory(undefined))
 
     expect(out).toContain('osv-scanner.toml')
     expect(status).toBe(1)
