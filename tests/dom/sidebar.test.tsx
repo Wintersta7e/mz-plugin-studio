@@ -1,5 +1,5 @@
 // The sidebar's tab list: closing a tab with unsaved changes asks first.
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from '../../src/renderer/src/components/layout/Sidebar'
@@ -12,44 +12,56 @@ import { resetStores } from './support/reset-stores'
 describe('sidebar tab close', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
   })
 
-  afterEach(cleanup)
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
   it('closing an unsaved tab asks with Cancel as the default', async () => {
+    expect.hasAssertions()
+
     const plugin = createEmptyPlugin()
     act(() => {
       usePluginStore.getState().openPlugin(plugin)
       usePluginStore.getState().updateMeta({ name: 'Edited' })
     })
-    render(
-      <Sidebar onOpenProject={() => {}} onOpenSettings={() => {}} onOpenShortcuts={() => {}} />
-    )
+    const ignored = vi.fn<() => void>()
+    render(<Sidebar onOpenProject={ignored} onOpenSettings={ignored} onOpenShortcuts={ignored} />)
     fireEvent.click(screen.getByRole('button', { name: 'Close Edited' }))
-    await waitFor(() => expect(window.api.dialog.message).toHaveBeenCalledTimes(1))
-    const options = vi.mocked(window.api.dialog.message).mock.calls[0][0]
+    await waitFor(() => {
+      expect(globalThis.api.dialog.message).toHaveBeenCalledTimes(1)
+    })
 
-    expect(options.buttons).toEqual(['Cancel', 'Close Without Saving'])
+    expect(vi.mocked(globalThis.api.dialog.message).mock.calls).toMatchObject([
+      [{ buttons: ['Cancel', 'Close Without Saving'] }]
+    ])
     // The fake answers 0, Cancel
-    expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toEqual([plugin.id])
+    expect(usePluginStore.getState().openPlugins.map((p) => p.id)).toStrictEqual([plugin.id])
   })
 })
 
-/** Opens a saved tab named `name`; the last one opened is active. */
+/**
+Opens a saved tab named `name`; the last one opened is active.
+*/
 function openTab(name: string): void {
   const plugin = createEmptyPlugin()
-  act(() => usePluginStore.getState().openPlugin({ ...plugin, meta: { ...plugin.meta, name } }))
+  act(() => {
+    usePluginStore.getState().openPlugin({ ...plugin, meta: { ...plugin.meta, name } })
+  })
 }
 
-/** The sidebar beside the status bar, which names the active tab. */
-function renderSidebar(): Record<string, () => void> {
+/**
+The sidebar beside the status bar, which names the active tab.
+*/
+function showSidebar(): Record<string, () => void> {
   const callbacks = {
-    onOpenProject: vi.fn(),
-    onOpenSettings: vi.fn(),
-    onOpenShortcuts: vi.fn(),
-    onTogglePluginBrowser: vi.fn(),
-    onToggleProjectBrowser: vi.fn()
+    onOpenProject: vi.fn<() => void>(),
+    onOpenSettings: vi.fn<() => void>(),
+    onOpenShortcuts: vi.fn<() => void>(),
+    onTogglePluginBrowser: vi.fn<() => void>(),
+    onToggleProjectBrowser: vi.fn<() => void>()
   }
   render(
     <>
@@ -63,19 +75,20 @@ function renderSidebar(): Record<string, () => void> {
 describe('sidebar', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
   })
 
   afterEach(() => {
-    cleanup()
     vi.unstubAllGlobals()
   })
 
-  it('New Plugin opens a tab and makes it the active one', async () => {
+  it('new Plugin opens a tab and makes it the active one', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     openTab('Alpha')
-    renderSidebar()
+    showSidebar()
     await user.click(screen.getByRole('button', { name: 'New Plugin' }))
 
     expect(screen.getByRole('button', { name: 'NewPlugin' })).toBeInTheDocument()
@@ -83,10 +96,12 @@ describe('sidebar', () => {
   })
 
   it('clicking a tab makes it the active one', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     openTab('Alpha')
     openTab('Beta')
-    renderSidebar()
+    showSidebar()
 
     expect(screen.getByText('Plugin: Beta')).toBeInTheDocument()
 
@@ -97,34 +112,42 @@ describe('sidebar', () => {
 
   it('a tab with unsaved changes says so in its name', () => {
     openTab('Alpha')
-    act(() => usePluginStore.getState().updateMeta({ name: 'Beta' }))
-    renderSidebar()
+    act(() => {
+      usePluginStore.getState().updateMeta({ name: 'Beta' })
+    })
+    showSidebar()
 
     expect(screen.getByRole('button', { name: 'Beta (unsaved changes)' })).toBeInTheDocument()
   })
 
   it('closing a saved tab asks nothing and removes it', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
     openTab('Alpha')
-    renderSidebar()
+    showSidebar()
     await user.click(screen.getByRole('button', { name: 'Close Alpha' }))
 
-    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Alpha' })).not.toBeInTheDocument()
   })
 
   it('a tab with no name is called Untitled', () => {
     openTab('')
-    renderSidebar()
+    showSidebar()
 
     expect(screen.getByRole('button', { name: 'Untitled' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close Untitled' })).toBeInTheDocument()
   })
 
   it('each rail button calls its own action once', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    act(() => useProjectStore.getState().setProject(sampleProject()))
-    const callbacks = renderSidebar()
+    act(() => {
+      useProjectStore.getState().setProject(sampleProject())
+    })
+    const callbacks = showSidebar()
     const buttons: [string, string][] = [
       ['Open Project', 'onOpenProject'],
       ['Settings', 'onOpenSettings'],
