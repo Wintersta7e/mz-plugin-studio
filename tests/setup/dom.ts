@@ -3,10 +3,13 @@ import { beforeEach, vi } from 'vitest'
 import { resetMonacoStub } from './monaco-stub'
 
 // The stub's components take the props the editor hosts pass, not the library's prop types, so
-// the mock is checked for the names it replaces
+// the mock is checked for the names it replaces. The library's default export is its Editor.
 vi.mock<Record<'default' | 'Editor' | 'DiffEditor', unknown>>(
   import('@monaco-editor/react'),
-  async () => import('./monaco-stub')
+  async () => {
+    const stub = await import('./monaco-stub')
+    return { ...stub, default: stub.Editor }
+  }
 )
 // The editor hosts import the bundled editor's setup; the stub above stands in for the editor
 vi.mock(import('../../src/renderer/src/lib/monaco-setup'), () => ({}))

@@ -102,7 +102,8 @@ export function parametersFrom(value: unknown): Record<string, string> {
   const copy: unknown = structuredClone(value)
   if (typeof copy !== 'object' || copy === null) throw new TypeError('parameters are not an object')
   const parameters: Record<string, string> = {}
-  for (const [key, item] of Object.entries(copy)) {
+  const entries: [string, unknown][] = Object.entries(copy)
+  for (const [key, item] of entries) {
     if (typeof item !== 'string') throw new TypeError(`parameter ${key} is not a string`)
     parameters[key] = item
   }
