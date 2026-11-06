@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import type { PluginParameter, ParamType, PluginStruct } from '../../types/plugin'
 import { normalizeOptions, optionsText, parseOptions } from '../../lib/select-options'
 import { useTypedText } from '../../lib/typed-text'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
 interface TypeFieldsProps {

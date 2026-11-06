@@ -1,5 +1,5 @@
 import type * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utilities'
 
 function Textarea({ className, ...props }: Readonly<React.ComponentProps<'textarea'>>) {
   return (

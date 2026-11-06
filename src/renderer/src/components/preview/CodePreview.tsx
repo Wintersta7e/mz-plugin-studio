@@ -18,12 +18,12 @@ import {
   isRawMode,
   type PluginOutput
 } from '../../lib/plugin-output'
-import { reloadFromProject } from '../../lib/raw-mode'
+import { didReloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
 import { NOTICE_MS } from '../../stores/toastStore'
 import { DiffView } from './DiffView'
 import { ExportMenu } from './ExportMenu'
-import { cn, refusalReason, userMessage } from '../../lib/utils'
+import { cn, refusalReason, userMessage } from '../../lib/utilities'
 import type { PluginBaseline, PluginDefinition } from '../../types/plugin'
 import log from 'electron-log/renderer'
 
@@ -357,7 +357,7 @@ function SourceBanner({
             variant="outline"
             size="sm"
             onClick={() => {
-              void reloadFromProject(pluginId)
+              void didReloadFromProject(pluginId)
             }}
             disabled={!project}
             data-testid="source-missing-reload"

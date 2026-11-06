@@ -23,7 +23,7 @@ const FLOORS = {
     'src/preload': { lines: 44, branches: 0 },
     'src/shared': { lines: 100, branches: 100 },
     'src/renderer/src/stores': { lines: 96, branches: 89 },
-    'src/renderer/src/lib': { lines: 96, branches: 88 },
+    'src/renderer/src/lib': { lines: 96, branches: 90 },
     [GENERATOR]: { lines: 99, branches: 97 },
     'src/renderer/src/components': { lines: 93, branches: 85 },
     'src/renderer/src': { lines: 90, branches: 83 },
@@ -33,7 +33,7 @@ const FLOORS = {
     // Every generator file, the category modules under templates/ included: a new one needs its
     // own floor.
     files: {
-      [`${GENERATOR}/index.ts`]: 96,
+      [`${GENERATOR}/index.ts`]: 97,
       [`${GENERATOR}/escape.ts`]: 97,
       [`${GENERATOR}/class-registry.ts`]: 100,
       [`${GENERATOR}/templates/index.ts`]: 92,

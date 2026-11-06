@@ -10,7 +10,7 @@ import { Button } from '../ui/button'
 import { useSettingsStore, useProjectStore, useTemplateStore, useToastStore } from '../../stores'
 import { deleteBackup, listBackups, type SavedBackup } from '../../stores/persist'
 import { NOTICE_MS } from '../../stores/toastStore'
-import { userMessage } from '../../lib/utils'
+import { userMessage } from '../../lib/utilities'
 
 interface SettingsDialogProps {
   open: boolean

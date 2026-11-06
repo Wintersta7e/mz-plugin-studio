@@ -33,7 +33,7 @@ import { formatRestoreReport, takeRestoreReport } from './stores/persist'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
-import { shouldHandleShortcut } from './lib/shortcuts'
+import { shortcutToHandle } from './lib/shortcuts'
 import { createEmptyPlugin, type PluginDefinition } from './types/plugin'
 import type { MZProject } from './types/mz'
 import { saveAllPlugins, savePlugin } from './lib/save-plugin'
@@ -42,7 +42,7 @@ import { PREVIEW_WIDTH_MAX, PREVIEW_WIDTH_MIN } from './stores/uiStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import { cn, refusalReason, userMessage } from './lib/utils'
+import { cn, refusalReason, userMessage } from './lib/utilities'
 import { PROJECT_OPEN_CANCELLED } from '../../shared/ipc-types'
 
 // The code editor loads with the first view that shows one, not at start
@@ -451,7 +451,7 @@ function useShortcuts(handlers: ShortcutHandlers): void {
       setShortcutsOpen
     })
     const handleKeyDown = (event: KeyboardEvent): void => {
-      const shortcut = shouldHandleShortcut(event)
+      const shortcut = shortcutToHandle(event)
       if (!shortcut) return
 
       event.preventDefault()

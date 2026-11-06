@@ -254,13 +254,12 @@
         "src/renderer/src/components/project/ProjectBrowser.tsx",
         "src/renderer/src/components/settings/SettingsDialog.tsx",
         "src/renderer/src/lib/exportFormats.ts",
-        "src/renderer/src/lib/mz-completions.ts",
         "src/renderer/src/lib/param-io.ts",
         "src/renderer/src/lib/plugin-output.ts",
         "src/renderer/src/lib/raw-mode.ts",
         "src/renderer/src/lib/save-plugin.ts",
         "src/renderer/src/lib/shortcuts.ts",
-        "src/renderer/src/lib/utils.ts",
+        "src/renderer/src/lib/utilities.ts",
         "src/renderer/src/main.tsx",
         "src/renderer/src/stores/historyStore.ts",
         "src/renderer/src/stores/persist.ts",
@@ -323,6 +322,12 @@
       "files": ["tools/**"],
       "code": "S",
       "reason": "The command-line tools print by design"
+    },
+    {
+      "rule": "unicorn/no-global-object-property-assignment",
+      "files": ["src/renderer/src/lib/monaco-setup.ts"],
+      "code": "S",
+      "reason": "Monaco reads its worker factory only from globalThis.MonacoEnvironment"
     },
     {
       "rule": "sonarjs/prefer-regexp-exec",

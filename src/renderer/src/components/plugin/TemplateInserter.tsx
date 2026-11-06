@@ -38,7 +38,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { TooltipProvider } from '../ui/tooltip'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 import { RAW_MODE_READ_ONLY_NOTICE } from '../../lib/raw-mode'
 import {
   CATEGORIES,

@@ -15,7 +15,7 @@ import { ScrollArea } from '../ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/tooltip'
 import { usePluginStore, useProjectStore, useSettingsStore } from '../../stores'
 import { createEmptyPlugin, type PluginDefinition } from '../../types/plugin'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 
 interface SidebarProps {
   onOpenProject: () => void

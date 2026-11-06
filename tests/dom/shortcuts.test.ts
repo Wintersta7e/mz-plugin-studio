@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   matchShortcut,
-  shouldHandleShortcut,
+  shortcutToHandle,
   shouldOverrideMonaco
 } from '../../src/renderer/src/lib/shortcuts'
 
@@ -158,7 +158,7 @@ describe(shouldOverrideMonaco, () => {
   })
 })
 
-describe(shouldHandleShortcut, () => {
+describe(shortcutToHandle, () => {
   beforeEach(() => {
     // Reset document.activeElement by default (no Monaco editor focused)
     vi.spyOn(document, 'activeElement', 'get').mockReturnValue(document.body)
@@ -166,14 +166,14 @@ describe(shouldHandleShortcut, () => {
 
   it('returns the shortcut when no Monaco editor is focused', () => {
     const event = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
-    const result = shouldHandleShortcut(event)
+    const result = shortcutToHandle(event)
 
     expect(result).toMatchObject({ key: 'ctrl+s' })
   })
 
   it('returns null for unrecognized shortcut', () => {
     const event = makeKeyboardEvent({ code: 'KeyQ', ctrlKey: true })
-    const result = shouldHandleShortcut(event)
+    const result = shortcutToHandle(event)
 
     expect(result).toBeNull()
   })
@@ -189,7 +189,7 @@ describe(shouldHandleShortcut, () => {
     vi.spyOn(document, 'activeElement', 'get').mockReturnValue(inputElement)
 
     const event = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
-    const result = shouldHandleShortcut(event)
+    const result = shortcutToHandle(event)
 
     // ctrl+s is in GLOBAL_OVERRIDE_SHORTCUTS so should still return
     expect(result).toMatchObject({ key: 'ctrl+s' })
@@ -209,7 +209,7 @@ describe(shouldHandleShortcut, () => {
 
     // ctrl+z is NOT in GLOBAL_OVERRIDE_SHORTCUTS
     const event = makeKeyboardEvent({ code: 'KeyZ', ctrlKey: true })
-    const result = shouldHandleShortcut(event)
+    const result = shortcutToHandle(event)
 
     expect(result).toBeNull()
 

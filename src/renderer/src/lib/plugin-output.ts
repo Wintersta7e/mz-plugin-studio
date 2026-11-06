@@ -21,32 +21,40 @@ export type PluginOutput =
   | { ok: true; code: string }
   | { ok: false; refusal: OutputRefusal; message: string }
 
-/** Loaded from a file, as opposed to created in the app. */
+/**
+Loaded from a file, as opposed to created in the app.
+*/
 export function isImported(plugin: Pick<PluginDefinition, 'importedFrom'>): boolean {
   return plugin.importedFrom !== undefined
 }
 
-/** Raw mode is on for an imported plugin unless the user turned it off. */
+/**
+Raw mode is on for an imported plugin unless the user turned it off.
+*/
 export function isRawMode(
   plugin: Pick<PluginDefinition, 'importedFrom'>,
-  choice: boolean | undefined
+  isChosen = true
 ): boolean {
-  return isImported(plugin) && (choice ?? true)
+  return isImported(plugin) && isChosen
 }
 
-/** The `.js` file a save writes: the file an imported plugin came from, else one named after it. */
+/**
+The `.js` file a save writes: the file an imported plugin came from, else one named after it.
+*/
 export const saveFileName = (plugin: Pick<PluginDefinition, 'importedFrom' | 'meta'>): string =>
   plugin.importedFrom ?? `${plugin.meta.name}.js`
 
-/** The last segment of `path`, with either separator. */
+/**
+The last segment of `path`, with either separator.
+*/
 export const fileNameOf = (path: string): string => path.split(/[\\/]/).pop() ?? path
 
 /**
- * What a plugin would lose in a game when `code`, the code a save writes, is saved to `filePath`:
- * MZ finds its commands by the exact file name and its parameters by the file name in any letter
- * case. Null when nothing, and when `code` never quotes the plugin's name: such code, as a loaded
- * plugin's own may, reads its name from its file.
- */
+What a plugin would lose in a game when `code`, the code a save writes, is saved to `filePath`:
+MZ finds its commands by the exact file name and its parameters by the file name in any letter
+case. Null when nothing, and when `code` never quotes the plugin's name: such code, as a loaded
+plugin's own may, reads its name from its file.
+*/
 export function fileNameMismatch(
   plugin: Pick<PluginDefinition, 'meta' | 'parameters' | 'commands'>,
   filePath: string,
@@ -55,31 +63,35 @@ export function fileNameMismatch(
   const name = plugin.meta.name
   if (!name) return null
   const quoted = [`'${escapeJSString(name)}'`, `"${escapeJSDoubleQuote(name)}"`, `\`${name}\``]
-  if (!quoted.some((literal) => code.includes(literal))) return null
+  if (quoted.every((literal) => !code.includes(literal))) return null
   const stem = fileNameOf(filePath).replace(/\.js$/i, '')
-  const commands = plugin.commands.length > 0 && stem !== name
-  const parameters = plugin.parameters.length > 0 && stem.toLowerCase() !== name.toLowerCase()
-  return commands || parameters ? { commands, parameters } : null
+  const isCommands = plugin.commands.length > 0 && stem !== name
+  const isParameters = plugin.parameters.length > 0 && stem.toLowerCase() !== name.toLowerCase()
+  return isCommands || isParameters ? { commands: isCommands, parameters: isParameters } : null
 }
 
 /**
- * The file text raw mode builds on and the values it was read with; null when either is not
- * loaded, which is when raw mode refuses with `source-missing`.
- */
+The file text raw mode builds on and the values it was read with; null when either is not
+loaded, which is when raw mode refuses with `source-missing`.
+*/
 export function loadedSource(
   plugin: Pick<PluginDefinition, 'rawSource'>,
   baseline: PluginBaseline | null
 ): { rawSource: string; baseline: PluginBaseline } | null {
-  return plugin.rawSource && baseline !== null ? { rawSource: plugin.rawSource, baseline } : null
+  return baseline === null || plugin.rawSource === undefined || plugin.rawSource === ''
+    ? null
+    : { rawSource: plugin.rawSource, baseline }
 }
 
-/** The code a save writes, or why raw mode cannot save it. */
+/**
+The code a save writes, or why raw mode cannot save it.
+*/
 export function generatePluginOutput(
   plugin: PluginDefinition,
-  rawMode: boolean,
+  isRaw: boolean,
   baseline: PluginBaseline | null
 ): PluginOutput {
-  if (!rawMode) return { ok: true, code: generatePlugin(plugin) }
+  if (!isRaw) return { ok: true, code: generatePlugin(plugin) }
   const source = loadedSource(plugin, baseline)
   if (source === null) {
     return {

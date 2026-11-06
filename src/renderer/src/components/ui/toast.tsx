@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { useToastStore, type ToastAction, type ToastType } from '../../stores/toastStore'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utilities'
 import { Button } from './button'
 
 const icons: Record<ToastType, typeof CheckCircle> = {

@@ -22,7 +22,7 @@ import App from '../../src/renderer/src/App'
 import { createDialogHandlers, type DialogPort } from '../../src/main/ipc/dialog'
 import { savePluginFile } from '../../src/main/ipc/plugin'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { reloadFromProject } from '../../src/renderer/src/lib/raw-mode'
+import { didReloadFromProject } from '../../src/renderer/src/lib/raw-mode'
 import {
   useHistoryStore,
   usePluginStore,
@@ -714,7 +714,7 @@ describe('app save: storage writes', APP_TIMEOUT, () => {
     const id = await openFromProject(project, FILE)
     let isReloaded = false
     const writes = await pluginWrites(async () => {
-      isReloaded = await act(async () => reloadFromProject(id))
+      isReloaded = await act(async () => didReloadFromProject(id))
     })
 
     expect(isReloaded).toBe(true)
@@ -878,14 +878,14 @@ describe('app save: tabs read from a file', APP_TIMEOUT, () => {
     await openProject(project)
     const read = await openFromProject(project, FILE)
 
-    await expect(act(async () => reloadFromProject(read))).resolves.toBe(true)
+    await expect(act(async () => didReloadFromProject(read))).resolves.toBe(true)
 
     const loaded = await globalThis.api.plugin.load(project, FILE)
     act(() => {
       usePluginStore.getState().openPlugin(loaded.plugin)
     })
 
-    await expect(act(async () => reloadFromProject(loaded.plugin.id))).resolves.toBe(true)
+    await expect(act(async () => didReloadFromProject(loaded.plugin.id))).resolves.toBe(true)
     expect(messages()).toStrictEqual([])
     expect(baseOf(loaded.plugin.id)).toHaveProperty('path', fileIn(FILE, project))
   })
@@ -937,7 +937,7 @@ describe('app save: a tab read from another project', APP_TIMEOUT, () => {
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    await expect(act(async () => reloadFromProject(id))).resolves.toBe(false)
+    await expect(act(async () => didReloadFromProject(id))).resolves.toBe(false)
     expect(messages()).toStrictEqual([
       {
         type: 'question',
@@ -961,7 +961,7 @@ describe('app save: a tab read from another project', APP_TIMEOUT, () => {
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    await expect(act(async () => reloadFromProject(id))).resolves.toBe(true)
+    await expect(act(async () => didReloadFromProject(id))).resolves.toBe(true)
     expect(messages()).toHaveLength(1)
     expect(plugin().rawSource).toBe(text)
     expect(baseOf(id)).toStrictEqual({ path: fileIn(FILE, second), sha256: sha(text) })

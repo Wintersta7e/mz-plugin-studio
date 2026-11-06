@@ -5,6 +5,7 @@ import {
   generateCommandSkeleton,
   generateHeaderOnly,
   generateParameterComment,
+  generatePlugin,
   generateRawMode,
   validatePlugin
 } from '../../../src/renderer/src/lib/generator/index'
@@ -14,7 +15,12 @@ import {
   generateReadme,
   generateTypeDeclaration
 } from '../../../src/renderer/src/lib/exportFormats'
-import { serializeParams } from '../../../src/renderer/src/lib/param-io'
+import { deserializeParams, serializeParams } from '../../../src/renderer/src/lib/param-io'
+import {
+  fileNameMismatch,
+  generatePluginOutput,
+  isRawMode
+} from '../../../src/renderer/src/lib/plugin-output'
 import { PluginParser } from '../../../src/main/services/pluginParser'
 import { ALL_PARAM_TYPES, toBaseline } from '../../../src/shared/types/plugin'
 import type { ParamType, PluginDefinition, PluginParameter } from '../../../src/shared/types/plugin'
@@ -355,6 +361,154 @@ function rowBase(): PluginDefinition {
   }
 }
 
+// --- A loaded plugin holding parameters of the wrong type --------------------------------
+
+// Not an identifier, so a declaration file repairs it into a namespace name.
+const LOADED_NAME = 'Fixture-Loaded'
+
+const LOADED_SOURCE = [
+  '/*:',
+  ' * @target MZ',
+  ' * @plugindesc Holds imported parameters of the wrong type',
+  ' * @author Example Author',
+  ' * @url https://example.invalid/loaded',
+  ' * @base Fixture_Base',
+  ' * @orderAfter Fixture_Core',
+  ' * @help Shows the label after the base plugin.',
+  ' *',
+  ' * @command Reset',
+  ' * @text Reset Label',
+  ' * @desc Clears the label.',
+  ' *',
+  ' * @command ShowLabel',
+  ' * @text Show Label',
+  ' * @desc Shows the label.',
+  ' *',
+  ' * @arg times',
+  ' * @text Times',
+  ' * @desc How often the label is shown.',
+  ' * @type number',
+  ' * @default 1',
+  ' *',
+  ' * @arg note',
+  ' * @type string',
+  ' */',
+  '/*~struct~Point:',
+  ' * @param x',
+  ' * @type number',
+  ' * @default 0',
+  ' */',
+  ''
+].join('\n')
+
+// Labels and descriptions of the wrong type, which the import replaces, every type annotation
+// the formats spell out, a nested parameter and a divider.
+const LOADED_PARAMETER_FILE = JSON.stringify({
+  version: 1,
+  source: LOADED_NAME,
+  parameters: [
+    { name: 'Label', text: 'Label', desc: 'Text to show.', type: 'string', default: 'Hello' },
+    {
+      name: 'Count',
+      text: 'Count',
+      desc: 7,
+      type: 'number',
+      default: 7,
+      min: 0,
+      max: 10,
+      decimals: 2
+    },
+    { name: 'Enabled', text: 0, desc: 'Whether it shows.', type: 'boolean', default: true },
+    { name: 'Empty', text: 'Empty', desc: 'No default.', type: 'string', default: '' },
+    {
+      name: 'Pair',
+      text: 'Pair',
+      desc: 'One point.',
+      type: 'struct',
+      structType: 'Point',
+      default: '{"x":"1"}'
+    },
+    {
+      name: 'Points',
+      text: 'Points',
+      desc: 'Some points.',
+      type: 'array',
+      arrayType: 'struct',
+      structType: 'Point',
+      default: '[]'
+    },
+    {
+      name: 'Ids',
+      text: 'Ids',
+      desc: 'Some ids.',
+      type: 'array',
+      arrayType: 'number',
+      default: '["1","2"]'
+    },
+    { name: 'Items', text: 'Items', desc: 'Any values.', type: 'array', default: '[]' },
+    {
+      name: 'Child',
+      text: 'Child',
+      desc: 'Nested.',
+      type: 'string',
+      default: 'x',
+      parent: 'Label'
+    },
+    { name: '--- Section ---', text: '--- Section ---', desc: '', type: 'string', default: '' }
+  ]
+})
+
+/**
+The plugin file as opened, holding the parameters the import path kept of the file above.
+*/
+function loadedEntry(): GeneratorEntry {
+  const imported = deserializeParams(LOADED_PARAMETER_FILE)
+  if (!imported.success) throw new Error(`parameter file refused: ${imported.reason}`)
+  const opened = PluginParser.parsePlugin(LOADED_SOURCE, `${LOADED_NAME}.js`)
+  // The import path gives each parameter a random id; a golden needs a fixed one
+  const parameters = imported.parameters.map((parameter, index) => ({
+    ...parameter,
+    id: `imported-${String(index)}`
+  }))
+  return {
+    name: 'type-violating-loaded',
+    def: { ...opened, id: 'loaded', importedFrom: `${LOADED_NAME}.js`, parameters }
+  }
+}
+
+/**
+What a save decides for a loaded plugin: whether raw mode is on, what it writes, and what a file
+name that is not the plugin's costs it.
+*/
+function saveSections(definition: PluginDefinition): [string, string][] {
+  const unloaded = { ...definition, rawSource: '' }
+  const outputs: [string, ReturnType<typeof generatePluginOutput>][] = [
+    ['file loaded', generatePluginOutput(definition, true, toBaseline(definition))],
+    ['file not loaded', generatePluginOutput(unloaded, true, toBaseline(unloaded))]
+  ]
+  const choices = [true, false, undefined].map(
+    (choice) =>
+      `${String(choice)}: imported ${String(isRawMode(definition, choice))}, ` +
+      `created ${String(isRawMode({}, choice))}`
+  )
+  // Regenerated code quotes the plugin's name, so the check goes on to the file name
+  const code = generatePlugin(definition)
+  const mismatches = [`${LOADED_NAME}.js`, `${LOADED_NAME.toLowerCase()}.js`, 'Other.js'].map(
+    (file) => {
+      const mismatch = fileNameMismatch(definition, `js/plugins/${file}`, code)
+      return `${file}: ${JSON.stringify(mismatch)}`
+    }
+  )
+  return [
+    ...outputs.map(([title, output]): [string, string] => [
+      `generatePluginOutput raw, ${title}`,
+      output.ok ? output.code : `refused ${output.refusal}: ${output.message}`
+    ]),
+    ['isRawMode', choices.join('\n')],
+    ['fileNameMismatch', mismatches.join('\n')]
+  ]
+}
+
 function row(name: string, change: (def: PluginDefinition) => void): GeneratorEntry {
   const def = rowBase()
   change(def)
@@ -400,7 +554,8 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
     def.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
   }),
   ...COMMENT_PAYLOADS.map((p) => ({ name: `hostile-${p.name}`, def: hostileDefinition(p.text) })),
-  { name: 'hostile-control', def: hostileDefinition('Safe') }
+  { name: 'hostile-control', def: hostileDefinition('Safe') },
+  loadedEntry()
 ]
 
 // A header-only source, so raw mode regenerates the annotation block around nothing else.
@@ -435,6 +590,9 @@ export function renderExports(entry: GeneratorEntry): string {
   ]
   if (entry.name.startsWith('hostile-')) {
     sections.push(['generateRawMode', headerOnlyRawMode(def)])
+  }
+  if (entry.name.startsWith('type-violating-')) {
+    sections.push(...saveSections(def))
   }
   return (
     sections.map(([title, text]) => `// ==== case: ${oneLine(title)}\n${text}`).join('\n\n') + '\n'

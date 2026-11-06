@@ -4,7 +4,7 @@ import { Button } from '../ui/button'
 import { useToastStore } from '../../stores'
 import { generatePluginsJsonEntry, generateReadme, typeDeclaration } from '../../lib/exportFormats'
 import { NOTICE_MS } from '../../stores/toastStore'
-import { userMessage } from '../../lib/utils'
+import { userMessage } from '../../lib/utilities'
 import type { PluginDefinition } from '../../types/plugin'
 import log from 'electron-log/renderer'
 

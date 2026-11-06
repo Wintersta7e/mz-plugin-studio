@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useProjectStore, usePluginStore } from '../../stores'
 import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 import type { DependencyIssue, DependencyReport } from '../../lib/dependency-analyzer'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { ScrollArea } from '../ui/scroll-area'

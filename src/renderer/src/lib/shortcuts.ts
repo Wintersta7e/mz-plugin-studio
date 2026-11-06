@@ -1,11 +1,11 @@
-export interface ShortcutDef {
+export interface ShortcutDefinition {
   key: string
   label: string
   description: string
   category: 'File' | 'Edit' | 'View' | 'Navigation'
 }
 
-export const SHORTCUTS: ShortcutDef[] = [
+export const SHORTCUTS: ShortcutDefinition[] = [
   // File
   { key: 'ctrl+s', label: 'Ctrl+S', description: 'Save / Export plugin', category: 'File' },
   { key: 'ctrl+n', label: 'Ctrl+N', description: 'New plugin', category: 'File' },
@@ -49,7 +49,7 @@ export const SHORTCUTS: ShortcutDef[] = [
 ]
 
 // Shortcuts that override even when Monaco editor is focused
-const GLOBAL_OVERRIDE_SHORTCUTS = [
+const GLOBAL_OVERRIDE_SHORTCUTS = new Set([
   'ctrl+s',
   'ctrl+shift+s',
   'ctrl+n',
@@ -57,41 +57,39 @@ const GLOBAL_OVERRIDE_SHORTCUTS = [
   'ctrl+b',
   'ctrl+shift+e',
   'f1'
-]
+])
 
-export function matchShortcut(e: KeyboardEvent): ShortcutDef | null {
-  if (e.altKey) return null
+export function matchShortcut(event: KeyboardEvent): ShortcutDefinition | null {
+  if (event.altKey) return null
 
-  const ctrl = e.ctrlKey || e.metaKey
-  const shift = e.shiftKey
-  const code = e.code
+  const isCtrl = event.ctrlKey || event.metaKey
+  const isShift = event.shiftKey
+  const code = event.code
 
   for (const shortcut of SHORTCUTS) {
-    const parts = shortcut.key.split('+')
-    const needsCtrl = parts.includes('ctrl')
-    const needsShift = parts.includes('shift')
-    const mainKey = parts[parts.length - 1]
+    const parts = new Set(shortcut.key.split('+'))
+    const isNeedsCtrl = parts.has('ctrl')
+    const isNeedsShift = parts.has('shift')
+    const mainKey = shortcut.key.slice(shortcut.key.lastIndexOf('+') + 1)
     const expectedCode = keyToCode(mainKey)
 
-    if (needsCtrl === ctrl && needsShift === shift && code === expectedCode) {
+    if (isNeedsCtrl === isCtrl && isNeedsShift === isShift && code === expectedCode) {
       return shortcut
     }
   }
   return null
 }
 
-export function shouldOverrideMonaco(shortcut: ShortcutDef): boolean {
-  return GLOBAL_OVERRIDE_SHORTCUTS.includes(shortcut.key)
+export function shouldOverrideMonaco(shortcut: ShortcutDefinition): boolean {
+  return GLOBAL_OVERRIDE_SHORTCUTS.has(shortcut.key)
 }
 
 function isMonacoFocused(): boolean {
-  const active = document.activeElement
-  if (!active) return false
-  return !!active.closest('.monaco-editor')
+  return !!document.activeElement?.closest('.monaco-editor')
 }
 
-export function shouldHandleShortcut(e: KeyboardEvent): ShortcutDef | null {
-  const shortcut = matchShortcut(e)
+export function shortcutToHandle(event: KeyboardEvent): ShortcutDefinition | null {
+  const shortcut = matchShortcut(event)
   if (!shortcut) return null
 
   if (isMonacoFocused() && !shouldOverrideMonaco(shortcut)) {
@@ -103,7 +101,7 @@ export function shouldHandleShortcut(e: KeyboardEvent): ShortcutDef | null {
 
 function keyToCode(key: string): string {
   if (/^[a-z]$/.test(key)) return `Key${key.toUpperCase()}`
-  if (/^[0-9]$/.test(key)) return `Digit${key}`
+  if (/^\d$/.test(key)) return `Digit${key}`
   if (/^f\d+$/i.test(key)) return key.toUpperCase()
   if (key === ',') return 'Comma'
   if (key === '.') return 'Period'

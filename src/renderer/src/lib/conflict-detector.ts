@@ -1,12 +1,12 @@
 /**
- * Conflict Detector — Conflict Detection for RPG Maker MZ Plugins
- *
- * Pure functions to detect conflicts between plugins that override
- * the same prototype methods.
- *
- * Override extraction logic lives in `src/shared/override-extractor.ts`
- * (shared between main and renderer processes).
- */
+Conflict Detector — Conflict Detection for RPG Maker MZ Plugins
+
+Pure functions to detect conflicts between plugins that override
+the same prototype methods.
+
+Override extraction logic lives in `src/shared/override-extractor.ts`
+(shared between main and renderer processes).
+*/
 
 export { extractOverrides } from '../../../shared/override-extractor'
 
@@ -27,15 +27,15 @@ export interface ConflictReport {
 }
 
 /**
- * Detect conflicts between plugins that override the same methods.
- *
- * @param headers - Plugin headers with name and overrides list (in load order)
- * @param mzClasses - Class popularity data from mz-classes.json
- * @returns A ConflictReport with sorted conflicts and health status
- */
+Detect conflicts between plugins that override the same methods.
+
+@param headers - Plugin headers with name and overrides list (in load order)
+@param mzClasses - Class popularity data from mz-classes.json
+@returns A ConflictReport with sorted conflicts and health status
+*/
 export function detectConflicts(
   headers: { filename: string; name: string; overrides: string[] }[],
-  mzClasses: Record<string, { popularity?: number }>
+  mzClasses: Readonly<Partial<Record<string, { popularity?: number }>>>
 ): ConflictReport {
   // Step 1: Build map of method → plugin names (preserving load order)
   const methodMap = new Map<string, string[]>()
@@ -60,9 +60,7 @@ export function detectConflicts(
     if (plugins.length < 2) continue
 
     // Split on .prototype. to get className and methodName
-    const parts = method.split('.prototype.')
-    const className = parts[0]
-    const methodName = parts[1] ?? method
+    const [className = method, methodName = method] = method.split('.prototype.', 2)
 
     // Severity based on class popularity
     const popularity = mzClasses[className]?.popularity ?? 0

@@ -10,7 +10,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 import type { ConflictReport, PluginConflict } from '../../lib/conflict-detector'
 import type { DependencyIssue, DependencyReport } from '../../lib/dependency-analyzer'
 

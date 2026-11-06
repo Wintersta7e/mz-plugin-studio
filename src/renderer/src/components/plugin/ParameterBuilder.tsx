@@ -40,8 +40,8 @@ import {
   duplicateParams,
   type ParamImportResult
 } from '../../lib/param-io'
-import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
-import { cn, userMessage } from '../../lib/utils'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useIsHeaderReadOnly } from '../../lib/raw-mode'
+import { cn, userMessage } from '../../lib/utilities'
 import { PARAM_TYPE_GROUPS, defaultText, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
 
@@ -321,7 +321,7 @@ export function ParameterBuilder() {
   const pluginName = usePluginStore((s) => s.plugin.meta.name)
   const addParameter = usePluginStore((s) => s.addParameter)
   const removeParameters = usePluginStore((s) => s.removeParameters)
-  const isHeaderReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useIsHeaderReadOnly()
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const { selectedIds, setSelectedIds, toggleSelect, selectAll } = useParamSelection(

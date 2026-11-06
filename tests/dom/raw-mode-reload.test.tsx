@@ -332,7 +332,7 @@ describe('reloading a tab with no unsaved edits', () => {
 
       expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
 
-      await expect(rawMode.reloadFromProject(id)).resolves.toBe(true)
+      await expect(rawMode.didReloadFromProject(id)).resolves.toBe(true)
       await expect(rawMode.prepareSave(id, { ask: false })).resolves.toMatchObject({
         status: 'ready',
         code: text
@@ -360,7 +360,7 @@ describe('reloading a tab with no unsaved edits', () => {
     const opened = { ...PluginParser.parsePlugin(v1, 'Fixture.js'), importedFrom: 'Fixture.js' }
     stores.usePluginStore.getState().openPlugin(opened)
 
-    await expect(rawMode.reloadFromProject(opened.id)).resolves.toBe(true)
+    await expect(rawMode.didReloadFromProject(opened.id)).resolves.toBe(true)
     await expect(rawMode.prepareSave(opened.id, { ask: false })).resolves.toMatchObject({
       status: 'ready',
       code: v2

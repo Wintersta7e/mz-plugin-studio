@@ -14,7 +14,6 @@
   },
   "test": {
     "exactOptionalPropertyTypes": {
-      "src/renderer/src/lib/raw-mode.ts": 1,
       "tests/dom/history-store.test.ts": 2,
       "tests/integration/check-coverage.test.ts": 1
     },
@@ -32,9 +31,6 @@
       "tests/unit/static-scope.test.ts": 5
     },
     "noUncheckedIndexedAccess": {
-      "src/renderer/src/lib/conflict-detector.ts": 2,
-      "src/renderer/src/lib/dependency-analyzer.ts": 1,
-      "src/renderer/src/lib/shortcuts.ts": 1,
       "tests/dom/history-store.test.ts": 11,
       "tests/golden/corpus/generator.ts": 8,
       "tests/golden/corpus/templates.ts": 5,
@@ -55,13 +51,7 @@
     }
   },
   "web": {
-    "exactOptionalPropertyTypes": {
-      "src/renderer/src/lib/raw-mode.ts": 1
-    },
-    "noUncheckedIndexedAccess": {
-      "src/renderer/src/lib/conflict-detector.ts": 2,
-      "src/renderer/src/lib/dependency-analyzer.ts": 1,
-      "src/renderer/src/lib/shortcuts.ts": 1
-    }
+    "exactOptionalPropertyTypes": {},
+    "noUncheckedIndexedAccess": {}
   }
 }
