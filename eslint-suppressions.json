@@ -2104,61 +2104,6 @@
       "count": 3
     }
   },
-  "tests/integration/refusal-text.test.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-array-flat-map": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
-    }
-  },
-  "tests/integration/release-ci-gate.test.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-hook": {
-      "count": 1
-    },
-    "vitest/require-top-level-describe": {
-      "count": 2
-    }
-  },
   "tests/integration/save-guard.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 6
@@ -2231,58 +2176,6 @@
     },
     "vitest/require-top-level-describe": {
       "count": 3
-    }
-  },
-  "tests/integration/scan-headers.test.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 2
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "vitest/consistent-test-it": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 2
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-top-level-describe": {
-      "count": 4
-    }
-  },
-  "tests/integration/strictness-status.test.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 11
     }
   },
   "tests/integration/write-grant.test.ts": {

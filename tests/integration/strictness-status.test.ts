@@ -44,19 +44,31 @@ const PARENT: Record<string, string> = {
 }
 
 const repos: string[] = []
-const counter = { cases: 0 }
+// Describe blocks run in shuffled order: the count prints once the last of them ends
+const counter = { cases: 0, describes: 0 }
+const DESCRIBES = 10
 
-const git = (dir: string, args: string[]): void => {
-  execFileSync('git', [...GIT_USER, ...args], { cwd: dir, env: ENV, stdio: 'ignore' })
+function countCase(): void {
+  counter.cases += 1
 }
-const tempDir = (): string => {
+
+function finishDescribe(): void {
+  for (const directory of repos.splice(0)) rmSync(directory, { recursive: true, force: true })
+  counter.describes += 1
+  if (counter.describes === DESCRIBES) process.stdout.write(`cases ${String(counter.cases)}\n`)
+}
+
+const git = (directory: string, args: string[]): void => {
+  execFileSync('git', [...GIT_USER, ...args], { cwd: directory, env: ENV, stdio: 'ignore' })
+}
+const temporaryDirectory = (): string => {
   const prefix = path.join(tmpdir(), 'strictness-status-')
-  const dir = realpathSync(mkdtempSync(prefix))
-  repos.push(dir)
-  return dir
+  const directory = realpathSync(mkdtempSync(prefix))
+  repos.push(directory)
+  return directory
 }
-const write = (dir: string, files: Record<string, string>): void => {
-  for (const [file, text] of Object.entries(files)) writeFileSync(path.join(dir, file), text)
+const write = (directory: string, files: Record<string, string>): void => {
+  for (const [file, text] of Object.entries(files)) writeFileSync(path.join(directory, file), text)
 }
 // Commits `files` (and the removal of `removed`) on top of the repository's HEAD.
 const commit = (directory: string, files: Record<string, string>, removed: string[] = []): void => {
@@ -73,22 +85,22 @@ const revParse = (directory: string, revision: string): string =>
   }).trim()
 
 // A repository whose parent commit holds PARENT and whose HEAD applies `head` (and `removed`).
-const makeRepo = (head: Record<string, string>, removed: string[] = []): string => {
-  const dir = tempDir()
-  git(dir, ['init', '-q'])
-  commit(dir, PARENT)
-  commit(dir, head, removed)
-  return dir
+const makeRepository = (head: Record<string, string>, removed: string[] = []): string => {
+  const directory = temporaryDirectory()
+  git(directory, ['init', '-q'])
+  commit(directory, PARENT)
+  commit(directory, head, removed)
+  return directory
 }
 
 const run = (
-  dir: string,
+  directory: string,
   command: string,
   args: string[],
   variables: Record<string, string> = {}
 ): { status: number | null; out: string } => {
   const result = spawnSync(process.execPath, [command, ...args], {
-    cwd: dir,
+    cwd: directory,
     env: { ...ENV, ...variables },
     encoding: 'utf8'
   })
@@ -105,7 +117,7 @@ const ALL_RULES_CONFIG = "import js from '@eslint/js'\n\nexport default [js.conf
 const sinceBaseWithoutSuppressions = (
   head: Record<string, string>
 ): { status: number | null; out: string } => {
-  const directory = makeRepo({}, ['eslint-suppressions.json'])
+  const directory = makeRepository({}, ['eslint-suppressions.json'])
   const base = revParse(directory, 'HEAD')
   commit(directory, { 'eslint-suppressions.json': suppressions(2), ...head })
   return status(directory, { STRICTNESS_BASE: base })
@@ -131,7 +143,7 @@ const reportTypecov = (
   files: Record<string, string> = {},
   ceilings: Record<string, number | undefined> = {}
 ): { status: number | null; out: string } => {
-  const directory = tempDir()
+  const directory = temporaryDirectory()
   const programs = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
   const scripts = Object.fromEntries(
     programs.map((name) => [`typecov:${name}`, 'node -e "console.log(\'(1 / 1) 100.00%\')"'])
@@ -154,7 +166,7 @@ const knipProduction = ({ issues, files }: { issues: number; files: number }): s
   `node -e "console.log('Unused exports (${String(issues)})'); ` +
   `console.log('knip scanned: files ${String(files)} of ${String(files)}')" -- --max-issues 2`
 const reportKnip = (production: string): { status: number | null; out: string } => {
-  const directory = tempDir()
+  const directory = temporaryDirectory()
   const scripts = {
     knip: 'node -e "console.log(\'Unused exports (1)\')"',
     'knip:production': production
@@ -175,7 +187,7 @@ const reportJscpd = (
   total: JscpdTotal | undefined,
   ceilings: string[] = CEILINGS
 ): { status: number | null; out: string } => {
-  const directory = tempDir()
+  const directory = temporaryDirectory()
   const report = JSON.stringify({ statistics: { total: { ...total, percentage: 2.5 } } })
   const fake = [
     "import { writeFileSync } from 'node:fs'",
@@ -198,18 +210,13 @@ const TWO_SPAWNS_TIMEOUT_MS = 15_000
 // Two spawned status runs, measured at 5.3 s together on CI.
 const SLOW_TWO_SPAWNS_TIMEOUT_MS = 20_000
 
-describe('strictness status', () => {
-  beforeEach(() => {
-    counter.cases += 1
-  })
+describe('strictness status: frozen counts', () => {
+  beforeEach(countCase)
 
-  afterAll(() => {
-    process.stdout.write(`cases ${counter.cases}\n`)
-    for (const dir of repos) rmSync(dir, { recursive: true, force: true })
-  })
+  afterAll(finishDescribe)
 
   it('(a) passes when the frozen count holds', () => {
-    const result = status(makeRepo({}))
+    const result = status(makeRepository({}))
 
     expect(result.out).toContain(
       'eslint-suppressions: 2 violations in 1 entries, 1 files (parent 2, delta 0)'
@@ -218,14 +225,14 @@ describe('strictness status', () => {
   })
 
   it('(b) passes when the frozen count falls', () => {
-    const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(1) }))
+    const result = status(makeRepository({ 'eslint-suppressions.json': suppressions(1) }))
 
     expect(result.out).toContain('(parent 2, delta -1)')
     expect(result.status).toBe(0)
   })
 
   it('(c) fails a rise without a lint config change', () => {
-    const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(3) }))
+    const result = status(makeRepository({ 'eslint-suppressions.json': suppressions(3) }))
 
     expect(result.out).toContain('(parent 2, delta +1)')
     expect(result.status).toBe(1)
@@ -233,35 +240,77 @@ describe('strictness status', () => {
 
   it('(d) passes a rise that comes with an ESLint config change', () => {
     const config = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
-    const dir = makeRepo({
+    const directory = makeRepository({
       'eslint-suppressions.json': suppressions(3),
       'eslint.config.mjs': config
     })
 
-    expect(status(dir).status).toBe(0)
+    expect(status(directory).status).toBe(0)
   })
 
   it('(e) passes a rise that comes with a new version of an imported lint package', () => {
-    const dir = makeRepo({
+    const directory = makeRepository({
       'eslint-suppressions.json': suppressions(3),
       'package.json': packageJson('1.0.1')
     })
 
-    expect(status(dir).status).toBe(0)
+    expect(status(directory).status).toBe(0)
   })
+})
+
+describe('strictness status: suppressions file', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
+
+  it('(g) fails without a suppressions file', () => {
+    expect(status(makeRepository({}, ['eslint-suppressions.json'])).status).toBe(1)
+  })
+
+  it('(h) fails on an entry naming an untracked file', { timeout: SPAWN_TIMEOUT_MS }, () => {
+    const result = status(
+      makeRepository({ 'eslint-suppressions.json': suppressions(2, 'gone.ts') })
+    )
+
+    expect(result.out).toContain('gone.ts')
+    expect(result.status).toBe(1)
+  })
+
+  it('(i) leaves ESLint failing on a fixed finding until its entry is pruned', () => {
+    const directory = temporaryDirectory()
+    write(directory, {
+      'eslint.config.mjs': "export default [{ rules: { 'no-var': 'error' } }]\n",
+      'eslint-suppressions.json': JSON.stringify({ 'a.js': { 'no-var': { count: 1 } } }),
+      'a.js': 'var a = 1\nexport { a }\n'
+    })
+
+    expect(run(directory, ESLINT, ['a.js']).status).toBe(0)
+
+    write(directory, { 'a.js': 'const a = 1\nexport { a }\n' })
+
+    expect(run(directory, ESLINT, ['a.js']).status).toBe(2)
+    expect(run(directory, ESLINT, ['--prune-suppressions', 'a.js']).status).toBe(0)
+    expect(run(directory, ESLINT, ['a.js']).status).toBe(0)
+  })
+})
+
+describe('strictness status: pending counts', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it(
     '(f) counts the errors a pending flag holds and fails once it holds none',
     { timeout: TWO_SPAWNS_TIMEOUT_MS },
     () => {
-      const pending = status(makeRepo({}))
+      const pending = status(makeRepository({}))
 
       expect(pending.out).toContain(
         'pending web noPropertyAccessFromIndexSignature: 1 errors in 1 files, ceiling 1'
       )
       expect(pending.status).toBe(0)
 
-      const cleared = status(makeRepo({ 'index.ts': BRACKET_ACCESS }))
+      const cleared = status(makeRepository({ 'index.ts': BRACKET_ACCESS }))
 
       expect(cleared.out).toContain('pending web noPropertyAccessFromIndexSignature: 0 errors in 0')
       expect(cleared.out).toContain(
@@ -272,7 +321,7 @@ describe('strictness status', () => {
   )
 
   it('(u) fails a pending count above its ceiling, naming the errors and their command', () => {
-    const result = status(makeRepo({ 'index.ts': TWO_DOT_ACCESSES }))
+    const result = status(makeRepository({ 'index.ts': TWO_DOT_ACCESSES }))
 
     expect(result.out).toContain(
       'pending web noPropertyAccessFromIndexSignature: index.ts: 2 errors, above its ceiling 1'
@@ -288,7 +337,7 @@ describe('strictness status', () => {
 
   it('(ae) fails a pending error moved to another file at an equal count', () => {
     const result = status(
-      makeRepo({
+      makeRepository({
         'index.ts': BRACKET_ACCESS,
         'other.ts': 'const map: Record<string, number> = {}\nexport const fresh = map.fresh\n'
       })
@@ -308,20 +357,26 @@ describe('strictness status', () => {
 
   it('(v) fails a pending count below its ceiling', () => {
     const lowered = ceilings({ web: { noPropertyAccessFromIndexSignature: { 'index.ts': 2 } } })
-    const result = status(makeRepo({ 'pending-ceilings.json': lowered }))
+    const result = status(makeRepository({ 'pending-ceilings.json': lowered }))
 
     expect(result.out).toContain(
       'pending web noPropertyAccessFromIndexSignature: index.ts: the count fell; lower its ceiling in pending-ceilings.json to 1'
     )
     expect(result.status).toBe(1)
   })
+})
+
+describe('strictness status: pending ceilings', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it(
     '(w) fails a pending flag without per-file ceilings, and a missing ceilings file',
     { timeout: SLOW_TWO_SPAWNS_TIMEOUT_MS },
     () => {
-      const unnamed = status(makeRepo({ 'pending-ceilings.json': ceilings({}) }))
-      const missing = status(makeRepo({}, ['pending-ceilings.json']))
+      const unnamed = status(makeRepository({ 'pending-ceilings.json': ceilings({}) }))
+      const missing = status(makeRepository({}, ['pending-ceilings.json']))
 
       expect(unnamed.out).toContain(
         'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
@@ -334,7 +389,7 @@ describe('strictness status', () => {
 
   it('(af) fails a ceiling held as one total rather than per file', () => {
     const total = '{"web":{"noPropertyAccessFromIndexSignature":1}}'
-    const result = status(makeRepo({ 'pending-ceilings.json': total }))
+    const result = status(makeRepository({ 'pending-ceilings.json': total }))
 
     expect(result.out).toContain(
       'pending web noPropertyAccessFromIndexSignature: pending-ceilings.json names no ceiling'
@@ -344,7 +399,7 @@ describe('strictness status', () => {
 
   it('(x) fails a ceiling for a flag that is not pending', () => {
     const stale = ceilings({ ...WEB_CEILING, node: { noUncheckedIndexedAccess: { 'a.ts': 3 } } })
-    const result = status(makeRepo({ 'pending-ceilings.json': stale }))
+    const result = status(makeRepository({ 'pending-ceilings.json': stale }))
 
     expect(result.out).toContain(
       'pending node noUncheckedIndexedAccess: pending-ceilings.json holds a ceiling for a flag no pending file holds'
@@ -352,37 +407,38 @@ describe('strictness status', () => {
     expect(result.status).toBe(1)
   })
 
-  it('(g) fails without a suppressions file', () => {
-    expect(status(makeRepo({}, ['eslint-suppressions.json'])).status).toBe(1)
-  })
+  it('(ac) fails a pending check whose tsc was killed, with how it ended and what it printed', () => {
+    const tsc = "process.stdout.write('checking\\n')\nprocess.kill(process.pid, 'SIGKILL')\n"
+    const result = statusWithTsc(makeRepository({}), tsc)
 
-  it('(h) fails on an entry naming an untracked file', { timeout: SPAWN_TIMEOUT_MS }, () => {
-    const result = status(makeRepo({ 'eslint-suppressions.json': suppressions(2, 'gone.ts') }))
-
-    expect(result.out).toContain('gone.ts')
+    expect(result.out).toContain(
+      'pending web noPropertyAccessFromIndexSignature: tsc failed (SIGKILL, 9 bytes received)'
+    )
+    expect(result.out).toContain('pending web noPropertyAccessFromIndexSignature | checking')
+    expect(result.out).not.toContain('no error left')
     expect(result.status).toBe(1)
   })
 
-  it('(i) leaves ESLint failing on a fixed finding until its entry is pruned', () => {
-    const dir = tempDir()
-    write(dir, {
-      'eslint.config.mjs': "export default [{ rules: { 'no-var': 'error' } }]\n",
-      'eslint-suppressions.json': JSON.stringify({ 'a.js': { 'no-var': { count: 1 } } }),
-      'a.js': 'var a = 1\nexport { a }\n'
-    })
+  it('(ad) fails a pending check whose tsc stops on an error without a location, printing it', () => {
+    const pending = { extends: './tsconfig.web.json', compilerOptions: { unknownFlag: true } }
+    const result = status(makeRepository({ 'tsconfig.web.pending.json': JSON.stringify(pending) }))
 
-    expect(run(dir, ESLINT, ['a.js']).status).toBe(0)
-
-    write(dir, { 'a.js': 'const a = 1\nexport { a }\n' })
-
-    expect(run(dir, ESLINT, ['a.js']).status).toBe(2)
-    expect(run(dir, ESLINT, ['--prune-suppressions', 'a.js']).status).toBe(0)
-    expect(run(dir, ESLINT, ['a.js']).status).toBe(0)
+    expect(result.out).toContain('pending web unknownFlag: tsc failed (exit 1, ')
+    expect(result.out).toContain(
+      "pending web unknownFlag | error TS5023: Unknown compiler option '--unknownFlag'."
+    )
+    expect(result.status).toBe(1)
   })
+})
+
+describe('strictness status: measured base', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it('(j) measures uncommitted changes against HEAD, not its parent', () => {
     const config = "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
-    const directory = makeRepo({
+    const directory = makeRepository({
       'eslint-suppressions.json': suppressions(3),
       'eslint.config.mjs': config
     })
@@ -394,7 +450,7 @@ describe('strictness status', () => {
   })
 
   it('(k) passes an uncommitted rise that comes with an uncommitted lint config change', () => {
-    const directory = makeRepo({})
+    const directory = makeRepository({})
     write(directory, {
       'eslint-suppressions.json': suppressions(3),
       'eslint.config.mjs': "import js from '@eslint/js'\n\nexport default [js.configs.all]\n"
@@ -406,7 +462,7 @@ describe('strictness status', () => {
   })
 
   it('(z) measures a clean tree against the base CI names, so a later commit hides no rise', () => {
-    const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
+    const directory = makeRepository({ 'eslint-suppressions.json': suppressions(50) })
     const base = revParse(directory, 'HEAD^')
     commit(directory, { 'notes.txt': 'unrelated\n' })
     const result = status(directory, { STRICTNESS_BASE: base })
@@ -420,7 +476,7 @@ describe('strictness status', () => {
     '(aa) measures against the merge-base with origin/main when CI names no base',
     { timeout: TWO_SPAWNS_TIMEOUT_MS },
     () => {
-      const directory = makeRepo({ 'eslint-suppressions.json': suppressions(50) })
+      const directory = makeRepository({ 'eslint-suppressions.json': suppressions(50) })
       git(directory, ['update-ref', 'refs/remotes/origin/main', 'HEAD^'])
       commit(directory, { 'notes.txt': 'unrelated\n' })
 
@@ -433,10 +489,16 @@ describe('strictness status', () => {
       expect(zeros.status).toBe(1)
     }
   )
+})
+
+describe('strictness status: base suppressions', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it('(ab) fails a rise in one entry that a fall in another hides from the total', () => {
     const swapped = { 'index.ts': { 'no-var': { count: 1 }, 'no-eval': { count: 1 } } }
-    const result = status(makeRepo({ 'eslint-suppressions.json': JSON.stringify(swapped) }))
+    const result = status(makeRepository({ 'eslint-suppressions.json': JSON.stringify(swapped) }))
 
     expect(result.out).toContain('(parent 2, delta 0)')
     expect(result.out).toContain('eslint-suppressions: index.ts no-eval: 1 (parent 0)')
@@ -467,7 +529,7 @@ describe('strictness status', () => {
     '(am) fails a base whose suppressions file is not JSON, or that is not a commit',
     { timeout: TWO_SPAWNS_TIMEOUT_MS },
     () => {
-      const directory = makeRepo({ 'eslint-suppressions.json': '{ not json' })
+      const directory = makeRepository({ 'eslint-suppressions.json': '{ not json' })
       const base = revParse(directory, 'HEAD')
       commit(directory, {
         'eslint-suppressions.json': suppressions(2),
@@ -483,29 +545,12 @@ describe('strictness status', () => {
       expect(missing.status).toBe(1)
     }
   )
+})
 
-  it('(ac) fails a pending check whose tsc was killed, with how it ended and what it printed', () => {
-    const tsc = "process.stdout.write('checking\\n')\nprocess.kill(process.pid, 'SIGKILL')\n"
-    const result = statusWithTsc(makeRepo({}), tsc)
+describe('strictness status: type coverage summaries', () => {
+  beforeEach(countCase)
 
-    expect(result.out).toContain(
-      'pending web noPropertyAccessFromIndexSignature: tsc failed (SIGKILL, 9 bytes received)'
-    )
-    expect(result.out).toContain('pending web noPropertyAccessFromIndexSignature | checking')
-    expect(result.out).not.toContain('no error left')
-    expect(result.status).toBe(1)
-  })
-
-  it('(ad) fails a pending check whose tsc stops on an error without a location, printing it', () => {
-    const pending = { extends: './tsconfig.web.json', compilerOptions: { unknownFlag: true } }
-    const result = status(makeRepo({ 'tsconfig.web.pending.json': JSON.stringify(pending) }))
-
-    expect(result.out).toContain('pending web unknownFlag: tsc failed (exit 1, ')
-    expect(result.out).toContain(
-      "pending web unknownFlag | error TS5023: Unknown compiler option '--unknownFlag'."
-    )
-    expect(result.status).toBe(1)
-  })
+  afterAll(finishDescribe)
 
   it('(l) names how a report run without a summary ended and what it printed', () => {
     const result = reportTypecov(
@@ -541,6 +586,12 @@ describe('strictness status', () => {
     expect(result.out).toContain('typecov web: (1 / 1) 100.00%, uncovered 0, ceiling 0')
     expect(result.status).toBe(0)
   })
+})
+
+describe('strictness status: type coverage ceilings', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it(
     '(ah) fails a program under its ceiling, and one the report names no ceiling for',
@@ -582,6 +633,12 @@ describe('strictness status', () => {
       expect(removed.status).toBe(0)
     }
   )
+})
+
+describe('strictness status: knip', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it('(m) passes the production knip count at its ceiling', () => {
     const result = reportKnip(knipProduction({ issues: 2, files: 3 }))
@@ -607,6 +664,12 @@ describe('strictness status', () => {
     expect(result.out).toContain('knip production: the run scanned no file')
     expect(result.status).toBe(1)
   })
+})
+
+describe('strictness status: jscpd', () => {
+  beforeEach(countCase)
+
+  afterAll(finishDescribe)
 
   it('(p) passes the jscpd clones and duplicated lines at their ceilings', () => {
     const result = reportJscpd(AT_CEILINGS)

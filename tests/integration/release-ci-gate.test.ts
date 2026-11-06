@@ -12,7 +12,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { delimiter, join } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const RELEASE = fileURLToPath(new URL('../../.github/workflows/release.yml', import.meta.url))
@@ -27,7 +27,8 @@ function stepScript(): string {
   const run = lines.findIndex((line, index) => index > step && line === '        run: |')
   if (run === -1) throw new Error('the CI wait step has no run: | block')
   const body: string[] = []
-  for (const line of lines.slice(run + 1)) {
+  const following = lines.slice(run + 1)
+  for (const line of following) {
     if (line.trim() !== '' && !line.startsWith(' '.repeat(10))) break
     body.push(line.slice(10))
   }
@@ -54,44 +55,37 @@ const FAKE_SLEEP = `#!/bin/sh
 echo "sleep $*" >> "$FAKE_LOG"
 `
 
-const tempDirs: string[] = []
-let cases = 0
+const temporaryFolders: string[] = []
+const counted = { cases: 0 }
 
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
-
-afterAll(() => {
-  console.log(`release CI gate: cases ${cases}`)
-})
-
-function runStep(env: Record<string, string>): {
+function runStep(variables: Record<string, string>): {
   status: number | null
   out: string
   log: string[]
 } {
-  const dir = mkdtempSync(join(tmpdir(), 'release-ci-gate-'))
-  tempDirs.push(dir)
-  const bin = join(dir, 'bin')
-  const script = join(dir, 'step.sh')
-  const log = join(dir, 'calls.log')
+  const folder = mkdtempSync(path.join(tmpdir(), 'release-ci-gate-'))
+  temporaryFolders.push(folder)
+  const bin = path.join(folder, 'bin')
+  const script = path.join(folder, 'step.sh')
+  const log = path.join(folder, 'calls.log')
   writeFileSync(script, stepScript())
   mkdirSync(bin)
-  writeFileSync(join(bin, 'gh'), FAKE_GH)
-  writeFileSync(join(bin, 'sleep'), FAKE_SLEEP)
-  chmodSync(join(bin, 'gh'), 0o755)
-  chmodSync(join(bin, 'sleep'), 0o755)
+  writeFileSync(path.join(bin, 'gh'), FAKE_GH)
+  writeFileSync(path.join(bin, 'sleep'), FAKE_SLEEP)
+  chmodSync(path.join(bin, 'gh'), 0o755)
+  chmodSync(path.join(bin, 'sleep'), 0o755)
+  const { PATH: searchPath = '' } = process.env
   const result = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', script], {
     encoding: 'utf8',
     env: {
       ...process.env,
-      PATH: `${bin}${delimiter}${process.env.PATH ?? ''}`,
+      PATH: `${bin}${path.delimiter}${searchPath}`,
       GITHUB_SHA: SHA,
       FAKE_LOG: log,
-      ...env
+      ...variables
     }
   })
-  cases++
+  counted.cases += 1
   return {
     status: result.status,
     out: result.stdout + result.stderr,
@@ -102,6 +96,16 @@ function runStep(env: Record<string, string>): {
 const lastLine = (out: string): string => out.trim().split('\n').at(-1) ?? ''
 
 describe('release CI gate', () => {
+  afterEach(() => {
+    for (const folder of temporaryFolders.splice(0)) {
+      rmSync(folder, { recursive: true, force: true })
+    }
+  })
+
+  afterAll(() => {
+    process.stdout.write(`release CI gate: cases ${String(counted.cases)}\n`)
+  })
+
   it('fails after six tries when the commit has no CI run', () => {
     const { status, out, log } = runStep({ FAKE_RUN_ID: '' })
     const lists = log.filter((line) => line.startsWith('gh run list '))
@@ -110,7 +114,7 @@ describe('release CI gate', () => {
 
     for (const line of lists) expect(line).toContain(`--workflow ci.yml --commit ${SHA}`)
 
-    expect(log.filter((line) => line.startsWith('gh run watch'))).toEqual([])
+    expect(log.filter((line) => line.startsWith('gh run watch'))).toStrictEqual([])
     expect(lastLine(out)).toContain(SHA)
     expect(status).toBe(1)
   })
@@ -133,7 +137,7 @@ describe('release CI gate', () => {
   it('fails without watching when listing the runs fails', () => {
     const { status, log } = runStep({ FAKE_LIST_EXIT: '1', FAKE_RUN_ID: '42' })
 
-    expect(log.filter((line) => line.startsWith('gh run watch'))).toEqual([])
+    expect(log.filter((line) => line.startsWith('gh run watch'))).toStrictEqual([])
     expect(status).toBe(1)
   })
 })

@@ -21,7 +21,6 @@
     "noPropertyAccessFromIndexSignature": {
       "e2e/playwright.config.ts": 1,
       "tests/golden/corpus/templates.ts": 3,
-      "tests/integration/release-ci-gate.test.ts": 1,
       "tests/unit/static-scope.test.ts": 5
     },
     "noUncheckedIndexedAccess": {

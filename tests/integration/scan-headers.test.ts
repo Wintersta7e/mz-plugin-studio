@@ -2,64 +2,92 @@
 // over a temporary project folder. It reads @base, @orderAfter and @orderBefore as the importer does.
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import path from 'node:path'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { setCurrentProjectRoot } from '../../src/main/file-access'
-import { IPC_CHANNELS } from '../../src/shared/ipc-types'
-import type { ScannedPluginHeader } from '../../src/shared/ipc-types'
+import { IPC_CHANNELS, type ScannedPluginHeader } from '../../src/shared/ipc-types'
 import { registerMainHandlers } from '../helpers/fake-ipc'
 
-vi.mock('electron', () => ({ ipcMain: {} }))
+vi.mock<{ ipcMain: object }>(import('electron'), () => ({ ipcMain: {} }))
 
-let tmp: string
+/**
+Project folders the running test made, removed after it
+*/
+const projects: string[] = []
 
-beforeEach(async () => {
-  tmp = await mkdtemp(join(tmpdir(), 'scan-headers-'))
-  await mkdir(join(tmp, 'js', 'plugins'), { recursive: true })
-})
+async function removeProjects(): Promise<void> {
+  for (const project of projects.splice(0)) await rm(project, { recursive: true, force: true })
+}
 
-afterEach(async () => {
-  await rm(tmp, { recursive: true, force: true })
-})
+function isHeader(value: unknown): value is ScannedPluginHeader {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'filename' in value &&
+    typeof value.filename === 'string'
+  )
+}
 
-/** Writes `files` into the project's plugins folder and runs the scan over it. */
+function isList(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value)
+}
+
+function isHeaderList(value: unknown): value is ScannedPluginHeader[] {
+  return isList(value) && value.every((entry) => isHeader(entry))
+}
+
+/**
+Writes `files` into a fresh project's plugins folder and runs the scan over it
+*/
 async function scan(files: Record<string, string>): Promise<ScannedPluginHeader[]> {
+  const project = await mkdtemp(path.join(tmpdir(), 'scan-headers-'))
+  projects.push(project)
+  await mkdir(path.join(project, 'js', 'plugins'), { recursive: true })
   for (const [name, content] of Object.entries(files)) {
-    await writeFile(join(tmp, 'js', 'plugins', name), content)
+    await writeFile(path.join(project, 'js', 'plugins', name), content)
   }
   const ipc = registerMainHandlers()
   // The scan acts only on the open project; this folder holds plugins only, so it is set directly
-  setCurrentProjectRoot(tmp)
-  const results = (await ipc.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, tmp)) as ScannedPluginHeader[]
-  return results.sort((a, b) => a.filename.localeCompare(b.filename))
+  setCurrentProjectRoot(project)
+  const results = await ipc.invoke(IPC_CHANNELS.PLUGIN_SCAN_HEADERS, project)
+  if (!isHeaderList(results)) throw new Error('the scan did not answer a list of plugin headers')
+  return results.toSorted((a, b) => a.filename.localeCompare(b.filename))
 }
 
 const order = (h: ScannedPluginHeader) => [h.filename, h.base, h.orderAfter, h.orderBefore]
 
-it('reads load-order tags that start a line', async () => {
-  const results = await scan({
-    'Demo.js':
-      '/*:\n * @target MZ\n * @base CoreLib\n * @orderAfter CoreLib\n * @orderBefore Last\n */\n',
-    'Bare.js': '/*:\n@target MZ\n@base CoreLib\n*/\n'
+describe('scan headers', () => {
+  afterEach(removeProjects)
+
+  it('reads load-order tags that start a line', async () => {
+    expect.assertions(1)
+
+    const results = await scan({
+      'Demo.js':
+        '/*:\n * @target MZ\n * @base CoreLib\n * @orderAfter CoreLib\n * @orderBefore Last\n */\n',
+      'Bare.js': '/*:\n@target MZ\n@base CoreLib\n*/\n'
+    })
+
+    expect(results.map((header) => order(header))).toStrictEqual([
+      ['Bare.js', ['CoreLib'], [], []],
+      ['Demo.js', ['CoreLib'], ['CoreLib'], ['Last']]
+    ])
   })
 
-  expect(results.map(order)).toEqual([
-    ['Bare.js', ['CoreLib'], [], []],
-    ['Demo.js', ['CoreLib'], ['CoreLib'], ['Last']]
-  ])
-})
+  it('reads no dependency from help text, a guarded help line or an empty tag', async () => {
+    expect.assertions(1)
 
-it('reads no dependency from help text, a guarded help line or an empty tag', async () => {
-  const results = await scan({
-    'Mention.js':
-      '/*:\n * @target MZ\n * @help\n * Requires @base CoreLib, @orderAfter A and @orderBefore B\n */\n',
-    'Guarded.js': '/*:\n * @target MZ\n * @help\n * \u{200B}@base CoreLib\n */\n',
-    'Empty.js': '/*:\n * @base\n * @orderAfter\n * @orderBefore\n * @target MZ\n */\n'
+    const results = await scan({
+      'Mention.js':
+        '/*:\n * @target MZ\n * @help\n * Requires @base CoreLib, @orderAfter A and @orderBefore B\n */\n',
+      'Guarded.js': '/*:\n * @target MZ\n * @help\n * \u{200B}@base CoreLib\n */\n',
+      'Empty.js': '/*:\n * @base\n * @orderAfter\n * @orderBefore\n * @target MZ\n */\n'
+    })
+
+    expect(results.map((header) => order(header))).toStrictEqual([
+      ['Empty.js', [], [], []],
+      ['Guarded.js', [], [], []],
+      ['Mention.js', [], [], []]
+    ])
   })
-
-  expect(results.map(order)).toEqual([
-    ['Empty.js', [], [], []],
-    ['Guarded.js', [], [], []],
-    ['Mention.js', [], [], []]
-  ])
 })
