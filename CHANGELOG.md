@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-11-06
+
 ### Fixed
 
 - In the template dialog, a field that holds a value of the wrong kind, such as a number in a text field or a list, is listed as an error on that field, instead of the template's check failing without a message.
