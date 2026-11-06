@@ -38,7 +38,6 @@
       "tests/golden/corpus/templates.ts": 5,
       "tests/golden/generator.test.ts": 2,
       "tests/golden/persisted.test.ts": 2,
-      "tests/integration/ipc-arguments.test.ts": 1,
       "tests/integration/ipc-channels.test.ts": 1,
       "tests/integration/ipc-registration.test.ts": 1,
       "tests/integration/project-load-errors.test.ts": 3,
