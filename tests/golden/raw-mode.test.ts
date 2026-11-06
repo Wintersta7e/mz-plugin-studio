@@ -13,29 +13,34 @@ import {
 } from '../../src/shared/types/plugin'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { fixturePath } from '../helpers/fixture-project'
-import { EDITS, fixturePlugins, loadFixture } from './corpus/raw-mode'
+import { EDITS, fixturePlugins, loadFixture, type Edit } from './corpus/raw-mode'
 
 const fixtures = fixturePlugins()
 const stem = (file: string): string => file.replace(/\.js$/, '')
 
-/** Raw mode's output for an edit of the fixture, against the fixture as it was opened. */
+/**
+Raw mode's output for an edit of the fixture, against the fixture as it was opened.
+*/
 function rawMode(file: string, edit: (typeof EDITS)[number]): string {
   const opened = loadFixture(file)
   return generateRawMode(edit.apply(opened), toBaseline(opened))
 }
 
+const EDITED = fixtures.flatMap((file) =>
+  EDITS.map((edit): [string, string, Edit] => [`${stem(file)}: ${edit.name}`, file, edit])
+)
+
 describe('raw-mode goldens', () => {
-  for (const file of fixtures) {
-    for (const edit of EDITS) {
-      it(`${stem(file)}: ${edit.name}`, async () => {
-        await expect(rawMode(file, edit)).toMatchFileSnapshot(
-          `__golden__/raw-mode/${stem(file)}.${edit.name}.js`
-        )
-      })
-    }
-  }
+  it.each(EDITED)('%s', async (_title, file, edit) => {
+    expect.assertions(1)
+    await expect(rawMode(file, edit)).toMatchFileSnapshot(
+      `__golden__/raw-mode/${stem(file)}.${edit.name}.js`
+    )
+  })
 
   it('compile results', async () => {
+    expect.assertions(3)
+
     const parses: Record<string, boolean> = {}
     for (const file of fixtures) {
       for (const edit of EDITS) {
@@ -44,9 +49,10 @@ describe('raw-mode goldens', () => {
       }
     }
     const total = Object.keys(parses).length
-    const compiling = Object.values(parses).filter((parsed) => parsed).length
-    console.log(
-      `raw-mode: fixtures ${fixtures.length} × edits ${EDITS.length}, compiling ${compiling}/${total}`
+    const compiling = Object.values(parses).filter(Boolean).length
+    process.stdout.write(
+      `raw-mode: fixtures ${String(fixtures.length)} × edits ${String(EDITS.length)}, ` +
+        `compiling ${String(compiling)}/${String(total)}\n`
     )
 
     expect(fixtures.length).toBeGreaterThan(0)

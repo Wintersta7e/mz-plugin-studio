@@ -178,8 +178,8 @@ const oldWrapperClose = (code: string): number | undefined =>
 const oldNoteTags = (note: string): string => {
   const tags: Record<string, string> = {}
   const matches = note.matchAll(previousPattern('<([^:>]+):?([^>]*)>', 'g'))
-  for (const [, name = '', value] of matches) {
-    tags[name] = value || 'true'
+  for (const [, name = '', value = ''] of matches) {
+    tags[name] = value === '' ? 'true' : value
   }
   return JSON.stringify(tags)
 }

@@ -9,8 +9,12 @@ import type { NoteParam, PluginParameter } from '../../src/shared/types/plugin'
 import { deserializeParams } from '../../src/renderer/src/lib/param-io'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { COMMENT_PAYLOADS } from '../helpers/hostile'
-import { GENERATOR_ENTRIES, countHostileLeaves, renderExports } from './corpus/generator'
-import type { GeneratorEntry } from './corpus/generator'
+import {
+  GENERATOR_ENTRIES,
+  countHostileLeaves,
+  renderExports,
+  type GeneratorEntry
+} from './corpus/generator'
 import { MZPARAMS_HOST } from './corpus/mzparams'
 import { freezeTime, restoreTime } from './corpus/normalise'
 import { typeViolatingDefaultCases, type TypeViolatingDefaultCase } from './corpus/type-violating'
@@ -22,9 +26,22 @@ const HOSTILE_PAYLOADS = new Map([
 const BENIGN = ['all-param-types', 'meta-full', 'fixture-generated', 'hostile-control']
 
 const entry = (name: string): GeneratorEntry => {
-  const found = GENERATOR_ENTRIES.find((e) => e.name === name)
+  const found = GENERATOR_ENTRIES.find((candidate) => candidate.name === name)
   if (found === undefined) throw new Error(`No generator entry ${name}`)
   return found
+}
+
+// The first of `items`, which must hold one
+function first<T>(items: readonly T[]): T {
+  const item = items.at(0)
+  if (item === undefined) throw new Error('expected at least one item')
+  return item
+}
+
+// The syntax problem of an entry's generated plugin, as a one-item list, or none when it compiles
+function compileProblems(name: string): { name: string; problem: unknown }[] {
+  const problem = compileCheck(generatePlugin(entry(name).def), `${name}.js`)
+  return problem === null ? [] : [{ name, problem }]
 }
 
 // What the import path keeps of a parameter file, then the plugin generated from it.
@@ -32,7 +49,7 @@ function renderDefaultCase(c: TypeViolatingDefaultCase): string {
   const imported = deserializeParams(c.content)
   if (!imported.success) return `// refused: ${imported.reason}\n`
   const dropped = imported.dropped.map((d) => `${d.param}.${d.field}`).join(', ')
-  const skipped = imported.skipped.map((s) => `${s.index} ${s.reason}`).join(', ')
+  const skipped = imported.skipped.map((s) => `${String(s.index)} ${s.reason}`).join(', ')
   return (
     `// dropped: ${dropped === '' ? 'none' : dropped}\n` +
     `// skipped: ${skipped === '' ? 'none' : skipped}\n` +
@@ -45,48 +62,46 @@ describe('generator goldens', () => {
 
   afterAll(restoreTime)
 
-  for (const e of GENERATOR_ENTRIES) {
-    it(`${e.name}: generatePlugin`, async () => {
-      await expect(generatePlugin(e.def)).toMatchFileSnapshot(`__golden__/generator/${e.name}.js`)
-    })
+  it.each(GENERATOR_ENTRIES)('$name: generatePlugin', async ({ name, def }) => {
+    expect.assertions(1)
+    await expect(generatePlugin(def)).toMatchFileSnapshot(`__golden__/generator/${name}.js`)
+  })
 
-    it(`${e.name}: exports`, async () => {
-      await expect(renderExports(e)).toMatchFileSnapshot(
-        `__golden__/generator/${e.name}.exports.txt`
-      )
-    })
-  }
+  it.each(GENERATOR_ENTRIES)('$name: exports', async (generatorEntry) => {
+    expect.assertions(1)
+    await expect(renderExports(generatorEntry)).toMatchFileSnapshot(
+      `__golden__/generator/${generatorEntry.name}.exports.txt`
+    )
+  })
 
-  for (const c of typeViolatingDefaultCases) {
-    it(`${c.name}: imported and generated`, async () => {
-      expect.hasAssertions()
-      await expect(renderDefaultCase(c)).toMatchFileSnapshot(`__golden__/generator/${c.name}.js`)
-    })
-  }
+  it.each(typeViolatingDefaultCases)('$name: imported and generated', async (c) => {
+    expect.hasAssertions()
+    await expect(renderDefaultCase(c)).toMatchFileSnapshot(`__golden__/generator/${c.name}.js`)
+  })
 
   it('hostile entries fill every string leaf', () => {
     const leaves = [...HOSTILE_PAYLOADS].map(([name, payload]) =>
       countHostileLeaves(entry(name).def, payload)
     )
-    const hostile = GENERATOR_ENTRIES.filter((e) => e.name.startsWith('hostile-')).length - 1
-    console.log(
-      `generator entries ${GENERATOR_ENTRIES.length} (hostile ${hostile}, ` +
-        `leaves ${leaves[0].holding}/${leaves[0].total})`
+    const hostile =
+      GENERATOR_ENTRIES.filter((candidate) => candidate.name.startsWith('hostile-')).length - 1
+    const firstLeaves = first(leaves)
+    process.stdout.write(
+      `generator entries ${String(GENERATOR_ENTRIES.length)} (hostile ${String(hostile)}, ` +
+        `leaves ${String(firstLeaves.holding)}/${String(firstLeaves.total)})\n`
     )
 
     expect(hostile).toBe(COMMENT_PAYLOADS.length)
 
     for (const count of leaves) {
       expect(count.total).toBeGreaterThan(0)
-      expect(count).toEqual(leaves[0])
+      expect(count).toStrictEqual(firstLeaves)
       expect(count.holding).toBe(count.total)
     }
   })
 
   it('benign entries compile', () => {
-    for (const name of BENIGN) {
-      expect(compileCheck(generatePlugin(entry(name).def), `${name}.js`), name).toBeNull()
-    }
+    expect(BENIGN.flatMap((name) => compileProblems(name))).toStrictEqual([])
   })
 })
 

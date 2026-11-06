@@ -14,13 +14,18 @@ describe('parser goldens', () => {
     expect(fixtures.length).toBeGreaterThan(0)
   })
 
-  for (const file of fixtures) {
-    it(`${stem(file)}: parsePlugin`, async () => {
-      await expect(
-        normaliseIds(JSON.stringify(loadFixture(file), null, 2)) + '\n'
-      ).toMatchFileSnapshot(`__golden__/parser/${stem(file)}.json`)
-    })
-  }
+  it.each(fixtures.map((file) => ({ file, name: stem(file) })))(
+    '$name: parsePlugin',
+    async ({ file, name }) => {
+      expect.assertions(1)
+
+      const parsed = loadFixture(file)
+
+      await expect(normaliseIds(JSON.stringify(parsed, null, 2)) + '\n').toMatchFileSnapshot(
+        `__golden__/parser/${name}.json`
+      )
+    }
+  )
 })
 
 describe('parser pattern goldens', () => {

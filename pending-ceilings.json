@@ -1,8 +1,1 @@
-{
-  "test": {
-    "noUncheckedIndexedAccess": {
-      "tests/golden/generator.test.ts": 2,
-      "tests/golden/persisted.test.ts": 2
-    }
-  }
-}
+{}

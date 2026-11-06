@@ -14,7 +14,6 @@
     "types": ["node", "vitest/globals"],
     "jsx": "react-jsx",
     "allowJs": true,
-    "noUncheckedIndexedAccess": false,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],
       "@/*": ["./src/renderer/src/*"],

@@ -1,7 +1,7 @@
 // The exact saved form of each store, empty and populated, pinned before schema versioning
 // changes it.
 import { beforeEach, describe, it, expect, vi } from 'vitest'
-import { normaliseIds } from './corpus/normalise'
+import { byCodeUnit, normaliseIds } from './corpus/normalise'
 import { POPULATED, persistedStores } from './corpus/persisted'
 
 interface StoreHook {
@@ -49,29 +49,31 @@ describe('persisted store goldens', () => {
 
   it('finds every persisted store and a populated state for each', () => {
     const keys = stores.map((s) => s.key)
-    console.log(`persisted keys ${keys.filter((k) => k in POPULATED).length}/${keys.length}`)
+    const populated = keys.filter((k) => Object.hasOwn(POPULATED, k)).length
+    process.stdout.write(`persisted keys ${String(populated)}/${String(keys.length)}\n`)
 
     expect(keys.length).toBeGreaterThan(0)
     expect(new Set(keys).size).toBe(keys.length)
-    expect([...keys].sort()).toEqual(Object.keys(POPULATED).sort())
+    expect(keys.toSorted(byCodeUnit)).toStrictEqual(Object.keys(POPULATED).toSorted(byCodeUnit))
   })
 
-  for (const { key, modulePath, exportName } of stores) {
-    for (const state of ['default', 'populated'] as const) {
-      it(`${key}: ${state}`, async () => {
-        localStorage.clear()
-        vi.resetModules()
-        const module = (await import(modulePath)) as Record<string, StoreHook>
-        module[exportName].setState(state === 'default' ? {} : POPULATED[key])
-        const raw = localStorage.getItem(key)
+  const savedForms = stores.flatMap((store) =>
+    (['default', 'populated'] as const).map((state) => ({ ...store, state }))
+  )
 
-        expect(raw, `${key} wrote nothing`).not.toBeNull()
-        await expect(normaliseIds(raw!) + '\n').toMatchFileSnapshot(
-          `__golden__/persisted/${key}.${state}.json`
-        )
-      })
-    }
-  }
+  it.each(savedForms)('$key: $state', async ({ key, modulePath, exportName, state }) => {
+    expect.assertions(2)
+
+    localStorage.clear()
+    const store = await freshStore(modulePath, exportName)
+    store.setState(state === 'default' ? {} : (POPULATED[key] ?? {}))
+    const raw = localStorage.getItem(key)
+
+    expect(raw, `${key} wrote nothing`).not.toBeNull()
+    await expect(normaliseIds(raw ?? '') + '\n').toMatchFileSnapshot(
+      `__golden__/persisted/${key}.${state}.json`
+    )
+  })
 
   // A restart loads the saved form back through each store's shape checks, which keep the id of
   // every plugin, parameter and entry they restore; a new id would orphan what refers to the old.
