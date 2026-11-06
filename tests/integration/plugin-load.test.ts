@@ -2,7 +2,7 @@
 // the file's text, so raw mode can save it back. A file that is not UTF-8 is refused, since its
 // text could not be written back unchanged.
 import { readFile, rm, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import path from 'node:path'
 import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setCurrentProjectRoot } from '../../src/main/file-access'
@@ -11,35 +11,50 @@ import { IPC_CHANNELS } from '../../src/shared/ipc-types'
 import { registerMainHandlers } from '../helpers/fake-ipc'
 import { copyFixtureProject } from '../helpers/fixture-project'
 
-vi.mock('electron', () => ({ ipcMain: {} }))
+vi.mock<{ ipcMain: object }>(import('electron'), () => ({ ipcMain: {} }))
 
-let project: string | null = null
+const projects: string[] = []
 
-beforeEach(() => {
-  vi.mocked(log.warn).mockClear()
-  vi.mocked(log.error).mockClear()
-})
-
-afterEach(async () => {
-  if (project !== null) await rm(dirname(project), { recursive: true, force: true })
-  project = null
-})
+/**
+A fresh copy of the fixture project, removed after the test
+*/
+async function freshProject(): Promise<string> {
+  const project = await copyFixtureProject()
+  projects.push(project)
+  return project
+}
 
 /**
 The handler main registers for `channel`, called as an invoke from the renderer reaches it,
-with the test's project copy as the open project.
+with `project` as the open project.
 */
-function handlerFor(channel: string): (...args: unknown[]) => Promise<unknown> {
+function handlerFor(project: string, channel: string): (...args: unknown[]) => Promise<unknown> {
   const ipc = registerMainHandlers()
-  if (project !== null) setCurrentProjectRoot(project)
-  return (...args) => ipc.invoke(channel, ...args)
+  setCurrentProjectRoot(project)
+  return async (...args) => ipc.invoke(channel, ...args)
 }
 
 describe('loading a plugin file', () => {
+  beforeEach(() => {
+    vi.mocked(log.warn).mockClear()
+    vi.mocked(log.error).mockClear()
+  })
+
+  afterEach(async () => {
+    for (const project of projects.splice(0)) {
+      await rm(path.dirname(project), { recursive: true, force: true })
+    }
+  })
+
   it('records the file name and keeps the file text', async () => {
-    project = await copyFixtureProject()
+    expect.assertions(3)
+
+    const project = await freshProject()
     const { plugin } = await loadPluginFile(project, 'Fixture_HandWritten.js')
-    const text = await readFile(join(project, 'js', 'plugins', 'Fixture_HandWritten.js'), 'utf-8')
+    const text = await readFile(
+      path.join(project, 'js', 'plugins', 'Fixture_HandWritten.js'),
+      'utf8'
+    )
 
     expect(plugin.importedFrom).toBe('Fixture_HandWritten.js')
     expect(plugin.rawSource).toBe(text)
@@ -47,7 +62,9 @@ describe('loading a plugin file', () => {
   })
 
   it('names the file when it cannot be read', async () => {
-    project = await copyFixtureProject()
+    expect.assertions(1)
+
+    const project = await freshProject()
 
     await expect(loadPluginFile(project, 'Missing.js')).rejects.toThrow(
       /^Failed to load plugin "Missing\.js": /
@@ -55,12 +72,15 @@ describe('loading a plugin file', () => {
   })
 
   it('keeps a UTF-8 byte order mark in the file text', async () => {
-    project = await copyFixtureProject()
+    expect.assertions(3)
+
+    const project = await freshProject()
     const { plugin } = await loadPluginFile(project, 'Fixture_Bom.js')
     const raw = await readRawPlugin(project, 'Fixture_Bom.js')
-    const byPath = await handlerFor(IPC_CHANNELS.PLUGIN_READ_BY_PATH)(
-      join(project, 'js', 'plugins', 'Fixture_Bom.js')
-    )
+    const byPath = await handlerFor(
+      project,
+      IPC_CHANNELS.PLUGIN_READ_BY_PATH
+    )(path.join(project, 'js', 'plugins', 'Fixture_Bom.js'))
 
     expect(plugin.rawSource?.startsWith('\u{FEFF}')).toBe(true)
     expect(raw.content.startsWith('\u{FEFF}')).toBe(true)
@@ -68,11 +88,13 @@ describe('loading a plugin file', () => {
   })
 
   it('refuses a file that is not UTF-8, naming it, and logs a warning', async () => {
-    project = await copyFixtureProject()
+    expect.assertions(5)
+
+    const project = await freshProject()
     // Shift_JIS text, which is not valid UTF-8
     const shiftJis = Buffer.from([0x83, 0x65, 0x83, 0x58, 0x83, 0x67])
     await writeFile(
-      join(project, 'js', 'plugins', 'NotUtf8.js'),
+      path.join(project, 'js', 'plugins', 'NotUtf8.js'),
       Buffer.concat([Buffer.from('/*:\n * @plugindesc '), shiftJis, Buffer.from('\n */\n')])
     )
     const notUtf8 = 'NotUtf8.js is not UTF-8. The app reads only UTF-8 files'
@@ -82,13 +104,19 @@ describe('loading a plugin file', () => {
     )
     await expect(readRawPlugin(project, 'NotUtf8.js')).rejects.toThrow(notUtf8)
     expect(vi.mocked(log.warn)).toHaveBeenCalledTimes(2)
-    expect(String(vi.mocked(log.warn).mock.calls[0][0])).toContain('NotUtf8.js')
+    expect(vi.mocked(log.warn)).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('NotUtf8.js'),
+      expect.anything()
+    )
     expect(vi.mocked(log.error)).not.toHaveBeenCalled()
   })
 
   it('refuses a file that is not UTF-8 when it is read by path, naming it', async () => {
-    project = await copyFixtureProject()
-    const file = join(project, 'js', 'plugins', 'NotUtf8.js')
+    expect.assertions(1)
+
+    const project = await freshProject()
+    const file = path.join(project, 'js', 'plugins', 'NotUtf8.js')
     // Shift_JIS text, which is not valid UTF-8
     const shiftJis = Buffer.from([0x83, 0x65, 0x83, 0x58, 0x83, 0x67])
     await writeFile(
@@ -96,7 +124,7 @@ describe('loading a plugin file', () => {
       Buffer.concat([Buffer.from('/*:\n * @plugindesc '), shiftJis, Buffer.from('\n */\n')])
     )
 
-    await expect(handlerFor(IPC_CHANNELS.PLUGIN_READ_BY_PATH)(file)).rejects.toThrow(
+    await expect(handlerFor(project, IPC_CHANNELS.PLUGIN_READ_BY_PATH)(file)).rejects.toThrow(
       'NotUtf8.js is not UTF-8. The app reads only UTF-8 files'
     )
   })

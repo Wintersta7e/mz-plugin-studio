@@ -298,7 +298,6 @@
         "tests/integration/ipc-channels.test.ts",
         "tests/integration/ipc-registration.test.ts",
         "tests/integration/mz-runtime-conformance.test.ts",
-        "tests/integration/plugin-load.test.ts",
         "tests/integration/project-scope.test.ts",
         "tests/integration/save-guard.test.ts",
         "tests/integration/write-grant.test.ts",

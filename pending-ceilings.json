@@ -23,8 +23,6 @@
       "tests/golden/corpus/templates.ts": 3,
       "tests/integration/ipc-channels.test.ts": 1,
       "tests/integration/ipc-registration.test.ts": 1,
-      "tests/integration/mz-parity.test.ts": 2,
-      "tests/integration/mz-runtime-conformance.test.ts": 10,
       "tests/integration/project-scope.test.ts": 3,
       "tests/integration/release-ci-gate.test.ts": 1,
       "tests/unit/static-scope.test.ts": 5
@@ -43,9 +41,6 @@
       "tests/integration/ipc-arguments.test.ts": 1,
       "tests/integration/ipc-channels.test.ts": 1,
       "tests/integration/ipc-registration.test.ts": 1,
-      "tests/integration/message-dialog.test.ts": 4,
-      "tests/integration/mz-runtime-conformance.test.ts": 1,
-      "tests/integration/plugin-load.test.ts": 1,
       "tests/integration/project-load-errors.test.ts": 3,
       "tests/integration/project-scope.test.ts": 2,
       "tests/unit/dialog-default-path.test.ts": 2,
