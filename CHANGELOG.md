@@ -18,6 +18,7 @@
 - When another project opens while the plugin browser is shown, the browser no longer lists the previous project's plugins while it reads the new project's list; clicking one of them tried to open a file the new project may not have.
 - The template dialog's preview shows each line of code as it will be inserted. Before, a comment was shown at the start of its line, ahead of the code and the indentation before it, although the inserted code was right.
 - In the Message Window Mod template's size mode, the Visible Lines setting now sets the message window's height, measured the way RPG Maker MZ measures its own 4-line window. Before, it was ignored.
+- The Message Window Mod template no longer shows a Window Height field in size mode; the field never changed the window, whose height Visible Lines sets.
 - In the Basic Plugin Command template, two arguments with one name, or an argument named like a JavaScript reserved word (such as `class`) or like a name the command's own code uses (`args`, `String`, `Number`, `JSON`, `console`), are listed as an error. Before, the template wrote code that RPG Maker MZ fails to load, or a command that fails when it runs.
 - In the BGM Control template, Save Current BGM now saves the playing music and Restore Saved BGM plays it again where it stopped. Before, saving kept nothing and restoring stopped the game with an error.
 - In the Audio Fade/Crossfade template, the crossfade and fade from silence now fade the new music in to its New BGM Volume. Before, it started at volume 0 and the fade kept it silent.

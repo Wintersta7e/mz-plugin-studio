@@ -283,14 +283,6 @@ const messageWindowModuleTemplate: CodeTemplate = {
       help: 'Width in pixels (default 816 for MZ)'
     },
     {
-      id: 'windowHeight',
-      label: 'Window Height',
-      type: 'number',
-      default: 180,
-      dependsOn: { field: 'modType', value: 'size' },
-      help: 'Height in pixels (default ~180)'
-    },
-    {
       id: 'numLines',
       label: 'Visible Lines',
       type: 'number',

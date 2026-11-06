@@ -1,4 +1,4 @@
-// ==== case: base {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: base {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -12,7 +12,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: modType=position {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=position {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -26,7 +26,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: modType=size {"modType":"size","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=size {"modType":"size","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Size Modification
 // Changes the dimensions of the message window
 
@@ -40,7 +40,7 @@ Scene_Message.prototype.messageWindowRect = function() {
     return rect;
 };
 
-// ==== case: modType=background {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -51,7 +51,7 @@ Window_Message.prototype.setBackgroundType = function(type) {
     _Window_Message_setBackgroundType.call(this, 1);
 };
 
-// ==== case: modType=opacity {"modType":"opacity","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=opacity {"modType":"opacity","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Opacity Modification
 // Changes the transparency of the message window
 
@@ -68,7 +68,7 @@ Window_Message.prototype.update = function() {
     this.opacity = 255;
 };
 
-// ==== case: modType=nameBox {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=nameBox {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Name Box Position Modification
 // Changes where the speaker name appears relative to the message window
 
@@ -81,7 +81,7 @@ Window_NameBox.prototype.updatePlacement = function() {
     this.x = messageWindow.x + (messageWindow.width - this.width) / 2;
 };
 
-// ==== case: positionType=top {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: positionType=top {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -95,7 +95,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: positionType=middle {"modType":"position","positionType":"middle","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: positionType=middle {"modType":"position","positionType":"middle","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -109,7 +109,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: positionType=bottom {"modType":"position","positionType":"bottom","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: positionType=bottom {"modType":"position","positionType":"bottom","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -123,7 +123,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: positionType=custom {"modType":"position","positionType":"custom","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: positionType=custom {"modType":"position","positionType":"custom","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -134,7 +134,7 @@ Window_Message.prototype.updatePlacement = function() {
     this.y = 0;
 };
 
-// ==== case: bgType=window {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"window","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgType=window {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"window","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -148,7 +148,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgType=dim {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgType=dim {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -162,7 +162,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgType=transparent {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"transparent","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgType=transparent {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"transparent","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -176,7 +176,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgType=custom {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgType=custom {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -190,7 +190,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=empty {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=empty {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -204,7 +204,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: nameBoxPosition=left {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"left"}
+// ==== case: nameBoxPosition=left {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"left"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -218,7 +218,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: nameBoxPosition=center {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: nameBoxPosition=center {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -232,7 +232,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: nameBoxPosition=right {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"right"}
+// ==== case: nameBoxPosition=right {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"right"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -246,7 +246,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: modType=background,bgType=window {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"window","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=window {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"window","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -257,7 +257,7 @@ Window_Message.prototype.setBackgroundType = function(type) {
     _Window_Message_setBackgroundType.call(this, 0);
 };
 
-// ==== case: modType=background,bgType=transparent {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"transparent","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=transparent {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"transparent","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -268,7 +268,7 @@ Window_Message.prototype.setBackgroundType = function(type) {
     _Window_Message_setBackgroundType.call(this, 2);
 };
 
-// ==== case: modType=background,bgType=custom {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -284,7 +284,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=empty {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=empty {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"","opacityValue":255,"nameBoxPosition":"center"}
 // rejects: Background color is required for custom background
 // Message Window Background Modification
 // Changes the visual style of the message window background
@@ -301,7 +301,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=nameBox,nameBoxPosition=left {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"left"}
+// ==== case: modType=nameBox,nameBoxPosition=left {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"left"}
 // Name Box Position Modification
 // Changes where the speaker name appears relative to the message window
 
@@ -314,7 +314,7 @@ Window_NameBox.prototype.updatePlacement = function() {
     this.x = messageWindow.x;
 };
 
-// ==== case: modType=nameBox,nameBoxPosition=right {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"right"}
+// ==== case: modType=nameBox,nameBoxPosition=right {"modType":"nameBox","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"right"}
 // Name Box Position Modification
 // Changes where the speaker name appears relative to the message window
 
@@ -327,7 +327,7 @@ Window_NameBox.prototype.updatePlacement = function() {
     this.x = messageWindow.x + messageWindow.width - this.width;
 };
 
-// ==== case: bgColor=comment-space {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X */ globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=comment-space {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X */ globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -341,7 +341,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=comment-u2028 {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X */\u2028globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=comment-u2028 {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X */\u2028globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -355,7 +355,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=comment-u2029 {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X */\u2029globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=comment-u2029 {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X */\u2029globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -369,7 +369,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=comment-lf {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X */\nglobalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=comment-lf {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X */\nglobalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -383,7 +383,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=quote-single {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X' + (globalThis.__pwn = 1) + 'Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=quote-single {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X' + (globalThis.__pwn = 1) + 'Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -397,7 +397,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=quote-double {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X\" + (globalThis.__pwn = 1) + \"Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=quote-double {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X\" + (globalThis.__pwn = 1) + \"Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -411,7 +411,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: bgColor=quote-backtick {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"dim","bgColor":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: bgColor=quote-backtick {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Position Modification
 // Changes the default position of the message window
 
@@ -425,7 +425,7 @@ Window_Message.prototype.updatePlacement = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=comment-space {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X */ globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=comment-space {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X */ globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -441,7 +441,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=comment-u2028 {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X */\u2028globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=comment-u2028 {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X */\u2028globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -457,7 +457,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=comment-u2029 {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X */\u2029globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=comment-u2029 {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X */\u2029globalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -473,7 +473,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=comment-lf {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X */\nglobalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=comment-lf {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X */\nglobalThis.__pwn = 1; /* Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -489,7 +489,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=quote-single {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X' + (globalThis.__pwn = 1) + 'Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=quote-single {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X' + (globalThis.__pwn = 1) + 'Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -505,7 +505,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=quote-double {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X\" + (globalThis.__pwn = 1) + \"Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=quote-double {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X\" + (globalThis.__pwn = 1) + \"Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
@@ -521,7 +521,7 @@ Window_Message.prototype.updateBackground = function() {
     }
 };
 
-// ==== case: modType=background,bgType=custom,bgColor=quote-backtick {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"windowHeight":180,"numLines":4,"bgType":"custom","bgColor":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","opacityValue":255,"nameBoxPosition":"center"}
+// ==== case: modType=background,bgType=custom,bgColor=quote-backtick {"modType":"background","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"custom","bgColor":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","opacityValue":255,"nameBoxPosition":"center"}
 // Message Window Background Modification
 // Changes the visual style of the message window background
 
