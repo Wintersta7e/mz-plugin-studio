@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from 'fs'
 import { join, relative } from 'path'
 import { fileURLToPath } from 'url'
 import { describe, expect, it } from 'vitest'
-import { refusalReason } from '../../src/renderer/src/lib/utils'
+import { refusalReason } from '../../src/renderer/src/lib/utilities'
 import { ACCESS_DENIED, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
 
 const SRC = fileURLToPath(new URL('../../src', import.meta.url))

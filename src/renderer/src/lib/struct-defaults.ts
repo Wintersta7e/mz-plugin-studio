@@ -6,7 +6,10 @@ All values are stored as strings per MZ convention (e.g., {"x":"100","visible":"
 Fields with empty string values are omitted.
 Returns empty string if no fields have values.
 */
-export function buildStructDefault(struct: PluginStruct, values: Record<string, string>): string {
+export function buildStructDefault(
+  struct: PluginStruct,
+  values: Partial<Record<string, string>>
+): string {
   const object: Record<string, string> = {}
   for (const field of struct.parameters) {
     const value = values[field.name]
@@ -14,8 +17,7 @@ export function buildStructDefault(struct: PluginStruct, values: Record<string, 
       object[field.name] = value
     }
   }
-  if (Object.keys(object).length === 0) return ''
-  return JSON.stringify(object)
+  return Object.keys(object).length === 0 ? '' : JSON.stringify(object)
 }
 
 /**
@@ -26,10 +28,12 @@ Non-string values are coerced to strings.
 export function parseStructDefault(jsonString: string): Record<string, string> {
   if (!jsonString || jsonString.trim() === '' || jsonString.trim() === '{}') return {}
   try {
-    const parsed = JSON.parse(jsonString)
+    const parsed: unknown = JSON.parse(jsonString)
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
     const result: Record<string, string> = {}
-    for (const [key, value] of Object.entries(parsed)) {
+    // A copy of the parsed object's own keys, which are all that Object.entries reads
+    const fields: Record<string, unknown> = { ...parsed }
+    for (const [key, value] of Object.entries(fields)) {
       result[key] = String(value)
     }
     return result
@@ -67,9 +71,7 @@ export function validateStructDefault(
   }
 
   const fieldNames = new Set(struct.parameters.map((p) => p.name))
-  const unknownKeys = Object.keys(parsed as Record<string, unknown>).filter(
-    (k) => !fieldNames.has(k)
-  )
+  const unknownKeys = Object.keys(parsed).filter((k) => !fieldNames.has(k))
 
   if (unknownKeys.length > 0) {
     return {
@@ -89,9 +91,15 @@ All values are coerced to strings.
 export function fillFromStructDefaults(struct: PluginStruct): Record<string, string> {
   const values: Record<string, string> = {}
   for (const field of struct.parameters) {
-    const def = field.default
-    if (def === undefined || def === '') continue
-    values[field.name] = String(def)
+    if (!isSetDefault(field.default)) continue
+    values[field.name] = String(field.default)
   }
   return values
+}
+
+/**
+Whether a field has a default to fill in: a field read from a saved plugin may carry none at all
+*/
+function isSetDefault(value: string | number | boolean | undefined): boolean {
+  return value !== undefined && value !== ''
 }

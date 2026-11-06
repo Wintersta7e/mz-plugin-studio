@@ -29,7 +29,7 @@ import { reloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
 import { NOTICE_MS } from '../../stores/toastStore'
 import { DiffView } from './DiffView'
-import { cn, refusalReason, userMessage } from '../../lib/utils'
+import { cn, refusalReason, userMessage } from '../../lib/utilities'
 import log from 'electron-log/renderer'
 
 const RAW_UNAVAILABLE = 'Raw mode unavailable: plugin was not imported from a file'

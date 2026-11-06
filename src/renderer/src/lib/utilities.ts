@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 // Electron rethrows an error from a main-process handler as
 // "Error invoking remote method '<channel>': <Name>Error: <message>"
-const IPC_PREFIX = /^Error invoking remote method '[^']+': (\w*Error: )?/
+const IPC_PREFIX = /^Error invoking remote method '[^']+': (?:\w*Error: )?/
 
 /**
 The text of a thrown value to show the user: an error from main keeps only its own message

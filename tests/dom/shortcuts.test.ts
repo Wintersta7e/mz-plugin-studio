@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   matchShortcut,
-  shouldHandleShortcut,
+  shortcutToHandle,
   shouldOverrideMonaco
 } from '../../src/renderer/src/lib/shortcuts'
 
@@ -201,7 +201,7 @@ describe('shouldHandleShortcut', () => {
 
   it('returns the shortcut when no Monaco editor is focused', () => {
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
-    const result = shouldHandleShortcut(evt)
+    const result = shortcutToHandle(evt)
 
     expect(result).not.toBeNull()
     expect(result!.key).toBe('ctrl+s')
@@ -209,7 +209,7 @@ describe('shouldHandleShortcut', () => {
 
   it('returns null for unrecognized shortcut', () => {
     const evt = makeKeyboardEvent({ code: 'KeyQ', ctrlKey: true })
-    const result = shouldHandleShortcut(evt)
+    const result = shortcutToHandle(evt)
 
     expect(result).toBeNull()
   })
@@ -225,7 +225,7 @@ describe('shouldHandleShortcut', () => {
     vi.spyOn(document, 'activeElement', 'get').mockReturnValue(inputEl)
 
     const evt = makeKeyboardEvent({ code: 'KeyS', ctrlKey: true })
-    const result = shouldHandleShortcut(evt)
+    const result = shortcutToHandle(evt)
 
     // ctrl+s is in GLOBAL_OVERRIDE_SHORTCUTS so should still return
     expect(result).not.toBeNull()
@@ -246,7 +246,7 @@ describe('shouldHandleShortcut', () => {
 
     // ctrl+z is NOT in GLOBAL_OVERRIDE_SHORTCUTS
     const evt = makeKeyboardEvent({ code: 'KeyZ', ctrlKey: true })
-    const result = shouldHandleShortcut(evt)
+    const result = shortcutToHandle(evt)
 
     expect(result).toBeNull()
 

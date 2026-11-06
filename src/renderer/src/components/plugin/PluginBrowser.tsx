@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useProjectStore, usePluginStore, useToastStore } from '../../stores'
 import { NOTICE_MS } from '../../stores/toastStore'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
-import { cn, userMessage } from '../../lib/utils'
+import { cn, userMessage } from '../../lib/utilities'
 import log from 'electron-log/renderer'
 
 type PluginBrowserProps = Readonly<{ onClose: () => void }>

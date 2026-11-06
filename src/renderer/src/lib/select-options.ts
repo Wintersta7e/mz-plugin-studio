@@ -22,7 +22,7 @@ const optionLine = (o: SelectOption): string =>
 Select options as the one-per-line text of their field.
 */
 export const optionsText = (options: SelectOption[] | undefined): string =>
-  options?.map(optionLine).join('\n') || ''
+  options?.map((option) => optionLine(option)).join('\n') ?? ''
 
 /**
 A line split at its first unescaped "|": the value, then the label, or no label.
@@ -60,9 +60,9 @@ export const parseOptions = (text: string): SelectOption[] =>
     .split('\n')
     .filter((line) => line.trim())
     .map((line) => {
-      const [raw, label] = splitLine(line)
+      const [raw, label = ''] = splitLine(line)
       const value = raw.trim()
-      return { value, text: label?.trim() || value }
+      return { value, text: label.trim() || value }
     })
 
 /**

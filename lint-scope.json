@@ -257,7 +257,7 @@
         "src/renderer/src/lib/raw-mode.ts",
         "src/renderer/src/lib/save-plugin.ts",
         "src/renderer/src/lib/shortcuts.ts",
-        "src/renderer/src/lib/utils.ts",
+        "src/renderer/src/lib/utilities.ts",
         "src/renderer/src/main.tsx",
         "src/renderer/src/stores/historyStore.ts",
         "src/renderer/src/stores/persist.ts",

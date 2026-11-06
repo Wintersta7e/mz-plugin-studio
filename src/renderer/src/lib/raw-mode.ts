@@ -8,7 +8,7 @@ import type { PluginDefinition } from '../types/plugin'
 import { hasMainBlock } from './generator'
 import { generatePluginOutput, isImported, isRawMode, loadedSource } from './plugin-output'
 import type { OutputRefusal } from './plugin-output'
-import { userMessage } from './utils'
+import { userMessage } from './utilities'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
   "Raw mode keeps this plugin's own code and language blocks, so this is read-only here. Turn raw mode off in the preview to edit it."

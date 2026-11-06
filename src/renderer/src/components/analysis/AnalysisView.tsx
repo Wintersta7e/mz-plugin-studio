@@ -10,7 +10,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { cn } from '../../lib/utils'
+import { cn } from '../../lib/utilities'
 
 export function AnalysisView() {
   const project = useProjectStore((s) => s.project)

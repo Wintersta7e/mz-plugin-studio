@@ -41,7 +41,7 @@ import {
   type ParamImportResult
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
-import { cn, userMessage } from '../../lib/utils'
+import { cn, userMessage } from '../../lib/utilities'
 import { PARAM_TYPE_GROUPS, defaultText, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
 

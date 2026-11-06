@@ -8,7 +8,7 @@ import type { SaveConflict, SaveGuard, SaveResult } from '../../../shared/ipc-ty
 import { fileNameMismatch, fileNameOf, isImported, saveFileName } from './plugin-output'
 import { prepareSave, reloadFromProject, sameFile } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
-import { userMessage } from './utils'
+import { userMessage } from './utilities'
 
 /**
 `save` is Ctrl+S (into the open project when there is one); `export` is the preview's Export button.

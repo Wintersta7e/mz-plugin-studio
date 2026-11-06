@@ -1,7 +1,7 @@
 // The text an error toast shows: Electron's prefix on an error from main is removed, so the
 // message starts with main's own reason.
 import { describe, expect, it } from 'vitest'
-import { userMessage } from '../../src/renderer/src/lib/utils'
+import { userMessage } from '../../src/renderer/src/lib/utilities'
 
 describe('userMessage', () => {
   it('removes the prefix Electron adds to an error from main', () => {

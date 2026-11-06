@@ -1293,9 +1293,6 @@
     },
     "unicorn/consistent-boolean-name": {
       "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
     }
   },
   "src/renderer/src/components/ui/button.tsx": {
@@ -1830,62 +1827,6 @@
     },
     "unicorn/prefer-global-this": {
       "count": 6
-    }
-  },
-  "src/renderer/src/lib/select-options.ts": {
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/shortcuts.ts": {
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/struct-defaults.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/utils.ts": {
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
     }
   },
   "src/renderer/src/main.tsx": {
@@ -3392,7 +3333,7 @@
       "count": 2
     },
     "vitest/prefer-describe-function-title": {
-      "count": 3
+      "count": 2
     }
   },
   "tests/dom/sidebar.test.tsx": {

@@ -22,14 +22,14 @@ import { formatRestoreReport, takeRestoreReport } from './stores/persist'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
-import { shouldHandleShortcut } from './lib/shortcuts'
+import { shortcutToHandle } from './lib/shortcuts'
 import { createEmptyPlugin } from './types/plugin'
 import { saveAllPlugins, savePlugin } from './lib/save-plugin'
 import { NOTICE_MS } from './stores/toastStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
-import { cn, refusalReason, userMessage } from './lib/utils'
+import { cn, refusalReason, userMessage } from './lib/utilities'
 import { PROJECT_OPEN_CANCELLED } from '../../shared/ipc-types'
 
 // The code editor loads with the first view that shows one, not at start
@@ -252,7 +252,7 @@ function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const shortcut = shouldHandleShortcut(e)
+      const shortcut = shortcutToHandle(e)
       if (!shortcut) return
 
       e.preventDefault()
