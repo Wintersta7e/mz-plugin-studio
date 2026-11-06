@@ -12,7 +12,7 @@ import {
   type PluginParameter,
   type ParamType
 } from '../../types/plugin'
-import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useIsHeaderReadOnly } from '../../lib/raw-mode'
 import {
   ExpandableCard,
   FieldDefaultInput,
@@ -59,7 +59,7 @@ export function StructBuilder() {
   const addStruct = usePluginStore((s) => s.addStruct)
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const isHeaderReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useIsHeaderReadOnly()
 
   const handleAddStruct = () => {
     const struct = createEmptyStruct(structs.map((s) => s.name))

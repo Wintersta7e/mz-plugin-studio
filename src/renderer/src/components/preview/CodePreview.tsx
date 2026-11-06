@@ -25,7 +25,7 @@ import { validatePlugin } from '../../lib/generator'
 import { generatePluginsJsonEntry, generateReadme, typeDeclaration } from '../../lib/exportFormats'
 import { generatePluginOutput, isImported, isRawMode } from '../../lib/plugin-output'
 import type { PluginOutput } from '../../lib/plugin-output'
-import { reloadFromProject } from '../../lib/raw-mode'
+import { didReloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
 import { NOTICE_MS } from '../../stores/toastStore'
 import { DiffView } from './DiffView'
@@ -518,7 +518,7 @@ export function CodePreview() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => void reloadFromProject(deferredPlugin.id)}
+                onClick={() => void didReloadFromProject(deferredPlugin.id)}
                 disabled={!project}
                 data-testid="source-missing-reload"
                 title={project ? undefined : 'Open the project first.'}

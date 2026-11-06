@@ -8,7 +8,7 @@ import { usePluginStore, useSettingsStore } from '../../stores'
 import { Button } from '../ui/button'
 import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
-import { RAW_MODE_READ_ONLY_NOTICE, useActiveRawMode } from '../../lib/raw-mode'
+import { RAW_MODE_READ_ONLY_NOTICE, useIsRawModeActive } from '../../lib/raw-mode'
 
 /**
 Inserts `code` where the editor says: over the selection, after a blank line at the end of code
@@ -112,7 +112,7 @@ export function CodeEditor() {
   const customCode = usePluginStore((s) => s.plugin.customCode) ?? ''
   const setCustomCode = usePluginStore((s) => s.setCustomCode)
   const [isTemplateOpen, setIsTemplateOpen] = useState(false)
-  const isRawMode = useActiveRawMode()
+  const isRawMode = useIsRawModeActive()
   const theme = useSettingsStore((s) => s.theme)
   const editorOptions = useEditorOptions(isRawMode)
   const handleBeforeMount = useCompletions()

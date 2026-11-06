@@ -250,7 +250,7 @@ describe('reloading a tab with no unsaved edits', () => {
 
       expect(stores.usePluginStore.getState().plugin.rawSource).toBeUndefined()
 
-      expect(await rawMode.reloadFromProject(id)).toBe(true)
+      expect(await rawMode.didReloadFromProject(id)).toBe(true)
       expect(await rawMode.prepareSave(id, { ask: false })).toMatchObject({
         status: 'ready',
         code: text
@@ -274,7 +274,7 @@ describe('reloading a tab with no unsaved edits', () => {
     const opened = { ...PluginParser.parsePlugin(v1, 'Fixture.js'), importedFrom: 'Fixture.js' }
     stores.usePluginStore.getState().openPlugin(opened)
 
-    expect(await rawMode.reloadFromProject(opened.id)).toBe(true)
+    expect(await rawMode.didReloadFromProject(opened.id)).toBe(true)
     expect(await rawMode.prepareSave(opened.id, { ask: false })).toMatchObject({
       status: 'ready',
       code: v2

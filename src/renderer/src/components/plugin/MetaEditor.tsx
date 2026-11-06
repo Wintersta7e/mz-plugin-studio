@@ -12,8 +12,8 @@ import type { LocalizedContent, NoteParam } from '../../types/plugin'
 import {
   RAW_MODE_HEADER_READ_ONLY_NOTICE,
   RAW_MODE_READ_ONLY_NOTICE,
-  useActiveRawMode,
-  useHeaderReadOnly
+  useIsRawModeActive,
+  useIsHeaderReadOnly
 } from '../../lib/raw-mode'
 import { nonBlankLines, normalizeLines, useTypedText } from '../../lib/typed-text'
 
@@ -225,7 +225,7 @@ function LocalizedTab({
 }: LocalizedTabProps) {
   const content = usePluginStore((s) => s.plugin.meta.localizations?.[lang])
   // Raw mode keeps the file's language blocks, so their fields are read-only
-  const isRawMode = useActiveRawMode()
+  const isRawMode = useIsRawModeActive()
   const readOnly = isRawMode
     ? { readOnly: true, title: RAW_MODE_READ_ONLY_NOTICE }
     : { readOnly: false }
@@ -516,7 +516,7 @@ function DeploymentFields({ fieldset }: HeaderFieldsProps) {
 }
 
 export function MetaEditor() {
-  const isHeaderReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useIsHeaderReadOnly()
   const fieldset: HeaderFieldset = {
     disabled: isHeaderReadOnly,
     title: isHeaderReadOnly ? RAW_MODE_HEADER_READ_ONLY_NOTICE : undefined

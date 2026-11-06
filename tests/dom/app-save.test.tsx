@@ -12,7 +12,7 @@ import App from '../../src/renderer/src/App'
 import { createDialogHandlers, type DialogPort } from '../../src/main/ipc/dialog'
 import { savePluginFile } from '../../src/main/ipc/plugin'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
-import { reloadFromProject } from '../../src/renderer/src/lib/raw-mode'
+import { didReloadFromProject } from '../../src/renderer/src/lib/raw-mode'
 import {
   useHistoryStore,
   usePluginStore,
@@ -510,7 +510,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const id = await openFromProject(project, FILE)
     let reloaded = false
     const writes = await pluginWrites(async () => {
-      reloaded = await act(() => reloadFromProject(id))
+      reloaded = await act(() => didReloadFromProject(id))
     })
 
     expect(reloaded).toBe(true)
@@ -672,7 +672,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    expect(await act(() => reloadFromProject(id))).toBe(false)
+    expect(await act(() => didReloadFromProject(id))).toBe(false)
     expect(messages()).toEqual([
       {
         type: 'question',
@@ -694,7 +694,7 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    expect(await act(() => reloadFromProject(id))).toBe(true)
+    expect(await act(() => didReloadFromProject(id))).toBe(true)
     expect(messages()).toHaveLength(1)
     expect(plugin().rawSource).toBe(text)
     expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
@@ -709,12 +709,12 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await openProject(project)
     const read = await openFromProject(project, FILE)
 
-    expect(await act(() => reloadFromProject(read))).toBe(true)
+    expect(await act(() => didReloadFromProject(read))).toBe(true)
 
     const loaded = await window.api.plugin.load(project, FILE)
     act(() => usePluginStore.getState().openPlugin(loaded.plugin))
 
-    expect(await act(() => reloadFromProject(loaded.plugin.id))).toBe(true)
+    expect(await act(() => didReloadFromProject(loaded.plugin.id))).toBe(true)
     expect(messages()).toEqual([])
     expect(usePluginStore.getState().baseByPluginId[loaded.plugin.id]?.path).toBe(
       fileIn(FILE, project)

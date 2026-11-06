@@ -12,7 +12,7 @@ import {
   type PluginParameter
 } from '../../types/plugin'
 import { generateCommandSkeleton } from '../../lib/generator'
-import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useHeaderReadOnly } from '../../lib/raw-mode'
+import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useIsHeaderReadOnly } from '../../lib/raw-mode'
 import {
   ExpandableCard,
   FieldDefaultInput,
@@ -90,7 +90,7 @@ export function CommandBuilder() {
   const structNames = useMemo(() => structs.map((s) => s.name), [structs])
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const isHeaderReadOnly = useHeaderReadOnly()
+  const isHeaderReadOnly = useIsHeaderReadOnly()
   const handleAddCommand = useAddCommand(setExpandedId)
 
   return (

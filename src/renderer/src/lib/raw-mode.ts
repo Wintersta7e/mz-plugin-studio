@@ -6,8 +6,7 @@ import { NOTICE_MS, useToastStore } from '../stores/toastStore'
 import { useUIStore } from '../stores/uiStore'
 import type { PluginDefinition } from '../types/plugin'
 import { hasMainBlock } from './generator'
-import { generatePluginOutput, isImported, isRawMode, loadedSource } from './plugin-output'
-import type { OutputRefusal } from './plugin-output'
+import { generatePluginOutput, isRawMode, loadedSource, type OutputRefusal } from './plugin-output'
 import { userMessage } from './utilities'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
@@ -29,22 +28,22 @@ export type SavePreparation =
 /**
 Whether the active tab is in raw mode.
 */
-export function useActiveRawMode(): boolean {
+export function useIsRawModeActive(): boolean {
   const id = usePluginStore((s) => s.plugin.id)
   const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
   const isChoice = useUIStore((s) => s.rawModeByPluginId[id])
-  return isRawMode({ importedFrom }, isChoice)
+  return isRawMode(importedFrom === undefined ? {} : { importedFrom }, isChoice)
 }
 
 /**
 Whether the active tab's header is read-only: raw mode cannot save header changes to its file.
 */
-export function useHeaderReadOnly(): boolean {
-  const rawMode = useActiveRawMode()
+export function useIsHeaderReadOnly(): boolean {
+  const isRawModeActive = useIsRawModeActive()
   const rawSource = usePluginStore((s) => s.plugin.rawSource)
   return useMemo(
-    () => rawMode && rawSource !== undefined && !hasMainBlock(rawSource),
-    [rawMode, rawSource]
+    () => isRawModeActive && rawSource !== undefined && !hasMainBlock(rawSource),
+    [isRawModeActive, rawSource]
   )
 }
 
@@ -57,6 +56,19 @@ export async function prepareSave(
   pluginId: string,
   options: { ask: boolean }
 ): Promise<SavePreparation> {
+  let preparation = await prepareOnce(pluginId, options)
+  // The tab or its raw mode may have changed while the dialog was open
+  while (preparation === 'confirmed') preparation = await prepareOnce(pluginId, options)
+  return preparation
+}
+
+/**
+One pass of `prepareSave`; 'confirmed' when the user just confirmed a regenerating save
+*/
+async function prepareOnce(
+  pluginId: string,
+  options: { ask: boolean }
+): Promise<SavePreparation | 'confirmed'> {
   const { plugin: active, openPlugins, baselineByPluginId } = usePluginStore.getState()
   const plugin = active.id === pluginId ? active : openPlugins.find((p) => p.id === pluginId)
   if (plugin === undefined) throw new Error(`No open plugin ${pluginId}`)
@@ -69,7 +81,8 @@ export async function prepareSave(
       : { status: 'refused', refusal: out.refusal, reason: out.message }
   }
 
-  if (isImported(plugin) && !ui.structuralSaveConfirmedByPluginId[pluginId]) {
+  const file = plugin.importedFrom
+  if (file !== undefined && !Object.hasOwn(ui.structuralSaveConfirmedByPluginId, pluginId)) {
     if (!options.ask) {
       return {
         status: 'refused',
@@ -77,17 +90,16 @@ export async function prepareSave(
         reason: 'needs confirmation: save it with Ctrl+S'
       }
     }
-    const answer = await window.api.dialog.message({
+    const answer = await globalThis.api.dialog.message({
       type: 'warning',
       title: 'Save without raw mode?',
-      message: `Saving ${plugin.importedFrom} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
+      message: `Saving ${file} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
       buttons: ['Cancel', 'Show Diff', 'Save']
     })
     if (answer === 1) useUIStore.getState().requestDiff(pluginId)
     if (answer !== 2) return { status: 'cancelled' }
     useUIStore.getState().confirmStructuralSave(pluginId)
-    // The tab or its raw mode may have changed while the dialog was open
-    return prepareSave(pluginId, options)
+    return 'confirmed'
   }
 
   const out = generatePluginOutput(plugin, false, null)
@@ -100,7 +112,7 @@ export async function prepareSave(
 A form of the paths `like` belongs with that compares as main does: Windows paths ignore case
 */
 function comparable(like: string): (p: string) => string {
-  const isWindows = /^[a-z]:|\\/i.test(like)
+  const isWindows = /^[a-z]:/i.test(like) || like.includes('\\')
   return (p) => {
     const slashed = p.replaceAll(/[\\/]+/g, '/').replace(/\/$/, '')
     return isWindows ? slashed.toLowerCase() : slashed
@@ -108,18 +120,18 @@ function comparable(like: string): (p: string) => string {
 }
 
 /**
-Whether `file` lies directly in `dir`
+Whether `file` lies directly in `directory`
 */
-function isFileIn(dir: string, file: string): boolean {
-  const normal = comparable(dir)
+function isFileIn(directory: string, file: string): boolean {
+  const normal = comparable(directory)
   const target = normal(file)
-  return target.slice(0, target.lastIndexOf('/')) === normal(dir)
+  return target.slice(0, target.lastIndexOf('/')) === normal(directory)
 }
 
 /**
 Whether two paths name one file
 */
-export function sameFile(a: string, b: string): boolean {
+export function isSameFile(a: string, b: string): boolean {
   const normal = comparable(a)
   return normal(a) === normal(b)
 }
@@ -131,17 +143,17 @@ first. A tab with no unsaved edits takes the file's values; a tab with edits ask
 replace them with the file or keep them. False when there is no project, the user cancels or
 the file cannot be read.
 */
-export async function reloadFromProject(pluginId: string): Promise<boolean> {
+export async function didReloadFromProject(pluginId: string): Promise<boolean> {
   const project = useProjectStore.getState().project
   const { openPlugins, dirtyByPluginId, baseByPluginId } = usePluginStore.getState()
   const plugin = openPlugins.find((p) => p.id === pluginId)
   if (project === null || plugin?.importedFrom === undefined) return false
   const separator = project.path.includes('\\') ? '\\' : '/'
-  const pluginsDir = [project.path, 'js', 'plugins'].join(separator)
-  const path = [pluginsDir, plugin.importedFrom].join(separator)
-  const base = baseByPluginId[pluginId]
-  if (base !== undefined && !isFileIn(pluginsDir, base.path)) {
-    const answer = await window.api.dialog.message({
+  const pluginsDirectory = [project.path, 'js', 'plugins'].join(separator)
+  const path = [pluginsDirectory, plugin.importedFrom].join(separator)
+  const base = Object.hasOwn(baseByPluginId, pluginId) ? baseByPluginId[pluginId] : undefined
+  if (base !== undefined && !isFileIn(pluginsDirectory, base.path)) {
+    const answer = await globalThis.api.dialog.message({
       type: 'question',
       title: 'Reload from another project?',
       message: `This tab was last read from or saved to ${base.path}, which is not in the open project's plugins folder. Reload it from ${path} instead?`,
@@ -152,7 +164,7 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
   let isKeepTab = false
   // A tab read by an older parser differs from its file with no edit, so only edits are kept
   if (dirtyByPluginId[pluginId]) {
-    const answer = await window.api.dialog.message({
+    const answer = await globalThis.api.dialog.message({
       type: 'question',
       title: 'Reload from project?',
       message: `${path} may not match this tab: the tab was read by an older version of the app, or the file changed since it was opened. Replace the tab with the file, dropping its unsaved edits, or keep the tab's values and apply them to the reloaded file?`,
@@ -162,8 +174,8 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     isKeepTab = answer === 2
   }
   try {
-    const file = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
-    const parsed = await window.api.plugin.parse(file.content)
+    const file = await globalThis.api.plugin.readRaw(project.path, plugin.importedFrom)
+    const parsed = await globalThis.api.plugin.parse(file.content)
     usePluginStore.getState().reattachSource(pluginId, file.content, parsed, {
       keepTab: isKeepTab,
       base: { path: file.path, sha256: file.sha256 }
@@ -195,12 +207,12 @@ function sourceMissingTabs(): PluginDefinition[] {
 
 /**
 Once a project is open, offers one action that reloads every tab whose file text is not loaded
-and whose file is in the project's plugins folder, each as `reloadFromProject` does.
+and whose file is in the project's plugins folder, each as `didReloadFromProject` does.
 */
 export async function offerReloadFromProject(projectPath: string): Promise<void> {
   let files: Set<string>
   try {
-    files = new Set(await window.api.plugin.list(projectPath))
+    files = new Set(await globalThis.api.plugin.list(projectPath))
   } catch (error) {
     log.warn('[reload] could not list the plugins of', projectPath, error)
     return
@@ -213,9 +225,9 @@ export async function offerReloadFromProject(projectPath: string): Promise<void>
   const names = tabs.map((p) => p.importedFrom)
   const named =
     names.length > 3
-      ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`
+      ? `${names.slice(0, 3).join(', ')} and ${String(names.length - 3)} more`
       : names.join(', ')
-  const folder = projectPath.split(/[\\/]/).filter(Boolean).pop() ?? projectPath
+  const folder = projectPath.split(/[\\/]/).findLast(Boolean) ?? projectPath
   const ids = tabs.map((p) => p.id)
   useToastStore.getState().addToast({
     type: 'info',
@@ -237,11 +249,11 @@ async function reloadAllFromProject(pluginIds: readonly string[]): Promise<void>
   if (missing.length === 0) return
   const notReloaded: string[] = []
   for (const plugin of missing) {
-    if (!(await reloadFromProject(plugin.id)))
+    if (!(await didReloadFromProject(plugin.id)))
       notReloaded.push(plugin.importedFrom ?? plugin.meta.name)
   }
-  const total = missing.length === 1 ? '1 plugin' : `${missing.length} plugins`
-  const message = `Reloaded ${missing.length - notReloaded.length} of ${total}`
+  const total = missing.length === 1 ? '1 plugin' : `${String(missing.length)} plugins`
+  const message = `Reloaded ${String(missing.length - notReloaded.length)} of ${total}`
   useToastStore.getState().addToast(
     notReloaded.length === 0
       ? { type: 'success', message }

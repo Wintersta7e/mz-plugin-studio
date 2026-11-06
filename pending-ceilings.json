@@ -42,7 +42,6 @@
   "test": {
     "exactOptionalPropertyTypes": {
       "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/lib/raw-mode.ts": 1,
       "tests/dom/app-shell.test.tsx": 1,
       "tests/dom/history-store.test.ts": 2,
       "tests/dom/raw-mode-controls.test.tsx": 2,
@@ -166,8 +165,7 @@
   },
   "web": {
     "exactOptionalPropertyTypes": {
-      "src/renderer/src/App.tsx": 2,
-      "src/renderer/src/lib/raw-mode.ts": 1
+      "src/renderer/src/App.tsx": 2
     },
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,
