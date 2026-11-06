@@ -39,7 +39,7 @@ describe('vitest config', () => {
 
     for (const project of projects) {
       const setupFiles =
-        typeof project === 'object' && 'test' in project ? project.test?.setupFiles : undefined
+        typeof project === 'object' && 'test' in project ? project.test.setupFiles : undefined
 
       expect([setupFiles ?? []].flat()).toContain('tests/setup/console.ts')
     }

@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.test.json",
   "compilerOptions": {
-    "exactOptionalPropertyTypes": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true
   }
