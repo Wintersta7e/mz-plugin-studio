@@ -308,5 +308,30 @@ export const typeViolatingDefaultCases: TypeViolatingDefaultCase[] = [
       { ...parameter('Broken', 'string', 'x'), type: 7 },
       parameter('Label', 'string', 'Hello')
     ])
+  },
+  // Every optional field, once of its own type and once of another: a wrong one is dropped by
+  // name and a null one silently, and options keep only their `{ value, text }` string elements.
+  {
+    name: 'type-violating-fields',
+    content: file([
+      { ...parameter('Speed', 'number', 3), id: 'kept', min: 0, max: 9, decimals: 1 },
+      { ...parameter('Slow', 'number', 3), min: '0', max: null, decimals: true },
+      { ...parameter('Image', 'file', ''), dir: 'img/pictures', require: true, rawType: 'file' },
+      { ...parameter('Sound', 'file', ''), dir: 7, require: 'yes', rawType: 3 },
+      { ...parameter('Points', 'array', '[]'), arrayType: 'struct', structType: 'Point' },
+      { ...parameter('Tags', 'array', '[]'), arrayType: 'tag', structType: ['Point'], parent: 1 },
+      { ...parameter('Flag', 'boolean', true), onLabel: 'On', offLabel: 0, parent: 'Speed' },
+      {
+        ...parameter('Pace', 'select', 'fast'),
+        options: [
+          { value: 'fast', text: 'Fast' },
+          'slow',
+          { value: 'mid', text: 'Mid', hint: 'between' },
+          { value: 1, text: 'One' }
+        ]
+      },
+      { ...parameter('Pick', 'combo', ''), options: 'fast,slow' },
+      { ...parameter('Extra', 'string', ''), text: 5, desc: null, colour: 'red' }
+    ])
   }
 ]
