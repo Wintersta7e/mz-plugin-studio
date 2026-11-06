@@ -53,10 +53,10 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const label = params['Label'] ?? false;
-    const count = Number(params['Count'] || false);
+    const label = params['Label'] ?? 'false';
+    const count = Number(params['Count'] || NaN);
     const enabled = (params['Enabled'] ?? 'false') === 'true';
-    const mode = params['Mode'] ?? false;
+    const mode = params['Mode'] ?? 'false';
 
     // Custom plugin code goes here
 

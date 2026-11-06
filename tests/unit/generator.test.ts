@@ -988,6 +988,95 @@ const FORMATTED_DEFAULTS: OutputCase[] = [
       ]
     },
     ["params['path'] ?? 'C:\\\\Users'"]
+  ],
+  // A parameter file may hold a default of another JavaScript type than its parameter's: the
+  // header shows it as text, and the code falls back to that text read as the parameter's type
+  [
+    'falls back to the shown number when a number default is text',
+    {
+      parameters: [
+        { id: 'p1', name: 'count', text: 'Count', desc: '', type: 'number', default: '7' }
+      ]
+    },
+    [' * @default 7', "Number(params['count'] || 7)"],
+    ["Number(params['count'] || 0)"]
+  ],
+  [
+    'falls back to the shown id when an ID-based default is text',
+    {
+      parameters: [
+        { id: 'p1', name: 'varId', text: 'Var', desc: '', type: 'variable', default: '3' }
+      ]
+    },
+    [' * @default 3', "Number(params['varId'] || 3)"]
+  ],
+  [
+    'falls back to what a number reads the shown text as when a number default is a boolean',
+    {
+      parameters: [
+        { id: 'p1', name: 'count', text: 'Count', desc: '', type: 'number', default: true }
+      ]
+    },
+    [' * @default true', "Number(params['count'] || NaN)"]
+  ],
+  [
+    'falls back to true when a boolean default is the text true',
+    {
+      parameters: [
+        { id: 'p1', name: 'enabled', text: 'Enabled', desc: '', type: 'boolean', default: 'true' }
+      ]
+    },
+    [' * @default true', "(params['enabled'] ?? 'true') === 'true'"]
+  ],
+  [
+    'falls back to the shown text when a string default is a number',
+    {
+      parameters: [{ id: 'p1', name: 'label', text: 'Label', desc: '', type: 'string', default: 5 }]
+    },
+    [' * @default 5', "params['label'] ?? '5';"]
+  ],
+  [
+    'falls back to the shown text when a select default is a boolean',
+    {
+      parameters: [
+        { id: 'p1', name: 'mode', text: 'Mode', desc: '', type: 'select', default: true }
+      ]
+    },
+    [' * @default true', "params['mode'] ?? 'true';"]
+  ],
+  [
+    'falls back to the shown location when a location has a default',
+    {
+      parameters: [
+        {
+          id: 'p1',
+          name: 'spawn',
+          text: 'Spawn',
+          desc: '',
+          type: 'location',
+          default: '{"mapId":"2","x":"3","y":"4"}'
+        }
+      ]
+    },
+    [
+      ' * @default {"mapId":"2","x":"3","y":"4"}',
+      `JSON.parse(params['spawn'] || '{"mapId":"2","x":"3","y":"4"}')`
+    ]
+  ],
+  [
+    'falls back to the shown text when a struct or array default is a number',
+    {
+      parameters: [
+        { id: 'p1', name: 'pair', text: 'Pair', desc: '', type: 'struct', default: 5 },
+        { id: 'p2', name: 'items', text: 'Items', desc: '', type: 'array', default: 6 }
+      ]
+    },
+    [
+      ' * @default 5',
+      ' * @default 6',
+      "JSON.parse(params['pair'] || '5')",
+      "JSON.parse(params['items'] || '6')"
+    ]
   ]
 ]
 

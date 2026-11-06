@@ -30,6 +30,7 @@
 - In the Message Window Mod template's background mode, the Custom color now covers the whole message window, as the Dim background does. Before, it stopped 4 pixels short of the window's right edge.
 - In the template dialog, a required field whose saved value came back empty, such as a number that was saved as not a number, is listed as required. Before, the template's code failed without naming the field.
 - In the template dialog, a drop-down field whose saved choice the template no longer offers is listed as an error on that field. Before, the template read it as one of its choices, and the Battle Event Hook template failed without a message.
+- When a parameter's or command argument's default holds another kind of value than its type, as an imported parameter file or plugin can give it (such as the text 7 for a number, or the number 5 for a text), the plugin code now falls back to the default its header shows when RPG Maker MZ has no value for it. Before, it fell back to another value: 0 instead of 7, false instead of true, or the number 5 instead of the text 5. A location parameter's default is now used the same way; before, the code always fell back to map 0 at 0, 0.
 
 ## [1.8.1] - 2026-11-05
 

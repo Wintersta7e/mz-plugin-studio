@@ -1174,7 +1174,10 @@ function extractHeaderPreamble(blockContent: string): string {
 Generate a parsing expression for a parameter/argument accessor.
 */
 function generateAccessorParser(accessor: string, param: PluginParameter): string {
-  const defaultValue = formatJSDefault(param.default, param.type)
+  // With the key absent the code reads the header's `@default` text as MZ stores it, whatever
+  // JavaScript type the default was given (a parameter file may hold a number for a text type)
+  const shown = annotationText(formatDefaultValue(param.default))
+  const defaultValue = formatJSDefault(shown, param.type)
 
   // Every type but number, boolean, location, struct and array is a scalar read: an ID-based
   // type as a number, any other as the text stored
@@ -1189,22 +1192,22 @@ function generateAccessorParser(accessor: string, param: PluginParameter): strin
       // MZ omits the param key entirely when the user never opens the Plugin
       // Manager, so `accessor` may be undefined even when @default is true.
       // Nullish-coalesce to the declared default before comparing.
-      const defaultText = param.default === true ? 'true' : 'false'
+      const defaultText = shown === 'true' ? 'true' : 'false'
       return `(${accessor} ?? '${defaultText}') === 'true'`
     }
 
     case 'location': {
-      return `JSON.parse(${accessor} || '{"mapId":"0","x":"0","y":"0"}')`
+      return `JSON.parse(${accessor} || '${jsonFallback(shown, '{"mapId":"0","x":"0","y":"0"}')}')`
     }
 
     case 'struct': {
-      return `JSON.parse(${accessor} || '${jsonFallback(param, '{}')}')`
+      return `JSON.parse(${accessor} || '${jsonFallback(shown, '{}')}')`
     }
 
     case 'array': {
       // MZ double-encodes struct<X>[]: outer JSON array of JSON strings.
       // Without the inner parse each element remains a string literal.
-      const parsed = `JSON.parse(${accessor} || '${jsonFallback(param, '[]')}')`
+      const parsed = `JSON.parse(${accessor} || '${jsonFallback(shown, '[]')}')`
       const inner = param.arrayType
       if (inner === 'struct' && param.structType !== undefined && param.structType !== '') {
         return `${parsed}.map(s => JSON.parse(s))`
@@ -1248,12 +1251,11 @@ function scalarAccessor(accessor: string, type: ScalarType, defaultValue: string
 }
 
 /**
-The JSON text a struct or array reads when its key is absent: its `@default`, else `empty`.
+The JSON text a struct, array or location reads when its key is absent: the `@default` text
+shown, else `empty`.
 */
-function jsonFallback(param: PluginParameter, empty: string): string {
-  return typeof param.default === 'string' && param.default !== ''
-    ? escapeJSString(annotationText(param.default))
-    : empty
+function jsonFallback(shown: string, empty: string): string {
+  return shown === '' ? empty : escapeJSString(shown)
 }
 
 function generateParamParser(param: PluginParameter): string {
@@ -1265,19 +1267,14 @@ function generateArgParser(arg: PluginParameter): string {
 }
 
 /**
-Format default value for JavaScript code
+The JavaScript literal a number or scalar falls back to: the `@default` text shown, read as a
+number for a number or ID-based type (0 when there is none), else as that text.
 */
-function formatJSDefault(value: string | number | boolean, type: ParamType): string {
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false'
-  }
-  if (typeof value === 'number') {
-    return String(value)
-  }
+function formatJSDefault(shown: string, type: ParamType): string {
   if (type === 'number' || ID_BASED_PARAM_TYPES.has(type)) {
-    return '0'
+    return shown === '' ? '0' : String(Number(shown))
   }
-  return `'${escapeJSString(annotationText(value))}'`
+  return `'${escapeJSString(shown)}'`
 }
 
 // Reserved words that would cause a SyntaxError if used as `const <name>`.

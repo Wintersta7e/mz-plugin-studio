@@ -53,10 +53,10 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const label = params['Label'] ?? 5;
+    const label = params['Label'] ?? '5';
     const count = Number(params['Count'] || 5);
     const enabled = (params['Enabled'] ?? 'false') === 'true';
-    const mode = params['Mode'] ?? 5;
+    const mode = params['Mode'] ?? '5';
 
     // Custom plugin code goes here
 

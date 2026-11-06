@@ -21,7 +21,7 @@ import {
   type PluginParameter,
   type PluginStruct
 } from '../../src/shared/types/plugin'
-import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
+import { GENERATOR_ENTRIES, type GeneratorEntry } from '../golden/corpus/generator'
 import { EDITS, fixturePlugins, loadFixture } from '../golden/corpus/raw-mode'
 import type { MzRuntime } from './mz-runtime'
 
@@ -132,15 +132,75 @@ export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {}
 
 // --- Cases ---------------------------------------------------------------------------------
 
+// Defaults of another JavaScript type than their parameter's, as a parameter file can hold them,
+// each shown as text that reads as the type, and a location with a default of its own: with the
+// key absent, the code must fall back to what the header's default reads as. A struct or array
+// default that is not text does not read as its type, so neither type is here.
+const ANOTHER_TYPE_DEFAULTS: [ParamType[], (string | number | boolean)[]][] = [
+  [['number', ...ID_BASED_PARAM_TYPES], ['7']],
+  [['boolean'], ['true']],
+  [
+    ['string', 'note', 'text', 'hidden', 'color', 'file', 'select', 'combo'],
+    [5, true]
+  ],
+  [['location'], ['{"mapId":"2","x":"3","y":"4"}']]
+]
+const SHOWN_OPTIONS = [
+  { value: '5', text: 'Five' },
+  { value: 'true', text: 'Yes' }
+]
+
+function anotherTypeParameters(): PluginParameter[] {
+  return ANOTHER_TYPE_DEFAULTS.flatMap(([types, values]) =>
+    types.flatMap((type) =>
+      values.map((value): PluginParameter => {
+        const name = `${type}_${typeof value}`
+        return {
+          id: name,
+          name,
+          text: name,
+          desc: '',
+          type,
+          default: value,
+          ...((type === 'select' || type === 'combo') && { options: SHOWN_OPTIONS })
+        }
+      })
+    )
+  )
+}
+
+const ANOTHER_TYPE_ENTRY: GeneratorEntry = {
+  name: 'defaults-of-another-type',
+  def: {
+    id: 'defaults-of-another-type',
+    meta: {
+      name: 'Fixture_DefaultTypes',
+      version: '1.0.0',
+      author: 'Example Author',
+      description: 'Defaults of another type than their parameter',
+      help: '',
+      url: '',
+      target: 'MZ',
+      dependencies: []
+    },
+    parameters: anotherTypeParameters(),
+    commands: [
+      { id: 'cmd', name: 'cmd', text: 'Command', desc: '', args: anotherTypeParameters() }
+    ],
+    structs: []
+  }
+}
+
 /**
-Every generator corpus entry as the app writes it, and every fixture written back by raw mode
-after each edit. An entry whose plugin name is not a file name cannot be loaded at all, so it
-runs under a plain name instead, keeping its own in `renamedFrom`.
+Every generator corpus entry as the app writes it, one more whose defaults have another type
+than their parameters, and every fixture written back by raw mode after each edit. An entry
+whose plugin name is not a file name cannot be loaded at all, so it runs under a plain name
+instead, keeping its own in `renamedFrom`.
 */
 export function conformanceCases(): ConformanceCase[] {
   const cases: ConformanceCase[] = []
   let renamed = 0
-  for (const entry of GENERATOR_ENTRIES) {
+  for (const entry of [...GENERATOR_ENTRIES, ANOTHER_TYPE_ENTRY]) {
     let definition = entry.def
     let renamedFrom: string | undefined
     if (isPluginNameRefused(definition)) {
