@@ -9,7 +9,7 @@ interface DiffViewProps {
   modified: string
 }
 
-export function DiffView({ original, modified }: DiffViewProps) {
+export function DiffView({ original, modified }: Readonly<DiffViewProps>) {
   const theme = useSettingsStore((s) => s.theme)
   const editorFontSize = useSettingsStore((s) => s.editorFontSize)
 
