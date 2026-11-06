@@ -15,12 +15,17 @@ async function loadCopy(leaf?: string): Promise<string> {
   return copy
 }
 
+function isList(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value)
+}
+
 async function expectLoads(copy: string): Promise<void> {
   await expect(ProjectParser.validateProject(copy)).resolves.toStrictEqual({ valid: true })
 
   const project = await ProjectParser.parseProject(copy)
-  const counts = Object.entries(project).flatMap(([field, value]) =>
-    Array.isArray(value) ? [[field, value.length] as const] : []
+  const fields: [string, unknown][] = Object.entries(project)
+  const counts = fields.flatMap(([field, value]) =>
+    isList(value) ? [[field, value.length] as const] : []
   )
   const listed = counts.map(([field, n]) => [field, String(n)].join(' ')).join(', ')
 
