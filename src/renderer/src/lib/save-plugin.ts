@@ -375,7 +375,7 @@ export async function saveAllPlugins(): Promise<void> {
   const ps = usePluginStore.getState()
   const project = useProjectStore.getState().project
   if (!project) return
-  const dirty = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id])
+  const dirty = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] === true)
   const dirtyPlugins = dirty.filter((p) => p.meta.name)
   const outcome: SaveAllOutcome = { records: [], notSaved: new Map(), failed: [] }
   for (const tab of dirtyPlugins) await saveTab(tab, project.path, outcome)

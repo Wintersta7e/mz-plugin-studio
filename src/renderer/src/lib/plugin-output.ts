@@ -113,12 +113,12 @@ export function generatePluginOutput(
   }
   // Raw mode finds a struct's block in the file by its name, so two structs of one name would
   // both be written into the first one's block
-  const duplicates = duplicateStructNames(plugin.structs)
-  if (duplicates.length > 0) {
+  const [duplicate] = duplicateStructNames(plugin.structs)
+  if (duplicate !== undefined) {
     return {
       ok: false,
       refusal: 'duplicate-struct',
-      message: `Not saved: two structs are named ${duplicates[0]}, so raw mode cannot tell which block of ${saveFileName(plugin)} each one is. Rename one of them, then save again.`
+      message: `Not saved: two structs are named ${duplicate}, so raw mode cannot tell which block of ${saveFileName(plugin)} each one is. Rename one of them, then save again.`
     }
   }
   let code: string

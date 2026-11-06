@@ -38,7 +38,7 @@ function getDatabaseName(databaseType: unknown): string {
     $dataCommonEvents: 'CommonEvents',
     $dataMapInfos: 'MapInfos'
   }
-  return names[String(databaseType)] || expectText(databaseType).replace('$data', '')
+  return names[String(databaseType)] ?? expectText(databaseType).replace('$data', '')
 }
 
 /**

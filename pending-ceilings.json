@@ -49,9 +49,5 @@
       "tests/unit/dialog-default-path.test.ts": 2,
       "tests/unit/static-scope.test.ts": 1
     }
-  },
-  "web": {
-    "exactOptionalPropertyTypes": {},
-    "noUncheckedIndexedAccess": {}
   }
 }

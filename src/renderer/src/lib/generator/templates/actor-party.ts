@@ -878,7 +878,7 @@ const equipmentHookTemplate: CodeTemplate = {
     // Header comment
     const eventLabel = equipEventLabel(eventType)
     const timingLabel = equipTimingLabel(timing)
-    const slotLabel = hook.hasSlotFilter ? ` (${SLOT_NAMES[slotText]} slot only)` : ''
+    const slotLabel = hook.hasSlotFilter ? ` (${String(SLOT_NAMES[slotText])} slot only)` : ''
     const lines = [`// Equipment Hook: ${eventLabel} - ${timingLabel}${slotLabel}`, '']
 
     // Equip and/or unequip hooks using forceChangeEquip for more granular control

@@ -1078,14 +1078,13 @@ function registrationLines(command: PluginCommand, name: string): string[] {
     `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(command.name))}', function(args) {`
   ]
   const argNames = new Set<string>()
-  const constants = command.args.map((arg) => {
+  const constants: string[] = []
+  for (const arg of command.args) {
     let constant = camelCase(arg.name)
     while (argNames.has(constant)) constant += '_'
     argNames.add(constant)
-    return constant
-  })
-  for (const [index, arg] of command.args.entries()) {
-    lines.push(`        const ${constants[index]} = ${generateArgParser(arg)};`)
+    constants.push(constant)
+    lines.push(`        const ${constant} = ${generateArgParser(arg)};`)
   }
   lines.push('')
   lines.push('        // TODO: Implement command logic')

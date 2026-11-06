@@ -41,7 +41,7 @@ import { NOTICE_MS } from './stores/toastStore'
 import { PREVIEW_WIDTH_MAX, PREVIEW_WIDTH_MIN } from './stores/uiStore'
 import { offerReloadFromProject } from './lib/raw-mode'
 import { FolderOpen, FilePlus } from 'lucide-react'
-import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
+import { motion, AnimatePresence, MotionConfig, stagger } from 'framer-motion'
 import { cn, refusalReason, userMessage } from './lib/utilities'
 import { PROJECT_OPEN_CANCELLED } from '../../shared/ipc-types'
 
@@ -810,7 +810,7 @@ function WelcomeScreen({
         animate="visible"
         variants={{
           hidden: {},
-          visible: { transition: { staggerChildren: 0.08 } }
+          visible: { transition: { delayChildren: stagger(0.08) } }
         }}
       >
         {/* MZ logo */}

@@ -69,7 +69,7 @@ export function isOneLineExpression(text: string): boolean {
   let outside = ''
   let index = 0
   while (index < text.length) {
-    const quote = text[index]
+    const quote = text.charAt(index)
     if (!QUOTES.has(quote)) {
       outside += quote
       index++

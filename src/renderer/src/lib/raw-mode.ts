@@ -163,7 +163,7 @@ export async function didReloadFromProject(pluginId: string): Promise<boolean> {
   }
   let isKeepTab = false
   // A tab read by an older parser differs from its file with no edit, so only edits are kept
-  if (dirtyByPluginId[pluginId]) {
+  if (dirtyByPluginId[pluginId] === true) {
     const answer = await globalThis.api.dialog.message({
       type: 'question',
       title: 'Reload from project?',

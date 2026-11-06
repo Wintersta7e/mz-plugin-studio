@@ -33,7 +33,7 @@ function splitLine(line: string): [string, string | undefined] {
   while (index < line.length) {
     if (line[index] === '|') return [value, line.slice(index + 1)]
     if (line[index] !== '\\') {
-      value += line[index++]
+      value += line.charAt(index++)
       continue
     }
     let end = index

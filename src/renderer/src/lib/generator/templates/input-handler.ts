@@ -64,9 +64,9 @@ const TRIGGER_DESCRIPTIONS: Record<string, string> = {
 Generates input handler code for a specific scene
 */
 function generateSceneHandler(keyName: string, triggerType: string, sceneName: string): string {
-  const keyCode = KEY_CODES[keyName]
-  const keyDisplayName = KEY_DISPLAY_NAMES[keyName]
-  const triggerDesc = TRIGGER_DESCRIPTIONS[triggerType]
+  const keyCode = String(KEY_CODES[keyName])
+  const keyDisplayName = String(KEY_DISPLAY_NAMES[keyName])
+  const triggerDesc = String(TRIGGER_DESCRIPTIONS[triggerType])
   const lines: string[] = [
     `// Input Handler: ${keyDisplayName} key on ${sceneName}`,
     `// Triggers ${triggerDesc}`,
@@ -103,9 +103,9 @@ function generateSceneHandler(keyName: string, triggerType: string, sceneName: s
 Generates a global input handler that works across all scenes
 */
 function generateGlobalHandler(keyName: string, triggerType: string): string {
-  const keyCode = KEY_CODES[keyName]
-  const keyDisplayName = KEY_DISPLAY_NAMES[keyName]
-  const triggerDesc = TRIGGER_DESCRIPTIONS[triggerType]
+  const keyCode = String(KEY_CODES[keyName])
+  const keyDisplayName = String(KEY_DISPLAY_NAMES[keyName])
+  const triggerDesc = String(TRIGGER_DESCRIPTIONS[triggerType])
   const lines: string[] = [
     `// Global Input Handler: ${keyDisplayName} key (all scenes)`,
     `// Triggers ${triggerDesc}`,
