@@ -2048,62 +2048,6 @@
       "count": 2
     }
   },
-  "tests/integration/read-scope.test.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 3
-    },
-    "@typescript-eslint/require-await": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 6
-    },
-    "vitest/no-conditional-expect": {
-      "count": 1
-    },
-    "vitest/no-standalone-expect": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 5
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 1
-    },
-    "vitest/require-hook": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 2
-    },
-    "vitest/require-top-level-describe": {
-      "count": 3
-    }
-  },
   "tests/integration/save-guard.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 6
@@ -2176,56 +2120,6 @@
     },
     "vitest/require-top-level-describe": {
       "count": 3
-    }
-  },
-  "tests/integration/write-grant.test.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 7
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    },
-    "vitest/require-top-level-describe": {
-      "count": 2
     }
   },
   "tests/setup/console.ts": {

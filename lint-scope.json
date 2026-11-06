@@ -300,7 +300,6 @@
         "tests/integration/mz-runtime-conformance.test.ts",
         "tests/integration/project-scope.test.ts",
         "tests/integration/save-guard.test.ts",
-        "tests/integration/write-grant.test.ts",
         "tests/unit/annotation-blocks.test.ts",
         "tests/unit/dialog-default-class.test.ts",
         "tests/unit/evaluate-plugin.test.ts",
