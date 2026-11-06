@@ -181,6 +181,7 @@
         "src/renderer/src/lib/generator/templates/actor-party.ts",
         "src/renderer/src/lib/generator/templates/index.ts",
         "src/renderer/src/lib/generator/templates/map-events.ts",
+        "src/renderer/src/lib/generator/templates/message-system.ts",
         "src/renderer/src/lib/generator/templates/scene-hooks.ts",
         "src/renderer/src/lib/generator/templates/sprite-system.ts",
         "src/renderer/src/lib/generator/templates/types.ts",

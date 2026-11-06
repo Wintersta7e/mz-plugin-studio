@@ -1583,38 +1583,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/lib/generator/templates/message-system.ts": {
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    },
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 4
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/no-useless-switch-case": {
-      "count": 1
-    },
-    "unicorn/prefer-else-if": {
-      "count": 2
-    },
-    "unicorn/prefer-hoisting-branch-code": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 4
-    }
-  },
   "src/renderer/src/lib/generator/templates/method-alias.ts": {
     "@typescript-eslint/no-base-to-string": {
       "count": 2
