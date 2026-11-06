@@ -1,32 +1,32 @@
 import type { PluginStruct } from '../types/plugin'
 
 /**
- * Build a JSON default string from struct field values.
- * All values are stored as strings per MZ convention (e.g., {"x":"100","visible":"true"}).
- * Fields with empty string values are omitted.
- * Returns empty string if no fields have values.
- */
+Build a JSON default string from struct field values.
+All values are stored as strings per MZ convention (e.g., {"x":"100","visible":"true"}).
+Fields with empty string values are omitted.
+Returns empty string if no fields have values.
+*/
 export function buildStructDefault(struct: PluginStruct, values: Record<string, string>): string {
-  const obj: Record<string, string> = {}
+  const object: Record<string, string> = {}
   for (const field of struct.parameters) {
-    const val = values[field.name]
-    if (val !== undefined && val !== '') {
-      obj[field.name] = val
+    const value = values[field.name]
+    if (value !== undefined && value !== '') {
+      object[field.name] = value
     }
   }
-  if (Object.keys(obj).length === 0) return ''
-  return JSON.stringify(obj)
+  if (Object.keys(object).length === 0) return ''
+  return JSON.stringify(object)
 }
 
 /**
- * Parse a JSON default string into a Record of field name to string value.
- * Returns empty object for empty/invalid/malformed input.
- * Non-string values are coerced to strings.
- */
-export function parseStructDefault(jsonStr: string): Record<string, string> {
-  if (!jsonStr || jsonStr.trim() === '' || jsonStr.trim() === '{}') return {}
+Parse a JSON default string into a Record of field name to string value.
+Returns empty object for empty/invalid/malformed input.
+Non-string values are coerced to strings.
+*/
+export function parseStructDefault(jsonString: string): Record<string, string> {
+  if (!jsonString || jsonString.trim() === '' || jsonString.trim() === '{}') return {}
   try {
-    const parsed = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonString)
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
     const result: Record<string, string> = {}
     for (const [key, value] of Object.entries(parsed)) {
@@ -44,20 +44,20 @@ export interface StructDefaultValidation {
 }
 
 /**
- * Validate a JSON default string against a struct definition.
- * Returns status: 'valid' if OK, 'warning' for unknown keys, 'error' for bad JSON.
- */
+Validate a JSON default string against a struct definition.
+Returns status: 'valid' if OK, 'warning' for unknown keys, 'error' for bad JSON.
+*/
 export function validateStructDefault(
-  jsonStr: string,
+  jsonString: string,
   struct: PluginStruct
 ): StructDefaultValidation {
-  if (!jsonStr || jsonStr.trim() === '' || jsonStr.trim() === '{}') {
+  if (!jsonString || jsonString.trim() === '' || jsonString.trim() === '{}') {
     return { status: 'valid', errors: [] }
   }
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(jsonStr)
+    parsed = JSON.parse(jsonString)
   } catch {
     return { status: 'error', errors: ['Invalid JSON: check syntax'] }
   }
@@ -82,10 +82,10 @@ export function validateStructDefault(
 }
 
 /**
- * Build a values Record from a struct's field defaults.
- * Skips fields with empty string defaults.
- * All values are coerced to strings.
- */
+Build a values Record from a struct's field defaults.
+Skips fields with empty string defaults.
+All values are coerced to strings.
+*/
 export function fillFromStructDefaults(struct: PluginStruct): Record<string, string> {
   const values: Record<string, string> = {}
   for (const field of struct.parameters) {

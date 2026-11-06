@@ -49,7 +49,7 @@ export const SHORTCUTS: ShortcutDef[] = [
 ]
 
 // Shortcuts that override even when Monaco editor is focused
-const GLOBAL_OVERRIDE_SHORTCUTS = [
+const GLOBAL_OVERRIDE_SHORTCUTS = new Set([
   'ctrl+s',
   'ctrl+shift+s',
   'ctrl+n',
@@ -57,23 +57,23 @@ const GLOBAL_OVERRIDE_SHORTCUTS = [
   'ctrl+b',
   'ctrl+shift+e',
   'f1'
-]
+])
 
 export function matchShortcut(e: KeyboardEvent): ShortcutDef | null {
   if (e.altKey) return null
 
-  const ctrl = e.ctrlKey || e.metaKey
-  const shift = e.shiftKey
+  const isCtrl = e.ctrlKey || e.metaKey
+  const isShift = e.shiftKey
   const code = e.code
 
   for (const shortcut of SHORTCUTS) {
     const parts = shortcut.key.split('+')
-    const needsCtrl = parts.includes('ctrl')
-    const needsShift = parts.includes('shift')
+    const isNeedsCtrl = parts.includes('ctrl')
+    const isNeedsShift = parts.includes('shift')
     const mainKey = parts[parts.length - 1]
     const expectedCode = keyToCode(mainKey)
 
-    if (needsCtrl === ctrl && needsShift === shift && code === expectedCode) {
+    if (isNeedsCtrl === isCtrl && isNeedsShift === isShift && code === expectedCode) {
       return shortcut
     }
   }
@@ -81,7 +81,7 @@ export function matchShortcut(e: KeyboardEvent): ShortcutDef | null {
 }
 
 export function shouldOverrideMonaco(shortcut: ShortcutDef): boolean {
-  return GLOBAL_OVERRIDE_SHORTCUTS.includes(shortcut.key)
+  return GLOBAL_OVERRIDE_SHORTCUTS.has(shortcut.key)
 }
 
 function isMonacoFocused(): boolean {
@@ -103,7 +103,7 @@ export function shouldHandleShortcut(e: KeyboardEvent): ShortcutDef | null {
 
 function keyToCode(key: string): string {
   if (/^[a-z]$/.test(key)) return `Key${key.toUpperCase()}`
-  if (/^[0-9]$/.test(key)) return `Digit${key}`
+  if (/^\d$/.test(key)) return `Digit${key}`
   if (/^f\d+$/i.test(key)) return key.toUpperCase()
   if (key === ',') return 'Comma'
   if (key === '.') return 'Period'

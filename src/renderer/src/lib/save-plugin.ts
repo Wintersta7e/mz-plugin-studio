@@ -10,7 +10,9 @@ import { prepareSave, reloadFromProject, sameFile } from './raw-mode'
 import type { SaveRefusal } from './raw-mode'
 import { userMessage } from './utils'
 
-/** `save` is Ctrl+S (into the open project when there is one); `export` is the preview's Export button. */
+/**
+`save` is Ctrl+S (into the open project when there is one); `export` is the preview's Export button.
+*/
 export type SaveMode = 'save' | 'export'
 
 type Written = Extract<SaveResult, { success: true }>
@@ -61,9 +63,9 @@ const recordOf = (plugin: PluginDefinition, result: Written, written: string): S
 })
 
 /**
- * Whether `result`, the answer to a save with `guard`, refused the file only because the tab
- * cannot tell what it held: a tab restored from an older version knows its file but not its bytes.
- */
+Whether `result`, the answer to a save with `guard`, refused the file only because the tab
+cannot tell what it held: a tab restored from an older version knows its file but not its bytes.
+*/
 function isUnconfirmed(plugin: PluginDefinition, guard: SaveGuard, result: Refused): boolean {
   if (result.conflict === 'would-break') return false
   return result.conflict === 'changed-on-disk'
@@ -71,12 +73,14 @@ function isUnconfirmed(plugin: PluginDefinition, guard: SaveGuard, result: Refus
     : guard.base === null && plugin.importedFrom === fileNameOf(result.path)
 }
 
-/** What the conflict prompt says about `result`, the answer to a save with `guard`. */
+/**
+What the conflict prompt says about `result`, the answer to a save with `guard`.
+*/
 function conflictMessage(plugin: PluginDefinition, guard: SaveGuard, result: Refused): string {
   const path = result.path
   if (result.conflict === 'would-break') {
     const problem = result.syntaxError
-    const at = problem?.line != null ? `line ${problem.line}: ` : ''
+    const at = problem?.line == null ? '' : `line ${problem.line}: `
     return `Saving would stop "${path}" from compiling (${at}${problem?.message ?? 'syntax error'}). Overwrite it anyway?`
   }
   if (isUnconfirmed(plugin, guard, result)) {
@@ -94,9 +98,9 @@ const LOST = {
 }
 
 /**
- * Whether to write `code`, the code of `plugin`, to `filePath`, asking first when the file is not
- * named after it; `choose` when the user wants to pick another file.
- */
+Whether to write `code`, the code of `plugin`, to `filePath`, asking first when the file is not
+named after it; `choose` when the user wants to pick another file.
+*/
 async function confirmFileName(
   plugin: PluginDefinition,
   filePath: string,
@@ -122,10 +126,10 @@ async function confirmFileName(
 }
 
 /**
- * Writes through `write`, asking before replacing a file the check refuses. Overwrite retries
- * against the bytes the prompt was about, so a file changed again meanwhile is asked about
- * again. Null when nothing was written.
- */
+Writes through `write`, asking before replacing a file the check refuses. Overwrite retries
+against the bytes the prompt was about, so a file changed again meanwhile is asked about
+again. Null when nothing was written.
+*/
 async function writeAsking(
   plugin: PluginDefinition,
   write: (guard: SaveGuard) => Promise<SaveResult>
@@ -134,7 +138,7 @@ async function writeAsking(
   for (;;) {
     const result = await write(guard)
     if (result.success) return result
-    const offerReload =
+    const isOfferReload =
       result.conflict === 'changed-on-disk' &&
       isImported(plugin) &&
       useProjectStore.getState().project !== null
@@ -142,9 +146,9 @@ async function writeAsking(
       type: 'warning',
       title: 'Overwrite file?',
       message: conflictMessage(plugin, guard, result),
-      buttons: ['Cancel', 'Overwrite', ...(offerReload ? ['Reload from project'] : [])]
+      buttons: ['Cancel', 'Overwrite', ...(isOfferReload ? ['Reload from project'] : [])]
     })
-    if (offerReload && answer === 2) {
+    if (isOfferReload && answer === 2) {
       await reloadFromProject(plugin.id)
       return null
     }
@@ -160,9 +164,9 @@ async function writeAsking(
 }
 
 /**
- * Writes one open plugin's `.js`, reporting the result in a toast. Ctrl+S writes into the open
- * project's `js/plugins`; Export, and Ctrl+S with no project, ask where to save.
- */
+Writes one open plugin's `.js`, reporting the result in a toast. Ctrl+S writes into the open
+project's `js/plugins`; Export, and Ctrl+S with no project, ask where to save.
+*/
 export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void> {
   const addToast = useToastStore.getState().addToast
   try {
@@ -211,23 +215,23 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void
     if (result === null) return
     // An export to the file Ctrl+S writes is a save; else, with a project open, Export writes a
     // copy and the tab's file is still the project's
-    const saved =
+    const isSaved =
       mode === 'save' ||
       (project !== null &&
         plugin.meta.name !== '' &&
         sameFile(result.path, `${project.path}/js/plugins/${saveFileName(plugin)}`))
-    if (saved || project === null) {
+    if (isSaved || project === null) {
       usePluginStore.getState().recordSaves([recordOf(plugin, result, code)])
     }
     addToast({
       type: 'success',
-      message: saved ? 'Plugin saved' : `Exported to ${result.path}`
+      message: isSaved ? 'Plugin saved' : `Exported to ${result.path}`
     })
     if (result.syntaxWarning !== undefined) {
       const { line, message } = result.syntaxWarning
       addToast({
         type: 'warning',
-        message: `Saved, but the file does not compile${line !== null ? ` (line ${line})` : ''}: ${message}`,
+        message: `Saved, but the file does not compile${line === null ? '' : ` (line ${line})`}: ${message}`,
         duration: NOTICE_MS
       })
     }
@@ -243,10 +247,10 @@ export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void
 }
 
 /**
- * Saves every unsaved tab into the open project and reports them in one toast. Tabs are saved one
- * at a time, so two tabs saving to one file meet the file check in turn; a tab whose save would
- * need a prompt is not saved and is named in the report with the others of its kind.
- */
+Saves every unsaved tab into the open project and reports them in one toast. Tabs are saved one
+at a time, so two tabs saving to one file meet the file check in turn; a tab whose save would
+need a prompt is not saved and is named in the report with the others of its kind.
+*/
 export async function saveAllPlugins(): Promise<void> {
   const ps = usePluginStore.getState()
   const project = useProjectStore.getState().project
@@ -279,7 +283,7 @@ export async function saveAllPlugins(): Promise<void> {
         skip(
           plugin,
           isUnconfirmed(plugin, guard, result) ? 'unconfirmed' : result.conflict,
-          line != null ? `${plugin.meta.name} (line ${line})` : plugin.meta.name
+          line == null ? plugin.meta.name : `${plugin.meta.name} (line ${line})`
         )
       }
     } catch (error: unknown) {

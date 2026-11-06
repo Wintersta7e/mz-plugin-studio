@@ -16,7 +16,9 @@ export const RAW_MODE_READ_ONLY_NOTICE =
 export const RAW_MODE_HEADER_READ_ONLY_NOTICE =
   'This file has no main annotation block (/*: or /*:en), so raw mode cannot save changes to its header and it is read-only here. Turn raw mode off in the preview to edit it.'
 
-/** Why a save is refused: raw mode cannot build the file, or a regenerating save is unconfirmed */
+/**
+Why a save is refused: raw mode cannot build the file, or a regenerating save is unconfirmed
+*/
 export type SaveRefusal = OutputRefusal | 'needs-confirmation'
 
 export type SavePreparation =
@@ -24,15 +26,19 @@ export type SavePreparation =
   | { status: 'refused'; refusal: SaveRefusal; reason: string }
   | { status: 'cancelled' }
 
-/** Whether the active tab is in raw mode. */
+/**
+Whether the active tab is in raw mode.
+*/
 export function useActiveRawMode(): boolean {
   const id = usePluginStore((s) => s.plugin.id)
   const importedFrom = usePluginStore((s) => s.plugin.importedFrom)
-  const choice = useUIStore((s) => s.rawModeByPluginId[id])
-  return isRawMode({ importedFrom }, choice)
+  const isChoice = useUIStore((s) => s.rawModeByPluginId[id])
+  return isRawMode({ importedFrom }, isChoice)
 }
 
-/** Whether the active tab's header is read-only: raw mode cannot save header changes to its file. */
+/**
+Whether the active tab's header is read-only: raw mode cannot save header changes to its file.
+*/
 export function useHeaderReadOnly(): boolean {
   const rawMode = useActiveRawMode()
   const rawSource = usePluginStore((s) => s.plugin.rawSource)
@@ -43,10 +49,10 @@ export function useHeaderReadOnly(): boolean {
 }
 
 /**
- * The code a save of an open tab writes. Raw mode saves the file's own text or refuses; the
- * first save of an imported plugin with raw mode off regenerates the whole file, so it asks
- * first when `ask` is set and is refused otherwise.
- */
+The code a save of an open tab writes. Raw mode saves the file's own text or refuses; the
+first save of an imported plugin with raw mode off regenerates the whole file, so it asks
+first when `ask` is set and is refused otherwise.
+*/
 export async function prepareSave(
   pluginId: string,
   options: { ask: boolean }
@@ -90,43 +96,49 @@ export async function prepareSave(
     : { status: 'refused', refusal: out.refusal, reason: out.message }
 }
 
-/** A form of the paths `like` belongs with that compares as main does: Windows paths ignore case */
+/**
+A form of the paths `like` belongs with that compares as main does: Windows paths ignore case
+*/
 function comparable(like: string): (p: string) => string {
-  const windows = /^[a-z]:|\\/i.test(like)
+  const isWindows = /^[a-z]:|\\/i.test(like)
   return (p) => {
-    const slashed = p.replace(/[\\/]+/g, '/').replace(/\/$/, '')
-    return windows ? slashed.toLowerCase() : slashed
+    const slashed = p.replaceAll(/[\\/]+/g, '/').replace(/\/$/, '')
+    return isWindows ? slashed.toLowerCase() : slashed
   }
 }
 
-/** Whether `file` lies directly in `dir` */
+/**
+Whether `file` lies directly in `dir`
+*/
 function isFileIn(dir: string, file: string): boolean {
   const normal = comparable(dir)
   const target = normal(file)
   return target.slice(0, target.lastIndexOf('/')) === normal(dir)
 }
 
-/** Whether two paths name one file */
+/**
+Whether two paths name one file
+*/
 export function sameFile(a: string, b: string): boolean {
   const normal = comparable(a)
   return normal(a) === normal(b)
 }
 
 /**
- * Reads an imported tab's file from the open project again and makes it the tab's file text,
- * baseline and the file it was read from. A tab last read or saved outside the open project asks
- * first. A tab with no unsaved edits takes the file's values; a tab with edits asks whether to
- * replace them with the file or keep them. False when there is no project, the user cancels or
- * the file cannot be read.
- */
+Reads an imported tab's file from the open project again and makes it the tab's file text,
+baseline and the file it was read from. A tab last read or saved outside the open project asks
+first. A tab with no unsaved edits takes the file's values; a tab with edits asks whether to
+replace them with the file or keep them. False when there is no project, the user cancels or
+the file cannot be read.
+*/
 export async function reloadFromProject(pluginId: string): Promise<boolean> {
   const project = useProjectStore.getState().project
   const { openPlugins, dirtyByPluginId, baseByPluginId } = usePluginStore.getState()
   const plugin = openPlugins.find((p) => p.id === pluginId)
   if (project === null || plugin?.importedFrom === undefined) return false
-  const sep = project.path.includes('\\') ? '\\' : '/'
-  const pluginsDir = [project.path, 'js', 'plugins'].join(sep)
-  const path = [pluginsDir, plugin.importedFrom].join(sep)
+  const separator = project.path.includes('\\') ? '\\' : '/'
+  const pluginsDir = [project.path, 'js', 'plugins'].join(separator)
+  const path = [pluginsDir, plugin.importedFrom].join(separator)
   const base = baseByPluginId[pluginId]
   if (base !== undefined && !isFileIn(pluginsDir, base.path)) {
     const answer = await window.api.dialog.message({
@@ -137,7 +149,7 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
     })
     if (answer !== 1) return false
   }
-  let keepTab = false
+  let isKeepTab = false
   // A tab read by an older parser differs from its file with no edit, so only edits are kept
   if (dirtyByPluginId[pluginId]) {
     const answer = await window.api.dialog.message({
@@ -147,13 +159,13 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
       buttons: ['Cancel', 'Replace with file', 'Keep tab values']
     })
     if (answer !== 1 && answer !== 2) return false
-    keepTab = answer === 2
+    isKeepTab = answer === 2
   }
   try {
     const file = await window.api.plugin.readRaw(project.path, plugin.importedFrom)
     const parsed = await window.api.plugin.parse(file.content)
     usePluginStore.getState().reattachSource(pluginId, file.content, parsed, {
-      keepTab,
+      keepTab: isKeepTab,
       base: { path: file.path, sha256: file.sha256 }
     })
     return true
@@ -168,7 +180,9 @@ export async function reloadFromProject(pluginId: string): Promise<boolean> {
   }
 }
 
-/** The open tabs raw mode refuses to save because their file text is not loaded. */
+/**
+The open tabs raw mode refuses to save because their file text is not loaded.
+*/
 function sourceMissingTabs(): PluginDefinition[] {
   const { openPlugins, baselineByPluginId } = usePluginStore.getState()
   const { rawModeByPluginId } = useUIStore.getState()
@@ -180,9 +194,9 @@ function sourceMissingTabs(): PluginDefinition[] {
 }
 
 /**
- * Once a project is open, offers one action that reloads every tab whose file text is not loaded
- * and whose file is in the project's plugins folder, each as `reloadFromProject` does.
- */
+Once a project is open, offers one action that reloads every tab whose file text is not loaded
+and whose file is in the project's plugins folder, each as `reloadFromProject` does.
+*/
 export async function offerReloadFromProject(projectPath: string): Promise<void> {
   let files: Set<string>
   try {
@@ -215,9 +229,9 @@ export async function offerReloadFromProject(projectPath: string): Promise<void>
 }
 
 /**
- * Reloads the tabs one after another, so each question comes on its own; skips reloaded tabs.
- * Reports how many it reloaded, naming those it did not.
- */
+Reloads the tabs one after another, so each question comes on its own; skips reloaded tabs.
+Reports how many it reloaded, naming those it did not.
+*/
 async function reloadAllFromProject(pluginIds: readonly string[]): Promise<void> {
   const missing = sourceMissingTabs().filter((p) => pluginIds.includes(p.id))
   if (missing.length === 0) return

@@ -1415,9 +1415,6 @@
   "src/renderer/src/lib/conflict-detector.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
     }
   },
   "src/renderer/src/lib/dependency-analyzer.ts": {
@@ -1439,23 +1436,8 @@
     "sonarjs/no-nested-conditional": {
       "count": 1
     },
-    "unicorn/name-replacements": {
-      "count": 10
-    },
-    "unicorn/no-for-loop": {
-      "count": 1
-    },
     "unicorn/no-unreadable-for-of-expression": {
       "count": 1
-    },
-    "unicorn/prefer-continue": {
-      "count": 1
-    },
-    "unicorn/prefer-export-from": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
     }
   },
   "src/renderer/src/lib/exportFormats.ts": {
@@ -1720,12 +1702,6 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-global-object-property-assignment": {
       "count": 1
     },
@@ -1751,12 +1727,6 @@
     },
     "max-lines-per-function": {
       "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
     },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 1
@@ -1840,13 +1810,10 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 8
+      "count": 5
     },
     "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
+      "count": 2
     },
     "unicorn/no-useless-recursion": {
       "count": 1
@@ -1856,12 +1823,6 @@
     },
     "unicorn/prefer-global-this": {
       "count": 6
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 7
     }
   },
   "src/renderer/src/lib/save-plugin.ts": {
@@ -1895,20 +1856,8 @@
     "sonarjs/no-nested-template-literals": {
       "count": 2
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 5
-    },
-    "unicorn/no-negated-condition": {
-      "count": 3
-    },
     "unicorn/prefer-global-this": {
       "count": 6
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
     }
   },
   "src/renderer/src/lib/select-options.ts": {
@@ -1918,36 +1867,18 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 2
     },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
     "unicorn/no-array-callback-reference": {
       "count": 1
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
     }
   },
   "src/renderer/src/lib/shortcuts.ts": {
-    "regexp/prefer-d": {
-      "count": 1
-    },
     "unicorn/consistent-boolean-name": {
-      "count": 5
+      "count": 1
     },
     "unicorn/name-replacements": {
       "count": 3
     },
     "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-set-has": {
       "count": 1
     },
     "unicorn/prefer-ternary": {
@@ -1971,21 +1902,10 @@
       "count": 2
     },
     "unicorn/name-replacements": {
-      "count": 5
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
+      "count": 1
     },
     "unicorn/prefer-ternary": {
       "count": 1
-    }
-  },
-  "src/renderer/src/lib/typed-text.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
     }
   },
   "src/renderer/src/lib/utils.ts": {
@@ -1994,9 +1914,6 @@
     },
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
     }
   },
   "src/renderer/src/main.tsx": {

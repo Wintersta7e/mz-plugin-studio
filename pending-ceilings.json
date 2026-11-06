@@ -85,7 +85,6 @@
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,
       "src/renderer/src/lib/conflict-detector.ts": 2,
-      "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
       "src/renderer/src/lib/shortcuts.ts": 1,
       "tests/dom/app-close.test.tsx": 1,
@@ -175,7 +174,6 @@
     "noUncheckedIndexedAccess": {
       "src/renderer/src/App.tsx": 1,
       "src/renderer/src/lib/conflict-detector.ts": 2,
-      "src/renderer/src/lib/dependency-analyzer.ts": 1,
       "src/renderer/src/lib/generator/templates/battle-system.ts": 8,
       "src/renderer/src/lib/shortcuts.ts": 1
     }

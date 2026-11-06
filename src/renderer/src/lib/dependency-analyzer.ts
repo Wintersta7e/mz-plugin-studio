@@ -2,7 +2,6 @@
 // Builds dependency graphs and validates load order, missing deps, circular deps
 
 import type { ScannedPluginHeader } from '../../../shared/ipc-types'
-export type { ScannedPluginHeader }
 
 export interface DependencyIssue {
   type: 'missing' | 'circular' | 'load-order' | 'duplicate'
@@ -24,7 +23,9 @@ export interface DependencyGraph {
   edges: Map<string, string[]> // plugin -> its dependencies (base + orderAfter + reverse orderBefore)
 }
 
-/** Build a directed dependency graph from scanned headers */
+/**
+Build a directed dependency graph from scanned headers
+*/
 export function buildDependencyGraph(headers: ScannedPluginHeader[]): DependencyGraph {
   const plugins = new Map<string, ScannedPluginHeader>()
   const edges = new Map<string, string[]>()
@@ -38,28 +39,34 @@ export function buildDependencyGraph(headers: ScannedPluginHeader[]): Dependency
   // then B must load after A, so B depends on A
   for (const header of headers) {
     for (const target of header.orderBefore) {
-      if (plugins.has(target)) {
-        const targetEdges = edges.get(target) || []
-        if (!targetEdges.includes(header.name)) {
-          targetEdges.push(header.name)
-          edges.set(target, targetEdges)
-        }
+      if (!plugins.has(target)) {
+        continue
       }
+
+      const targetEdges = edges.get(target) || []
+      if (targetEdges.includes(header.name)) {
+        continue
+      }
+
+      targetEdges.push(header.name)
+      edges.set(target, targetEdges)
     }
   }
 
   return { plugins, edges }
 }
 
-/** Validate the dependency graph and return a full report */
+/**
+Validate the dependency graph and return a full report
+*/
 export function validateDependencies(headers: ScannedPluginHeader[]): DependencyReport {
   const graph = buildDependencyGraph(headers)
   const issues: DependencyIssue[] = []
 
   // Build position index for load order checking
   const positionIndex = new Map<string, number>()
-  for (let i = 0; i < headers.length; i++) {
-    positionIndex.set(headers[i].name, i)
+  for (const [index, header] of headers.entries()) {
+    positionIndex.set(header.name, index)
   }
 
   // 1. Detect duplicate plugin names
@@ -84,35 +91,35 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
   // 2. Detect missing dependencies
   for (const header of headers) {
     // @base = hard dependency (error if missing)
-    for (const dep of header.base) {
-      if (!graph.plugins.has(dep)) {
+    for (const dependency of header.base) {
+      if (!graph.plugins.has(dependency)) {
         issues.push({
           type: 'missing',
           severity: 'error',
           pluginName: header.name,
-          message: `"${header.name}" requires "${dep}" but it was not found in the project`
+          message: `"${header.name}" requires "${dependency}" but it was not found in the project`
         })
       }
     }
     // @orderAfter = soft load order hint (warning if missing)
-    for (const dep of header.orderAfter) {
-      if (!graph.plugins.has(dep) && !header.base.includes(dep)) {
+    for (const dependency of header.orderAfter) {
+      if (!graph.plugins.has(dependency) && !header.base.includes(dependency)) {
         issues.push({
           type: 'missing',
           severity: 'warning',
           pluginName: header.name,
-          message: `"${header.name}" should load after "${dep}" but it was not found in the project`
+          message: `"${header.name}" should load after "${dependency}" but it was not found in the project`
         })
       }
     }
     // @orderBefore = soft load order hint (warning if target missing)
-    for (const dep of header.orderBefore) {
-      if (!graph.plugins.has(dep)) {
+    for (const dependency of header.orderBefore) {
+      if (!graph.plugins.has(dependency)) {
         issues.push({
           type: 'missing',
           severity: 'warning',
           pluginName: header.name,
-          message: `"${header.name}" should load before "${dep}" but it was not found in the project`
+          message: `"${header.name}" should load before "${dependency}" but it was not found in the project`
         })
       }
     }
@@ -125,24 +132,24 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
   for (const header of headers) {
     const myPos = positionIndex.get(header.name)
     if (myPos === undefined) continue
-    const allDeps = [...new Set(graph.edges.get(header.name) || [])]
-    for (const dep of allDeps) {
-      const depPos = positionIndex.get(dep)
-      if (depPos !== undefined && depPos > myPos) {
+    const allDependencies = [...new Set(graph.edges.get(header.name) || [])]
+    for (const dependency of allDependencies) {
+      const dependencyPos = positionIndex.get(dependency)
+      if (dependencyPos !== undefined && dependencyPos > myPos) {
         issues.push({
           type: 'load-order',
           severity: 'warning',
           pluginName: header.name,
-          message: `"${header.name}" depends on "${dep}" but loads before it`,
-          details: `${header.name} is at position ${myPos + 1}, ${dep} is at position ${depPos + 1}`
+          message: `"${header.name}" depends on "${dependency}" but loads before it`,
+          details: `${header.name} is at position ${myPos + 1}, ${dependency} is at position ${dependencyPos + 1}`
         })
       }
     }
   }
 
   // Determine health
-  const hasErrors = issues.some((i) => i.severity === 'error')
-  const hasWarnings = issues.some((i) => i.severity === 'warning')
+  const hasErrors = issues.some((index) => index.severity === 'error')
+  const hasWarnings = issues.some((index) => index.severity === 'warning')
   const health = hasErrors ? 'errors' : hasWarnings ? 'warnings' : 'healthy'
 
   return {
@@ -153,7 +160,9 @@ export function validateDependencies(headers: ScannedPluginHeader[]): Dependency
   }
 }
 
-/** Detect circular dependencies using DFS with three-color marking */
+/**
+Detect circular dependencies using DFS with three-color marking
+*/
 function detectCycles(graph: DependencyGraph): DependencyIssue[] {
   const issues: DependencyIssue[] = []
   const WHITE = 0,
@@ -168,13 +177,13 @@ function detectCycles(graph: DependencyGraph): DependencyIssue[] {
 
   function dfs(node: string): void {
     color.set(node, GRAY)
-    for (const dep of graph.edges.get(node) || []) {
-      if (!graph.plugins.has(dep)) continue // skip missing (handled elsewhere)
-      if (color.get(dep) === GRAY) {
+    for (const dependency of graph.edges.get(node) || []) {
+      if (!graph.plugins.has(dependency)) continue // skip missing (handled elsewhere)
+      if (color.get(dependency) === GRAY) {
         // Found cycle - reconstruct path
-        const cycle = [dep, node]
+        const cycle = [dependency, node]
         let next = parent.get(node)
-        while (next !== undefined && next !== dep) {
+        while (next !== undefined && next !== dependency) {
           cycle.push(next)
           next = parent.get(next)
         }
@@ -186,9 +195,9 @@ function detectCycles(graph: DependencyGraph): DependencyIssue[] {
           message: 'Circular dependency detected: ' + cycle.join(' -> '),
           details: cycle.join(' -> ')
         })
-      } else if (color.get(dep) === WHITE) {
-        parent.set(dep, node)
-        dfs(dep)
+      } else if (color.get(dependency) === WHITE) {
+        parent.set(dependency, node)
+        dfs(dependency)
       }
     }
     color.set(node, BLACK)
@@ -199,3 +208,5 @@ function detectCycles(graph: DependencyGraph): DependencyIssue[] {
   }
   return issues
 }
+
+export { type ScannedPluginHeader } from '../../../shared/ipc-types'

@@ -1,9 +1,9 @@
 /**
- * RPG Maker MZ Autocomplete Provider for Monaco Editor
- *
- * Registers completion items for MZ global objects, class names,
- * and common code patterns (snippets).
- */
+RPG Maker MZ Autocomplete Provider for Monaco Editor
+
+Registers completion items for MZ global objects, class names,
+and common code patterns (snippets).
+*/
 
 import type { Monaco } from '@monaco-editor/react'
 import type { IDisposable, languages, editor, Position } from 'monaco-editor'
@@ -72,12 +72,12 @@ export function registerMZCompletions(monaco: Monaco): IDisposable {
       // Check if we're typing after '$' (the word parser may not include it)
       const lineContent = model.getLineContent(position.lineNumber)
       const charBefore = lineContent[word.startColumn - 2] // -2 because columns are 1-indexed
-      const includeGlobals = charBefore === '$' || word.word.startsWith('$')
+      const isIncludeGlobals = charBefore === '$' || word.word.startsWith('$')
 
       const suggestions: languages.CompletionItem[] = []
 
       // Global objects
-      if (includeGlobals || word.word.length === 0) {
+      if (isIncludeGlobals || word.word.length === 0) {
         for (const g of MZ_GLOBALS) {
           suggestions.push({
             label: g.name,

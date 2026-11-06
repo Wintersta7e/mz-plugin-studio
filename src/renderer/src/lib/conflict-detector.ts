@@ -1,12 +1,12 @@
 /**
- * Conflict Detector — Conflict Detection for RPG Maker MZ Plugins
- *
- * Pure functions to detect conflicts between plugins that override
- * the same prototype methods.
- *
- * Override extraction logic lives in `src/shared/override-extractor.ts`
- * (shared between main and renderer processes).
- */
+Conflict Detector — Conflict Detection for RPG Maker MZ Plugins
+
+Pure functions to detect conflicts between plugins that override
+the same prototype methods.
+
+Override extraction logic lives in `src/shared/override-extractor.ts`
+(shared between main and renderer processes).
+*/
 
 export { extractOverrides } from '../../../shared/override-extractor'
 
@@ -27,12 +27,12 @@ export interface ConflictReport {
 }
 
 /**
- * Detect conflicts between plugins that override the same methods.
- *
- * @param headers - Plugin headers with name and overrides list (in load order)
- * @param mzClasses - Class popularity data from mz-classes.json
- * @returns A ConflictReport with sorted conflicts and health status
- */
+Detect conflicts between plugins that override the same methods.
+
+@param headers - Plugin headers with name and overrides list (in load order)
+@param mzClasses - Class popularity data from mz-classes.json
+@returns A ConflictReport with sorted conflicts and health status
+*/
 export function detectConflicts(
   headers: { filename: string; name: string; overrides: string[] }[],
   mzClasses: Record<string, { popularity?: number }>

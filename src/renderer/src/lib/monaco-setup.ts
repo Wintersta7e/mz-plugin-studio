@@ -9,9 +9,9 @@ import tsWorkerUrl from 'monaco-editor/languages/features/typescript/ts.worker?w
 import { loader, type Monaco } from '@monaco-editor/react'
 
 /**
- * The built app starts each worker from a blob that loads the worker's file, so the worker runs
- * under the page's policy, which admits blob workers only. The dev server serves module workers.
- */
+The built app starts each worker from a blob that loads the worker's file, so the worker runs
+under the page's policy, which admits blob workers only. The dev server serves module workers.
+*/
 function startWorker(url: string): Worker {
   if (import.meta.env.DEV) return new Worker(url, { type: 'module' })
   const source = `importScripts(${JSON.stringify(new URL(url, location.href).href)});`
@@ -20,8 +20,8 @@ function startWorker(url: string): Worker {
 
 self.MonacoEnvironment = {
   getWorker(_workerId, label) {
-    const typescript = label === 'typescript' || label === 'javascript'
-    return startWorker(typescript ? tsWorkerUrl : editorWorkerUrl)
+    const isTypescript = label === 'typescript' || label === 'javascript'
+    return startWorker(isTypescript ? tsWorkerUrl : editorWorkerUrl)
   }
 }
 
