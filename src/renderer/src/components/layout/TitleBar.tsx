@@ -3,20 +3,31 @@ import { Minus, Square, X, Maximize2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { useProjectStore } from '../../stores'
 
+async function readMaximized(setIsMaximized: (isMaximized: boolean) => void): Promise<void> {
+  setIsMaximized(await globalThis.api.window.isMaximized())
+}
+
+function handleMinimize(): void {
+  globalThis.api.window.minimize()
+}
+
+function handleMaximize(): void {
+  globalThis.api.window.maximize()
+}
+
+// Main asks about unsaved changes in any tab, as for Alt+F4 or the taskbar
+function handleClose(): void {
+  globalThis.api.window.close()
+}
+
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false)
   const project = useProjectStore((s) => s.project)
 
   useEffect(() => {
-    window.api.window.isMaximized().then(setIsMaximized)
-    const unsubscribe = window.api.window.onMaximizeChange(setIsMaximized)
-    return () => unsubscribe()
+    void readMaximized(setIsMaximized)
+    return globalThis.api.window.onMaximizeChange(setIsMaximized)
   }, [])
-
-  const handleMinimize = () => window.api.window.minimize()
-  const handleMaximize = () => window.api.window.maximize()
-  // Main asks about unsaved changes in any tab, as for Alt+F4 or the taskbar
-  const handleClose = () => window.api.window.close()
 
   return (
     <div className="titlebar-drag-region flex h-10 items-center justify-between border-b border-border bg-card px-2">
