@@ -982,7 +982,7 @@ const jscpdSources = (): number => {
 // The cruise options' `exclude.path` patterns, as dependency-cruiser's own extractor resolves them.
 const excludePatterns = (options: ICruiseOptions): RegExp[] => {
   const { exclude } = options
-  const value: unknown = isRecord(exclude) ? exclude.path : exclude
+  const { path: value }: Record<string, unknown> = isRecord(exclude) ? exclude : { path: exclude }
   if (typeof value === 'string') return [new RegExp(value, 'v')]
   return isStringArray(value) ? value.map((pattern) => new RegExp(pattern, 'v')) : []
 }
@@ -1001,10 +1001,9 @@ const TYPECOV_SCRIPT =
   /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion$/v
 const typecovConfig = (script = ''): string | undefined => {
   // An optional group that did not take part in the match is undefined.
-  const groups: Partial<Record<string, string>> = TYPECOV_SCRIPT.exec(script)?.groups ?? {}
-  return groups.config === undefined
-    ? undefined
-    : path.posix.join(groups.folder ?? '.', groups.config)
+  const groups = new Map(Object.entries(TYPECOV_SCRIPT.exec(script)?.groups ?? {}))
+  const config = groups.get('config')
+  return config === undefined ? undefined : path.posix.join(groups.get('folder') ?? '.', config)
 }
 
 // Whether Prettier would format a file under the glob if `.prettierignore` did not name it.
@@ -1125,7 +1124,10 @@ describe('static scope: format gate, transitional files and gate scripts', () =>
     )
 
     expect(TRANSITIONAL_ARTEFACTS.filter((file) => !tracked.includes(file))).toStrictEqual([])
-    expect(packageScripts().deps.includes('--ignore-known')).toBe(
+
+    const dependencyScript = new Map(Object.entries(packageScripts())).get('deps')
+
+    expect(dependencyScript?.includes('--ignore-known')).toBe(
       TRANSITIONAL_ARTEFACTS.includes(KNOWN_VIOLATIONS)
     )
   })

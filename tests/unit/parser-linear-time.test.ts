@@ -22,7 +22,7 @@ function timeParse(marker: string): number {
   const start = performance.now()
   PluginParser.parsePlugin(content)
   const ms = performance.now() - start
-  console.log(`marker "${marker}": ${Math.round(ms)} ms`)
+  process.stdout.write(`marker "${marker}": ${String(Math.round(ms))} ms\n`)
   return ms
 }
 
@@ -77,9 +77,9 @@ function expectRampWithinBound(
     const start = performance.now()
     parse(content)
     const elapsed = performance.now() - start
-    console.log(`${leg} ramp: ${size} chars ${Math.round(elapsed)} ms`)
+    process.stdout.write(`${leg} ramp: ${String(size)} chars ${String(Math.round(elapsed))} ms\n`)
 
-    expect(elapsed, `${size} chars`).toBeLessThan(BOUND_MS)
+    expect(elapsed, `${String(size)} chars`).toBeLessThan(BOUND_MS)
   }
 }
 
@@ -103,11 +103,13 @@ describe('parse time of project note tags', () => {
   })
 })
 
-/** Every string of up to `maxLen` pieces from `alphabet`, the empty string included. */
-function* strings(alphabet: string[], maxLen: number): Generator<string> {
+/**
+Every string of up to `maxLength` pieces from `alphabet`, the empty string included.
+*/
+function* strings(alphabet: string[], maxLength: number): Generator<string> {
   let level = ['']
   yield ''
-  for (let len = 1; len <= maxLen; len++) {
+  for (let length = 1; length <= maxLength; length++) {
     const next: string[] = []
     for (const prefix of level) {
       for (const piece of alphabet) {
@@ -137,35 +139,40 @@ function checkEquivalence<T>(
       )
     }
   }
-  console.log(`equivalence ${name}: inputs ${count}, mismatches ${mismatches.length}`)
-  for (const line of mismatches.slice(0, 5)) console.log(`  ${line}`)
+  process.stdout.write(
+    `equivalence ${name}: inputs ${String(count)}, mismatches ${String(mismatches.length)}\n`
+  )
+  for (const line of mismatches.slice(0, 5)) process.stdout.write(`  ${line}\n`)
 
   expect(count).toBeGreaterThan(0)
-  expect(mismatches.length).toBe(0)
+  expect(mismatches).toHaveLength(0)
 }
 
 // Help and the description end before a line that starts a tag (same line start as the tag
 // itself) or ends the comment. Help with no end after it (written last in a block) runs to the
 // end of the header instead of reading as missing.
 const LINE = String.raw`(?<![^\r\n])[^\S\r\n]*(?:\*[^\S\r\n]*)?`
-const oldHelp = (header: string): string | undefined =>
-  header.match(
-    new RegExp(String.raw`${LINE}@help\s*([\s\S]*?)(?=\n(?:${LINE}@[a-z]|[^\S\r\n]*\*\/))`, 'i')
-  )?.[1] ?? header.match(new RegExp(String.raw`${LINE}@help\s*([\s\S]*)$`, 'i'))?.[1]
-const oldStrip = (value: string): string => value.replace(/\s*\*?\s*$/, '')
-const oldPlugindesc = (header: string): string | undefined =>
-  header.match(
-    new RegExp(
-      String.raw`${LINE}@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n(?:${LINE}@|[^\S\r\n]*\*\/)|$)`,
-      's'
-    )
-  )?.[1]
-const oldJoin = (text: string): string => text.replace(/\n\s*\*\s*/g, ' ')
-const oldScriptName = (content: string): string | undefined =>
-  content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1]
 // The earlier pattern, compiled from its source text: kept only as the reference and run on
 // inputs of at most a few characters, where its slow backtracking costs nothing.
 const previousPattern = (source: string, flags = ''): RegExp => new RegExp(source, flags)
+const oldHelp = (header: string): string | undefined =>
+  previousPattern(
+    String.raw`${LINE}@help\s*([\s\S]*?)(?=\n(?:${LINE}@[a-z]|[^\S\r\n]*\*\/))`,
+    'i'
+  ).exec(header)?.[1] ??
+  previousPattern(String.raw`${LINE}@help\s*([\s\S]*)$`, 'i').exec(header)?.[1]
+const oldStrip = (value: string): string =>
+  value.replace(previousPattern(String.raw`\s*\*?\s*$`), '')
+const oldPlugindesc = (header: string): string | undefined =>
+  previousPattern(
+    String.raw`${LINE}@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=\n(?:${LINE}@|[^\S\r\n]*\*\/)|$)`,
+    's'
+  ).exec(header)?.[1]
+const oldJoin = (text: string): string => text.replaceAll(/\n\s*\*\s*/g, ' ')
+const oldScriptName = (content: string): string | undefined =>
+  previousPattern(String.raw`\*\s+@plugindesc[\s\S]*?(\w+)\.js`, 'i').exec(content)?.[1]
+const afterHelpTag = (s: string): string => ' * @help' + s
+const afterPlugindescTag = (s: string): string => ' * @plugindesc' + s
 const oldWrapperClose = (code: string): number | undefined =>
   previousPattern(String.raw`\}\s*\)\s*\(\s*\)\s*;?\s*$`).exec(code)?.index
 const oldNoteTags = (note: string): string => {
@@ -184,34 +191,41 @@ const TAG_VALUE_PIECES = [' ', '\t', '\n', '\r', '\u{2028}', 'a', '@', '*', '/']
 
 describe('linear-time help and tag readers match the regular expressions they replace', () => {
   it('help text, any header', () => {
+    expect.hasAssertions()
+
     checkEquivalence(
       'help',
-      strings(['\n', ' ', '*', '/', '@', 'a', '@help', '@HeLp', ' '], 5),
+      strings(['\n', ' ', '*', '/', '@', 'a', '@help', '@HeLp', '\u{A0}'], 5),
       oldHelp,
       matchHelp
     )
   })
 
   it('help text after a help tag', () => {
-    const after = (s: string): string => ' * @help' + s
+    expect.hasAssertions()
+
     checkEquivalence(
       'help after tag',
       strings(['\n', ' ', '*', '/', '@', 'a', '\t'], 6),
-      (s) => oldHelp(after(s)),
-      (s) => matchHelp(after(s))
+      (s) => oldHelp(afterHelpTag(s)),
+      (s) => matchHelp(afterHelpTag(s))
     )
   })
 
   it('trailing star and spaces', () => {
+    expect.hasAssertions()
+
     checkEquivalence(
       'trailing star',
-      strings([' ', '\t', '*', 'a', ' ', '﻿', '/'], 6),
+      strings([' ', '\t', '*', 'a', '\u{A0}', '\u{FEFF}', '/'], 6),
       oldStrip,
       stripTrailingStar
     )
   })
 
   it('description, any header', () => {
+    expect.hasAssertions()
+
     checkEquivalence(
       'plugindesc',
       strings(['\n', ' ', '*', '/', '@', 'a', '@plugindesc', '@PluginDesc'], 5),
@@ -221,16 +235,19 @@ describe('linear-time help and tag readers match the regular expressions they re
   })
 
   it('description after a plugindesc tag', () => {
-    const after = (s: string): string => ' * @plugindesc' + s
+    expect.hasAssertions()
+
     checkEquivalence(
       'plugindesc after tag',
       strings(['\n', ' ', '*', '/', '@', 'a', '\t'], 6),
-      (s) => oldPlugindesc(after(s)),
-      (s) => matchPlugindesc(after(s))
+      (s) => oldPlugindesc(afterPlugindescTag(s)),
+      (s) => matchPlugindesc(afterPlugindescTag(s))
     )
   })
 
   it('description lines joined', () => {
+    expect.hasAssertions()
+
     checkEquivalence(
       'description join',
       strings(['\n', ' ', '*', 'a', '\t', ' '], 6),
@@ -240,6 +257,8 @@ describe('linear-time help and tag readers match the regular expressions they re
   })
 
   it('script name after a plugindesc tag', () => {
+    expect.hasAssertions()
+
     checkEquivalence(
       'script name',
       strings(['* @plugindesc', '*', ' ', 'a', '_', '.js', '.', '\n'], 5),

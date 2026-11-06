@@ -3,7 +3,7 @@
 // default. The folder check is awaited, so a slow drive never holds up the main process.
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import path from 'path'
+import path from 'node:path'
 import type {
   MessageBoxReturnValue,
   OpenDialogOptions,
@@ -21,10 +21,9 @@ import {
 } from '../../src/main/ipc/dialog'
 import type { Handler } from '../../src/main/ipc/registration'
 import type { InvokeChannel } from '../../src/shared/ipc-types'
+import { afterAllTests } from '../helpers/after-all-tests'
 
-let rows = 0
-
-type Row = [label: string, request: Partial<DialogDefaultRequest>, expected: string | undefined]
+const counted = { rows: 0, describes: 0 }
 
 const KIND = {
   'open-folder': 'open-folder',
@@ -32,7 +31,9 @@ const KIND = {
   'save-file': 'save-file:.js'
 } as const
 
-/** A request with nothing set but the channel; `existing` lists the folders that exist */
+/**
+A request with nothing set but the channel; `existing` lists the folders that exist
+*/
 function request(
   partial: Partial<DialogDefaultRequest>,
   existing: readonly string[] = []
@@ -44,204 +45,234 @@ function request(
     rendererValue: undefined,
     lastDirectory: undefined,
     projectRoot: undefined,
-    directoryExists: async (dir) => existing.includes(dir),
+    // Answers a turn later, as a check on disk does
+    directoryExists: async (directory) => {
+      await Promise.resolve()
+      return existing.includes(directory)
+    },
     ...partial
   }
 }
 
-afterAll(() => {
-  console.log(`dialog defaults: rows ${rows}`)
+// Describe blocks run in shuffled order: the count prints once the last counting one ends
+const DESCRIBES = 2
 
-  expect(rows).toBeGreaterThan(0)
-})
+function rowProblems(): string[] {
+  counted.describes += 1
+  if (counted.describes < DESCRIBES) return []
+  process.stdout.write(`dialog defaults: rows ${String(counted.rows)}\n`)
+  return counted.rows > 0 ? [] : ['no row ran']
+}
+
+type Row = [label: string, request: Partial<DialogDefaultRequest>, expected: string | undefined]
+
+const save: Row[] = [
+  [
+    'a file name opens in the folder last chosen for its kind',
+    {
+      kind: 'save-file:.mzparams',
+      rendererValue: 'Plugin.mzparams',
+      lastDirectory: '/work/exports'
+    },
+    '/work/exports/Plugin.mzparams'
+  ],
+  [
+    'a file name alone when no folder is known',
+    { kind: 'save-file:.mzparams', rendererValue: 'Plugin.mzparams' },
+    'Plugin.mzparams'
+  ],
+  [
+    "a plugin opens in the open project's plugins folder",
+    { rendererValue: 'MyPlugin.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
+    '/work/Game/js/plugins/MyPlugin.js'
+  ],
+  [
+    'a plugin without a project opens in the folder last chosen',
+    { rendererValue: 'MyPlugin.js', lastDirectory: '/work/out' },
+    '/work/out/MyPlugin.js'
+  ],
+  [
+    'a file name alone when the folder last chosen is gone',
+    { rendererValue: 'MyPlugin.js', lastDirectory: '/work/gone' },
+    'MyPlugin.js'
+  ],
+  ['no file name: the folder alone', { lastDirectory: '/work/out' }, '/work/out'],
+  [
+    'no file name and the folder last chosen is gone: no default',
+    { lastDirectory: '/work/gone' },
+    undefined
+  ],
+  ['nothing known: no default', {}, undefined],
+  [
+    'a full path the renderer asks again at stays as it is',
+    {
+      rendererValue: '/work/Other/js/plugins/MyPlugin.js',
+      projectRoot: '/work/Game',
+      lastDirectory: '/work/out'
+    },
+    '/work/Other/js/plugins/MyPlugin.js'
+  ],
+  [
+    "another kind never opens in the project's plugins folder",
+    { kind: 'save-file:.md', rendererValue: 'Plugin_README.md', projectRoot: '/work/Game' },
+    'Plugin_README.md'
+  ]
+]
+
+const open: Row[] = [
+  [
+    'the folder last chosen for its kind',
+    { lastDirectory: '/work/last', projectRoot: '/work/Game' },
+    '/work/last'
+  ],
+  ['the folder last chosen is gone: no default', { lastDirectory: '/work/gone' }, undefined],
+  ['nothing known: no default', {}, undefined],
+  [
+    "a plugin opens in the open project's plugins folder",
+    { kind: 'open-file:.js', projectRoot: '/work/Game' },
+    '/work/Game/js/plugins'
+  ],
+  [
+    "a plugin opens in the project's plugins folder before the folder last chosen",
+    { kind: 'open-file:.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
+    '/work/Game/js/plugins'
+  ],
+  [
+    'no plugins folder in the project: the folder last chosen',
+    { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/out' },
+    '/work/out'
+  ],
+  [
+    'no plugins folder in the project and the folder last chosen is gone: no default',
+    { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/gone' },
+    undefined
+  ],
+  [
+    'no plugins folder in the project: no default',
+    { kind: 'open-file:.js', projectRoot: '/work/Bare' },
+    undefined
+  ],
+  [
+    "another kind never opens in the project's plugins folder",
+    { projectRoot: '/work/Game' },
+    undefined
+  ]
+]
+
+const kinds = [
+  ['open-folder', undefined, 'open-folder'],
+  ['open-folder', [{ name: 'n', extensions: ['js'] }], 'open-folder'],
+  ['open-file', [{ name: 'MZ Parameters', extensions: ['mzparams'] }], 'open-file:.mzparams'],
+  ['open-file', undefined, 'open-file:.js'],
+  ['save-file', undefined, 'save-file:.js'],
+  ['save-file', [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }], 'save-file:.d.ts'],
+  [
+    'save-file',
+    [
+      { name: 'JSON', extensions: ['json', 'js'] },
+      { name: 'Markdown', extensions: ['md'] }
+    ],
+    'save-file:.json'
+  ]
+] as const
 
 describe('dialog default path', () => {
-  const save: Row[] = [
-    [
-      'a file name opens in the folder last chosen for its kind',
-      {
-        kind: 'save-file:.mzparams',
-        rendererValue: 'Plugin.mzparams',
-        lastDirectory: '/work/exports'
-      },
-      '/work/exports/Plugin.mzparams'
-    ],
-    [
-      'a file name alone when no folder is known',
-      { kind: 'save-file:.mzparams', rendererValue: 'Plugin.mzparams' },
-      'Plugin.mzparams'
-    ],
-    [
-      "a plugin opens in the open project's plugins folder",
-      { rendererValue: 'MyPlugin.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
-      '/work/Game/js/plugins/MyPlugin.js'
-    ],
-    [
-      'a plugin without a project opens in the folder last chosen',
-      { rendererValue: 'MyPlugin.js', lastDirectory: '/work/out' },
-      '/work/out/MyPlugin.js'
-    ],
-    [
-      'a file name alone when the folder last chosen is gone',
-      { rendererValue: 'MyPlugin.js', lastDirectory: '/work/gone' },
-      'MyPlugin.js'
-    ],
-    ['no file name: the folder alone', { lastDirectory: '/work/out' }, '/work/out'],
-    [
-      'no file name and the folder last chosen is gone: no default',
-      { lastDirectory: '/work/gone' },
-      undefined
-    ],
-    ['nothing known: no default', {}, undefined],
-    [
-      'a full path the renderer asks again at stays as it is',
-      {
-        rendererValue: '/work/Other/js/plugins/MyPlugin.js',
-        projectRoot: '/work/Game',
-        lastDirectory: '/work/out'
-      },
-      '/work/Other/js/plugins/MyPlugin.js'
-    ],
-    [
-      "another kind never opens in the project's plugins folder",
-      { kind: 'save-file:.md', rendererValue: 'Plugin_README.md', projectRoot: '/work/Game' },
-      'Plugin_README.md'
-    ]
-  ]
+  afterAll(afterAllTests(rowProblems))
 
   it.each(save)('save: %s', async (_label, partial, expected) => {
-    rows++
+    expect.assertions(1)
+
+    counted.rows++
     const existing = ['/work/exports', '/work/out']
 
-    expect(await resolveDialogDefaultPath(request(partial, existing), path.posix)).toBe(expected)
+    await expect(resolveDialogDefaultPath(request(partial, existing), path.posix)).resolves.toBe(
+      expected
+    )
   })
 
   it('opens the folder dialog beside the most recent project when its parent exists', async () => {
-    rows++
+    expect.assertions(1)
+
+    counted.rows++
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
 
-    expect(await resolveDialogDefaultPath(request(seed, ['/work/Games']), path.posix)).toBe(
-      '/work/Games'
-    )
+    await expect(
+      resolveDialogDefaultPath(request(seed, ['/work/Games']), path.posix)
+    ).resolves.toBe('/work/Games')
   })
 
   it('falls back to the folder last chosen while it exists, then to none, when that parent is gone', async () => {
-    rows += 3
+    expect.assertions(3)
+
+    counted.rows += 3
     const seed = { channel: 'open-folder', rendererValue: '/work/Games/Proj' } as const
     const last = { ...seed, lastDirectory: '/work/Other' }
 
-    expect(await resolveDialogDefaultPath(request(last, ['/work/Other']), path.posix)).toBe(
-      '/work/Other'
-    )
-    expect(await resolveDialogDefaultPath(request(last), path.posix)).toBeUndefined()
-    expect(await resolveDialogDefaultPath(request(seed), path.posix)).toBeUndefined()
+    await expect(
+      resolveDialogDefaultPath(request(last, ['/work/Other']), path.posix)
+    ).resolves.toBe('/work/Other')
+    await expect(resolveDialogDefaultPath(request(last), path.posix)).resolves.toBeUndefined()
+    await expect(resolveDialogDefaultPath(request(seed), path.posix)).resolves.toBeUndefined()
   })
 
   it('waits for a slow folder check and keeps it from blocking other work', async () => {
-    rows++
-    const checks: ((exists: boolean) => void)[] = []
+    expect.hasAssertions()
+
+    counted.rows++
+    const checks: ((doesExist: boolean) => void)[] = []
     const slow = request({
       channel: 'open-folder',
       rendererValue: '/work/Games/Proj',
       lastDirectory: '/work/Other',
-      directoryExists: () => new Promise<boolean>((resolve) => checks.push(resolve))
+      directoryExists: async () =>
+        new Promise<boolean>((resolve) => {
+          checks.push(resolve)
+        })
     })
     const resolved = resolveDialogDefaultPath(slow, path.posix)
     // Other work runs while the check is still out
-    let ran = false
+    let hasOtherWorkRun = false
     await new Promise<void>((resolve) =>
       setTimeout(() => {
-        ran = true
+        hasOtherWorkRun = true
         resolve()
       }, 0)
     )
 
-    expect(ran).toBe(true)
+    expect(hasOtherWorkRun).toBe(true)
     expect(checks).toHaveLength(1)
 
-    checks[0](false)
+    checks[0]?.(false)
     // Then the folder last chosen is checked the same way
-    await vi.waitFor(() => expect(checks).toHaveLength(2))
-    checks[1](true)
+    await vi.waitFor(() => {
+      expect(checks).toHaveLength(2)
+    })
+    checks[1]?.(true)
 
-    expect(await resolved).toBe('/work/Other')
+    await expect(resolved).resolves.toBe('/work/Other')
   })
-
-  const open: Row[] = [
-    [
-      'the folder last chosen for its kind',
-      { lastDirectory: '/work/last', projectRoot: '/work/Game' },
-      '/work/last'
-    ],
-    ['the folder last chosen is gone: no default', { lastDirectory: '/work/gone' }, undefined],
-    ['nothing known: no default', {}, undefined],
-    [
-      "a plugin opens in the open project's plugins folder",
-      { kind: 'open-file:.js', projectRoot: '/work/Game' },
-      '/work/Game/js/plugins'
-    ],
-    [
-      "a plugin opens in the project's plugins folder before the folder last chosen",
-      { kind: 'open-file:.js', projectRoot: '/work/Game', lastDirectory: '/work/out' },
-      '/work/Game/js/plugins'
-    ],
-    [
-      'no plugins folder in the project: the folder last chosen',
-      { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/out' },
-      '/work/out'
-    ],
-    [
-      'no plugins folder in the project and the folder last chosen is gone: no default',
-      { kind: 'open-file:.js', projectRoot: '/work/Bare', lastDirectory: '/work/gone' },
-      undefined
-    ],
-    [
-      'no plugins folder in the project: no default',
-      { kind: 'open-file:.js', projectRoot: '/work/Bare' },
-      undefined
-    ],
-    [
-      "another kind never opens in the project's plugins folder",
-      { projectRoot: '/work/Game' },
-      undefined
-    ]
-  ]
 
   it.each(open)('open: %s', async (_label, partial, expected) => {
-    rows++
+    expect.assertions(1)
+
+    counted.rows++
     const existing = ['/work/Game/js/plugins', '/work/Bare', '/work/last', '/work/out']
 
-    expect(
-      await resolveDialogDefaultPath(
-        request({ channel: 'open-file', ...partial }, existing),
-        path.posix
-      )
-    ).toBe(expected)
+    await expect(
+      resolveDialogDefaultPath(request({ channel: 'open-file', ...partial }, existing), path.posix)
+    ).resolves.toBe(expected)
   })
 
-  it.each([
-    ['open-folder', undefined, 'open-folder'],
-    ['open-folder', [{ name: 'n', extensions: ['js'] }], 'open-folder'],
-    ['open-file', [{ name: 'MZ Parameters', extensions: ['mzparams'] }], 'open-file:.mzparams'],
-    ['open-file', undefined, 'open-file:.js'],
-    ['save-file', undefined, 'save-file:.js'],
-    ['save-file', [{ name: 'TypeScript Declaration', extensions: ['d.ts'] }], 'save-file:.d.ts'],
-    [
-      'save-file',
-      [
-        { name: 'JSON', extensions: ['json', 'js'] },
-        { name: 'Markdown', extensions: ['md'] }
-      ],
-      'save-file:.json'
-    ]
-  ] as const)('kind of %s with filters %j is %s', (channel, filters, expected) => {
-    rows++
+  it.each(kinds)('kind of %s with filters %j is %s', (channel, filters, expected) => {
+    counted.rows++
 
     expect(dialogKind(channel, filters)).toBe(expected)
   })
 })
 
 describe('dialog folders kept across restarts', () => {
+  afterAll(afterAllTests(rowProblems))
+
   // A drive or filesystem root is kept, though a project may not be one; network, device and
   // relative paths never are
   it.each([
@@ -263,7 +294,7 @@ describe('dialog folders kept across restarts', () => {
     ['posix', 'work', false],
     ['posix', '/\0', false]
   ] as const)('%s %j is kept: %s', (platform, folder, kept) => {
-    rows++
+    counted.rows++
 
     expect(checkDialogFolder(folder, path[platform])).toBe(kept ? folder : undefined)
   })

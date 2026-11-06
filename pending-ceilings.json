@@ -1,20 +1,13 @@
 {
   "test": {
-    "exactOptionalPropertyTypes": {
-      "tests/dom/history-store.test.ts": 2
-    },
     "noPropertyAccessFromIndexSignature": {
-      "tests/golden/corpus/templates.ts": 3,
-      "tests/unit/static-scope.test.ts": 5
+      "tests/golden/corpus/templates.ts": 3
     },
     "noUncheckedIndexedAccess": {
-      "tests/dom/history-store.test.ts": 11,
       "tests/golden/corpus/generator.ts": 8,
       "tests/golden/corpus/templates.ts": 5,
       "tests/golden/generator.test.ts": 2,
-      "tests/golden/persisted.test.ts": 2,
-      "tests/unit/dialog-default-path.test.ts": 2,
-      "tests/unit/static-scope.test.ts": 1
+      "tests/golden/persisted.test.ts": 2
     }
   }
 }
