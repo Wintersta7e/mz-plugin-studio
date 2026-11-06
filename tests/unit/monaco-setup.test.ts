@@ -27,19 +27,17 @@ class FakeWorker {
   ) {}
 }
 
-type GetWorker = (workerId: string, label: string) => FakeWorker
 const blobs = new Map<string, Blob>()
 const configCalls: unknown[][] = []
-const scope: { MonacoEnvironment?: { getWorker: GetWorker } } = {}
 
 function getWorker(label: string): FakeWorker {
-  const environment = scope.MonacoEnvironment
-  if (environment === undefined) throw new Error('the setup set no editor environment')
-  return environment.getWorker('', label)
+  const worker = globalThis.MonacoEnvironment?.getWorker?.('', label)
+  if (!(worker instanceof FakeWorker)) throw new TypeError('the setup set no editor environment')
+  return worker
 }
 
 beforeAll(async () => {
-  vi.stubGlobal('self', scope)
+  vi.stubGlobal('MonacoEnvironment', undefined)
   vi.stubGlobal('Worker', FakeWorker)
   vi.stubGlobal('location', { href: PAGE })
   vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {

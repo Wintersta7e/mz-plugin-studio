@@ -759,8 +759,8 @@ describe('static scope: ESLint departures from the presets', () => {
         `exclusions ${String(scope.exclusions.length)} (S ${String(safe)}, D ${String(duplicate)}, X/D ${String(falsePositive)})`
       )
 
-      expect(scope.exclusions).toHaveLength(30)
-      expect(byCode).toStrictEqual({ S: 9, D: 20, 'X/D': 1 })
+      expect(scope.exclusions).toHaveLength(31)
+      expect(byCode).toStrictEqual({ S: 10, D: 20, 'X/D': 1 })
 
       // Negative control: a preset rule switched off outside the tables is reported.
       const control = new ESLint({

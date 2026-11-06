@@ -20,7 +20,10 @@
     "erasableSyntaxOnly": false,
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"],
-      "@/*": ["./src/renderer/src/*"]
+      "@/*": ["./src/renderer/src/*"],
+      "monaco-editor/esm/vs/editor/editor.api": [
+        "./node_modules/monaco-editor/esm/vs/editor/editor.api.d.ts"
+      ]
     }
   }
 }

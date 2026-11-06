@@ -1664,43 +1664,6 @@
       "count": 1
     }
   },
-  "src/renderer/src/lib/monaco-setup.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 1
-    }
-  },
-  "src/renderer/src/lib/mz-completions.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 11
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-nullish-coalescing": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    }
-  },
   "src/renderer/src/lib/param-io.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1

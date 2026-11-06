@@ -9,21 +9,25 @@ import type { Monaco } from '@monaco-editor/react'
 import type { IDisposable, languages, editor, Position } from 'monaco-editor'
 import { getAllClassNames, getClassInfo } from './generator/class-registry'
 
-// Pre-computed class data (static, built once on first use)
-let cachedClassData: { name: string; detail: string; documentation: string }[] | null = null
+interface ClassItem {
+  name: string
+  detail: string
+  documentation: string
+}
 
-function getClassData(): NonNullable<typeof cachedClassData> {
-  if (!cachedClassData) {
-    cachedClassData = getAllClassNames().map((name) => {
-      const info = getClassInfo(name)
-      return {
-        name,
-        detail: info ? `${info.category} - ${info.file}` : 'RPG Maker MZ Class',
-        documentation: info?.description ?? ''
-      }
-    })
-  }
-  return cachedClassData
+// Pre-computed class data (static, built once on first use)
+const classDataCache: { items?: ClassItem[] } = {}
+
+function getClassData(): ClassItem[] {
+  classDataCache.items ??= getAllClassNames().map((name) => {
+    const info = getClassInfo(name)
+    return {
+      name,
+      detail: info ? `${info.category} - ${info.file}` : 'RPG Maker MZ Class',
+      documentation: info?.description ?? ''
+    }
+  })
+  return classDataCache.items
 }
 
 // MZ global objects with descriptions
@@ -58,6 +62,56 @@ const MZ_GLOBALS: { name: string; description: string }[] = [
   { name: '$dataMap', description: 'Currently loaded map data' }
 ]
 
+// Common snippets
+const MZ_SNIPPETS: { label: string; detail: string; documentation: string; insertText: string }[] =
+  [
+    {
+      label: 'alias',
+      detail: 'Method alias pattern',
+      documentation: 'Safely extend an MZ class method using the alias pattern',
+      insertText: [
+        'const _${1:ClassName}_${2:methodName} = ${1:ClassName}.prototype.${2:methodName};',
+        '${1:ClassName}.prototype.${2:methodName} = function(${3}) {',
+        '\t_${1:ClassName}_${2:methodName}.call(this${4});',
+        '\t$0',
+        '};'
+      ].join('\n')
+    },
+    {
+      label: 'plugincmd',
+      detail: 'Register plugin command',
+      documentation: 'Register a new plugin command with PluginManager',
+      insertText: [
+        "PluginManager.registerCommand(PLUGIN_NAME, '${1:commandName}', function(args) {",
+        '\t$0',
+        '});'
+      ].join('\n')
+    },
+    {
+      label: 'prototype',
+      detail: 'Prototype method definition',
+      documentation: 'Define a new prototype method on an MZ class',
+      insertText: [
+        '${1:ClassName}.prototype.${2:methodName} = function(${3}) {',
+        '\t$0',
+        '};'
+      ].join('\n')
+    },
+    {
+      label: 'notetag',
+      detail: 'Note tag parser',
+      documentation: 'Parse a custom note tag from database item notes',
+      insertText: [
+        "const note = ${1:item}.note || '';",
+        'const match = note.match(/<${2:TagName}:\\s*(.+?)>/i);',
+        'if (match) {',
+        '\tconst value = ${3:match[1]};',
+        '\t$0',
+        '}'
+      ].join('\n')
+    }
+  ]
+
 export function registerMZCompletions(monaco: Monaco): IDisposable {
   return monaco.languages.registerCompletionItemProvider('javascript', {
     provideCompletionItems: (model: editor.ITextModel, position: Position) => {
@@ -73,95 +127,34 @@ export function registerMZCompletions(monaco: Monaco): IDisposable {
       const lineContent = model.getLineContent(position.lineNumber)
       const charBefore = lineContent[word.startColumn - 2] // -2 because columns are 1-indexed
       const isIncludeGlobals = charBefore === '$' || word.word.startsWith('$')
+      const globals = isIncludeGlobals || word.word.length === 0 ? MZ_GLOBALS : []
 
-      const suggestions: languages.CompletionItem[] = []
-
-      // Global objects
-      if (isIncludeGlobals || word.word.length === 0) {
-        for (const g of MZ_GLOBALS) {
-          suggestions.push({
-            label: g.name,
-            kind: monaco.languages.CompletionItemKind.Variable,
-            detail: 'RPG Maker MZ Global',
-            documentation: g.description,
-            insertText: g.name,
-            range
-          })
-        }
-      }
-
-      // Class names from registry (cached)
-      for (const cls of getClassData()) {
-        suggestions.push({
+      const suggestions: languages.CompletionItem[] = [
+        // Global objects
+        ...globals.map((g) => ({
+          label: g.name,
+          kind: monaco.languages.CompletionItemKind.Variable,
+          detail: 'RPG Maker MZ Global',
+          documentation: g.description,
+          insertText: g.name,
+          range
+        })),
+        // Class names from registry (cached)
+        ...getClassData().map((cls) => ({
           label: cls.name,
           kind: monaco.languages.CompletionItemKind.Class,
           detail: cls.detail,
           documentation: cls.documentation,
           insertText: cls.name,
           range
-        })
-      }
-
-      // Common snippets
-      suggestions.push(
-        {
-          label: 'alias',
+        })),
+        ...MZ_SNIPPETS.map((snippet) => ({
+          ...snippet,
           kind: monaco.languages.CompletionItemKind.Snippet,
-          detail: 'Method alias pattern',
-          documentation: 'Safely extend an MZ class method using the alias pattern',
-          insertText: [
-            'const _${1:ClassName}_${2:methodName} = ${1:ClassName}.prototype.${2:methodName};',
-            '${1:ClassName}.prototype.${2:methodName} = function(${3}) {',
-            '\t_${1:ClassName}_${2:methodName}.call(this${4});',
-            '\t$0',
-            '};'
-          ].join('\n'),
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
           range
-        },
-        {
-          label: 'plugincmd',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          detail: 'Register plugin command',
-          documentation: 'Register a new plugin command with PluginManager',
-          insertText: [
-            "PluginManager.registerCommand(PLUGIN_NAME, '${1:commandName}', function(args) {",
-            '\t$0',
-            '});'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range
-        },
-        {
-          label: 'prototype',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          detail: 'Prototype method definition',
-          documentation: 'Define a new prototype method on an MZ class',
-          insertText: [
-            '${1:ClassName}.prototype.${2:methodName} = function(${3}) {',
-            '\t$0',
-            '};'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range
-        },
-        {
-          label: 'notetag',
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          detail: 'Note tag parser',
-          documentation: 'Parse a custom note tag from database item notes',
-          insertText: [
-            "const note = ${1:item}.note || '';",
-            'const match = note.match(/<${2:TagName}:\\s*(.+?)>/i);',
-            'if (match) {',
-            '\tconst value = ${3:match[1]};',
-            '\t$0',
-            '}'
-          ].join('\n'),
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range
-        }
-      )
+        }))
+      ]
 
       return { suggestions }
     }
