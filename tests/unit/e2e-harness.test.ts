@@ -290,8 +290,8 @@ describe('e2e harness', () => {
     it('is enabled by the CI image job and the local image run', () => {
       expect(jobIn('ci.yml', 'e2e-linux').nested.get('env')).toEqual([`${VISUAL_IMAGE_ENV}: '1'`])
 
-      for (const check of [true, false])
-        expect(imageCommand(check), String(check)).toContain(`${VISUAL_IMAGE_ENV}=1 ${XVFB} `)
+      for (const isCheck of [true, false])
+        expect(imageCommand(isCheck), String(isCheck)).toContain(`${VISUAL_IMAGE_ENV}=1 ${XVFB} `)
     })
   })
 
@@ -338,7 +338,7 @@ describe('e2e harness', () => {
 
     expect(
       needs
-        .replace(/^\[|\]$/g, '')
+        .replaceAll(/^\[|\]$/g, '')
         .split(',')
         .map((id) => id.trim())
     ).toContain('e2e-linux')
@@ -348,10 +348,10 @@ describe('e2e harness', () => {
     const { devDependencies } = readJson('package.json') as {
       devDependencies: Record<string, string>
     }
-    const version = devDependencies['@playwright/test'].replace(/\./g, '\\.')
+    const version = devDependencies['@playwright/test'].replaceAll('.', '\\.')
 
     expect(IMAGE).toMatch(
-      new RegExp(`^mcr\\.microsoft\\.com/playwright:v${version}-noble@sha256:[0-9a-f]{64}$`)
+      new RegExp(String.raw`^mcr\.microsoft\.com/playwright:v${version}-noble@sha256:[0-9a-f]{64}$`)
     )
     expect(jobIn('ci.yml', 'e2e-linux').nested.get('container')).toEqual([
       `image: ${IMAGE}`,

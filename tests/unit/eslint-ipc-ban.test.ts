@@ -1,7 +1,7 @@
 // Raw IPC skips the sender, argument and file-access checks the two wrappers apply, so lint
 // refuses it in every source file except those wrappers.
-import { existsSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
 
@@ -192,7 +192,7 @@ const CASES: { name: string; source: string; filePath: string; rules: string[] }
 function sourceFiles(): string[] {
   return (readdirSync(join(ROOT, 'src'), { recursive: true }) as string[])
     .filter((p) => /\.tsx?$/.test(p))
-    .map((p) => `src/${p.split('\\').join('/')}`)
+    .map((p) => `src/${p.replaceAll('\\', '/')}`)
     .sort()
 }
 

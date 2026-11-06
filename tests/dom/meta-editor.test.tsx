@@ -1,8 +1,8 @@
 // The meta tab: generating help text over text already there asks first, the plugin name of a
 // plugin loaded from a file cannot be changed, and each field is written into the plugin code.
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
@@ -10,15 +10,47 @@ import { createEmptyPlugin, type NoteParam } from '../../src/renderer/src/types/
 import { createFakeApi } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
+type Message = Window['api']['dialog']['message']
+
 const HELP = 'Help written by hand'
 
-/** Clicks Auto-generate with the message dialog answering `answer`; returns the dialog mock. */
-function generateAnswering(answer: number) {
-  const message = vi.fn(async () => answer)
-  window.api = createFakeApi({ dialog: { message } })
+// Clicks Auto-generate with the message dialog answering `answer`; returns the dialog mock.
+function generateAnswering(answer: number): Mock<Message> {
+  const message = vi.fn<Message>().mockResolvedValue(answer)
+  vi.stubGlobal('api', createFakeApi({ dialog: { message } }))
   render(<MetaEditor />)
   fireEvent.click(screen.getByTitle('Auto-generate help text from plugin metadata'))
   return message
+}
+
+// Lets the answer of the message dialog reach the code that asked
+const settle = async (): Promise<void> => {
+  await act(async () => {
+    await Promise.resolve()
+  })
+}
+
+async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
+  await user.clear(field)
+  await user.type(field, text)
+}
+
+// The generated plugin code the preview shows.
+const preview = (): string => {
+  const editor = screen.getByTestId('monaco-editor')
+  if (!(editor instanceof HTMLTextAreaElement)) throw new TypeError('the preview is no text area')
+  return editor.value
+}
+
+function mountWithPreview(): UserEvent {
+  const user = userEvent.setup()
+  render(
+    <>
+      <MetaEditor />
+      <CodePreview />
+    </>
+  )
+  return user
 }
 
 describe('meta editor help text', () => {
@@ -31,14 +63,19 @@ describe('meta editor help text', () => {
   })
 
   afterEach(() => {
-    cleanup()
+    vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
   it('replacing help text asks with Cancel as the default', async () => {
-    const confirm = vi.spyOn(window, 'confirm')
+    expect.hasAssertions()
+
+    // The browser's own confirm box must stay unused
+    const spied = { confirm: vi.spyOn(globalThis, 'confirm') }
     const message = generateAnswering(0)
-    await waitFor(() => expect(message).toHaveBeenCalledTimes(1))
+    await waitFor(() => {
+      expect(message).toHaveBeenCalledTimes(1)
+    })
 
     expect(message).toHaveBeenCalledWith({
       type: 'question',
@@ -47,15 +84,19 @@ describe('meta editor help text', () => {
       buttons: ['Cancel', 'Replace']
     })
 
-    await act(async () => {})
+    await settle()
 
     expect(usePluginStore.getState().plugin.meta.help).toBe(HELP)
-    expect(confirm).not.toHaveBeenCalled()
+    expect(spied.confirm).not.toHaveBeenCalled()
   })
 
   it('choosing Replace replaces the help text', async () => {
+    expect.hasAssertions()
+
     generateAnswering(1)
-    await waitFor(() => expect(usePluginStore.getState().plugin.meta.help).not.toBe(HELP))
+    await waitFor(() => {
+      expect(usePluginStore.getState().plugin.meta.help).not.toBe(HELP)
+    })
   })
 })
 
@@ -65,16 +106,18 @@ describe('meta editor plugin name', () => {
 
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
   })
 
   afterEach(() => {
-    cleanup()
+    vi.unstubAllGlobals()
   })
 
   it('is read-only for a plugin loaded from a file, raw mode on or off', () => {
     const plugin = { ...createEmptyPlugin(), importedFrom: 'Loaded.js' }
-    act(() => usePluginStore.getState().openPlugin(plugin))
+    act(() => {
+      usePluginStore.getState().openPlugin(plugin)
+    })
     const { rerender } = render(<MetaEditor />)
     const notice =
       'Loaded from Loaded.js: the plugin name is the file name, so it cannot be changed here.'
@@ -82,7 +125,9 @@ describe('meta editor plugin name', () => {
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('title', notice)
 
-    act(() => useUIStore.getState().setRawModeForPlugin(plugin.id, false))
+    act(() => {
+      useUIStore.getState().setRawModeForPlugin(plugin.id, false)
+    })
     rerender(<MetaEditor />)
 
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
@@ -90,19 +135,21 @@ describe('meta editor plugin name', () => {
   })
 
   it('says under the name of a plugin loaded from a file why it cannot change', () => {
-    act(() =>
+    act(() => {
       usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), importedFrom: 'Loaded.js' })
-    )
+    })
     render(<MetaEditor />)
 
     expect(screen.getByText(NAME_NOTICE)).toBeInTheDocument()
   })
 
   it('is editable for a plugin made in the app', () => {
-    act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
+    act(() => {
+      usePluginStore.getState().openPlugin(createEmptyPlugin())
+    })
     render(<MetaEditor />)
 
-    expect(screen.queryByText(NAME_NOTICE)).toBeNull()
+    expect(screen.queryByText(NAME_NOTICE)).not.toBeInTheDocument()
 
     const name = screen.getByLabelText('Plugin Name')
 
@@ -117,35 +164,20 @@ describe('meta editor plugin name', () => {
 describe('meta editor fields in the plugin code', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
-    act(() => usePluginStore.getState().openPlugin(createEmptyPlugin()))
+    vi.stubGlobal('api', createFakeApi())
+    act(() => {
+      usePluginStore.getState().openPlugin(createEmptyPlugin())
+    })
   })
 
   afterEach(() => {
-    cleanup()
+    vi.unstubAllGlobals()
   })
 
-  /** The generated plugin code the preview shows. */
-  const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
-
-  function renderWithPreview(): UserEvent {
-    const user = userEvent.setup()
-    render(
-      <>
-        <MetaEditor />
-        <CodePreview />
-      </>
-    )
-    return user
-  }
-
-  async function retype(user: UserEvent, field: HTMLElement, text: string): Promise<void> {
-    await user.clear(field)
-    await user.type(field, text)
-  }
-
   it('writes the typed name, author and URL into the plugin code', async () => {
-    const user = renderWithPreview()
+    expect.hasAssertions()
+
+    const user = mountWithPreview()
     await retype(user, screen.getByLabelText('Plugin Name'), 'Alpha')
     await retype(user, screen.getByLabelText('Version'), '2.1.0')
     await retype(user, screen.getByLabelText('Author'), 'Sample Author')
@@ -153,18 +185,25 @@ describe('meta editor fields in the plugin code', () => {
 
     expect(screen.getByLabelText('Version')).toHaveValue('2.1.0')
 
+    const lines = [
+      ' * @author Sample Author\n',
+      ' * @url https://example.com/alpha\n',
+      "const PLUGIN_NAME = 'Alpha';"
+    ]
     await waitFor(() => {
-      expect(preview()).toContain(' * @author Sample Author\n')
-      expect(preview()).toContain(' * @url https://example.com/alpha\n')
-      expect(preview()).toContain("const PLUGIN_NAME = 'Alpha';")
+      expect(lines.filter((line) => !preview().includes(line))).toStrictEqual([])
     })
   })
 
   it('writes the Japanese description into a block of its own', async () => {
-    const user = renderWithPreview()
+    expect.hasAssertions()
+
+    const user = mountWithPreview()
     await user.click(screen.getByRole('tab', { name: 'Japanese' }))
     await user.type(await screen.findByLabelText('Description (Japanese)'), 'Sample text')
-    await waitFor(() => expect(preview()).toContain('/*:ja\n * @plugindesc Sample text\n'))
+    await waitFor(() => {
+      expect(preview()).toContain('/*:ja\n * @plugindesc Sample text\n')
+    })
   })
 
   it.each([
@@ -173,10 +212,14 @@ describe('meta editor fields in the plugin code', () => {
     ['Order Before (one per line)', '@orderBefore'],
     ['Required Assets (one per line)', '@requiredAssets']
   ])('writes one %s line per entered line', async (label, tag) => {
-    const user = renderWithPreview()
+    expect.hasAssertions()
+
+    const user = mountWithPreview()
     await user.click(screen.getByLabelText(label))
     await user.paste('Alpha\nBeta')
-    await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
+    await waitFor(() => {
+      expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`)
+    })
   })
 
   it.each([
@@ -185,26 +228,32 @@ describe('meta editor fields in the plugin code', () => {
     ['Order Before (one per line)', '@orderBefore'],
     ['Required Assets (one per line)', '@requiredAssets']
   ])('keeps an Enter typed at the end of %s', async (label, tag) => {
-    const user = renderWithPreview()
+    expect.hasAssertions()
+
+    const user = mountWithPreview()
     await user.type(screen.getByLabelText(label), 'Alpha{Enter}Beta')
 
     expect(screen.getByLabelText(label)).toHaveValue('Alpha\nBeta')
 
-    await waitFor(() => expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`))
+    await waitFor(() => {
+      expect(preview()).toContain(` * ${tag} Alpha\n * ${tag} Beta\n`)
+    })
   })
 
   it('shows the dependencies of the plugin opened after an Enter was typed', async () => {
-    const user = renderWithPreview()
+    expect.hasAssertions()
+
+    const user = mountWithPreview()
     await user.type(screen.getByLabelText('Dependencies (one per line)'), 'Alpha{Enter}')
 
     expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Alpha\n')
 
     const beta = createEmptyPlugin()
-    act(() =>
+    act(() => {
       usePluginStore
         .getState()
         .openPlugin({ ...beta, meta: { ...beta.meta, dependencies: ['Beta'] } })
-    )
+    })
 
     expect(screen.getByLabelText('Dependencies (one per line)')).toHaveValue('Beta')
   })
@@ -224,7 +273,6 @@ describe('meta editor note parameters', () => {
   })
 
   afterEach(() => {
-    cleanup()
     vi.unstubAllGlobals()
   })
 

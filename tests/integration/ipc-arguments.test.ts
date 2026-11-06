@@ -1,8 +1,8 @@
 // The argument check of every channel: a value of the wrong shape is refused before the handler
 // runs, or dropped where the channel has a safe default; a valid value passes as a fresh copy.
-import { mkdtempSync, rmSync } from 'fs'
-import { tmpdir } from 'os'
-import path, { join } from 'path'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import path, { join } from 'node:path'
 import log from 'electron-log/main'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
@@ -116,7 +116,7 @@ describe('ipc arguments', () => {
       ['/p', 'a.js', 'code', { base: null, overwriteBroken: true }]
     )
     const extra = { base: { ...base, size: 3 }, force: ['changed-on-disk'] }
-    const [, , , guard] = handlers['plugin:save'].check(['/p', 'a.js', 'code', extra])
+    const guard = handlers['plugin:save'].check(['/p', 'a.js', 'code', extra])[3]
     cases++
 
     expect(guard).toStrictEqual({ base })

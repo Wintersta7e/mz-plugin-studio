@@ -5,10 +5,12 @@
 // back to other names or a shorter help than the definition it was written from.
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
-import { ALL_PARAM_TYPES, ID_BASED_PARAM_TYPES } from '../../src/shared/types/plugin'
-import type { ParamType, PluginDefinition } from '../../src/shared/types/plugin'
-import { refusedCommandNames } from './mz-conformance'
-import type { ConformanceCase } from './mz-conformance'
+import {
+  ALL_PARAM_TYPES,
+  ID_BASED_PARAM_TYPES,
+  type PluginDefinition
+} from '../../src/shared/types/plugin'
+import { refusedCommandNames, type ConformanceCase } from './mz-conformance'
 
 export type AnnotationRule =
   | 'block-line'
@@ -29,49 +31,66 @@ export const ANNOTATION_RULES: readonly AnnotationRule[] = [
   'help-round-trip'
 ]
 
-/** Rules about the comment itself, which hold whatever text a field carries. */
+/**
+Rules about the comment itself, which hold whatever text a field carries.
+*/
 export const TEXT_RULES: readonly AnnotationRule[] = ['block-line', 'empty-tag', 'struct-block']
 
 export interface AnnotationFinding {
   rule: AnnotationRule
-  /** The block's opener as written: `/*:`, `/*:ja`, `/*~struct~Name:` */
+  /**
+  The block's opener as written: `/*:`, `/*:ja`, `/*~struct~Name:`
+  */
   block: string
-  /** Line number in the file, from 1 */
+  /**
+  Line number in the file, from 1
+  */
   line: number
   detail: string
 }
 
 export interface RuleScope {
   rules: readonly AnnotationRule[]
-  /** The definition the code was generated from; `help-round-trip` compares against it. */
+  /**
+  The definition the code was generated from; `help-round-trip` compares against it.
+  */
   definition?: PluginDefinition
 }
 
 /**
- * The rules each case is held to. A hostile entry's types, parents and defaults carry the
- * payload by design, and raw mode writes back whatever the imported file declared, so both are
- * held to the text rules only.
- */
+The rules each case is held to. A hostile entry's types, parents and defaults carry the
+payload by design, and raw mode writes back whatever the imported file declared, so both are
+held to the text rules only.
+*/
 export function scopeFor(c: ConformanceCase): RuleScope {
-  if (c.kind === 'raw-mode' || c.hostile === true) return { rules: TEXT_RULES }
-  return { rules: ANNOTATION_RULES, definition: c.definition }
+  return c.kind === 'raw-mode' || c.hostile === true
+    ? { rules: TEXT_RULES }
+    : { rules: ANNOTATION_RULES, definition: c.definition }
 }
 
 export interface AnnotationBlockText {
   opener: string
-  /** Bare struct name for `/*~struct~Name:` blocks, with the language suffix kept apart */
+  /**
+  Bare struct name for `/*~struct~Name:` blocks, with the language suffix kept apart
+  */
   structName: string | null
   lang: string
-  /** Line number of the opener, from 1 */
+  /**
+  Line number of the opener, from 1
+  */
   line: number
-  /** Every line after the opener's, the closing line included */
+  /**
+  Every line after the opener's, the closing line included
+  */
   lines: string[]
 }
 
 const OPENER = /\/\*(?::([A-Za-z_]*)|~struct~(\w+):([A-Za-z_]*))/g
 const LINE_BREAK = /\r\n|\r|\n/
 
-/** Every annotation block, each from its opener to the first `*\/` after it. */
+/**
+Every annotation block, each from its opener to the first `*\/` after it.
+*/
 export function annotationBlocks(code: string): AnnotationBlockText[] {
   const blocks: AnnotationBlockText[] = []
   const opener = new RegExp(OPENER)
@@ -79,11 +98,11 @@ export function annotationBlocks(code: string): AnnotationBlockText[] {
   while ((match = opener.exec(code)) !== null) {
     const close = code.indexOf('*/', match.index + match[0].length)
     if (close === -1) break
-    const struct = match[2] !== undefined
+    const structName = match.at(2)
     blocks.push({
       opener: match[0],
-      structName: struct ? match[2] : null,
-      lang: (struct ? match[3] : match[1]) ?? '',
+      structName: structName ?? null,
+      lang: match.at(structName === undefined ? 1 : 3) ?? '',
       line: code.slice(0, match.index).split(LINE_BREAK).length,
       lines: code
         .slice(match.index + match[0].length, close + 2)
@@ -95,7 +114,15 @@ export function annotationBlocks(code: string): AnnotationBlockText[] {
   return blocks
 }
 
-const TAG_LINE = /^\s*\*\s*@(\w+)(.*)$/
+const TAG_LINE = /^\s*\*\s*@(\w+)\b(.*)$/
+
+/**
+The tag of a `* @tag value` line and its value, trimmed; null for any other line.
+*/
+function tagLine(text: string): { tag: string; value: string } | null {
+  const m = TAG_LINE.exec(text)
+  return m === null ? null : { tag: m.at(1) ?? '', value: (m.at(2) ?? '').trim() }
+}
 
 interface Item {
   tag: 'param' | 'arg'
@@ -113,10 +140,11 @@ interface Item {
 // note, hidden, icon, location, weapon, armor, troop, animation, tileset.
 const KNOWN_TYPES: ReadonlySet<string> = new Set([...ALL_PARAM_TYPES, 'multiline_string'])
 const STRUCT_TYPE = /^struct<(\w+)>$/
+const ID_BASED_TYPES: ReadonlySet<string> = ID_BASED_PARAM_TYPES
 
 const baseType = (type: string): string => (type.endsWith('[]') ? type.slice(0, -2) : type)
 
-function typeKnown(type: string): boolean {
+function isKnownType(type: string): boolean {
   const base = baseType(type)
   return KNOWN_TYPES.has(base) || STRUCT_TYPE.test(base)
 }
@@ -129,23 +157,28 @@ function parseJson(text: string): unknown {
   }
 }
 
-/** Why `text` does not read as a value of `type`, or null when it does. */
+const isList = (value: unknown): value is readonly unknown[] => Array.isArray(value)
+
+const isStringArray = (value: unknown): boolean =>
+  isList(value) && value.every((entry) => typeof entry === 'string')
+
+const isStringRecord = (value: unknown): boolean =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every((v: unknown) => typeof v === 'string')
+
+/**
+Why `text` does not read as a value of `type`, or null when it does.
+*/
 function defaultProblem(item: Item, type: string, text: string): string | null {
   if (type.endsWith('[]')) {
-    const value = parseJson(text)
-    const ok = Array.isArray(value) && value.every((e) => typeof e === 'string')
-    return ok ? null : 'is not a JSON array of strings'
+    return isStringArray(parseJson(text)) ? null : 'is not a JSON array of strings'
   }
   if (STRUCT_TYPE.test(type)) {
-    const value = parseJson(text)
-    const ok =
-      typeof value === 'object' &&
-      value !== null &&
-      !Array.isArray(value) &&
-      Object.values(value).every((v) => typeof v === 'string')
-    return ok ? null : 'is not a JSON object of strings'
+    return isStringRecord(parseJson(text)) ? null : 'is not a JSON object of strings'
   }
-  if (type === 'number' || ID_BASED_PARAM_TYPES.has(type as ParamType)) {
+  if (type === 'number' || ID_BASED_TYPES.has(type)) {
     return Number.isFinite(Number(text)) ? null : 'is not a finite number'
   }
   if (type === 'boolean') return text === 'true' || text === 'false' ? null : 'is not true or false'
@@ -156,115 +189,159 @@ function defaultProblem(item: Item, type: string, text: string): string | null {
   return null
 }
 
-/** The `@param` and `@arg` entries of one block, with the tags that follow each. */
+/**
+Records one tag line on the item it follows; tags no rule reads are left out.
+*/
+function addTag(item: Item, tag: string, value: string, line: number): void {
+  switch (tag) {
+    case 'type': {
+      item.type = value
+      break
+    }
+    case 'default': {
+      item.default = value
+      break
+    }
+    case 'parent': {
+      item.parent = { name: value, line }
+      break
+    }
+    case 'option': {
+      item.options.push({ label: value })
+      break
+    }
+    case 'value': {
+      const last = item.options.at(-1)
+      if (last !== undefined && last.value === undefined) last.value = value
+      else item.options.push({ label: value, value })
+      break
+    }
+    // No default
+  }
+}
+
+/**
+The `@param` and `@arg` entries of one block, with the tags that follow each.
+*/
 function itemsOf(block: AnnotationBlockText): Item[] {
   const items: Item[] = []
   let current: Item | null = null
-  block.lines.forEach((text, i) => {
-    const m = TAG_LINE.exec(text)
-    if (m === null) return
-    const [, tag, rest] = m
-    const value = rest.trim()
-    const line = block.line + 1 + i
+  for (const [index, text] of block.lines.entries()) {
+    const found = tagLine(text)
+    if (found === null) continue
+    const { tag, value } = found
+    const line = block.line + 1 + index
     if (tag === 'param' || tag === 'arg') {
       current = { tag, name: value, line, options: [] }
       items.push(current)
     } else if (tag === 'command') {
       current = null
     } else if (current !== null) {
-      const item: Item = current
-      if (tag === 'type') item.type = value
-      else if (tag === 'default') item.default = value
-      else if (tag === 'parent') item.parent = { name: value, line }
-      else if (tag === 'option') item.options.push({ label: value })
-      else if (tag === 'value') {
-        const last = item.options.at(-1)
-        if (last !== undefined && last.value === undefined) last.value = value
-        else item.options.push({ label: value, value })
-      }
+      addTag(current, tag, value, line)
     }
-  })
+  }
   return items
 }
 
 const helpLines = (help: string): number => (help === '' ? 0 : help.split('\n').length)
 
-function helpRoundTrip(code: string, def: PluginDefinition): string[] {
+const names = (list: { name: string }[]): string => JSON.stringify(list.map((p) => p.name))
+
+// A defined name reads back as the generator writes it on its one header line
+const written = (list: { name: string }[]): string =>
+  JSON.stringify(list.map((p) => annotationText(p.name)))
+
+function helpRoundTrip(code: string, definition: PluginDefinition): string[] {
   const parsed = PluginParser.parsePlugin(code)
   const problems: string[] = []
-  const names = (list: { name: string }[]): string => JSON.stringify(list.map((p) => p.name))
-  // A defined name reads back as the generator writes it on its one header line
-  const written = (list: { name: string }[]): string =>
-    JSON.stringify(list.map((p) => annotationText(p.name)))
-  if (names(parsed.parameters) !== written(def.parameters)) {
-    problems.push(`parameters ${names(def.parameters)} read back as ${names(parsed.parameters)}`)
+  if (names(parsed.parameters) !== written(definition.parameters)) {
+    problems.push(
+      `parameters ${names(definition.parameters)} read back as ${names(parsed.parameters)}`
+    )
   }
   // A command name the app refuses as not an identifier is read back in a way MZ's own reading
   // is not known to share, so only the accepted names are compared
-  const refused = refusedCommandNames(def)
-  const accepted = def.commands.filter((cmd) => !refused.has(cmd.name))
-  const acceptedNames = accepted.map((cmd) => cmd.name)
+  const refused = refusedCommandNames(definition)
+  const accepted = definition.commands.filter((command) => !refused.has(command.name))
+  const acceptedNames = new Set(accepted.map((command) => command.name))
   const readBack = parsed.commands.filter(
-    (cmd) => refused.size === 0 || acceptedNames.includes(cmd.name)
+    (command) => refused.size === 0 || acceptedNames.has(command.name)
   )
   if (names(readBack) !== written(accepted)) {
     problems.push(`commands ${names(accepted)} read back as ${names(readBack)}`)
   }
-  const want = helpLines(def.meta.help)
+  const want = helpLines(definition.meta.help)
   const got = helpLines(parsed.meta.help)
-  if (got !== want) problems.push(`help of ${want} lines reads back as ${got}`)
+  if (got !== want) problems.push(`help of ${String(want)} lines reads back as ${String(got)}`)
   return problems
+}
+
+type Report = (
+  rule: AnnotationRule,
+  block: AnnotationBlockText,
+  line: number,
+  detail: string
+) => void
+
+type StructUses = Map<string, { block: AnnotationBlockText; line: number }>
+
+/**
+The rules each line of a block is held to, whatever item it belongs to.
+*/
+function checkLines(block: AnnotationBlockText, report: Report): void {
+  for (const [index, text] of block.lines.entries()) {
+    const line = block.line + 1 + index
+    if (!text.trimStart().startsWith('*')) report('block-line', block, line, JSON.stringify(text))
+    const found = tagLine(text)
+    if (found !== null && found.tag !== 'help' && found.value === '') {
+      report('empty-tag', block, line, `@${found.tag}`)
+    }
+  }
+}
+
+/**
+The rules each item of a block is held to; records the first use of each struct type.
+*/
+function checkItems(block: AnnotationBlockText, report: Report, structsNamed: StructUses): void {
+  const items = itemsOf(block)
+  const params = new Set(items.filter((it) => it.tag === 'param').map((it) => it.name))
+  for (const item of items) {
+    const where = `@${item.tag} ${item.name}`
+    if (item.parent !== undefined && !params.has(item.parent.name)) {
+      report('parent', block, item.parent.line, `${where}: @parent ${item.parent.name}`)
+    }
+    if (item.type === undefined) continue
+    if (!isKnownType(item.type)) report('type-known', block, item.line, `${where}: ${item.type}`)
+    const structName = STRUCT_TYPE.exec(baseType(item.type))?.at(1)
+    if (structName !== undefined && !structsNamed.has(structName)) {
+      structsNamed.set(structName, { block, line: item.line })
+    }
+    if (item.default === undefined) continue
+    const problem = defaultProblem(item, item.type, item.default)
+    if (problem !== null) {
+      report('default-parses', block, item.line, `${where}: ${item.default} ${problem}`)
+    }
+  }
 }
 
 export function checkAnnotations(code: string, scope: RuleScope): AnnotationFinding[] {
   const on = new Set(scope.rules)
   const findings: AnnotationFinding[] = []
   const blocks = annotationBlocks(code)
-  const report = (
-    rule: AnnotationRule,
-    block: AnnotationBlockText,
-    line: number,
-    detail: string
-  ): void => {
+  const report: Report = (rule, block, line, detail) => {
     if (on.has(rule)) findings.push({ rule, block: block.opener, line, detail })
   }
-  const structsNamed = new Map<string, { block: AnnotationBlockText; line: number }>()
+  const structsNamed: StructUses = new Map()
 
   for (const block of blocks) {
-    block.lines.forEach((text, i) => {
-      const line = block.line + 1 + i
-      if (!/^\s*\*/.test(text)) report('block-line', block, line, JSON.stringify(text))
-      const m = TAG_LINE.exec(text)
-      if (m !== null && m[1] !== 'help' && m[2].trim() === '') {
-        report('empty-tag', block, line, `@${m[1]}`)
-      }
-    })
-    const items = itemsOf(block)
-    const params = new Set(items.filter((it) => it.tag === 'param').map((it) => it.name))
-    for (const item of items) {
-      const where = `@${item.tag} ${item.name}`
-      if (item.parent !== undefined && !params.has(item.parent.name)) {
-        report('parent', block, item.parent.line, `${where}: @parent ${item.parent.name}`)
-      }
-      if (item.type === undefined) continue
-      if (!typeKnown(item.type)) report('type-known', block, item.line, `${where}: ${item.type}`)
-      const struct = STRUCT_TYPE.exec(baseType(item.type))
-      if (struct !== null && !structsNamed.has(struct[1])) {
-        structsNamed.set(struct[1], { block, line: item.line })
-      }
-      if (item.default !== undefined) {
-        const problem = defaultProblem(item, item.type, item.default)
-        if (problem !== null) {
-          report('default-parses', block, item.line, `${where}: ${item.default} ${problem}`)
-        }
-      }
-    }
+    checkLines(block, report)
+    checkItems(block, report, structsNamed)
   }
 
   for (const [name, at] of structsNamed) {
     const defined = blocks.filter((b) => b.structName === name && b.lang === '').length
     if (defined !== 1) {
-      report('struct-block', at.block, at.line, `struct<${name}> defined ${defined} times`)
+      report('struct-block', at.block, at.line, `struct<${name}> defined ${String(defined)} times`)
     }
   }
 

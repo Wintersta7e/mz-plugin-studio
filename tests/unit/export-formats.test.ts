@@ -646,7 +646,7 @@ describe('exports against the generated header', () => {
       const refused = refusedCommandNames(c.definition)
       const header = PluginParser.parsePlugin(c.code, c.fileName)
 
-      expect(header.commands.length, c.id).toBe(c.definition.commands.length)
+      expect(header.commands, c.id).toHaveLength(c.definition.commands.length)
 
       const expected: Record<string, string[]> = {}
       if (header.parameters.length > 0) expected.Parameters = header.parameters.map((p) => p.name)
@@ -771,7 +771,7 @@ describe('type declaration namespace', () => {
       createMinimalPlugin({ metaOverrides: { name: 'My-Plugin\nv2' } })
     )
 
-    expect(text.split('\n')[0]).toBe('// Type declarations for My-Plugin v2 v1.0.0')
+    expect(text.split('\n', 1)[0]).toBe('// Type declarations for My-Plugin v2 v1.0.0')
   })
 
   it('parses for every corpus entry under its own plugin name', () => {

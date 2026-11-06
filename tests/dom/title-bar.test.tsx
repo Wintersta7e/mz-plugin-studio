@@ -1,6 +1,6 @@
 // The title bar's close button: it asks main to close the window, and main asks about unsaved
 // changes in any open tab, so the button itself never prompts.
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TitleBar } from '../../src/renderer/src/components/layout/TitleBar'
@@ -9,7 +9,9 @@ import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
-/** Opens a tab and makes it active; a `name` typed into it leaves it unsaved. */
+/**
+Opens a tab and makes it active; a `name` typed into it leaves it unsaved.
+*/
 function openTab(name?: string): string {
   const plugin = createEmptyPlugin()
   act(() => {
@@ -26,18 +28,18 @@ const clickClose = (): void => {
 describe('title bar close', () => {
   beforeEach(() => {
     resetStores()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
   })
 
-  afterEach(cleanup)
+  afterEach(vi.unstubAllGlobals)
 
   it('title-bar close with no unsaved tab asks main to close the window', () => {
     openTab()
     render(<TitleBar />)
     clickClose()
 
-    expect(window.api.window.close).toHaveBeenCalledTimes(1)
-    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(globalThis.api.window.close).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
   })
 
   it('title-bar close with only a background tab unsaved leaves the question to main', () => {
@@ -51,8 +53,8 @@ describe('title bar close', () => {
     render(<TitleBar />)
     clickClose()
 
-    expect(window.api.window.close).toHaveBeenCalledTimes(1)
-    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(globalThis.api.window.close).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
   })
 
   it('title-bar close with the active tab unsaved leaves the question to main', () => {
@@ -60,85 +62,132 @@ describe('title bar close', () => {
     render(<TitleBar />)
     clickClose()
 
-    expect(window.api.window.close).toHaveBeenCalledTimes(1)
-    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(globalThis.api.window.close).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
   })
 })
 
-/** Renders the title bar and lets the window's first maximized answer land. */
+/**
+Renders the title bar and lets the window's first maximized answer land.
+*/
 async function renderTitleBar(): Promise<ReturnType<typeof render>> {
   const view = render(<TitleBar />)
-  await act(async () => {})
+  await act(async () => {
+    await Promise.resolve()
+  })
   return view
 }
 
 // Minimize and maximize carry no name: they are the first two buttons, in that order.
 const windowButtons = (): HTMLElement[] => screen.getAllByRole('button')
 
+function windowButton(index: number): HTMLElement {
+  const button = windowButtons().at(index)
+  if (button === undefined) throw new Error(`missing window button ${String(index)}`)
+  return button
+}
+
+function reportMaximized(
+  report: ((isMaximized: boolean) => void) | undefined,
+  isMaximized: boolean
+): void {
+  if (report === undefined) throw new Error('maximize listener was not registered')
+  report(isMaximized)
+}
+
 describe('title bar window controls', () => {
   beforeEach(() => {
     resetStores()
   })
 
-  afterEach(cleanup)
+  afterEach(vi.unstubAllGlobals)
 
   it('names the app, and the game once a project is open', async () => {
-    window.api = createFakeApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createFakeApi())
     await renderTitleBar()
 
     expect(screen.getByText('Plugin Studio')).toBeInTheDocument()
     expect(screen.queryByText('- Sample Game')).not.toBeInTheDocument()
 
-    act(() => useProjectStore.getState().setProject(sampleProject()))
+    act(() => {
+      useProjectStore.getState().setProject(sampleProject())
+    })
 
     expect(screen.getByText('- Sample Game')).toBeInTheDocument()
   })
 
   it('the first two buttons minimize and maximize the window', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
     await renderTitleBar()
-    const [minimize, maximize] = windowButtons()
+    const minimize = windowButton(0)
+    const maximize = windowButton(1)
 
     await user.click(minimize)
 
-    expect(window.api.window.minimize).toHaveBeenCalledTimes(1)
-    expect(window.api.window.maximize).not.toHaveBeenCalled()
+    expect(globalThis.api.window.minimize).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.window.maximize).not.toHaveBeenCalled()
 
     await user.click(maximize)
 
-    expect(window.api.window.maximize).toHaveBeenCalledTimes(1)
-    expect(window.api.window.minimize).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.window.maximize).toHaveBeenCalledTimes(1)
+    expect(globalThis.api.window.minimize).toHaveBeenCalledTimes(1)
   })
 
   it('the maximize button shows whether the window is maximized as main reports it', async () => {
-    let report!: (maximized: boolean) => void
-    window.api = createFakeApi({
-      window: {
-        isMaximized: vi.fn(async () => true),
-        onMaximizeChange: vi.fn((callback: (maximized: boolean) => void) => {
-          report = callback
-          return () => {}
-        })
-      }
-    })
-    await renderTitleBar()
-    const maximize = windowButtons()[1]
-    const maximized = maximize.innerHTML
+    expect.hasAssertions()
 
-    act(() => report(false))
-    const restored = maximize.innerHTML
+    let report: ((isMaximized: boolean) => void) | undefined
+    vi.stubGlobal(
+      'api',
+      createFakeApi({
+        window: {
+          isMaximized: vi.fn<Window['api']['window']['isMaximized']>().mockResolvedValue(true),
+          onMaximizeChange: vi
+            .fn<Window['api']['window']['onMaximizeChange']>()
+            .mockImplementation((callback) => {
+              report = callback
+              return vi.fn<() => void>()
+            })
+        }
+      })
+    )
+    await renderTitleBar()
+    const maximize = windowButton(1)
+    const maximized = new XMLSerializer().serializeToString(maximize)
+
+    act(() => {
+      reportMaximized(report, false)
+    })
+    const restored = new XMLSerializer().serializeToString(maximize)
 
     expect(restored).not.toBe(maximized)
 
-    act(() => report(true))
+    act(() => {
+      reportMaximized(report, true)
+    })
 
-    expect(maximize.innerHTML).toBe(maximized)
+    expect(new XMLSerializer().serializeToString(maximize)).toBe(maximized)
   })
 
   it('stops listening for maximize changes when it unmounts', async () => {
-    const unsubscribe = vi.fn()
-    window.api = createFakeApi({ window: { onMaximizeChange: vi.fn(() => unsubscribe) } })
+    expect.hasAssertions()
+
+    const unsubscribe = vi.fn<() => void>()
+    vi.stubGlobal(
+      'api',
+      createFakeApi({
+        window: {
+          onMaximizeChange: vi
+            .fn<Window['api']['window']['onMaximizeChange']>()
+            .mockReturnValue(unsubscribe)
+        }
+      })
+    )
     const { unmount } = await renderTitleBar()
 
     expect(unsubscribe).not.toHaveBeenCalled()

@@ -2,13 +2,14 @@
 // that context: a constructor walk from any of them ends at the context's own Function, never
 // the test process's. Paths resolve from the working directory so CommonJS and ESM loaders
 // both accept this module.
-import { existsSync, readdirSync, readFileSync } from 'fs'
-import { join, resolve } from 'path'
-import { Script, createContext } from 'vm'
-import type { Context } from 'vm'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { Script, createContext, type Context } from 'node:vm'
 import { SENTINEL } from './hostile'
 
-/** A syntax error: its message and 1-based line, null when the stack names no line. */
+/**
+A syntax error: its message and 1-based line, null when the stack names no line.
+*/
 export interface CompileProblem {
   message: string
   line: number | null
@@ -48,14 +49,14 @@ const STUB_SOURCE = `
 globalThis.PluginManager = { parameters: () => ({}), registerCommand: () => {} };
 `
 
-function repoPath(relative: string): string {
-  const path = resolve(process.cwd(), relative)
-  if (!existsSync(path)) {
+function repositoryPath(relative: string): string {
+  const absolute = path.resolve(process.cwd(), relative)
+  if (!existsSync(absolute)) {
     throw new Error(
       `${relative} not found under ${process.cwd()} (run tests from the repository root)`
     )
   }
-  return path
+  return absolute
 }
 
 type Compiled = { script: Script; problem: null } | { script: null; problem: CompileProblem }
@@ -67,7 +68,7 @@ function compile(code: string, filename: string): Compiled {
   } catch (error) {
     if (!(error instanceof Error) || error.name !== 'SyntaxError') throw error
     const escaped = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const line = String(error.stack).match(new RegExp(`^${escaped}:(\\d+)`, 'm'))?.[1]
+    const line = new RegExp(String.raw`^${escaped}:(\d+)`, 'm').exec(String(error.stack))?.[1]
     return {
       script: null,
       problem: { message: error.message, line: line === undefined ? null : Number(line) }
@@ -75,37 +76,51 @@ function compile(code: string, filename: string): Compiled {
   }
 }
 
-/** Compiles without running anything; null when the code parses. */
+/**
+Compiles without running anything; null when the code parses.
+*/
 export function compilePlugin(code: string, filename = 'plugin.js'): CompileProblem | null {
   return compile(code, filename).problem
 }
 
-let templateGlobals: ReturnType<typeof listTemplateGlobals> | null = null
+// Listed on first use
+const cache: { templateGlobals: ReturnType<typeof listTemplateGlobals> | null } = {
+  templateGlobals: null
+}
+
+function byCodeUnit(a: string, b: string): number {
+  if (a === b) return 0
+  return a < b ? -1 : 1
+}
 
 /**
- * Global names a template may touch at the top level: every class of the MZ dictionary, every
- * `$game*`/`$data*` and other MZ global named in the template sources, and `window` and
- * `setTimeout`.
- */
+Global names a template may touch at the top level: every class of the MZ dictionary, every
+`$game*`/`$data*` and other MZ global named in the template sources, and `window` and
+`setTimeout`.
+*/
 export function listTemplateGlobals(): {
   names: string[]
   dictionary: number
   sources: number
   fixed: number
 } {
-  const dictionary = Object.keys(
-    JSON.parse(readFileSync(repoPath('src/renderer/src/data/mz-classes.json'), 'utf8'))
-  )
+  const dictionaryFile = repositoryPath('src/renderer/src/data/mz-classes.json')
+  const parsed: unknown = JSON.parse(readFileSync(dictionaryFile, 'utf8'))
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('the MZ class dictionary is not an object')
+  }
+  const dictionary = Object.keys(parsed)
   const known = new Set(dictionary)
   const found = new Set<string>()
-  const dir = repoPath('src/renderer/src/lib/generator/templates')
-  for (const file of readdirSync(dir).filter((f) => f.endsWith('.ts'))) {
-    const text = readFileSync(join(dir, file), 'utf8')
+  const directory = repositoryPath('src/renderer/src/lib/generator/templates')
+  for (const file of readdirSync(directory)) {
+    if (!file.endsWith('.ts')) continue
+    const text = readFileSync(path.join(directory, file), 'utf8')
     for (const pattern of SOURCE_PATTERNS) {
       for (const [name] of text.matchAll(pattern)) if (!known.has(name)) found.add(name)
     }
   }
-  const sources = [...found].sort()
+  const sources = found.values().toArray().toSorted(byCodeUnit)
   return {
     names: [...dictionary, ...sources, ...FIXED_GLOBALS],
     dictionary: dictionary.length,
@@ -115,20 +130,21 @@ export function listTemplateGlobals(): {
 }
 
 function standInSource(): string {
-  templateGlobals ??= listTemplateGlobals()
-  const names = `const NAMES = ${JSON.stringify(templateGlobals.names)};`
+  cache.templateGlobals ??= listTemplateGlobals()
+  const names = `const NAMES = ${JSON.stringify(cache.templateGlobals.names)};`
   return `(() => {${names}${STAND_IN_SOURCE}})();`
 }
 
-/** Defines a stand-in, created inside `context`, for every name of `listTemplateGlobals()`. */
+/**
+Defines a stand-in, created inside `context`, for every name of `listTemplateGlobals()`.
+*/
 export function installStandIns(context: Context): void {
   // eslint-disable-next-line sonarjs/code-eval -- installs the stand-in globals in the fresh test context
   new Script(standInSource(), { filename: 'stand-ins.js' }).runInContext(context)
 }
 
 function bootstrap(mode: 'generator' | 'template'): string {
-  if (mode === 'generator') return STUB_SOURCE
-  return `${standInSource()}${STUB_SOURCE}`
+  return mode === 'generator' ? STUB_SOURCE : `${standInSource()}${STUB_SOURCE}`
 }
 
 function describeThrown(error: unknown): string {
@@ -140,11 +156,11 @@ function describeThrown(error: unknown): string {
 }
 
 /**
- * Compiles `code`; on a syntax error returns it having run nothing. Otherwise runs it in a new
- * plain-object context holding the `PluginManager` stub (template mode adds a stand-in for every
- * name of `listTemplateGlobals()`), with a time limit. `sentinel` tells whether the code set
- * `__pwn` on the context's global; `context` is that global, holding only values created inside.
- */
+Compiles `code`; on a syntax error returns it having run nothing. Otherwise runs it in a new
+plain-object context holding the `PluginManager` stub (template mode adds a stand-in for every
+name of `listTemplateGlobals()`), with a time limit. `sentinel` tells whether the code set
+`__pwn` on the context's global; `context` is that global, holding only values created inside.
+*/
 export function evaluatePlugin(
   code: string,
   options: { mode: 'generator' | 'template'; filename?: string }
@@ -162,5 +178,5 @@ export function evaluatePlugin(
   } catch (error) {
     threw = describeThrown(error)
   }
-  return { compileProblem: null, threw, sentinel: SENTINEL in context, context }
+  return { compileProblem: null, threw, sentinel: Reflect.has(context, SENTINEL), context }
 }

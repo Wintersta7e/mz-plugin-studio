@@ -1,8 +1,8 @@
 // Text typed into a template's free-text fields, followed to where it lands in the generated
 // code: which comment, string or code position holds it, and what hostile text there does when
 // the code runs in a sealed context.
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterAll, describe, it, expect } from 'vitest'
 import {
   getTemplate,
@@ -58,7 +58,7 @@ function fieldRenderers(): { types: string[]; free: string[] } {
 const identifierOnly = (text: string): string =>
   text
     .trim()
-    .replace(/[^a-zA-Z0-9]/g, '')
+    .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
 const upperCase = (text: string): string => text.toUpperCase()
 const TRANSFORMED: Record<string, (text: string) => string> = {
@@ -311,8 +311,8 @@ describe('template field text', () => {
 const LINE_TERMINATORS: [string, string][] = [
   ['lf', '\n'],
   ['cr', '\r'],
-  ['u2028', '\u2028'],
-  ['u2029', '\u2029']
+  ['u2028', '\u{2028}'],
+  ['u2029', '\u{2029}']
 ]
 const accepted = { cases: 0, rejected: 0 }
 
@@ -339,8 +339,8 @@ function acceptedTextFailures(id: string, fieldId: string): string[] {
         }
         const code = getTemplate(id)!.generate(values)
         const result = evaluatePlugin(code, { mode: 'template' })
-        const clean = result.compileProblem === null && result.threw === null && !result.sentinel
-        if (!clean || !isContained(code, needleFor(key, INJECTED))) {
+        const isClean = result.compileProblem === null && result.threw === null && !result.sentinel
+        if (!isClean || !isContained(code, needleFor(key, INJECTED))) {
           failures.push(`${key} under ${set.name}: ${name}`)
         }
       }

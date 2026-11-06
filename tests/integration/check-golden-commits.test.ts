@@ -1,10 +1,10 @@
 // The golden commit check run against throwaway repositories: a clean range passes, and each
 // rule fails on the commit that breaks it.
 import { describe, it, expect, afterEach } from 'vitest'
-import { execFileSync, spawnSync } from 'child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 
 const SCRIPT = resolve(process.cwd(), 'scripts/check-golden-commits.mjs')
 const GOLDEN = 'tests/golden/__golden__'

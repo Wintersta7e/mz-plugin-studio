@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire, isBuiltin } from 'node:module'
 import { join, relative, resolve, sep } from 'node:path'
 
-const NODE_MODULES_BUDGET = 2097152
+const NODE_MODULES_BUDGET = 2_097_152
 
 // Top-level entries the packaged app may hold, with their kind.
 const ALLOWED_TOP_LEVEL = new Map([
@@ -203,7 +203,7 @@ function checkPackage(args) {
     }
   }
   for (const name of REQUIRED_FILES) {
-    if (!topLevel.some((entry) => entry.name === name && entry.kind === 'file')) {
+    if (topLevel.every((entry) => !(entry.name === name && entry.kind === 'file'))) {
       problems.push(`missing: ${name}`)
     }
   }
@@ -244,7 +244,7 @@ function listSources(root) {
 // TypeScript and esbuild elide `import type …` and a clause of only `{ type … }` items;
 // `import type from '…'` imports a default export named `type`.
 function isTypeOnly(typeKeyword, clause) {
-  const bindings = clause.replace(COMMENT, ' ').trim()
+  const bindings = clause.replaceAll(COMMENT, ' ').trim()
   if (typeKeyword) return bindings !== ''
   const named = /^\{([^{}]*)\}$/.exec(bindings)
   if (!named) return false
@@ -276,8 +276,8 @@ function readImports(source) {
   for (const match of source.matchAll(CALL_IMPORT)) specifiers.push(match[2])
   const unclassified = [...source.matchAll(FROM_SPECIFIER)]
     .filter((match) => packageOf(match[2]) !== undefined)
-    .filter(
-      (match) => !statements.some(([start, end]) => match.index >= start && match.index < end)
+    .filter((match) =>
+      statements.every(([start, end]) => !(match.index >= start && match.index < end))
     )
     .map((match) => source.slice(0, match.index).split('\n').length)
   return { specifiers, unclassified }
@@ -331,10 +331,10 @@ function checkRuntimeDeps(args) {
   print(listLine('in dependencies, not imported', unused))
   print(listLine('imported, not in dependencies', undeclared))
   print(listLine('unclassified imports', unclassified))
-  const failed =
+  const isFailed =
     scanned === 0 || unused.length > 0 || undeclared.length > 0 || unclassified.length > 0
-  print(`ci-policy runtime-deps: ${failed ? 'FAILED' : 'ok'}`)
-  return failed ? 1 : 0
+  print(`ci-policy runtime-deps: ${isFailed ? 'FAILED' : 'ok'}`)
+  return isFailed ? 1 : 0
 }
 
 // Parsed JSON from a file, or undefined after printing why it could not be read.
@@ -367,7 +367,7 @@ function electronNodeVersion() {
   try {
     binary = createRequire(resolve('package.json'))('electron')
   } catch (error) {
-    return { problem: `electron could not be loaded (${String(error.message).split('\n')[0]})` }
+    return { problem: `electron could not be loaded (${String(error.message).split('\n', 1)[0]})` }
   }
   if (typeof binary !== 'string') return { problem: 'electron did not export a binary path' }
   const result = spawnSync(binary, ['-p', 'process.versions.node'], {
@@ -383,8 +383,8 @@ function electronNodeVersion() {
 }
 
 function checkToolchain(args) {
-  const electron = args.length === 1 && args[0] === '--electron'
-  if (args.length !== 0 && !electron) return usage()
+  const isElectron = args.length === 1 && args[0] === '--electron'
+  if (args.length !== 0 && !isElectron) return usage()
   const manifest = readJson('package.json')
   if (manifest === undefined) return 1
   const types = readJson('node_modules/@types/node/package.json')
@@ -412,7 +412,7 @@ function checkToolchain(args) {
   if (wanted && versionParts(typesVersion)?.[0] !== wanted[0]) {
     problems.push(`@types/node ${typesVersion} is not major ${wanted[0]}`)
   }
-  if (electron) {
+  if (isElectron) {
     const result = electronNodeVersion()
     if (result.problem) {
       problems.push(result.problem)
@@ -537,7 +537,7 @@ function checkFuses(args) {
     return 1
   }
   const at = buffer.indexOf(FUSE_SENTINEL)
-  if (at < 0) return fail('no fuse wire found')
+  if (at === -1) return fail('no fuse wire found')
   let wires = 0
   for (let next = at; next >= 0; next = buffer.indexOf(FUSE_SENTINEL, next + 1)) wires++
   if (wires > 1) return fail(`${wires} fuse wires found`)

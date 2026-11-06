@@ -1,9 +1,9 @@
 // What read-by-path may read: a file under the open project's js/plugins folder, or a file the
 // user chose in an open or save dialog this session; a UNC path only when chosen in a dialog.
 // Each case starts from fresh main modules, as a new app session does.
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import path, { dirname, join } from 'path'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path, { dirname, join } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
 import type { DialogPort } from '../../src/main/ipc/handlers'

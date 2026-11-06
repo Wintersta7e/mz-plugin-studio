@@ -79,7 +79,7 @@ describe('CI workflow', () => {
   it('every setup-node reads the Node version from package.json engines', () => {
     const setups = steps.filter(isSetupNode)
 
-    expect(setups.length).toBe(jobs.length)
+    expect(setups).toHaveLength(jobs.length)
 
     for (const step of setups) expect(step.nested).toContain('node-version-file: package.json')
 
@@ -224,9 +224,9 @@ describe('Release workflow', () => {
     expect(setups).toHaveLength(1)
     expect(setups[0].nested).toContain('node-version-file: package.json')
     expect(setups[0].nested).toContain('package-manager-cache: false')
-    expect(job.steps.flatMap((step) => step.nested).filter((line) => /^cache:/.test(line))).toEqual(
-      []
-    )
+    expect(
+      job.steps.flatMap((step) => step.nested).filter((line) => line.startsWith('cache:'))
+    ).toEqual([])
     expect(releaseText).not.toMatch(/\bnode-version:/)
 
     const installs = runs(job).filter((line) => /\bnpm ci\b/.test(line))

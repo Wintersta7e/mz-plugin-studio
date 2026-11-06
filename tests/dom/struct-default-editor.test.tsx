@@ -18,11 +18,19 @@ const POINT: PluginStruct = {
   ]
 }
 
+// The editor over an empty value, with the spy on its change handler and a user to drive it.
+function showEditor() {
+  const onChange = vi.fn<(value: string) => void>()
+  const user = userEvent.setup()
+  const { rerender } = render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+  return { onChange, user, rerender }
+}
+
 describe('struct default editor', () => {
   it('reports the JSON holding an edited field', async () => {
-    const onChange = vi.fn()
-    const user = userEvent.setup()
-    render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+    expect.hasAssertions()
+
+    const { onChange, user } = showEditor()
     await user.type(screen.getByRole('spinbutton'), '5')
 
     expect(onChange).toHaveBeenLastCalledWith('{"x":"5"}')
@@ -30,21 +38,31 @@ describe('struct default editor', () => {
 
   it('says Valid JSON for valid text only', () => {
     const { rerender } = render(
-      <StructDefaultEditor struct={POINT} value='{"x":"5"}' onChange={vi.fn()} />
+      <StructDefaultEditor
+        struct={POINT}
+        value='{"x":"5"}'
+        onChange={vi.fn<(value: string) => void>()}
+      />
     )
 
     expect(screen.getByText('Valid JSON')).toBeInTheDocument()
 
-    rerender(<StructDefaultEditor struct={POINT} value='{"x":' onChange={vi.fn()} />)
+    rerender(
+      <StructDefaultEditor
+        struct={POINT}
+        value='{"x":'
+        onChange={vi.fn<(value: string) => void>()}
+      />
+    )
 
     expect(screen.queryByText('Valid JSON')).not.toBeInTheDocument()
     expect(screen.getByText('Invalid JSON: check syntax')).toBeInTheDocument()
   })
 
   it('fills every field from its default', async () => {
-    const onChange = vi.fn()
-    const user = userEvent.setup()
-    render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+    expect.hasAssertions()
+
+    const { onChange, user } = showEditor()
     await user.click(screen.getByRole('button', { name: 'Fill from struct defaults' }))
 
     expect(onChange).toHaveBeenCalledExactlyOnceWith('{"x":"1","label":"Home"}')
@@ -53,9 +71,9 @@ describe('struct default editor', () => {
   })
 
   it('clears a value to empty, and has nothing to clear without one', async () => {
-    const onChange = vi.fn()
-    const user = userEvent.setup()
-    const { rerender } = render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+    expect.hasAssertions()
+
+    const { onChange, user, rerender } = showEditor()
 
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
 
@@ -72,9 +90,7 @@ describe('struct default editor', () => {
   it('reads its fields from the value again for another struct', async () => {
     expect.hasAssertions()
 
-    const user = userEvent.setup()
-    const onChange = vi.fn<(jsonString: string) => void>()
-    const { rerender } = render(<StructDefaultEditor struct={POINT} value="" onChange={onChange} />)
+    const { onChange, user, rerender } = showEditor()
     await user.type(screen.getByRole('spinbutton'), '5')
 
     expect(screen.getByRole('spinbutton')).toHaveValue(5)

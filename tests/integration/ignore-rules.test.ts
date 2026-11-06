@@ -1,6 +1,6 @@
 // Coverage output and local tool scripts must never show up as untracked changes
 import { describe, it, expect } from 'vitest'
-import { spawnSync } from 'child_process'
+import { spawnSync } from 'node:child_process'
 
 const IGNORED_PATHS = [
   'coverage/coverage-summary.json',

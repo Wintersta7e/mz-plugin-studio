@@ -83,10 +83,10 @@ async function restoreCapturedProfile({ app, page, pageErrors }: LaunchedApp): P
 
   const { openPlugins, dirtyByPluginId } = tabs.state
   const clean = openPlugins.filter(
-    (plugin) => ui.state.rawModeByPluginId[plugin.id] === true && !dirtyByPluginId[plugin.id]
+    (plugin) => ui.state.rawModeByPluginId[plugin.id] && !dirtyByPluginId[plugin.id]
   )
   const edited = openPlugins.filter(
-    (plugin) => Boolean(plugin.codeBody) && dirtyByPluginId[plugin.id] === true
+    (plugin) => Boolean(plugin.codeBody) && dirtyByPluginId[plugin.id]
   )
   expect(clean).toHaveLength(1)
   expect(edited).toHaveLength(1)
@@ -96,7 +96,7 @@ async function restoreCapturedProfile({ app, page, pageErrors }: LaunchedApp): P
 async function selectTab(page: Page, name: string): Promise<void> {
   // Fixture names are plain word characters; a tab's label may carry an unsaved mark after it
   const index = (await tabNames(page)).findIndex((label) =>
-    new RegExp(`^${name}(?!\\w)`).test(label ?? '')
+    new RegExp(String.raw`^${name}(?!\w)`).test(label ?? '')
   )
   expect(index).toBeGreaterThanOrEqual(0)
   await page.getByTestId('plugin-tab').nth(index).click()

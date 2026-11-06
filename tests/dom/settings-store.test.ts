@@ -19,7 +19,19 @@ function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {
   }
 }
 
-describe('settingsStore', () => {
+function first<T>(values: readonly T[]): T {
+  const value = values.at(0)
+  if (value === undefined) throw new Error('expected an item')
+  return value
+}
+
+function preset(name: string): PluginParameter[] {
+  const value = new Map(Object.entries(useSettingsStore.getState().parameterPresets)).get(name)
+  if (value === undefined) throw new Error(`missing preset: ${name}`)
+  return value
+}
+
+describe('settingsStore: presets', () => {
   beforeEach(() => {
     resetSettingsStore()
   })
@@ -33,31 +45,29 @@ describe('settingsStore', () => {
 
       expect(presets).toHaveProperty('My Preset')
       expect(presets['My Preset']).toHaveLength(1)
-      expect(presets['My Preset'][0].name).toBe('TestParam')
+      expect(first(preset('My Preset')).name).toBe('TestParam')
     })
 
     it('no-ops when name is empty or whitespace-only', () => {
       const params = [makeParam()]
       useSettingsStore.getState().savePreset('', params)
-      useSettingsStore.getState().savePreset('   ', params)
+      useSettingsStore.getState().savePreset(' '.repeat(3), params)
 
-      expect(useSettingsStore.getState().parameterPresets).toEqual({})
+      expect(useSettingsStore.getState().parameterPresets).toStrictEqual({})
     })
 
     it('no-ops when params array is empty', () => {
       useSettingsStore.getState().savePreset('Empty Preset', [])
 
-      expect(useSettingsStore.getState().parameterPresets).toEqual({})
+      expect(useSettingsStore.getState().parameterPresets).toStrictEqual({})
     })
 
     it('overwrites an existing preset with the same name', () => {
       useSettingsStore.getState().savePreset('Preset', [makeParam({ name: 'First' })])
       useSettingsStore.getState().savePreset('Preset', [makeParam({ name: 'Second' })])
 
-      const presets = useSettingsStore.getState().parameterPresets
-
-      expect(presets['Preset']).toHaveLength(1)
-      expect(presets['Preset'][0].name).toBe('Second')
+      expect(preset('Preset')).toHaveLength(1)
+      expect(first(preset('Preset')).name).toBe('Second')
     })
   })
 
@@ -91,9 +101,13 @@ describe('settingsStore', () => {
 
       useSettingsStore.getState().clearAllPresets()
 
-      expect(useSettingsStore.getState().parameterPresets).toEqual({})
+      expect(useSettingsStore.getState().parameterPresets).toStrictEqual({})
     })
   })
+})
+
+describe('settingsStore: editor font size', () => {
+  beforeEach(resetSettingsStore)
 
   describe('setEditorFontSize', () => {
     it('sets font size within valid range', () => {
@@ -137,25 +151,22 @@ describe('settingsStore', () => {
       useSettingsStore.getState().savePreset('Isolated', params)
 
       // Mutate the original array and object
-      params[0].name = 'Mutated'
-      params[0].default = 'after'
+      first(params).name = 'Mutated'
+      first(params).default = 'after'
       params.push(makeParam({ name: 'Extra' }))
 
-      const stored = useSettingsStore.getState().parameterPresets['Isolated']
+      const stored = preset('Isolated')
 
       expect(stored).toHaveLength(1)
-      expect(stored[0].name).toBe('Original')
-      expect(stored[0].default).toBe('before')
+      expect(first(preset('Isolated')).name).toBe('Original')
+      expect(first(preset('Isolated')).default).toBe('before')
     })
   })
 })
 
 // COV-19: resetEditorSettings and individual setters
 describe('settingsStore - COV-19', () => {
-  beforeEach(() => {
-    localStorage.clear()
-    useSettingsStore.setState(useSettingsStore.getInitialState(), true)
-  })
+  beforeEach(resetSettingsStore)
 
   describe('resetEditorSettings', () => {
     it('resets theme, fontSize, wordWrap, minimap, lineNumbers, debugLogging to defaults', () => {
@@ -170,12 +181,21 @@ describe('settingsStore - COV-19', () => {
 
       const state = useSettingsStore.getState()
 
-      expect(state.theme).toBe('dark')
-      expect(state.editorFontSize).toBe(13)
-      expect(state.editorWordWrap).toBe(true)
-      expect(state.editorMinimap).toBe(false)
-      expect(state.editorLineNumbers).toBe(true)
-      expect(state.debugLogging).toBe(false)
+      expect({
+        theme: state.theme,
+        fontSize: state.editorFontSize,
+        wordWrap: state.editorWordWrap,
+        minimap: state.editorMinimap,
+        lineNumbers: state.editorLineNumbers,
+        debugLogging: state.debugLogging
+      }).toStrictEqual({
+        theme: 'dark',
+        fontSize: 13,
+        wordWrap: true,
+        minimap: false,
+        lineNumbers: true,
+        debugLogging: false
+      })
     })
 
     it('preserves parameterPresets after resetEditorSettings', () => {

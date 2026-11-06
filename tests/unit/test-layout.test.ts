@@ -1,11 +1,11 @@
 // The test directory decides the environment: node tests must not import stores,
 // components, App or Testing Library, and every test file sits in one of four folders.
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { ESLint } from 'eslint'
 import eslintConfig from '../../eslint.config.mjs'
-import { TEST_DIRS } from '../helpers/test-dirs'
+import { TEST_DIRS } from '../helpers/test-directories'
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
 const ROUTED_GROUPS = [
@@ -23,7 +23,7 @@ const ROUTED_GROUPS = [
   '@testing-library/user-event'
 ]
 
-const DOM_BOUND_DIRS = ['dom', 'golden']
+const DOM_BOUND_DIRS = new Set(['dom', 'golden'])
 
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -58,7 +58,7 @@ const MODULE_ONLY_SYNTAX = 'import' + '.meta'
 const TESTS_ROOT = join(process.cwd(), 'tests')
 
 const allFiles = (readdirSync(TESTS_ROOT, { recursive: true }) as string[])
-  .map((p) => p.split('\\').join('/'))
+  .map((p) => p.replaceAll('\\', '/'))
   .filter((p) => /\.(ts|tsx)$/.test(p))
 const testFiles = allFiles.filter((p) => /\.test\.(ts|tsx)$/.test(p))
 const read = (rel: string): string => readFileSync(join(TESTS_ROOT, rel), 'utf8')
@@ -76,7 +76,7 @@ describe('test layout', () => {
     const counts = { unit: 0, integration: 0, dom: 0, golden: 0 }
     const misplaced: string[] = []
     for (const file of testFiles) {
-      const first = file.split('/')[0]
+      const first = file.split('/', 1)[0]
       if ((TEST_DIRS as readonly string[]).includes(first)) counts[first as keyof typeof counts]++
       else misplaced.push(file)
     }
@@ -85,7 +85,7 @@ describe('test layout', () => {
     let importsScanned = 0
     const routedOutsideDom: string[] = []
     for (const file of allFiles) {
-      if (DOM_BOUND_DIRS.includes(file.split('/')[0])) continue
+      if (DOM_BOUND_DIRS.has(file.split('/', 1)[0])) continue
       for (const spec of specifiers(read(file))) {
         importsScanned++
         if (ROUTED.test(spec)) routedOutsideDom.push(`${file}: ${spec}`)
@@ -121,7 +121,11 @@ describe('test layout', () => {
   })
 
   it('mirrors the routed list in the ESLint routing block', () => {
-    type Block = { files?: string[]; ignores?: string[]; rules?: Record<string, unknown> }
+    interface Block {
+      files?: string[]
+      ignores?: string[]
+      rules?: Record<string, unknown>
+    }
     const block = (eslintConfig as Block[]).find(
       (b) =>
         b.rules?.['no-restricted-imports'] !== undefined &&

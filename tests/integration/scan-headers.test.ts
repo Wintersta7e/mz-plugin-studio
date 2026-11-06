@@ -1,8 +1,8 @@
 // The project header scan that feeds the dependency analyzer, called through its IPC registration
 // over a temporary project folder. It reads @base, @orderAfter and @orderBefore as the importer does.
-import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { setCurrentProjectRoot } from '../../src/main/file-access'
 import { IPC_CHANNELS } from '../../src/shared/ipc-types'
@@ -53,7 +53,7 @@ it('reads no dependency from help text, a guarded help line or an empty tag', as
   const results = await scan({
     'Mention.js':
       '/*:\n * @target MZ\n * @help\n * Requires @base CoreLib, @orderAfter A and @orderBefore B\n */\n',
-    'Guarded.js': '/*:\n * @target MZ\n * @help\n * ​@base CoreLib\n */\n',
+    'Guarded.js': '/*:\n * @target MZ\n * @help\n * \u{200B}@base CoreLib\n */\n',
     'Empty.js': '/*:\n * @base\n * @orderAfter\n * @orderBefore\n * @target MZ\n */\n'
   })
 

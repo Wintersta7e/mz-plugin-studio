@@ -1,14 +1,17 @@
-// The five persist option blocks of tag v1.6.0, copied verbatim from
+// The five persist option blocks of tag v1.6.0, copied from
 // src/renderer/src/stores/{pluginStore,uiStore,settingsStore,projectStore,templateStore}.ts at
-// that tag, each around v1.6.0's initial values of the persisted fields. The stores stand in
-// for v1.6.0 reading and writing back what a newer build saved (downgrade checks).
-import { readdirSync, readFileSync } from 'fs'
-import { join } from 'path'
-import { create } from 'zustand'
-import type { StoreApi, UseBoundStore } from 'zustand'
+// that tag, each around v1.6.0's initial values of the persisted fields; the pruning callbacks
+// are reshaped to this repository's lint rules, with the same reads and writes. The stores stand
+// in for v1.6.0 reading and writing back what a newer build saved (downgrade checks).
+import { readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { createEmptyPlugin } from '../../src/shared/types/plugin'
-import type { PluginDefinition, PluginParameter } from '../../src/shared/types/plugin'
+import {
+  createEmptyPlugin,
+  type PluginDefinition,
+  type PluginParameter
+} from '../../src/shared/types/plugin'
 
 export type PersistedKey =
   | 'mz-plugin-studio-project'
@@ -25,19 +28,27 @@ export const PERSISTED_KEYS: readonly PersistedKey[] = [
   'mz-plugin-studio-plugin'
 ]
 
-const PAYLOAD_DIR = join(process.cwd(), 'tests/fixtures/persisted/v1.6.0')
+const PAYLOAD_DIR = path.join(process.cwd(), 'tests/fixtures/persisted/v1.6.0')
 
-/** The captured v1.6.0 values found on disk, by key (exact strings). */
+/**
+The captured v1.6.0 values found on disk, by key (exact strings).
+*/
 export function readV160Payloads(): Partial<Record<PersistedKey, string>> {
   const payloads: Partial<Record<PersistedKey, string>> = {}
   for (const file of readdirSync(PAYLOAD_DIR)) {
-    const key = file.replace(/\.json$/, '') as PersistedKey
-    if (PERSISTED_KEYS.includes(key)) payloads[key] = readFileSync(join(PAYLOAD_DIR, file), 'utf8')
+    const name = file.replace(/\.json$/, '')
+    const key = PERSISTED_KEYS.find((known) => known === name)
+    if (key !== undefined) payloads[key] = readFileSync(path.join(PAYLOAD_DIR, file), 'utf8')
   }
   return payloads
 }
 
-type AnyStore = UseBoundStore<StoreApi<Record<string, unknown>>>
+/**
+What the downgrade checks call on each store: a write-back that changes nothing.
+*/
+interface V160Store {
+  setState(partial: Record<string, never>): void
+}
 
 interface PluginState {
   plugin: PluginDefinition
@@ -77,8 +88,17 @@ interface TemplateStoreState {
   recentlyUsed: { id: string; timestamp: number }[]
 }
 
-/** Fresh v1.6.0 stores; each hydrates from localStorage as it is created. */
-export function createV160Stores(): Record<PersistedKey, AnyStore> {
+type PluginStore = UseBoundStore<StoreApi<PluginState>>
+type UIStore = UseBoundStore<StoreApi<UIState>>
+
+/**
+The entries of `map` whose key is a live plugin id, in their order.
+*/
+function liveEntries<T>(map: Record<string, T>, liveIds: Set<string>): Record<string, T> {
+  return Object.fromEntries(Object.entries(map).filter(([id]) => liveIds.has(id)))
+}
+
+function createV160PluginStore(): PluginStore {
   const usePluginStore = create<PluginState>()(
     persist(
       (): PluginState => ({
@@ -102,36 +122,30 @@ export function createV160Stores(): Record<PersistedKey, AnyStore> {
           savedPathsByPluginId: state.savedPathsByPluginId
         }),
         // Prune stale map entries for plugins no longer in openPlugins (LEAK-05)
-        onRehydrateStorage: () => (state) => {
-          if (!state) return
-          const liveIds = new Set(state.openPlugins.map((p) => p.id))
-          let dirtyChanged = false
-          let pathsChanged = false
-          const nextDirty = { ...state.dirtyByPluginId }
-          const nextPaths = { ...state.savedPathsByPluginId }
-          for (const key of Object.keys(nextDirty)) {
-            if (!liveIds.has(key)) {
-              delete nextDirty[key]
-              dirtyChanged = true
-            }
-          }
-          for (const key of Object.keys(nextPaths)) {
-            if (!liveIds.has(key)) {
-              delete nextPaths[key]
-              pathsChanged = true
-            }
-          }
-          if (dirtyChanged || pathsChanged) {
-            usePluginStore.setState({
-              ...(dirtyChanged ? { dirtyByPluginId: nextDirty } : {}),
-              ...(pathsChanged ? { savedPathsByPluginId: nextPaths } : {})
-            })
-          }
-        }
+        onRehydrateStorage: () => pruneClosed
       }
     )
   )
+  function pruneClosed(state: PluginState | undefined): void {
+    if (!state) return
+    const liveIds = new Set(state.openPlugins.map((p) => p.id))
+    const nextDirty = liveEntries(state.dirtyByPluginId, liveIds)
+    const nextPaths = liveEntries(state.savedPathsByPluginId, liveIds)
+    const isDirtyChanged =
+      Object.keys(nextDirty).length !== Object.keys(state.dirtyByPluginId).length
+    const isPathsChanged =
+      Object.keys(nextPaths).length !== Object.keys(state.savedPathsByPluginId).length
+    if (isDirtyChanged || isPathsChanged) {
+      usePluginStore.setState({
+        ...(isDirtyChanged && { dirtyByPluginId: nextDirty }),
+        ...(isPathsChanged && { savedPathsByPluginId: nextPaths })
+      })
+    }
+  }
+  return usePluginStore
+}
 
+function createV160UIStore(usePluginStore: PluginStore): UIStore {
   const useUIStore = create<UIState>()(
     persist(
       (): UIState => ({
@@ -151,26 +165,34 @@ export function createV160Stores(): Record<PersistedKey, AnyStore> {
           rawModeByPluginId: state.rawModeByPluginId
         }),
         // Prune rawModeByPluginId entries for plugins no longer open (LEAK-05)
-        onRehydrateStorage: () => (state) => {
-          if (!state) return
-          // Defer to next tick so pluginStore is fully hydrated first
-          setTimeout(() => {
-            try {
-              const liveIds = new Set(usePluginStore.getState().openPlugins.map((p) => p.id))
-              const raw = useUIStore.getState().rawModeByPluginId
-              const stale = Object.keys(raw).filter((k) => !liveIds.has(k))
-              if (stale.length === 0) return
-              const next = { ...raw }
-              for (const key of stale) delete next[key]
-              useUIStore.setState({ rawModeByPluginId: next })
-            } catch {
-              // pluginStore not available (e.g. in tests) — skip pruning
-            }
-          }, 0)
-        }
+        onRehydrateStorage: () => pruneClosed
       }
     )
   )
+  function pruneClosed(state: UIState | undefined): void {
+    if (!state) return
+    // Defer to next tick so pluginStore is fully hydrated first
+    setTimeout(() => {
+      try {
+        const liveIds = new Set(usePluginStore.getState().openPlugins.map((p) => p.id))
+        const raw = useUIStore.getState().rawModeByPluginId
+        const next = liveEntries(raw, liveIds)
+        if (Object.keys(next).length === Object.keys(raw).length) return
+        useUIStore.setState({ rawModeByPluginId: next })
+      } catch {
+        // pluginStore not available (e.g. in tests) — skip pruning
+      }
+    }, 0)
+  }
+  return useUIStore
+}
+
+/**
+Fresh v1.6.0 stores; each hydrates from localStorage as it is created.
+*/
+export function createV160Stores(): Record<PersistedKey, V160Store> {
+  const usePluginStore = createV160PluginStore()
+  const useUIStore = createV160UIStore(usePluginStore)
 
   const useSettingsStore = create<SettingsState>()(
     persist(
@@ -229,10 +251,10 @@ export function createV160Stores(): Record<PersistedKey, AnyStore> {
   )
 
   return {
-    'mz-plugin-studio-plugin': usePluginStore as unknown as AnyStore,
-    'mz-plugin-studio-ui': useUIStore as unknown as AnyStore,
-    'mz-plugin-studio-settings': useSettingsStore as unknown as AnyStore,
-    'mz-plugin-studio-project': useProjectStore as unknown as AnyStore,
-    'mz-plugin-studio-templates': useTemplateStore as unknown as AnyStore
+    'mz-plugin-studio-plugin': usePluginStore,
+    'mz-plugin-studio-ui': useUIStore,
+    'mz-plugin-studio-settings': useSettingsStore,
+    'mz-plugin-studio-project': useProjectStore,
+    'mz-plugin-studio-templates': useTemplateStore
   }
 }

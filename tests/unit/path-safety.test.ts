@@ -1,5 +1,5 @@
 // Which paths the IPC path guard accepts, one row per input and path flavour
-import path from 'path'
+import path from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
   assertSafeFilePath,
@@ -327,8 +327,8 @@ const ROWS: Row[] = [
     'C:/Games/lpt9/Synthetic.js',
     '\\\\host\\share\\NUL\\Synthetic.js',
     // Windows also reserves COM and LPT with a superscript 1-3, and the console names
-    'C:\\Games\\Proj\\js\\plugins\\COM\u00b9.js',
-    'C:\\Games\\LPT\u00b2\\Synthetic.js',
+    'C:\\Games\\Proj\\js\\plugins\\COM\u{B9}.js',
+    'C:\\Games\\LPT\u{B2}\\Synthetic.js',
     'C:\\Games\\Proj\\js\\plugins\\CONOUT$.js',
     'C:\\Games\\conin$\\Synthetic.js'
   ].map(
@@ -350,7 +350,7 @@ const ROWS: Row[] = [
     'C:\\Games\\COM10\\Synthetic.js',
     'C:\\Games\\LPT0\\Synthetic.js',
     'C:\\Games\\COM0\\Synthetic.js',
-    'C:\\Games\\Proj\\js\\plugins\\COM\u2074.js',
+    'C:\\Games\\Proj\\js\\plugins\\COM\u{2074}.js',
     'C:\\Games\\Proj\\js\\plugins\\CONIN.js',
     'C:\\Games\\NULL\\Synthetic.js',
     'C:\\Games\\Proj\\js\\plugins\\Synthetic_AUX.js',
@@ -371,9 +371,9 @@ const ROWS: Row[] = [
       'LPT9.js',
       'prn .js',
       'AUX.backup.js',
-      'COM\u00b9.js',
-      'lpt\u00b2.js',
-      'COM\u00b3 .js',
+      'COM\u{B9}.js',
+      'lpt\u{B2}.js',
+      'COM\u{B3} .js',
       'CONIN$.js',
       'conout$.backup.js'
     ].map(

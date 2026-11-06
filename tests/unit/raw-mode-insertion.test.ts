@@ -3,7 +3,7 @@
 // added command or read the added parameter; a file that cannot be read as JavaScript, or an
 // output that is not JavaScript, is refused instead of written.
 import { describe, it, expect } from 'vitest'
-import { Script, createContext } from 'vm'
+import { Script, createContext } from 'node:vm'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import type { PluginOutput } from '../../src/renderer/src/lib/plugin-output'

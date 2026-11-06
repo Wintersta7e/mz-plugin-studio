@@ -1,6 +1,6 @@
 // Which default paths a file dialog may open with, decided from the text alone: a default path
 // is looked up before the user acts, so no row may touch the filesystem.
-import path from 'path'
+import path from 'node:path'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 import {
   checkSaveDefaultPath,

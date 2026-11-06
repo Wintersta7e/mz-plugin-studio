@@ -1,8 +1,5 @@
 {
   "e2e/fixtures/app.ts": {
-    "@typescript-eslint/consistent-type-definitions": {
-      "count": 1
-    },
     "@typescript-eslint/dot-notation": {
       "count": 1
     },
@@ -46,9 +43,6 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 5
-    },
-    "unicorn/consistent-conditional-object-spread": {
       "count": 1
     },
     "unicorn/consistent-function-scoping": {
@@ -62,9 +56,6 @@
     },
     "unicorn/name-replacements": {
       "count": 10
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
     },
     "unicorn/no-return-array-push": {
       "count": 5
@@ -84,13 +75,7 @@
     "unicorn/prefer-await": {
       "count": 5
     },
-    "unicorn/prefer-export-from": {
-      "count": 1
-    },
     "unicorn/prefer-global-this": {
-      "count": 1
-    },
-    "unicorn/prefer-string-raw": {
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
@@ -140,9 +125,6 @@
     "unicorn/prefer-global-this": {
       "count": 2
     },
-    "unicorn/prefer-location-assign": {
-      "count": 1
-    },
     "unicorn/require-array-sort-compare": {
       "count": 1
     },
@@ -153,9 +135,6 @@
   "e2e/flows/boundary.e2e.ts": {
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 7
-    },
-    "@typescript-eslint/prefer-includes": {
-      "count": 1
     },
     "@typescript-eslint/promise-function-async": {
       "count": 8
@@ -185,9 +164,6 @@
       "count": 5
     },
     "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
       "count": 1
     },
     "unicorn/prefer-then-catch": {
@@ -305,9 +281,6 @@
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 1
     },
-    "@typescript-eslint/no-unnecessary-boolean-literal-compare": {
-      "count": 2
-    },
     "@typescript-eslint/no-unnecessary-type-assertion": {
       "count": 2
     },
@@ -326,13 +299,7 @@
     "unicorn/no-await-expression-member": {
       "count": 3
     },
-    "unicorn/no-unnecessary-boolean-comparison": {
-      "count": 2
-    },
     "unicorn/no-unsafe-string-replacement": {
-      "count": 1
-    },
-    "unicorn/prefer-string-raw": {
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
@@ -364,9 +331,6 @@
     "unicorn/no-array-sort": {
       "count": 2
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-await-expression-member": {
       "count": 4
     },
@@ -374,9 +338,6 @@
       "count": 1
     },
     "unicorn/prefer-await": {
-      "count": 1
-    },
-    "unicorn/prefer-early-return": {
       "count": 1
     },
     "unicorn/prefer-iterator-to-array": {
@@ -439,9 +400,6 @@
     "@typescript-eslint/strict-boolean-expressions": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
     "unicorn/name-replacements": {
       "count": 1
     }
@@ -483,16 +441,10 @@
     "unicorn/consistent-boolean-name": {
       "count": 1
     },
-    "unicorn/explicit-timer-delay": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
     "unicorn/isolated-functions": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 2
     },
     "unicorn/no-await-expression-member": {
@@ -502,7 +454,7 @@
       "count": 2
     },
     "unicorn/prefer-add-event-listener": {
-      "count": 4
+      "count": 2
     },
     "unicorn/prefer-await": {
       "count": 2
@@ -541,9 +493,6 @@
     },
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
     }
   },
   "e2e/visual/app-states.e2e.ts": {
@@ -577,17 +526,11 @@
     "unicorn/name-replacements": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-await-expression-member": {
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
-    },
-    "unicorn/switch-case-braces": {
-      "count": 7
     }
   },
   "e2e/visual/inventory.e2e.ts": {
@@ -602,102 +545,6 @@
     },
     "unicorn/name-replacements": {
       "count": 1
-    }
-  },
-  "electron.vite.config.ts": {
-    "@typescript-eslint/no-deprecated": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    }
-  },
-  "scripts/check-coverage.mjs": {
-    "n/no-process-exit": {
-      "count": 3
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/no-array-sort": {
-      "count": 2
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
-  "scripts/check-golden-commits.mjs": {
-    "complexity": {
-      "count": 1
-    },
-    "n/no-process-exit": {
-      "count": 1
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
-    "regexp/use-ignore-case": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 6
-    },
-    "unicorn/no-null": {
-      "count": 2
-    },
-    "unicorn/no-return-array-push": {
-      "count": 1
-    },
-    "unicorn/prefer-continue": {
-      "count": 1
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
     }
   },
   "scripts/ci-policy.mjs": {
@@ -715,12 +562,6 @@
     },
     "sonarjs/no-nested-template-literals": {
       "count": 7
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/consistent-existence-index-check": {
-      "count": 1
     },
     "unicorn/consistent-function-scoping": {
       "count": 1
@@ -746,17 +587,11 @@
     "unicorn/no-for-each": {
       "count": 1
     },
-    "unicorn/no-negated-array-predicate": {
-      "count": 2
-    },
     "unicorn/no-null": {
       "count": 2
     },
     "unicorn/no-useless-undefined": {
       "count": 10
-    },
-    "unicorn/numeric-separators-style": {
-      "count": 1
     },
     "unicorn/prefer-combined-guards": {
       "count": 2
@@ -767,151 +602,8 @@
     "unicorn/prefer-simple-condition-first": {
       "count": 1
     },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
     "unicorn/require-array-sort-compare": {
       "count": 6
-    }
-  },
-  "scripts/e2e-prepare.mjs": {
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 8
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 4
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/prefer-await": {
-      "count": 1
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-set-methods": {
-      "count": 1
-    },
-    "unicorn/prefer-top-level-await": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 11
-    }
-  },
-  "scripts/e2e-visual-update.mjs": {
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-top-level-side-effects": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
-  "scripts/strictness-status.mjs": {
-    "unicorn/no-null": {
-      "count": 5
-    }
-  },
-  "scripts/third-party-licenses.mjs": {
-    "n/no-process-exit": {
-      "count": 2
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 6
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 2
-    },
-    "regexp/optimal-quantifier-concatenation": {
-      "count": 2
-    },
-    "sonarjs/no-nested-conditional": {
-      "count": 1
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 1
-    },
-    "sonarjs/regex-complexity": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/no-array-sort": {
-      "count": 4
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 3
-    },
-    "unicorn/no-duplicate-loops": {
-      "count": 1
-    },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 3
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-sort-comparator": {
-      "count": 1
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 3
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 3
     }
   },
   "src/main/services/pluginParser.ts": {
@@ -2054,483 +1746,6 @@
       "count": 1
     }
   },
-  "tests/dom/analysis-view.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 2
-    },
-    "unicorn/prefer-global-this": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    }
-  },
-  "tests/dom/app-close.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 3
-    },
-    "@typescript-eslint/require-await": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 4
-    },
-    "unicorn/prefer-global-this": {
-      "count": 10
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 3
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 3
-    }
-  },
-  "tests/dom/app-open-folder.test.tsx": {
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 1
-    }
-  },
-  "tests/dom/app-save.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 54
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-invalid-void-type": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 6
-    },
-    "@typescript-eslint/require-await": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "no-console": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "promise/param-names": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 2
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 33
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 2
-    },
-    "unicorn/prefer-global-this": {
-      "count": 61
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 7
-    },
-    "vitest/max-expects": {
-      "count": 26
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 33
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 20
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 14
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 48
-    },
-    "vitest/require-hook": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 4
-    }
-  },
-  "tests/dom/app-shell.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 12
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-promise-reject-errors": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 17
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "jest-dom/prefer-in-document": {
-      "count": 5
-    },
-    "jest-dom/prefer-to-have-text-content": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 2
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 3
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 4
-    },
-    "unicorn/prefer-global-this": {
-      "count": 16
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 2
-    },
-    "vitest/prefer-called-with": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 19
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 10
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 6
-    },
-    "vitest/prefer-strict-boolean-matchers": {
-      "count": 5
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 5
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 18
-    }
-  },
-  "tests/dom/code-editor.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
-  "tests/dom/code-preview.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 40
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 7
-    },
-    "@typescript-eslint/require-await": {
-      "count": 10
-    },
-    "jest-dom/prefer-enabled-disabled": {
-      "count": 2
-    },
-    "jest-dom/prefer-in-document": {
-      "count": 11
-    },
-    "max-lines-per-function": {
-      "count": 4
-    },
-    "promise/param-names": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 6
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 8
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-await-expression-member": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 17
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 43
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    },
-    "vitest/max-expects": {
-      "count": 12
-    },
-    "vitest/prefer-called-times": {
-      "count": 2
-    },
-    "vitest/prefer-called-with": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 36
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 20
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 7
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 14
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 12
-    },
-    "vitest/require-top-level-describe": {
-      "count": 2
-    }
-  },
-  "tests/dom/command-builder.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 8
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 9
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 3
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 7
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 5
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
-  "tests/dom/diff-view.test.tsx": {
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 2
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    }
-  },
   "tests/dom/history-store.test.ts": {
     "@typescript-eslint/no-unnecessary-condition": {
       "count": 2
@@ -2555,1263 +1770,6 @@
     },
     "vitest/prefer-to-have-length": {
       "count": 1
-    }
-  },
-  "tests/dom/meta-editor.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 11
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "jest-dom/prefer-in-document": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 1
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 2
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 5
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 3
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 3
-    },
-    "unicorn/prefer-global-this": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    }
-  },
-  "tests/dom/parameter-builder.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 18
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 5
-    },
-    "@typescript-eslint/require-await": {
-      "count": 23
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "testing-library/no-node-access": {
-      "count": 1
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 5
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 24
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 5
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 14
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 14
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 12
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 32
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 3
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 13
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 25
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
-  "tests/dom/persisted-damage.test.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 4
-    },
-    "unicorn/no-await-expression-member": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-called-with": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 14
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 20
-    },
-    "vitest/unbound-method": {
-      "count": 1
-    }
-  },
-  "tests/dom/persisted-downgrade.test.ts": {
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 3
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 4
-    },
-    "no-console": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 10
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 6
-    },
-    "vitest/valid-expect": {
-      "count": 3
-    }
-  },
-  "tests/dom/persisted-load.test.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 32
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 4
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 3
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 9
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 10
-    },
-    "vitest/valid-expect": {
-      "count": 2
-    }
-  },
-  "tests/dom/persisted-restore.test.ts": {
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 2
-    }
-  },
-  "tests/dom/plugin-browser.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 8
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 9
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "testing-library/no-container": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 12
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
-    "unicorn/prefer-scoped-selector": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 10
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 2
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 4
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 2
-    }
-  },
-  "tests/dom/plugin-store.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 3
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "sonarjs/publicly-writable-directories": {
-      "count": 13
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 5
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 4
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 16
-    },
-    "vitest/no-conditional-expect": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 35
-    }
-  },
-  "tests/dom/project-browser.test.tsx": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 3
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 1
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 2
-    }
-  },
-  "tests/dom/project-store.test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "promise/param-names": {
-      "count": 1
-    },
-    "sonarjs/publicly-writable-directories": {
-      "count": 18
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/prefer-global-this": {
-      "count": 8
-    },
-    "unicorn/prefer-promise-with-resolvers": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
-    },
-    "vitest/prefer-to-contain": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 9
-    }
-  },
-  "tests/dom/raw-mode-controls.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 3
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 7
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "jest-dom/prefer-enabled-disabled": {
-      "count": 2
-    },
-    "jest-dom/prefer-in-document": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 2
-    },
-    "no-console": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 17
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 4
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 4
-    },
-    "unicorn/name-replacements": {
-      "count": 10
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 3
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 5
-    },
-    "unicorn/prefer-global-this": {
-      "count": 3
-    },
-    "unicorn/prefer-query-selector": {
-      "count": 2
-    },
-    "unicorn/prefer-single-call": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 6
-    },
-    "vitest/max-expects": {
-      "count": 5
-    },
-    "vitest/prefer-each": {
-      "count": 1
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 3
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-hook": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 8
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    },
-    "vitest/valid-expect": {
-      "count": 5
-    }
-  },
-  "tests/dom/raw-mode-reload.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 5
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 9
-    },
-    "jest-dom/prefer-in-document": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 2
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 11
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 7
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 5
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 4
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 9
-    }
-  },
-  "tests/dom/raw-mode-save-paths.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 22
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 4
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 2
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 3
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 2
-    },
-    "vitest/max-expects": {
-      "count": 26
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 5
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 2
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 14
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 4
-    },
-    "vitest/valid-expect": {
-      "count": 2
-    }
-  },
-  "tests/dom/settings-dialog.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 4
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 10
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 2
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 2
-    },
-    "@typescript-eslint/require-await": {
-      "count": 5
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 3
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-await-expression-member": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 5
-    },
-    "unicorn/prefer-global-this": {
-      "count": 11
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "vitest/max-expects": {
-      "count": 9
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 12
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 1
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 3
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 5
-    }
-  },
-  "tests/dom/settings-store.test.ts": {
-    "@typescript-eslint/dot-notation": {
-      "count": 3
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "unicorn/prefer-string-repeat": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    }
-  },
-  "tests/dom/shortcuts-dialog.test.tsx": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "no-console": {
-      "count": 1
-    },
-    "sonarjs/no-misleading-array-reverse": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 2
-    },
-    "unicorn/no-array-sort": {
-      "count": 2
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    }
-  },
-  "tests/dom/shortcuts.test.ts": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 12
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "sonarjs/parameterized-tests": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 19
-    },
-    "unicorn/prefer-dom-node-append": {
-      "count": 4
-    },
-    "unicorn/prefer-dom-node-remove": {
-      "count": 2
-    },
-    "vitest/prefer-describe-function-title": {
-      "count": 3
-    }
-  },
-  "tests/dom/sidebar.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 4
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 3
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 2
-    },
-    "unicorn/prefer-global-this": {
-      "count": 5
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 5
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 5
-    }
-  },
-  "tests/dom/status-bar.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 5
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 2
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 2
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-global-this": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    }
-  },
-  "tests/dom/struct-builder.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 5
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 9
-    },
-    "@typescript-eslint/no-unnecessary-type-assertion": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 8
-    },
-    "testing-library/no-wait-for-multiple-assertions": {
-      "count": 4
-    },
-    "testing-library/render-result-naming-convention": {
-      "count": 8
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 4
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 8
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 2
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
-  "tests/dom/struct-default-editor.test.tsx": {
-    "vitest/prefer-expect-assertions": {
-      "count": 3
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 5
-    }
-  },
-  "tests/dom/support/load-persisted.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 8
-    },
-    "@typescript-eslint/non-nullable-type-assertion-style": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/dom/support/main-api.ts": {
-    "@typescript-eslint/require-await": {
-      "count": 3
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "preserve-caught-error": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 7
-    }
-  },
-  "tests/dom/support/preview.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    }
-  },
-  "tests/dom/support/reset-stores.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    }
-  },
-  "tests/dom/template-inserter.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 2
-    },
-    "jest-dom/prefer-to-have-text-content": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-console": {
-      "count": 1
-    },
-    "testing-library/no-node-access": {
-      "count": 5
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-scoped-selector": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 11
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 13
-    },
-    "vitest/prefer-expect-resolves": {
-      "count": 1
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 3
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 14
-    },
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
-  },
-  "tests/dom/title-bar.test.tsx": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 3
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "testing-library/no-manual-cleanup": {
-      "count": 1
-    },
-    "testing-library/no-unnecessary-act": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 5
-    },
-    "unicorn/prefer-dom-node-html-methods": {
-      "count": 3
-    },
-    "unicorn/prefer-global-this": {
-      "count": 15
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/prefer-expect-assertions": {
-      "count": 4
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 4
-    }
-  },
-  "tests/dom/toast-store.test.ts": {
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 6
-    },
-    "unicorn/numeric-separators-style": {
-      "count": 2
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 3
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 3
-    }
-  },
-  "tests/dom/toast-ui.test.tsx": {
-    "@typescript-eslint/no-floating-promises": {
-      "count": 7
-    },
-    "testing-library/no-container": {
-      "count": 2
-    },
-    "testing-library/no-node-access": {
-      "count": 2
-    },
-    "unicorn/numeric-separators-style": {
-      "count": 2
-    },
-    "vitest/prefer-lowercase-title": {
-      "count": 1
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 1
-    }
-  },
-  "tests/dom/ui-store.test.ts": {
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 4
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-strict-equal": {
-      "count": 6
     }
   },
   "tests/golden/corpus/generator.ts": {
@@ -4149,448 +2107,9 @@
       "count": 2
     }
   },
-  "tests/helpers/annotation-rules.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 2
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "regexp/no-super-linear-backtracking": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 4
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 7
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-for-each": {
-      "count": 2
-    },
-    "unicorn/prefer-continue": {
-      "count": 1
-    },
-    "unicorn/prefer-set-has": {
-      "count": 1
-    },
-    "unicorn/prefer-switch": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 10
-    },
-    "vitest/no-conditional-tests": {
-      "count": 1
-    }
-  },
-  "tests/helpers/console-guard.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "tests/helpers/evaluate-plugin.ts": {
-    "@typescript-eslint/no-unsafe-argument": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-regexp-exec": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 2
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 1
-    },
-    "unicorn/no-duplicate-loops": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 1
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
-    "unicorn/require-array-sort-compare": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/fake-api.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/require-await": {
-      "count": 15
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 21
-    }
-  },
-  "tests/helpers/fake-ipc.ts": {
-    "@typescript-eslint/no-confusing-void-expression": {
-      "count": 1
-    },
-    "@typescript-eslint/no-empty-function": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "@typescript-eslint/require-await": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-smaller-scope": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 5
-    }
-  },
-  "tests/helpers/fixture-project.ts": {
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/max-nested-calls": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 1
-    }
-  },
-  "tests/helpers/hostile.ts": {
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/js-context.ts": {
-    "import-x/no-named-as-default-member": {
-      "count": 15
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/mz-conformance.ts": {
-    "@typescript-eslint/no-misused-spread": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 6
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 4
-    },
-    "@typescript-eslint/switch-exhaustiveness-check": {
-      "count": 2
-    },
-    "complexity": {
-      "count": 1
-    },
-    "eqeqeq": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 3
-    },
-    "sonarjs/no-nested-template-literals": {
-      "count": 4
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 9
-    },
-    "unicorn/consistent-class-member-order": {
-      "count": 1
-    },
-    "unicorn/consistent-conditional-object-spread": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 9
-    },
-    "unicorn/no-array-callback-reference": {
-      "count": 1
-    },
-    "unicorn/no-array-sort": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 7
-    },
-    "unicorn/no-negated-array-predicate": {
-      "count": 2
-    },
-    "unicorn/no-unreadable-array-destructuring": {
-      "count": 3
-    },
-    "unicorn/no-unreadable-for-of-expression": {
-      "count": 3
-    },
-    "unicorn/no-unused-builtin-method-return": {
-      "count": 4
-    },
-    "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-combined-guards": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
-    "unicorn/prefer-set-has": {
-      "count": 3
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 26
-    },
-    "unicorn/switch-case-braces": {
-      "count": 7
-    }
-  },
-  "tests/helpers/mz-corescript.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 8
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 3
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-return-array-push": {
-      "count": 1
-    },
-    "unicorn/no-top-level-assignment-in-function": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    }
-  },
-  "tests/helpers/mz-runtime.ts": {
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 4
-    },
-    "no-duplicate-imports": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-structured-clone": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 9
-    }
-  },
-  "tests/helpers/persist-v160.ts": {
-    "@typescript-eslint/no-dynamic-delete": {
-      "count": 3
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "no-duplicate-imports": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/consistent-conditional-object-spread": {
-      "count": 2
-    },
-    "unicorn/consistent-function-scoping": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-continue": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    }
-  },
-  "tests/helpers/test-dirs.ts": {
-    "unicorn/name-replacements": {
-      "count": 1
-    }
-  },
-  "tests/helpers/workflow-reader.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 1
-    },
-    "complexity": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "sonarjs/no-nested-assignment": {
-      "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
-    "unicorn/consistent-existence-index-check": {
-      "count": 1
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 3
-    },
-    "vitest/no-conditional-tests": {
-      "count": 2
-    }
-  },
   "tests/integration/check-coverage.test.ts": {
     "@typescript-eslint/restrict-template-expressions": {
-      "count": 7
+      "count": 4
     },
     "max-lines-per-function": {
       "count": 1
@@ -4609,15 +2128,6 @@
     },
     "unicorn/name-replacements": {
       "count": 18
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 4
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
@@ -4645,9 +2155,6 @@
     "unicorn/no-unnecessary-parameters": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
@@ -4660,9 +2167,6 @@
   },
   "tests/integration/ci-policy-fuses.test.ts": {
     "@typescript-eslint/no-misused-spread": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unnecessary-template-expression": {
       "count": 1
     },
     "@typescript-eslint/no-unsafe-type-assertion": {
@@ -4680,9 +2184,6 @@
     "no-console": {
       "count": 1
     },
-    "unicorn/consistent-existence-index-check": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -4695,22 +2196,10 @@
     "unicorn/no-unnecessary-parameters": {
       "count": 2
     },
-    "unicorn/no-unnecessary-string-trim": {
-      "count": 1
-    },
     "unicorn/no-unreadable-for-of-expression": {
       "count": 1
     },
-    "unicorn/no-useless-template-literals": {
-      "count": 1
-    },
     "unicorn/prefer-iterator-to-array": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 5
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
     },
     "vitest/max-expects": {
@@ -4726,9 +2215,6 @@
   "tests/integration/ci-policy-needs.test.ts": {
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
     }
   },
   "tests/integration/ci-policy-osv-ignores.test.ts": {
@@ -4740,9 +2226,6 @@
     },
     "unicorn/name-replacements": {
       "count": 4
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 5
     },
     "vitest/require-top-level-describe": {
       "count": 1
@@ -4758,20 +2241,11 @@
     "unicorn/name-replacements": {
       "count": 5
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 5
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
     "vitest/require-top-level-describe": {
       "count": 1
     }
   },
   "tests/integration/ci-policy.test.ts": {
-    "@typescript-eslint/consistent-type-definitions": {
-      "count": 1
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
@@ -4784,20 +2258,11 @@
     "unicorn/name-replacements": {
       "count": 4
     },
-    "unicorn/numeric-separators-style": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
     "vitest/require-top-level-describe": {
       "count": 1
     }
   },
   "tests/integration/dialog-memory.test.ts": {
-    "@typescript-eslint/consistent-type-definitions": {
-      "count": 2
-    },
     "@typescript-eslint/no-confusing-void-expression": {
       "count": 6
     },
@@ -4825,12 +2290,6 @@
     "no-console": {
       "count": 1
     },
-    "regexp/strict": {
-      "count": 2
-    },
-    "sonarjs/prefer-specific-assertions": {
-      "count": 1
-    },
     "unicorn/consistent-function-scoping": {
       "count": 1
     },
@@ -4838,9 +2297,6 @@
       "count": 1
     },
     "unicorn/name-replacements": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
       "count": 1
     },
     "unicorn/no-await-expression-member": {
@@ -4855,14 +2311,8 @@
     "unicorn/prefer-at": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
     "unicorn/prefer-promise-with-resolvers": {
       "count": 1
-    },
-    "unicorn/prefer-smaller-scope": {
-      "count": 2
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
@@ -4884,9 +2334,6 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 5
-    },
-    "vitest/prefer-to-have-length": {
-      "count": 1
     },
     "vitest/require-hook": {
       "count": 1
@@ -4926,9 +2373,6 @@
     "unicorn/prefer-code-point": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
     "vitest/prefer-describe-function-title": {
       "count": 4
     },
@@ -4961,9 +2405,6 @@
     "unicorn/import-style": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
@@ -4975,9 +2416,6 @@
     }
   },
   "tests/integration/ignore-rules.test.ts": {
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
     "vitest/prefer-each": {
       "count": 1
     }
@@ -5021,12 +2459,6 @@
     },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 8
-    },
-    "unicorn/no-unreadable-array-destructuring": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
     },
     "unicorn/single-line-block-comment-style": {
       "count": 2
@@ -5084,9 +2516,6 @@
     "no-duplicate-imports": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -5102,9 +2531,6 @@
     "unicorn/no-top-level-assignment-in-function": {
       "count": 2
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
     "unicorn/require-array-sort-compare": {
       "count": 2
     },
@@ -5114,19 +2540,10 @@
     "vitest/max-expects": {
       "count": 21
     },
-    "vitest/prefer-called-times": {
-      "count": 4
-    },
-    "vitest/prefer-called-with": {
-      "count": 4
-    },
     "vitest/prefer-expect-assertions": {
       "count": 2
     },
     "vitest/prefer-expect-resolves": {
-      "count": 1
-    },
-    "vitest/prefer-expect-type-of": {
       "count": 1
     },
     "vitest/prefer-hooks-in-order": {
@@ -5203,9 +2620,6 @@
     "unicorn/prefer-iterator-to-array": {
       "count": 2
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
     "unicorn/prefer-then-catch": {
       "count": 1
     },
@@ -5216,12 +2630,6 @@
       "count": 5
     },
     "vitest/max-expects": {
-      "count": 1
-    },
-    "vitest/prefer-called-times": {
-      "count": 1
-    },
-    "vitest/prefer-called-with": {
       "count": 1
     },
     "vitest/prefer-expect-assertions": {
@@ -5355,9 +2763,6 @@
     "unicorn/name-replacements": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
@@ -5378,17 +2783,8 @@
     "unicorn/import-style": {
       "count": 1
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 6
-    },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
     },
     "unicorn/text-encoding-identifier-case": {
       "count": 1
@@ -5409,9 +2805,6 @@
     },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
     },
     "vitest/prefer-expect-assertions": {
       "count": 2
@@ -5466,9 +2859,6 @@
     "unicorn/name-replacements": {
       "count": 6
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-await-expression-member": {
       "count": 2
     },
@@ -5481,12 +2871,6 @@
     "unicorn/prefer-at": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 4
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 5
     },
@@ -5495,12 +2879,6 @@
     },
     "vitest/no-standalone-expect": {
       "count": 1
-    },
-    "vitest/prefer-called-times": {
-      "count": 3
-    },
-    "vitest/prefer-called-with": {
-      "count": 3
     },
     "vitest/prefer-expect-assertions": {
       "count": 14
@@ -5555,9 +2933,6 @@
     "unicorn/no-top-level-assignment-in-function": {
       "count": 4
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
@@ -5605,12 +2980,6 @@
     "unicorn/no-unnecessary-array-flat-map": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
@@ -5625,9 +2994,6 @@
     "no-console": {
       "count": 1
     },
-    "unicorn/consistent-existence-index-check": {
-      "count": 2
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -5639,9 +3005,6 @@
     },
     "unicorn/no-unreadable-for-of-expression": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 5
     },
     "vitest/prefer-strict-equal": {
       "count": 2
@@ -5691,12 +3054,6 @@
       "count": 8
     },
     "unicorn/no-unnecessary-parameters": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 5
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
@@ -5754,12 +3111,6 @@
     },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 1
-    },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
@@ -5819,9 +3170,6 @@
     "unicorn/no-top-level-assignment-in-function": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 2
     },
@@ -5850,97 +3198,13 @@
     }
   },
   "tests/setup/dom.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 5
-    },
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 4
-    },
-    "@typescript-eslint/promise-function-async": {
-      "count": 1
-    },
-    "unicorn/no-global-object-property-assignment": {
-      "count": 1
-    },
-    "vitest/prefer-import-in-mock": {
-      "count": 2
-    },
     "vitest/require-top-level-describe": {
-      "count": 1
-    },
-    "vitest/unbound-method": {
-      "count": 3
-    }
-  },
-  "tests/setup/mocks.ts": {
-    "vitest/prefer-import-in-mock": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 6
-    }
-  },
-  "tests/setup/monaco-stub.tsx": {
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 3
-    },
-    "sonarjs/prefer-read-only-props": {
-      "count": 2
-    },
-    "unicorn/name-replacements": {
-      "count": 2
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/prefer-at": {
-      "count": 1
-    },
-    "unicorn/prefer-default-parameters": {
-      "count": 3
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "vitest/require-mock-type-parameters": {
-      "count": 11
-    }
-  },
-  "tests/setup/no-skips-reporter.ts": {
-    "@typescript-eslint/array-type": {
-      "count": 1
-    },
-    "@typescript-eslint/no-non-null-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 3
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
-    "unicorn/prefer-simple-condition-first": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
       "count": 1
     }
   },
   "tests/unit/analyze-plugins.test.ts": {
     "vitest/prefer-describe-function-title": {
-      "count": 9
+      "count": 8
     },
     "vitest/prefer-strict-equal": {
       "count": 12
@@ -5955,12 +3219,6 @@
     },
     "no-duplicate-imports": {
       "count": 1
-    },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
     },
     "vitest/prefer-describe-function-title": {
       "count": 1
@@ -5992,9 +3250,6 @@
       "count": 1
     },
     "unicorn/no-unsafe-string-replacement": {
-      "count": 1
-    },
-    "unicorn/numeric-separators-style": {
       "count": 1
     },
     "unicorn/single-line-block-comment-style": {
@@ -6041,12 +3296,6 @@
       "count": 1
     },
     "unicorn/prefer-iterator-to-array": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-string-replace-all": {
       "count": 2
     },
     "unicorn/single-line-block-comment-style": {
@@ -6146,13 +3395,7 @@
     "unicorn/prefer-iterator-to-array": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
     "unicorn/prefer-smaller-scope": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
       "count": 1
     },
     "unicorn/require-array-sort-compare": {
@@ -6202,12 +3445,6 @@
     "unicorn/no-await-expression-member": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-ternary": {
-      "count": 1
-    },
     "vitest/max-expects": {
       "count": 1
     },
@@ -6247,9 +3484,6 @@
     },
     "unicorn/no-top-level-assignment-in-function": {
       "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
@@ -6348,13 +3582,7 @@
     "regexp/no-unused-capturing-group": {
       "count": 1
     },
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "sonarjs/regex-complexity": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
       "count": 1
     },
     "unicorn/import-style": {
@@ -6372,17 +3600,11 @@
     "unicorn/no-unreadable-for-of-expression": {
       "count": 1
     },
-    "unicorn/no-useless-collection-argument": {
-      "count": 1
-    },
     "unicorn/prefer-at": {
       "count": 1
     },
     "unicorn/prefer-iterator-to-array": {
       "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 3
     },
     "unicorn/require-array-sort-compare": {
       "count": 6
@@ -6442,9 +3664,6 @@
     "no-duplicate-imports": {
       "count": 1
     },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -6465,12 +3684,6 @@
     },
     "unicorn/prefer-iterator-to-array": {
       "count": 1
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
     },
     "unicorn/require-array-sort-compare": {
       "count": 1
@@ -6501,11 +3714,8 @@
     "no-console": {
       "count": 4
     },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 4
-    },
     "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 5
+      "count": 2
     },
     "vitest/prefer-describe-function-title": {
       "count": 4
@@ -6538,12 +3748,6 @@
     },
     "unicorn/no-array-sort": {
       "count": 3
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
     },
     "unicorn/require-array-sort-compare": {
       "count": 3
@@ -6627,9 +3831,6 @@
     "unicorn/prefer-math-constants": {
       "count": 1
     },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 3
     },
@@ -6641,9 +3842,6 @@
     },
     "vitest/prefer-strict-equal": {
       "count": 16
-    },
-    "vitest/prefer-to-have-length": {
-      "count": 1
     },
     "vitest/valid-expect": {
       "count": 8
@@ -6668,15 +3866,6 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
     },
-    "@typescript-eslint/prefer-includes": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-regexp-exec": {
-      "count": 4
-    },
-    "@typescript-eslint/prefer-string-starts-ends-with": {
-      "count": 2
-    },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
     },
@@ -6687,13 +3876,7 @@
       "count": 1
     },
     "unicorn/consistent-boolean-name": {
-      "count": 3
-    },
-    "unicorn/consistent-existence-index-check": {
-      "count": 3
-    },
-    "unicorn/escape-case": {
-      "count": 1
+      "count": 2
     },
     "unicorn/import-style": {
       "count": 1
@@ -6707,29 +3890,14 @@
     "unicorn/no-array-sort": {
       "count": 4
     },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
     "unicorn/no-computed-property-existence-check": {
       "count": 1
     },
     "unicorn/no-unnecessary-parameters": {
       "count": 1
     },
-    "unicorn/prefer-includes": {
-      "count": 1
-    },
     "unicorn/prefer-iterator-to-array": {
       "count": 3
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-string-raw": {
-      "count": 4
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 2
     },
     "unicorn/prefer-unicode-code-point-escapes": {
       "count": 1
@@ -6745,9 +3913,6 @@
     }
   },
   "tests/unit/generator.test.ts": {
-    "@typescript-eslint/array-type": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 2
     },
@@ -6765,9 +3930,6 @@
     },
     "unicorn/name-replacements": {
       "count": 4
-    },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 2
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
@@ -6818,12 +3980,6 @@
     "unicorn/no-unnecessary-array-flat-map": {
       "count": 1
     },
-    "unicorn/prefer-string-raw": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 2
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 6
     },
@@ -6870,9 +4026,6 @@
     },
     "unicorn/no-array-sort": {
       "count": 4
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
     },
     "unicorn/require-array-sort-compare": {
       "count": 4
@@ -6973,12 +4126,6 @@
     "unicorn/no-unreadable-for-of-expression": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 3
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
     "unicorn/require-array-sort-compare": {
       "count": 2
     },
@@ -7072,13 +4219,7 @@
     "no-console": {
       "count": 3
     },
-    "regexp/negation": {
-      "count": 2
-    },
     "sonarjs/argument-type": {
-      "count": 2
-    },
-    "unicorn/consistent-existence-index-check": {
       "count": 2
     },
     "unicorn/import-style": {
@@ -7091,9 +4232,6 @@
       "count": 1
     },
     "unicorn/no-unnecessary-array-flat-map": {
-      "count": 1
-    },
-    "unicorn/prefer-set-has": {
       "count": 1
     },
     "vitest/prefer-lowercase-title": {
@@ -7133,9 +4271,6 @@
     },
     "unicorn/import-style": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
@@ -7213,17 +4348,8 @@
     "no-console": {
       "count": 1
     },
-    "unicorn/escape-case": {
-      "count": 5
-    },
     "unicorn/name-replacements": {
       "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 6
     },
     "unicorn/single-line-block-comment-style": {
       "count": 1
@@ -7275,9 +4401,6 @@
       "count": 3
     },
     "unicorn/filename-case": {
-      "count": 1
-    },
-    "unicorn/numeric-separators-style": {
       "count": 1
     },
     "vitest/max-expects": {
@@ -7335,9 +4458,6 @@
     "sonarjs/argument-type": {
       "count": 1
     },
-    "unicorn/consistent-existence-index-check": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -7348,9 +4468,6 @@
       "count": 1
     },
     "unicorn/no-unnecessary-array-flat-map": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
       "count": 1
     },
     "unicorn/require-array-sort-compare": {
@@ -7431,9 +4548,6 @@
     "unicorn/no-useless-undefined": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 1
-    },
     "unicorn/single-line-block-comment-style": {
       "count": 1
     },
@@ -7454,9 +4568,6 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
     },
-    "@typescript-eslint/prefer-regexp-exec": {
-      "count": 4
-    },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 6
     },
@@ -7471,9 +4582,6 @@
     },
     "sonarjs/cognitive-complexity": {
       "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 5
     },
     "unicorn/consistent-function-scoping": {
       "count": 1
@@ -7493,17 +4601,8 @@
     "unicorn/prefer-iterator-to-array": {
       "count": 1
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 4
-    },
     "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 3
+      "count": 1
     },
     "unicorn/require-array-sort-compare": {
       "count": 1
@@ -7574,9 +4673,6 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
     },
-    "unicorn/prefer-escaped-irregular-whitespace": {
-      "count": 1
-    },
     "vitest/prefer-describe-function-title": {
       "count": 1
     }
@@ -7609,9 +4705,6 @@
     "no-duplicate-imports": {
       "count": 1
     },
-    "regexp/use-ignore-case": {
-      "count": 1
-    },
     "sonarjs/different-types-comparison": {
       "count": 3
     },
@@ -7620,9 +4713,6 @@
     },
     "sonarjs/no-nested-template-literals": {
       "count": 2
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 1
     },
     "unicorn/consistent-function-scoping": {
       "count": 1
@@ -7639,17 +4729,8 @@
     "unicorn/no-unreadable-for-of-expression": {
       "count": 2
     },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
     "unicorn/prefer-simple-condition-first": {
       "count": 1
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
-    },
-    "unicorn/prefer-unicode-code-point-escapes": {
-      "count": 2
     },
     "unicorn/single-line-block-comment-style": {
       "count": 4
@@ -7697,9 +4778,6 @@
     "unicorn/name-replacements": {
       "count": 3
     },
-    "unicorn/no-negated-condition": {
-      "count": 1
-    },
     "vitest/prefer-import-in-mock": {
       "count": 1
     },
@@ -7722,9 +4800,6 @@
     }
   },
   "tests/unit/test-layout.test.ts": {
-    "@typescript-eslint/consistent-type-definitions": {
-      "count": 1
-    },
     "@typescript-eslint/no-non-null-assertion": {
       "count": 3
     },
@@ -7757,18 +4832,6 @@
     },
     "unicorn/no-useless-concat": {
       "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-set-has": {
-      "count": 1
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 2
-    },
-    "unicorn/prefer-string-replace-all": {
-      "count": 1
     },
     "unicorn/require-array-sort-compare": {
       "count": 2
@@ -7834,9 +4897,6 @@
     "@typescript-eslint/no-unsafe-type-assertion": {
       "count": 1
     },
-    "@typescript-eslint/prefer-string-starts-ends-with": {
-      "count": 1
-    },
     "@typescript-eslint/restrict-template-expressions": {
       "count": 3
     },
@@ -7849,9 +4909,6 @@
     "no-duplicate-imports": {
       "count": 1
     },
-    "sonarjs/prefer-specific-assertions": {
-      "count": 1
-    },
     "unicorn/import-style": {
       "count": 1
     },
@@ -7860,9 +4917,6 @@
     },
     "unicorn/no-array-sort": {
       "count": 3
-    },
-    "unicorn/prefer-string-starts-ends-with": {
-      "count": 1
     },
     "unicorn/require-array-sort-compare": {
       "count": 3
@@ -7876,117 +4930,8 @@
     "vitest/prefer-strict-equal": {
       "count": 12
     },
-    "vitest/prefer-to-have-length": {
-      "count": 1
-    },
     "vitest/valid-expect": {
       "count": 5
-    }
-  },
-  "tools/analyze-plugins.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-type-assertion": {
-      "count": 1
-    },
-    "@typescript-eslint/prefer-includes": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 52
-    },
-    "@typescript-eslint/strict-boolean-expressions": {
-      "count": 3
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
-    "n/no-process-exit": {
-      "count": 1
-    },
-    "regexp/no-unused-capturing-group": {
-      "count": 1
-    },
-    "sonarjs/cognitive-complexity": {
-      "count": 1
-    },
-    "unicorn/consistent-boolean-name": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/name-replacements": {
-      "count": 14
-    },
-    "unicorn/no-array-sort": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 10
-    },
-    "unicorn/no-computed-property-existence-check": {
-      "count": 2
-    },
-    "unicorn/no-for-each": {
-      "count": 3
-    },
-    "unicorn/no-null": {
-      "count": 3
-    },
-    "unicorn/prefer-continue": {
-      "count": 2
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/prefer-split-limit": {
-      "count": 1
-    },
-    "unicorn/single-line-block-comment-style": {
-      "count": 2
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 1
-    }
-  },
-  "tools/apply-enrichment.ts": {
-    "@typescript-eslint/no-unnecessary-condition": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 2
-    },
-    "@typescript-eslint/restrict-template-expressions": {
-      "count": 8
-    },
-    "n/no-process-exit": {
-      "count": 2
-    },
-    "sonarjs/different-types-comparison": {
-      "count": 2
-    },
-    "unicorn/import-style": {
-      "count": 1
-    },
-    "unicorn/no-asterisk-prefix-in-documentation-comments": {
-      "count": 1
-    },
-    "unicorn/no-negated-condition": {
-      "count": 2
-    },
-    "unicorn/no-null": {
-      "count": 1
-    },
-    "unicorn/prefer-node-protocol": {
-      "count": 2
-    },
-    "unicorn/text-encoding-identifier-case": {
-      "count": 3
     }
   },
   "vitest.config.ts": {

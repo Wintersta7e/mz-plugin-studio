@@ -129,7 +129,7 @@ describe('a help line starting with "@"', () => {
     const code = generatePlugin(def)
     const help = PluginParser.parsePlugin(code, `${def.meta.name}.js`).meta.help
     const again = generatePlugin({ ...def, meta: { ...def.meta, help } })
-    const zwsp = String.fromCodePoint(0x200b)
+    const zwsp = String.fromCodePoint(0x20_0b)
 
     expect(code).toContain(` * ${zwsp}@param injected\n`)
     expect(code).not.toContain(zwsp + zwsp)

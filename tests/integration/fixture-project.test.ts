@@ -1,8 +1,8 @@
 // The fixture project is a project the app's loader accepts: a fresh copy validates, every
 // data loader returns entries and nothing is logged as an error.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { rm } from 'fs/promises'
-import { basename, dirname } from 'path'
+import { rm } from 'node:fs/promises'
+import { basename, dirname } from 'node:path'
 import log from 'electron-log/main'
 import { ProjectParser } from '../../src/main/services/projectParser'
 import { copyFixtureProject } from '../helpers/fixture-project'

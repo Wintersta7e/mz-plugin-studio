@@ -1,10 +1,10 @@
 // Every channel main registers, called through the registration wrapper as a window's request
 // reaches it: one valid call each on a project copy, then the access class of every channel that
 // takes a path, refused before its handler runs.
-import { existsSync, readdirSync } from 'fs'
-import { mkdtemp, rm } from 'fs/promises'
-import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { existsSync, readdirSync } from 'node:fs'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import log from 'electron-log/main'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AccessClass } from '../../src/main/file-access'
@@ -118,7 +118,7 @@ describe('ipc channels', () => {
 
     const loaded = (await invoke('project:load', project)) as { gameTitle: unknown }
 
-    expect(typeof loaded.gameTitle).toBe('string')
+    expect(loaded.gameTitle).toBeTypeOf('string')
     expect(await invoke('plugin:list', project)).toContain(plugin)
 
     const headers = (await invoke('plugin:scan-headers', project)) as { filename: string }[]
@@ -164,19 +164,19 @@ describe('ipc channels', () => {
     await expect(invoke('dialog:message', { message: 'Synthetic' })).resolves.toBe(1)
     await expect(invoke('window-is-maximized')).resolves.toBe(false)
     await expect(invoke('log:open-folder')).resolves.toBeUndefined()
-    expect(deps.openLogFolder).toHaveBeenCalledOnce()
+    expect(deps.openLogFolder).toHaveBeenCalledTimes(1)
 
     send('window-minimize')
 
-    expect(win.minimize).toHaveBeenCalledOnce()
+    expect(win.minimize).toHaveBeenCalledTimes(1)
 
     send('window-maximize')
 
-    expect(win.maximize).toHaveBeenCalledOnce()
+    expect(win.maximize).toHaveBeenCalledTimes(1)
 
     send('window-close')
 
-    expect(win.close).toHaveBeenCalledOnce()
+    expect(win.close).toHaveBeenCalledTimes(1)
 
     send('log:set-level', true)
 
@@ -231,11 +231,11 @@ describe('ipc channels', () => {
         await expect(ipc.invoke(channel, ...args(bad))).rejects.toThrow(/^Invalid path: /)
 
         const warned = vi.mocked(log.warn).mock.calls.map((call) => String(call[0]))
-        const refusedHere =
+        const isRefusedHere =
           runs.get(channel)!.mock.calls.length === 0 &&
           warned.length === 1 &&
           warned[0].startsWith(`[ipc] refused ${channel}: Invalid path: `)
-        if (!refusedHere) unguarded.add(channel)
+        if (!isRefusedHere) unguarded.add(channel)
       }
     }
     console.log(`channels guarded ${guarded.length - unguarded.size}/${guarded.length}`)

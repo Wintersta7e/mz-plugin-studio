@@ -41,7 +41,7 @@ async function paramCount(page: Page): Promise<number> {
 }
 
 /** The plugin name a payload's save uses, so no two saves share a file */
-const pluginName = (payload: Payload): string => `Hostile_${payload.name.replace(/-/g, '_')}`
+const pluginName = (payload: Payload): string => `Hostile_${payload.name.replaceAll('-', '_')}`
 
 async function newPluginNamed(page: Page, name: string): Promise<void> {
   await newPlugin(page)
@@ -80,7 +80,7 @@ test('loads a two-dot folder name and reports a non-project folder', async ({ tw
   const log = join(userDataDir, 'logs', 'main.log')
   const lines = readFileSync(log, 'utf8').split('\n').filter(Boolean)
   expect(lines.length).toBeGreaterThan(0)
-  expect(lines.filter((line) => /\[error\]/.test(line) && line.includes(empty))).toEqual([])
+  expect(lines.filter((line) => line.includes('[error]') && line.includes(empty))).toEqual([])
   await assertDialogsDrained(app)
 })
 

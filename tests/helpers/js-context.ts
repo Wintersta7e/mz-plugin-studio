@@ -1,7 +1,7 @@
 // Where a piece of text lands in JavaScript source: inside a comment, inside a string, template
 // or regex token, or in code position. Judges position only; compiling and running belong to
 // the evaluation helper.
-import ts from 'typescript'
+import * as ts from 'typescript'
 
 export type JsContext =
   | 'line-comment'
@@ -34,20 +34,23 @@ function tokenContext(token: ts.Node, code: string, sf: ts.SourceFile): JsContex
   return null
 }
 
-/** Every comment and every string, template and regex token of `code`, in no set order. */
+/**
+Every comment and every string, template and regex token of `code`, in no set order.
+*/
 function spansOf(code: string): Span[] {
   const sf = ts.createSourceFile('snippet.js', code, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS)
   const spans: Span[] = []
   const seen = new Set<number>()
   const addComments = (ranges: ts.CommentRange[] | undefined): void => {
-    for (const range of ranges ?? []) {
+    if (ranges === undefined) return
+    for (const range of ranges) {
       if (seen.has(range.pos)) continue
       seen.add(range.pos)
-      const line = range.kind === ts.SyntaxKind.SingleLineCommentTrivia
+      const isLine = range.kind === ts.SyntaxKind.SingleLineCommentTrivia
       spans.push({
         start: range.pos,
         end: range.end,
-        context: line ? 'line-comment' : 'block-comment'
+        context: isLine ? 'line-comment' : 'block-comment'
       })
     }
   }
@@ -77,7 +80,9 @@ function occurrences(code: string, needle: string): number[] {
   return found
 }
 
-/** The context each occurrence of `needle` starts in, in source order. */
+/**
+The context each occurrence of `needle` starts in, in source order.
+*/
 export function contextsOf(code: string, needle: string): JsContext[] {
   const spans = spansOf(code)
   return occurrences(code, needle).map(
@@ -85,7 +90,9 @@ export function contextsOf(code: string, needle: string): JsContext[] {
   )
 }
 
-/** True when every occurrence of `needle` lies wholly inside one comment, string, template or regex. */
+/**
+True when every occurrence of `needle` lies wholly inside one comment, string, template or regex.
+*/
 export function isContained(code: string, needle: string): boolean {
   const spans = spansOf(code)
   return occurrences(code, needle).every((at) =>

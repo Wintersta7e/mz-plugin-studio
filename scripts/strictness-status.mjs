@@ -32,7 +32,13 @@ const TYPECOV_PROGRAMS = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
 // Each pending check is a full type-check of its program; four at a time bounds memory.
 const TSC_JOBS = 4
 
+/**
+@param {string} line
+*/
 const print = (line) => process.stdout.write(`${line}\n`)
+/**
+@param {string[]} args
+*/
 const git = (args) => execFileSync('git', args, { encoding: 'utf8' })
 // The commit the working tree is measured against, the start of the change under test. CI names
 // it in STRICTNESS_BASE: the pushed range's base (a push's previous tip, a pull request's base);
@@ -48,10 +54,14 @@ function baseCommit() {
   const result = spawnSync('git', ['merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8' })
   return result.status === 0 ? result.stdout.trim() : undefined
 }
-// A file's text at the base commit; null when the base or the file is absent.
+// A file's text at the base commit; undefined when the base or the file is absent.
+/**
+@param {string} base
+@param {string} file
+*/
 const baseFile = (base, file) => {
   const result = spawnSync('git', ['show', `${base}:${file}`], { encoding: 'utf8' })
-  return result.status === 0 ? result.stdout : null
+  return result.status === 0 ? result.stdout : undefined
 }
 // Whether a revision resolves to a commit (`^0` peels a tag and fails on anything else).
 /**
@@ -65,31 +75,55 @@ const isCommit = (revision) =>
 */
 const hasFile = (commit, file) =>
   spawnSync('git', ['cat-file', '-e', `${commit}:${file}`]).status === 0
-// Parsed JSON; null when the text is absent or not JSON.
+// Parsed JSON; undefined when the text is absent or not JSON.
+/**
+@param {string | undefined} text
+@returns {unknown}
+*/
 const parseJson = (text) => {
+  /**
+  @type {unknown}
+  */
+  let value
   try {
-    return text === null ? null : JSON.parse(text)
+    value = text === undefined ? text : JSON.parse(text)
   } catch {
-    return null
+    value = undefined
   }
+  return value
 }
+/**
+@param {unknown} value
+@returns {value is Record<string, unknown>}
+*/
+const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 
 /**
 @typedef {{ file: string, rule: string, count: number }} SuppressionEntry
 */
-// The (file, rule, count) entries of a suppressions file's text; null if unreadable.
+// The (file, rule, count) entries of a suppressions file's text; undefined if unreadable.
 /**
-@param {string | null} text
-@returns {SuppressionEntry[] | null}
+@param {string | undefined} text
+@returns {SuppressionEntry[] | undefined}
 */
 function suppressionEntries(text) {
   const data = parseJson(text)
-  return typeof data !== 'object' || data === null || Array.isArray(data)
-    ? null
-    : Object.entries(data).flatMap(([file, rules]) =>
-        Object.entries(rules).map(([rule, { count }]) => ({ file, rule, count }))
+  const entries = isRecord(data)
+    ? Object.entries(data).flatMap(([file, rules]) =>
+        Object.entries(isRecord(rules) ? rules : {}).map(([rule, entry]) => ({
+          file,
+          rule,
+          count: isRecord(entry) ? entry['count'] : undefined
+        }))
       )
+    : undefined
+  return entries?.every((entry) => hasCount(entry)) ? entries : undefined
 }
+/**
+@param {{ file: string, rule: string, count: unknown }} entry
+@returns {entry is SuppressionEntry}
+*/
+const hasCount = (entry) => typeof entry.count === 'number'
 /**
 @param {SuppressionEntry[]} entries
 */
@@ -103,29 +137,47 @@ const entryName = ({ file, rule }) => `${file} ${rule}`
 function lintPackages() {
   const config = readFileSync('eslint.config.mjs', 'utf8')
   const names = new Set(['eslint', 'typescript'])
-  for (const match of config.matchAll(/^import\s[^'"]*['"](?<specifier>[^'"]+)['"]/gmv)) {
-    const { specifier } = match.groups
+  for (const [, specifier = ''] of config.matchAll(
+    /^import\s[^'"]*['"](?<specifier>[^'"]+)['"]/gmv
+  )) {
     if (specifier.startsWith('.') || specifier.startsWith('node:')) continue
     const parts = specifier.split('/')
-    names.add(specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0])
+    names.add(parts.slice(0, specifier.startsWith('@') ? 2 : 1).join('/'))
   }
   return names
 }
 
+// The devDependencies of a package.json text; none when it is absent or holds none.
+/**
+@param {string | undefined} text
+@returns {Record<string, unknown>}
+*/
+function devDependencies(text) {
+  const manifest = parseJson(text)
+  const { devDependencies: dependencies } = isRecord(manifest) ? manifest : {}
+  return isRecord(dependencies) ? dependencies : {}
+}
+
 // Whether the working tree changes the lint config or the version of a lint package since base.
+/**
+@param {string} base
+*/
 function changesLintSetup(base) {
   const changed = git(['diff', '--name-only', base]).split('\n')
   if (changed.some((file) => LINT_CONFIGS.has(file))) return true
-  const before = parseJson(baseFile(base, 'package.json'))?.devDependencies ?? {}
-  const after = parseJson(readFileSync('package.json', 'utf8'))?.devDependencies ?? {}
+  const before = devDependencies(baseFile(base, 'package.json'))
+  const after = devDependencies(readFileSync('package.json', 'utf8'))
   return [...lintPackages()].some((name) => before[name] !== after[name])
 }
 
+/**
+@param {Set<string>} tracked
+*/
 function checkSuppressions(tracked) {
   const now = suppressionEntries(
-    existsSync(SUPPRESSIONS) ? readFileSync(SUPPRESSIONS, 'utf8') : null
+    existsSync(SUPPRESSIONS) ? readFileSync(SUPPRESSIONS, 'utf8') : undefined
   )
-  if (now === null) {
+  if (now === undefined) {
     print(`eslint-suppressions: ${SUPPRESSIONS} missing or unreadable`)
     return false
   }
@@ -144,7 +196,7 @@ function checkSuppressions(tracked) {
     print(`eslint-suppressions: ${base} has no ${SUPPRESSIONS}; its entries count as zero`)
   }
   const parent = isAbsent ? [] : suppressionEntries(baseFile(base, SUPPRESSIONS))
-  if (parent === null) {
+  if (parent === undefined) {
     print(`eslint-suppressions: ${base} has no readable ${SUPPRESSIONS}`)
     return false
   }
@@ -170,16 +222,31 @@ function checkSuppressions(tracked) {
   return isOk
 }
 
+/**
+@typedef {{ program: string, config: string, flag: string }} PendingPair
+*/
+
 // Every (program, config, flag) a tracked pending file holds.
+/**
+@param {Set<string>} tracked
+*/
 function pendingPairs(tracked) {
+  /**
+  @type {PendingPair[]}
+  */
   const pairs = []
   const files = [...tracked].toSorted((left, right) => left.localeCompare(right))
   for (const file of files) {
-    const program = PENDING_FILE.exec(path.posix.basename(file))?.groups?.program
+    const program = PENDING_FILE.exec(path.posix.basename(file))?.groups?.['program']
     if (program === undefined) continue
+    /**
+    @type {unknown}
+    */
     const pending = JSON.parse(readFileSync(file, 'utf8'))
-    const config = path.posix.join(path.posix.dirname(file), pending.extends)
-    const flags = Object.keys(pending.compilerOptions ?? {})
+    const { extends: base, compilerOptions } = isRecord(pending) ? pending : {}
+    if (typeof base !== 'string') throw new TypeError(`${file}: no extends path`)
+    const config = path.posix.join(path.posix.dirname(file), base)
+    const flags = isRecord(compilerOptions) ? Object.keys(compilerOptions) : []
     for (const flag of flags) pairs.push({ program, config, flag })
   }
   return pairs
@@ -219,8 +286,14 @@ function pendingErrors(pair) {
       stdio: ['ignore', 'pipe', 'pipe']
     })
     let out = ''
-    child.stdout.on('data', (chunk) => (out += chunk))
-    child.stderr.on('data', (chunk) => (out += chunk))
+    /**
+    @param {Buffer} chunk
+    */
+    const collect = (chunk) => {
+      out += chunk.toString()
+    }
+    child.stdout.on('data', collect)
+    child.stderr.on('data', collect)
     child.on('close', (code, signal) => {
       /**
       @type {Map<string, string[]>}
@@ -249,10 +322,16 @@ function pendingErrors(pair) {
 @returns {Map<string, number> | undefined}
 */
 function fileCeilings(value) {
-  const isRecord = typeof value === 'object' && value !== null && !Array.isArray(value)
-  const entries = isRecord ? Object.entries(value) : []
-  const isValid = isRecord && entries.every(([, count]) => Number.isSafeInteger(count) && count > 0)
-  return isValid ? new Map(entries) : undefined
+  const entries = isRecord(value) ? Object.entries(value) : undefined
+  return entries?.every((entry) => isCeiling(entry)) ? new Map(entries) : undefined
+}
+/**
+@param {[string, unknown]} entry
+@returns {entry is [string, number]}
+*/
+const isCeiling = (entry) => {
+  const [, count] = entry
+  return typeof count === 'number' && Number.isSafeInteger(count) && count > 0
 }
 
 // Why a pending flag's errors fail against its ceilings, one line each; empty when every file
@@ -269,6 +348,9 @@ function pendingProblems(errors, ceilings) {
   const files = [...new Set([...errors.keys(), ...ceilings.keys()])].toSorted((left, right) =>
     left.localeCompare(right)
   )
+  /**
+  @type {string[]}
+  */
   const problems = []
   for (const file of files) {
     const lines = errors.get(file) ?? []
@@ -315,9 +397,10 @@ function checkPendingFlag(pair, { errors, run }, value) {
   const held = fileCeilings(value)
   let count = 0
   for (const lines of errors.values()) count += lines.length
-  const limits = held?.values() ?? []
   let ceiling = 0
-  for (const each of limits) ceiling += each
+  if (held !== undefined) {
+    for (const each of held.values()) ceiling += each
+  }
   print(`${label}: ${count} errors in ${errors.size} files, ceiling ${held ? ceiling : 'none'}`)
   const problems = pendingProblems(errors, held)
   for (const problem of problems) print(`${label}: ${problem}`)
@@ -327,28 +410,34 @@ function checkPendingFlag(pair, { errors, run }, value) {
   return problems.length === 0
 }
 
+/**
+@param {Set<string>} tracked
+*/
 async function checkPending(tracked) {
   const pairs = pendingPairs(tracked)
-  const results = Array.from({ length: pairs.length })
-  let next = 0
+  /**
+  @type {{ pair: PendingPair, result: Awaited<ReturnType<typeof pendingErrors>> }[]}
+  */
+  const checked = []
+  // The workers take the pairs in order from one iterator, each starting the next as one ends.
+  const queue = pairs.entries()
   const worker = async () => {
-    while (next < pairs.length) {
-      const index = next
-      next += 1
-      results[index] = await pendingErrors(pairs[index])
-    }
+    for (const [index, pair] of queue) checked[index] = { pair, result: await pendingErrors(pair) }
   }
   await Promise.all(Array.from({ length: TSC_JOBS }, worker))
   const ceilings = existsSync(PENDING_CEILINGS)
     ? parseJson(readFileSync(PENDING_CEILINGS, 'utf8'))
     : undefined
-  if (typeof ceilings !== 'object' || !ceilings || Array.isArray(ceilings)) {
+  if (!isRecord(ceilings)) {
     print(`pending: ${PENDING_CEILINGS} missing or unreadable`)
     return false
   }
   let isOk = true
-  for (const [index, pair] of pairs.entries()) {
-    if (!checkPendingFlag(pair, results[index], ceilings[pair.program]?.[pair.flag])) isOk = false
+  for (const { pair, result } of checked) {
+    const flags = ceilings[pair.program]
+    if (!checkPendingFlag(pair, result, isRecord(flags) ? flags[pair.flag] : undefined)) {
+      isOk = false
+    }
   }
   for (const name of staleCeilings(ceilings, pairs)) {
     print(`pending ${name}: ${PENDING_CEILINGS} holds a ceiling for a flag no pending file holds`)
@@ -365,13 +454,16 @@ async function checkPending(tracked) {
 @param {string[]} [extra]
 */
 function npmRun(script, extra = []) {
-  const npm = process.env.npm_execpath
+  const npm = process.env['npm_execpath']
   const [command, args] = npm === undefined ? ['npm', []] : [process.execPath, [npm]]
   const tail = extra.length === 0 ? [] : ['--', ...extra]
   const directory = mkdtempSync(path.join(tmpdir(), 'strictness-run-'))
   const files = [path.join(directory, 'stdout'), path.join(directory, 'stderr')]
   try {
     const fds = files.map((file) => openSync(file, 'w'))
+    /**
+    @type {import('node:child_process').SpawnSyncReturns<Buffer>}
+    */
     let result
     try {
       result = spawnSync(command, [...args, 'run', '-s', script, ...tail], {
@@ -416,7 +508,7 @@ function reportKnipRun(script, label) {
   const { status, out } = run
   const types = Array.from(
     out.matchAll(/^(?<type>[A-Z][\w ]+) \((?<count>\d+)\)$/gmv),
-    ({ groups }) => ({ type: groups.type, count: Number(groups.count) })
+    ([, type = '', count = '']) => ({ type, count: Number(count) })
   )
   const hints = types.filter(({ type }) => type === 'Configuration hints')
   const issues = types.filter(({ type }) => type !== 'Configuration hints')
@@ -431,12 +523,15 @@ function reportKnipRun(script, label) {
   return { isOk, total, out }
 }
 
-// The parsed package.json; null when it is not JSON.
+// The text of a package.json script; empty when package.json is not JSON or has no such script.
 /**
-@returns {{ scripts?: Partial<Record<string, string>> } | null}
+@param {string} name
 */
-function readManifest() {
-  return parseJson(readFileSync('package.json', 'utf8'))
+function packageScript(name) {
+  const manifest = parseJson(readFileSync('package.json', 'utf8'))
+  const { scripts } = isRecord(manifest) ? manifest : {}
+  const script = isRecord(scripts) ? scripts[name] : undefined
+  return typeof script === 'string' ? script : ''
 }
 
 // The production run holds its ceiling in its own `--max-issues`, above which knip fails. A
@@ -447,9 +542,9 @@ const KNIP_SCANNED = /^knip scanned: files (?<files>\d+)/mv
 function reportKnipProduction() {
   const { isOk, total, out } = reportKnipRun(KNIP_PRODUCTION, 'knip production')
   if (!isOk) return false
-  const ceiling = KNIP_CEILING.exec(readManifest()?.scripts?.[KNIP_PRODUCTION] ?? '')?.groups
-    .ceiling
-  const files = Number(KNIP_SCANNED.exec(out)?.groups.files ?? 0)
+  const [, ceiling] = KNIP_CEILING.exec(packageScript(KNIP_PRODUCTION)) ?? []
+  const [, scanned = '0'] = KNIP_SCANNED.exec(out) ?? []
+  const files = Number(scanned)
   print(`knip production: files scanned ${files}, issues ${total}, ceiling ${ceiling ?? 'none'}`)
   if (files === 0) {
     print('knip production: the run scanned no file')
@@ -480,6 +575,26 @@ function reportKnip() {
 // with the copies it counts. A share would let new copies through as the code around them grows.
 /**
 @typedef {{ sources: number, clones: number, duplicatedLines: number, percentage: number }} JscpdTotal
+*/
+
+// The totals of a jscpd JSON report; undefined when it holds none.
+/**
+@param {unknown} report
+@returns {JscpdTotal | undefined}
+*/
+function jscpdTotal(report) {
+  const { statistics } = isRecord(report) ? report : {}
+  const { total } = isRecord(statistics) ? statistics : {}
+  const { sources, clones, duplicatedLines, percentage } = isRecord(total) ? total : {}
+  return typeof sources === 'number' &&
+    typeof clones === 'number' &&
+    typeof duplicatedLines === 'number' &&
+    typeof percentage === 'number'
+    ? { sources, clones, duplicatedLines, percentage }
+    : undefined
+}
+
+/**
 @param {string[]} args
 */
 function reportJscpd(args) {
@@ -491,11 +606,9 @@ function reportJscpd(args) {
   const report = path.join(output, 'jscpd-report.json')
   try {
     const run = npmRun('jscpd', ['--reporters', 'json', '--output', output])
-    /**
-    @type {{ statistics?: { total?: JscpdTotal } } | null | undefined}
-    */
-    const parsed = existsSync(report) ? parseJson(readFileSync(report, 'utf8')) : undefined
-    const total = parsed?.statistics?.total
+    const total = jscpdTotal(
+      existsSync(report) ? parseJson(readFileSync(report, 'utf8')) : undefined
+    )
     if (total === undefined || run.status !== 0) {
       printFailedRun('jscpd', run.status === 0 ? 'the run wrote no report' : 'the run failed', run)
       return false
@@ -582,16 +695,19 @@ function reportTypecov(args) {
 }
 
 const [flag, kind] = process.argv.slice(2)
-let ok
-if (flag === '--report' && kind === 'knip') ok = reportKnip()
-else if (flag === '--report' && kind === 'jscpd') ok = reportJscpd(process.argv.slice(4))
-else if (flag === '--report' && kind === 'typecov') ok = reportTypecov(process.argv.slice(4))
+/**
+@type {boolean}
+*/
+let isOk
+if (flag === '--report' && kind === 'knip') isOk = reportKnip()
+else if (flag === '--report' && kind === 'jscpd') isOk = reportJscpd(process.argv.slice(4))
+else if (flag === '--report' && kind === 'typecov') isOk = reportTypecov(process.argv.slice(4))
 else if (flag === undefined) {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
-  ok = (await checkPending(tracked)) && suppressionsOk
+  isOk = (await checkPending(tracked)) && suppressionsOk
 } else {
   print('usage: node scripts/strictness-status.mjs [--report knip|jscpd|typecov]')
-  ok = false
+  isOk = false
 }
-process.exitCode = ok ? 0 : 1
+process.exitCode = isOk ? 0 : 1

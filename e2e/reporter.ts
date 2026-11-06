@@ -21,10 +21,9 @@ export default class E2eReporter implements Reporter {
     process.stdout.write(
       `e2e: passed ${passed}, failed ${failed}, skipped ${skipped}, flaky ${flaky}, retries ${retries}\n`
     )
-    if (passed === 0 || failed > 0 || skipped > 0 || flaky > 0 || retries > 0) {
-      return { status: 'failed' }
-    }
-    return undefined
+    return passed === 0 || failed > 0 || skipped > 0 || flaky > 0 || retries > 0
+      ? { status: 'failed' }
+      : undefined
   }
 
   printsToStdio(): boolean {

@@ -1,13 +1,23 @@
 // Saving from the keyboard: Ctrl+S saves the active tab into the open project, Save All
 // (Ctrl+Shift+S) every unsaved tab. Behind `window.api` sit the main-process save and load
 // functions, writing to a fresh temporary project, so every conflict is the file check's own.
-import { createHash } from 'crypto'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { dirname, join } from 'path'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createHash } from 'node:crypto'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi
+} from 'vitest'
 import App from '../../src/renderer/src/App'
 import { createDialogHandlers, type DialogPort } from '../../src/main/ipc/dialog'
 import { savePluginFile } from '../../src/main/ipc/plugin'
@@ -23,32 +33,69 @@ import {
   createEmptyCommand,
   createEmptyParameter,
   createEmptyPlugin,
+  type PluginDefinition,
   toBaseline
 } from '../../src/renderer/src/types/plugin'
-import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
-import { IPC_CHANNELS } from '../../src/shared/ipc-types'
-import type { MessageDialogOptions, SaveConflict } from '../../src/shared/ipc-types'
+import {
+  IPC_CHANNELS,
+  type MessageDialogOptions,
+  type SaveConflict
+} from '../../src/shared/ipc-types'
 import { afterAllTests } from '../helpers/after-all-tests'
 import { copyFixtureProject } from '../helpers/fixture-project'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
+type Api = Window['api']
+
 const FILE = 'Fixture_HandWritten.js'
 
-let root: string
+// Each case renders the whole app, which takes seconds on a cold start
+const APP_TIMEOUT = { timeout: 30_000 }
+
+// The fresh temporary project of the running test
+const temporary = { root: '' }
 const cleanups: string[] = []
 
 const sha = (bytes: string | Buffer): string => createHash('sha256').update(bytes).digest('hex')
 
-const fileIn = (name: string, project = root): string => join(project, 'js', 'plugins', name)
+const fileIn = (name: string, project = temporary.root): string =>
+  path.join(project, 'js', 'plugins', name)
 
-async function openProject(path = root): Promise<void> {
-  const project = { ...(await window.api.project.load(path)), path }
-  act(() => useProjectStore.getState().setProject(project))
+async function setUp(): Promise<void> {
+  resetStores()
+  // The build defines this; the status bar shows it.
+  vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
+  temporary.root = await mkdtemp(path.join(tmpdir(), 'app-save-'))
 }
 
-/** Opens a new plugin as the active tab; a `name` is typed into it, which leaves it unsaved. */
+async function tearDown(): Promise<void> {
+  vi.unstubAllGlobals()
+  await rm(temporary.root, { recursive: true, force: true })
+  for (const directory of cleanups.splice(0)) await rm(directory, { recursive: true, force: true })
+}
+
+async function openProject(project = temporary.root): Promise<void> {
+  const loaded = { ...(await globalThis.api.project.load(project)), path: project }
+  act(() => {
+    useProjectStore.getState().setProject(loaded)
+  })
+}
+
+const editMeta = (meta: Partial<PluginDefinition['meta']>): void => {
+  act(() => {
+    usePluginStore.getState().updateMeta(meta)
+  })
+}
+
+const activate = (id: string): void => {
+  act(() => {
+    usePluginStore.getState().setActivePlugin(id)
+  })
+}
+
+// Opens a new plugin as the active tab; a `name` is typed into it, which leaves it unsaved.
 function openTab(name?: string, description?: string): string {
   const plugin = createEmptyPlugin()
   act(() => {
@@ -59,64 +106,84 @@ function openTab(name?: string, description?: string): string {
   return plugin.id
 }
 
-/** Opens `file` of `project` as the plugin browser does: the tab and the file it was read from. */
+// Opens `file` of `project` as the plugin browser does: the tab and the file it was read from.
 async function openFromProject(project: string, file: string): Promise<string> {
-  const loaded = await window.api.plugin.load(project, file)
-  act(() =>
+  const loaded = await globalThis.api.plugin.load(project, file)
+  act(() => {
     usePluginStore
       .getState()
       .openPlugin(loaded.plugin, { path: loaded.path, sha256: loaded.sha256 })
-  )
+  })
   return loaded.plugin.id
+}
+
+// The open tab `id`; throws when no tab has it.
+function openTabOf(id: string): PluginDefinition {
+  const found = usePluginStore.getState().openPlugins.find((open) => open.id === id)
+  if (found === undefined) throw new Error(`no open tab ${id}`)
+  return found
 }
 
 async function copyProject(): Promise<string> {
   const project = await copyFixtureProject()
-  cleanups.push(dirname(project))
+  cleanups.push(path.dirname(project))
   return project
 }
 
-function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
-  let resolve!: (value: T) => void
-  const promise = new Promise<T>((r) => (resolve = r))
-  return { promise, resolve }
-}
-
-/** A save into the project that waits for `gate` before it reaches main. */
-const heldSave = (gate: Promise<void>) =>
-  vi.fn(async (...args: Parameters<typeof savePluginFile>) => {
+// A save into the project that waits for `gate` before it reaches main.
+const heldSave = (gate: Promise<unknown>): Mock<typeof savePluginFile> =>
+  vi.fn<typeof savePluginFile>(async (...args) => {
     await gate
     return savePluginFile(...args)
   })
 
+// Main's save into the project, as the renderer reaches it, failing for Gamma.js as a full disk does.
+const saveFailingGamma = (): Mock<typeof savePluginFile> =>
+  vi.fn<typeof savePluginFile>(
+    viaIpc(IPC_CHANNELS.PLUGIN_SAVE, async (...args: Parameters<typeof savePluginFile>) => {
+      if (args[1] === 'Gamma.js') throw new Error('disk full')
+      return savePluginFile(...args)
+    })
+  )
+
+// Main's dialog methods for a handler whose argument check is the only part a test runs.
+const notOpened = (): never => {
+  throw new Error('the test opens no dialog')
+}
+const NO_DIALOGS: DialogPort = {
+  showOpenDialog: notOpened,
+  showSaveDialog: notOpened,
+  showMessageBox: notOpened
+}
+
 const pressSave = (): void => {
-  fireEvent.keyDown(window, { key: 's', code: 'KeyS', ctrlKey: true })
+  fireEvent.keyDown(globalThis.window, { key: 's', code: 'KeyS', ctrlKey: true })
 }
 
 const pressSaveAll = (): void => {
-  fireEvent.keyDown(window, { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true })
+  fireEvent.keyDown(globalThis.window, { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true })
 }
 
 const pressUndo = (): void => {
-  fireEvent.keyDown(window, { key: 'z', code: 'KeyZ', ctrlKey: true })
+  fireEvent.keyDown(globalThis.window, { key: 'z', code: 'KeyZ', ctrlKey: true })
 }
 
 const pressRedo = (): void => {
-  fireEvent.keyDown(window, { key: 'Z', code: 'KeyZ', ctrlKey: true, shiftKey: true })
+  fireEvent.keyDown(globalThis.window, { key: 'Z', code: 'KeyZ', ctrlKey: true, shiftKey: true })
 }
 
-/** Waits for the app's delayed history record to hold `count` states of the tab. */
-const historyHolds = (count: number): Promise<void> =>
-  waitFor(() => expect(useHistoryStore.getState().past).toHaveLength(count))
-
-/** Lets a save that is not waiting on the test run to its end. */
-const settle = async (): Promise<void> => {
-  for (let i = 0; i < 5; i++) await act(async () => {})
+// Lets a save that is not waiting on the test run to its end.
+async function settle(): Promise<void> {
+  for (let round = 0; round < 5; round++) {
+    await act(async () => {
+      await Promise.resolve()
+    })
+  }
 }
 
 const toasts = (): string[] => useToastStore.getState().toasts.map((t) => `${t.type}: ${t.message}`)
 
-/** How many times `run` writes the open plugins to storage. */
+// How many times `run` writes the open plugins to storage.
 async function pluginWrites(run: () => unknown): Promise<number> {
   const setItem = vi.spyOn(Storage.prototype, 'setItem')
   try {
@@ -132,95 +199,197 @@ const plugin = (): PluginDefinition => usePluginStore.getState().plugin
 
 const isDirty = (id: string): boolean => usePluginStore.getState().dirtyByPluginId[id] ?? false
 
-const guards = () => vi.mocked(window.api.plugin.save).mock.calls.map((call) => call[3])
+const baseOf = (id: string) => usePluginStore.getState().baseByPluginId[id]
+
+const saveCalls = () => vi.mocked(globalThis.api.plugin.save).mock.calls
+
+const guards = () => saveCalls().map((call) => call[3])
 
 const messages = (): MessageDialogOptions[] =>
-  vi.mocked(window.api.dialog.message).mock.calls.map((call) => call[0])
+  vi.mocked(globalThis.api.dialog.message).mock.calls.map((call) => call[0])
 
-const checkedKinds = new Set<SaveConflict>()
-let dialogsChecked = 0
+// Waits for the app's delayed history record to hold `count` states of the tab.
+const historyHolds = async (count: number): Promise<void> => {
+  await waitFor(() => {
+    expect(useHistoryStore.getState().past).toHaveLength(count)
+  })
+}
 
-/** The `index`th message dialog, checked as a save conflict's. */
-function conflictDialog(index: number, kind: SaveConflict): MessageDialogOptions {
-  const options = messages()[index]
+// Waits until the toasts shown are `shown`.
+const toastsShow = async (shown: string[]): Promise<void> => {
+  await waitFor(() => {
+    expect(toasts()).toStrictEqual(shown)
+  })
+}
 
-  expect(options.title).toBe('Overwrite file?')
-  // Main makes Cancel the default and the Escape answer; the routine passes neither
-  expect(options.buttons).toContain('Cancel')
-  expect(options).not.toHaveProperty('defaultId')
-  expect(options).not.toHaveProperty('cancelId')
+// Waits until `count` toasts are shown.
+const toastCount = async (count: number): Promise<void> => {
+  await waitFor(() => {
+    expect(toasts()).toHaveLength(count)
+  })
+}
 
-  checkedKinds.add(kind)
-  dialogsChecked++
-  return options
+// Waits until the app has asked `count` message dialogs.
+const messagesShown = async (count: number): Promise<void> => {
+  await waitFor(() => {
+    expect(messages()).toHaveLength(count)
+  })
+}
+
+// Waits until the app has asked main for `count` saves into the project.
+const savesAsked = async (count: number): Promise<void> => {
+  await waitFor(() => {
+    expect(globalThis.api.plugin.save).toHaveBeenCalledTimes(count)
+  })
+}
+
+// Waits until the app has opened the save dialog `count` times.
+const saveDialogsOpened = async (count: number): Promise<void> => {
+  await waitFor(() => {
+    expect(globalThis.api.dialog.saveFile).toHaveBeenCalledTimes(count)
+  })
+}
+
+// Waits until the title bar no longer marks the active tab unsaved.
+const modifiedMarkGone = async (): Promise<void> => {
+  await waitFor(() => {
+    expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
+  })
+}
+
+// The combobox showing a value that starts with `text`; throws when none does.
+function comboboxShowing(text: string): HTMLElement {
+  const found = screen.getAllByRole('combobox').find((box) => box.textContent.startsWith(text))
+  if (found === undefined) throw new Error(`no combobox shows ${text}`)
+  return found
 }
 
 const escaped = (text: string): string => text.replace(/[\\^$.*+?()[\]{}|/]/g, '\\$&')
 
-// Each case renders the whole app, which takes seconds on a cold start
-describe('saving from the keyboard', { timeout: 30_000 }, () => {
-  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+// Checks the save conflict dialogs the tests of one suite show. After the suite it prints how
+// many it checked, and fails when that is none or a kind of `kinds` had no dialog checked.
+function conflictChecks(kinds: readonly SaveConflict[]): {
+  dialog: (index: number, kind: SaveConflict) => MessageDialogOptions
+  afterAll: () => void
+} {
+  const checkedKinds = new Set<SaveConflict>()
+  let checked = 0
+  return {
+    // The `index`th message dialog, checked as a save conflict's.
+    dialog(index, kind) {
+      const options = messages().at(index)
+      if (options === undefined) throw new Error(`no message dialog ${String(index)}`)
 
-  beforeEach(async () => {
-    resetStores()
-    // The build defines this; the status bar shows it.
-    vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
-    root = await mkdtemp(join(tmpdir(), 'app-save-'))
-  })
+      expect(options.title).toBe('Overwrite file?')
+      // Main makes Cancel the default and the Escape answer; the routine passes neither
+      expect(options.buttons).toContain('Cancel')
+      expect(options).not.toHaveProperty('defaultId')
+      expect(options).not.toHaveProperty('cancelId')
 
-  afterEach(async () => {
-    cleanup()
-    vi.unstubAllGlobals()
-    await rm(root, { recursive: true, force: true })
-    for (const dir of cleanups.splice(0)) await rm(dir, { recursive: true, force: true })
-  })
-
-  // Each kind of save conflict had its dialog checked by one of the tests below.
-  afterAll(
-    afterAllTests(() => {
-      console.log(`save conflict dialogs checked ${dialogsChecked}`)
-      const kinds: SaveConflict[] = ['changed-on-disk', 'exists-unrelated', 'would-break']
+      checkedKinds.add(kind)
+      checked++
+      return options
+    },
+    afterAll: afterAllTests(() => {
+      process.stdout.write(`save conflict dialogs checked ${String(checked)}\n`)
       const unchecked = kinds.filter((kind) => !checkedKinds.has(kind))
       return [
-        ...(dialogsChecked === 0 ? ['no save conflict dialog was checked'] : []),
+        ...(checked === 0 ? ['no save conflict dialog was checked'] : []),
         ...unchecked.map((kind) => `the ${kind} dialog was not checked`)
       ]
     })
-  )
+  }
+}
+
+const SAVE_FILTERS = [{ name: 'JavaScript Files', extensions: ['js'] }]
+
+// The question before a save to a file not named after the plugin "Alpha".
+const RENAMED = {
+  type: 'warning',
+  title: 'File name differs from plugin name',
+  message:
+    '"Chosen.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands and parameters would not work in a game. Save anyway?',
+  buttons: ['Cancel', 'Choose another file', 'Save anyway']
+}
+
+// Opens the unsaved plugin "Alpha" with a command and a parameter.
+function openWithBoth(): string {
+  const id = openTab('Alpha')
+  act(() => {
+    usePluginStore.getState().addCommand(createEmptyCommand())
+    usePluginStore.getState().addParameter(createEmptyParameter())
+  })
+  return id
+}
+
+// A plugin whose code reads its own name from the file it is loaded from.
+const SELF_NAMED_SOURCE = [
+  '/*:',
+  ' * @target MZ',
+  ' * @plugindesc Reads its name from its file',
+  ' * @param Speed',
+  ' * @default 1',
+  ' * @command Show',
+  ' */',
+  '(() => {',
+  '  const name = document.currentScript.src.match(/([^/]+)\\.js$/)[1];',
+  '  const params = PluginManager.parameters(name);',
+  "  PluginManager.registerCommand(name, 'Show', () => {});",
+  '})();',
+  ''
+].join('\n')
+
+describe('app save: ctrl+S into a project', APP_TIMEOUT, () => {
+  const conflicts = conflictChecks(['exists-unrelated'])
+
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  afterAll(conflicts.afterAll)
 
   it("a second new plugin with the default name asks before replacing the first one's file", async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     await openProject()
     const first = openTab()
     const second = openTab(undefined, 'The second plugin')
     render(<App />)
-    act(() => usePluginStore.getState().setActivePlugin(first))
+    activate(first)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
     const written = await readFile(fileIn('NewPlugin.js'), 'utf8')
-
-    act(() => usePluginStore.getState().setActivePlugin(second))
+    activate(second)
     pressSave()
-    await waitFor(() => expect(messages()).toHaveLength(1))
+    await messagesShown(1)
     await settle()
-    const options = conflictDialog(0, 'exists-unrelated')
+    const options = conflicts.dialog(0, 'exists-unrelated')
 
-    expect(options.message).toBe(
-      `"${fileIn('NewPlugin.js')}" is not the file this tab last opened or saved. Overwrite it?`
-    )
-    expect(options.buttons).toEqual(['Cancel', 'Overwrite'])
-    expect(await readFile(fileIn('NewPlugin.js'), 'utf8')).toBe(written)
-    expect(isDirty(second)).toBe(true)
-    expect(usePluginStore.getState().baseByPluginId[second]).toBeUndefined()
-    expect(toasts()).toEqual(['success: Plugin saved'])
+    expect(options).toMatchObject({
+      message: `"${fileIn('NewPlugin.js')}" is not the file this tab last opened or saved. Overwrite it?`,
+      buttons: ['Cancel', 'Overwrite']
+    })
+    await expect(readFile(fileIn('NewPlugin.js'), 'utf8')).resolves.toBe(written)
+    expect({ isDirty: isDirty(second), base: baseOf(second) }).toStrictEqual({
+      isDirty: true,
+      base: undefined
+    })
     // Cancel tries no second write: one save for each tab
-    expect(window.api.plugin.save).toHaveBeenCalledTimes(2)
+    expect({ toasts: toasts(), saves: saveCalls().length }).toStrictEqual({
+      toasts: ['success: Plugin saved'],
+      saves: 2
+    })
     expect(screen.getByText('(modified)')).toBeInTheDocument()
   })
 
-  it('Ctrl+S writes the tab into the project, and the next one is checked against what it wrote', async () => {
+  it('ctrl+S writes the tab into the project, and the next one is checked against what it wrote', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    window.api = createMainApi()
+    vi.stubGlobal('api', createMainApi())
     await openProject()
     openTab('Alpha')
     render(<App />)
@@ -231,57 +400,70 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     await user.keyboard('{Control>}s{/Control}')
     await screen.findByText('Plugin saved')
 
-    expect(window.api.plugin.save).toHaveBeenCalledWith(root, 'Alpha.js', code, { base: null })
+    expect(globalThis.api.plugin.save).toHaveBeenCalledWith(temporary.root, 'Alpha.js', code, {
+      base: null
+    })
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
 
     const first = await readFile(fileIn('Alpha.js'))
-
     await user.type(screen.getByLabelText('Author'), 'Someone')
 
     expect(screen.getByText('(modified)')).toBeInTheDocument()
 
     await user.keyboard('{Control>}s{/Control}')
-    await waitFor(() => expect(window.api.plugin.save).toHaveBeenCalledTimes(2))
+    await savesAsked(2)
 
-    expect(guards()[1]).toEqual({ base: { path: fileIn('Alpha.js'), sha256: sha(first) } })
+    expect(guards().at(1)).toStrictEqual({ base: { path: fileIn('Alpha.js'), sha256: sha(first) } })
 
-    await waitFor(() => expect(screen.queryByText('(modified)')).not.toBeInTheDocument())
+    await modifiedMarkGone()
   })
+})
 
-  it('Ctrl+S without a project writes nothing when the save dialog is closed, and the file chosen next time', async () => {
+describe('app save: ctrl+S without a project', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('ctrl+S without a project writes nothing when the save dialog is closed, and the file chosen next time', async () => {
+    expect.hasAssertions()
+
     const user = userEvent.setup()
-    const target = join(root, 'Alpha.js')
+    const target = path.join(temporary.root, 'Alpha.js')
     const chosen = [null, target]
-    window.api = createMainApi({ chosen: () => chosen.shift() ?? null })
+    vi.stubGlobal('api', createMainApi({ chosen: () => chosen.shift() ?? null }))
     openTab('Alpha')
     render(<App />)
     await user.keyboard('{Control>}s{/Control}')
-    await waitFor(() => expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1))
+    await saveDialogsOpened(1)
     await settle()
 
-    expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
-    expect(window.api.plugin.save).not.toHaveBeenCalled()
+    expect(globalThis.api.plugin.saveToPath).not.toHaveBeenCalled()
+    expect(globalThis.api.plugin.save).not.toHaveBeenCalled()
     expect(screen.getByText('(modified)')).toBeInTheDocument()
 
     const code = generatePlugin(plugin())
     await user.keyboard('{Control>}s{/Control}')
     await screen.findByText('Plugin saved')
 
-    expect(window.api.plugin.saveToPath).toHaveBeenCalledWith(target, code, { base: null })
+    expect(globalThis.api.plugin.saveToPath).toHaveBeenCalledWith(target, code, { base: null })
     expect(screen.queryByText('(modified)')).not.toBeInTheDocument()
   })
 
-  it('Ctrl+S without a project asks where to save and writes there', async () => {
-    const target = join(root, 'Chosen.js')
-    window.api = createMainApi({ chosen: () => target })
+  it('ctrl+S without a project asks where to save and writes there', async () => {
+    expect.hasAssertions()
+
+    const target = path.join(temporary.root, 'Chosen.js')
+    vi.stubGlobal('api', createMainApi({ chosen: () => target }))
     const id = openTab('Alpha')
     render(<App />)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
 
-    expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
+    expect(globalThis.api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: 'Alpha.js',
-      filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+      filters: SAVE_FILTERS
     })
 
     const bytes = await readFile(target)
@@ -289,35 +471,44 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(bytes.toString('utf8')).toBe(generatePlugin(plugin()))
     expect(isDirty(id)).toBe(false)
     expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(target)
-    expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
-      path: target,
-      sha256: sha(bytes)
-    })
+    expect(baseOf(id)).toStrictEqual({ path: target, sha256: sha(bytes) })
   })
+})
 
-  it('Ctrl+S without a project asks once, then writes the chosen file without asking', async () => {
-    const target = join(root, 'Chosen.js')
-    window.api = createMainApi({ chosen: () => target })
+describe('app save: saving again without a project', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('ctrl+S without a project asks once, then writes the chosen file without asking', async () => {
+    expect.hasAssertions()
+
+    const target = path.join(temporary.root, 'Chosen.js')
+    vi.stubGlobal('api', createMainApi({ chosen: () => target }))
     const id = openTab('Alpha')
     render(<App />)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
-    act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
+    await toastsShow(['success: Plugin saved'])
+    editMeta({ description: 'Second save' })
     pressSave()
-    await waitFor(() => expect(toasts()).toHaveLength(2))
+    await toastCount(2)
 
     expect(toasts()[1]).toBe('success: Plugin saved')
-    expect(window.api.dialog.saveFile).toHaveBeenCalledTimes(1)
-    expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+    expect(globalThis.api.dialog.saveFile).toHaveBeenCalledTimes(1)
+    await expect(readFile(target, 'utf8')).resolves.toBe(generatePlugin(plugin()))
     expect(isDirty(id)).toBe(false)
   })
 
-  it('Ctrl+S without a project, in a new session, offers the file the tab was saved to', async () => {
-    const target = join(root, 'Saved.js')
+  it('ctrl+S without a project, in a new session, offers the file the tab was saved to', async () => {
+    expect.hasAssertions()
+
+    const target = path.join(temporary.root, 'Saved.js')
     await writeFile(target, 'saved last session\n')
-    window.api = createMainApi({ chosen: () => target })
+    vi.stubGlobal('api', createMainApi({ chosen: () => target }))
     const id = openTab('Alpha')
-    act(() =>
+    act(() => {
       usePluginStore.getState().recordSaves([
         {
           id,
@@ -327,159 +518,168 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
           written: 'saved last session\n'
         }
       ])
-    )
-    act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+    })
+    editMeta({ description: 'Edited' })
     render(<App />)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
 
-    expect(window.api.dialog.saveFile).toHaveBeenCalledWith({
+    expect(globalThis.api.dialog.saveFile).toHaveBeenCalledWith({
       defaultPath: target,
-      filters: [{ name: 'JavaScript Files', extensions: ['js'] }]
+      filters: SAVE_FILTERS
     })
-    expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+    await expect(readFile(target, 'utf8')).resolves.toBe(generatePlugin(plugin()))
   })
+})
 
-  describe('Ctrl+S without a project to a file not named after the plugin', () => {
-    const RENAMED = {
-      type: 'warning',
-      title: 'File name differs from plugin name',
-      message:
-        '"Chosen.js" is not named after the plugin "Alpha". RPG Maker MZ finds a plugin\'s commands by its exact file name and its parameters by its file name in any letter case, so its commands and parameters would not work in a game. Save anyway?',
-      buttons: ['Cancel', 'Choose another file', 'Save anyway']
-    }
+describe(
+  'app save: ctrl+S without a project to a file not named after the plugin',
+  APP_TIMEOUT,
+  () => {
+    beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-    function openWithBoth(): string {
-      const id = openTab('Alpha')
-      act(() => {
-        usePluginStore.getState().addCommand(createEmptyCommand())
-        usePluginStore.getState().addParameter(createEmptyParameter())
-      })
-      return id
-    }
+    beforeEach(setUp)
+
+    afterEach(tearDown)
 
     it('asks first; Cancel writes nothing and leaves the tab unsaved', async () => {
-      const target = join(root, 'Chosen.js')
-      window.api = createMainApi({ chosen: () => target })
+      expect.hasAssertions()
+
+      const target = path.join(temporary.root, 'Chosen.js')
+      vi.stubGlobal('api', createMainApi({ chosen: () => target }))
       const id = openWithBoth()
       render(<App />)
       pressSave()
-      await waitFor(() => expect(messages()).toEqual([RENAMED]))
+      await waitFor(() => {
+        expect(messages()).toStrictEqual([RENAMED])
+      })
       await settle()
 
-      expect(window.api.plugin.saveToPath).not.toHaveBeenCalled()
+      expect(globalThis.api.plugin.saveToPath).not.toHaveBeenCalled()
       await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
       expect(isDirty(id)).toBe(true)
-      expect(toasts()).toEqual([])
+      expect(toasts()).toStrictEqual([])
     })
 
     it('asks first; Save anyway writes the file once', async () => {
-      const target = join(root, 'Chosen.js')
-      window.api = createMainApi({ chosen: () => target, answers: [2] })
+      expect.hasAssertions()
+
+      const target = path.join(temporary.root, 'Chosen.js')
+      vi.stubGlobal('api', createMainApi({ chosen: () => target, answers: [2] }))
       const id = openWithBoth()
       render(<App />)
       pressSave()
-      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      await toastsShow(['success: Plugin saved'])
 
-      expect(messages()).toEqual([RENAMED])
-      expect(window.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
-      expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+      expect(messages()).toStrictEqual([RENAMED])
+      expect(globalThis.api.plugin.saveToPath).toHaveBeenCalledTimes(1)
+      await expect(readFile(target, 'utf8')).resolves.toBe(generatePlugin(plugin()))
       expect(isDirty(id)).toBe(false)
     })
 
     it('after Save anyway, does not ask again for that file', async () => {
-      const target = join(root, 'Chosen.js')
-      window.api = createMainApi({ chosen: () => target, answers: [2] })
+      expect.hasAssertions()
+
+      const target = path.join(temporary.root, 'Chosen.js')
+      vi.stubGlobal('api', createMainApi({ chosen: () => target, answers: [2] }))
       openWithBoth()
       render(<App />)
       pressSave()
-      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
-      act(() => usePluginStore.getState().updateMeta({ description: 'Second save' }))
+      await toastsShow(['success: Plugin saved'])
+      editMeta({ description: 'Second save' })
       pressSave()
-      await waitFor(() => expect(toasts()).toHaveLength(2))
+      await toastCount(2)
 
       expect(toasts()[1]).toBe('success: Plugin saved')
-      expect(messages()).toEqual([RENAMED])
-      expect(await readFile(target, 'utf8')).toBe(generatePlugin(plugin()))
+      expect(messages()).toStrictEqual([RENAMED])
+      await expect(readFile(target, 'utf8')).resolves.toBe(generatePlugin(plugin()))
     })
 
-    it('Choose another file opens the save dialog at a file named after the plugin', async () => {
-      const target = join(root, 'Chosen.js')
-      const named = join(root, 'Alpha.js')
+    it('choose another file opens the save dialog at a file named after the plugin', async () => {
+      expect.hasAssertions()
+
+      const target = path.join(temporary.root, 'Chosen.js')
+      const named = path.join(temporary.root, 'Alpha.js')
       const chosen = [target, named]
-      window.api = createMainApi({ chosen: () => chosen.shift() ?? null, answers: [1] })
+      vi.stubGlobal('api', createMainApi({ chosen: () => chosen.shift() ?? null, answers: [1] }))
       const id = openWithBoth()
       render(<App />)
       pressSave()
-      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+      await toastsShow(['success: Plugin saved'])
 
-      expect(messages()).toEqual([RENAMED])
+      expect(messages()).toStrictEqual([RENAMED])
 
-      const asked = vi.mocked(window.api.dialog.saveFile).mock.calls[1]
-
-      expect(asked).toEqual([
-        { defaultPath: named, filters: [{ name: 'JavaScript Files', extensions: ['js'] }] }
-      ])
-
+      const asked = vi.mocked(globalThis.api.dialog.saveFile).mock.calls.at(1)
       // Main's check passes the remembered folder and name to the dialog unchanged
-      const saveDialog = createDialogHandlers({} as DialogPort)['dialog:save-file']
+      const saveDialog = createDialogHandlers(NO_DIALOGS)['dialog:save-file']
+      const expected = [{ defaultPath: named, filters: SAVE_FILTERS }]
 
-      expect(saveDialog.check(asked)).toEqual(asked)
-      expect(await readFile(named, 'utf8')).toBe(generatePlugin(plugin()))
+      expect({ asked, checked: saveDialog.check(asked ?? []) }).toStrictEqual({
+        asked: expected,
+        checked: expected
+      })
+      await expect(readFile(named, 'utf8')).resolves.toBe(generatePlugin(plugin()))
       await expect(readFile(target)).rejects.toMatchObject({ code: 'ENOENT' })
       expect(usePluginStore.getState().savedPathsByPluginId[id]).toBe(named)
     })
+  }
+)
 
-    it('does not ask for a loaded plugin whose code reads its own name from its file', async () => {
-      const source = [
-        '/*:',
-        ' * @target MZ',
-        ' * @plugindesc Reads its name from its file',
-        ' * @param Speed',
-        ' * @default 1',
-        ' * @command Show',
-        ' */',
-        '(() => {',
-        '  const name = document.currentScript.src.match(/([^/]+)\\.js$/)[1];',
-        '  const params = PluginManager.parameters(name);',
-        "  PluginManager.registerCommand(name, 'Show', () => {});",
-        '})();',
-        ''
-      ].join('\n')
-      await mkdir(dirname(fileIn('SelfNamed.js')), { recursive: true })
-      await writeFile(fileIn('SelfNamed.js'), source)
-      const target = join(root, 'Other.js')
-      window.api = createMainApi({ chosen: () => target })
-      await openFromProject(root, 'SelfNamed.js')
-      render(<App />)
-      pressSave()
-      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+describe('app save: ctrl+S without a project to a file the name check passes', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-      expect(messages()).toEqual([])
-      expect(await readFile(target, 'utf8')).toBe(source)
-    })
+  beforeEach(setUp)
 
-    it('does not ask for a file named after the plugin', async () => {
-      const target = join(root, 'Alpha.js')
-      window.api = createMainApi({ chosen: () => target })
-      openWithBoth()
-      render(<App />)
-      pressSave()
-      await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+  afterEach(tearDown)
 
-      expect(messages()).toEqual([])
-    })
+  it('does not ask for a loaded plugin whose code reads its own name from its file', async () => {
+    expect.hasAssertions()
+
+    await mkdir(path.dirname(fileIn('SelfNamed.js')), { recursive: true })
+    await writeFile(fileIn('SelfNamed.js'), SELF_NAMED_SOURCE)
+    const target = path.join(temporary.root, 'Other.js')
+    vi.stubGlobal('api', createMainApi({ chosen: () => target }))
+    await openFromProject(temporary.root, 'SelfNamed.js')
+    render(<App />)
+    pressSave()
+    await toastsShow(['success: Plugin saved'])
+
+    expect(messages()).toStrictEqual([])
+    await expect(readFile(target, 'utf8')).resolves.toBe(SELF_NAMED_SOURCE)
   })
 
+  it('does not ask for a file named after the plugin', async () => {
+    expect.hasAssertions()
+
+    const target = path.join(temporary.root, 'Alpha.js')
+    vi.stubGlobal('api', createMainApi({ chosen: () => target }))
+    openWithBoth()
+    render(<App />)
+    pressSave()
+    await toastsShow(['success: Plugin saved'])
+
+    expect(messages()).toStrictEqual([])
+  })
+})
+
+describe('app save: storage writes', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
   it('one Ctrl+S writes the open plugins to storage once', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     await openProject()
     openTab('Alpha')
     render(<App />)
     await settle()
     const setItem = vi.spyOn(Storage.prototype, 'setItem')
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
     await settle()
     const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
     setItem.mockRestore()
@@ -488,142 +688,171 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
   })
 
   it('one undo step and one redo step each write the open plugins to storage once', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     await historyHolds(2)
     await settle()
 
-    expect(await pluginWrites(pressUndo)).toBe(1)
+    await expect(pluginWrites(pressUndo)).resolves.toBe(1)
     expect(useHistoryStore.getState().future).toHaveLength(1)
     expect(isDirty(plugin().id)).toBe(true)
-    expect(await pluginWrites(pressRedo)).toBe(1)
+    await expect(pluginWrites(pressRedo)).resolves.toBe(1)
     expect(useHistoryStore.getState().future).toHaveLength(0)
   })
 
   it('one reload writes the open plugins to storage once', async () => {
+    expect.hasAssertions()
+
     const project = await copyProject()
-    window.api = createMainApi()
+    vi.stubGlobal('api', createMainApi())
     await openProject(project)
     const id = await openFromProject(project, FILE)
-    let reloaded = false
+    let isReloaded = false
     const writes = await pluginWrites(async () => {
-      reloaded = await act(() => reloadFromProject(id))
+      isReloaded = await act(async () => reloadFromProject(id))
     })
 
-    expect(reloaded).toBe(true)
+    expect(isReloaded).toBe(true)
     expect(writes).toBe(1)
   })
+})
+
+describe('app save: an edit during a save', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
 
   it.each([
     ['Ctrl+S', pressSave, 'success: Plugin saved'],
     ['Save All', pressSaveAll, 'success: 1 plugin saved']
   ])('an edit made while %s is in flight stays unsaved', async (_label, press, toast) => {
-    const gate = deferred<void>()
-    window.api = createMainApi({ overrides: { plugin: { save: heldSave(gate.promise) } } })
+    expect.hasAssertions()
+
+    const gate = Promise.withResolvers<null>()
+    vi.stubGlobal('api', createMainApi({ overrides: { plugin: { save: heldSave(gate.promise) } } }))
     await openProject()
     const id = openTab('Alpha')
     render(<App />)
     press()
-    await waitFor(() => expect(window.api.plugin.save).toHaveBeenCalledTimes(1))
-    act(() => usePluginStore.getState().updateMeta({ description: 'edited during save' }))
-    await act(async () => gate.resolve())
-    await waitFor(() => expect(toasts()).toContain(toast))
+    await savesAsked(1)
+    editMeta({ description: 'edited during save' })
+    await act(async () => {
+      gate.resolve(null)
+      await gate.promise
+    })
+    await waitFor(() => {
+      expect(toasts()).toContain(toast)
+    })
 
     expect(plugin().meta.description).toBe('edited during save')
     expect(isDirty(id)).toBe(true)
 
     const bytes = await readFile(fileIn('Alpha.js'))
 
-    expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
-      path: fileIn('Alpha.js'),
-      sha256: sha(bytes)
-    })
+    expect(baseOf(id)).toStrictEqual({ path: fileIn('Alpha.js'), sha256: sha(bytes) })
   })
+})
 
-  it('Save All skips a tab whose file it did not write, names it and every tab not saved in one report and saves the rest', async () => {
-    await mkdir(join(root, 'js', 'plugins'), { recursive: true })
+describe('app save: save all', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('save All skips a tab whose file it did not write, names it and every tab not saved in one report and saves the rest', async () => {
+    expect.hasAssertions()
+
+    await mkdir(path.join(temporary.root, 'js', 'plugins'), { recursive: true })
     await writeFile(fileIn('Beta.js'), 'unrelated')
-    window.api = createMainApi({
-      overrides: {
-        plugin: {
-          save: vi.fn(
-            viaIpc(IPC_CHANNELS.PLUGIN_SAVE, async (...args: Parameters<typeof savePluginFile>) => {
-              if (args[1] === 'Gamma.js') throw new Error('disk full')
-              return savePluginFile(...args)
-            })
-          )
-        }
-      }
-    })
+    vi.stubGlobal('api', createMainApi({ overrides: { plugin: { save: saveFailingGamma() } } }))
     await openProject()
-    const [alpha, beta, gamma, unnamed] = [
-      openTab('Alpha'),
-      openTab('Beta'),
-      openTab('Gamma'),
-      openTab('')
-    ]
+    const tabs = [openTab('Alpha'), openTab('Beta'), openTab('Gamma'), openTab('')]
     render(<App />)
     pressSaveAll()
-    await waitFor(() =>
-      expect(toasts()).toEqual([
-        'warning: Saved 1, failed 1. Not saved, the file there is not the one this tab last opened or saved: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
-      ])
-    )
+    await toastsShow([
+      'warning: Saved 1, failed 1. Not saved, the file there is not the one this tab last opened or saved: Beta. Not saved, no plugin name: 1 tab. Failed: Gamma (disk full).'
+    ])
 
-    expect(useToastStore.getState().toasts[0].duration).toBeGreaterThanOrEqual(10_000)
-    expect(await readFile(fileIn('Beta.js'), 'utf8')).toBe('unrelated')
-    expect(await readFile(fileIn('Alpha.js'), 'utf8')).toContain('@target MZ')
-    expect([alpha, beta, gamma, unnamed].map(isDirty)).toEqual([false, true, true, true])
-    expect(window.api.dialog.message).not.toHaveBeenCalled()
+    expect(useToastStore.getState().toasts.at(0)?.duration).toBeGreaterThanOrEqual(10_000)
+    await expect(readFile(fileIn('Beta.js'), 'utf8')).resolves.toBe('unrelated')
+    await expect(readFile(fileIn('Alpha.js'), 'utf8')).resolves.toContain('@target MZ')
+    expect(tabs.map((id) => isDirty(id))).toStrictEqual([false, true, true, true])
+    expect(globalThis.api.dialog.message).not.toHaveBeenCalled()
   })
 
-  it('Save All of two new plugins with one name saves the first and skips the second', async () => {
-    window.api = createMainApi()
+  it('save All of two new plugins with one name saves the first and skips the second', async () => {
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     await openProject()
     const first = openTab('NewPlugin', 'The first plugin')
     const second = openTab('NewPlugin', 'The second plugin')
-    const firstCode = generatePlugin(usePluginStore.getState().openPlugins[0])
+    const firstCode = generatePlugin(openTabOf(first))
     render(<App />)
     pressSaveAll()
-    await waitFor(() =>
-      expect(toasts()).toEqual([
-        'warning: Saved 1. Not saved, the file there is not the one this tab last opened or saved: NewPlugin.'
-      ])
-    )
+    await toastsShow([
+      'warning: Saved 1. Not saved, the file there is not the one this tab last opened or saved: NewPlugin.'
+    ])
 
-    expect(await readFile(fileIn('NewPlugin.js'), 'utf8')).toBe(firstCode)
-    expect([first, second].map(isDirty)).toEqual([false, true])
+    await expect(readFile(fileIn('NewPlugin.js'), 'utf8')).resolves.toBe(firstCode)
+    expect([first, second].map((id) => isDirty(id))).toStrictEqual([false, true])
   })
+})
+
+describe('app save: tabs read from a file', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
 
   it('a tab opened from the plugin browser and saved records the file it wrote', async () => {
+    expect.hasAssertions()
+
     const project = await copyProject()
-    window.api = createMainApi({ overrides: { plugin: { list: vi.fn(async () => [FILE]) } } })
+    const list = vi.fn<Api['plugin']['list']>().mockResolvedValue([FILE])
+    vi.stubGlobal('api', createMainApi({ overrides: { plugin: { list } } }))
     await openProject(project)
     render(<App />)
-    fireEvent.keyDown(window, { key: 'E', code: 'KeyE', ctrlKey: true, shiftKey: true })
+    fireEvent.keyDown(globalThis.window, { key: 'E', code: 'KeyE', ctrlKey: true, shiftKey: true })
     fireEvent.click(await screen.findByTitle(FILE))
-    await waitFor(() => expect(plugin().importedFrom).toBe(FILE))
+    await waitFor(() => {
+      expect(plugin().importedFrom).toBe(FILE)
+    })
     const id = plugin().id
-    act(() => usePluginStore.getState().updateMeta({ description: 'Edited and saved' }))
+    editMeta({ description: 'Edited and saved' })
     const saved = plugin()
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
     const onDisk = await readFile(fileIn(FILE, project))
     const state = usePluginStore.getState()
 
     expect(onDisk.toString('utf8')).toContain('Edited and saved')
     expect(state.plugin.rawSource).toBe(onDisk.toString('utf8'))
-    expect(state.baselineByPluginId[id]).toEqual(toBaseline(saved))
-    expect(state.baseByPluginId[id]).toEqual({ path: fileIn(FILE, project), sha256: sha(onDisk) })
-    expect(isDirty(id)).toBe(false)
+    expect({
+      baseline: state.baselineByPluginId[id],
+      base: state.baseByPluginId[id],
+      isDirty: isDirty(id)
+    }).toStrictEqual({
+      baseline: toBaseline(saved),
+      base: { path: fileIn(FILE, project), sha256: sha(onDisk) },
+      isDirty: false
+    })
   })
 
   it('a tab loaded from a file cannot be renamed, and Ctrl+S writes the file it came from', async () => {
+    expect.hasAssertions()
+
     const project = await copyProject()
-    window.api = createMainApi()
+    vi.stubGlobal('api', createMainApi())
     await openProject(project)
     const id = await openFromProject(project, FILE)
     render(<App />)
@@ -631,49 +860,85 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
     expect(screen.getByLabelText('Plugin Name')).toHaveAttribute('readonly')
 
     // A name that differs from the file, as a tab restored from an older version can hold
-    act(() => usePluginStore.getState().updateMeta({ name: 'Renamed', description: 'Kept' }))
+    editMeta({ name: 'Renamed', description: 'Kept' })
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
 
-    expect(vi.mocked(window.api.plugin.save).mock.calls.map((call) => call[1])).toEqual([FILE])
-    expect(await readFile(fileIn(FILE, project), 'utf8')).toContain('Kept')
+    expect(saveCalls().map((call) => call[1])).toStrictEqual([FILE])
+    await expect(readFile(fileIn(FILE, project), 'utf8')).resolves.toContain('Kept')
     await expect(readFile(fileIn('Renamed.js', project))).rejects.toThrow(/ENOENT/)
     expect(isDirty(id)).toBe(false)
   })
 
+  it('reload of a tab in the open project, or with no file recorded, does not ask', async () => {
+    expect.hasAssertions()
+
+    const project = await copyProject()
+    vi.stubGlobal('api', createMainApi())
+    await openProject(project)
+    const read = await openFromProject(project, FILE)
+
+    await expect(act(async () => reloadFromProject(read))).resolves.toBe(true)
+
+    const loaded = await globalThis.api.plugin.load(project, FILE)
+    act(() => {
+      usePluginStore.getState().openPlugin(loaded.plugin)
+    })
+
+    await expect(act(async () => reloadFromProject(loaded.plugin.id))).resolves.toBe(true)
+    expect(messages()).toStrictEqual([])
+    expect(baseOf(loaded.plugin.id)).toHaveProperty('path', fileIn(FILE, project))
+  })
+})
+
+describe('app save: a tab read from another project', APP_TIMEOUT, () => {
+  const conflicts = conflictChecks(['exists-unrelated'])
+
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  afterAll(conflicts.afterAll)
+
   it("a tab read from another project asks before replacing the open project's file", async () => {
+    expect.hasAssertions()
+
     const first = await copyProject()
     const second = await copyProject()
-    window.api = createMainApi()
+    vi.stubGlobal('api', createMainApi())
     const id = await openFromProject(first, FILE)
-    act(() => usePluginStore.getState().updateMeta({ description: 'Edited in the first' }))
+    editMeta({ description: 'Edited in the first' })
     await openProject(second)
     const firstBytes = await readFile(fileIn(FILE, first))
     const secondBytes = await readFile(fileIn(FILE, second))
     render(<App />)
     pressSave()
-    await waitFor(() => expect(messages()).toHaveLength(1))
+    await messagesShown(1)
     await settle()
-    const options = conflictDialog(0, 'exists-unrelated')
+    const options = conflicts.dialog(0, 'exists-unrelated')
 
     expect(options.message).toBe(
       `"${fileIn(FILE, second)}" is not the file this tab last opened or saved. Overwrite it?`
     )
-    expect(await readFile(fileIn(FILE, second))).toEqual(secondBytes)
-    expect(await readFile(fileIn(FILE, first))).toEqual(firstBytes)
+    await expect(readFile(fileIn(FILE, second))).resolves.toStrictEqual(secondBytes)
+    await expect(readFile(fileIn(FILE, first))).resolves.toStrictEqual(firstBytes)
     expect(isDirty(id)).toBe(true)
-    expect(usePluginStore.getState().baseByPluginId[id]?.path).toBe(fileIn(FILE, first))
+    expect(baseOf(id)).toHaveProperty('path', fileIn(FILE, first))
   })
 
-  it('Reload of a tab read from another project asks first, and Cancel reads nothing', async () => {
+  it('reload of a tab read from another project asks first, and Cancel reads nothing', async () => {
+    expect.hasAssertions()
+
     const first = await copyProject()
     const second = await copyProject()
-    window.api = createMainApi()
+    vi.stubGlobal('api', createMainApi())
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    expect(await act(() => reloadFromProject(id))).toBe(false)
-    expect(messages()).toEqual([
+    await expect(act(async () => reloadFromProject(id))).resolves.toBe(false)
+    expect(messages()).toStrictEqual([
       {
         type: 'question',
         title: 'Reload from another project?',
@@ -681,167 +946,184 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
         buttons: ['Cancel', 'Reload']
       }
     ])
-    expect(window.api.plugin.readRaw).not.toHaveBeenCalled()
-    expect(usePluginStore.getState().baseByPluginId[id]?.path).toBe(fileIn(FILE, first))
+    expect(globalThis.api.plugin.readRaw).not.toHaveBeenCalled()
+    expect(baseOf(id)).toHaveProperty('path', fileIn(FILE, first))
   })
 
-  it("Reload of a tab read from another project, confirmed, takes the open project's file", async () => {
+  it("reload of a tab read from another project, confirmed, takes the open project's file", async () => {
+    expect.hasAssertions()
+
     const first = await copyProject()
     const second = await copyProject()
     const text = `${await readFile(fileIn(FILE, second), 'utf8')}// the second copy\n`
     await writeFile(fileIn(FILE, second), text)
-    window.api = createMainApi({ answers: [1] })
+    vi.stubGlobal('api', createMainApi({ answers: [1] }))
     const id = await openFromProject(first, FILE)
     await openProject(second)
 
-    expect(await act(() => reloadFromProject(id))).toBe(true)
+    await expect(act(async () => reloadFromProject(id))).resolves.toBe(true)
     expect(messages()).toHaveLength(1)
     expect(plugin().rawSource).toBe(text)
-    expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
-      path: fileIn(FILE, second),
-      sha256: sha(text)
-    })
+    expect(baseOf(id)).toStrictEqual({ path: fileIn(FILE, second), sha256: sha(text) })
   })
+})
 
-  it('Reload of a tab in the open project, or with no file recorded, does not ask', async () => {
-    const project = await copyProject()
-    window.api = createMainApi()
-    await openProject(project)
-    const read = await openFromProject(project, FILE)
+describe('app save: a file changed on disk', APP_TIMEOUT, () => {
+  const conflicts = conflictChecks(['changed-on-disk'])
 
-    expect(await act(() => reloadFromProject(read))).toBe(true)
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 
-    const loaded = await window.api.plugin.load(project, FILE)
-    act(() => usePluginStore.getState().openPlugin(loaded.plugin))
+  beforeEach(setUp)
 
-    expect(await act(() => reloadFromProject(loaded.plugin.id))).toBe(true)
-    expect(messages()).toEqual([])
-    expect(usePluginStore.getState().baseByPluginId[loaded.plugin.id]?.path).toBe(
-      fileIn(FILE, project)
-    )
-  })
+  afterEach(tearDown)
+
+  afterAll(conflicts.afterAll)
 
   it('a file changed on disk while its prompt is open is asked about again', async () => {
+    expect.hasAssertions()
+
     const project = await copyProject()
-    const path = fileIn(FILE, project)
-    const text = await readFile(path, 'utf8')
+    const file = fileIn(FILE, project)
+    const text = await readFile(file, 'utf8')
     const changed = `${text}\n// changed elsewhere\n`
     const changedAgain = `${text}\n// changed elsewhere again\n`
     let asked = 0
-    window.api = createMainApi({
-      overrides: {
-        dialog: {
-          message: vi.fn(async () => {
-            asked++
-            if (asked > 1) return 0
-            await writeFile(path, changedAgain)
-            return 1
-          })
-        }
-      }
+    const message = vi.fn<Api['dialog']['message']>(async () => {
+      asked++
+      if (asked > 1) return 0
+      await writeFile(file, changedAgain)
+      return 1
     })
+    vi.stubGlobal('api', createMainApi({ overrides: { dialog: { message } } }))
     await openProject(project)
     const id = await openFromProject(project, FILE)
     render(<App />)
-    await writeFile(path, changed)
-    act(() => usePluginStore.getState().updateMeta({ description: 'Edited' }))
+    await writeFile(file, changed)
+    editMeta({ description: 'Edited' })
     pressSave()
-    await waitFor(() => expect(messages()).toHaveLength(2))
+    await messagesShown(2)
     await settle()
     for (const index of [0, 1]) {
-      const options = conflictDialog(index, 'changed-on-disk')
+      const options = conflicts.dialog(index, 'changed-on-disk')
 
-      expect(options.message).toBe(
-        `"${path}" has changed on disk since this tab last read or saved it. Overwrite it?`
-      )
-      expect(options.buttons).toEqual(['Cancel', 'Overwrite', 'Reload from project'])
+      expect(options).toMatchObject({
+        message: `"${file}" has changed on disk since this tab last read or saved it. Overwrite it?`,
+        buttons: ['Cancel', 'Overwrite', 'Reload from project']
+      })
     }
 
-    expect(guards()).toEqual([
-      { base: { path, sha256: sha(text) } },
-      { base: { path, sha256: sha(changed) } }
+    // Strict equality also holds that the second save does not skip the compile check
+    expect(guards()).toStrictEqual([
+      { base: { path: file, sha256: sha(text) } },
+      { base: { path: file, sha256: sha(changed) } }
     ])
-    expect(guards()[1]).not.toHaveProperty('overwriteBroken')
-    expect(await readFile(path, 'utf8')).toBe(changedAgain)
-    expect(isDirty(id)).toBe(true)
-    expect(window.api.plugin.save).toHaveBeenCalledTimes(2)
+    await expect(readFile(file, 'utf8')).resolves.toBe(changedAgain)
+    expect({ isDirty: isDirty(id), saves: saveCalls().length }).toStrictEqual({
+      isDirty: true,
+      saves: 2
+    })
     expect(screen.getByText('(modified)')).toBeInTheDocument()
   })
+})
 
-  it('Overwrite on a file this tab did not write retries against the bytes it was shown', async () => {
-    await mkdir(join(root, 'js', 'plugins'), { recursive: true })
+describe('app save: overwrite', APP_TIMEOUT, () => {
+  const conflicts = conflictChecks(['exists-unrelated', 'would-break'])
+
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  afterAll(conflicts.afterAll)
+
+  it('overwrite on a file this tab did not write retries against the bytes it was shown', async () => {
+    expect.hasAssertions()
+
+    await mkdir(path.join(temporary.root, 'js', 'plugins'), { recursive: true })
     await writeFile(fileIn('Alpha.js'), '// old file\n')
-    window.api = createMainApi({ answers: [1] })
+    vi.stubGlobal('api', createMainApi({ answers: [1] }))
     await openProject()
     const id = openTab('Alpha')
     render(<App />)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
-    conflictDialog(0, 'exists-unrelated')
+    await toastsShow(['success: Plugin saved'])
+    conflicts.dialog(0, 'exists-unrelated')
 
-    expect(guards()).toEqual([
+    // Strict equality also holds that the retry does not skip the compile check
+    expect(guards()).toStrictEqual([
       { base: null },
       { base: { path: fileIn('Alpha.js'), sha256: sha('// old file\n') } }
     ])
-    expect(guards()[1]).not.toHaveProperty('overwriteBroken')
 
     const bytes = await readFile(fileIn('Alpha.js'))
 
     expect(bytes.toString('utf8')).toBe(generatePlugin(plugin()))
-    expect(usePluginStore.getState().baseByPluginId[id]).toEqual({
-      path: fileIn('Alpha.js'),
-      sha256: sha(bytes)
-    })
+    expect(baseOf(id)).toStrictEqual({ path: fileIn('Alpha.js'), sha256: sha(bytes) })
   })
 
-  it('Overwrite on code that would stop the file compiling skips only that check', async () => {
-    window.api = createMainApi({ answers: [1] })
+  it('overwrite on code that would stop the file compiling skips only that check', async () => {
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi({ answers: [1] }))
     await openProject()
     const id = openTab('Alpha')
     render(<App />)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
     const compiling = await readFile(fileIn('Alpha.js'))
-    act(() => usePluginStore.getState().setCustomCode('let broken = ;'))
+    act(() => {
+      usePluginStore.getState().setCustomCode('let broken = ;')
+    })
     pressSave()
-    await waitFor(() => expect(toasts()).toHaveLength(3))
-    const options = conflictDialog(0, 'would-break')
+    await toastCount(3)
+    const options = conflicts.dialog(0, 'would-break')
+    const written = await readFile(fileIn('Alpha.js'), 'utf8')
+    // The prompt and the warning both name the line of the file that does not compile
+    const brokenLine = written.split('\n').findIndex((line) => line.includes('let broken = ;')) + 1
+    const shownFile = escaped(fileIn('Alpha.js'))
 
     expect(options.message).toMatch(
       new RegExp(
-        `^Saving would stop "${escaped(fileIn('Alpha.js'))}" from compiling \\(line \\d+: .+\\)\\. Overwrite it anyway\\?$`
+        String.raw`^Saving would stop "${shownFile}" from compiling \(line ${brokenLine}: .+\)\. Overwrite it anyway\?$`
       )
     )
 
     const base = { path: fileIn('Alpha.js'), sha256: sha(compiling) }
 
-    expect(guards().slice(1)).toEqual([{ base }, { base, overwriteBroken: true }])
-    expect(toasts()[1]).toBe('success: Plugin saved')
-    expect(toasts()[2]).toMatch(/^warning: Saved, but the file does not compile \(line \d+\): .+/)
-
-    const written = await readFile(fileIn('Alpha.js'), 'utf8')
-
+    expect({ guards: guards().slice(1), isDirty: isDirty(id) }).toStrictEqual({
+      guards: [{ base }, { base, overwriteBroken: true }],
+      isDirty: false
+    })
+    // The second toast, then the third, one per line
+    expect(toasts().slice(1).join('\n')).toMatch(
+      /^success: Plugin saved\nwarning: Saved, but the file does not compile \(line \d+\): .+/
+    )
     expect(written).toContain('let broken = ;')
-    expect(isDirty(id)).toBe(false)
-
-    // The prompt and the warning both name the line of the file that does not compile
-    const brokenLine = written.split('\n').findIndex((line) => line.includes('let broken = ;')) + 1
-
-    expect(options.message).toContain(`(line ${brokenLine}: `)
     expect(
-      screen.getByText(new RegExp(`does not compile \\(line ${brokenLine}\\)`))
+      screen.getByText(new RegExp(String.raw`does not compile \(line ${brokenLine}\)`))
     ).toBeInTheDocument()
   })
+})
+
+describe('app save: undo and redo around a save', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
 
   it('undo after a save marks the tab unsaved', async () => {
-    window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi({ chosen: () => path.join(temporary.root, 'Chosen.js') }))
     const id = openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     await historyHolds(2)
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
 
     expect(isDirty(id)).toBe(false)
 
@@ -852,15 +1134,17 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
   })
 
   it('redo after a save marks the tab unsaved', async () => {
-    window.api = createMainApi({ chosen: () => join(root, 'Chosen.js') })
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi({ chosen: () => path.join(temporary.root, 'Chosen.js') }))
     const id = openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     await historyHolds(2)
     pressUndo()
     pressSave()
-    await waitFor(() => expect(toasts()).toEqual(['success: Plugin saved']))
+    await toastsShow(['success: Plugin saved'])
 
     expect(isDirty(id)).toBe(false)
 
@@ -871,11 +1155,13 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
   })
 
   it('one undo after one edit restores the state before the edit, and redo applies it again', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     await historyHolds(2)
     pressUndo()
 
@@ -885,15 +1171,25 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
 
     expect(plugin().meta.name).toBe('Alpha')
   })
+})
+
+describe('app save: undo and redo', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
 
   it('undo steps back through two edits one at a time, and redo forward again', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     await historyHolds(2)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Beta' }))
+    editMeta({ name: 'Beta' })
     await historyHolds(3)
     const names: string[] = []
     for (const press of [pressUndo, pressUndo, pressUndo, pressRedo, pressRedo, pressRedo]) {
@@ -901,19 +1197,19 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
       names.push(plugin().meta.name)
     }
 
-    expect(names).toEqual(['Alpha', 'NewPlugin', 'NewPlugin', 'Alpha', 'Beta', 'Beta'])
+    expect(names).toStrictEqual(['Alpha', 'NewPlugin', 'NewPlugin', 'Alpha', 'Beta', 'Beta'])
   })
 
   it('undo shows the select options a parameter had before the last typed option', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     openTab()
     render(<App />)
     const user = userEvent.setup()
     await user.click(screen.getByRole('tab', { name: 'Parameters' }))
     await user.click(screen.getByRole('button', { name: 'Add Parameter' }))
-    await user.click(
-      screen.getAllByRole('combobox').find((c) => c.textContent?.startsWith('String'))!
-    )
+    await user.click(comboboxShowing('String'))
     await user.click(await screen.findByRole('option', { name: /^Select/ }))
     const options = (): HTMLElement => screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options(), 'a|')
@@ -929,11 +1225,13 @@ describe('saving from the keyboard', { timeout: 30_000 }, () => {
   })
 
   it('undo right after an edit, before it is recorded, restores the state before the edit', async () => {
-    window.api = createMainApi()
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
     openTab()
     render(<App />)
     await historyHolds(1)
-    act(() => usePluginStore.getState().updateMeta({ name: 'Alpha' }))
+    editMeta({ name: 'Alpha' })
     pressUndo()
 
     expect(plugin().meta.name).toBe('NewPlugin')

@@ -2,9 +2,9 @@
 // loads with the first editor shown: the renderer entry never reaches it through a static import,
 // every other source file imports the editor's types only, and its notices ship
 import { describe, expect, it } from 'vitest'
-import { existsSync, readdirSync, readFileSync } from 'fs'
-import { dirname, join, relative, resolve } from 'path'
-import { fileURLToPath } from 'url'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
@@ -28,7 +28,7 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-const rel = (file: string): string => relative(ROOT, file).split('\\').join('/')
+const rel = (file: string): string => relative(ROOT, file).replaceAll('\\', '/')
 
 function parse(file: string): ts.SourceFile {
   return ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest)

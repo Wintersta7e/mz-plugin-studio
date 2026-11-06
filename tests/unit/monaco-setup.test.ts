@@ -21,10 +21,12 @@ vi.mock('@monaco-editor/react', () => ({ loader: { config: h.config } }))
 const PAGE = 'file:///app/out/renderer/index.html'
 
 class FakeWorker {
-  constructor(
-    readonly url: string,
-    readonly options?: { type?: string }
-  ) {}
+  readonly url: string
+  readonly options: { type?: string } | undefined
+  constructor(url: string, options?: { type?: string }) {
+    this.url = url
+    this.options = options
+  }
 }
 
 type GetWorker = (workerId: string, label: string) => FakeWorker

@@ -2,12 +2,19 @@
 import { createElement } from 'react'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Toast } from '../../src/renderer/src/stores/toastStore'
 import { createFakeApi } from '../helpers/fake-api'
+
+function firstToastMessage(toasts: readonly Toast[]): string {
+  const toast = toasts.at(0)
+  if (toast === undefined) throw new Error('no toast was shown')
+  return toast.message
+}
 
 describe('restore report at startup', () => {
   beforeEach(() => {
     localStorage.clear()
-    window.api = createFakeApi()
+    vi.stubGlobal('api', createFakeApi())
     // The build defines this; the status bar shows it.
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
   })
@@ -18,6 +25,8 @@ describe('restore report at startup', () => {
   })
 
   it('one toast names every store that was not loaded as stored, once', async () => {
+    expect.hasAssertions()
+
     localStorage.setItem('mz-plugin-studio-ui', '{"state":')
     localStorage.setItem(
       'mz-plugin-studio-settings',
@@ -28,13 +37,14 @@ describe('restore report at startup', () => {
     const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
 
     render(createElement(App))
-    const toasts = useToastStore.getState().toasts
 
-    expect(toasts).toHaveLength(1)
-    expect(toasts[0].type).toBe('warning')
-    expect(toasts[0].message).toBe(
-      'Layout: the saved data could not be read, so defaults were loaded; a copy was kept as mz-plugin-studio-ui.backup. Settings: theme had unexpected values and were reset; a copy was kept as mz-plugin-studio-settings.backup. Backups can be exported or deleted in Settings > Data > Saved-state backups.'
-    )
+    expect(useToastStore.getState().toasts).toStrictEqual([
+      expect.objectContaining({
+        type: 'warning',
+        message:
+          'Layout: the saved data could not be read, so defaults were loaded; a copy was kept as mz-plugin-studio-ui.backup. Settings: theme had unexpected values and were reset; a copy was kept as mz-plugin-studio-settings.backup. Backups can be exported or deleted in Settings > Data > Saved-state backups.'
+      })
+    ])
 
     cleanup()
     render(createElement(App))
@@ -43,6 +53,8 @@ describe('restore report at startup', () => {
   }, 30_000)
 
   it('the toast names what was lost in user words, never by field name', async () => {
+    expect.hasAssertions()
+
     const meta = { name: 'Good', version: '1', author: '', description: '', help: '', url: '' }
     const param = { id: 'p', name: 'Speed', text: 'Speed', desc: 3, type: 'number', default: '' }
     const openPlugins = [
@@ -76,12 +88,12 @@ describe('restore report at startup', () => {
     const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
 
     render(createElement(App))
-    const [toast] = useToastStore.getState().toasts
+    const message = firstToastMessage(useToastStore.getState().toasts)
 
-    expect(toast.message).toContain('parameter 1 of open plugin Good')
-    expect(toast.message).toContain('description of parameter 1 of struct 1 of open plugin Good')
-    expect(toast.message).toContain('entry 1 of parameter preset Mixed')
+    expect(message).toContain('parameter 1 of open plugin Good')
+    expect(message).toContain('description of parameter 1 of struct 1 of open plugin Good')
+    expect(message).toContain('entry 1 of parameter preset Mixed')
     // no camelCase field name and no index brackets
-    expect(toast.message).not.toMatch(/[a-z][A-Z]|\[\d/)
+    expect(message).not.toMatch(/[a-z][A-Z]|\[\d/)
   }, 30_000)
 })

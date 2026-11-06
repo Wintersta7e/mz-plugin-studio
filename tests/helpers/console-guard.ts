@@ -21,16 +21,18 @@ export function createConsoleGuard(target: Pick<Console, ConsoleLevel>): Console
   const originals = { error: target.error, warn: target.warn }
   const expectations: Expectation[] = []
   const unexpected: string[] = []
-  const installed = {} as Pick<Console, ConsoleLevel>
-  for (const level of LEVELS) {
-    installed[level] = (...args: unknown[]): void => {
+  const record =
+    (level: ConsoleLevel) =>
+    (...args: unknown[]): void => {
       const text = format(...args)
-      const expectation = expectations.find((e) => e.level === level && e.pattern.test(text))
+      const expectation = expectations.find(
+        (candidate) => candidate.level === level && candidate.pattern.test(text)
+      )
       if (expectation) expectation.met = true
       else unexpected.push(`unexpected console.${level}: ${text}`)
     }
-    target[level] = installed[level]
-  }
+  const installed: Pick<Console, ConsoleLevel> = { error: record('error'), warn: record('warn') }
+  for (const level of LEVELS) target[level] = installed[level]
 
   return {
     expect(level, pattern) {
@@ -45,27 +47,30 @@ export function createConsoleGuard(target: Pick<Console, ConsoleLevel>): Console
         target[level] = originals[level]
       }
       for (const { level, pattern, met } of expectations) {
-        if (!met) problems.push(`expected console.${level} matching ${pattern}, none came`)
+        if (!met) problems.push(`expected console.${level} matching ${String(pattern)}, none came`)
       }
       return problems
     }
   }
 }
 
-let running: ConsoleGuard | undefined
+// The guard of the test that is running, if any
+const current: { guard: ConsoleGuard | undefined } = { guard: undefined }
 
-/** States that the running test expects a console call at this level matching the pattern. */
+/**
+States that the running test expects a console call at this level matching the pattern.
+*/
 export function expectConsole(level: ConsoleLevel, pattern: RegExp): void {
-  if (!running) throw new Error('expectConsole called outside a running test')
-  running.expect(level, pattern)
+  if (!current.guard) throw new Error('expectConsole called outside a running test')
+  current.guard.expect(level, pattern)
 }
 
 export function startTestGuard(target: Pick<Console, ConsoleLevel>): void {
-  running = createConsoleGuard(target)
+  current.guard = createConsoleGuard(target)
 }
 
 export function endTestGuard(): string[] {
-  const guard = running
-  running = undefined
+  const { guard } = current
+  current.guard = undefined
   return guard ? guard.finish() : []
 }

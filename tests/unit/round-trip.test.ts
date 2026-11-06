@@ -3,8 +3,8 @@
 // (fixture, property) pairs that fail today; a listed pair must fail and an unlisted pair must
 // hold, so a fix that makes a listed pair hold fails here until its row is removed.
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { toBaseline } from '../../src/shared/types/plugin'
@@ -216,8 +216,8 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
     const main = mainBlock(text)
     const problems: string[] = []
     for (const { edit, edited, out } of runs) {
-      const changed = touched(edited, base).length > 0
-      if (changed && main === undefined && HEADER_EDITS.has(edit.name)) {
+      const isChanged = touched(edited, base).length > 0
+      if (isChanged && main === undefined && HEADER_EDITS.has(edit.name)) {
         if (out !== null)
           problems.push(`${edit.name}: header edit without a main block not refused`)
         continue
@@ -227,7 +227,7 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
         continue
       }
       const allowedIn = (t: string): Block[] => {
-        if (!changed) return []
+        if (!isChanged) return []
         if (edit.name === 'struct-field-added') {
           const block = structBlock(t, base.structs[0].name)
           return block === undefined ? [] : [block]
@@ -240,25 +240,25 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
       if (before === after) continue
       const names = addedNames(edited, base)
       const inserted = insertion(before, after)
-      const scaffold =
+      const isScaffold =
         (edit.name === 'param-added' || edit.name === 'command-added') &&
         inserted !== null &&
         names.some((n) => inserted.includes(n))
-      if (!scaffold) problems.push(`${edit.name}: bytes outside the allowed blocks changed`)
+      if (!isScaffold) problems.push(`${edit.name}: bytes outside the allowed blocks changed`)
     }
     return problems
   },
 
   encoding: (file) => {
     const { text, runs } = load(file)
-    const crlf = text.includes('\r\n')
-    const bom = text.startsWith('\uFEFF')
+    const isCrlf = text.includes('\r\n')
+    const isBom = text.startsWith('\u{FEFF}')
     const problems: string[] = []
     for (const { edit, out } of runs) {
       if (out === null) continue
-      if (crlf && /(?:^|[^\r])\n/.test(out)) problems.push(`${edit.name}: bare LF in a CRLF file`)
-      if (!crlf && out.includes('\r')) problems.push(`${edit.name}: CR in an LF file`)
-      if (bom && !out.startsWith('\uFEFF')) problems.push(`${edit.name}: BOM lost`)
+      if (isCrlf && /(?:^|[^\r])\n/.test(out)) problems.push(`${edit.name}: bare LF in a CRLF file`)
+      if (!isCrlf && out.includes('\r')) problems.push(`${edit.name}: CR in an LF file`)
+      if (isBom && !out.startsWith('\u{FEFF}')) problems.push(`${edit.name}: BOM lost`)
     }
     return problems
   },
@@ -310,8 +310,8 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
         key === 'id' || key === 'rawSource' ? undefined : value
       )
     const crlf = open(read(CRLF_TWIN), LF_TWIN)
-    crlf.codeBody = crlf.codeBody?.replace(/\r\n/g, '\n')
-    crlf.customCode = crlf.customCode?.replace(/\r\n/g, '\n')
+    crlf.codeBody = crlf.codeBody?.replaceAll('\r\n', '\n')
+    crlf.customCode = crlf.customCode?.replaceAll('\r\n', '\n')
     return strip(crlf) === strip(open(read(LF_TWIN), LF_TWIN)) ? [] : ['parse differs from LF twin']
   },
 
@@ -319,9 +319,9 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
     const { text, base } = load(file)
     const main = mainBlock(text)
     if (main === undefined) return []
-    const lf = bodyOf(text, main).replace(/\r\n/g, '\n')
+    const lf = bodyOf(text, main).replaceAll('\r\n', '\n')
     const problems: string[] = []
-    const description = lf.match(/@plugindesc (.*)/)?.[1] ?? ''
+    const description = /@plugindesc (.*)/.exec(lf)?.[1] ?? ''
     if (base.meta.description !== description) problems.push('description not from main block')
     const names = [...lf.matchAll(/@param (\S+)/g)].map((m) => m[1])
     if (JSON.stringify(base.parameters.map((p) => p.name)) !== JSON.stringify(names)) {
@@ -329,7 +329,7 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
     }
     // Names alone match in every language block; labels tell which block was read.
     for (const m of lf.matchAll(/@param (\S+)([\s\S]*?)(?=@param\s|@command\s|\*\/)/g)) {
-      const label = m[2].match(/@text (.*)/)?.[1]
+      const label = /@text (.*)/.exec(m[2])?.[1]
       const param = base.parameters.find((p) => p.name === m[1])
       if (label !== undefined && param !== undefined && param.text !== label) {
         problems.push(`parameter ${m[1]} text not from main block`)
@@ -342,12 +342,12 @@ const PROPERTIES: Record<PropertyName, (file: string) => string[]> = {
     const { text, base } = load(file)
     const main = mainBlock(text)
     if (main === undefined) return []
-    const lf = bodyOf(text, main).replace(/\r\n/g, '\n')
+    const lf = bodyOf(text, main).replaceAll('\r\n', '\n')
     const problems: string[] = []
     for (const m of lf.matchAll(/@command (\S+)([\s\S]*?)(?=@command\s|@param\s|\*\/)/g)) {
-      const head = m[2].split(/@arg\s/)[0]
-      const expectedText = head.match(/@text (.*)/)?.[1] ?? m[1]
-      const expectedDesc = head.match(/@desc (.*)/)?.[1]
+      const head = m[2].split(/@arg\s/, 1)[0]
+      const expectedText = /@text (.*)/.exec(head)?.[1] ?? m[1]
+      const expectedDesc = /@desc (.*)/.exec(head)?.[1]
       const cmd = base.commands.find((c) => c.name === m[1])
       if (cmd === undefined) problems.push(`command ${m[1]} not read`)
       else if (cmd.text !== expectedText) problems.push(`command ${m[1]} text`)
@@ -374,11 +374,11 @@ const NAMES = Object.keys(PROPERTIES) as PropertyName[]
 describe('round trip of imported plugins', () => {
   for (const file of FIXTURES) {
     for (const property of NAMES) {
-      const listed = KNOWN_FAILING[file]?.includes(property) ?? false
+      const isListed = KNOWN_FAILING[file]?.includes(property) ?? false
 
-      it(`${property}: ${file}${listed ? ' (fails today)' : ''}`, () => {
+      it(`${property}: ${file}${isListed ? ' (fails today)' : ''}`, () => {
         const problems = PROPERTIES[property](file)
-        if (listed) expect(problems, 'expected property to fail').not.toEqual([])
+        if (isListed) expect(problems, 'expected property to fail').not.toEqual([])
         else expect(problems, `${property} of ${file}`).toEqual([])
       })
     }

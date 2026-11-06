@@ -2,10 +2,10 @@
 // the renderer suggests, every dialog in the folder its kind last chose while it is still there,
 // kept across restarts in the user data folder, and a plugin's save and open dialogs in the open
 // project's plugins folder. Each case starts from fresh main modules, as a restart does.
-import type * as Fs from 'fs'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
-import { tmpdir } from 'os'
-import { dirname, join, parse } from 'path'
+import type * as Fs from 'node:fs'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { dirname, join, parse } from 'node:path'
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DialogPort } from '../../src/main/ipc/handlers'
 import { copyFixtureProject } from '../helpers/fixture-project'
@@ -24,13 +24,19 @@ const FOLDERS_FILE = 'dialog-folders.json'
 let cases = 0
 let root: string
 
-type OpenAnswer = { canceled: boolean; filePaths: string[] }
-type SaveAnswer = { canceled: boolean; filePath?: string }
+interface OpenAnswer {
+  canceled: boolean
+  filePaths: string[]
+}
+interface SaveAnswer {
+  canceled: boolean
+  filePath?: string
+}
 
 /**
- * Fresh main modules on a stand-in for `ipcMain`, keeping what lasts across restarts in `userData`
- * when given; the dialogs record their options and answer from queues
- */
+Fresh main modules on a stand-in for `ipcMain`, keeping what lasts across restarts in `userData`
+when given; the dialogs record their options and answer from queues
+*/
 async function session(userData?: string) {
   vi.resetModules()
   const { registerMainHandlers } = await import('../helpers/fake-ipc')
@@ -59,7 +65,7 @@ async function session(userData?: string) {
     const before = recorded.length
     await call()
 
-    expect(recorded.length).toBe(before + 1)
+    expect(recorded).toHaveLength(before + 1)
 
     return recorded[recorded.length - 1].options
   }
@@ -378,7 +384,10 @@ describe('dialog memory', () => {
     }
     // A key JSON.parse keeps as an own property, which an object of folders must not take as its prototype
     const proto = `,"__proto__":${JSON.stringify(join(root, 'B'))}}}`
-    await writeFile(join(userData, FOLDERS_FILE), JSON.stringify({ folders }).replace(/}}$/, proto))
+    await writeFile(
+      join(userData, FOLDERS_FILE),
+      JSON.stringify({ folders }).replace(/\}\}$/, proto)
+    )
     const s = await session(userData)
     const params = await s.shown(() => s.ipc.invoke('dialog:open-file', { filters: PARAMS }))
 

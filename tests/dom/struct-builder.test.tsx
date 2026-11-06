@@ -13,27 +13,51 @@ import {
 } from '../../src/renderer/src/types/plugin'
 import { resetStores } from './support/reset-stores'
 
-beforeEach(resetStores)
+/**
+The generated plugin code the preview shows.
+*/
+const preview = (): string => screen.getByTestId<HTMLTextAreaElement>('monaco-editor').value
 
-/** The generated plugin code the preview shows. */
-const preview = (): string => (screen.getByTestId('monaco-editor') as HTMLTextAreaElement).value
+function first<T>(values: readonly T[]): T {
+  const value = values.at(0)
+  if (value === undefined) throw new Error('expected an item')
+  return value
+}
 
-/** The block the plugin code holds for the struct named `name`. */
+/**
+The block the plugin code holds for the struct named `name`.
+*/
 function structBlock(name: string): string {
   const code = preview()
   const start = code.indexOf(`/*~struct~${name}:`)
   return start === -1 ? '' : code.slice(start, code.indexOf(' */', start))
 }
 
-/** The row of the field whose name field holds `name`; its buttons have no names. */
-const fieldRow = (name: string): HTMLElement =>
-  screen.getByDisplayValue(name).closest<HTMLElement>('.rounded')!
+// The button immediately before the field name expands its details.
+async function expandField(user: UserEvent): Promise<void> {
+  const name = screen.getByDisplayValue('NewParameter')
+  const button = screen
+    .getAllByRole('button')
+    .findLast((item) => name.compareDocumentPosition(item) === Node.DOCUMENT_POSITION_PRECEDING)
+  if (button === undefined) throw new Error('field expand button is missing')
+  await user.click(button)
+}
 
-/** The select showing `text`; a select's label names no target, so it has no accessible name. */
-const combobox = (text: string): HTMLElement =>
-  screen.getAllByRole('combobox').find((c) => c.textContent === text)!
+/**
+The select showing `text`; a select's label names no target, so it has no accessible name.
+*/
+function combobox(text: string): HTMLElement {
+  const found = screen.getAllByRole('combobox').find((item) => item.textContent === text)
+  if (found === undefined) throw new Error(`missing combobox: ${text}`)
+  return found
+}
 
-function renderTab(structs: PluginStruct[] = []): UserEvent {
+function firstStructParameter(): ReturnType<typeof createEmptyParameter> {
+  const struct = first(usePluginStore.getState().plugin.structs)
+  return first(struct.parameters)
+}
+
+function openTab(structs: PluginStruct[] = []): UserEvent {
   usePluginStore.getState().openPlugin({ ...createEmptyPlugin(), structs })
   const user = userEvent.setup()
   render(
@@ -55,9 +79,24 @@ async function pick(user: UserEvent, current: string, option: string): Promise<v
   await user.click(await screen.findByRole('option', { name: option }))
 }
 
-describe('struct blocks', () => {
+// Opens struct Point, gives its one field the type `fieldType` and expands the field's details.
+async function openPointField(fieldType: string): Promise<UserEvent> {
+  const user = openTab([
+    { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
+  ])
+  await user.click(screen.getByText('Point'))
+  await pick(user, 'String', fieldType)
+  await expandField(user)
+  return user
+}
+
+describe('struct blocks: creation', () => {
+  beforeEach(resetStores)
+
   it('writes a new struct and its field into a block of its own', async () => {
-    const user = renderTab()
+    expect.hasAssertions()
+
+    const user = openTab()
 
     expect(screen.getByText('No structs defined')).toBeInTheDocument()
 
@@ -66,17 +105,21 @@ describe('struct blocks', () => {
     expect(screen.queryByText('No structs defined')).not.toBeInTheDocument()
 
     await retype(user, screen.getByPlaceholderText('StructName'), 'Point')
-    await waitFor(() => expect(preview()).toContain('/*~struct~Point:'))
+    await waitFor(() => {
+      expect(preview()).toContain('/*~struct~Point:')
+    })
 
     await user.click(screen.getByRole('button', { name: 'Add Field' }))
     await retype(user, screen.getByPlaceholderText('fieldName'), 'x')
-    await waitFor(() => expect(structBlock('Point')).toContain(' * @param x\n'))
+    await waitFor(() => {
+      expect(structBlock('Point')).toContain(' * @param x\n')
+    })
   })
 
   it('names each added struct apart from the structs already there', async () => {
     expect.hasAssertions()
 
-    const view = renderTab([{ ...createEmptyStruct(), name: 'NewStruct' }])
+    const view = openTab([{ ...createEmptyStruct(), name: 'NewStruct' }])
 
     await view.click(screen.getByRole('button', { name: 'Add Struct' }))
     await view.click(screen.getByRole('button', { name: 'Add Struct' }))
@@ -87,34 +130,32 @@ describe('struct blocks', () => {
       'NewStruct3'
     ])
   })
+})
+
+describe('struct blocks: select options', () => {
+  beforeEach(resetStores)
 
   it('writes the options of a select field', async () => {
-    const user = renderTab([
-      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
-    ])
-    await user.click(screen.getByText('Point'))
-    await pick(user, 'String', 'Select')
-    // The first button of a field row shows its details
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    expect.hasAssertions()
+
+    const user = await openPointField('Select')
     await user.click(screen.getByPlaceholderText(/^option1\|Option 1/))
     await user.paste('a|Alpha\nb')
     await waitFor(() => {
       const block = structBlock('Point')
 
-      expect(block).toContain(' * @type select\n')
-      expect(block).toContain(' * @option Alpha\n * @value a\n')
-      expect(block).toContain(' * @option b\n')
+      expect([
+        block.includes(' * @type select\n'),
+        block.includes(' * @option Alpha\n * @value a\n'),
+        block.includes(' * @option b\n')
+      ]).toStrictEqual([true, true, true])
     })
   })
 
   it('keeps a "|" and an Enter typed at the end of the options of a select field', async () => {
-    const user = renderTab([
-      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
-    ])
-    await user.click(screen.getByText('Point'))
-    await pick(user, 'String', 'Select')
-    // The first button of a field row shows its details
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    expect.hasAssertions()
+
+    const user = await openPointField('Select')
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options, 'a|Alpha{Enter}b')
 
@@ -123,32 +164,36 @@ describe('struct blocks', () => {
     await waitFor(() => {
       const block = structBlock('Point')
 
-      expect(block).toContain(' * @option Alpha\n * @value a\n')
-      expect(block).toContain(' * @option b\n')
+      expect([
+        block.includes(' * @option Alpha\n * @value a\n'),
+        block.includes(' * @option b\n')
+      ]).toStrictEqual([true, true])
     })
   })
+})
+
+describe('struct blocks: select option values', () => {
+  beforeEach(resetStores)
 
   it('keeps every "|" after the first in the label of a select option', async () => {
-    const user = renderTab([
-      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
-    ])
-    await user.click(screen.getByText('Point'))
-    await pick(user, 'String', 'Select')
-    // The first button of a field row shows its details
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    expect.hasAssertions()
+
+    const user = await openPointField('Select')
     const options = screen.getByPlaceholderText(/^option1\|Option 1/)
     await user.type(options, 'a|b|c')
 
     expect(options).toHaveValue('a|b|c')
-    expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
-      { value: 'a', text: 'b|c' }
-    ])
+    expect(firstStructParameter().options).toStrictEqual([{ value: 'a', text: 'b|c' }])
 
-    await waitFor(() => expect(structBlock('Point')).toContain(' * @option b|c\n * @value a\n'))
+    await waitFor(() => {
+      expect(structBlock('Point')).toContain(' * @option b|c\n * @value a\n')
+    })
   })
 
   it('keeps a loaded select option whose value holds a "|" when the options are typed in', async () => {
-    const user = renderTab([
+    expect.hasAssertions()
+
+    const user = openTab([
       {
         ...createEmptyStruct(),
         name: 'Point',
@@ -166,52 +211,57 @@ describe('struct blocks', () => {
     ])
     await user.click(screen.getByText('Point'))
     // The first button of a field row shows its details
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    await expandField(user)
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'x')
 
-    expect(usePluginStore.getState().plugin.structs[0].parameters[0].options).toEqual([
+    expect(firstStructParameter().options).toStrictEqual([
       { value: 'a|b', text: 'Label' },
       { value: 'cx', text: 'cx' }
     ])
   })
+})
+
+describe('struct blocks: field types', () => {
+  beforeEach(resetStores)
 
   it('writes a field holding another struct as that struct type', async () => {
-    const user = renderTab([
+    expect.hasAssertions()
+
+    const user = openTab([
       { ...createEmptyStruct(), name: 'Point' },
       { ...createEmptyStruct(), name: 'Area', parameters: [createEmptyParameter()] }
     ])
     await user.click(screen.getByText('Area'))
     await pick(user, 'String', 'Struct')
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    await expandField(user)
     await pick(user, 'Select struct...', 'Point')
-    await waitFor(() => expect(structBlock('Area')).toContain(' * @type struct<Point>\n'))
+    await waitFor(() => {
+      expect(structBlock('Area')).toContain(' * @type struct<Point>\n')
+    })
   })
 
   it('writes the options of a combo field', async () => {
-    const user = renderTab([
-      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
-    ])
-    await user.click(screen.getByText('Point'))
-    await pick(user, 'String', 'Combo')
-    // The first button of a field row shows its details
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    expect.hasAssertions()
+
+    const user = await openPointField('Combo')
     await user.type(screen.getByPlaceholderText(/^option1\|Option 1/), 'a|Alpha')
     await waitFor(() => {
       const block = structBlock('Point')
 
-      expect(block).toContain(' * @type combo\n')
-      expect(block).toContain(' * @option Alpha\n * @value a\n')
+      expect([
+        block.includes(' * @type combo\n'),
+        block.includes(' * @option Alpha\n * @value a\n')
+      ]).toStrictEqual([true, true])
     })
   })
 
   it('writes an array field as an array of the element type it picks', async () => {
-    const user = renderTab([
-      { ...createEmptyStruct(), name: 'Point', parameters: [createEmptyParameter()] }
-    ])
-    await user.click(screen.getByText('Point'))
-    await pick(user, 'String', 'Array')
-    await user.click(fieldRow('NewParameter').querySelector('button')!)
+    expect.hasAssertions()
+
+    const user = await openPointField('Array')
     await pick(user, 'String', 'Number')
-    await waitFor(() => expect(structBlock('Point')).toContain(' * @type number[]\n'))
+    await waitFor(() => {
+      expect(structBlock('Point')).toContain(' * @type number[]\n')
+    })
   })
 })

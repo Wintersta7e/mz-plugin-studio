@@ -76,7 +76,7 @@ describe('findAnnotationBlocks', () => {
   }
 
   it('each block runs from its opener to the first closing marker after it', () => {
-    const source = '﻿/*:\n * @plugindesc A\n */\r\n\r\n/*:ja\r\n * x\r\n */\r\n' + CODE
+    const source = '\u{FEFF}/*:\n * @plugindesc A\n */\r\n\r\n/*:ja\r\n * x\r\n */\r\n' + CODE
     const blocks = findAnnotationBlocks(source)
 
     expect(blocks.map((b) => source.slice(b.start, b.end))).toEqual([
@@ -88,9 +88,9 @@ describe('findAnnotationBlocks', () => {
 
   it('offsets in a CRLF text point at the same blocks as in its LF copy', () => {
     const lf = '/*:\n * @plugindesc A\n */\n\n/*~struct~Pos:\n * @param x\n */\n' + CODE
-    const crlf = lf.replace(/\n/g, '\r\n')
+    const crlf = lf.replaceAll('\n', '\r\n')
     const slices = (text: string): string[] =>
-      findAnnotationBlocks(text).map((b) => text.slice(b.start, b.end).replace(/\r\n/g, '\n'))
+      findAnnotationBlocks(text).map((b) => text.slice(b.start, b.end).replaceAll('\r\n', '\n'))
 
     expect(slices(crlf)).toEqual(slices(lf))
     expect(findAnnotationBlocks(crlf)[1].start).toBe(crlf.indexOf('/*~'))

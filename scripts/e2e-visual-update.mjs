@@ -17,7 +17,7 @@ import {
   writeFileSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -37,20 +37,29 @@ export const BASELINES = 'e2e/__screenshots__/linux'
 // Where Playwright writes the HTML report: below the directory of package.json
 export const REPORT = 'playwright-report'
 
+/**
+@param {string} line
+*/
 const print = (line) => process.stdout.write(`${line}\n`)
 
-/** @param {string} relPath a repository path with `/` @returns {boolean} */
-export function isCopyBack(relPath) {
-  return /^e2e\/__screenshots__\/linux\/[^/]+\.png$/.test(relPath)
+/**
+@param {string} relativePath a repository path with `/`
+@returns {boolean}
+*/
+export function isCopyBack(relativePath) {
+  return /^e2e\/__screenshots__\/linux\/[^/]+\.png$/.test(relativePath)
 }
 
-/** @param {boolean} check @returns {string} the command the image runs in the copy */
-export function imageCommand(check) {
+/**
+@param {boolean} isCheck
+@returns {string} the command the image runs in the copy
+*/
+export function imageCommand(isCheck) {
   const visual = [
     `${VISUAL_IMAGE_ENV}=1`,
     XVFB,
     'node node_modules/@playwright/test/cli.js test -c e2e/playwright.config.ts --project=visual',
-    ...(check ? [] : ['--update-snapshots=changed'])
+    ...(isCheck ? [] : ['--update-snapshots=changed'])
   ].join(' ')
   return [
     'npm ci --ignore-scripts',
@@ -60,11 +69,16 @@ export function imageCommand(check) {
   ].join(' && ')
 }
 
-/** @param {string} dir @returns {string[]} the PNG names in `dir` */
-const pngs = (dir) =>
-  existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.png')) : []
+/**
+@param {string} directory
+@returns {string[]} the PNG names in `directory`
+*/
+const pngs = (directory) =>
+  existsSync(directory) ? readdirSync(directory).filter((name) => name.endsWith('.png')) : []
 
-/** @param {string} copy */
+/**
+@param {string} copy
+*/
 function copyTree(copy) {
   const files = execFileSync(
     'git',
@@ -75,23 +89,26 @@ function copyTree(copy) {
     }
   )
     .split('\0')
-    .filter((file) => file && existsSync(join(ROOT, file)))
+    .filter((file) => file && existsSync(path.join(ROOT, file)))
   for (const file of files) {
-    mkdirSync(dirname(join(copy, file)), { recursive: true })
-    cpSync(join(ROOT, file), join(copy, file))
+    mkdirSync(path.dirname(path.join(copy, file)), { recursive: true })
+    cpSync(path.join(ROOT, file), path.join(copy, file))
   }
   // The suite compares git status before and after; baselines the run writes are its output
   execFileSync('git', ['init', '-q'], { cwd: copy })
-  writeFileSync(join(copy, 'e2e', '__screenshots__', '.gitignore'), '*\n')
+  writeFileSync(path.join(copy, 'e2e', '__screenshots__', '.gitignore'), '*\n')
   return files.length
 }
 
-/** @param {string[]} argv @returns {number} the container's exit status */
+/**
+@param {string[]} argv
+@returns {number} the container's exit status
+*/
 export function main(argv) {
-  const check = argv.includes('--check')
-  const copy = mkdtempSync(join(tmpdir(), 'mz-visual-'))
+  const isCheck = argv.includes('--check')
+  const copy = mkdtempSync(path.join(tmpdir(), 'mz-visual-'))
   try {
-    mkdirSync(join(copy, BASELINES), { recursive: true })
+    mkdirSync(path.join(copy, BASELINES), { recursive: true })
     print(`visual-update: copied ${copyTree(copy)} files`)
     // The image's files then belong to the caller, who deletes the copy
     if (!process.getuid || !process.getgid) throw new Error('runs on a Linux host only')
@@ -113,34 +130,33 @@ export function main(argv) {
         IMAGE,
         'bash',
         '-c',
-        imageCommand(check)
+        imageCommand(isCheck)
       ],
       { stdio: 'inherit' }
     )
     const status = docker.status ?? 1
     if (docker.error) print(`visual-update: docker failed to start: ${docker.error.message}`)
 
-    const changed = check
+    const changed = isCheck
       ? []
-      : pngs(join(copy, BASELINES)).filter((name) => {
-          const host = join(ROOT, BASELINES, name)
-          const fresh = join(copy, BASELINES, name)
+      : pngs(path.join(copy, BASELINES)).filter((name) => {
+          const host = path.join(ROOT, BASELINES, name)
+          const fresh = path.join(copy, BASELINES, name)
           return !existsSync(host) || !readFileSync(host).equals(readFileSync(fresh))
         })
     for (const name of changed) {
-      const relPath = `${BASELINES}/${name}`
-      if (!isCopyBack(relPath)) throw new Error(`not a Linux baseline: ${relPath}`)
-      mkdirSync(join(ROOT, BASELINES), { recursive: true })
-      cpSync(join(copy, relPath), join(ROOT, relPath))
+      const relativePath = `${BASELINES}/${name}`
+      if (!isCopyBack(relativePath)) throw new Error(`not a Linux baseline: ${relativePath}`)
+      mkdirSync(path.join(ROOT, BASELINES), { recursive: true })
+      cpSync(path.join(copy, relativePath), path.join(ROOT, relativePath))
     }
-    print(
-      `visual-update: changed ${changed.length}${changed.map((name) => `\n  ${name}`).join('')}`
-    )
+    const names = changed.map((name) => `\n  ${name}`).join('')
+    print(`visual-update: changed ${changed.length}${names}`)
 
-    if (existsSync(join(copy, REPORT))) {
-      rmSync(join(ROOT, REPORT), { recursive: true, force: true })
-      cpSync(join(copy, REPORT), join(ROOT, REPORT), { recursive: true })
-      print(`visual-update: report ${join(ROOT, REPORT, 'index.html')}`)
+    if (existsSync(path.join(copy, REPORT))) {
+      rmSync(path.join(ROOT, REPORT), { recursive: true, force: true })
+      cpSync(path.join(copy, REPORT), path.join(ROOT, REPORT), { recursive: true })
+      print(`visual-update: report ${path.join(ROOT, REPORT, 'index.html')}`)
     } else print('visual-update: no report written')
     print(`visual-update: exit ${status}`)
     return status
@@ -149,6 +165,11 @@ export function main(argv) {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+// Sets the exit status from main when run as a script, not when imported
+function runFromCommandLine() {
   process.exitCode = main(process.argv.slice(2))
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  runFromCommandLine()
 }

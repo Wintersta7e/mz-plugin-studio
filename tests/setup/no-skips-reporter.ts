@@ -3,10 +3,38 @@
 // skip by name: the RPG Maker MZ parity check without MZ_CORESCRIPT_DIR, which needs a local
 // install that never enters the repository. A run filtered by test name skips the rest on
 // purpose, so it is counted but not failed.
-import { relative } from 'path'
+import path from 'node:path'
 import type { Reporter, TestModule, Vitest } from 'vitest/node'
 
 const PARITY_FILE = 'tests/integration/mz-parity.test.ts'
+
+interface Tally {
+  found: string[]
+  skipped: number
+  expectedFails: number
+  parity: number
+}
+
+function tallyModule(
+  tally: Tally,
+  file: string,
+  module: TestModule,
+  isParityAllowed: boolean
+): void {
+  for (const testCase of module.children.allTests()) {
+    if (testCase.options.fails === true) {
+      tally.expectedFails++
+      tally.found.push(`expected to fail: ${file} > ${testCase.fullName}`)
+    }
+    if (testCase.result().state !== 'skipped') continue
+    if (isParityAllowed && file === PARITY_FILE) {
+      tally.parity++
+    } else {
+      tally.skipped++
+      tally.found.push(`${testCase.options.mode}: ${file} > ${testCase.fullName}`)
+    }
+  }
+}
 
 export default class NoSkipsReporter implements Reporter {
   private vitest: Vitest | undefined
@@ -15,34 +43,22 @@ export default class NoSkipsReporter implements Reporter {
     this.vitest = vitest
   }
 
-  onTestRunEnd(testModules: ReadonlyArray<TestModule>): void {
-    const vitest = this.vitest!
-    const parityAllowed = (process.env.MZ_CORESCRIPT_DIR ?? '') === ''
-    const found: string[] = []
-    let skipped = 0
-    let expectedFails = 0
-    let parity = 0
+  onTestRunEnd(testModules: readonly TestModule[]): void {
+    const { vitest } = this
+    if (vitest === undefined) throw new Error('the reporter ended a run it was not started for')
+    const { MZ_CORESCRIPT_DIR = '' } = process.env
+    const isParityAllowed = MZ_CORESCRIPT_DIR === ''
+    const tally: Tally = { found: [], skipped: 0, expectedFails: 0, parity: 0 }
     for (const module of testModules) {
-      const file = relative(vitest.config.root, module.moduleId).split('\\').join('/')
-      for (const test of module.children.allTests()) {
-        if (test.options.fails) {
-          expectedFails++
-          found.push(`expected to fail: ${file} > ${test.fullName}`)
-        }
-        if (test.result().state !== 'skipped') continue
-        if (parityAllowed && file === PARITY_FILE) {
-          parity++
-        } else {
-          skipped++
-          found.push(`${test.options.mode}: ${file} > ${test.fullName}`)
-        }
-      }
+      const file = path.relative(vitest.config.root, module.moduleId).replaceAll('\\', '/')
+      tallyModule(tally, file, module, isParityAllowed)
     }
-    const filtered = vitest.config.testNamePattern !== undefined
+    const { found, skipped, expectedFails, parity } = tally
+    const isFiltered = vitest.config.testNamePattern !== undefined
     vitest.logger.log(
-      `skipped or todo tests ${skipped}; expected-to-fail tests ${expectedFails}; ` +
-        `allowed: mz parity without MZ_CORESCRIPT_DIR ${parity}` +
-        (filtered ? '; not failed: the run is filtered by test name' : '')
+      `skipped or todo tests ${String(skipped)}; expected-to-fail tests ${String(expectedFails)}; ` +
+        `allowed: mz parity without MZ_CORESCRIPT_DIR ${String(parity)}` +
+        (isFiltered ? '; not failed: the run is filtered by test name' : '')
     )
     for (const line of found) vitest.logger.log(`  ${line}`)
     // How each project ordered its tests, and the seed that replays a shuffled run.
@@ -52,6 +68,6 @@ export default class NoSkipsReporter implements Reporter {
     )
     const seed = String(vitest.config.sequence.seed)
     vitest.logger.log(`test order: ${orders.join(', ')}; seed ${seed}`)
-    if (found.length > 0 && !filtered) process.exitCode = 1
+    if (!isFiltered && found.length > 0) process.exitCode = 1
   }
 }

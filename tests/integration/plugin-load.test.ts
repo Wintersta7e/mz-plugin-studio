@@ -1,8 +1,8 @@
 // Loading a plugin from a project copy: the definition records the file it came from and keeps
 // the file's text, so raw mode can save it back. A file that is not UTF-8 is refused, since its
 // text could not be written back unchanged.
-import { readFile, rm, writeFile } from 'fs/promises'
-import { dirname, join } from 'path'
+import { readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setCurrentProjectRoot } from '../../src/main/file-access'
@@ -26,9 +26,9 @@ afterEach(async () => {
 })
 
 /**
- * The handler main registers for `channel`, called as an invoke from the renderer reaches it,
- * with the test's project copy as the open project.
- */
+The handler main registers for `channel`, called as an invoke from the renderer reaches it,
+with the test's project copy as the open project.
+*/
 function handlerFor(channel: string): (...args: unknown[]) => Promise<unknown> {
   const ipc = registerMainHandlers()
   if (project !== null) setCurrentProjectRoot(project)
@@ -62,8 +62,8 @@ describe('loading a plugin file', () => {
       join(project, 'js', 'plugins', 'Fixture_Bom.js')
     )
 
-    expect(plugin.rawSource?.startsWith('﻿')).toBe(true)
-    expect(raw.content.startsWith('﻿')).toBe(true)
+    expect(plugin.rawSource?.startsWith('\u{FEFF}')).toBe(true)
+    expect(raw.content.startsWith('\u{FEFF}')).toBe(true)
     expect(byPath).toBe(raw.content)
   })
 

@@ -192,7 +192,7 @@ describe('template registry', () => {
           id: 'custom-validated',
           validate: (values) => ({
             valid: values.className === 'Game_Actor',
-            errors: values.className !== 'Game_Actor' ? ['Only Game_Actor is allowed'] : []
+            errors: values.className === 'Game_Actor' ? [] : ['Only Game_Actor is allowed']
           })
         })
       )

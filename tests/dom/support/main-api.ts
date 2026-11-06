@@ -12,8 +12,7 @@ import {
 } from '../../../src/main/ipc/plugin'
 import { PluginParser } from '../../../src/main/services/pluginParser'
 import { IPC_CHANNELS } from '../../../src/shared/ipc-types'
-import { createFakeApi } from '../../helpers/fake-api'
-import type { FakeApiOverrides } from '../../helpers/fake-api'
+import { createFakeApi, type FakeApiOverrides } from '../../helpers/fake-api'
 
 export interface MainApiOptions {
   chosen?: () => string | null
@@ -22,18 +21,20 @@ export interface MainApiOptions {
 }
 
 /**
- * `fn` as the renderer reaches it over `channel`: Electron sends a thrown error back as its
- * string and rejects with "Error invoking remote method '<channel>': <Name>Error: <message>".
- */
+`fn` as the renderer reaches it over `channel`: Electron sends a thrown error back as its
+string and rejects with "Error invoking remote method '<channel>': <Name>Error: <message>".
+*/
 export function viaIpc<A extends unknown[], R>(
   channel: string,
-  fn: (...args: A) => Promise<R>
+  function_: (...args: A) => Promise<R>
 ): (...args: A) => Promise<R> {
   return async (...args) => {
     try {
-      return await fn(...args)
+      return await function_(...args)
     } catch (error) {
-      throw new Error(`Error invoking remote method '${channel}': ${String(error)}`)
+      throw new Error(`Error invoking remote method '${channel}': ${String(error)}`, {
+        cause: error
+      })
     }
   }
 }
@@ -46,20 +47,37 @@ export function createMainApi({
   return createFakeApi({
     ...overrides,
     plugin: {
-      save: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_SAVE, savePluginFile)),
-      saveToPath: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, savePluginToPath)),
-      load: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_LOAD, loadPluginFile)),
-      readRaw: vi.fn(viaIpc(IPC_CHANNELS.PLUGIN_READ_RAW, readRawPlugin)),
-      parse: vi.fn(async (content: string) => PluginParser.parsePlugin(content)),
+      save: vi
+        .fn<Window['api']['plugin']['save']>()
+        .mockImplementation(viaIpc(IPC_CHANNELS.PLUGIN_SAVE, savePluginFile)),
+      saveToPath: vi
+        .fn<Window['api']['plugin']['saveToPath']>()
+        .mockImplementation(viaIpc(IPC_CHANNELS.PLUGIN_SAVE_TO_PATH, savePluginToPath)),
+      load: vi
+        .fn<Window['api']['plugin']['load']>()
+        .mockImplementation(viaIpc(IPC_CHANNELS.PLUGIN_LOAD, loadPluginFile)),
+      readRaw: vi
+        .fn<Window['api']['plugin']['readRaw']>()
+        .mockImplementation(viaIpc(IPC_CHANNELS.PLUGIN_READ_RAW, readRawPlugin)),
+      parse: vi.fn<Window['api']['plugin']['parse']>().mockImplementation(async (content) => {
+        const parsed = PluginParser.parsePlugin(content)
+        await Promise.resolve()
+        return parsed
+      }),
       ...overrides.plugin
     },
     dialog: {
-      saveFile: vi.fn(async () => {
+      saveFile: vi.fn<Window['api']['dialog']['saveFile']>().mockImplementation(async () => {
         const path = chosen()
         if (path !== null) recordWriteGrant(path)
+        await Promise.resolve()
         return path
       }),
-      message: vi.fn(async () => answers.shift() ?? 0),
+      message: vi.fn<Window['api']['dialog']['message']>().mockImplementation(async () => {
+        const answer = answers.shift() ?? 0
+        await Promise.resolve()
+        return answer
+      }),
       ...overrides.dialog
     }
   })

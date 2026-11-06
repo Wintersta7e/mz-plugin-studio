@@ -1,13 +1,13 @@
 // Tests for `ci-policy toolchain`: Node, its type definitions and Electron's Node against engines
 import { afterEach, describe, expect, it } from 'vitest'
-import { spawnSync } from 'child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { dirname, join } from 'path'
-import { fileURLToPath } from 'url'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
-const MAJOR = Number(process.versions.node.split('.')[0])
+const MAJOR = Number(process.versions.node.split('.', 1)[0])
 
 const tempDirs: string[] = []
 

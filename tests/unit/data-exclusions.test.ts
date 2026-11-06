@@ -1,8 +1,8 @@
 // Fixture and golden files are exact bytes: formatting, linting and the test program must
 // never read or rewrite them. Every data file on disk is checked against all three.
 import { describe, it, expect } from 'vitest'
-import { existsSync, readdirSync, statSync } from 'fs'
-import { join, resolve } from 'path'
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { getFileInfo } from 'prettier'
 import { ESLint } from 'eslint'
 import ts from 'typescript'
@@ -11,10 +11,11 @@ const DATA_GLOBS = ['tests/fixtures/**', 'tests/golden/__golden__/**']
 
 function filesUnder(dir: string): string[] {
   const root = join(process.cwd(), dir)
-  if (!existsSync(root)) return []
-  return (readdirSync(root, { recursive: true }) as string[])
-    .map((p) => join(root, p))
-    .filter((p) => statSync(p).isFile())
+  return existsSync(root)
+    ? (readdirSync(root, { recursive: true }) as string[])
+        .map((p) => join(root, p))
+        .filter((p) => statSync(p).isFile())
+    : []
 }
 
 describe('data exclusions', () => {
