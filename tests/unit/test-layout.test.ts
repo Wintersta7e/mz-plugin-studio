@@ -12,8 +12,9 @@ const join = (...parts: string[]): string => path.join(...parts)
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 const member = (record: Record<string, unknown>, key: string): unknown => Reflect.get(record, key)
+const isList = (value: unknown): value is unknown[] => Array.isArray(value)
 const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item: unknown) => typeof item === 'string')
+  isList(value) && value.every((item) => typeof item === 'string')
 const configPath = pathToFileURL(join(process.cwd(), 'eslint.config.mjs')).href
 
 // Owner of the routed-specifier list; the ESLint routing block mirrors it.
@@ -175,9 +176,9 @@ describe('test layout', () => {
     const blockRules = isRecord(block) ? member(block, 'rules') : undefined
     const rules = isRecord(blockRules) ? blockRules : {}
     const restriction = rules['no-restricted-imports']
-    const options: unknown = Array.isArray(restriction) ? restriction.at(1) : undefined
+    const options = isList(restriction) ? restriction.at(1) : undefined
     const patterns = isRecord(options) ? member(options, 'patterns') : undefined
-    const firstPattern: unknown = Array.isArray(patterns) ? patterns.at(0) : undefined
+    const firstPattern = isList(patterns) ? patterns.at(0) : undefined
     const group = isRecord(firstPattern) ? member(firstPattern, 'group') : undefined
 
     expect(patterns).toHaveLength(1)

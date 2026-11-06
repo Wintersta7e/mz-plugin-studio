@@ -3,15 +3,20 @@
 // plugin must behave the same in both. Without the variable nothing of an install is read, and
 // the test says so.
 import { describe, expect, it } from 'vitest'
-import { conformanceCases, runConformance } from '../helpers/mz-conformance'
-import type { ConformanceCase, ConformanceReport } from '../helpers/mz-conformance'
+import {
+  conformanceCases,
+  runConformance,
+  type ConformanceCase,
+  type ConformanceReport
+} from '../helpers/mz-conformance'
 import { corescriptVersion, createMzCorescript } from '../helpers/mz-corescript'
-import { createMzShim } from '../helpers/mz-runtime'
-import type { MzRuntime } from '../helpers/mz-runtime'
+import { createMzShim, type MzRuntime } from '../helpers/mz-runtime'
 
-const dir = process.env.MZ_CORESCRIPT_DIR ?? ''
+const { MZ_CORESCRIPT_DIR: coreDirectory = '' } = process.env
 
-/** What one case did on one runtime: its findings, its renamed loads and its trace. */
+/**
+What one case did on one runtime: its findings, its renamed loads and its trace.
+*/
 function behaviour(report: ConformanceReport, id: string): string {
   return JSON.stringify({
     findings: report.findings.filter((f) => f.caseId === id),
@@ -24,41 +29,56 @@ function differing(a: ConformanceReport, b: ConformanceReport, cases: Conformanc
   return cases.map((c) => c.id).filter((id) => behaviour(a, id) !== behaviour(b, id))
 }
 
-/** The stand-in with commands stored under the plugin name in lower case. */
+interface CommandRegistry {
+  registerCommand: (plugin: string, command: string, handler: unknown) => void
+}
+
+function isCommandRegistry(value: unknown): value is CommandRegistry {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'registerCommand' in value &&
+    typeof value.registerCommand === 'function'
+  )
+}
+
+/**
+The stand-in with commands stored under the plugin name in lower case.
+*/
 function lowerCasedCommandKeys(): MzRuntime {
   const mz = createMzShim()
-  const manager = mz.context.PluginManager as {
-    registerCommand(plugin: string, command: string, fn: unknown): void
-  }
+  const { PluginManager: manager }: Record<string, unknown> = mz.context
+  if (!isCommandRegistry(manager)) throw new Error('the stand-in has no command registry')
   const register = manager.registerCommand.bind(manager)
-  manager.registerCommand = (plugin, command, fn) => register(plugin.toLowerCase(), command, fn)
+  manager.registerCommand = (plugin, command, handler) => {
+    register(plugin.toLowerCase(), command, handler)
+  }
   return mz
 }
 
+const core = (): MzRuntime => createMzCorescript(coreDirectory)
+
 // Skipped, not passed, without the variable: the run's skip counter allows this file by name.
-describe.skipIf(dir === '')('plugin loader stand-in against a local MZ install', () => {
+describe.skipIf(coreDirectory === '')('plugin loader stand-in against a local MZ install', () => {
   const cases = conformanceCases()
-  const core = (): MzRuntime => createMzCorescript(dir)
 
   it('gives every case the same report as the core scripts', () => {
-    console.log(`mz parity: corescript ${corescriptVersion(dir)}`)
+    process.stdout.write(`mz parity: corescript ${corescriptVersion(coreDirectory)}\n`)
     const shim = runConformance(createMzShim, cases)
     const real = runConformance(core, cases)
     const differ = differing(shim, real, cases)
-    console.log(
-      `mz parity: plugins ${cases.length}, identical ${cases.length - differ.length}, ` +
-        `differing ${differ.length}`
+    process.stdout.write(
+      `mz parity: plugins ${String(cases.length)}, ` +
+        `identical ${String(cases.length - differ.length)}, differing ${String(differ.length)}\n`
     )
 
     expect(cases.length).toBeGreaterThan(0)
-
-    const first = differ[0]
-
+    // The first differing case, with both behaviours
     expect(
-      first === undefined
-        ? ''
-        : `${first}\nshim ${behaviour(shim, first)}\nmz   ${behaviour(real, first)}`
-    ).toBe('')
+      differ
+        .slice(0, 1)
+        .map((first) => `${first}\nshim ${behaviour(shim, first)}\nmz   ${behaviour(real, first)}`)
+    ).toStrictEqual([])
   }, 120_000)
 
   it('tells a stand-in that stores commands under another key from the core scripts', () => {

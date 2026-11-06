@@ -3,11 +3,24 @@
 import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync, readlinkSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import path from 'node:path'
 import { isWithin, readArtifacts, runRoot } from './fixtures/app'
 import { TREE_SNAPSHOT, treeStatus } from './global-setup'
 
-/** Executables of every running process the platform lets us read */
+/**
+The executable of process `pid`, or undefined once it exited or when it is not ours to read
+*/
+function executableOf(pid: string): string | undefined {
+  try {
+    return readlinkSync(`/proc/${pid}/exe`)
+  } catch {
+    return undefined
+  }
+}
+
+/**
+Executables of every running process the platform lets us read
+*/
 function processExecutables(): string[] {
   if (process.platform === 'win32') {
     return execFileSync(
@@ -24,44 +37,41 @@ function processExecutables(): string[] {
   }
   return readdirSync('/proc')
     .filter((entry) => /^\d+$/.test(entry))
-    .flatMap((pid) => {
-      try {
-        return [readlinkSync(`/proc/${pid}/exe`)]
-      } catch {
-        // Exited meanwhile, or not ours to read
-        return []
-      }
-    })
+    .map((pid) => executableOf(pid))
+    .filter((executable) => executable !== undefined)
 }
 
 const lines = (text: string): Set<string> => new Set(text.split('\n').filter(Boolean))
 
-export default async function globalTeardown(): Promise<void> {
+export default function globalTeardown(): void {
   const { release, twin } = readArtifacts()
-  const appDirs = [dirname(release), dirname(twin)]
-  const left = processExecutables().filter((exe) => appDirs.some((dir) => isWithin(exe, dir)))
-  process.stdout.write(`e2e: app processes left ${left.length}\n`)
-  if (process.env['E2E_RUN_ROOT'] === undefined) {
+  const appDirectories = [path.dirname(release), path.dirname(twin)]
+  const left = processExecutables().filter((exe) =>
+    appDirectories.some((directory) => isWithin(exe, directory))
+  )
+  process.stdout.write(`e2e: app processes left ${String(left.length)}\n`)
+  const { E2E_RUN_ROOT: createdRoot, E2E_RUN_START: startText } = process.env
+  if (createdRoot === undefined) {
     // The global setup failed before creating the run root, so no test ran
-    if (left.length > 0) throw new Error(`e2e teardown: app processes left ${left.length}`)
+    if (left.length > 0) throw new Error(`e2e teardown: app processes left ${String(left.length)}`)
     return
   }
 
   const root = runRoot()
-  const before = lines(readFileSync(join(root, TREE_SNAPSHOT), 'utf8'))
-  const added = [...lines(treeStatus())].filter((line) => !before.has(line))
-  process.stdout.write(`e2e: tree entries added ${added.length}\n`)
+  const before = lines(readFileSync(path.join(root, TREE_SNAPSHOT), 'utf8'))
+  const added = [...lines(treeStatus()).difference(before)]
+  process.stdout.write(`e2e: tree entries added ${String(added.length)}\n`)
 
   rmSync(root, { recursive: true, force: true, maxRetries: 3 })
-  const roots = readdirSync(tmpdir()).filter((entry) => join(tmpdir(), entry) === root)
-  process.stdout.write(`e2e: temp roots left ${roots.length}\n`)
+  const roots = readdirSync(tmpdir()).filter((entry) => path.join(tmpdir(), entry) === root)
+  process.stdout.write(`e2e: temp roots left ${String(roots.length)}\n`)
 
   // Copies of the fixture project made during the run that a teardown missed
-  const start = Number(process.env['E2E_RUN_START'])
+  const start = Number(startText)
   const copies = readdirSync(tmpdir())
     .filter((entry) => entry.startsWith('mz-fixture-'))
-    .filter((entry) => statSync(join(tmpdir(), entry)).mtimeMs >= start)
-  process.stdout.write(`e2e: fixture copies left ${copies.length}\n`)
+    .filter((entry) => statSync(path.join(tmpdir(), entry)).mtimeMs >= start)
+  process.stdout.write(`e2e: fixture copies left ${String(copies.length)}\n`)
 
   const problems = [
     ...left.map((exe) => `app process left: ${exe}`),

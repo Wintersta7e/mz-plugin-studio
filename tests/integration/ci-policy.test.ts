@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import path from 'node:path'
 
-const SCRIPT = resolve('scripts/ci-policy.mjs')
+const SCRIPT = path.resolve('scripts/ci-policy.mjs')
 
 interface AsarTree {
   [name: string]: number | AsarTree
@@ -46,22 +46,24 @@ function writeAsar(file: string, tree: AsarTree): void {
   writeFileSync(file, buffer)
 }
 
-const tempDirs: string[] = []
+const temporaryDirectories: string[] = []
 
-function tempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'ci-policy-'))
-  tempDirs.push(dir)
-  return dir
+function temporaryDirectory(): string {
+  const directory = mkdtempSync(path.join(tmpdir(), 'ci-policy-'))
+  temporaryDirectories.push(directory)
+  return directory
 }
 
-afterEach(() => {
-  for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true })
-})
+function removeTemporaryDirectories(): void {
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true })
+  }
+}
 
 function writeFiles(root: string, files: Record<string, string>): void {
-  for (const [path, content] of Object.entries(files)) {
-    mkdirSync(dirname(join(root, path)), { recursive: true })
-    writeFileSync(join(root, path), content)
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(root, file)), { recursive: true })
+    writeFileSync(path.join(root, file), content)
   }
 }
 
@@ -78,12 +80,14 @@ const ALLOWED: AsarTree = {
 }
 
 function checkAsar(tree: AsarTree): { status: number | null; out: string } {
-  const file = join(tempDir(), 'app.asar')
+  const file = path.join(temporaryDirectory(), 'app.asar')
   writeAsar(file, tree)
   return runPolicy(['package', file])
 }
 
 describe('ci-policy package', () => {
+  afterEach(removeTemporaryDirectories)
+
   it('accepts the allowed layout and reports its sizes and packages', () => {
     const { status, out } = checkAsar(ALLOWED)
 
@@ -124,7 +128,9 @@ describe('ci-policy package', () => {
   })
 
   it('requires the third-party licence file', () => {
-    const { 'THIRD_PARTY_LICENSES.md': _omitted, ...tree } = ALLOWED
+    const tree = Object.fromEntries(
+      Object.entries(ALLOWED).filter(([name]) => name !== 'THIRD_PARTY_LICENSES.md')
+    )
     const { status, out } = checkAsar(tree)
 
     expect(lines(out)).toContain('FAIL missing: THIRD_PARTY_LICENSES.md')
@@ -139,7 +145,7 @@ describe('ci-policy package', () => {
   })
 
   it('fails a file that is not an asar archive', () => {
-    const file = join(tempDir(), 'app.asar')
+    const file = path.join(temporaryDirectory(), 'app.asar')
     writeFileSync(file, Buffer.alloc(64, 0xff))
     const { status, out } = runPolicy(['package', file])
 
@@ -148,7 +154,7 @@ describe('ci-policy package', () => {
   })
 
   it('fails a path that does not exist', () => {
-    const missing = join(tempDir(), 'missing.asar')
+    const missing = path.join(temporaryDirectory(), 'missing.asar')
     const { status, out } = runPolicy(['package', missing])
 
     expect(lines(out)).toContain(`not found: ${missing}`)
@@ -175,7 +181,7 @@ const MAIN_SOURCE = [
 const DEPENDENCIES = { a: '1.0.0', '@s/b': '1.0.0', f: '1.0.0', g: '1.0.0' }
 
 function sourceRoot(dependencies: Record<string, string>, mainSource = MAIN_SOURCE): string {
-  const root = tempDir()
+  const root = temporaryDirectory()
   writeFiles(root, {
     'package.json': JSON.stringify({ name: 'fixture', dependencies }),
     'src/main/x.ts': mainSource,
@@ -186,58 +192,90 @@ function sourceRoot(dependencies: Record<string, string>, mainSource = MAIN_SOUR
   return root
 }
 
+function scanImports(
+  dependencies: Record<string, string>,
+  mainSource?: string
+): ReturnType<typeof runPolicy> {
+  return runPolicy(['runtime-deps'], sourceRoot(dependencies, mainSource))
+}
+
+const SCANNED_ONE_EACH =
+  'ci-policy runtime-deps: files scanned 3 (src/main 1, src/preload 1, src/shared 1)'
+const SCANNED_NONE =
+  'ci-policy runtime-deps: files scanned 0 (src/main 0, src/preload 0, src/shared 0)'
+
+const LINE_COMMENT_DEPENDENCIES = { 'line-comment': '1.0.0', f: '1.0.0', g: '1.0.0' }
+
+const LINE_COMMENT_SOURCE = [
+  'import {',
+  "  one, // was from 'old-name'",
+  '  two',
+  "} from 'line-comment'",
+  'import {',
+  '  type A, // a type',
+  '  type B',
+  "} from 'typeonly-commented'",
+  ''
+].join('\n')
+
+const BLOCK_COMMENT_SOURCE = [
+  "import { one /* why */, two } from 'block-comment'",
+  "import /* default */ three from 'block-default'",
+  ''
+].join('\n')
+
+const BLOCK_COMMENT_DEPENDENCIES = {
+  'block-comment': '1.0.0',
+  'block-default': '1.0.0',
+  f: '1.0.0',
+  g: '1.0.0'
+}
+
+const COMMENTED_SOURCES = [
+  ['a local export list', "export { // was from 'commented-dep'\n  local\n}\nconst local = 1\n"],
+  [
+    'a clause no pattern reads',
+    "import { // from 'commented-dep'\n  'a-b' as ab\n} from './local'\n"
+  ]
+]
+
 describe('ci-policy runtime-deps', () => {
+  afterEach(removeTemporaryDirectories)
+
   it('counts value imports and skips type-only, relative, builtin and electron imports', () => {
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(DEPENDENCIES))
+    const { status, out } = scanImports(DEPENDENCIES)
 
     expect(status).toBe(0)
-    expect(lines(out)).toContain(
-      'ci-policy runtime-deps: files scanned 3 (src/main 1, src/preload 1, src/shared 1)'
-    )
+    expect(lines(out)).toContain(SCANNED_ONE_EACH)
     expect(lines(out)).toContain('value imports 4: @s/b, a, f, g')
     expect(lines(out)).toContain('ci-policy runtime-deps: ok')
   })
 
   it('fails a dependency nothing imports', () => {
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot({ ...DEPENDENCIES, c: '1.0.0' }))
+    const { status, out } = scanImports({ ...DEPENDENCIES, c: '1.0.0' })
 
     expect(lines(out)).toContain('in dependencies, not imported 1: c')
     expect(status).toBe(1)
   })
 
   it('fails an import missing from dependencies', () => {
-    const root = sourceRoot(DEPENDENCIES, `${MAIN_SOURCE}export { h } from 'h'\n`)
-    const { status, out } = runPolicy(['runtime-deps'], root)
+    const { status, out } = scanImports(DEPENDENCIES, `${MAIN_SOURCE}export { h } from 'h'\n`)
 
     expect(lines(out)).toContain('imported, not in dependencies 1: h')
     expect(status).toBe(1)
   })
 
   it('fails when no source file is scanned', () => {
-    const root = tempDir()
+    const root = temporaryDirectory()
     writeFiles(root, { 'package.json': JSON.stringify({ name: 'fixture', dependencies: {} }) })
     const { status, out } = runPolicy(['runtime-deps'], root)
 
-    expect(lines(out)).toContain(
-      'ci-policy runtime-deps: files scanned 0 (src/main 0, src/preload 0, src/shared 0)'
-    )
+    expect(lines(out)).toContain(SCANNED_NONE)
     expect(status).toBe(1)
   })
 
   it('reads an import clause that holds a line comment', () => {
-    const source = [
-      'import {',
-      "  one, // was from 'old-name'",
-      '  two',
-      "} from 'line-comment'",
-      'import {',
-      '  type A, // a type',
-      '  type B',
-      "} from 'typeonly-commented'",
-      ''
-    ].join('\n')
-    const root = sourceRoot({ 'line-comment': '1.0.0', f: '1.0.0', g: '1.0.0' }, source)
-    const { status, out } = runPolicy(['runtime-deps'], root)
+    const { status, out } = scanImports(LINE_COMMENT_DEPENDENCIES, LINE_COMMENT_SOURCE)
 
     expect(lines(out)).toContain('value imports 3: f, g, line-comment')
     expect(lines(out)).toContain('unclassified imports 0:')
@@ -245,18 +283,7 @@ describe('ci-policy runtime-deps', () => {
   })
 
   it('reads an import clause that holds a block comment', () => {
-    const source = [
-      "import { one /* why */, two } from 'block-comment'",
-      "import /* default */ three from 'block-default'",
-      ''
-    ].join('\n')
-    const dependencies = {
-      'block-comment': '1.0.0',
-      'block-default': '1.0.0',
-      f: '1.0.0',
-      g: '1.0.0'
-    }
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    const { status, out } = scanImports(BLOCK_COMMENT_DEPENDENCIES, BLOCK_COMMENT_SOURCE)
 
     expect(lines(out)).toContain('value imports 4: block-comment, block-default, f, g')
     expect(status).toBe(0)
@@ -265,7 +292,7 @@ describe('ci-policy runtime-deps', () => {
   it('reads a re-export that follows a local type export', () => {
     const source = "export type { E }\nexport { h } from 'after-type-export'\n"
     const dependencies = { 'after-type-export': '1.0.0', f: '1.0.0', g: '1.0.0' }
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    const { status, out } = scanImports(dependencies, source)
 
     expect(lines(out)).toContain('value imports 3: after-type-export, f, g')
     expect(status).toBe(0)
@@ -274,7 +301,7 @@ describe('ci-policy runtime-deps', () => {
   it('reads a default import named type as a value import', () => {
     const source = "import type from 'default-named-type'\n"
     const dependencies = { 'default-named-type': '1.0.0', f: '1.0.0', g: '1.0.0' }
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+    const { status, out } = scanImports(dependencies, source)
 
     expect(lines(out)).toContain('value imports 3: default-named-type, f, g')
     expect(status).toBe(0)
@@ -282,30 +309,24 @@ describe('ci-policy runtime-deps', () => {
 
   it('fails a from-import no pattern reads, naming its file and line', () => {
     const source = "import { app } from 'electron'\nimport { 'a-b' as ab } from 'quoted-name'\n"
-    const { status, out } = runPolicy(
-      ['runtime-deps'],
-      sourceRoot({ f: '1.0.0', g: '1.0.0' }, source)
-    )
+    const { status, out } = scanImports({ f: '1.0.0', g: '1.0.0' }, source)
 
     expect(lines(out)).toContain('unclassified imports 1: src/main/x.ts:2')
     expect(lines(out)).toContain('ci-policy runtime-deps: FAILED')
     expect(status).toBe(1)
   })
 
-  it.each([
-    ['a local export list', "export { // was from 'commented-dep'\n  local\n}\nconst local = 1\n"],
-    [
-      'a clause no pattern reads',
-      "import { // from 'commented-dep'\n  'a-b' as ab\n} from './local'\n"
-    ]
-  ])('never reads the source from a line comment inside %s', (_shape, source) => {
-    const dependencies = { 'commented-dep': '1.0.0', f: '1.0.0', g: '1.0.0' }
-    const { status, out } = runPolicy(['runtime-deps'], sourceRoot(dependencies, source))
+  it.each(COMMENTED_SOURCES)(
+    'never reads the source from a line comment inside %s',
+    (_shape, source) => {
+      const dependencies = { 'commented-dep': '1.0.0', f: '1.0.0', g: '1.0.0' }
+      const { status, out } = scanImports(dependencies, source)
 
-    expect(lines(out)).toContain('value imports 2: f, g')
-    expect(lines(out)).toContain('unclassified imports 1: src/main/x.ts:1')
-    expect(status).toBe(1)
-  })
+      expect(lines(out)).toContain('value imports 2: f, g')
+      expect(lines(out)).toContain('unclassified imports 1: src/main/x.ts:1')
+      expect(status).toBe(1)
+    }
+  )
 
   it('passes on the repository tree', () => {
     const { status, out } = runPolicy(['runtime-deps'])

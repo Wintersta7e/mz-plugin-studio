@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.e2e.json",
-  "compilerOptions": {
-    "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true
-  }
-}

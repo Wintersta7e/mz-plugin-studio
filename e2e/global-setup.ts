@@ -4,13 +4,15 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import path from 'node:path'
 import { getCurrentFuseWire } from '@electron/fuses'
 import { readArtifacts } from './fixtures/app'
 
 export const TREE_SNAPSHOT = 'tree-status.txt'
 
-/** `git status` of the working tree, every untracked file included */
+/**
+`git status` of the working tree, every untracked file included
+*/
 export function treeStatus(): string {
   return execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], {
     cwd: process.cwd(),
@@ -28,11 +30,10 @@ export default async function globalSetup(): Promise<void> {
   process.stdout.write(`e2e: fuses release ${formatWire(releaseWire)}\n`)
   process.stdout.write(`e2e: fuses twin ${formatWire(twinWire)}\n`)
   const { diff } = compareWires(releaseWire, twinWire)
-  process.stdout.write(`e2e: fuse diff ${diff.join(', ')} (${diff.length} fuse)\n`)
+  process.stdout.write(`e2e: fuse diff ${diff.join(', ')} (${String(diff.length)} fuse)\n`)
 
-  const root = mkdtempSync(join(tmpdir(), 'mz-e2e-run-'))
-  process.env['E2E_RUN_ROOT'] = root
-  process.env['E2E_RUN_START'] = String(Date.now())
-  writeFileSync(join(root, TREE_SNAPSHOT), treeStatus())
+  const root = mkdtempSync(path.join(tmpdir(), 'mz-e2e-run-'))
+  Object.assign(process.env, { E2E_RUN_ROOT: root, E2E_RUN_START: String(Date.now()) })
+  writeFileSync(path.join(root, TREE_SNAPSHOT), treeStatus())
   process.stdout.write(`e2e: run root ${root}\n`)
 }

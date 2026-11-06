@@ -2,7 +2,7 @@
 // data loader returns entries and nothing is logged as an error.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { rm } from 'node:fs/promises'
-import { basename, dirname } from 'node:path'
+import path from 'node:path'
 import log from 'electron-log/main'
 import { ProjectParser } from '../../src/main/services/projectParser'
 import { copyFixtureProject } from '../helpers/fixture-project'
@@ -10,24 +10,30 @@ import { copyFixtureProject } from '../helpers/fixture-project'
 const copies: string[] = []
 
 async function loadCopy(leaf?: string): Promise<string> {
-  const path = await copyFixtureProject(leaf)
-  copies.push(path)
-  return path
+  const copy = await copyFixtureProject(leaf)
+  copies.push(copy)
+  return copy
 }
 
-async function expectLoads(path: string): Promise<void> {
-  expect(await ProjectParser.validateProject(path)).toEqual({ valid: true })
+function isList(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value)
+}
 
-  const project = await ProjectParser.parseProject(path)
-  const counts = Object.entries(project)
-    .filter(([, value]) => Array.isArray(value))
-    .map(([field, value]) => [field, (value as unknown[]).length] as const)
+async function expectLoads(copy: string): Promise<void> {
+  await expect(ProjectParser.validateProject(copy)).resolves.toStrictEqual({ valid: true })
 
-  console.log(`fixture project: ${counts.map(([field, n]) => `${field} ${n}`).join(', ')}`)
+  const project = await ProjectParser.parseProject(copy)
+  const fields: [string, unknown][] = Object.entries(project)
+  const counts = fields.flatMap(([field, value]) =>
+    isList(value) ? [[field, value.length] as const] : []
+  )
+  const listed = counts.map(([field, n]) => [field, String(n)].join(' ')).join(', ')
+
+  process.stdout.write(`fixture project: ${listed}\n`)
 
   expect(project.gameTitle).toBe('Fixture Game')
   expect(counts.length).toBeGreaterThan(0)
-  expect(counts.filter(([, n]) => n < 1)).toEqual([])
+  expect(counts.filter(([, n]) => n < 1)).toStrictEqual([])
   expect(vi.mocked(log.error)).toHaveBeenCalledTimes(0)
 }
 
@@ -37,22 +43,27 @@ describe('fixture project', () => {
   })
 
   afterEach(async () => {
-    for (const path of copies.splice(0)) await rm(dirname(path), { recursive: true, force: true })
+    for (const copy of copies.splice(0))
+      await rm(path.dirname(copy), { recursive: true, force: true })
   })
 
   it('loads through the project parser', async () => {
-    const path = await loadCopy()
+    expect.assertions(6)
 
-    expect(basename(path)).toBe('Fixture Game')
+    const copy = await loadCopy()
 
-    await expectLoads(path)
+    expect(path.basename(copy)).toBe('Fixture Game')
+
+    await expectLoads(copy)
   })
 
   it('loads from a path with spaces and parentheses', async () => {
-    const path = await loadCopy('Fixture Game (copy)')
+    expect.assertions(6)
 
-    expect(basename(path)).toBe('Fixture Game (copy)')
+    const copy = await loadCopy('Fixture Game (copy)')
 
-    await expectLoads(path)
+    expect(path.basename(copy)).toBe('Fixture Game (copy)')
+
+    await expectLoads(copy)
   })
 })

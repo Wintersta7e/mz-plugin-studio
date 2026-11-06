@@ -6,10 +6,14 @@ import { fileURLToPath } from 'node:url'
 const SCRIPT = fileURLToPath(new URL('../../scripts/ci-policy.mjs', import.meta.url))
 
 function needs(json: string | undefined): { status: number | null; out: string } {
-  const env = { ...process.env }
-  delete env.NEEDS_JSON
-  if (json !== undefined) env.NEEDS_JSON = json
-  const result = spawnSync(process.execPath, [SCRIPT, 'needs'], { env, encoding: 'utf8' })
+  const inherited = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => name !== 'NEEDS_JSON')
+  )
+  const environment = json === undefined ? inherited : { ...inherited, NEEDS_JSON: json }
+  const result = spawnSync(process.execPath, [SCRIPT, 'needs'], {
+    env: environment,
+    encoding: 'utf8'
+  })
   return { status: result.status, out: result.stdout + result.stderr }
 }
 

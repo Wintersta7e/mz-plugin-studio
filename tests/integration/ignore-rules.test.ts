@@ -9,11 +9,9 @@ const IGNORED_PATHS = [
 ]
 
 describe('ignore rules', () => {
-  for (const path of IGNORED_PATHS) {
-    it(`${path} is ignored by git`, () => {
-      const result = spawnSync('git', ['check-ignore', '-q', path], { cwd: process.cwd() })
+  it.each(IGNORED_PATHS)('%s is ignored by git', (path) => {
+    const result = spawnSync('git', ['check-ignore', '-q', path], { cwd: process.cwd() })
 
-      expect(result.status).toBe(0)
-    })
-  }
+    expect(result.status).toBe(0)
+  })
 })

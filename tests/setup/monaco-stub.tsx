@@ -206,8 +206,6 @@ export function Editor({
   )
 }
 
-export default Editor
-
 export function DiffEditor({
   original = '',
   modified = ''
