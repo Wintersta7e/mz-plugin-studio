@@ -489,7 +489,18 @@ test('release build serves the production policy and blocks inline code', async 
     const script = document.createElement('script')
     script.textContent = 'globalThis.e2eInline = 1'
     document.body.append(script)
-    Reflect.apply(setTimeout, globalThis, ['globalThis.e2eTimer = 1', 0])
+    // Code from a string, in a task the page scheduled (the evaluated callback itself may eval):
+    // the policy refuses it and the page's eval throws, which the page records
+    setTimeout(() => {
+      try {
+        globalThis.eval('globalThis.e2eTimer = 1')
+      } catch (error) {
+        Reflect.set(globalThis, 'e2eEvalRefusal', {
+          evalError: error instanceof EvalError,
+          message: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }, 0)
   })
   await expect
     .poll(async () => {
@@ -504,10 +515,23 @@ test('release build serves the production policy and blocks inline code', async 
     await page.evaluate((): unknown[] => {
       const inline: unknown = Reflect.get(globalThis, 'e2eInline')
       const timer: unknown = Reflect.get(globalThis, 'e2eTimer')
-      return [inline, timer]
+      const refusal: unknown = Reflect.get(globalThis, 'e2eEvalRefusal')
+      return [inline, timer, refusal]
     })
-  ).toEqual([undefined, undefined])
-  await expect.poll(() => policy.refused.length).toBe(2)
+  ).toEqual([
+    undefined,
+    undefined,
+    // This engine words the refusal "Evaluating a string as JavaScript violates ..."; older ones
+    // began it "Refused to evaluate a string as JavaScript"
+    {
+      evalError: true,
+      message: expect.stringMatching(
+        /^(?:Refused to evaluate|Evaluating) a string as JavaScript .*'unsafe-eval'/v
+      )
+    }
+  ])
+  // Only the inline script logs a refusal: the refused eval throws instead, as checked above
+  await expect.poll(() => policy.refused.length).toBe(1)
   policy.print()
 })
 
