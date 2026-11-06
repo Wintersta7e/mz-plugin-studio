@@ -48,3 +48,31 @@ PluginManager.registerCommand(' ', 'Sample', function(args) {
     // Your command logic here
     console.log('Sample called');
 });
+
+// ==== case: type-violating: commandName=null,arg1Name="target",arg1Type="number",arg2Name="data",arg2Type="json" {"arg1Type":"number","arg2Type":"json","commandName":null,"pluginName":"Sample","arg1Name":"target","arg2Name":"data"}
+// rejects: Field "Command Name" is required
+// Plugin Command: 
+// Arguments:
+//   target (number) - First argument
+//   data (json) - Second argument
+PluginManager.registerCommand('Sample', '', function(args) {
+    // Parse arguments
+    const target = Number(args.target);
+    const data = JSON.parse(args.data);
+
+    // Your command logic here
+    console.log(' called with:', target, data);
+});
+
+// ==== case: type-violating: commandName=42,arg1Name="flag",arg1Type="boolean" {"arg1Type":"boolean","arg2Type":"number","commandName":42,"pluginName":"Sample","arg1Name":"flag"}
+// rejects: Field "Command Name" must be text
+// Plugin Command: 42
+// Arguments:
+//   flag (boolean) - First argument
+PluginManager.registerCommand('Sample', '42', function(args) {
+    // Parse arguments
+    const flag = args.flag === 'true';
+
+    // Your command logic here
+    console.log('42 called with:', flag);
+});

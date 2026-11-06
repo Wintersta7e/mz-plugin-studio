@@ -183,13 +183,24 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { arg1Name: 'target', arg2Name: 42 },
     { commandName: ' ', pluginName: null },
     { commandName: '1st', arg1Type: null },
-    { pluginName: ' ', arg2Type: null }
+    { pluginName: ' ', arg2Type: null },
+    {
+      commandName: null,
+      arg1Name: 'target',
+      arg1Type: 'number',
+      arg2Name: 'data',
+      arg2Type: 'json'
+    },
+    { commandName: 42, arg1Name: 'flag', arg1Type: 'boolean' }
   ],
   'plugin-command-validated': [
     { errorHandling: 'silent', pluginName: 42 },
     { errorHandling: 'throw', pluginName: null },
     { minValue: null, maxValue: 'abc' },
-    { minValue: 5, maxValue: null }
+    { minValue: 5, maxValue: null },
+    { validateNumberRange: null },
+    { validateActorId: null },
+    { validateActorId: null, validateNumberRange: null }
   ],
   'popup-notification-window': [
     { defaultDuration: null, height: null },
