@@ -3,11 +3,13 @@
 // floor directory.
 import { describe, it, expect, afterEach } from 'vitest'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 const SCRIPT = path.resolve(process.cwd(), 'scripts/check-coverage.mjs')
+// The floors the check reads, copied into each throwaway repository.
+const RATCHETS = path.resolve(process.cwd(), 'ratchets.json')
 // No user or system git configuration reaches the throwaway repositories.
 const ENV = { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' }
 const DIRS = [
@@ -35,13 +37,15 @@ interface Entry {
 interface Run {
   status: number | null
   lines: string[]
+  errors: string
 }
 
 const full: Entry = { lines: { covered: 10, total: 10 }, branches: { covered: 10, total: 10 } }
 const repos: string[] = []
 
 /**
-A repository tracking one source file per directory in `directories`, plus each path in `extra`.
+A repository tracking one source file per directory in `directories`, plus each path in `extra`,
+with the floors of ratchets.json.
 */
 function makeRepository(directories: string[] = DIRS, extra: string[] = []): string {
   const created = mkdtempSync(path.join(tmpdir(), 'check-coverage-'))
@@ -53,6 +57,7 @@ function makeRepository(directories: string[] = DIRS, extra: string[] = []): str
     writeFileSync(path.join(directory, file), 'export {}\n')
   }
   execFileSync('git', ['add', '.'], { cwd: directory, env: ENV })
+  copyFileSync(RATCHETS, path.join(directory, 'ratchets.json'))
   return directory
 }
 
@@ -87,7 +92,11 @@ function check(
     env: ENV,
     encoding: 'utf8'
   })
-  return { status: result.status, lines: result.stdout.split('\n').filter((l) => l !== '') }
+  return {
+    status: result.status,
+    lines: result.stdout.split('\n').filter((l) => l !== ''),
+    errors: result.stderr
+  }
 }
 
 /**
@@ -151,7 +160,11 @@ function checkGolden(repository: string, entries: Record<string, Entry>): Run {
     env: ENV,
     encoding: 'utf8'
   })
-  return { status: result.status, lines: result.stdout.split('\n').filter((line) => line !== '') }
+  return {
+    status: result.status,
+    lines: result.stdout.split('\n').filter((line) => line !== ''),
+    errors: result.stderr
+  }
 }
 
 function removeRepositories(): void {
@@ -252,7 +265,7 @@ describe('check-coverage suite: floors', () => {
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain(
-      `coverage floor src/main lines: raise the floor to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
+      `coverage floor src/main lines: raise the floor in ratchets.json to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
     )
   })
 
@@ -312,6 +325,25 @@ describe('check-coverage suite: missing figures and owners', () => {
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain('coverage summary entry without branches: src/shared/file.ts')
+  })
+
+  it('fails without ratchets.json, and on a floor that is not a whole number', () => {
+    const missing = makeRepository()
+    rmSync(path.join(missing, 'ratchets.json'))
+    const fractional = makeRepository()
+    const floors = {
+      coverage: { suite: { global: { lines: 90, branches: 80 }, 'src/main': { lines: 94.5 } } }
+    }
+    writeFileSync(path.join(fractional, 'ratchets.json'), JSON.stringify(floors))
+    const run = check(fractional)
+    const absent = check(missing)
+
+    expect(absent.status).toBe(1)
+    expect(absent.lines).toContain('coverage floors missing: ratchets.json')
+    expect(run.status).toBe(1)
+    expect(run.errors).toContain(
+      'ratchets.json holds no whole-number floor at coverage.suite.src/main.lines'
+    )
   })
 
   it('fails when a directory has no reported file', () => {
@@ -436,7 +468,7 @@ describe('check-coverage golden', () => {
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain(
-      `coverage floor ${index} lines: raise the floor to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
+      `coverage floor ${index} lines: raise the floor in ratchets.json to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
     )
   })
 })

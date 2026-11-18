@@ -38,7 +38,7 @@ jobs:
       - run: npm run deps
       - run: npm run knip
       - run: npm run knip:production
-      - run: npm run jscpd:report
+      - run: npm run ratchets
       - run: npm run format:check
       - run: npm run strictness:status
         env:

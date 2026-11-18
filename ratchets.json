@@ -1,0 +1,70 @@
+{
+  "jscpd": {
+    "clones": 42,
+    "duplicatedLines": 513
+  },
+  "coverage": {
+    "suite": {
+      "src/main": {
+        "lines": 94,
+        "branches": 93
+      },
+      "src/preload": {
+        "lines": 44,
+        "branches": 0
+      },
+      "src/shared": {
+        "lines": 100,
+        "branches": 100
+      },
+      "src/renderer/src/stores": {
+        "lines": 96,
+        "branches": 89
+      },
+      "src/renderer/src/lib": {
+        "lines": 96,
+        "branches": 90
+      },
+      "src/renderer/src/lib/generator": {
+        "lines": 99,
+        "branches": 97
+      },
+      "src/renderer/src/components": {
+        "lines": 93,
+        "branches": 85
+      },
+      "src/renderer/src": {
+        "lines": 90,
+        "branches": 83
+      },
+      "global": {
+        "lines": 96,
+        "branches": 91
+      }
+    },
+    "golden": {
+      "files": {
+        "src/renderer/src/lib/generator/index.ts": 97,
+        "src/renderer/src/lib/generator/escape.ts": 97,
+        "src/renderer/src/lib/generator/class-registry.ts": 100,
+        "src/renderer/src/lib/generator/templates/index.ts": 92,
+        "src/renderer/src/lib/generator/templates/types.ts": 100,
+        "src/renderer/src/lib/generator/templates/actor-party.ts": 100,
+        "src/renderer/src/lib/generator/templates/audio-system.ts": 100,
+        "src/renderer/src/lib/generator/templates/battle-system.ts": 95,
+        "src/renderer/src/lib/generator/templates/custom-window.ts": 100,
+        "src/renderer/src/lib/generator/templates/database-extension.ts": 100,
+        "src/renderer/src/lib/generator/templates/input-handler.ts": 100,
+        "src/renderer/src/lib/generator/templates/map-events.ts": 100,
+        "src/renderer/src/lib/generator/templates/menu-system.ts": 100,
+        "src/renderer/src/lib/generator/templates/message-system.ts": 99,
+        "src/renderer/src/lib/generator/templates/method-alias.ts": 100,
+        "src/renderer/src/lib/generator/templates/plugin-commands.ts": 99,
+        "src/renderer/src/lib/generator/templates/save-load.ts": 100,
+        "src/renderer/src/lib/generator/templates/scene-hooks.ts": 100,
+        "src/renderer/src/lib/generator/templates/sprite-system.ts": 100,
+        "src/renderer/src/lib/generator/templates/values.ts": 100
+      }
+    }
+  }
+}

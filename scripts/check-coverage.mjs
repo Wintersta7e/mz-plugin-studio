@@ -1,4 +1,4 @@
-// Checks a coverage report from the repository root.
+// Checks a coverage report from the repository root against the floors ratchets.json holds.
 //   suite:  every tracked source file is reported, and each directory's line and branch coverage
 //           is at or above its floors (coverage/coverage-summary.json).
 //   golden: each tracked generator file, covered by the golden tests alone, is at or above its
@@ -13,50 +13,13 @@ import path from 'node:path'
 
 const GENERATOR = 'src/renderer/src/lib/generator'
 
-const FLOORS = {
-  // A file counts toward the deepest directory holding it, so `src/renderer/src/lib` excludes
-  // `generator/` and `src/renderer/src` holds only the files no deeper directory owns (App.tsx,
-  // main.tsx); a file with lines that no directory owns fails the check. `global` is the whole
-  // report.
-  suite: {
-    'src/main': { lines: 94, branches: 93 },
-    'src/preload': { lines: 44, branches: 0 },
-    'src/shared': { lines: 100, branches: 100 },
-    'src/renderer/src/stores': { lines: 96, branches: 89 },
-    'src/renderer/src/lib': { lines: 96, branches: 90 },
-    [GENERATOR]: { lines: 99, branches: 97 },
-    'src/renderer/src/components': { lines: 93, branches: 85 },
-    'src/renderer/src': { lines: 90, branches: 83 },
-    global: { lines: 96, branches: 91 }
-  },
-  golden: {
-    // Every generator file, the category modules under templates/ included: a new one needs its
-    // own floor.
-    files: {
-      [`${GENERATOR}/index.ts`]: 97,
-      [`${GENERATOR}/escape.ts`]: 97,
-      [`${GENERATOR}/class-registry.ts`]: 100,
-      [`${GENERATOR}/templates/index.ts`]: 92,
-      [`${GENERATOR}/templates/types.ts`]: 100,
-      [`${GENERATOR}/templates/actor-party.ts`]: 100,
-      [`${GENERATOR}/templates/audio-system.ts`]: 100,
-      [`${GENERATOR}/templates/battle-system.ts`]: 95,
-      [`${GENERATOR}/templates/custom-window.ts`]: 100,
-      [`${GENERATOR}/templates/database-extension.ts`]: 100,
-      [`${GENERATOR}/templates/input-handler.ts`]: 100,
-      [`${GENERATOR}/templates/map-events.ts`]: 100,
-      [`${GENERATOR}/templates/menu-system.ts`]: 100,
-      [`${GENERATOR}/templates/message-system.ts`]: 99,
-      [`${GENERATOR}/templates/method-alias.ts`]: 100,
-      [`${GENERATOR}/templates/plugin-commands.ts`]: 99,
-      [`${GENERATOR}/templates/save-load.ts`]: 100,
-      [`${GENERATOR}/templates/scene-hooks.ts`]: 100,
-      [`${GENERATOR}/templates/sprite-system.ts`]: 100,
-      [`${GENERATOR}/templates/values.ts`]: 100
-    }
-  }
-}
-const GOLDEN_FLOORS = new Map(Object.entries(FLOORS.golden.files))
+// The floors live in ratchets.json under `coverage`. `suite` holds one entry per directory: a file
+// counts toward the deepest directory holding it, so `src/renderer/src/lib` excludes `generator/`
+// and `src/renderer/src` holds only the files no deeper directory owns (App.tsx, main.tsx); a file
+// with lines that no directory owns fails the check. Its `global` entry is the whole report.
+// `golden.files` holds every generator file, the category modules under templates/ included: a new
+// one needs its own floor.
+const RATCHETS = 'ratchets.json'
 
 const SUMMARY = {
   suite: 'coverage/coverage-summary.json',
@@ -69,6 +32,7 @@ const SUMMARY = {
 @typedef {{ lines: Counts, branches: Counts }} Sum
 @typedef {{ lines: number, branches: number }} Floors
 @typedef {{ directory: string, floors: Floors, lines: Counts, branches: Counts, files: number }} DirectorySum
+@typedef {{ suite: Map<string, Floors>, global: Floors, golden: Map<string, number> }} AllFloors
 */
 
 /**
@@ -118,7 +82,8 @@ const printSlack = (scope, metric, counts, floor) => {
   const isRising = wholePercent(counts) > floor
   if (isRising) {
     print(
-      `coverage floor ${scope} ${metric}: raise the floor to ${wholePercent(counts)} ` +
+      `coverage floor ${scope} ${metric}: raise the floor in ${RATCHETS} to ` +
+        `${wholePercent(counts)} ` +
         `(measured ${percent(counts).toFixed(2)}%)`
     )
   }
@@ -212,6 +177,55 @@ function readReport(file) {
 }
 
 /**
+A whole-number floor; throws naming its key when the value is not one.
+@param {unknown} value
+@param {string} key
+*/
+function readFloor(value, key) {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value)) {
+    throw new TypeError(`${RATCHETS} holds no whole-number floor at ${key}`)
+  }
+  return value
+}
+
+/**
+The coverage floors ratchets.json holds; throws naming the first value that is not a floor.
+@returns {AllFloors}
+*/
+function readFloors() {
+  /**
+  @type {unknown}
+  */
+  const ratchets = JSON.parse(readFileSync(RATCHETS, 'utf8'))
+  const { coverage } = isRecord(ratchets) ? ratchets : {}
+  const { suite, golden } = isRecord(coverage) ? coverage : {}
+  const { files } = isRecord(golden) ? golden : {}
+  /**
+  @type {Map<string, Floors>}
+  */
+  const directories = new Map()
+  const suiteEntries = Object.entries(isRecord(suite) ? suite : {})
+  for (const [directory, floors] of suiteEntries) {
+    const { lines, branches } = isRecord(floors) ? floors : {}
+    const key = `coverage.suite.${directory}`
+    directories.set(directory, {
+      lines: readFloor(lines, `${key}.lines`),
+      branches: readFloor(branches, `${key}.branches`)
+    })
+  }
+  const global = directories.get('global')
+  if (global === undefined) throw new TypeError(`${RATCHETS} holds no coverage.suite.global floors`)
+  directories.delete('global')
+  const goldenFloors = new Map(
+    Object.entries(isRecord(files) ? files : {}).map(([file, floor]) => [
+      file,
+      readFloor(floor, `coverage.golden.files.${file}`)
+    ])
+  )
+  return { suite: directories, global, golden: goldenFloors }
+}
+
+/**
 Tracked TypeScript sources under `directory`, declaration files excluded.
 @param {string} directory
 */
@@ -235,20 +249,19 @@ const withBranches = ([file, { lines, branches }]) =>
 /**
 Each floor directory's summed figures; prints each file with lines that no directory owns.
 @param {Map<string, Sum>} files
+@param {Map<string, Floors>} suiteFloors
 */
-function directorySums(files) {
+function directorySums(files, suiteFloors) {
   /**
   @type {DirectorySum[]}
   */
-  const sums = Object.entries(FLOORS.suite)
-    .filter(([directory]) => directory !== 'global')
-    .map(([directory, floors]) => ({
-      directory,
-      floors,
-      lines: zero(),
-      branches: zero(),
-      files: 0
-    }))
+  const sums = [...suiteFloors].map(([directory, floors]) => ({
+    directory,
+    floors,
+    lines: zero(),
+    branches: zero(),
+    files: 0
+  }))
   let isFailed = false
   for (const [file, entry] of files) {
     const owner = sums
@@ -271,8 +284,9 @@ function directorySums(files) {
 
 /**
 @param {{ files: Map<string, Entry>, total: Entry }} report
+@param {AllFloors} floors
 */
-function checkSuite({ files, total }) {
+function checkSuite({ files, total }, floors) {
   let isFailed = false
   const tracked = trackedSources('src')
   const reported = tracked.filter((file) => files.has(file)).length
@@ -291,15 +305,16 @@ function checkSuite({ files, total }) {
   const totalSum = { lines: total.lines, branches: total.branches }
 
   const { sums, isFailed: isUnowned } = directorySums(
-    new Map([...files].flatMap((item) => withBranches(item)))
+    new Map([...files].flatMap((item) => withBranches(item))),
+    floors.suite
   )
   if (isUnowned) isFailed = true
   for (const sum of sums) {
     print(`coverage floor ${sum.directory}: ${bothAtFloor(sum, sum.floors)}, files ${sum.files}`)
     if (doesScopeFail(sum.directory, sum, sum.floors, sum.files)) isFailed = true
   }
-  print(`coverage floor global: ${bothAtFloor(totalSum, FLOORS.suite.global)}, files ${files.size}`)
-  if (doesScopeFail('global', totalSum, FLOORS.suite.global, files.size)) isFailed = true
+  print(`coverage floor global: ${bothAtFloor(totalSum, floors.global)}, files ${files.size}`)
+  if (doesScopeFail('global', totalSum, floors.global, files.size)) isFailed = true
   return isFailed
 }
 
@@ -312,14 +327,15 @@ const byCodeUnits = (left, right) => (left < right ? -1 : Number(left > right))
 
 /**
 @param {{ files: Map<string, Entry> }} report
+@param {Map<string, number>} goldenFloors
 */
-function checkGolden({ files }) {
-  const paths = [...new Set([...trackedSources(GENERATOR), ...GOLDEN_FLOORS.keys()])].toSorted(
+function checkGolden({ files }, goldenFloors) {
+  const paths = [...new Set([...trackedSources(GENERATOR), ...goldenFloors.keys()])].toSorted(
     byCodeUnits
   )
   let atBar = 0
   for (const file of paths) {
-    const floor = GOLDEN_FLOORS.get(file)
+    const floor = goldenFloors.get(file)
     const lines = files.get(file)?.lines
     if (floor === undefined) {
       print(`golden coverage ${file}: no floor`)
@@ -344,12 +360,18 @@ function main(mode) {
     print('usage: node scripts/check-coverage.mjs suite|golden')
     return 1
   }
+  if (!existsSync(RATCHETS)) {
+    print(`coverage floors missing: ${RATCHETS}`)
+    return 1
+  }
   if (!existsSync(SUMMARY[mode])) {
     print(`coverage summary missing: ${SUMMARY[mode]}`)
     return 1
   }
+  const floors = readFloors()
   const report = readReport(SUMMARY[mode])
-  const isFailed = mode === 'suite' ? checkSuite(report) : checkGolden(report)
+  const isFailed =
+    mode === 'suite' ? checkSuite(report, floors) : checkGolden(report, floors.golden)
   return isFailed ? 1 : 0
 }
 

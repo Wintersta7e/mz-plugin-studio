@@ -1,23 +1,15 @@
-// Reports what the strict configuration still holds back, from the repository root.
-//   default:          the frozen lint findings in eslint-suppressions.json against the base
-//                     commit's (baseCommit), and the type-check errors each pending flag still
-//                     has. Fails a rise in any (file, rule) entry unless the change under test
-//                     changes the lint config or a lint package version; fails a file's pending
-//                     count off the exact ceiling pending-ceilings.json holds for it (printing
-//                     the errors of a file above it and the tsc command), a pending flag
-//                     without a ceiling or a ceiling without a pending flag, a pending flag
-//                     with no error left (it must move to its program), and a pending check
-//                     whose tsc did not finish (printing how it ended and its last lines).
-//   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
-//                     ceilings given as --clones and --duplicated-lines, or without a report).
-// The reports otherwise fail only when a run printed no summary or scanned nothing, and then
-// print how the run ended and its last lines.
+// Reports what the strict configuration still holds back, from the repository root: the frozen
+// lint findings in eslint-suppressions.json against the base commit's (baseCommit), and the
+// type-check errors each pending flag still has. Fails a rise in any (file, rule) entry unless the
+// change under test changes the lint config or a lint package version; fails a file's pending
+// count off the exact ceiling pending-ceilings.json holds for it (printing the errors of a file
+// above it and the tsc command), a pending flag without a ceiling or a ceiling without a pending
+// flag, a pending flag with no error left (it must move to its program), and a pending check whose
+// tsc did not finish (printing how it ended and its last lines).
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { closeSync, existsSync, mkdtempSync, openSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { parseArgs } from 'node:util'
 
 const SUPPRESSIONS = 'eslint-suppressions.json'
 const LINT_CONFIGS = new Set(['eslint.config.mjs', 'lint-scope.json'])
@@ -440,41 +432,6 @@ async function checkPending(tracked) {
   return isOk
 }
 
-// Runs an npm script with extra arguments and returns its output, its size in bytes, its exit
-// status and how it ended. The child writes into regular files rather than pipes: a file write
-// completes before the child can exit, so no output depends on a reader keeping up.
-/**
-@param {string} script
-@param {string[]} [extra]
-*/
-function npmRun(script, extra = []) {
-  const npm = process.env['npm_execpath']
-  const [command, args] = npm === undefined ? ['npm', []] : [process.execPath, [npm]]
-  const tail = extra.length === 0 ? [] : ['--', ...extra]
-  const directory = mkdtempSync(path.join(tmpdir(), 'strictness-run-'))
-  const files = [path.join(directory, 'stdout'), path.join(directory, 'stderr')]
-  try {
-    const fds = files.map((file) => openSync(file, 'w'))
-    /**
-    @type {import('node:child_process').SpawnSyncReturns<Buffer>}
-    */
-    let result
-    try {
-      result = spawnSync(command, [...args, 'run', '-s', script, ...tail], {
-        stdio: ['ignore', ...fds]
-      })
-    } finally {
-      for (const fd of fds) closeSync(fd)
-    }
-    const output = Buffer.concat(files.map((file) => readFileSync(file)))
-    const ending =
-      result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
-    return { status: result.status, out: output.toString('utf8'), bytes: output.length, ending }
-  } finally {
-    rmSync(directory, { recursive: true, force: true })
-  }
-}
-
 // A run with no usable summary prints how it ended, how many bytes it printed and its last lines,
 // so a failure that does not recur still leaves its cause in the log.
 const OUTPUT_TAIL = 20
@@ -492,93 +449,12 @@ function printFailedRun(label, reason, { out, bytes, ending }) {
   for (const line of tail) print(`${label} | ${line}`)
 }
 
-// The copy-paste run's clones and duplicated lines, each held exactly at the ceiling the
-// `jscpd:report` script names: a rise fails, and so does a fall, so a ceiling only moves down
-// with the copies it counts. A share would let new copies through as the code around them grows.
-/**
-@typedef {{ sources: number, clones: number, duplicatedLines: number, percentage: number }} JscpdTotal
-*/
-
-// The totals of a jscpd JSON report; undefined when it holds none.
-/**
-@param {unknown} report
-@returns {JscpdTotal | undefined}
-*/
-function jscpdTotal(report) {
-  const { statistics } = isRecord(report) ? report : {}
-  const { total } = isRecord(statistics) ? statistics : {}
-  const { sources, clones, duplicatedLines, percentage } = isRecord(total) ? total : {}
-  return typeof sources === 'number' &&
-    typeof clones === 'number' &&
-    typeof duplicatedLines === 'number' &&
-    typeof percentage === 'number'
-    ? { sources, clones, duplicatedLines, percentage }
-    : undefined
-}
-
-/**
-@param {string[]} args
-*/
-function reportJscpd(args) {
-  const { values } = parseArgs({
-    args,
-    options: { clones: { type: 'string' }, 'duplicated-lines': { type: 'string' } }
-  })
-  const output = mkdtempSync(path.join(tmpdir(), 'jscpd-'))
-  const report = path.join(output, 'jscpd-report.json')
-  try {
-    const run = npmRun('jscpd', ['--reporters', 'json', '--output', output])
-    const total = jscpdTotal(
-      existsSync(report) ? parseJson(readFileSync(report, 'utf8')) : undefined
-    )
-    if (total === undefined || run.status !== 0) {
-      printFailedRun('jscpd', run.status === 0 ? 'the run wrote no report' : 'the run failed', run)
-      return false
-    }
-    const { sources, clones, duplicatedLines, percentage } = total
-    const ceilings = { clones: values.clones, lines: values['duplicated-lines'] }
-    print(
-      `jscpd: files scanned ${sources}, clones ${clones}, duplicated lines ${duplicatedLines} ` +
-        `(${percentage.toFixed(2)}%), ceilings clones ${ceilings.clones ?? 'none'}, ` +
-        `duplicated lines ${ceilings.lines ?? 'none'}`
-    )
-    if (sources === 0) {
-      print('jscpd: the run scanned no file')
-      return false
-    }
-    /**
-    @type {[string, number, string | undefined][]}
-    */
-    const counts = [
-      ['clones', clones, ceilings.clones],
-      ['duplicated-lines', duplicatedLines, ceilings.lines]
-    ]
-    let isOk = true
-    for (const [name, count, ceiling] of counts) {
-      if (ceiling === undefined) print(`jscpd: the jscpd:report script names no --${name} ceiling`)
-      else if (count > Number(ceiling)) print(`jscpd: ${name} rose above the ceiling ${ceiling}`)
-      else if (count < Number(ceiling)) print(`jscpd: ${name} fell; lower --${name} to ${count}`)
-      else continue
-      isOk = false
-    }
-    return isOk
-  } finally {
-    rmSync(output, { recursive: true, force: true })
-  }
-}
-
-const [flag, kind] = process.argv.slice(2)
-/**
-@type {boolean}
-*/
-let isOk
-if (flag === '--report' && kind === 'jscpd') isOk = reportJscpd(process.argv.slice(4))
-else if (flag === undefined) {
+if (process.argv.length > 2) {
+  print('usage: node scripts/strictness-status.mjs')
+  process.exitCode = 1
+} else {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
-  isOk = (await checkPending(tracked)) && suppressionsOk
-} else {
-  print('usage: node scripts/strictness-status.mjs [--report jscpd]')
-  isOk = false
+  const isOk = (await checkPending(tracked)) && suppressionsOk
+  process.exitCode = isOk ? 0 : 1
 }
-process.exitCode = isOk ? 0 : 1
