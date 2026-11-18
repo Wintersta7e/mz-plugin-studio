@@ -345,6 +345,7 @@
         "electron.vite.config.ts",
         "eslint.config.mjs",
         "scripts/e2e-prepare.mjs",
+        "scripts/mutation.mjs",
         "vitest.config.ts"
       ],
       "code": "S",
@@ -361,10 +362,11 @@
         "electron.vite.config.ts",
         "eslint.config.mjs",
         "scripts/e2e-prepare.mjs",
+        "scripts/mutation.mjs",
         "vitest.config.ts"
       ],
       "code": "S",
-      "reason": "The build, lint and test configs and the e2e build script run from the development install"
+      "reason": "The build, lint and test configs, the e2e build script and the mutation test runner run from the development install"
     },
     {
       "rule": "sonarjs/deprecation",
@@ -508,6 +510,7 @@
         "scripts/check-golden-commits.mjs",
         "scripts/check-ratchets.mjs",
         "scripts/e2e-visual-update.mjs",
+        "scripts/mutation.mjs",
         "scripts/strictness-status.mjs",
         "tests/integration/check-coverage.test.ts",
         "tests/integration/check-golden-commits.test.ts",

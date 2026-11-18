@@ -8,6 +8,14 @@ const dom = 'tests/setup/dom.ts'
 const consoleGuard = 'tests/setup/console.ts'
 // Fails the run on a skipped, todo or expected-to-fail test, however it was written.
 const noSkips = './tests/setup/no-skips-reporter.ts'
+// Mutation testing (scripts/mutation.mjs sets MUTATION_TESTING) runs the suite on instrumented
+// copies of the changed source, in a sandbox without the git history. A test that parses a source
+// module's own statements, or asks git about the tree, fails there and cannot catch a mutant, so
+// that run leaves it out.
+const repositoryReadingTests =
+  process.env['MUTATION_TESTING'] === '1'
+    ? ['tests/unit/csp.test.ts', 'tests/unit/documentation-sync.test.ts']
+    : []
 
 export default defineConfig({
   plugins: [react()],
@@ -43,7 +51,12 @@ export default defineConfig({
           name: 'node',
           environment: 'node',
           include: ['tests/**/*.test.{ts,tsx}'],
-          exclude: ['tests/dom/**', 'tests/golden/**', 'tests/fixtures/**'],
+          exclude: [
+            'tests/dom/**',
+            'tests/golden/**',
+            'tests/fixtures/**',
+            ...repositoryReadingTests
+          ],
           setupFiles: [consoleGuard, mocks]
         }
       },

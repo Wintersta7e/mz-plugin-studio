@@ -59,8 +59,8 @@ describe('ci workflow: inventory', () => {
     expect(stepCount).toBeGreaterThan(0)
   })
 
-  it('holds only the CI and release workflows', () => {
-    expect(files).toStrictEqual(['ci.yml', 'release.yml'])
+  it('holds only the CI, release and mutation testing workflows', () => {
+    expect(files).toStrictEqual(['ci.yml', 'mutation.yml', 'release.yml'])
   })
 
   it('the aggregate test job always runs and needs every other job', () => {
@@ -247,6 +247,39 @@ describe('ci workflow: changed lines coverage', () => {
       srcOnly: true,
       floor: true,
       measuredLines: true
+    })
+  })
+})
+
+describe('mutation testing workflow', () => {
+  it('runs weekly and by hand on the changed source, apart from the CI it would slow down', () => {
+    const [job, ...others] = readJobs('mutation.yml')
+    const text = readFileSync(join(WORKFLOWS, 'mutation.yml'), 'utf8')
+    const run = job === undefined ? [] : runs(job)
+
+    expect(others).toStrictEqual([])
+    expect({
+      triggers: /^on:\n {2}schedule:\n {4}- cron: '[\d *]+'\n {2}workflow_dispatch:\n\n/mv.test(
+        text
+      ),
+      readOnly: /^permissions:\n {2}contents: read$/mv.test(text),
+      fullClone: job?.steps.at(0)?.nested.includes('fetch-depth: 0'),
+      noCache: job?.steps.some((step) => step.nested.includes('package-manager-cache: false')),
+      install: run.filter((line) => /\bnpm ci\b/v.test(line)),
+      weekBase: run.includes('base="$(git rev-list -n 1 --before=\'7 days ago\' HEAD)"'),
+      branchBase: run.includes('base="$(git merge-base HEAD origin/main)"'),
+      mutation: run.includes('npm run mutation -- --since "$base"'),
+      gatesCi: jobs.some((each) => runs(each).some((line) => line.includes('npm run mutation')))
+    }).toStrictEqual({
+      triggers: true,
+      readOnly: true,
+      fullClone: true,
+      noCache: true,
+      install: ['npm ci --ignore-scripts'],
+      weekBase: true,
+      branchBase: true,
+      mutation: true,
+      gatesCi: false
     })
   })
 })

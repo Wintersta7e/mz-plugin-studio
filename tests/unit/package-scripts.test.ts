@@ -1,6 +1,6 @@
 // A bare tool name in a script resolves to whatever is on PATH; on a tree installed
 // without bin links that is a global install of another version.
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -401,5 +401,86 @@ describe('package.json overrides', () => {
     expect(admitted).toContain(`remove the override: ${A11Y_PLUGIN} admits ESLint`)
     expect(missing).toContain(`add back the override: ${A11Y_PLUGIN} excludes ESLint`)
     expect(unread).toContain('by hand: it is not a list of ^N ranges')
+  })
+})
+
+// The override that lifts the qs copy the mutation tester's HTTP client pins exactly to a release
+// past its advisories; once the client asks for a range instead, the override can go.
+const versionParts = (version: string): number[] => version.split('.').map(Number)
+const isOlder = (version: string, than: string): boolean => {
+  const [a, b] = [versionParts(version), versionParts(than)]
+  const at = a.findIndex((part, index) => part !== b[index])
+  return at !== -1 && (a[at] ?? 0) < (b[at] ?? 0)
+}
+
+describe('package.json overrides: qs', () => {
+  it('the qs override stays only while typed-rest-client pins an older qs', () => {
+    const client = readJson('node_modules/typed-rest-client/package.json')
+    const overrides = member(readJson('package.json'), 'overrides')
+    const pinned = String(member(member(client, 'dependencies'), 'qs'))
+    const forced = String(member(member(overrides, 'typed-rest-client'), 'qs'))
+    process.stdout.write(`typed-rest-client qs ${pinned}, override ${forced}\n`)
+
+    expect({
+      exactPin: /^\d+\.\d+\.\d+$/v.test(pinned),
+      older: isOlder(pinned, forced)
+    }).toStrictEqual({ exactPin: true, older: true })
+  })
+})
+
+// What is wrong with a Stryker config's thresholds; empty when high, low and break are all
+// numbers with break <= low <= high <= 100.
+const thresholdProblem = (config: unknown): string => {
+  const thresholds = member(config, 'thresholds')
+  const [floor, low, high] = ['break', 'low', 'high'].map((key) => member(thresholds, key))
+  if (typeof floor !== 'number' || typeof low !== 'number' || typeof high !== 'number') {
+    return `thresholds break, low and high must all be numbers: ${JSON.stringify(thresholds)}`
+  }
+  return floor <= low && low <= high && high <= 100
+    ? ''
+    : `thresholds must hold break <= low <= high <= 100: ${JSON.stringify(thresholds)}`
+}
+
+describe('package.json scripts: mutation testing', () => {
+  it('the mutation thresholds set break, low and high together, in order', () => {
+    expect(thresholdProblem(readJson('stryker.config.json'))).toBe('')
+  })
+
+  it('names a missing or misordered mutation threshold', () => {
+    const config = readJson('stryker.config.json')
+    const withThresholds = (thresholds: Record<string, number>): unknown => ({
+      ...(typeof config === 'object' && config),
+      thresholds
+    })
+
+    expect(thresholdProblem(withThresholds({ break: 50, low: 50 }))).toContain(
+      'must all be numbers'
+    )
+    expect(thresholdProblem(withThresholds({ break: 60, low: 50, high: 70 }))).toContain(
+      'break <= low <= high <= 100'
+    )
+    expect(thresholdProblem(withThresholds({ break: 50, low: 50, high: 101 }))).toContain(
+      'break <= low <= high <= 100'
+    )
+  })
+
+  it('mutation testing of a range without a source change runs nothing', () => {
+    const run = spawnSync(process.execPath, ['scripts/mutation.mjs', '--since', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    })
+    const bare = spawnSync(process.execPath, ['scripts/mutation.mjs'], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    })
+
+    expect({ status: run.status, stdout: run.stdout }).toStrictEqual({
+      status: 0,
+      stdout: 'mutation: no src change\n'
+    })
+    expect({ status: bare.status, stdout: bare.stdout }).toStrictEqual({
+      status: 2,
+      stdout: 'usage: node scripts/mutation.mjs --since <base>\n'
+    })
   })
 })

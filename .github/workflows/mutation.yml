@@ -1,0 +1,34 @@
+name: Mutation testing
+
+on:
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - name: Mutation testing of the changed source
+        shell: bash
+        run: |
+          # The weekly run covers the week's source changes; a run by hand covers its branch's changes since main.
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            base="$(git rev-list -n 1 --before='7 days ago' HEAD)"
+          else
+            base="$(git merge-base HEAD origin/main)"
+          fi
+          npm run mutation -- --since "$base"

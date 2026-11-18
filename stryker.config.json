@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.config.ts",
+    "related": true
+  },
+  "coverageAnalysis": "perTest",
+  "disableTypeChecks": false,
+  "ignoreStatic": true,
+  "allowEmpty": true,
+  "concurrency": "50%",
+  "thresholds": {
+    "high": 86,
+    "low": 76,
+    "break": 76
+  },
+  "reporters": ["clear-text", "progress-append-only"],
+  "ignorePatterns": [
+    "/dist",
+    "/out",
+    "/.dev",
+    "/coverage",
+    "/docs/plans",
+    "/playwright-report",
+    "/test-results"
+  ]
+}
