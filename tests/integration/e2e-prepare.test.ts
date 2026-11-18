@@ -81,6 +81,17 @@ const page = (...scripts: string[]): string =>
 const map = (...sources: string[]): string =>
   JSON.stringify({ version: 3, sources, names: [], mappings: '' })
 
+// A built renderer whose page loads two mapped start scripts: 1000000 bytes, then these
+function sizedStartScripts(secondBytes: number): string {
+  return tree({
+    'index.html': page('./assets/index-a1.js', './assets/vendor-b2.js'),
+    'assets/index-a1.js': 'x'.repeat(1_000_000),
+    'assets/index-a1.js.map': map('../../src/renderer/src/main.tsx'),
+    'assets/vendor-b2.js': 'x'.repeat(secondBytes),
+    'assets/vendor-b2.js.map': map('../../node_modules/react/index.js')
+  })
+}
+
 describe(compareWires, () => {
   afterAll(printCounts)
 
@@ -230,6 +241,17 @@ describe(checkStartScripts, () => {
 
     expect(() => checkStartScripts(directory)).toThrow(
       './assets/vendor-b2.js loads the code editor at start'
+    )
+  })
+
+  it('accepts start scripts at their budget and rejects one byte over', () => {
+    counts.start++
+
+    // Two start scripts whose bytes add up to the budget, then to one byte more
+    expect(checkStartScripts(sizedStartScripts(114_112))).toHaveLength(2)
+
+    expect(() => checkStartScripts(sizedStartScripts(114_113))).toThrow(
+      'renderer start scripts 1114113 bytes > budget 1114112'
     )
   })
 

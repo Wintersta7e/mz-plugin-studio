@@ -93,7 +93,7 @@ describe('ci-policy package', () => {
 
     expect(status).toBe(0)
     expect(lines(out)).toContain(
-      'entries 7; total 1288 bytes; out/ 1000 bytes; node_modules/ 70 bytes (budget 2097152)'
+      'entries 7; total 1288 bytes; out/ 1000 bytes (budget 14221312); node_modules/ 70 bytes (budget 2097152)'
     )
     expect(lines(out)).toContain(
       'top-level: LICENSE, THIRD_PARTY_LICENSES.md, node_modules/, out/, package.json, resources/'
@@ -124,6 +124,17 @@ describe('ci-policy package', () => {
     const over = checkAsar({ ...ALLOWED, node_modules: { x: { 'index.js': 2_097_153 } } })
 
     expect(lines(over.out)).toContain('FAIL node_modules/ 2097153 bytes > budget 2097152')
+    expect(over.status).toBe(1)
+  })
+
+  it('accepts out at the budget and rejects one byte over', () => {
+    const atBudget = checkAsar({ ...ALLOWED, out: { main: { 'index.js': 14_221_312 } } })
+
+    expect(atBudget.status).toBe(0)
+
+    const over = checkAsar({ ...ALLOWED, out: { main: { 'index.js': 14_221_313 } } })
+
+    expect(lines(over.out)).toContain('FAIL out/ 14221313 bytes > budget 14221312')
     expect(over.status).toBe(1)
   })
 

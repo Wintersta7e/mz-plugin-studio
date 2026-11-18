@@ -201,6 +201,9 @@ export async function diffTrees(releaseDirectory, twinDirectory, executablePath)
 // The renderer bundle is minified with hidden source maps: each script's .map lists the modules
 // it holds, and a source under this path is the code editor
 const EDITOR_SOURCE = 'node_modules/monaco-editor/'
+// The bytes of every script the page loads at start: the measured sum with a tenth to spare,
+// rounded up to 64 KiB. Raised only in a commit that says why the start grew
+const START_SCRIPTS_BUDGET = 1_114_112
 
 /**
 The sources a script's source map lists; fails when the map is missing or lists none.
@@ -223,7 +226,8 @@ function mapSources(rendererDirectory, file) {
 
 /**
 Fails if a script the renderer page loads at start holds the code editor, which loads with the
-first editor shown, or if a script has no source map to attribute its modules by.
+first editor shown, if a script has no source map to attribute its modules by, or if the start
+scripts together outgrow their budget.
 @param {string} rendererDirectory the built renderer, holding index.html
 @returns {{ file: string; bytes: number; sources: number; editorSources: number }[]} each script
   the page loads
@@ -236,7 +240,7 @@ export function checkStartScripts(rendererDirectory) {
   const files = []
   for (const [, file = ''] of html.matchAll(/\b(?:src|href)="([^"]+\.js)"/g)) files.push(file)
   if (files.length === 0) throw new Error(`${rendererDirectory}/index.html loads no script`)
-  return files.map((file) => {
+  const scripts = files.map((file) => {
     const { size: bytes } = statSync(path.join(rendererDirectory, file))
     const sources = mapSources(rendererDirectory, file)
     const editorSources = sources.filter((source) => source.includes(EDITOR_SOURCE)).length
@@ -247,6 +251,12 @@ export function checkStartScripts(rendererDirectory) {
     if (editorSources > 0) throw new Error(`${file} loads the code editor at start`)
     return { file, bytes, sources: sources.length, editorSources }
   })
+  const total = scripts.reduce((sum, { bytes }) => sum + bytes, 0)
+  print(`renderer start scripts ${total} bytes (budget ${START_SCRIPTS_BUDGET})`)
+  if (total > START_SCRIPTS_BUDGET) {
+    throw new Error(`renderer start scripts ${total} bytes > budget ${START_SCRIPTS_BUDGET}`)
+  }
+  return scripts
 }
 
 /**

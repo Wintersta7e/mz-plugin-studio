@@ -12,6 +12,9 @@ import { createRequire, isBuiltin } from 'node:module'
 import path from 'node:path'
 
 const NODE_MODULES_BUDGET = 2_097_152
+// The app's own built code: the measured out/ bytes with a tenth to spare, rounded up to 64 KiB.
+// Raised only in a commit that says why the code grew
+const OUT_BUDGET = 14_221_312
 
 // Top-level entries the packaged app may hold, with their kind.
 const ALLOWED_TOP_LEVEL = new Map([
@@ -361,13 +364,15 @@ function checkPackage(args) {
       problems.push(`missing: ${name}`)
     }
   }
+  const outBytes = bytesUnder('out')
+  if (outBytes > OUT_BUDGET) problems.push(`out/ ${outBytes} bytes > budget ${OUT_BUDGET}`)
   if (nodeModulesBytes > NODE_MODULES_BUDGET) {
     problems.push(`node_modules/ ${nodeModulesBytes} bytes > budget ${NODE_MODULES_BUDGET}`)
   }
   if (leaves.length === 0) problems.push('0 entries scanned')
 
   print(
-    `entries ${leaves.length}; total ${total} bytes; out/ ${bytesUnder('out')} bytes; ` +
+    `entries ${leaves.length}; total ${total} bytes; out/ ${outBytes} bytes (budget ${OUT_BUDGET}); ` +
       `node_modules/ ${nodeModulesBytes} bytes (budget ${NODE_MODULES_BUDGET})`
   )
   const names = topLevel.map((entry) => displayName(entry)).toSorted(byCodeUnit)
