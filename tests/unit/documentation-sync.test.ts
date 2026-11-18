@@ -20,7 +20,8 @@ const DENYLIST = [
   /\b\d+\+?\s+(?:[\w.&/-]+\s+){0,3}?(?:classes|methods|(?:parameter\s+)?types|global objects)\b/i,
   /\b\d+\+?\s+(?:[\w.&/-]+\s+){0,3}?(?:names|database types|objects)\b/i,
   /\b(Electron|TypeScript|React|Node(\.js)?|Vite|Tailwind( CSS)?|Monaco|Vitest|Playwright)[\s-]v?\d+/i,
-  /img\.shields\.io\/badge\/(Electron|React|TypeScript|Node|Vite|Tailwind)/
+  // The host starts at the line start or after a character no host name holds
+  /(?:^|[^\w.-])img\.shields\.io\/badge\/(Electron|React|TypeScript|Node|Vite|Tailwind)/
 ]
 
 function byCodeUnit(left: string, right: string): number {
@@ -212,7 +213,7 @@ describe('published docs match the code', () => {
     process.stdout.write(
       `strict badge: tsconfigs ${String(configs.length)}, non-strict ${String(nonStrict.length)}\n`
     )
-    const isBadgeShown = /img\.shields\.io\/badge\/tsc-strict\b/.test(readme)
+    const isBadgeShown = /(?:^|[^\w.-])img\.shields\.io\/badge\/tsc-strict\b/.test(readme)
 
     expect(configs.length).toBeGreaterThan(0)
     // A non-strict tsconfig is wrong only while the badge claims strictness

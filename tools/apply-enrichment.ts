@@ -111,6 +111,26 @@ function readJson(filePath: string): unknown {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
 }
 
+/**
+Reads mz-classes.json, or prints why it cannot and returns undefined. A missing file shows as the
+read's ENOENT, not as a separate check the file could stop matching before the write that follows.
+*/
+function readClassDictionary(): Record<string, MZClass> | undefined {
+  let mzClasses: unknown
+  try {
+    mzClasses = readJson(MZ_CLASSES_PATH)
+  } catch (error) {
+    if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
+    console.error(`ERROR: mz-classes.json not found at ${MZ_CLASSES_PATH}`)
+    return undefined
+  }
+  if (!isMZClassMap(mzClasses)) {
+    console.error(`ERROR: ${MZ_CLASSES_PATH} does not hold the class dictionary`)
+    return undefined
+  }
+  return mzClasses
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
 
 function main(): void {
@@ -132,16 +152,8 @@ function main(): void {
   console.log(`  Class entries: ${String(Object.keys(enrichment.classPopularity).length)}`)
   console.log(`  Method entries: ${String(Object.keys(enrichment.methodPopularity).length)}`)
 
-  // Read mz-classes.json
-  if (!fs.existsSync(MZ_CLASSES_PATH)) {
-    console.error(`ERROR: mz-classes.json not found at ${MZ_CLASSES_PATH}`)
-    process.exitCode = 1
-    return
-  }
-
-  const mzClasses = readJson(MZ_CLASSES_PATH)
-  if (!isMZClassMap(mzClasses)) {
-    console.error(`ERROR: ${MZ_CLASSES_PATH} does not hold the class dictionary`)
+  const mzClasses = readClassDictionary()
+  if (mzClasses === undefined) {
     process.exitCode = 1
     return
   }

@@ -741,15 +741,16 @@ function findPluginFiles(baseDirectory: string): { filePath: string; category: s
 }
 
 function analyzeFile(filePath: string, category: string): PluginAnalysis | undefined {
-  const stat = fs.statSync(filePath)
-  if (stat.size < 200) return // Skip separator/placeholder files
+  // One read: the size and the text come from the same bytes, never a later state of the file
+  const bytes = fs.readFileSync(filePath)
+  if (bytes.length < 200) return // Skip separator/placeholder files
 
-  const content = fs.readFileSync(filePath, 'utf8')
+  const content = bytes.toString('utf8')
   const fileName = path.basename(filePath)
 
   return {
     fileName,
-    fileSize: stat.size,
+    fileSize: bytes.length,
     category,
     iifeStyle: detectIIFEStyle(content),
     useStrict: hasUseStrict(content),

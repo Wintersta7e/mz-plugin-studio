@@ -33,17 +33,21 @@ const SOURCE_PATTERNS = [
 const FIXED_GLOBALS = ['window', 'setTimeout']
 
 // Runs inside the context. Every stand-in is created there, and each trap answers with a new
-// stand-in, so no property read ever returns something from outside the context.
+// stand-in, so no property read ever returns something from outside the context. The names
+// arrive as one comma-separated string, a primitive, so no outside object enters and the source
+// stays constant rather than built from data.
 const STAND_IN_SOURCE = `
-const make = () => new Proxy(function () {}, {
-  get: () => make(),
-  set: () => true,
-  apply: () => make(),
-  construct: () => make(),
-  defineProperty: () => true,
-  deleteProperty: () => true
-});
-for (const name of NAMES) globalThis[name] = make();
+(names) => {
+  const make = () => new Proxy(function () {}, {
+    get: () => make(),
+    set: () => true,
+    apply: () => make(),
+    construct: () => make(),
+    defineProperty: () => true,
+    deleteProperty: () => true
+  });
+  for (const name of names.split(',')) globalThis[name] = make();
+}
 `
 const STUB_SOURCE = `
 globalThis.PluginManager = { parameters: () => ({}), registerCommand: () => {} };
@@ -129,22 +133,17 @@ export function listTemplateGlobals(): {
   }
 }
 
-function standInSource(): string {
-  cache.templateGlobals ??= listTemplateGlobals()
-  const names = `const NAMES = ${JSON.stringify(cache.templateGlobals.names)};`
-  return `(() => {${names}${STAND_IN_SOURCE}})();`
-}
-
 /**
 Defines a stand-in, created inside `context`, for every name of `listTemplateGlobals()`.
 */
 export function installStandIns(context: Context): void {
+  cache.templateGlobals ??= listTemplateGlobals()
   // eslint-disable-next-line sonarjs/code-eval -- installs the stand-in globals in the fresh test context
-  new Script(standInSource(), { filename: 'stand-ins.js' }).runInContext(context)
-}
-
-function bootstrap(mode: 'generator' | 'template'): string {
-  return mode === 'generator' ? STUB_SOURCE : `${standInSource()}${STUB_SOURCE}`
+  const install: unknown = new Script(STAND_IN_SOURCE, { filename: 'stand-ins.js' }).runInContext(
+    context
+  )
+  if (typeof install !== 'function') throw new TypeError('the stand-in source is not a function')
+  Reflect.apply(install, undefined, [cache.templateGlobals.names.join(',')])
 }
 
 function describeThrown(error: unknown): string {
@@ -170,8 +169,9 @@ export function evaluatePlugin(
     return { compileProblem: compiled.problem, threw: null, sentinel: false, context: null }
   }
   const context: Record<string, unknown> = createContext({})
+  if (options.mode === 'template') installStandIns(context)
   // eslint-disable-next-line sonarjs/code-eval -- runs the bootstrap in the fresh test context that holds the stub
-  new Script(bootstrap(options.mode), { filename: 'bootstrap.js' }).runInContext(context)
+  new Script(STUB_SOURCE, { filename: 'bootstrap.js' }).runInContext(context)
   let threw: string | null = null
   try {
     compiled.script.runInContext(context, { timeout: TIMEOUT_MS })
