@@ -2,10 +2,11 @@
 // loads with the first editor shown: the renderer entry never reaches it through a static import,
 // every other source file imports the editor's types only, and its notices ship
 import { describe, expect, it } from 'vitest'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as ts from 'typescript'
+import { sourceFiles } from '../helpers/source-files'
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const SRC = path.join(ROOT, 'src')
@@ -21,11 +22,7 @@ const HOSTS = [
 const NOTICES_MARK = 'THIRD-PARTY SOFTWARE NOTICES AND INFORMATION'
 const SOURCE_FILE = /\.tsx?$/
 
-function sourceFiles(): string[] {
-  return readdirSync(SRC, { withFileTypes: true, recursive: true })
-    .filter((entry) => entry.isFile() && SOURCE_FILE.test(entry.name))
-    .map((entry) => path.join(entry.parentPath, entry.name))
-}
+const typeScriptSources = (): string[] => sourceFiles(SRC, SOURCE_FILE)
 
 const relativePath = (file: string): string => path.relative(ROOT, file).replaceAll('\\', '/')
 
@@ -55,16 +52,22 @@ function imports(source: ts.SourceFile): { from: string; value: boolean }[] {
   })
 }
 
-const isLocal = (from: string): boolean => from.startsWith('.') || from.startsWith('@/')
+// The renderer's two aliases, as electron.vite.config.ts and tsconfig.web.json declare them
+const RENDERER_ALIASES = ['@/', '@renderer/']
+const aliasOf = (from: string): string | undefined =>
+  RENDERER_ALIASES.find((alias) => from.startsWith(alias))
+const isLocal = (from: string): boolean => from.startsWith('.') || aliasOf(from) !== undefined
 
 /**
-The source file a relative or `@/` specifier names, if it is one
+The source file a relative or renderer-alias specifier names, if it is one
 */
 function resolveSource(importer: string, from: string): string | undefined {
   if (!isLocal(from)) return undefined
-  const base = from.startsWith('@/')
-    ? path.join(RENDERER, from.slice(2))
-    : path.resolve(path.dirname(importer), from)
+  const alias = aliasOf(from)
+  const base =
+    alias === undefined
+      ? path.resolve(path.dirname(importer), from)
+      : path.join(RENDERER, from.slice(alias.length))
   const candidates = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'].map(
     (extension) => base + extension
   )
@@ -104,7 +107,7 @@ function member(value: unknown, key: string): unknown {
 
 describe('code editor entry', () => {
   it('is imported first by each editor host and nowhere else', () => {
-    const files = sourceFiles()
+    const files = typeScriptSources()
     const importers = files.filter(
       (file) => relativePath(file) !== SETUP && readFileSync(file, 'utf8').includes(SETUP_NAME)
     )
@@ -145,11 +148,21 @@ describe('code editor entry', () => {
   })
 
   it('keeps every other editor import type-only', () => {
-    const valueImporters = sourceFiles().filter((file) =>
+    const valueImporters = typeScriptSources().filter((file) =>
       imports(parse(file)).some(({ from, value }) => value && isEditorPackage(from))
     )
 
     expect(valueImporters.map((file) => relativePath(file))).toStrictEqual([SETUP])
+  })
+
+  it('follows both renderer aliases to their source file', () => {
+    const importer = path.join(ROOT, ENTRY)
+
+    expect(
+      ['@/lib/monaco-setup', '@renderer/lib/monaco-setup'].map((from) =>
+        resolveSource(importer, from)
+      )
+    ).toStrictEqual([path.join(ROOT, SETUP), path.join(ROOT, SETUP)])
   })
 
   it('bundles the editor as a build-time package and ships its notices', () => {

@@ -1,22 +1,14 @@
 // Main refuses a request with one message shape that the window recognises: every refusal is
 // built from the shared prefix, and the window reads its reason back in plain words.
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { sourceFiles } from '../helpers/source-files'
 import { refusalReason } from '../../src/renderer/src/lib/utilities'
 import { ACCESS_DENIED, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
 
 const SRC = fileURLToPath(new URL('../../src', import.meta.url))
-
-/**
-Every TypeScript source file under `directory`
-*/
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true, recursive: true })
-    .filter((entry) => !entry.isDirectory() && /\.tsx?$/.test(entry.name))
-    .map((entry) => path.join(entry.parentPath, entry.name))
-}
 
 /**
 How `ipcRenderer.invoke` rejects when main's handler throws `error`
@@ -26,7 +18,7 @@ const overIpc = (error: Error): Error =>
 
 describe('refusal text', () => {
   it('only the shared contract spells out the refusal prefix', () => {
-    const files = sourceFiles(SRC)
+    const files = sourceFiles(SRC, /\.tsx?$/)
     process.stdout.write(`refusal prefix: scanned ${String(files.length)} source files\n`)
 
     expect(files.length).toBeGreaterThan(50)

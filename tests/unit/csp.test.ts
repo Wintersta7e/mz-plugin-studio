@@ -1,10 +1,11 @@
 // The Content Security Policy module: its two policies, its purity, its single holder, and the
 // filter that keeps the page's `file:` requests inside the renderer folder
 import { describe, expect, it } from 'vitest'
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as ts from 'typescript'
+import { sourceFiles } from '../helpers/source-files'
 import type { Session } from 'electron'
 import {
   DEV_SERVER_CSP,
@@ -42,12 +43,8 @@ const FILTER_CASES: [string, string, NodeJS.Platform, boolean][] = [
   ['not a url', '/app/out/renderer', 'linux', false]
 ]
 
-function sourceFiles(directory: string): string[] {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const file = path.join(directory, entry.name)
-    return entry.isDirectory() ? sourceFiles(file) : file
-  })
-}
+// A policy string may sit in a source file of any type
+const ANY_NAME = /./
 
 function byCodeUnit(left: string, right: string): number {
   if (left === right) return 0
@@ -142,7 +139,7 @@ describe('the Content Security Policy module', () => {
   })
 
   it('is the only source file holding a policy string', () => {
-    const files = sourceFiles(SRC)
+    const files = sourceFiles(SRC, ANY_NAME)
     const holders = files
       .filter((file) => readFileSync(file, 'utf8').includes(POLICY_MARK))
       .map((file) => path.relative(ROOT, file).replaceAll('\\', '/'))

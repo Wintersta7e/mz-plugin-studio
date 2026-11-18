@@ -1,9 +1,10 @@
 // The portable build cannot replace itself, so nothing may check for, download or install
 // an update, and the packager is given no update feed or targets other than Windows.
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { sourceFiles } from '../helpers/source-files'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const read = (file: string): string => readFileSync(path.join(ROOT, file), 'utf8')
@@ -13,18 +14,6 @@ const UPDATER =
 
 const REMOVED_LINE =
   '- The app no longer checks GitHub for updates; download new versions from the Releases page.'
-
-function byCodeUnit(left: string, right: string): number {
-  if (left === right) return 0
-  return left < right ? -1 : 1
-}
-
-function sourceFiles(): string[] {
-  return readdirSync(path.join(ROOT, 'src'), { recursive: true, encoding: 'utf8' })
-    .filter((file) => /\.tsx?$/.test(file))
-    .map((file) => path.join('src', file).replaceAll('\\', '/'))
-    .toSorted(byCodeUnit)
-}
 
 /**
 A member of a value parsed from JSON; undefined when the value holds no such member.
@@ -44,7 +33,10 @@ function updaterHits(file: string): string[] {
 
 describe('portable release without an updater', () => {
   it('no source or packaging file names the updater', () => {
-    const files = [...sourceFiles(), 'package.json', 'electron-builder.yml']
+    const sources = sourceFiles(path.join(ROOT, 'src'), /\.tsx?$/).map((file) =>
+      path.relative(ROOT, file).replaceAll('\\', '/')
+    )
+    const files = [...sources, 'package.json', 'electron-builder.yml']
     const hits = files.flatMap((file) => updaterHits(file))
     process.stdout.write(
       [

@@ -1,9 +1,10 @@
 // Raw IPC skips the sender, argument and file-access checks the two wrappers apply, so lint
 // refuses it in every source file except those wrappers.
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { ESLint } from 'eslint'
 import { describe, expect, it } from 'vitest'
+import { sourceFiles } from '../helpers/source-files'
 
 const ROOT = process.cwd()
 const WRAPPERS = ['src/main/ipc/registration.ts', 'src/preload/ipc.ts']
@@ -199,16 +200,6 @@ const CASES: { name: string; source: string; filePath: string; rules: string[] }
 ]
 
 /**
-Every TypeScript source file under src/, relative to the repository root.
-*/
-function sourceFiles(): string[] {
-  return readdirSync(path.join(ROOT, 'src'), { recursive: true, encoding: 'utf8' })
-    .filter((p) => /\.tsx?$/.test(p))
-    .map((p) => `src/${p.replaceAll('\\', '/')}`)
-    .toSorted(byCodeUnit)
-}
-
-/**
 Reads `key` of `value` when it is an object, so the calculated config is read through `unknown`.
 */
 function member(value: unknown, key: PropertyKey): unknown {
@@ -229,7 +220,10 @@ describe('raw IPC lint ban', () => {
   })
 
   it('exempts exactly the two wrappers among the source files', { timeout: 60_000 }, async () => {
-    const files = sourceFiles()
+    // Every TypeScript source file under src/, relative to the repository root
+    const files = sourceFiles(path.join(ROOT, 'src'), /\.tsx?$/).map((file) =>
+      path.relative(ROOT, file).replaceAll('\\', '/')
+    )
     const exempt: string[] = []
     for (const file of files) {
       const config: unknown = await eslint.calculateConfigForFile(path.join(ROOT, file))
