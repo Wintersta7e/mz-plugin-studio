@@ -478,11 +478,15 @@ fades out before the new one mounts, the only one on the page meanwhile: text fi
 is lost when it goes.
 */
 export async function newPlugin(page: Page): Promise<void> {
-  // The main area holds one view at a time: the active tab's editor or the screen without one
-  const leaving = await page.getByRole('main').locator(':scope > *').elementHandles()
+  // The main area holds one view at a time: the active tab's editor or the screen without one.
+  // Found by tag, not role: a menu still closing hides the main area from role queries, which
+  // then find no view, and the wait below would wait on nothing.
+  const views = page.locator('main > *')
+  await expect(views, 'the view the new plugin replaces').toHaveCount(1)
+  const leaving = await views.elementHandle()
   await page.getByTestId('new-plugin').click()
   // Detached counts as hidden; a fading element at any opacity still counts as visible
-  for (const element of leaving) await element.waitForElementState('hidden')
+  await leaving.waitForElementState('hidden')
 }
 
 /**

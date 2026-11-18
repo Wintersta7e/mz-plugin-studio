@@ -42,13 +42,19 @@ const UNC_PATH =
 const PLUGIN_KEY: PersistedKey = 'mz-plugin-studio-plugin'
 
 /**
+The active plugin as the app saved it for its next start: what the store holds
+*/
+async function savedPlugin(page: Page): Promise<unknown> {
+  const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
+  if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
+  return field(field(JSON.parse(raw), 'state'), 'plugin')
+}
+
+/**
 How many parameters the active plugin has, as the app saved it for its next start
 */
 async function paramCount(page: Page): Promise<number> {
-  const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
-  if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
-  const plugin = field(field(JSON.parse(raw), 'state'), 'plugin')
-  const parameters = field(plugin, 'parameters')
+  const parameters = field(await savedPlugin(page), 'parameters')
   if (!isList(parameters)) throw new TypeError(`no parameter list saved under ${PLUGIN_KEY}`)
   return parameters.length
 }
@@ -79,10 +85,16 @@ The plugin name a payload's save uses, so no two saves share a file
 */
 const pluginName = (payload: Payload): string => `Hostile_${payload.name.replaceAll('-', '_')}`
 
+/**
+Opens a new plugin and names it, read back from the store: a name filled into an editor on its
+way out never reaches the plugin the save writes
+*/
 async function newPluginNamed(page: Page, name: string): Promise<void> {
   await newPlugin(page)
   await page.getByTestId('editor-tab-meta').click()
   await page.getByTestId('meta-name').fill(name)
+  const meta = field(await savedPlugin(page), 'meta')
+  expect(field(meta, 'name')).toBe(name)
 }
 
 /**
