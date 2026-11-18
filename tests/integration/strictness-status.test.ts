@@ -46,7 +46,7 @@ const PARENT: Record<string, string> = {
 const repos: string[] = []
 // Describe blocks run in shuffled order: the count prints once the last of them ends
 const counter = { cases: 0, describes: 0 }
-const DESCRIBES = 8
+const DESCRIBES = 7
 
 function countCase(): void {
   counter.cases += 1
@@ -133,20 +133,6 @@ const statusWithTsc = (directory: string, tsc: string): { status: number | null;
     'node_modules/typescript/bin/tsc': tsc
   })
   return run(directory, path.join(directory, 'scripts/strictness-status.mjs'), [])
-}
-
-// A production knip run printing one summary line and its scanned files, under the ceiling 2.
-const knipProduction = ({ issues, files }: { issues: number; files: number }): string =>
-  `node -e "console.log('Unused exports (${String(issues)})'); ` +
-  `console.log('knip scanned: files ${String(files)} of ${String(files)}')" -- --max-issues 2`
-const reportKnip = (production: string): { status: number | null; out: string } => {
-  const directory = temporaryDirectory()
-  const scripts = {
-    knip: 'node -e "console.log(\'Unused exports (1)\')"',
-    'knip:production': production
-  }
-  write(directory, { 'package.json': JSON.stringify({ scripts }) })
-  return run(directory, SCRIPT, ['--report', 'knip'])
 }
 
 // A jscpd run that writes a JSON report with these totals into the folder `--output` names, or no
@@ -543,37 +529,6 @@ describe('strictness status: base suppressions', () => {
       expect(missing.status).toBe(1)
     }
   )
-})
-
-describe('strictness status: knip', () => {
-  beforeEach(countCase)
-
-  afterAll(finishDescribe)
-
-  it('(m) passes the production knip count at its ceiling', () => {
-    const result = reportKnip(knipProduction({ issues: 2, files: 3 }))
-
-    expect(result.out).toContain('knip issues: 1')
-    expect(result.out).toContain('knip production: files scanned 3, issues 2, ceiling 2')
-    expect(result.status).toBe(0)
-  })
-
-  it('(n) fails the production knip count above its ceiling and below it', () => {
-    const above = reportKnip(knipProduction({ issues: 3, files: 3 }))
-    const below = reportKnip(knipProduction({ issues: 1, files: 3 }))
-
-    expect(above.out).toContain('knip production: the count rose above the ceiling 2')
-    expect(above.status).toBe(1)
-    expect(below.out).toContain('knip production: the count fell; lower --max-issues to 1')
-    expect(below.status).toBe(1)
-  })
-
-  it('(o) fails a production knip run that scanned no file', () => {
-    const result = reportKnip(knipProduction({ issues: 2, files: 0 }))
-
-    expect(result.out).toContain('knip production: the run scanned no file')
-    expect(result.status).toBe(1)
-  })
 })
 
 describe('strictness status: jscpd', () => {

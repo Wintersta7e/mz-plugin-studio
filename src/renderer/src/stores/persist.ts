@@ -5,6 +5,9 @@ import log from 'electron-log/renderer'
 import type { PersistOptions, PersistStorage } from 'zustand/middleware'
 import { useToastStore } from './toastStore'
 
+/**
+@internal exported for tests
+*/
 export type PersistedKey =
   | 'mz-plugin-studio-project'
   | 'mz-plugin-studio-templates'
@@ -16,6 +19,9 @@ const BACKUP_SUFFIX = '.backup'
 
 // One step into a saved field: a key, an array element (with the name a check reads from it), or a
 // record entry
+/**
+@internal exported for tests
+*/
 export type PathStep = { key: string } | { index: number; name?: string } | { entry: string }
 export type FieldPath = PathStep[]
 
@@ -28,6 +34,9 @@ export type MigrationStep = (state: Record<string, unknown>) => Record<string, u
 
 // What the restore report calls a saved field or a key inside one: one phrase, or one for the whole
 // field and one for an entry of it ('' leaves a key out of the words)
+/**
+@internal exported for tests
+*/
 export type FieldLabel = string | { all: string; one: string }
 export type FieldLabels = Readonly<Record<string, FieldLabel>>
 
@@ -46,6 +55,9 @@ export interface PersistSpec<S, P> {
 
 // kept: the backup entry holds this data; earlier-copy-kept: it holds older data, so this was not
 // copied; failed: writing the copy threw
+/**
+@internal exported for tests
+*/
 export type BackupOutcome = 'kept' | 'earlier-copy-kept' | 'failed'
 
 export interface RestoreReportEntry {

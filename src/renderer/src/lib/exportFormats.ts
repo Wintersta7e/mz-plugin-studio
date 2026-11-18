@@ -162,6 +162,7 @@ export function typeDeclaration(plugin: PluginDefinition): { content: string; no
 
 /**
 Generates a TypeScript declaration file (.d.ts) for the plugin
+@internal exported for tests
 */
 export const generateTypeDeclaration = (plugin: PluginDefinition): string =>
   typeDeclaration(plugin).content

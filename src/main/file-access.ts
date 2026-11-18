@@ -90,11 +90,13 @@ function assertReadAllowed(filePath: string, pathImpl: PlatformPath): void {
 
 /**
 The file in the app's user data folder that keeps the granted project folders
+@internal exported for tests
 */
 export const PROJECT_ROOTS_FILE = 'project-roots.json'
 
 /**
 How many granted project folders the file keeps, most recently used first
+@internal exported for tests
 */
 export const MAX_PROJECT_ROOTS = 20
 

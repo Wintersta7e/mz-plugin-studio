@@ -16,6 +16,7 @@ const COMMENTS_AND_STRINGS = new RegExp(`${COMMENT.source}|${STRING_LITERAL.sour
 Replace comments and string literals with spaces so that
 prototype references inside them are not matched by the
 extraction regexes.
+@internal exported for tests
 */
 export function stripCommentsAndStrings(code: string): string {
   return code.replaceAll(COMMENTS_AND_STRINGS, (match) => ' '.repeat(match.length))

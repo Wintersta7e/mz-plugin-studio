@@ -27,6 +27,7 @@ import type { InvokeHandlers } from './registration'
 
 /**
 Lowercase hex sha256 of `bytes`
+@internal exported for tests
 */
 export function sha256Hex(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex')
@@ -110,6 +111,7 @@ async function writeGuarded(
 /**
 Writes `content` to `filePath`, a path chosen in a save dialog; creates its folder when missing.
 The dialog already asked about replacing the file, so a guard checks only the base and syntax.
+@internal exported for tests
 */
 export async function savePluginToPath(
   filePath: string,
@@ -152,6 +154,7 @@ async function readWithSha(filePath: string): Promise<{ content: string; sha256:
 
 /**
 Parses `js/plugins/<filename>` of a project, recording the file it came from
+@internal exported for tests
 */
 export async function loadPluginFile(projectPath: string, filename: string): Promise<LoadedPlugin> {
   assertSafeProjectPath(projectPath)
@@ -177,6 +180,7 @@ export async function loadPluginFile(projectPath: string, filename: string): Pro
 /**
 Writes `content` to `js/plugins/<filename>` of a project; creates the folder when missing.
 An existing file is replaced only when it is the guard's base, unchanged.
+@internal exported for tests
 */
 export async function savePluginFile(
   projectPath: string,
@@ -195,6 +199,7 @@ export async function savePluginFile(
 
 /**
 Reads the text of `js/plugins/<filename>` of a project with the sha256 of its bytes
+@internal exported for tests
 */
 export async function readRawPlugin(projectPath: string, filename: string): Promise<RawPluginFile> {
   assertSafeProjectPath(projectPath)
@@ -206,6 +211,7 @@ export async function readRawPlugin(projectPath: string, filename: string): Prom
 
 /**
 Reads the text of a file the user picked, or a tab's saved file
+@internal exported for tests
 */
 export async function readFileByPath(filePath: string): Promise<string> {
   assertSafeFilePath(filePath)

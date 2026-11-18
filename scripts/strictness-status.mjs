@@ -8,8 +8,6 @@
 //                     without a ceiling or a ceiling without a pending flag, a pending flag
 //                     with no error left (it must move to its program), and a pending check
 //                     whose tsc did not finish (printing how it ended and its last lines).
-//   --report knip:    the dead-code findings by type, of the whole tree (exits 0 on findings) and
-//                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
 //                     ceilings given as --clones and --duplicated-lines, or without a report).
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
@@ -494,78 +492,6 @@ function printFailedRun(label, reason, { out, bytes, ending }) {
   for (const line of tail) print(`${label} | ${line}`)
 }
 
-// A knip run's findings by type; whether it printed a usable summary, its total and its output.
-/**
-@param {string} script
-@param {string} label
-*/
-function reportKnipRun(script, label) {
-  const run = npmRun(script)
-  const { status, out } = run
-  const types = Array.from(
-    out.matchAll(/^(?<type>[A-Z][\w ]+) \((?<count>\d+)\)$/gmv),
-    ([, type = '', count = '']) => ({ type, count: Number(count) })
-  )
-  const hints = types.filter(({ type }) => type === 'Configuration hints')
-  const issues = types.filter(({ type }) => type !== 'Configuration hints')
-  for (const { type, count } of types) print(`${label} ${type.toLowerCase()}: ${count}`)
-  const total = issues.reduce((sum, { count }) => sum + count, 0)
-  print(`${label} issues: ${total}`)
-  const isClean = out.includes('Knip found no issues')
-  const isEmpty = issues.length === 0 && !isClean
-  const isHintOnly = total === 0 && status !== 0
-  const isOk = !isEmpty && !isHintOnly && hints.length === 0
-  if (!isOk) printFailedRun(label, 'config hints or no parsable summary', run)
-  return { isOk, total, out }
-}
-
-// The text of a package.json script; empty when package.json is not JSON or has no such script.
-/**
-@param {string} name
-*/
-function packageScript(name) {
-  const manifest = parseJson(readFileSync('package.json', 'utf8'))
-  const { scripts } = isRecord(manifest) ? manifest : {}
-  const script = isRecord(scripts) ? scripts[name] : undefined
-  return typeof script === 'string' ? script : ''
-}
-
-// The production run holds its ceiling in its own `--max-issues`, above which knip fails. A
-// count below it fails here too, so the ceiling only moves down with the findings it counts.
-const KNIP_PRODUCTION = 'knip:production'
-const KNIP_CEILING = /--max-issues (?<ceiling>\d+)/v
-const KNIP_SCANNED = /^knip scanned: files (?<files>\d+)/mv
-function reportKnipProduction() {
-  const { isOk, total, out } = reportKnipRun(KNIP_PRODUCTION, 'knip production')
-  if (!isOk) return false
-  const [, ceiling] = KNIP_CEILING.exec(packageScript(KNIP_PRODUCTION)) ?? []
-  const [, scanned = '0'] = KNIP_SCANNED.exec(out) ?? []
-  const files = Number(scanned)
-  print(`knip production: files scanned ${files}, issues ${total}, ceiling ${ceiling ?? 'none'}`)
-  if (files === 0) {
-    print('knip production: the run scanned no file')
-    return false
-  }
-  if (ceiling === undefined) {
-    print(`knip production: the ${KNIP_PRODUCTION} script names no --max-issues ceiling`)
-    return false
-  }
-  if (total > Number(ceiling)) {
-    print(`knip production: the count rose above the ceiling ${ceiling}`)
-    return false
-  }
-  if (total < Number(ceiling)) {
-    print(`knip production: the count fell; lower --max-issues to ${total}`)
-    return false
-  }
-  return true
-}
-
-function reportKnip() {
-  const isAllOk = reportKnipRun('knip', 'knip').isOk
-  return reportKnipProduction() && isAllOk
-}
-
 // The copy-paste run's clones and duplicated lines, each held exactly at the ceiling the
 // `jscpd:report` script names: a rise fails, and so does a fall, so a ceiling only moves down
 // with the copies it counts. A share would let new copies through as the code around them grows.
@@ -646,14 +572,13 @@ const [flag, kind] = process.argv.slice(2)
 @type {boolean}
 */
 let isOk
-if (flag === '--report' && kind === 'knip') isOk = reportKnip()
-else if (flag === '--report' && kind === 'jscpd') isOk = reportJscpd(process.argv.slice(4))
+if (flag === '--report' && kind === 'jscpd') isOk = reportJscpd(process.argv.slice(4))
 else if (flag === undefined) {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
   isOk = (await checkPending(tracked)) && suppressionsOk
 } else {
-  print('usage: node scripts/strictness-status.mjs [--report knip|jscpd]')
+  print('usage: node scripts/strictness-status.mjs [--report jscpd]')
   isOk = false
 }
 process.exitCode = isOk ? 0 : 1

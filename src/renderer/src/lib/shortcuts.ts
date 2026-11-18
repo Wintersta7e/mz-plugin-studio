@@ -59,6 +59,9 @@ const GLOBAL_OVERRIDE_SHORTCUTS = new Set([
   'f1'
 ])
 
+/**
+@internal exported for tests
+*/
 export function matchShortcut(event: KeyboardEvent): ShortcutDefinition | null {
   if (event.altKey) return null
 
@@ -80,6 +83,9 @@ export function matchShortcut(event: KeyboardEvent): ShortcutDefinition | null {
   return null
 }
 
+/**
+@internal exported for tests
+*/
 export function shouldOverrideMonaco(shortcut: ShortcutDefinition): boolean {
   return GLOBAL_OVERRIDE_SHORTCUTS.has(shortcut.key)
 }

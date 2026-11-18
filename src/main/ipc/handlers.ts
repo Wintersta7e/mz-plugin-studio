@@ -7,6 +7,9 @@ import { pluginHandlers } from './plugin'
 import { createProjectHandlers } from './project'
 import type { InvokeHandlers, SendListeners } from './registration'
 
+/**
+@internal exported for tests
+*/
 export type WindowPort = Pick<
   BrowserWindow,
   'minimize' | 'maximize' | 'unmaximize' | 'isMaximized' | 'close'
@@ -73,4 +76,7 @@ export function createSendListeners(dependencies: MainDependencies): SendListene
   }
 }
 
+/**
+@internal exported for tests
+*/
 export { type DialogPort } from './dialog'

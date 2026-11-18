@@ -5,6 +5,9 @@ import type { Session } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+/**
+@internal exported for tests
+*/
 export function buildCsp({ devServer }: { devServer: boolean }): string {
   return [
     "default-src 'none'",
@@ -26,6 +29,7 @@ export const DEV_SERVER_CSP = buildCsp({ devServer: true })
 
 /**
 True when a `file:` URL names a path inside the renderer folder; any unreadable URL is not
+@internal exported for tests
 */
 export function isFileRequestAllowed(
   url: string,

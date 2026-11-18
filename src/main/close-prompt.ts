@@ -2,6 +2,9 @@
 // the renderer does while any open plugin has unsaved changes.
 import type { MessageBoxSyncOptions } from 'electron'
 
+/**
+@internal exported for tests
+*/
 export function closePromptOptions(): MessageBoxSyncOptions {
   return {
     type: 'warning',

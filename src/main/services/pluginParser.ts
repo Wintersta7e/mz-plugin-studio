@@ -91,6 +91,7 @@ function firstEnd(text: string, end: RegExp, from: number): number {
 Same result as header.match(/<line start>@help\s*([\s\S]*?)(?=<HELP_END>)/i)?.[1], in linear
 time, except that a body with no end after it runs to the end of the header (help written last
 in a block).
+@internal exported for tests
 */
 export function matchHelp(header: string): string | undefined {
   const m = tagRegex('help', 'i').exec(header)
@@ -109,6 +110,7 @@ export function matchHelp(header: string): string | undefined {
 /**
 Same result as header.match(/<line start>@plugindesc(?!\S)[^\S\r\n]*(.*?)(?=<DESC_END>|$)/s)?.[1],
 in linear time.
+@internal exported for tests
 */
 export function matchPlugindesc(header: string): string | undefined {
   const m = tagRegex(String.raw`plugindesc(?!\S)[^\S\r\n]*`).exec(header)
@@ -150,12 +152,16 @@ function tagValueStart(tag: string): RegExp {
 Same result as content.match(/\*\s+@plugindesc[\s\S]*?(\w+)\.js/i)?.[1], in linear time: a
 name is tried right after the tag and then only where a word starts, since a name tried inside
 a long word would re-read the rest of the word at every character.
+@internal exported for tests
 */
 export function matchScriptName(content: string): string | undefined {
   return /\*\s+@plugindesc(?:[\s\S]+?\b)??(\w+)\.js/i.exec(content)?.[1]
 }
 
 // Same result as text.replace(/\n\s*\*\s*/g, ' '), in linear time
+/**
+@internal exported for tests
+*/
 export function joinStarLines(text: string): string {
   const nextNonWs = nextNonWsTable(text)
   let out = ''
@@ -176,6 +182,7 @@ export function joinStarLines(text: string): string {
 
 /**
 Same result as value.replace(/\s*\*?\s*$/, ''), in linear time.
+@internal exported for tests
 */
 export function stripTrailingStar(value: string): string {
   const trimmed = value.trimEnd()

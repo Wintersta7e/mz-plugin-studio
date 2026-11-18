@@ -249,6 +249,9 @@ export const SEND_CHANNELS = [
   IPC_CHANNELS.LOG_SET_LEVEL
 ] as const satisfies readonly SendChannel[]
 
+/**
+@internal exported for tests
+*/
 export const EVENT_CHANNELS = [
   IPC_CHANNELS.WINDOW_MAXIMIZED_CHANGED
 ] as const satisfies readonly EventChannel[]

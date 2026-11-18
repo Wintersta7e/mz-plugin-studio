@@ -30,6 +30,7 @@ import type { InvokeHandlers } from './registration'
 Shows the save dialog; returns the chosen path, or null when cancelled.
 The chosen path becomes writable by save-to-path and readable by read-by-path for the rest of
 the session.
+@internal exported for tests
 */
 export async function showSaveFileDialog(
   dialog: Pick<Dialog, 'showSaveDialog'>,
@@ -56,6 +57,7 @@ export async function showSaveFileDialog(
 /**
 Shows a message box; returns the index of the button the user chose. A Cancel button is both
 the Enter and the Esc button unless the caller names others, so no key press discards work.
+@internal exported for tests
 */
 export async function showMessageDialog(
   dialog: Pick<Dialog, 'showMessageBox'>,
@@ -189,6 +191,7 @@ function checkMessageOptions(value: unknown): MessageDialogOptions {
 
 /**
 What a dialog may open at: a bare file name, or a folder it opens in
+@internal exported for tests
 */
 export type DialogDefaultClass = 'filename' | 'directory-seed'
 
@@ -198,6 +201,7 @@ const MAX_FILENAME_LENGTH = 255
 The class of a dialog's default path, or null when the dialog opens without it. Decided from
 the text alone, before anything looks the path up: the dialog looks its default path up before
 the user acts, and looking up a network path sends the user's Windows credentials to its host.
+@internal exported for tests
 */
 export function classifyDialogDefault(
   value: unknown,
@@ -226,6 +230,7 @@ export function classifyDialogDefault(
 /**
 The save dialog's default path: a bare file name, or a full path to a file the app may write
 (Save asks again at the file it last chose); anything else is dropped.
+@internal exported for tests
 */
 export function checkSaveDefaultPath(
   value: unknown,
@@ -250,6 +255,7 @@ function checkOpenDefaultPath(value: unknown): string | undefined {
 /**
 A folder the file of dialog folders keeps: one a dialog may open at, or a local drive or
 filesystem root (`D:\`, `/`), which a dialog may open at though a project may not be one
+@internal exported for tests
 */
 export function checkDialogFolder(
   value: unknown,
@@ -299,6 +305,7 @@ type DefaultingDialog = 'open-folder' | 'open-file' | 'save-file'
 /**
 Which dialogs share a remembered folder: the folder dialog, or the channel with the first
 extension of its first filter (the handler's own filter, `.js`, when there is none).
+@internal exported for tests
 */
 export function dialogKind(
   channel: DefaultingDialog,
@@ -307,6 +314,9 @@ export function dialogKind(
   return channel === 'open-folder' ? channel : `${channel}:.${filters?.[0]?.extensions[0] ?? 'js'}`
 }
 
+/**
+@internal exported for tests
+*/
 export interface DialogDefaultRequest {
   channel: DefaultingDialog
   kind: string
@@ -364,6 +374,7 @@ async function saveDefaultPath(
 /**
 The default path a dialog opens with, or undefined for none: from Electron 43 a dialog without
 one opens in Downloads, and the system no longer restores the folder it last showed.
+@internal exported for tests
 */
 export async function resolveDialogDefaultPath(
   request: DialogDefaultRequest,

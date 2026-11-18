@@ -10,6 +10,9 @@ export interface ToastAction {
   run: () => void
 }
 
+/**
+@internal exported for tests
+*/
 export interface Toast {
   id: string
   type: ToastType

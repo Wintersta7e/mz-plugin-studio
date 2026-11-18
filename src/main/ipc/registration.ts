@@ -23,6 +23,9 @@ import {
 
 import { invalidArguments } from './arguments'
 
+/**
+@internal exported for tests
+*/
 export { LOG_CHANNEL } from '../../shared/ipc-types'
 
 /**
@@ -38,6 +41,9 @@ Longest log line, measured as JSON
 */
 const MAX_LOG_LENGTH = 256 * 1024
 
+/**
+@internal exported for tests
+*/
 export interface Handler<C extends InvokeChannel> {
   access: AccessClass
   /**
@@ -58,6 +64,9 @@ interface Listener<C extends SendChannel> {
 export type InvokeHandlers = { [C in InvokeChannel]: Handler<C> }
 export type SendListeners = { [C in SendChannel]: Listener<C> }
 
+/**
+@internal exported for tests
+*/
 export interface SenderEvent {
   readonly senderFrame: unknown
 }

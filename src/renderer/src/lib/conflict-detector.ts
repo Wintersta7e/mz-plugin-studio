@@ -8,6 +8,9 @@ Override extraction logic lives in `src/shared/override-extractor.ts`
 (shared between main and renderer processes).
 */
 
+/**
+@internal exported for tests
+*/
 export { extractOverrides } from '../../../shared/override-extractor'
 
 // --- Types ---

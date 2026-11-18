@@ -191,6 +191,12 @@ describe('package.json scripts', () => {
     expect(scripts.get('typecov')).toBe('node scripts/typecov.mjs')
   })
 
+  it('check runs both knip modes, and the production run allows no finding', () => {
+    expect(commandsOf(script('check'))).toContain('npm run knip')
+    expect(commandsOf(script('check'))).toContain('npm run knip:production')
+    expect(script('knip:production')).not.toContain('--max-issues')
+  })
+
   it('the lint covers the whole tree and fails on any warning', () => {
     expect(scripts.get('lint')).toBe('node node_modules/eslint/bin/eslint.js --max-warnings 0 .')
     expect(scripts.get('lint:scripts')).toBeUndefined()

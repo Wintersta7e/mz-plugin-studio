@@ -18,6 +18,9 @@ export interface DependencyReport {
   pluginNames: string[]
 }
 
+/**
+@internal exported for tests
+*/
 export interface DependencyGraph {
   plugins: Map<string, ScannedPluginHeader>
   edges: Map<string, string[]> // plugin -> its dependencies (base + orderAfter + reverse orderBefore)
@@ -25,6 +28,7 @@ export interface DependencyGraph {
 
 /**
 Build a directed dependency graph from scanned headers
+@internal exported for tests
 */
 export function buildDependencyGraph(headers: ScannedPluginHeader[]): DependencyGraph {
   const plugins = new Map<string, ScannedPluginHeader>()
