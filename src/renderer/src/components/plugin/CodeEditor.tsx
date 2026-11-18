@@ -8,6 +8,7 @@ import { usePluginStore, useSettingsStore } from '../../stores'
 import { Button } from '../ui/button'
 import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
+import { editorTheme } from '../../lib/editor-theme'
 import { RAW_MODE_READ_ONLY_NOTICE, useIsRawModeActive } from '../../lib/raw-mode'
 
 /**
@@ -159,7 +160,7 @@ export function CodeEditor() {
           height="100%"
           language="javascript"
           value={customCode}
-          theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+          theme={editorTheme(theme)}
           beforeMount={handleBeforeMount}
           onMount={handleMount}
           onChange={handleChange}

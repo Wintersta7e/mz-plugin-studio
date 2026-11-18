@@ -33,7 +33,7 @@ export function TitleBar() {
     <div className="titlebar-drag-region flex h-10 items-center justify-between border-b border-border bg-card px-2">
       <div className="flex items-center gap-2 titlebar-no-drag">
         <div className="flex h-6 w-6 items-center justify-center rounded bg-primary/20">
-          <span className="text-xs font-bold text-primary">MZ</span>
+          <span className="text-xs font-bold text-primary-text">MZ</span>
         </div>
         <span className="text-sm font-medium text-foreground">Plugin Studio</span>
         {project && <span className="text-sm text-muted-foreground">- {project.gameTitle}</span>}

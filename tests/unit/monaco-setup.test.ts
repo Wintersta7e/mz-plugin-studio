@@ -1,15 +1,22 @@
-// The bundled code editor's setup: the editor instance handed to the React wrapper, and the
-// workers it starts, from a blob on a page loaded from disk and as modules under the dev server
+// The bundled code editor's setup: the editor instance handed to the React wrapper, its dark theme,
+// and the workers it starts, from a blob on a page loaded from disk and as modules under the dev
+// server
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  DARK_EDITOR_THEME,
+  darkEditorTheme,
+  editorTheme
+} from '../../src/renderer/src/lib/editor-theme'
 
 const h = vi.hoisted(() => ({
   config: vi.fn<(options: unknown) => void>(),
+  defineTheme: vi.fn<(name: string, data: unknown) => void>(),
   editorWorkerUrl: './assets/editor.worker-a1.js',
   tsWorkerUrl: './assets/ts.worker-b2.js'
 }))
 
 vi.mock<Record<'editor' | 'languages', unknown>>(import('monaco-editor/editor'), () => ({
-  editor: { name: 'editor namespace' },
+  editor: { name: 'editor namespace', defineTheme: h.defineTheme },
   languages: {}
 }))
 vi.mock(import('monaco-editor/features/register.all'), () => ({}))
@@ -39,6 +46,7 @@ class FakeWorker {
 
 const blobs = new Map<string, Blob>()
 const configCalls: unknown[][] = []
+const themeCalls: unknown[][] = []
 
 function getWorker(label: string): FakeWorker {
   const worker = globalThis.MonacoEnvironment?.getWorker?.('', label)
@@ -60,6 +68,7 @@ describe('code editor setup', () => {
     await import('../../src/renderer/src/lib/monaco-setup')
     // Vitest clears call records before each test
     configCalls.push(...h.config.mock.calls)
+    themeCalls.push(...h.defineTheme.mock.calls)
   })
 
   beforeEach(() => {
@@ -82,6 +91,11 @@ describe('code editor setup', () => {
     expect(typeof options === 'object' && options !== null && Reflect.get(options, 'monaco')).toBe(
       monaco
     )
+  })
+
+  it('defines the dark theme the editor hosts pass for the dark app theme', () => {
+    expect(themeCalls).toStrictEqual([[DARK_EDITOR_THEME, darkEditorTheme]])
+    expect([editorTheme('dark'), editorTheme('light')]).toStrictEqual([DARK_EDITOR_THEME, 'vs'])
   })
 
   it('starts each built worker as a classic worker from a blob', async () => {

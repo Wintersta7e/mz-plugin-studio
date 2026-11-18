@@ -3,6 +3,7 @@ import '../../lib/monaco-setup'
 import { useMemo } from 'react'
 import { DiffEditor } from '@monaco-editor/react'
 import { useSettingsStore } from '../../stores'
+import { editorTheme } from '../../lib/editor-theme'
 
 interface DiffViewProps {
   original: string
@@ -31,7 +32,7 @@ export function DiffView({ original, modified }: Readonly<DiffViewProps>) {
       original={original}
       modified={modified}
       language="javascript"
-      theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+      theme={editorTheme(theme)}
       options={diffOptions}
     />
   )

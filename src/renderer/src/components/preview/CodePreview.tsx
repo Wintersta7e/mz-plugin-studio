@@ -2,6 +2,7 @@
 import '../../lib/monaco-setup'
 import { useMemo, useCallback, useState, useRef, useEffect, useDeferredValue } from 'react'
 import { Editor } from '@monaco-editor/react'
+import { editorTheme } from '../../lib/editor-theme'
 import { Copy, Download, Check, FileCode2, GitCompare } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -433,7 +434,7 @@ function PreviewBody({
       height="100%"
       language="javascript"
       value={code}
-      theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+      theme={editorTheme(theme)}
       options={previewOptions}
     />
   )

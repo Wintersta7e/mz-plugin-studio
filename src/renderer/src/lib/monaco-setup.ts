@@ -7,6 +7,7 @@ import 'monaco-editor/languages/features/typescript/register'
 import editorWorkerUrl from 'monaco-editor/editor/editor.worker?worker&url'
 import tsWorkerUrl from 'monaco-editor/languages/features/typescript/ts.worker?worker&url'
 import { loader } from '@monaco-editor/react'
+import { DARK_EDITOR_THEME, darkEditorTheme } from './editor-theme'
 
 /**
 A page loaded from disk starts each worker from a blob that loads the worker's file, so the worker
@@ -26,5 +27,7 @@ globalThis.MonacoEnvironment = {
     return startWorker(isTypescript ? tsWorkerUrl : editorWorkerUrl)
   }
 }
+
+monaco.editor.defineTheme(DARK_EDITOR_THEME, darkEditorTheme)
 
 loader.config({ monaco })

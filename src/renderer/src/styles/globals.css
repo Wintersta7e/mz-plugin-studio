@@ -10,6 +10,7 @@
 
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-text: hsl(var(--primary-text));
 
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
@@ -102,6 +103,8 @@
 
     --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
+    /* Text on a 20% tint of the primary colour over a card, AA contrast (4.5:1) */
+    --primary-text: 217 91% 67%;
 
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -138,6 +141,7 @@
 
     --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
+    --primary-text: 217 91% 43%;
 
     --secondary: 210 40% 93%;
     --secondary-foreground: 222 47% 11%;
