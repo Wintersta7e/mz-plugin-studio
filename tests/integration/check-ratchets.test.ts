@@ -1,12 +1,23 @@
-// The ratchet check run against throwaway folders whose jscpd is a fake writing a JSON report: the
-// copied code's clones and duplicated lines are held exactly at the ceilings ratchets.json holds.
-import { spawnSync } from 'node:child_process'
+// The ratchet check run against throwaway repositories whose jscpd is a fake writing a JSON report:
+// the copied code's clones and duplicated lines are held exactly at the ceilings ratchets.json
+// holds, and no ceiling or floor may move toward lax since the base commit.
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 const SCRIPT = path.resolve(import.meta.dirname, '../../scripts/check-ratchets.mjs')
+// No user or system git configuration (hooks, signing) reaches the throwaway repositories, and no
+// base named for the outer run reaches the check.
+const ENV = Object.fromEntries(
+  Object.entries({
+    ...process.env,
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_NOSYSTEM: '1'
+  }).filter(([name]) => name !== 'RATCHETS_BASE')
+)
+const GIT_USER = ['-c', 'user.name=Test', '-c', 'user.email=test@example.invalid']
 
 interface JscpdTotal {
   sources: number
@@ -17,6 +28,10 @@ interface Clone {
   first: string
   second: string
 }
+interface Run {
+  status: number | null
+  out: string
+}
 const CEILINGS = { clones: 2, duplicatedLines: 20 }
 const JSCPD_CEILINGS = { jscpd: CEILINGS }
 const AT_CEILINGS: JscpdTotal = { sources: 3, clones: 2, duplicatedLines: 20 }
@@ -24,8 +39,25 @@ const CLONES: Clone[] = [
   { first: 'src/a.ts:1-12', second: 'src/b.ts:4-15' },
   { first: 'src/a.ts:30-37', second: 'src/c.ts:9-16' }
 ]
+// The base of the range cases: two ceilings, two floors and two package.json script flags.
+const BASE_RATCHETS = {
+  jscpd: CEILINGS,
+  coverage: { suite: { global: { lines: 90, branches: 80 } } }
+}
+const packageJson = (atLeast: string, maxWarnings: string): string =>
+  JSON.stringify({
+    scripts: {
+      lint: `eslint --max-warnings ${maxWarnings} .`,
+      'typecov:web': `type-coverage -p tsconfig.web.json --at-least ${atLeast}`
+    }
+  })
+const BASE_PACKAGE = packageJson('100', '0')
+const ZERO_SHA = '0'.repeat(40)
 
 const directories: string[] = []
+
+const git = (directory: string, args: string[]): string =>
+  execFileSync('git', [...GIT_USER, ...args], { cwd: directory, env: ENV, encoding: 'utf8' }).trim()
 
 // A duplicate entry of a jscpd JSON report for a clone written `file:start-end`.
 const duplicate = ({ first, second }: Clone): Record<string, unknown> => {
@@ -37,37 +69,84 @@ const duplicate = ({ first, second }: Clone): Record<string, unknown> => {
   return { firstFile: side(first), secondFile: side(second) }
 }
 
-// The check in a folder whose ratchets.json holds `ratchets` and whose jscpd writes a report with
-// these totals and clones into the folder `--output` names, or no report.
-const check = (
-  total: JscpdTotal | undefined,
-  ratchets: Record<string, unknown> = JSCPD_CEILINGS,
-  clones: Clone[] = CLONES
-): { status: number | null; out: string } => {
-  const directory = mkdtempSync(path.join(tmpdir(), 'check-ratchets-'))
-  directories.push(directory)
+// A fake jscpd that writes a report with these totals and clones into the folder `--output` names,
+// or no report.
+const fakeJscpd = (total: JscpdTotal | undefined, clones: Clone[]): string => {
   const report = JSON.stringify({
     statistics: { total: { ...total, percentage: 2.5 } },
     duplicates: clones.map((clone) => duplicate(clone))
   })
-  const fake = [
+  return [
     "import { writeFileSync } from 'node:fs'",
     "const output = process.argv[process.argv.indexOf('--output') + 1]",
     total === undefined ? '' : `writeFileSync(\`\${output}/jscpd-report.json\`, '${report}')`
   ].join('\n')
+}
+
+// Commits `files` on top of the repository's HEAD; the new commit's id.
+const commit = (directory: string, files: Record<string, string>): string => {
+  for (const [file, text] of Object.entries(files)) writeFileSync(path.join(directory, file), text)
+  git(directory, ['add', '.'])
+  git(directory, ['commit', '-q', '--allow-empty', '-m', 'change'])
+  return git(directory, ['rev-parse', 'HEAD'])
+}
+
+// A repository holding the fake jscpd and one commit of `files`.
+const repository = (
+  files: Record<string, string>,
+  total: JscpdTotal | undefined,
+  clones: Clone[] = CLONES
+): string => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'check-ratchets-'))
+  directories.push(directory)
+  git(directory, ['init', '-q'])
   mkdirSync(path.join(directory, 'node_modules/jscpd'), { recursive: true })
-  writeFileSync(path.join(directory, 'node_modules/jscpd/run-jscpd.js'), fake)
-  writeFileSync(path.join(directory, 'ratchets.json'), JSON.stringify(ratchets))
-  const result = spawnSync(process.execPath, [SCRIPT], { cwd: directory, encoding: 'utf8' })
+  writeFileSync(path.join(directory, 'node_modules/jscpd/run-jscpd.js'), fakeJscpd(total, clones))
+  commit(directory, files)
+  return directory
+}
+
+const run = (directory: string, args: string[], variables: Record<string, string> = {}): Run => {
+  const result = spawnSync(process.execPath, [SCRIPT, ...args], {
+    cwd: directory,
+    env: { ...ENV, ...variables },
+    encoding: 'utf8'
+  })
   return { status: result.status, out: `${result.stdout}${result.stderr}` }
 }
 
-describe('ratchets: jscpd', () => {
-  afterEach(() => {
-    for (const directory of directories.splice(0)) {
-      rmSync(directory, { recursive: true, force: true })
-    }
+// The full check in a repository whose ratchets.json holds `ratchets`, measured against HEAD (so
+// only the exact jscpd check can fail).
+const check = (
+  total: JscpdTotal | undefined,
+  ratchets: Record<string, unknown> = JSCPD_CEILINGS,
+  clones: Clone[] = CLONES
+): Run =>
+  run(repository({ 'ratchets.json': JSON.stringify(ratchets) }, total, clones), [], {
+    RATCHETS_BASE: 'HEAD'
   })
+
+// A repository whose base commit holds BASE_RATCHETS and BASE_PACKAGE and whose HEAD applies
+// `head`; the repository and the base commit's id.
+const since = (
+  head: Record<string, string>,
+  total: JscpdTotal = AT_CEILINGS
+): { directory: string; base: string } => {
+  const files = { 'ratchets.json': JSON.stringify(BASE_RATCHETS), 'package.json': BASE_PACKAGE }
+  const directory = repository(files, total)
+  const base = git(directory, ['rev-parse', 'HEAD'])
+  commit(directory, head)
+  return { directory, base }
+}
+
+const removeRepositories = (): void => {
+  for (const directory of directories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true })
+  }
+}
+
+describe('ratchets: jscpd', () => {
+  afterEach(removeRepositories)
 
   it('(p) passes the jscpd clones and duplicated lines at their ceilings', () => {
     const result = check(AT_CEILINGS)
@@ -130,5 +209,135 @@ describe('ratchets: jscpd', () => {
     expect(unnamed.out).toContain('ratchets: ratchets.json holds no jscpd.clones ceiling')
     expect(unnamed.out).toContain('ratchets: ratchets.json holds no jscpd.duplicatedLines ceiling')
     expect(unnamed.status).toBe(1)
+  })
+})
+
+describe('ratchets: direction since the base', () => {
+  afterEach(removeRepositories)
+
+  it('fails a commit that raises the clones and their ceiling together, which the exact check passes', () => {
+    const raised = JSON.stringify({ ...BASE_RATCHETS, jscpd: { ...CEILINGS, clones: 3 } })
+    const { directory, base } = since({ 'ratchets.json': raised }, { ...AT_CEILINGS, clones: 3 })
+    const exact = run(directory, [], { RATCHETS_BASE: 'HEAD' })
+    const range = run(directory, ['--base', base])
+
+    expect(exact.status).toBe(0)
+    expect(range.out).toContain(`ratchets: jscpd.clones 2 → 3: a ceiling rose since ${base}`)
+    expect(range.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(range.status).toBe(1)
+  })
+
+  it('fails a coverage floor lowered since the base', () => {
+    const lowered = JSON.stringify({
+      ...BASE_RATCHETS,
+      coverage: { suite: { global: { lines: 89, branches: 80 } } }
+    })
+    const { directory, base } = since({ 'ratchets.json': lowered })
+    const result = run(directory, ['--base', base])
+
+    expect(result.out).toContain(
+      `ratchets: coverage.suite.global.lines 90 → 89: a floor fell since ${base}`
+    )
+    expect(result.status).toBe(1)
+  })
+
+  it('fails a type coverage threshold lowered or a warning ceiling raised in package.json', () => {
+    const atLeast = since({ 'package.json': packageJson('99', '0') })
+    const warnings = since({ 'package.json': packageJson('100', '1') })
+    const lowered = run(atLeast.directory, ['--base', atLeast.base])
+    const raised = run(warnings.directory, ['--base', warnings.base])
+
+    expect(lowered.out).toContain(
+      `ratchets: package.json scripts.typecov:web --at-least 100 → 99: a floor fell since ${atLeast.base}`
+    )
+    expect(lowered.status).toBe(1)
+    expect(raised.out).toContain(
+      `ratchets: package.json scripts.lint --max-warnings 0 → 1: a ceiling rose since ${warnings.base}`
+    )
+    expect(raised.status).toBe(1)
+  })
+
+  it('passes a ratchet the base does not hold, and values moved toward strict', () => {
+    const added = JSON.stringify({
+      jscpd: { clones: 1, duplicatedLines: 20 },
+      coverage: {
+        suite: { global: { lines: 91, branches: 80 } },
+        golden: { files: { 'src/new.ts': 90 } }
+      }
+    })
+    const { directory, base } = since({ 'ratchets.json': added })
+    const result = run(directory, ['--base', base])
+
+    expect(result.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(result.status).toBe(0)
+  })
+
+  it('fails a ratchet that vanished since the base, and a value outside the known sections', () => {
+    const vanished = since({ 'ratchets.json': JSON.stringify(JSCPD_CEILINGS) })
+    const unknown = since({
+      'ratchets.json': JSON.stringify({ ...BASE_RATCHETS, size: { app: 5 } })
+    })
+    const gone = run(vanished.directory, ['--base', vanished.base])
+    const outside = run(unknown.directory, ['--base', unknown.base])
+
+    expect(gone.out).toContain(
+      `ratchets: coverage.suite.global.lines 90 → none: the ratchet vanished since ${vanished.base}`
+    )
+    expect(gone.status).toBe(1)
+    expect(outside.out).toContain(
+      'ratchets: size.app is in no section ratchets.json knows (jscpd, coverage)'
+    )
+    expect(outside.status).toBe(1)
+  })
+})
+
+describe('ratchets: the base compared with', () => {
+  afterEach(removeRepositories)
+
+  it('fails a base that is not a commit or holds no readable ratchets.json', () => {
+    const { directory, base } = since({})
+    const absent = 'f'.repeat(40)
+    const missing = run(directory, ['--base', absent])
+    const unreadable = repository(
+      { 'ratchets.json': 'not json', 'package.json': BASE_PACKAGE },
+      AT_CEILINGS
+    )
+    const unreadableBase = git(unreadable, ['rev-parse', 'HEAD'])
+    commit(unreadable, { 'ratchets.json': JSON.stringify(BASE_RATCHETS) })
+    const unparsed = run(unreadable, ['--base', unreadableBase])
+
+    expect(run(directory, ['--base', base]).status).toBe(0)
+    expect(missing.out).toContain(`ratchets: base ${absent} is not a commit`)
+    expect(missing.status).toBe(1)
+    expect(unparsed.out).toContain(`ratchets: ${unreadableBase} has no readable ratchets.json`)
+    expect(unparsed.status).toBe(1)
+  })
+
+  it('fails a comparison of nothing', () => {
+    const empty = repository({ 'ratchets.json': '{}' }, AT_CEILINGS)
+    const nothing = run(empty, ['--base', 'HEAD'])
+
+    expect(nothing.out).toContain('ratchets: compared 0 against ')
+    expect(nothing.status).toBe(1)
+  })
+
+  it('compares with RATCHETS_BASE, else the merge-base with origin/main, else the parent', () => {
+    const raised = JSON.stringify({ ...BASE_RATCHETS, jscpd: { ...CEILINGS, clones: 3 } })
+    const { directory, base } = since({ 'ratchets.json': raised }, { ...AT_CEILINGS, clones: 3 })
+    const parent = run(directory, [])
+    git(directory, ['update-ref', 'refs/remotes/origin/main', base])
+    const runs = [
+      run(directory, [], { RATCHETS_BASE: base }),
+      run(directory, [], { RATCHETS_BASE: ZERO_SHA }),
+      run(directory, [], { RATCHETS_BASE: '' }),
+      run(directory, []),
+      parent
+    ]
+
+    expect(runs.map((result) => result.out.includes(`compared 6 against ${base}`))).toStrictEqual(
+      runs.map(() => true)
+    )
+    expect(runs.map((result) => result.status)).toStrictEqual(runs.map(() => 1))
+    expect(run(directory, [], { RATCHETS_BASE: 'HEAD' }).status).toBe(0)
   })
 })

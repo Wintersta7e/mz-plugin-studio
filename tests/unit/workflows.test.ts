@@ -165,6 +165,17 @@ describe('ci workflow: execution', () => {
     expect(job.steps.at(0)?.nested).toContain('fetch-depth: 0')
   })
 
+  it('the ratchets compare the pushed range from its base, like the strictness status', () => {
+    const job = jobOf('static')
+    const ratchets = job.steps.filter((step) => step.run.includes('npm run ratchets'))
+
+    expect(ratchets).toHaveLength(1)
+    expect(ratchets.at(0)?.nested).toStrictEqual([
+      'RATCHETS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}'
+    ])
+    expect(job.steps.at(0)?.nested).toContain('fetch-depth: 0')
+  })
+
   it('the Windows job tests fixture bytes before Electron and checks the package it builds', () => {
     const job = jobOf('package-win')
     const fixtures = indexOfRun(job, /tests\/unit\/fixture-set\.test\.ts/)

@@ -4,19 +4,54 @@
 //          does a fall, naming the ceiling to write, so a ceiling only moves down with the copies
 //          it counts. A share would let new copies through as the code around them grows. A run
 //          that wrote no report or scanned no file fails, printing how it ended and its last lines.
+//   direction: compares every ratchet with its value at the base commit, the start of the change
+//          under test: each number in ratchets.json (`jscpd` holds ceilings, `coverage` floors)
+//          and each package.json script's `--at-least` (a floor) and `--max-warnings` (a
+//          ceiling). Fails a ceiling that rose, a floor that fell, a ratchet the base holds and
+//          the tree does not, a number outside the known sections, a base that is not a commit or
+//          holds an unreadable file, and a comparison of nothing. A ratchet the base does not hold
+//          passes, so a new one can land. The exact checks alone pass a commit that raises a count
+//          and its ceiling together; this one does not.
+// `node scripts/check-ratchets.mjs` runs both: the base is RATCHETS_BASE (CI names the pushed
+// range's base: a push's previous tip, a pull request's base); an empty or all-zero value, or none,
+// stands for the merge-base with origin/main, else HEAD's parent. `--base <ref>` runs the
+// direction check alone against `ref`.
 // The coverage floors in the same file are checked by scripts/check-coverage.mjs.
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { parseArgs } from 'node:util'
 
 const RATCHETS = 'ratchets.json'
+const PACKAGE = 'package.json'
 const JSCPD = 'node_modules/jscpd/run-jscpd.js'
 const OUTPUT_TAIL = 20
 
 /**
 @typedef {{ sources: number, clones: number, duplicatedLines: number, percentage: number }} JscpdTotal
+@typedef {'ceiling' | 'floor'} Direction
+@typedef {{ value: number, direction: Direction }} Ratchet
 */
+
+// Which way the numbers of each ratchets.json section may move: a ceiling only down, a floor up.
+/**
+@type {[string, Direction][]}
+*/
+const SECTION_DIRECTIONS = [
+  ['jscpd', 'ceiling'],
+  ['coverage', 'floor']
+]
+const SECTIONS = new Map(SECTION_DIRECTIONS)
+const SECTION_NAMES = SECTION_DIRECTIONS.map(([name]) => name).join(', ')
+// The package.json script flags that hold a ratchet.
+/**
+@type {[string, RegExp, Direction][]}
+*/
+const SCRIPT_FLAGS = [
+  ['--at-least', /--at-least (?<value>\d+(?:\.\d+)?)/v, 'floor'],
+  ['--max-warnings', /--max-warnings (?<value>\d+)/v, 'ceiling']
+]
 
 /**
 @param {string} line
@@ -44,22 +79,27 @@ A member of a parsed JSON value; undefined when the value holds no such member.
 const member = (value, key) => (isRecord(value) ? value[key] : undefined)
 
 /**
-Parsed JSON of a file; undefined when the file is absent or not JSON.
-@param {string} file
+Parsed JSON; undefined when the text is not JSON.
+@param {string} text
 @returns {unknown}
 */
-function readJson(file) {
-  if (!existsSync(file)) return
+function parseJson(text) {
   try {
     /**
     @type {unknown}
     */
-    const value = JSON.parse(readFileSync(file, 'utf8'))
+    const value = JSON.parse(text)
     return value
   } catch {
     return
   }
 }
+
+/**
+Parsed JSON of a file; undefined when the file is absent or not JSON.
+@param {string} file
+*/
+const readJson = (file) => (existsSync(file) ? parseJson(readFileSync(file, 'utf8')) : undefined)
 
 /**
 The totals of a jscpd JSON report; undefined when it holds none.
@@ -175,12 +215,156 @@ function checkJscpd(ratchets) {
 }
 
 /**
+Each number of a parsed ratchets.json by its dotted key, with its section's direction, and the key
+of each number outside a known section.
+@param {unknown} ratchets
+*/
+function storeRatchets(ratchets) {
+  /**
+  @type {Map<string, Ratchet>}
+  */
+  const found = new Map()
+  /**
+  @type {string[]}
+  */
+  const unknown = []
+  /**
+  @param {unknown} value
+  @param {string} key
+  @param {Direction | undefined} direction
+  */
+  const walk = (value, key, direction) => {
+    if (typeof value === 'number') {
+      if (direction === undefined) unknown.push(key)
+      else found.set(key, { value, direction })
+    } else if (isRecord(value)) {
+      for (const [name, inner] of Object.entries(value)) {
+        walk(inner, `${key}.${name}`, direction)
+      }
+    }
+  }
+  const sections = Object.entries(isRecord(ratchets) ? ratchets : {})
+  for (const [section, value] of sections) {
+    walk(value, section, SECTIONS.get(section))
+  }
+  return { found, unknown }
+}
+
+/**
+The ratchets the scripts of a parsed package.json hold, by `package.json scripts.<name> <flag>`.
+@param {unknown} manifest
+*/
+function scriptRatchets(manifest) {
+  /**
+  @type {Map<string, Ratchet>}
+  */
+  const found = new Map()
+  const scripts = member(manifest, 'scripts')
+  const bodies = Object.entries(isRecord(scripts) ? scripts : {})
+  for (const [name, body] of bodies) {
+    for (const [flag, pattern, direction] of SCRIPT_FLAGS) {
+      const value = typeof body === 'string' ? pattern.exec(body)?.groups?.['value'] : undefined
+      if (value !== undefined) {
+        found.set(`${PACKAGE} scripts.${name} ${flag}`, { value: Number(value), direction })
+      }
+    }
+  }
+  return found
+}
+
+/**
+A file's text at a commit; undefined when the commit holds no such file.
+@param {string} commit
+@param {string} file
+*/
+function showFile(commit, file) {
+  const result = spawnSync('git', ['show', `${commit}:${file}`], { encoding: 'utf8' })
+  return result.status === 0 ? result.stdout : undefined
+}
+
+/**
+The ratchets a commit holds; undefined, printing why, when one of its files is not readable.
+@param {string} commit
+*/
+function ratchetsAt(commit) {
+  /**
+  @type {Map<string, Ratchet>}
+  */
+  const found = new Map()
+  for (const file of [RATCHETS, PACKAGE]) {
+    const text = showFile(commit, file)
+    const parsed = text === undefined ? {} : parseJson(text)
+    if (!isRecord(parsed)) {
+      print(`${commit} has no readable ${file}`)
+      return
+    }
+    const held = file === RATCHETS ? storeRatchets(parsed).found : scriptRatchets(parsed)
+    for (const [key, ratchet] of held) found.set(key, ratchet)
+  }
+  return found
+}
+
+/**
+The base commit RATCHETS_BASE names; with none, the merge-base with origin/main, else HEAD's parent.
+*/
+function namedBase() {
+  const named = process.env['RATCHETS_BASE']
+  if (named !== undefined && named !== '' && !/^0+$/v.test(named)) return named
+  const result = spawnSync('git', ['merge-base', 'HEAD', 'origin/main'], { encoding: 'utf8' })
+  return result.status === 0 ? result.stdout.trim() : 'HEAD^'
+}
+
+/**
+Whether no ratchet moved toward lax since `base`; prints each that did and the count compared.
+@param {string} base
+@param {Record<string, unknown>} ratchets
+*/
+function checkDirection(base, ratchets) {
+  const resolved = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${base}^0`], {
+    encoding: 'utf8'
+  })
+  if (resolved.status !== 0) {
+    print(`base ${base} is not a commit`)
+    return false
+  }
+  const commit = resolved.stdout.trim()
+  const before = ratchetsAt(commit)
+  if (before === undefined) return false
+  const store = storeRatchets(ratchets)
+  const now = new Map([...store.found, ...scriptRatchets(readJson(PACKAGE))])
+  for (const key of store.unknown) {
+    print(`${key} is in no section ${RATCHETS} knows (${SECTION_NAMES})`)
+  }
+  let isOk = store.unknown.length === 0
+  for (const [key, { value, direction }] of before) {
+    const current = now.get(key)?.value
+    const moved = direction === 'ceiling' ? 'a ceiling rose' : 'a floor fell'
+    if (current === undefined) {
+      print(`${key} ${value} → none: the ratchet vanished since ${commit}`)
+    } else if (direction === 'ceiling' ? current > value : current < value) {
+      print(`${key} ${value} → ${current}: ${moved} since ${commit}`)
+    } else {
+      continue
+    }
+    isOk = false
+  }
+  print(`compared ${before.size} against ${commit}`)
+  return isOk && before.size > 0
+}
+
+/**
 The exit status of the ratchet checks.
 @param {string[]} args
 */
 function main(args) {
-  if (args.length > 0) {
-    print('usage: node scripts/check-ratchets.mjs')
+  /**
+  @type {string | undefined}
+  */
+  let base
+  try {
+    base = parseArgs({ args, options: { base: { type: 'string' } } }).values.base
+  } catch {
+    print('usage: node scripts/check-ratchets.mjs [--base <ref>]')
     return 1
   }
   const ratchets = readJson(RATCHETS)
@@ -188,7 +372,10 @@ function main(args) {
     print(`${RATCHETS} is missing or not a JSON object`)
     return 1
   }
-  return checkJscpd(ratchets) ? 0 : 1
+  if (base !== undefined) return checkDirection(base, ratchets) ? 0 : 1
+  const isDirectionOk = checkDirection(namedBase(), ratchets)
+  const isJscpdOk = checkJscpd(ratchets)
+  return isJscpdOk && isDirectionOk ? 0 : 1
 }
 
 process.exitCode = main(process.argv.slice(2))

@@ -39,6 +39,8 @@ jobs:
       - run: npm run knip
       - run: npm run knip:production
       - run: npm run ratchets
+        env:
+          RATCHETS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
       - run: npm run format:check
       - run: npm run strictness:status
         env:

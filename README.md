@@ -195,7 +195,8 @@ and `test:golden:coverage`. Every TypeScript program is held at 100 % type cover
 finding, in the whole tree and in the shipped code alone (an export only tests use is tagged
 `@internal`). Lint findings, pending type-check errors (per file) and duplicated code each hold an
 exact ceiling that fails when the count rises or falls, so a change that lowers a count lowers its
-ceiling in the same commit; `ratchets` prints each clone when duplicated code rises. The ceilings
+ceiling in the same commit; `ratchets` prints each clone when duplicated code rises, and fails a
+change that raises a ceiling or lowers a floor since the commit it started from. The ceilings
 live in `eslint-suppressions.json`, `pending-ceilings.json` and `ratchets.json`.
 The test coverage floors, also in `ratchets.json`, are the measured values rounded down, and fail
 when coverage falls below one or rises a whole point above it.
