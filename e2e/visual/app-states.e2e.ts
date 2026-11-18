@@ -59,8 +59,14 @@ async function applyTheme(twin: LaunchedApp, theme: Theme): Promise<void> {
   if (theme === 'light') await useLightTheme(twin)
 }
 
-// States showing a new plugin's generated code
-const PREVIEW_STATES = new Set<State>(['metadata', 'parameters', 'commands', 'code'])
+// States showing a new plugin's generated code, each with the one name that code declares and
+// never reads
+const UNUSED_NAMES = new Map<State, string>([
+  ['metadata', 'PLUGIN_NAME'],
+  ['parameters', 'newParameter'],
+  ['commands', 'args'],
+  ['code', 'PLUGIN_NAME']
+])
 
 /**
 Drives the app into `state`; returns the temp directories it shows paths of
@@ -117,13 +123,15 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
       break
     }
   }
-  if (PREVIEW_STATES.has(state)) {
-    // The generated code declares a name it never reads, and the editor's language worker fades
-    // that name about a second after the first paint: the frame before it is stable for a while
-    // but not final
+  const unused = UNUSED_NAMES.get(state)
+  if (unused !== undefined) {
+    // The editor's language worker fades the unread name about a second after the first paint.
+    // A fade the worker computed for an earlier text of the preview lands on the same offsets of
+    // the new text, on another name or part of one, until its next check: each frame before the
+    // fade covers exactly that name is stable for a while but not final
     await expect(
-      page.getByTestId('code-preview').locator('.squiggly-inline-unnecessary').first()
-    ).toBeVisible()
+      page.getByTestId('code-preview').locator('.squiggly-inline-unnecessary')
+    ).toHaveText([unused])
   }
   return shown
 }
@@ -132,7 +140,7 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
 The masks of a state's screenshot
 */
 function masksFor(state: State): string[] {
-  return PREVIEW_STATES.has(state) ? [...MASKS, PREVIEW_GUIDES] : MASKS
+  return UNUSED_NAMES.has(state) ? [...MASKS, PREVIEW_GUIDES] : MASKS
 }
 
 /**
