@@ -486,6 +486,37 @@ export async function newPlugin(page: Page): Promise<void> {
 }
 
 /**
+Waits until the code preview fades exactly those of `names` its rendered lines show, in order:
+`names` are the names its code declares once and never reads. The editor's language worker fades
+them about a second after the first paint, and a fade it computed for an earlier text of the
+preview lands on the same offsets of the new text (another name, part of one, or a comment) until
+its next check: each frame before is stable for a while but not final. The editor renders only the
+lines in its view, and a smaller window shows fewer: a name below the view has no fade to wait for.
+*/
+export async function previewFadesOnly(page: Page, ...names: string[]): Promise<void> {
+  const preview = page.getByTestId('code-preview')
+  await expect
+    .poll(async () => {
+      // One read, so the lines and the fades come from the same frame
+      const { lines, fades } = await preview.evaluate((element) => ({
+        lines: [...element.querySelectorAll('.view-line')].map((line) => line.textContent),
+        fades: [...element.querySelectorAll('.squiggly-inline-unnecessary')].map(
+          (fade) => fade.textContent
+        )
+      }))
+      const shown = names.filter((name) =>
+        lines.some((line) => new RegExp(String.raw`\b${name}\b`).test(line))
+      )
+      // A wait with no name in view would wait on nothing
+      if (shown.length === 0) return `none of ${names.join(', ')} in view`
+      return fades.join(', ') === shown.join(', ')
+        ? 'settled'
+        : `faded [${fades.join(', ')}] while [${shown.join(', ')}] are in view`
+    })
+    .toBe('settled')
+}
+
+/**
 Opens a project plugin from the Plugin Browser and waits until its tab is the active one
 */
 export async function openFromBrowser(page: Page, file: string): Promise<void> {

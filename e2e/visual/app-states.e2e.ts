@@ -11,6 +11,7 @@ import {
   type LaunchedApp,
   loadFixtureProject,
   newPlugin,
+  previewFadesOnly,
   runRoot,
   settle,
   test
@@ -124,15 +125,7 @@ async function enter(twin: LaunchedApp, state: State): Promise<string[]> {
     }
   }
   const unused = UNUSED_NAMES.get(state)
-  if (unused !== undefined) {
-    // The editor's language worker fades the unread name about a second after the first paint.
-    // A fade the worker computed for an earlier text of the preview lands on the same offsets of
-    // the new text, on another name or part of one, until its next check: each frame before the
-    // fade covers exactly that name is stable for a while but not final
-    await expect(
-      page.getByTestId('code-preview').locator('.squiggly-inline-unnecessary')
-    ).toHaveText([unused])
-  }
+  if (unused !== undefined) await previewFadesOnly(page, unused)
   return shown
 }
 

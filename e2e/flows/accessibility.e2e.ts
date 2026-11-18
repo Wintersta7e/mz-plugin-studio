@@ -3,7 +3,7 @@
 // elements it names, so one run lists them all.
 import { AxeBuilder } from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
-import { expect, loadFixtureProject, newPlugin, test } from '../fixtures/app'
+import { expect, loadFixtureProject, newPlugin, previewFadesOnly, test } from '../fixtures/app'
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
@@ -82,11 +82,16 @@ test('the main views have no accessibility violations', async ({ twin }) => {
   // A new parameter's card opens expanded
   await page.getByTestId('param-add').click()
   await expect(page.getByTestId('param-add')).toBeVisible()
+  // A fade still on the offsets of an earlier preview text can cover a comment, whose faded
+  // colour has a contrast the settled preview never shows
+  await previewFadesOnly(page, 'newParameter')
   results.push(await scan(page, 'parameters'))
 
   await page.getByTestId('editor-tab-commands').click()
   await page.getByTestId('command-add').click()
   await page.getByTestId('command-arg-add').click()
+  // The plugin still holds the parameter added above
+  await previewFadesOnly(page, 'newParameter', 'args')
   results.push(await scan(page, 'commands'))
 
   await page.getByTestId('settings-open').click()
