@@ -234,7 +234,9 @@ describe('ci workflow: changed lines coverage', () => {
       floor: script.includes(
         'diff-cover" coverage/lcov.info --compare-branch="$base" --fail-under=90 '
       ),
-      measuredLines: script.includes('total_num_lines')
+      measuredLines: run.includes(
+        'node scripts/ci-policy.mjs diff-coverage coverage/lcov.info "$RUNNER_TEMP/diff-cover.json"'
+      )
     }).toStrictEqual({
       afterSuite: true,
       fullClone: true,

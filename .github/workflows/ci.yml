@@ -141,8 +141,7 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/diff-cover"
           "$RUNNER_TEMP/diff-cover/bin/pip" install --quiet --require-hashes --only-binary=:all: -r "$RUNNER_TEMP/diff-cover-requirements.txt"
           "$RUNNER_TEMP/diff-cover/bin/diff-cover" coverage/lcov.info --compare-branch="$base" --fail-under=90 --format "json:$RUNNER_TEMP/diff-cover.json"
-          # A report that measured no changed line checked nothing.
-          python3 -c 'import json, sys; lines = json.load(open(sys.argv[1]))["total_num_lines"]; print(f"diff coverage: measured lines {lines}"); sys.exit(lines == 0)' "$RUNNER_TEMP/diff-cover.json"
+          node scripts/ci-policy.mjs diff-coverage coverage/lcov.info "$RUNNER_TEMP/diff-cover.json"
       - run: npm run test:golden:coverage
       - name: Clean tree after tests
         shell: bash

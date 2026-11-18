@@ -3,6 +3,7 @@
 //   node scripts/ci-policy.mjs runtime-deps        (run from the repository root)
 //   node scripts/ci-policy.mjs toolchain [--electron]
 //   node scripts/ci-policy.mjs needs               (reads NEEDS_JSON)
+//   node scripts/ci-policy.mjs diff-coverage <lcov.info> <diff-cover.json>
 //   node scripts/ci-policy.mjs osv-ignores
 //   node scripts/ci-policy.mjs fuses <executable>
 import { spawnSync } from 'node:child_process'
@@ -98,6 +99,7 @@ const SUBCOMMANDS = new Map([
   ['runtime-deps', checkRuntimeDependencies],
   ['toolchain', checkToolchain],
   ['needs', checkNeeds],
+  ['diff-coverage', checkDiffCoverage],
   ['osv-ignores', checkOsvIgnores],
   ['fuses', checkFuses]
 ])
@@ -129,7 +131,7 @@ function printError(line) {
 
 function usage() {
   printError(
-    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | osv-ignores | fuses <executable>>'
+    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | diff-coverage <lcov.info> <diff-cover.json> | osv-ignores | fuses <executable>>'
   )
   return 1
 }
@@ -864,6 +866,37 @@ function checkNeeds(args) {
   print(`ci-policy needs: jobs ${jobs.length}`)
   if (jobs.length === 0) problems.push('0 jobs')
   return finish('needs', problems)
+}
+
+/**
+Checks that a diff-cover JSON report measured something: an lcov report listing no source file
+means coverage did not run, so a report of 0 changed lines then checked nothing; with source
+files listed, 0 measured lines means the change holds no executable line (comments, types).
+diff-cover's own --fail-under fails a change below the floor.
+@param {readonly string[]} args
+*/
+function checkDiffCoverage(args) {
+  if (args.length !== 2) return usage()
+  const [lcovFile = '', reportFile = ''] = args
+  const lcov = readInput(lcovFile, (input) => readFileSync(input, 'utf8'))
+  const report = readJson(reportFile)
+  if (lcov === undefined || report === undefined) return 1
+
+  /**
+  @type {string[]}
+  */
+  const problems = []
+  const sourceFiles = lcov.split('\n').filter((line) => line.startsWith('SF:')).length
+  print(`diff coverage: lcov source files ${sourceFiles}`)
+  if (sourceFiles === 0) problems.push('lcov lists no source file: coverage did not run')
+  const { total_num_lines: lines } = fieldsOf(report)
+  if (typeof lines === 'number') {
+    const note = lines === 0 && sourceFiles > 0 ? ' (no executable change)' : ''
+    print(`diff coverage: measured lines ${lines}${note}`)
+  } else {
+    problems.push('report has no total_num_lines count')
+  }
+  return finish('diff-coverage', problems)
 }
 
 /**
