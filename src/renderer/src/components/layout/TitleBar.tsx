@@ -45,6 +45,7 @@ export function TitleBar() {
           size="icon"
           className="h-8 w-10 rounded-none hover:bg-muted"
           onClick={handleMinimize}
+          aria-label="Minimize window"
         >
           <Minus className="h-4 w-4" />
         </Button>
@@ -53,6 +54,7 @@ export function TitleBar() {
           size="icon"
           className="h-8 w-10 rounded-none hover:bg-muted"
           onClick={handleMaximize}
+          aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
         >
           {isMaximized ? <Square className="h-3.5 w-3.5" /> : <Maximize2 className="h-4 w-4" />}
         </Button>

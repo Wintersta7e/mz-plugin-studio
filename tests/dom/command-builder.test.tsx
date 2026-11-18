@@ -36,19 +36,7 @@ const previewDrops = async (text: string): Promise<void> => {
   })
 }
 
-// The buttons of a command card's header and of an argument row have no names. With one command
-// open, the buttons without a name are, in screen order, the command's delete button, then each
-// argument row's details and delete buttons.
-const COMMAND_DELETE = 0
-const ARGUMENT_DETAILS = 1
-const ARGUMENT_DELETE = 2
-const namelessButton = (position: number): HTMLElement => {
-  const button = screen.getAllByRole('button', { name: '' }).at(position)
-  if (button === undefined) throw new Error(`no button without a name at ${String(position)}`)
-  return button
-}
-
-// The select showing `text`; a select's label names no target, so it has no accessible name
+// The select showing `text`: several selects share a name (each argument row's "Type")
 const combobox = (text: string): HTMLElement => {
   const select = screen.getAllByRole('combobox').find((c) => c.textContent === text)
   if (select === undefined) throw new Error(`no select shows ${text}`)
@@ -83,7 +71,7 @@ async function addArgument(user: UserEvent, type: string): Promise<void> {
   await user.click(screen.getByRole('button', { name: 'Add Argument' }))
   await retype(user, screen.getByPlaceholderText('argName'), 'mode')
   await pick(user, 'String', type)
-  await user.click(namelessButton(ARGUMENT_DETAILS))
+  await user.click(screen.getByRole('button', { name: 'Details of mode' }))
 }
 
 describe('command skeleton', () => {
@@ -133,16 +121,16 @@ describe('command annotations', () => {
 
     await user.click(screen.getByRole('combobox'))
     await user.click(await screen.findByRole('option', { name: 'Number' }))
-    await user.click(namelessButton(ARGUMENT_DETAILS))
+    await user.click(screen.getByRole('button', { name: 'Details of count' }))
     await user.type(screen.getByPlaceholderText('No min'), '1')
     await previewHolds(' * @type number\n', ' * @min 1\n')
 
-    await user.click(namelessButton(ARGUMENT_DELETE))
+    await user.click(screen.getByRole('button', { name: 'Remove count' }))
     await previewDrops('@arg count')
 
     expect(preview()).toContain(' * @command showBanner\n')
 
-    await user.click(namelessButton(COMMAND_DELETE))
+    await user.click(screen.getByRole('button', { name: /^Delete / }))
     await previewDrops('@command showBanner')
 
     expect(screen.getByText('No commands defined')).toBeInTheDocument()

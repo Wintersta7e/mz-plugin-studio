@@ -1198,6 +1198,7 @@ function ParamCardHeader({
           event.stopPropagation()
         }}
         className="relative z-10 h-4 w-4 rounded border-muted-foreground"
+        aria-label={`Select ${param.text || param.name}`}
       />
       <MoveGrip param={param} readOnly={readOnly} onToggle={onToggle} onMove={onMove} />
       <button
@@ -1231,6 +1232,7 @@ function ParamCardHeader({
             event.stopPropagation()
             onDelete()
           }}
+          aria-label={`Delete ${param.text || param.name}`}
         >
           <Trash2 className="h-4 w-4" />
         </Button>

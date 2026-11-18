@@ -63,6 +63,7 @@ export function ExpandableCard({
             event.stopPropagation()
             onDelete()
           }}
+          aria-label={`Delete ${name}`}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -114,7 +115,14 @@ export function FieldRowHeader({
 }: FieldRowHeaderProps) {
   return (
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onToggle}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-label={param.name ? `Details of ${param.name}` : 'Details'}
+      >
         {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </Button>
 
@@ -133,7 +141,7 @@ export function FieldRowHeader({
           onUpdate({ type: value })
         }}
       >
-        <SelectTrigger className="h-8 w-32">
+        <SelectTrigger className="h-8 w-32" aria-label="Type">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -145,7 +153,13 @@ export function FieldRowHeader({
         </SelectContent>
       </Select>
 
-      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 text-destructive"
+        onClick={onRemove}
+        aria-label={param.name ? `Remove ${param.name}` : 'Remove'}
+      >
         <Trash2 className="h-3 w-3" />
       </Button>
     </div>

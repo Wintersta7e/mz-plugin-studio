@@ -8,8 +8,8 @@ import { useProjectStore } from '../../src/renderer/src/stores'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { resetStores } from './support/reset-stores'
 
-// The header's close button, the only button beside the panel title and the one without a name
-const closeButton = (): HTMLElement => screen.getByRole('button', { name: '' })
+// The header's close button beside the panel title
+const closeButton = (): HTMLElement => screen.getByRole('button', { name: 'Close project data' })
 
 // Which of `texts` the panel shows
 const shownOf = (texts: string[]): string[] =>

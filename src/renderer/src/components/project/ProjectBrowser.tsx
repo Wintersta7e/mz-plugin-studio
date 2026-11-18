@@ -298,7 +298,7 @@ export function ProjectBrowser({ onClose }: Readonly<ProjectBrowserProps>) {
       <div className="flex h-full flex-col bg-background border-l border-border">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="font-semibold">Project Data</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close project data">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -323,7 +323,7 @@ export function ProjectBrowser({ onClose }: Readonly<ProjectBrowserProps>) {
           <h2 className="font-semibold">Project Data</h2>
           <p className="text-xs text-muted-foreground truncate">{project.gameTitle}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close project data">
           <X className="h-4 w-4" />
         </Button>
       </div>

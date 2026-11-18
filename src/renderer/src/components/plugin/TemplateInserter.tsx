@@ -793,7 +793,13 @@ function DialogShell({ templateCount, focusRef, onClose, onInsert, children }: D
               <kbd className="hidden rounded bg-muted px-2 py-1 text-xs text-muted-foreground sm:inline-block">
                 {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to insert
               </kbd>
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+                aria-label="Close templates"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>

@@ -409,7 +409,13 @@ function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
         </div>
       </div>
       <div className="flex flex-col items-center gap-1 pt-5">
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onDelete}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 text-destructive"
+          onClick={onDelete}
+          aria-label={noteParam.name ? `Delete ${noteParam.name}` : 'Delete note parameter'}
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>

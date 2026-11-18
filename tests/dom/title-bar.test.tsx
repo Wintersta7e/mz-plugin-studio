@@ -78,14 +78,11 @@ async function renderTitleBar(): Promise<ReturnType<typeof render>> {
   return view
 }
 
-// Minimize and maximize carry no name: they are the first two buttons, in that order.
-const windowButtons = (): HTMLElement[] => screen.getAllByRole('button')
+const minimizeButton = (): HTMLElement => screen.getByRole('button', { name: 'Minimize window' })
 
-function windowButton(index: number): HTMLElement {
-  const button = windowButtons().at(index)
-  if (button === undefined) throw new Error(`missing window button ${String(index)}`)
-  return button
-}
+// Named for what a click does: maximize, or restore a maximized window
+const maximizeButton = (): HTMLElement =>
+  screen.getByRole('button', { name: /^(Maximize|Restore) window$/ })
 
 function reportMaximized(
   report: ((isMaximized: boolean) => void) | undefined,
@@ -124,8 +121,8 @@ describe('title bar window controls', () => {
     const user = userEvent.setup()
     vi.stubGlobal('api', createFakeApi())
     await renderTitleBar()
-    const minimize = windowButton(0)
-    const maximize = windowButton(1)
+    const minimize = minimizeButton()
+    const maximize = maximizeButton()
 
     await user.click(minimize)
 
@@ -157,7 +154,8 @@ describe('title bar window controls', () => {
       })
     )
     await renderTitleBar()
-    const maximize = windowButton(1)
+    // A maximized window's button restores it
+    const maximize = screen.getByRole('button', { name: 'Restore window' })
     const maximized = new XMLSerializer().serializeToString(maximize)
 
     act(() => {
@@ -166,6 +164,7 @@ describe('title bar window controls', () => {
     const restored = new XMLSerializer().serializeToString(maximize)
 
     expect(restored).not.toBe(maximized)
+    expect(maximize).toHaveAccessibleName('Maximize window')
 
     act(() => {
       reportMaximized(report, true)
