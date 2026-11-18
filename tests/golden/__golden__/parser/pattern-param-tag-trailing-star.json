@@ -20,7 +20,7 @@
       "id": "<id:2>",
       "name": "p",
       "text": "p",
-      "desc": "Help",
+      "desc": "Help *",
       "type": "file",
       "default": "",
       "dir": "img/pictures/ *"

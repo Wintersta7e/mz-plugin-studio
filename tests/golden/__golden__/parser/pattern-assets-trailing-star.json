@@ -13,7 +13,7 @@
     "orderBefore": [],
     "noteParams": [],
     "requiredAssets": [
-      "img/pictures/Fixture_Star"
+      "img/pictures/Fixture_Star *"
     ],
     "localizations": {}
   },

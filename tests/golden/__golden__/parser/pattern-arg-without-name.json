@@ -25,8 +25,8 @@
       "args": [
         {
           "id": "<id:3>",
-          "name": "Named Arg",
-          "text": "Named Arg",
+          "name": "Named Arg *",
+          "text": "Named Arg *",
           "desc": "",
           "type": "string",
           "default": ""

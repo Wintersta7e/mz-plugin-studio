@@ -18,8 +18,8 @@
   "parameters": [
     {
       "id": "<id:2>",
-      "name": "Two Words",
-      "text": "Two Words",
+      "name": "Two Words *",
+      "text": "Two Words *",
       "desc": "",
       "type": "boolean",
       "default": ""

@@ -190,6 +190,15 @@ export function stripTrailingStar(value: string): string {
 }
 
 /**
+A tag value, trimmed. A block's text stops where its comment closer starts, so a value on the
+block's last line ends in the first `*` of a closer written with two stars; that `*` is not part
+of the value. Any other `*` is, a last one included.
+*/
+function withoutCloserStar(value: string, isBlockEnd: boolean): string {
+  return (isBlockEnd && value.endsWith('*') ? stripTrailingStar(value) : value).trim()
+}
+
+/**
 Same result as parseFloat(text) for a text of an optional `-` and then digits and dots: Number
 reads the part before a second dot, which is the part parseFloat reads (`.` and `-.` are NaN
 to both).
@@ -491,7 +500,9 @@ function parseMeta(content: string, header: string, languages: [string, string][
   // Also match a final entry that lacks a trailing newline (right before */).
   meta.requiredAssets = header
     .matchAll(tagRegex(String.raw`requiredAssets(?!\S)[^\S\r\n]*(.*?)(?=\n|\r|\*\/|$)`, 'gi'))
-    .map((match) => stripTrailingStar(present(match[1])).trim())
+    .map((match) =>
+      withoutCloserStar(present(match[1]), match.index + match[0].length === header.length)
+    )
     .filter((value) => value !== '')
     .toArray()
 
@@ -625,10 +636,11 @@ function parseParameters(header: string): PluginParameter[] {
   let match: RegExpExecArray | null
 
   while ((match = paramRegex.exec(header)) !== null) {
-    const rawParamName = stripTrailingStar(present(match[1])).trim()
+    const paramBlock = present(match[2])
+    const rawParamName = withoutCloserStar(present(match[1]), paramBlock === '')
     // Skip empty @param lines (used as visual separators)
     if (!rawParamName) continue
-    parameters.push(readParameter(rawParamName, present(match[2])))
+    parameters.push(readParameter(rawParamName, paramBlock))
   }
 
   return parameters
@@ -779,9 +791,10 @@ function parseArgs(block: string): PluginParameter[] {
   let match: RegExpExecArray | null
 
   while ((match = argRegex.exec(block)) !== null) {
-    const argName = stripTrailingStar(present(match[1])).trim()
+    const argBlock = present(match[2])
+    const argName = withoutCloserStar(present(match[1]), argBlock === '')
     if (!argName) continue
-    args.push(readArg(argName, present(match[2])))
+    args.push(readArg(argName, argBlock))
   }
 
   return args
@@ -822,10 +835,14 @@ function parseStructs(blocks: [string, string, string][]): PluginStruct[] {
 }
 
 /**
-The value of the first `@tag` without a trailing `*`: '' when the tag has no value or is missing.
+The value of the first `@tag` without the extra `*` of a two-star closer: '' when the tag has no
+value or is missing.
 */
 function extractTag(block: string, tag: string): string {
-  return stripTrailingStar(tagText(block, tag)).trim()
+  const match = tagMatch(block, tag)
+  return match
+    ? withoutCloserStar(present(match[1]), match.index + match[0].length === block.length)
+    : ''
 }
 
 /**
@@ -839,8 +856,15 @@ function tagText(block: string, tag: string): string {
 The rest of the line after the first `@tag`: '' when the tag has no value, null without the tag.
 */
 function tagValue(block: string, tag: string): string | null {
-  const match = block.match(tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i'))
+  const match = tagMatch(block, tag)
   return match ? present(match[1]).trim() : null
+}
+
+/**
+The first `@tag` and, as group 1, the rest of its line: null without the tag.
+*/
+function tagMatch(block: string, tag: string): RegExpExecArray | null {
+  return tagRegex(String.raw`${tag}(?!\S)[^\S\r\n]*([^\r\n]*)`, 'i').exec(block)
 }
 
 /**

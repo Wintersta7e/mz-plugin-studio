@@ -2,7 +2,12 @@
 import { describe, it, expect } from 'vitest'
 import { PluginParser } from '../../src/main/services/pluginParser'
 import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/generator/index'
-import { toBaseline, type PluginParameter } from '../../src/shared/types/plugin'
+import {
+  createEmptyParameter,
+  createEmptyPlugin,
+  toBaseline,
+  type PluginParameter
+} from '../../src/shared/types/plugin'
 
 // The fragments of a text it does not hold (no text holds none)
 const missing = (text: string | undefined, fragments: string[]): string[] =>
@@ -616,5 +621,75 @@ describe('tags count only at the start of a line', () => {
     expect(plugin.meta.localizations).toStrictEqual({
       ja: { description: 'Demo', help: 'Some help' }
     })
+  })
+})
+
+describe('a star at the end of a tag value', () => {
+  it('a star the author wrote stays part of the name, text or description', () => {
+    const plugin = PluginParser.parsePlugin(`/*:
+ * @target MZ
+ * @plugindesc x
+ * @requiredAssets img/pictures/Star*
+ *
+ * @param *
+ *
+ * @param Rank*
+ * @text Grade A*
+ * @desc Grade A*
+ *
+ * @command go*
+ * @text Go*
+ * @desc Runs*
+ *
+ * @arg Bonus*
+ * @text Bonus*
+ * @desc Bonus*
+ *
+ * @help
+ */
+`)
+
+    expect(plugin.meta.requiredAssets).toStrictEqual(['img/pictures/Star*'])
+    expect(plugin.parameters.map((p) => [p.name, p.text, p.desc])).toStrictEqual([
+      ['*', '*', ''],
+      ['Rank*', 'Grade A*', 'Grade A*']
+    ])
+    expect(plugin.commands.map((c) => [c.text, c.desc])).toStrictEqual([['Go*', 'Runs*']])
+    expect(plugin.commands.at(0)?.args.map((a) => [a.name, a.text, a.desc])).toStrictEqual([
+      ['Bonus*', 'Bonus*', 'Bonus*']
+    ])
+  })
+
+  it('a star the generator writes comes back on reopening', () => {
+    const plugin = createEmptyPlugin()
+    plugin.parameters = [
+      { ...createEmptyParameter(), name: '*', text: 'Grade A*', desc: 'Grade A*' },
+      { ...createEmptyParameter(), name: 'Rank*', text: 'Rank*' }
+    ]
+
+    const again = PluginParser.parsePlugin(generatePlugin(plugin))
+
+    expect(again.parameters.map((p) => [p.name, p.text, p.desc])).toStrictEqual([
+      ['*', 'Grade A*', 'Grade A*'],
+      ['Rank*', 'Rank*', '']
+    ])
+  })
+
+  it('the star of a "**/" closer on the last tag line is not part of the value', () => {
+    const lastParameter = PluginParser.parsePlugin('/*:\n * @plugindesc x\n * @param Speed **/\n')
+    const lastText = PluginParser.parsePlugin(
+      '/*:\n * @plugindesc x\n * @param Speed\n * @text Speed**/\n'
+    )
+    const lastArgument = PluginParser.parsePlugin(
+      '/*:\n * @plugindesc x\n * @command go\n * @arg Count **/\n'
+    )
+    const lastAsset = PluginParser.parsePlugin(
+      '/*:\n * @plugindesc x\n * @requiredAssets img/pictures/Sun **/\n'
+    )
+
+    expect(lastParameter.parameters.map((p) => p.name)).toStrictEqual(['Speed'])
+    expect(lastText.parameters.map((p) => p.text)).toStrictEqual(['Speed'])
+    expect(lastArgument.commands.at(0)?.args.map((a) => a.name)).toStrictEqual(['Count'])
+    expect(lastAsset.meta.requiredAssets).toStrictEqual(['img/pictures/Sun'])
   })
 })

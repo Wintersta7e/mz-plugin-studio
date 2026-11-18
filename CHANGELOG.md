@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Opening a plugin file keeps a `*` at the end of a parameter or argument name, a display name, a description or a required asset. Before, that last `*` was cut off, so `Rank*` came back as `Rank` and a parameter named `*` was lost; saving the plugin again wrote the shortened text.
+
 ## [1.8.2] - 2026-11-06
 
 ### Fixed
