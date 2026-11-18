@@ -300,6 +300,21 @@ describe('meta editor note parameters', () => {
     expect(screen.getByDisplayValue('Second')).toBe(second)
   })
 
+  it('names the delete button of a row by its tag name, and an added row without one', async () => {
+    expect.hasAssertions()
+
+    openNoteParams([{ name: 'Picture', type: 'file' }])
+    const events = userEvent.setup()
+    render(<MetaEditor />)
+    await events.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(
+      screen
+        .getAllByRole('button', { name: /^Delete / })
+        .map((button) => button.getAttribute('aria-label'))
+    ).toStrictEqual(['Delete Picture', 'Delete note parameter'])
+  })
+
   it('shows None for a database stored as an empty text', () => {
     expect.hasAssertions()
 

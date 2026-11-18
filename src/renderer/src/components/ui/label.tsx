@@ -16,4 +16,11 @@ function Label({
   return <LabelPrimitive.Root className={cn(labelVariants(), className)} {...props} />
 }
 
-export { Label }
+/**
+A label's look for text that names a section or a group of controls rather than one control
+*/
+function GroupLabel({ className, ...props }: Readonly<React.ComponentProps<'span'>>) {
+  return <span className={cn(labelVariants(), className)} {...props} />
+}
+
+export { GroupLabel, Label }

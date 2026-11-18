@@ -98,6 +98,15 @@ export default defineConfig(
   },
   { files: ['src/renderer/**'], languageOptions: { globals: globals.browser } },
   {
+    // The ui wrappers render these elements, so jsx-a11y checks a wrapper as its element
+    files: ['src/renderer/**/*.tsx', 'tests/**/*.tsx'],
+    settings: {
+      'jsx-a11y': {
+        components: { Button: 'button', Input: 'input', Label: 'label', Textarea: 'textarea' }
+      }
+    }
+  },
+  {
     files: [
       'src/main/**',
       'src/preload/**',

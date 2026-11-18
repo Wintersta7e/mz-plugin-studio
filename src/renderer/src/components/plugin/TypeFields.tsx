@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -143,10 +144,13 @@ function ArrayTypeFields({
   sizes: Sizes
   className: string | undefined
 }>) {
+  const id = useId()
   return (
     <div className={cn('grid grid-cols-2', sizes.gap, className)}>
       <div className={sizes.field}>
-        <Label className={sizes.label}>Array Element Type</Label>
+        <Label htmlFor={id} className={sizes.label}>
+          Array Element Type
+        </Label>
         <Select
           value={param.arrayType ?? 'string'}
           onValueChange={(value) => {
@@ -154,7 +158,7 @@ function ArrayTypeFields({
             if (picked) onUpdate({ arrayType: picked.value })
           }}
         >
-          <SelectTrigger className={sizes.trigger}>
+          <SelectTrigger id={id} className={sizes.trigger}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -193,11 +197,14 @@ function StructPicker({
   sizes: Sizes
   onPick: (value: string) => void
 }>) {
+  const id = useId()
   return (
     <div className={sizes.field}>
-      <Label className={sizes.label}>Struct Type</Label>
+      <Label htmlFor={id} className={sizes.label}>
+        Struct Type
+      </Label>
       <Select value={value} onValueChange={onPick}>
-        <SelectTrigger className={sizes.trigger}>
+        <SelectTrigger id={id} className={sizes.trigger}>
           <SelectValue placeholder="Select struct..." />
         </SelectTrigger>
         <SelectContent>
@@ -227,13 +234,15 @@ function OptionsEditor({
   className: string | undefined
 }>) {
   const [optionsTyped, setOptionsTyped] = useTypedText(optionsText(param.options), normalizeOptions)
+  const id = useId()
 
   return (
     <div className={cn(sizes.field, className)}>
-      <Label className={sizes.label}>
+      <Label htmlFor={id} className={sizes.label}>
         Options (one per line, format: value|label or just label; write a | in a value as \|)
       </Label>
       <Textarea
+        id={id}
         value={optionsTyped}
         onChange={(event) => {
           setOptionsTyped(event.target.value)

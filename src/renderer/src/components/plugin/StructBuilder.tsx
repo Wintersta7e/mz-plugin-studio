@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import { GroupLabel, Label } from '../ui/label'
 import { ScrollArea } from '../ui/scroll-area'
 import { usePluginStore } from '../../stores'
 import {
@@ -17,6 +17,7 @@ import {
   ExpandableCard,
   FieldDefaultInput,
   FieldRowHeader,
+  FieldTextInput,
   LimitInput,
   type FieldProps
 } from './EditorParts'
@@ -145,11 +146,13 @@ function StructDetails({
   const addStructParam = usePluginStore((s) => s.addStructParam)
   const updateStructParam = usePluginStore((s) => s.updateStructParam)
   const removeStructParam = usePluginStore((s) => s.removeStructParam)
+  const nameId = useId()
   return (
     <div className="border-t border-border p-4 space-y-4">
       <div className="space-y-2">
-        <Label>Struct Name</Label>
+        <Label htmlFor={nameId}>Struct Name</Label>
         <Input
+          id={nameId}
           value={struct.name}
           onChange={(event) => {
             updateStruct(struct.id, { name: event.target.value })
@@ -161,7 +164,7 @@ function StructDetails({
       {/* Parameters */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label>Fields</Label>
+          <GroupLabel>Fields</GroupLabel>
           <Button
             variant="outline"
             size="sm"
@@ -232,37 +235,34 @@ function StructParamDetails({
   onUpdate,
   allStructs
 }: FieldProps & Readonly<Pick<StructParamRowProps, 'allStructs'>>) {
+  const defaultId = useId()
   return (
     <div className="mt-2 space-y-3 pl-8">
       <div className="grid grid-cols-2 gap-2">
+        <FieldTextInput
+          label="Display Label"
+          value={param.text}
+          placeholder="Field Label"
+          onChange={(value) => {
+            onUpdate({ text: value })
+          }}
+        />
         <div className="space-y-1">
-          <Label className="text-xs">Display Label</Label>
-          <Input
-            value={param.text}
-            onChange={(event) => {
-              onUpdate({ text: event.target.value })
-            }}
-            placeholder="Field Label"
-            className="h-8"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Default Value</Label>
-          <FieldDefaultInput param={param} onUpdate={onUpdate} />
+          <Label htmlFor={defaultId} className="text-xs">
+            Default Value
+          </Label>
+          <FieldDefaultInput id={defaultId} param={param} onUpdate={onUpdate} />
         </div>
       </div>
 
-      <div className="space-y-1">
-        <Label className="text-xs">Description</Label>
-        <Input
-          value={param.desc}
-          onChange={(event) => {
-            onUpdate({ desc: event.target.value })
-          }}
-          placeholder="Field description"
-          className="h-8"
-        />
-      </div>
+      <FieldTextInput
+        label="Description"
+        value={param.desc}
+        placeholder="Field description"
+        onChange={(value) => {
+          onUpdate({ desc: value })
+        }}
+      />
 
       {/* Number-specific fields */}
       {param.type === 'number' && <NumberLimitFields param={param} onUpdate={onUpdate} />}
@@ -276,17 +276,14 @@ function StructParamDetails({
 
       {/* File directory */}
       {param.type === 'file' && (
-        <div className="space-y-1">
-          <Label className="text-xs">Directory (relative to project)</Label>
-          <Input
-            value={param.dir ?? ''}
-            onChange={(event) => {
-              onUpdate({ dir: event.target.value })
-            }}
-            placeholder="img/pictures"
-            className="h-8"
-          />
-        </div>
+        <FieldTextInput
+          label="Directory (relative to project)"
+          value={param.dir ?? ''}
+          placeholder="img/pictures"
+          onChange={(value) => {
+            onUpdate({ dir: value })
+          }}
+        />
       )}
     </div>
   )

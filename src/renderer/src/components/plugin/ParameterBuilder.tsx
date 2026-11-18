@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect, useRef, useMemo, useCallback, memo } from 'react'
+import { useState, useLayoutEffect, useRef, useMemo, useCallback, memo, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus,
@@ -16,7 +16,6 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Switch } from '../ui/switch'
 import { ScrollArea } from '../ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import {
@@ -42,8 +41,9 @@ import {
 } from '../../lib/param-io'
 import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useIsHeaderReadOnly } from '../../lib/raw-mode'
 import { cn, userMessage } from '../../lib/utilities'
-import { PARAM_TYPE_GROUPS, defaultText, toLimit } from './param-types'
+import { PARAM_TYPE_GROUPS, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
+import { FieldDefaultInput } from './EditorParts'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
 
@@ -58,11 +58,11 @@ interface GameDataOption {
 }
 
 /**
-The loaded project's entries a parameter of one of the game data types picks its default from
+The loaded project's entries a parameter of one of the game data types picks its default from,
+keyed by those types; a type without a key is not a game data type
 */
-type GameData = Partial<Record<ParamType, readonly GameDataOption[]>>
+type GameData = ReadonlyMap<ParamType, readonly GameDataOption[]>
 
-const GAME_DATA_TYPES: ReadonlySet<ParamType> = new Set(['variable', 'switch', 'actor', 'item'])
 const NUMERIC_ID_TYPES: ReadonlySet<ParamType> = new Set(['icon', 'map'])
 
 type AddParameter = (param: PluginParameter) => void
@@ -866,7 +866,13 @@ function ParamList({
     [parameters]
   )
   const gameData: GameData = useMemo(
-    () => ({ variable: variables, switch: switches, actor: actors, item: items }),
+    () =>
+      new Map<ParamType, readonly GameDataOption[]>([
+        ['variable', variables],
+        ['switch', switches],
+        ['actor', actors],
+        ['item', items]
+      ]),
     [variables, switches, actors, items]
   )
   const drag = useParamDrag(readOnly)
@@ -1283,6 +1289,7 @@ function ParamCardBody({
     'param' | 'readOnly' | 'onUpdate' | 'structNames' | 'structs' | 'paramNameMap' | 'gameData'
   > & { showAdvanced: boolean; onToggleAdvanced: () => void }
 >) {
+  const defaultId = useId()
   return (
     <fieldset {...lockProps(readOnly)} className="min-w-0 border-t border-border p-4 space-y-4">
       {/* Essential: Internal Name + Display Label */}
@@ -1293,8 +1300,13 @@ function ParamCardBody({
         <ParamTypeSelect param={param} onUpdate={onUpdate} />
         {param.type !== 'struct' && (
           <div className="space-y-2">
-            <Label>Default Value</Label>
-            <ParamDefaultInput param={param} onUpdate={onUpdate} gameData={gameData} />
+            <Label htmlFor={defaultId}>Default Value</Label>
+            <ParamDefaultInput
+              id={defaultId}
+              param={param}
+              onUpdate={onUpdate}
+              gameData={gameData}
+            />
           </div>
         )}
       </div>
@@ -1332,11 +1344,13 @@ function ParamNameFields({
   paramNameMap
 }: CardFieldProps & Readonly<{ paramNameMap: ParamNameMap }>) {
   const nameError = getParamNameError(param.name, paramNameMap, param.id)
+  const id = useId()
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label>Internal Name</Label>
+        <Label htmlFor={`${id}-name`}>Internal Name</Label>
         <Input
+          id={`${id}-name`}
           value={param.name}
           onChange={(event) => {
             onUpdate({ name: event.target.value })
@@ -1347,8 +1361,9 @@ function ParamNameFields({
         {nameError !== null && <p className="text-xs text-destructive">{nameError}</p>}
       </div>
       <div className="space-y-2">
-        <Label>Display Label</Label>
+        <Label htmlFor={`${id}-text`}>Display Label</Label>
         <Input
+          id={`${id}-text`}
           value={param.text}
           onChange={(event) => {
             onUpdate({ text: event.target.value })
@@ -1361,16 +1376,17 @@ function ParamNameFields({
 }
 
 function ParamTypeSelect({ param, onUpdate }: CardFieldProps) {
+  const id = useId()
   return (
     <div className="space-y-2">
-      <Label>Type</Label>
+      <Label htmlFor={id}>Type</Label>
       <Select
         value={param.type}
         onValueChange={(value: ParamType) => {
           onUpdate({ type: value })
         }}
       >
-        <SelectTrigger>
+        <SelectTrigger id={id}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -1396,13 +1412,15 @@ function ParamTypeSelect({ param, onUpdate }: CardFieldProps) {
 }
 
 function ParamDefaultInput({
+  id,
   param,
   onUpdate,
   gameData
-}: CardFieldProps & Readonly<{ gameData: GameData }>) {
+}: CardFieldProps & Readonly<{ id: string; gameData: GameData }>) {
   if (NUMERIC_ID_TYPES.has(param.type)) {
     return (
       <Input
+        id={id}
         type="number"
         value={String(param.default)}
         onChange={(event) => {
@@ -1413,44 +1431,24 @@ function ParamDefaultInput({
       />
     )
   }
-  if (GAME_DATA_TYPES.has(param.type)) {
-    return (
-      <GameDataDefault param={param} onUpdate={onUpdate} options={gameData[param.type] ?? []} />
-    )
-  }
-  if (param.type === 'boolean') {
-    return (
-      <div className="flex items-center h-10">
-        <Switch
-          checked={param.default === true || param.default === 'true'}
-          onCheckedChange={(checked) => {
-            onUpdate({ default: checked })
-          }}
-        />
-      </div>
-    )
-  }
-  return (
-    <Input
-      value={defaultText(param.default)}
-      onChange={(event) => {
-        const value = param.type === 'number' ? Number(event.target.value) : event.target.value
-        onUpdate({ default: value })
-      }}
-      type={param.type === 'number' ? 'number' : 'text'}
-      placeholder="Default value"
-    />
+  const options = gameData.get(param.type)
+  return options === undefined ? (
+    <FieldDefaultInput id={id} param={param} onUpdate={onUpdate} compact={false} />
+  ) : (
+    <GameDataDefault id={id} param={param} onUpdate={onUpdate} options={options} />
   )
 }
 
 function GameDataDefault({
+  id,
   param,
   onUpdate,
   options
-}: CardFieldProps & Readonly<{ options: readonly GameDataOption[] }>) {
+}: CardFieldProps & Readonly<{ id: string; options: readonly GameDataOption[] }>) {
   if (options.length === 0) {
     return (
       <Input
+        id={id}
         // Controlled like the default input it replaces in place
         value=""
         readOnly
@@ -1467,7 +1465,7 @@ function GameDataDefault({
         onUpdate({ default: Number(value) })
       }}
     >
-      <SelectTrigger>
+      <SelectTrigger id={id}>
         <SelectValue placeholder={`Select ${param.type}...`} />
       </SelectTrigger>
       <SelectContent>
@@ -1486,12 +1484,14 @@ function GameDataDefault({
 An emptied number field clears its value
 */
 function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
+  const id = useId()
   return (
     <>
       {/* Description */}
       <div className="space-y-2">
-        <Label>Description</Label>
+        <Label htmlFor={`${id}-desc`}>Description</Label>
         <Input
+          id={`${id}-desc`}
           value={param.desc}
           onChange={(event) => {
             onUpdate({ desc: event.target.value })
@@ -1504,8 +1504,9 @@ function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
       {param.type === 'boolean' && (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>On Label</Label>
+            <Label htmlFor={`${id}-on`}>On Label</Label>
             <Input
+              id={`${id}-on`}
               value={param.onLabel ?? ''}
               onChange={(event) => {
                 onUpdate({ onLabel: event.target.value || undefined })
@@ -1514,8 +1515,9 @@ function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Off Label</Label>
+            <Label htmlFor={`${id}-off`}>Off Label</Label>
             <Input
+              id={`${id}-off`}
               value={param.offLabel ?? ''}
               onChange={(event) => {
                 onUpdate({ offLabel: event.target.value || undefined })
@@ -1532,8 +1534,9 @@ function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
       {/* File/Animation directory */}
       {(param.type === 'file' || param.type === 'animation') && (
         <div className="space-y-2">
-          <Label>Directory (relative to project)</Label>
+          <Label htmlFor={`${id}-dir`}>Directory (relative to project)</Label>
           <Input
+            id={`${id}-dir`}
             value={param.dir ?? ''}
             onChange={(event) => {
               onUpdate({ dir: event.target.value })
@@ -1547,11 +1550,13 @@ function ParamAdvancedFields({ param, onUpdate }: CardFieldProps) {
 }
 
 function NumberLimitFields({ param, onUpdate }: CardFieldProps) {
+  const id = useId()
   return (
     <div className="grid grid-cols-3 gap-4">
       <div className="space-y-2">
-        <Label>Min</Label>
+        <Label htmlFor={`${id}-min`}>Min</Label>
         <Input
+          id={`${id}-min`}
           type="number"
           value={param.min ?? ''}
           onChange={(event) => {
@@ -1561,8 +1566,9 @@ function NumberLimitFields({ param, onUpdate }: CardFieldProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label>Max</Label>
+        <Label htmlFor={`${id}-max`}>Max</Label>
         <Input
+          id={`${id}-max`}
           type="number"
           value={param.max ?? ''}
           onChange={(event) => {
@@ -1572,8 +1578,9 @@ function NumberLimitFields({ param, onUpdate }: CardFieldProps) {
         />
       </div>
       <div className="space-y-2">
-        <Label>Decimals</Label>
+        <Label htmlFor={`${id}-decimals`}>Decimals</Label>
         <Input
+          id={`${id}-decimals`}
           type="number"
           value={param.decimals ?? ''}
           onChange={(event) => {

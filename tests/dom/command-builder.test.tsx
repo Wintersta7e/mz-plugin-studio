@@ -207,3 +207,24 @@ describe('command annotations', () => {
     await previewHolds(' * @type struct<Point>[]\n')
   })
 })
+
+// The field labelled `label` under the argument: the command's own field of that label comes first
+function argumentField(label: string): HTMLElement {
+  const field = screen.getAllByLabelText(label).at(1)
+  if (field === undefined) throw new Error(`the argument has no field labelled ${label}`)
+  return field
+}
+
+describe('command argument fields', () => {
+  beforeEach(resetStores)
+
+  it('writes the label and description typed under an argument, found by their labels', async () => {
+    expect.hasAssertions()
+
+    const user = openCommandTab()
+    await addArgument(user, 'Number')
+    await retype(user, argumentField('Display Label'), 'Count')
+    await user.type(argumentField('Description'), 'How many')
+    await previewHolds(' * @arg mode\n * @text Count\n', ' * @desc How many\n')
+  })
+})

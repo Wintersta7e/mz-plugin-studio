@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import { GroupLabel, Label } from '../ui/label'
 import { Switch } from '../ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Button } from '../ui/button'
@@ -81,10 +81,13 @@ export function StructDefaultEditor({
   }
 
   const visibleFields = struct.parameters.filter((f) => f.type !== 'hidden')
+  const headingId = useId()
 
   return (
-    <div className="space-y-3">
-      <Label className="text-xs font-medium text-muted-foreground">Default Value</Label>
+    <div role="group" aria-labelledby={headingId} className="space-y-3">
+      <GroupLabel id={headingId} className="text-xs font-medium text-muted-foreground">
+        Default Value
+      </GroupLabel>
 
       {visibleFields.length === 0 ? (
         <p className="text-xs text-muted-foreground">

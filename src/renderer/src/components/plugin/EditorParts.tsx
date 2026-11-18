@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2, GripVertical, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -7,6 +7,7 @@ import { Label } from '../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
 import type { ParamType, PluginParameter } from '../../types/plugin'
+import { cn } from '../../lib/utilities'
 import { defaultText } from './param-types'
 
 type ExpandableCardProps = Readonly<{
@@ -152,13 +153,20 @@ export function FieldRowHeader({
 }
 
 /**
-The default value control of a command argument or struct field: a switch for a boolean
+The default value control of a parameter, command argument or struct field: a switch for a
+boolean. Compact (the default) sizes it for an argument or field row; a parameter card's is full size
 */
-export function FieldDefaultInput({ param, onUpdate }: FieldProps) {
+export function FieldDefaultInput({
+  param,
+  onUpdate,
+  id,
+  compact = true
+}: FieldProps & Readonly<{ id: string; compact?: boolean }>) {
   if (param.type === 'boolean') {
     return (
-      <div className="flex items-center h-8">
+      <div className={compact ? 'flex items-center h-8' : 'flex items-center h-10'}>
         <Switch
+          id={id}
           checked={param.default === true || param.default === 'true'}
           onCheckedChange={(checked) => {
             onUpdate({ default: checked })
@@ -169,14 +177,15 @@ export function FieldDefaultInput({ param, onUpdate }: FieldProps) {
   }
   return (
     <Input
+      id={id}
       value={defaultText(param.default)}
       onChange={(event) => {
         const value = param.type === 'number' ? Number(event.target.value) : event.target.value
         onUpdate({ default: value })
       }}
       type={param.type === 'number' ? 'number' : 'text'}
-      placeholder="Default"
-      className="h-8"
+      placeholder={compact ? 'Default' : 'Default value'}
+      className={compact ? 'h-8' : undefined}
     />
   )
 }
@@ -212,6 +221,41 @@ export function LimitInput({
         }}
         placeholder={placeholder}
         min={min}
+        className="h-8"
+      />
+    </div>
+  )
+}
+
+/**
+A labelled text field in the details of a command argument or struct field
+*/
+export function FieldTextInput({
+  label,
+  value,
+  placeholder,
+  className,
+  onChange
+}: Readonly<{
+  label: string
+  value: string
+  placeholder: string
+  className?: string
+  onChange: (value: string) => void
+}>) {
+  const id = useId()
+  return (
+    <div className={cn('space-y-1', className)}>
+      <Label htmlFor={id} className="text-xs">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value)
+        }}
+        placeholder={placeholder}
         className="h-8"
       />
     </div>

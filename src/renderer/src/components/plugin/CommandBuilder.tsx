@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import { GroupLabel, Label } from '../ui/label'
 import { ScrollArea } from '../ui/scroll-area'
 import { usePluginStore } from '../../stores'
 import {
@@ -17,6 +17,7 @@ import {
   ExpandableCard,
   FieldDefaultInput,
   FieldRowHeader,
+  FieldTextInput,
   LimitInput,
   type FieldProps
 } from './EditorParts'
@@ -168,12 +169,14 @@ function CommandDetails({
   structNames
 }: Readonly<Pick<CommandCardProps, 'command' | 'structNames'>>) {
   const onUpdate = useUpdateCommand(command)
+  const id = useId()
   return (
     <div className="border-t border-border p-4 space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Command Name</Label>
+          <Label htmlFor={`${id}-name`}>Command Name</Label>
           <Input
+            id={`${id}-name`}
             value={command.name}
             onChange={(event) => {
               onUpdate({ name: event.target.value })
@@ -182,8 +185,9 @@ function CommandDetails({
           />
         </div>
         <div className="space-y-2">
-          <Label>Display Label</Label>
+          <Label htmlFor={`${id}-text`}>Display Label</Label>
           <Input
+            id={`${id}-text`}
             value={command.text}
             onChange={(event) => {
               onUpdate({ text: event.target.value })
@@ -194,8 +198,9 @@ function CommandDetails({
       </div>
 
       <div className="space-y-2">
-        <Label>Description</Label>
+        <Label htmlFor={`${id}-desc`}>Description</Label>
         <Input
+          id={`${id}-desc`}
           value={command.desc}
           onChange={(event) => {
             onUpdate({ desc: event.target.value })
@@ -219,7 +224,7 @@ function CommandArguments({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Label>Arguments</Label>
+        <GroupLabel>Arguments</GroupLabel>
         <Button
           variant="outline"
           size="sm"
@@ -290,34 +295,32 @@ function ArgumentDetails({
   structNames,
   onUpdate
 }: FieldProps & Readonly<Pick<ArgumentRowProps, 'structNames'>>) {
+  const defaultId = useId()
   return (
     <div className="mt-2 grid grid-cols-2 gap-2 pl-8">
+      <FieldTextInput
+        label="Display Label"
+        value={param.text}
+        placeholder="Argument Label"
+        onChange={(value) => {
+          onUpdate({ text: value })
+        }}
+      />
       <div className="space-y-1">
-        <Label className="text-xs">Display Label</Label>
-        <Input
-          value={param.text}
-          onChange={(event) => {
-            onUpdate({ text: event.target.value })
-          }}
-          placeholder="Argument Label"
-          className="h-8"
-        />
+        <Label htmlFor={defaultId} className="text-xs">
+          Default Value
+        </Label>
+        <FieldDefaultInput id={defaultId} param={param} onUpdate={onUpdate} />
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Default Value</Label>
-        <FieldDefaultInput param={param} onUpdate={onUpdate} />
-      </div>
-      <div className="col-span-2 space-y-1">
-        <Label className="text-xs">Description</Label>
-        <Input
-          value={param.desc}
-          onChange={(event) => {
-            onUpdate({ desc: event.target.value })
-          }}
-          placeholder="Argument description"
-          className="h-8"
-        />
-      </div>
+      <FieldTextInput
+        label="Description"
+        value={param.desc}
+        placeholder="Argument description"
+        className="col-span-2"
+        onChange={(value) => {
+          onUpdate({ desc: value })
+        }}
+      />
 
       <TypeFields
         param={param}
@@ -335,17 +338,15 @@ function ArgumentDetails({
 
       {/* File-specific: directory */}
       {param.type === 'file' && (
-        <div className="col-span-2 space-y-1">
-          <Label className="text-xs">Directory</Label>
-          <Input
-            value={param.dir ?? ''}
-            onChange={(event) => {
-              onUpdate({ dir: event.target.value || undefined })
-            }}
-            placeholder="img/pictures"
-            className="h-8"
-          />
-        </div>
+        <FieldTextInput
+          label="Directory"
+          value={param.dir ?? ''}
+          placeholder="img/pictures"
+          className="col-span-2"
+          onChange={(value) => {
+            onUpdate({ dir: value || undefined })
+          }}
+        />
       )}
     </div>
   )
@@ -354,28 +355,22 @@ function ArgumentDetails({
 function BooleanLabelFields({ param, onUpdate }: FieldProps) {
   return (
     <>
-      <div className="space-y-1">
-        <Label className="text-xs">On Label</Label>
-        <Input
-          value={param.onLabel ?? ''}
-          onChange={(event) => {
-            onUpdate({ onLabel: event.target.value || undefined })
-          }}
-          placeholder="ON"
-          className="h-8"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Off Label</Label>
-        <Input
-          value={param.offLabel ?? ''}
-          onChange={(event) => {
-            onUpdate({ offLabel: event.target.value || undefined })
-          }}
-          placeholder="OFF"
-          className="h-8"
-        />
-      </div>
+      <FieldTextInput
+        label="On Label"
+        value={param.onLabel ?? ''}
+        placeholder="ON"
+        onChange={(value) => {
+          onUpdate({ onLabel: value || undefined })
+        }}
+      />
+      <FieldTextInput
+        label="Off Label"
+        value={param.offLabel ?? ''}
+        placeholder="OFF"
+        onChange={(value) => {
+          onUpdate({ offLabel: value || undefined })
+        }}
+      />
     </>
   )
 }

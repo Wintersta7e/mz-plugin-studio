@@ -255,6 +255,25 @@ describe('struct blocks: field types', () => {
     })
   })
 
+  it('writes the label, description and directory typed for a file field, found by their labels', async () => {
+    expect.hasAssertions()
+
+    const user = await openPointField('File')
+    await retype(user, screen.getByLabelText('Display Label'), 'Picture')
+    await user.type(screen.getByLabelText('Description'), 'Shown first')
+    await user.type(screen.getByLabelText('Directory (relative to project)'), 'img/pictures')
+    await waitFor(() => {
+      const block = structBlock('Point')
+
+      expect([
+        block.includes(' * @text Picture\n'),
+        block.includes(' * @desc Shown first\n'),
+        block.includes(' * @type file\n'),
+        block.includes(' * @dir img/pictures\n')
+      ]).toStrictEqual([true, true, true, true])
+    })
+  })
+
   it('writes an array field as an array of the element type it picks', async () => {
     expect.hasAssertions()
 

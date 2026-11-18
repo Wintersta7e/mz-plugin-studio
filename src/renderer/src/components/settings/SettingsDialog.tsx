@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useId, type ReactNode } from 'react'
 import log from 'electron-log/renderer'
 import { Trash2, Sun, Moon, FolderOpen, Download } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs'
-import { Label } from '../ui/label'
+import { GroupLabel, Label } from '../ui/label'
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
@@ -154,10 +154,15 @@ function ThemeButton({
 function ThemeRow() {
   const theme = useSettingsStore((s) => s.theme)
   const setTheme = useSettingsStore((s) => s.setTheme)
+  const headingId = useId()
   return (
     <div className="flex items-center justify-between">
-      <Label>Theme</Label>
-      <div className="flex items-center gap-1 rounded-md border border-input p-0.5">
+      <GroupLabel id={headingId}>Theme</GroupLabel>
+      <div
+        role="group"
+        aria-labelledby={headingId}
+        className="flex items-center gap-1 rounded-md border border-input p-0.5"
+      >
         <ThemeButton
           isSelected={theme === 'dark'}
           onSelect={() => {

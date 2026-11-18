@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Sparkles, Plus, Trash2 } from 'lucide-react'
 import { Input } from '../ui/input'
-import { Label } from '../ui/label'
+import { GroupLabel, Label } from '../ui/label'
 import { Button } from '../ui/button'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -264,11 +264,12 @@ function LocalizedTab({
 }
 
 function LocalizedFields({ fieldset }: HeaderFieldsProps) {
+  const headingId = useId()
   return (
     <div className="space-y-2">
-      <Label>Description & Help</Label>
+      <GroupLabel id={headingId}>Description & Help</GroupLabel>
       <Tabs defaultValue="en" className="w-full">
-        <TabsList>
+        <TabsList aria-labelledby={headingId}>
           <TabsTrigger value="en">English</TabsTrigger>
           <TabsTrigger value="ja">Japanese</TabsTrigger>
           <TabsTrigger value="zh">Chinese</TabsTrigger>
@@ -354,12 +355,16 @@ type NoteParamRowProps = Readonly<{
 }>
 
 function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
+  const id = useId()
   return (
     <div className="grid grid-cols-[1fr_auto] gap-2">
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Label className="text-xs">Tag Name</Label>
+          <Label htmlFor={`${id}-name`} className="text-xs">
+            Tag Name
+          </Label>
           <Input
+            id={`${id}-name`}
             value={noteParam.name}
             onChange={(event) => {
               onUpdate({ name: event.target.value })
@@ -369,8 +374,11 @@ function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Type</Label>
+          <Label htmlFor={`${id}-type`} className="text-xs">
+            Type
+          </Label>
           <Input
+            id={`${id}-type`}
             value={noteParam.type}
             onChange={(event) => {
               onUpdate({ type: event.target.value })
@@ -380,8 +388,11 @@ function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Directory</Label>
+          <Label htmlFor={`${id}-dir`} className="text-xs">
+            Directory
+          </Label>
           <Input
+            id={`${id}-dir`}
             value={noteParam.dir ?? ''}
             onChange={(event) => {
               onUpdate({ dir: event.target.value || undefined })
@@ -391,25 +402,10 @@ function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Database</Label>
-          <Select
-            value={selectedData(noteParam.data)}
-            onValueChange={(value) => {
-              onUpdate({ data: value === 'none' ? undefined : value })
-            }}
-          >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {NOTE_DATA_OPTIONS.map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor={`${id}-data`} className="text-xs">
+            Database
+          </Label>
+          <NoteDataSelect id={`${id}-data`} data={noteParam.data} onUpdate={onUpdate} />
         </div>
       </div>
       <div className="flex flex-col items-center gap-1 pt-5">
@@ -421,6 +417,33 @@ function NoteParamRow({ noteParam, onUpdate, onDelete }: NoteParamRowProps) {
   )
 }
 
+function NoteDataSelect({
+  id,
+  data,
+  onUpdate
+}: Readonly<{ id: string; data: NoteParam['data'] } & Pick<NoteParamRowProps, 'onUpdate'>>) {
+  return (
+    <Select
+      value={selectedData(data)}
+      onValueChange={(value) => {
+        onUpdate({ data: value === 'none' ? undefined : value })
+      }}
+    >
+      <SelectTrigger id={id} className="h-8 text-sm">
+        <SelectValue placeholder="Select..." />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">None</SelectItem>
+        {NOTE_DATA_OPTIONS.map((opt) => (
+          <SelectItem key={opt} value={opt}>
+            {opt}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function NoteParamsField() {
   const noteParams = usePluginStore((s) => s.plugin.meta.noteParams) ?? NO_NOTE_PARAMS
   const updateMeta = usePluginStore((s) => s.updateMeta)
@@ -428,7 +451,7 @@ function NoteParamsField() {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label>Note Parameters (deployment)</Label>
+        <GroupLabel>Note Parameters (deployment)</GroupLabel>
         <Button
           variant="ghost"
           size="sm"
