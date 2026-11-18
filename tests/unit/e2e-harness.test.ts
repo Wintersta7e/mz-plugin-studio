@@ -459,7 +459,7 @@ describe('e2e harness: Windows', () => {
     const build = jobIn('release.yml', 'build')
     const wire = build.steps.findIndex((step) => step.keys.get('name') === 'Fuse wire')
     const portable = build.steps.findIndex(
-      (step) => step.keys.get('name') === 'Upload portable exe'
+      (step) => step.keys.get('name') === 'Upload release assets'
     )
     const [smokePrepare = -1, smoke = -1] = stepsInOrder(build, [PREPARE_REUSE, RELEASE_SMOKE])
 

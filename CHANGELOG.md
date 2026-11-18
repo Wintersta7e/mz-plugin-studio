@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Each release carries a `SHA256SUMS` file to check the download against, and `sbom.cdx.json`, a list of the third-party packages inside the app. The release also holds signed records that its own build workflow made the exe from this repository; `gh attestation verify` checks them. The README's Quick start shows how.
+
 ### Changed
 
 - The app is smaller and has less to unpack each time it starts: its window code ships minified, without the source maps.

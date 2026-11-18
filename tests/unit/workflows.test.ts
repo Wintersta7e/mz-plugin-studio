@@ -475,7 +475,7 @@ describe('release workflow: preparation', () => {
       job,
       /^node scripts\/ci-policy\.mjs fuses dist\/win-unpacked\/mz-plugin-studio\.exe$/
     )
-    const upload = job.steps.indexOf(stepNamed(job, 'Upload portable exe'))
+    const upload = job.steps.indexOf(stepNamed(job, 'Upload release assets'))
 
     expect({
       needs: job.keys.get('needs'),
@@ -559,5 +559,110 @@ describe('release workflow: publishing', () => {
 
     expect(job.steps.indexOf(cleanup)).toBeGreaterThan(publish)
     expect(cleanup.run.join('\n')).toContain('tail -n +3')
+  })
+})
+
+const attestSteps = (job: Job): Step[] =>
+  job.steps.filter((step) => (step.keys.get('uses') ?? '').startsWith('actions/attest-'))
+
+describe('release workflow: checksums and SBOM', () => {
+  it('the build job hashes the exe and its SBOM and hands exactly those three files on', () => {
+    const job = releaseJob('build')
+    const fuses = job.steps.indexOf(stepNamed(job, 'Fuse wire'))
+    const sbom = stepNamed(job, 'Software bill of materials')
+    const sums = stepNamed(job, 'Checksums')
+    const upload = stepNamed(job, 'Upload release assets')
+
+    expect({
+      sbom: sbom.run,
+      sbomAfterFuses: job.steps.indexOf(sbom) > fuses,
+      sums: sums.run,
+      sumsDirectory: sums.keys.get('working-directory'),
+      sumsAfterSbom: job.steps.indexOf(sums) > job.steps.indexOf(sbom),
+      uploadAfterSums: job.steps.indexOf(upload) > job.steps.indexOf(sums),
+      upload: upload.nested
+    }).toStrictEqual({
+      sbom: ['node scripts/third-party-licenses.mjs --sbom dist/sbom.cdx.json'],
+      sbomAfterFuses: true,
+      sums: ['sha256sum -- *-portable.exe sbom.cdx.json > SHA256SUMS', 'cat SHA256SUMS'],
+      sumsDirectory: 'dist',
+      sumsAfterSbom: true,
+      uploadAfterSums: true,
+      upload: [
+        'name: release-assets',
+        'path: |',
+        'dist/*-portable.exe',
+        'dist/sbom.cdx.json',
+        'dist/SHA256SUMS',
+        'if-no-files-found: error'
+      ]
+    })
+  })
+
+  it('the release carries the checked exe, its checksums and its SBOM, and nothing else', () => {
+    const job = releaseJob('publish')
+    const download = job.steps.find((step) =>
+      (step.keys.get('uses') ?? '').startsWith('actions/download-artifact@')
+    )
+    const assets = stepNamed(job, 'Check the release assets')
+    const create = stepNamed(job, 'Publish release').run.join('\n')
+
+    expect({
+      download: download?.nested,
+      checkId: assets.keys.get('id'),
+      verified: assets.run.includes('(cd dist && sha256sum --check --strict SHA256SUMS)'),
+      output: assets.run.includes('echo "exe=${ASSET}" >> "$GITHUB_OUTPUT"'),
+      assetsOfRelease: /--notes-file release-notes\.md \\\n(.*)$/v.exec(create)?.at(1),
+      assetFromCheck: stepNamed(job, 'Publish release').nested.includes(
+        'ASSET: ${{ steps.assets.outputs.exe }}'
+      )
+    }).toStrictEqual({
+      download: ['name: release-assets', 'path: dist'],
+      checkId: 'assets',
+      verified: true,
+      output: true,
+      assetsOfRelease: '"$ASSET" dist/SHA256SUMS dist/sbom.cdx.json',
+      assetFromCheck: true
+    })
+  })
+})
+
+describe('release workflow: attestations', () => {
+  it('only the publish job attests, the exe and its SBOM, before the release exists', () => {
+    const job = releaseJob('publish')
+    const [provenance, sbom] = attestSteps(job)
+    const create = job.steps.indexOf(stepNamed(job, 'Publish release'))
+
+    expect({
+      attestingJobs: releaseJobs
+        .filter((each) => attestSteps(each).length > 0)
+        .map((each) => each.id),
+      signingJobs: releaseJobs
+        .filter((each) =>
+          permissionsOf(each).some((line) => /^(?:id-token|attestations): write$/v.test(line))
+        )
+        .map((each) => each.id),
+      permissions: permissionsOf(job),
+      provenance: provenance?.keys.get('uses'),
+      provenanceInputs: provenance?.nested,
+      sbom: sbom?.keys.get('uses'),
+      sbomInputs: sbom?.nested,
+      beforeRelease: [provenance, sbom].every(
+        (step) => step !== undefined && job.steps.indexOf(step) < create
+      )
+    }).toStrictEqual({
+      attestingJobs: ['publish'],
+      signingJobs: ['publish'],
+      permissions: ['contents: write', 'id-token: write', 'attestations: write'],
+      provenance:
+        'actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2',
+      provenanceInputs: ['subject-path: ${{ steps.assets.outputs.exe }}'],
+      sbom: 'actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0',
+      sbomInputs: [
+        'subject-path: ${{ steps.assets.outputs.exe }}',
+        'sbom-path: dist/sbom.cdx.json'
+      ],
+      beforeRelease: true
+    })
   })
 })

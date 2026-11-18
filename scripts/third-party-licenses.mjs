@@ -1,4 +1,5 @@
-// Writes THIRD_PARTY_LICENSES.md from package-lock.json and the installed packages; --check compares instead.
+// Writes THIRD_PARTY_LICENSES.md from package-lock.json and the installed packages; --check compares instead;
+// --sbom <file> writes the same packages as a CycloneDX 1.6 software bill of materials instead.
 // Covered: the lockfile closure of the root `dependencies` (shipped in the app's node_modules) and of every
 // package value-imported from src/ (bundled into out/), plus GENERATED_INTO_APP, without electron and Node builtins.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -17,6 +18,15 @@ const SOURCE_FILE = /\.(?:m?[jt]sx?|cjs|css)$/
 const LICENSE_FILE_RE = /^(?:licen[cs]e|copying)/i
 // The notices a package publishes for the code it vendors, reproduced after its own license
 const NOTICES_FILE = 'ThirdPartyNotices.txt'
+// Subresource-integrity algorithm names and their CycloneDX names
+const HASH_ALGORITHMS = new Map([
+  ['sha1', 'SHA-1'],
+  ['sha256', 'SHA-256'],
+  ['sha384', 'SHA-384'],
+  ['sha512', 'SHA-512']
+])
+// An SPDX license id or expression; anything else is named as free text
+const SPDX_EXPRESSION = /^[\w.+\-() ]+$/
 
 // The characters an import is read by. A statement starts at the start of the text or after a
 // space or `;`; a stylesheet `@import` starts anywhere.
@@ -322,7 +332,8 @@ function repository(manifest, key) {
 }
 
 /**
-@typedef {{ licenses: Set<string>, repo: string, texts: Set<string>, isBundled: boolean }} Row
+@typedef {{ license: string, integrity: unknown }} Release
+@typedef {{ licenses: Set<string>, repo: string, texts: Set<string>, isBundled: boolean, releases: Map<string, Release> }} Row
 */
 
 /**
@@ -380,9 +391,16 @@ function readPackages() {
       licenses: new Set(),
       repo: repository(manifest, key),
       texts: new Set(),
-      isBundled: false
+      isBundled: false,
+      releases: new Map()
     }
-    row.licenses.add(String(lockEntry(key)['license'] ?? manifest['license'] ?? 'UNKNOWN'))
+    const entry = lockEntry(key)
+    const license = String(entry['license'] ?? manifest['license'] ?? 'UNKNOWN')
+    row.licenses.add(license)
+    row.releases.set(String(entry['version'] ?? manifest['version'] ?? ''), {
+      license,
+      integrity: entry['integrity']
+    })
     if (!shipped.has(key)) {
       row.isBundled = true
       addTexts(directory, row.texts)
@@ -427,6 +445,81 @@ function licenseTexts(rows) {
     }
   }
   return { lines, texts, withoutFile }
+}
+
+/**
+The CycloneDX hashes of a lockfile `integrity` value.
+@param {string} id
+@param {unknown} integrity
+*/
+function hashesOf(id, integrity) {
+  if (typeof integrity !== 'string') throw new TypeError(`${id}: no integrity in package-lock.json`)
+  return integrity
+    .split(' ')
+    .filter((item) => item !== '')
+    .map((item) => {
+      const dash = item.indexOf('-')
+      const alg = HASH_ALGORITHMS.get(item.slice(0, dash))
+      if (alg === undefined) throw new Error(`${id}: unknown integrity algorithm in ${item}`)
+      return { alg, content: Buffer.from(item.slice(dash + 1), 'base64').toString('hex') }
+    })
+}
+
+/**
+One CycloneDX component per package version.
+@param {[string, Row][]} rows
+*/
+function sbomComponents(rows) {
+  return rows.flatMap(([name, row]) =>
+    [...row.releases]
+      .toSorted(([left], [right]) => byCodeUnit(left, right))
+      .map(([version, { license, integrity }]) => {
+        if (version === '') throw new Error(`${name}: no version in package-lock.json`)
+        const id = `${name}@${version}`
+        const slash = name.startsWith('@') ? name.indexOf('/') : -1
+        const purl = `pkg:npm/${name.replaceAll('@', '%40')}@${encodeURIComponent(version)}`
+        const isExpression = SPDX_EXPRESSION.test(license) && license !== 'UNKNOWN'
+        return {
+          type: 'library',
+          'bom-ref': purl,
+          ...(slash !== -1 && { group: name.slice(0, slash) }),
+          name: name.slice(slash + 1),
+          version,
+          purl,
+          licenses: [isExpression ? { expression: license } : { license: { name: license } }],
+          hashes: hashesOf(id, integrity)
+        }
+      })
+  )
+}
+
+/**
+Writes the CycloneDX bill of materials of the listed packages to `file`.
+@param {string | undefined} file
+@param {[string, Row][]} rows
+@returns {number} the exit status
+*/
+function writeSbom(file, rows) {
+  if (file === undefined || file.startsWith('--')) {
+    process.stderr.write('--sbom needs a file to write to\n')
+    return 1
+  }
+  const manifest = isRecord(rootManifest) ? rootManifest : {}
+  const name = String(manifest['name'])
+  const version = String(manifest['version'])
+  const components = sbomComponents(rows)
+  const bom = {
+    bomFormat: 'CycloneDX',
+    specVersion: '1.6',
+    version: 1,
+    metadata: {
+      component: { type: 'application', 'bom-ref': `${name}@${version}`, name, version }
+    },
+    components
+  }
+  writeFileSync(file, `${JSON.stringify(bom, undefined, 2)}\n`)
+  process.stdout.write(`sbom components ${components.length}\n`)
+  return 0
 }
 
 /**
@@ -478,6 +571,8 @@ function main() {
   )
   if (rows.length === 0) return 1
   if (process.argv.includes('--check')) return check(generated)
+  const sbom = process.argv.indexOf('--sbom')
+  if (sbom !== -1) return writeSbom(process.argv.at(sbom + 1), rows)
   writeFileSync(OUTPUT, generated)
   return 0
 }

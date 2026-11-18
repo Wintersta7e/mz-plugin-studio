@@ -162,6 +162,12 @@ Templates insert working code for common plugin patterns, grouped by category:
 [latest release](https://github.com/Wintersta7e/mz-plugin-studio/releases/latest) and run it — there is
 no installer.
 
+**Verify a download:** each release also carries `SHA256SUMS` and `sbom.cdx.json`, the list of
+third-party packages inside the app (CycloneDX). With the three files in one folder,
+`sha256sum -c SHA256SUMS` checks that none changed, and
+`gh attestation verify mz-plugin-studio-<version>-portable.exe --repo Wintersta7e/mz-plugin-studio`
+checks that the release workflow of this repository built the exe.
+
 **Build it:**
 
 ```bash
