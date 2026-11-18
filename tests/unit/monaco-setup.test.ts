@@ -1,5 +1,5 @@
 // The bundled code editor's setup: the editor instance handed to the React wrapper, and the
-// workers it starts, from a blob in the built app and as modules under the dev server
+// workers it starts, from a blob on a page loaded from disk and as modules under the dev server
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
@@ -26,6 +26,7 @@ vi.mock<Record<'loader', unknown>>(import('@monaco-editor/react'), () => ({
 }))
 
 const PAGE = 'file:///app/out/renderer/index.html'
+const DEV_PAGE = 'http://localhost:5173/'
 
 class FakeWorker {
   readonly url: string
@@ -49,7 +50,7 @@ describe('code editor setup', () => {
   beforeAll(async () => {
     vi.stubGlobal('MonacoEnvironment', undefined)
     vi.stubGlobal('Worker', FakeWorker)
-    vi.stubGlobal('location', { href: PAGE })
+    vi.stubGlobal('location', { href: PAGE, protocol: 'file:' })
     vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
       if (!(blob instanceof Blob)) throw new TypeError('the setup made an object URL of a non-blob')
       const url = `blob:test/${String(blobs.size)}`
@@ -87,6 +88,7 @@ describe('code editor setup', () => {
     expect.hasAssertions()
 
     vi.stubEnv('DEV', false)
+    vi.stubGlobal('location', { href: PAGE, protocol: 'file:' })
     const cases: [string, string][] = [
       ['typescript', h.tsWorkerUrl],
       ['javascript', h.tsWorkerUrl],
@@ -111,8 +113,22 @@ describe('code editor setup', () => {
     )
   })
 
+  it('starts blob workers on a page loaded from disk even in a dev-flagged build', async () => {
+    expect.hasAssertions()
+
+    vi.stubEnv('DEV', true)
+    vi.stubGlobal('location', { href: PAGE, protocol: 'file:' })
+    const ts = getWorker('typescript')
+
+    expect([ts.options, await blobs.get(ts.url)?.text()]).toStrictEqual([
+      undefined,
+      `importScripts(${JSON.stringify(new URL(h.tsWorkerUrl, PAGE).href)});`
+    ])
+  })
+
   it('starts module workers from their URL under the dev server', () => {
     vi.stubEnv('DEV', true)
+    vi.stubGlobal('location', { href: DEV_PAGE, protocol: 'http:' })
     const ts = getWorker('typescript')
 
     expect([ts.url, ts.options]).toStrictEqual([h.tsWorkerUrl, { type: 'module' }])

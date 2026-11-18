@@ -9,11 +9,13 @@ import tsWorkerUrl from 'monaco-editor/languages/features/typescript/ts.worker?w
 import { loader } from '@monaco-editor/react'
 
 /**
-The built app starts each worker from a blob that loads the worker's file, so the worker runs
-under the page's policy, which admits blob workers only. The dev server serves module workers.
+A page loaded from disk starts each worker from a blob that loads the worker's file, so the worker
+runs under that page's policy, which admits blob workers only. The policy is chosen by how the page
+loads, not by the build's mode, so the worker form follows the same fact: the dev server serves
+module workers.
 */
 function startWorker(url: string): Worker {
-  if (import.meta.env.DEV) return new Worker(url, { type: 'module' })
+  if (location.protocol !== 'file:') return new Worker(url, { type: 'module' })
   const source = `importScripts(${JSON.stringify(new URL(url, location.href).href)});`
   return new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' })))
 }
