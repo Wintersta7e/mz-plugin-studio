@@ -99,6 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -114,6 +115,34 @@ jobs:
           fi
           echo "node_modules/electron/dist: absent"
       - run: npm run test:coverage
+      - name: Changed lines coverage
+        shell: bash
+        env:
+          DIFF_COVER_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$DIFF_COVER_BASE"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="$(git merge-base HEAD origin/main)"
+          fi
+          changed="$(git diff --name-only "$base" HEAD -- src | wc -l)"
+          if [ "$changed" -eq 0 ]; then
+            echo "diff coverage: no src change"
+            exit 0
+          fi
+          echo "diff coverage: changed src files $changed"
+          cat > "$RUNNER_TEMP/diff-cover-requirements.txt" <<'EOF'
+          diff-cover==11.0.0 --hash=sha256:8b0a5b356d525718ee18c14b163ce179c75ccdc5b8d5474ef22ade6a0e1fa65d
+          chardet==7.7.0 --hash=sha256:feb66c96264e3e6a9ff0c7318ce0028800b6c18ad07c8000d2404a108d1ef767
+          jinja2==3.1.6 --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+          markupsafe==3.0.4 --hash=sha256:8e124f974786f831d6043728e38296969d3579db8896fe004682f5758e613581
+          pluggy==1.7.0 --hash=sha256:7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec
+          pygments==2.21.0 --hash=sha256:2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9
+          EOF
+          python3 -m venv "$RUNNER_TEMP/diff-cover"
+          "$RUNNER_TEMP/diff-cover/bin/pip" install --quiet --require-hashes --only-binary=:all: -r "$RUNNER_TEMP/diff-cover-requirements.txt"
+          "$RUNNER_TEMP/diff-cover/bin/diff-cover" coverage/lcov.info --compare-branch="$base" --fail-under=90 --format "json:$RUNNER_TEMP/diff-cover.json"
+          # A report that measured no changed line checked nothing.
+          python3 -c 'import json, sys; lines = json.load(open(sys.argv[1]))["total_num_lines"]; print(f"diff coverage: measured lines {lines}"); sys.exit(lines == 0)' "$RUNNER_TEMP/diff-cover.json"
       - run: npm run test:golden:coverage
       - name: Clean tree after tests
         shell: bash

@@ -202,6 +202,55 @@ describe('ci workflow: execution', () => {
   })
 })
 
+describe('ci workflow: changed lines coverage', () => {
+  it('the unit job checks nine in ten changed source lines run under the suite', () => {
+    const job = jobOf('unit')
+    const coverage = indexOfRun(job, /^npm run test:coverage$/)
+    const changed = job.steps.filter((step) => step.keys.get('name') === 'Changed lines coverage')
+    const run = changed.at(0)?.run ?? []
+    const script = run.join('\n')
+    const requirements = run.filter((line) => /^[\w-]+==/.test(line))
+    const vitestConfig = readFileSync(join(ROOT, 'vitest.config.ts'), 'utf8')
+
+    expect(changed).toHaveLength(1)
+    expect({
+      afterSuite: coverage >= 0 && job.steps.findIndex((step) => changed.includes(step)) > coverage,
+      fullClone: job.steps.at(0)?.nested.includes('fetch-depth: 0'),
+      base: changed
+        .at(0)
+        ?.nested.includes(
+          'DIFF_COVER_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}'
+        ),
+      lcov: /reporter: \[[^\]]*'lcovonly'/.test(vitestConfig),
+      pinned: requirements.some((line) => line.startsWith('diff-cover==11.0.0 ')),
+      unhashed: requirements.filter(
+        (line) => !/^[\w-]+==[\w.]+ --hash=sha256:[0-9a-f]{64}$/.test(line)
+      ),
+      hashedInstall: script.includes(
+        'pip" install --quiet --require-hashes --only-binary=:all: -r '
+      ),
+      mergeBase: run.includes('base="$(git merge-base HEAD origin/main)"'),
+      srcOnly: script.includes('git diff --name-only "$base" HEAD -- src'),
+      floor: script.includes(
+        'diff-cover" coverage/lcov.info --compare-branch="$base" --fail-under=90 '
+      ),
+      measuredLines: script.includes('total_num_lines')
+    }).toStrictEqual({
+      afterSuite: true,
+      fullClone: true,
+      base: true,
+      lcov: true,
+      pinned: true,
+      unhashed: [],
+      hashedInstall: true,
+      mergeBase: true,
+      srcOnly: true,
+      floor: true,
+      measuredLines: true
+    })
+  })
+})
+
 const releaseText = readFileSync(join(WORKFLOWS, 'release.yml'), 'utf8')
 const releaseJobs = readJobs('release.yml')
 

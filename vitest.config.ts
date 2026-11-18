@@ -28,12 +28,12 @@ export default defineConfig({
     silent: false,
     reporters: ['default', noSkips],
     // Floors live in ratchets.json and scripts/check-coverage.mjs checks them, so a golden-only
-    // run never meets suite floors.
+    // run never meets suite floors. CI reads lcov.info for the coverage of changed lines.
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['**/*.d.ts'],
-      reporter: ['text-summary', 'json-summary', 'json'],
+      reporter: ['text-summary', 'json-summary', 'json', 'lcovonly'],
       reportsDirectory: 'coverage'
     },
     projects: [
