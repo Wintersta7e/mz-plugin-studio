@@ -123,7 +123,7 @@ function* strings(alphabet: string[], maxLength: number): Generator<string> {
 
 function checkEquivalence<T>(
   name: string,
-  inputs: Iterable<string>,
+  inputs: Iterable<string, unknown, undefined>,
   oracle: (s: string) => T,
   actual: (s: string) => T
 ): void {

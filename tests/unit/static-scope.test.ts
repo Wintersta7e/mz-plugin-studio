@@ -13,7 +13,7 @@ import { getFileInfo } from 'prettier'
 import * as ts from 'typescript'
 import { beforeAll, describe, expect, it } from 'vitest'
 import scope from '../../lint-scope.json'
-import { typeScriptPrograms } from '../helpers/typescript-programs'
+import { typeScriptPrograms } from '../../scripts/typecov.mjs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const STRICT_FILE = 'tsconfig.strict.json'
@@ -86,10 +86,11 @@ const report = (line: string): void => {
   process.stdout.write(`${line}\n`)
 }
 
+const isList = (value: unknown): value is unknown[] => Array.isArray(value)
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
+  typeof value === 'object' && value !== null && !isList(value)
 const isStringArray = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.every((item) => typeof item === 'string')
+  isList(value) && value.every((item) => typeof item === 'string')
 
 interface RawConfig {
   extends?: string | string[]
@@ -106,13 +107,18 @@ const isRawConfig = (value: unknown): value is RawConfig => {
   const { extends: base, references, compilerOptions } = value
   return (
     (base === undefined || typeof base === 'string' || isStringArray(base)) &&
-    (references === undefined || (Array.isArray(references) && references.every(isReference))) &&
+    (references === undefined || (isList(references) && references.every(isReference))) &&
     (compilerOptions === undefined || isRecord(compilerOptions))
   )
 }
+// The reader returns the parsed JSON untyped: it is read as unknown and checked
+const readConfigFile: (
+  file: string,
+  read: (name: string) => string | undefined
+) => { config?: unknown; error?: ts.Diagnostic } = ts.readConfigFile
 const rawConfig = (file: string): RawConfig => {
-  const result = ts.readConfigFile(path.join(ROOT, file), (name) => ts.sys.readFile(name))
-  const config: unknown = result.config
+  const result = readConfigFile(path.join(ROOT, file), (name) => ts.sys.readFile(name))
+  const { config } = result
   if (result.error !== undefined || !isRawConfig(config))
     throw new Error(`${file}: unreadable config`)
   return config
@@ -323,10 +329,10 @@ const firstInScope = (entry: Scoped): string | undefined =>
 
 const SEVERITY: Record<string, number> = { '0': 0, off: 0, '1': 1, warn: 1, '2': 2, error: 2 }
 const severityOf = (entry: unknown): number => {
-  const level: unknown = Array.isArray(entry) ? entry[0] : entry
+  const level: unknown = isList(entry) ? entry[0] : entry
   return SEVERITY[String(level)] ?? -1
 }
-const optionsOf = (entry: unknown): unknown[] => (Array.isArray(entry) ? entry.slice(1) : [])
+const optionsOf = (entry: unknown): unknown[] => (isList(entry) ? entry.slice(1) : [])
 const isSameSetting = (left: unknown, right: unknown): boolean =>
   severityOf(left) === severityOf(right) &&
   JSON.stringify(optionsOf(left)) === JSON.stringify(optionsOf(right))
@@ -351,7 +357,7 @@ interface ConfigModule {
 }
 // ESLint validates each block when it loads them; this only rules out a missing export.
 const isConfigArray = (value: unknown): value is Linter.Config[] =>
-  Array.isArray(value) && value.every((block) => isRecord(block))
+  isList(value) && value.every((block) => isRecord(block))
 const loadConfigModule = async (): Promise<ConfigModule> => {
   const configModule: unknown = await import(
     pathToFileURL(path.join(ROOT, 'eslint.config.mjs')).href
@@ -440,7 +446,7 @@ const entriesNotInEffect = (actual: Map<string, Resolved>): string[] => {
     .map((row) => `owner swap ${row.rule}`)
   const optIns = scope.optIns.flatMap((row) => {
     const rules = rulesIn(row)
-    return Object.entries(row.rules)
+    return Object.entries<unknown>(row.rules)
       .filter(([rule, entry]) => !isListedSetting(rules[rule], entry))
       .map(([rule]) => `opt-in ${rule}`)
   })
@@ -972,7 +978,7 @@ const packageScripts = (): Record<string, string> => {
 
 // Every key of a JSON value, at any depth.
 const keysOf = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value.flatMap((item: unknown) => keysOf(item))
+  if (isList(value)) return value.flatMap((item) => keysOf(item))
   if (!isRecord(value)) return []
   return Object.entries(value).flatMap(([key, child]) => [key, ...keysOf(child)])
 }
@@ -1032,7 +1038,7 @@ const cruiseScan = async (
 
 // type-coverage resolves a config's folder twice, so each script runs from its program's folder.
 const TYPECOV_SCRIPT =
-  /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion$/v
+  /^(?:cd (?<folder>[\w.\-]+) && )?node [\w.\/\-]+\/type-coverage -p (?<config>[\w.\-]+) --strict --ignore-as-assertion --ignore-type-assertion --ignore-non-null-assertion --at-least 100$/v
 const typecovConfig = (script = ''): string | undefined => {
   // An optional group that did not take part in the match is undefined.
   const groups = new Map(Object.entries(TYPECOV_SCRIPT.exec(script)?.groups ?? {}))

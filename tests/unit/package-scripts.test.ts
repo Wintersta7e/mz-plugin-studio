@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { typeScriptPrograms } from '../helpers/typescript-programs'
+import { typeScriptPrograms } from '../../scripts/typecov.mjs'
 import { readJobs } from '../helpers/workflow-reader'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
@@ -179,7 +179,7 @@ describe('package.json scripts', () => {
     expect(commandsOf(script('check')).slice(0, gates.length)).toStrictEqual(gates)
   })
 
-  it('each type coverage script runs one program or the report that holds their ceilings', () => {
+  it('each type coverage script runs one program, or the runner that runs them all', () => {
     const typecov = scripts
       .keys()
       .filter((name) => name === 'typecov' || name.startsWith('typecov:'))
@@ -187,7 +187,8 @@ describe('package.json scripts', () => {
     const other = typecov.filter((name) => name.split(':').length !== 2)
 
     expect(typecov.length).toBeGreaterThan(1)
-    expect(other).toStrictEqual([])
+    expect(other).toStrictEqual(['typecov'])
+    expect(scripts.get('typecov')).toBe('node scripts/typecov.mjs')
   })
 
   it('the lint covers the whole tree and fails on any warning', () => {
@@ -232,8 +233,15 @@ describe('package.json scripts: TypeScript programs', () => {
       programs.map((name) => `npm run typecheck:${name}`)
     )
     expect(named('typecheck:')).toStrictEqual(new Set(programs))
-    // The report holds the ceilings of the program runs; it runs no program itself
-    expect(named('typecov:').difference(new Set(['report']))).toStrictEqual(new Set(programs))
+    expect(named('typecov:')).toStrictEqual(new Set(programs))
+  })
+
+  it("each program's type coverage script fails below full coverage", () => {
+    const lax = typeScriptPrograms(ROOT)
+      .map((program) => `typecov:${program.name}`)
+      .filter((name) => !script(name).endsWith(' --at-least 100'))
+
+    expect(lax).toStrictEqual([])
   })
 })
 

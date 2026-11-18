@@ -46,7 +46,7 @@ const PARENT: Record<string, string> = {
 const repos: string[] = []
 // Describe blocks run in shuffled order: the count prints once the last of them ends
 const counter = { cases: 0, describes: 0 }
-const DESCRIBES = 10
+const DESCRIBES = 8
 
 function countCase(): void {
   counter.cases += 1
@@ -135,32 +135,6 @@ const statusWithTsc = (directory: string, tsc: string): { status: number | null;
   return run(directory, path.join(directory, 'scripts/strictness-status.mjs'), [])
 }
 
-// A type coverage report whose test program runs `test`, with `files` beside it, and whose other
-// programs each print a full summary with nothing uncovered. The report holds the uncovered
-// ceilings `ceilings` names over 0 for each program and 2 for the test program; undefined drops one.
-const reportTypecov = (
-  test: string,
-  files: Record<string, string> = {},
-  ceilings: Record<string, number | undefined> = {}
-): { status: number | null; out: string } => {
-  const directory = temporaryDirectory()
-  const programs = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
-  const scripts = Object.fromEntries(
-    programs.map((name) => [`typecov:${name}`, 'node -e "console.log(\'(1 / 1) 100.00%\')"'])
-  )
-  scripts['typecov:test'] = test
-  write(directory, { ...files, 'package.json': JSON.stringify({ scripts }) })
-  const held: Record<string, number | undefined> = {
-    ...Object.fromEntries(programs.map((name) => [name, 0])),
-    test: 2,
-    ...ceilings
-  }
-  const args = Object.entries(held).flatMap(([name, count]) =>
-    count === undefined ? [] : [`--${name}`, String(count)]
-  )
-  return run(directory, SCRIPT, ['--report', 'typecov', ...args])
-}
-
 // A production knip run printing one summary line and its scanned files, under the ceiling 2.
 const knipProduction = ({ issues, files }: { issues: number; files: number }): string =>
   `node -e "console.log('Unused exports (${String(issues)})'); ` +
@@ -203,7 +177,7 @@ const reportJscpd = (
 const AT_CEILINGS: JscpdTotal = { sources: 3, clones: 2, duplicatedLines: 20 }
 
 // Timeouts at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
-// One spawned status run (ESLint and tsc on a fixture repo), or two type coverage report runs.
+// One spawned status run (ESLint and tsc on a fixture repo).
 const SPAWN_TIMEOUT_MS = 10_000
 // Two spawned status runs.
 const TWO_SPAWNS_TIMEOUT_MS = 15_000
@@ -567,94 +541,6 @@ describe('strictness status: base suppressions', () => {
       expect(unparseable.status).toBe(1)
       expect(missing.out).toContain(`eslint-suppressions: base ${absent} is not a commit`)
       expect(missing.status).toBe(1)
-    }
-  )
-})
-
-describe('strictness status: type coverage summaries', () => {
-  beforeEach(countCase)
-
-  afterAll(finishDescribe)
-
-  it('(l) names how a report run without a summary ended and what it printed', () => {
-    const result = reportTypecov(
-      "node -e \"console.log('first'); console.log('last'); process.exit(3)\""
-    )
-
-    expect(result.out).toContain('typecov web: (1 / 1) 100.00%')
-    expect(result.out).toContain(
-      'typecov test: no summary or nothing scanned (exit 3, 11 bytes received)'
-    )
-    expect(result.out).toContain('typecov test | first\ntypecov test | last\n')
-    expect(result.status).toBe(1)
-  })
-
-  it('(y) reads the summary a report run prints after a large output and a failing exit', () => {
-    const fake = [
-      "const line = 'uncovered '.repeat(10)",
-      'for (let i = 0; i < 5000; i++) console.log(line + String(i))',
-      "console.log('(10 / 12) 83.33%')",
-      'process.exit(1)'
-    ].join('\n')
-    const result = reportTypecov('node fake-typecov.mjs', { 'fake-typecov.mjs': fake }, { test: 1 })
-
-    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling 1')
-    expect(result.out).toContain('typecov test: the uncovered count rose above the ceiling 1')
-    expect(result.status).toBe(1)
-  })
-
-  it('(ag) passes each program exactly at the uncovered ceiling the report names', () => {
-    const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\')"')
-
-    expect(result.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling 2')
-    expect(result.out).toContain('typecov web: (1 / 1) 100.00%, uncovered 0, ceiling 0')
-    expect(result.status).toBe(0)
-  })
-})
-
-describe('strictness status: type coverage ceilings', () => {
-  beforeEach(countCase)
-
-  afterAll(finishDescribe)
-
-  it(
-    '(ah) fails a program under its ceiling, and one the report names no ceiling for',
-    { timeout: SPAWN_TIMEOUT_MS },
-    () => {
-      const under = reportTypecov('node -e "console.log(\'(11 / 12) 91.66%\')"')
-      const none = reportTypecov(
-        'node -e "console.log(\'(10 / 12) 83.33%\')"',
-        {},
-        { test: undefined }
-      )
-
-      expect(under.out).toContain('typecov test: the uncovered count fell; lower --test to 1')
-      expect(under.status).toBe(1)
-      expect(none.out).toContain('typecov test: (10 / 12) 83.33%, uncovered 2, ceiling none')
-      expect(none.out).toContain('typecov test: the typecov:report script names no --test ceiling')
-      expect(none.status).toBe(1)
-    }
-  )
-
-  it('(ai) fails a run that exits non-zero at its ceiling, printing how it ended', () => {
-    const result = reportTypecov('node -e "console.log(\'(10 / 12) 83.33%\'); process.exit(2)"')
-
-    expect(result.out).toContain('typecov test: the run failed (exit 2, ')
-    expect(result.out).toContain('typecov test | (10 / 12) 83.33%')
-    expect(result.status).toBe(1)
-  })
-
-  it(
-    '(aj) passes fully typed code added or removed with the report unchanged',
-    { timeout: SPAWN_TIMEOUT_MS },
-    () => {
-      const added = reportTypecov('node -e "console.log(\'(15 / 17) 88.23%\')"')
-      const removed = reportTypecov('node -e "console.log(\'(4 / 6) 66.66%\')"')
-
-      expect(added.out).toContain('typecov test: (15 / 17) 88.23%, uncovered 2, ceiling 2')
-      expect(added.status).toBe(0)
-      expect(removed.out).toContain('typecov test: (4 / 6) 66.66%, uncovered 2, ceiling 2')
-      expect(removed.status).toBe(0)
     }
   )
 })

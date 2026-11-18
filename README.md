@@ -189,13 +189,13 @@ npm run test:golden    # generated-plugin output against the golden corpus
 npm run build:win      # portable Windows build into dist/
 ```
 
-`npm run check` runs, in order: `ci:runtime-deps`, `lint`, `typecheck`, `typecov:report`, `deps`,
+`npm run check` runs, in order: `ci:runtime-deps`, `lint`, `typecheck`, `typecov`, `deps`,
 `knip:report`, `jscpd:report`, `format:check`, `strictness:status`, `licenses`, `test:coverage` and
-`test:golden:coverage`. Lint findings, pending type-check errors (per file), unused exports,
-duplicated code and each program's identifiers without a type each hold an exact ceiling that
-fails when the count rises or falls, so a change that lowers a count lowers its ceiling in the
-same commit. The ceilings live in `eslint-suppressions.json`, `pending-ceilings.json` and the
-`knip:production`, `jscpd:report` and `typecov:report` scripts in `package.json`.
+`test:golden:coverage`. Every TypeScript program is held at 100 % type coverage. Lint findings,
+pending type-check errors (per file), unused exports and duplicated code each hold an exact
+ceiling that fails when the count rises or falls, so a change that lowers a count lowers its
+ceiling in the same commit. The ceilings live in `eslint-suppressions.json`,
+`pending-ceilings.json` and the `knip:production` and `jscpd:report` scripts in `package.json`.
 The test coverage floors in `scripts/check-coverage.mjs` are the measured values rounded down,
 and fail when coverage falls below one or rises a whole point above it.
 

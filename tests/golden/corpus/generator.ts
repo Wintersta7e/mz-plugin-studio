@@ -124,6 +124,9 @@ export function hostileDefinition(payload: string): HostileDefinition {
 
 const PARAMETER_LISTS = new Set(['parameters', 'args'])
 const EXEMPT_KEYS = new Set(['type', 'arrayType'])
+const isList = (value: unknown): value is unknown[] => Array.isArray(value)
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
 
 /**
 Counts string leaves, and those carrying `payload`; a parameter's type keys are exempt.
@@ -137,9 +140,9 @@ export function countHostileLeaves(
     if (typeof value === 'string') {
       counts.total++
       if (value.includes(payload)) counts.holding++
-    } else if (Array.isArray(value)) {
+    } else if (isList(value)) {
       for (const item of value) visit(item, key)
-    } else if (typeof value === 'object' && value !== null) {
+    } else if (isRecord(value)) {
       const isParameter = PARAMETER_LISTS.has(key)
       for (const [k, v] of Object.entries(value)) {
         if (!(isParameter && EXEMPT_KEYS.has(k))) visit(v, k)

@@ -12,9 +12,6 @@
 //                     of the production code alone (fails unless at its ceiling).
 //   --report jscpd:   the copied code's clones and duplicated lines (fails unless both are at the
 //                     ceilings given as --clones and --duplicated-lines, or without a report).
-//   --report typecov: the type coverage of each program (fails unless each program's count of
-//                     identifiers without a type is at the ceiling given as --<program>, or
-//                     when a run fails).
 // The reports otherwise fail only when a run printed no summary or scanned nothing, and then
 // print how the run ended and its last lines.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
@@ -28,7 +25,6 @@ const SUPPRESSIONS = 'eslint-suppressions.json'
 const LINT_CONFIGS = new Set(['eslint.config.mjs', 'lint-scope.json'])
 const PENDING_CEILINGS = 'pending-ceilings.json'
 const PENDING_FILE = /^tsconfig\.(?<program>[\w\-]+)\.pending\.json$/v
-const TYPECOV_PROGRAMS = ['node', 'web', 'test', 'tools', 'scripts', 'e2e']
 // Each pending check is a full type-check of its program; four at a time bounds memory.
 const TSC_JOBS = 4
 
@@ -645,55 +641,6 @@ function reportJscpd(args) {
   }
 }
 
-// Each program's count of identifiers without a type is held exactly at the ceiling the
-// `typecov:report` script names as `--<program>`: a rise fails, and so does a fall, so a ceiling
-// only moves down with the identifiers it counts. A percentage would move with every typed line.
-/**
-@param {string} program
-@param {string | undefined} ceiling
-@param {number} uncovered
-*/
-function typecovProblem(program, ceiling, uncovered) {
-  if (ceiling === undefined) return `the typecov:report script names no --${program} ceiling`
-  if (uncovered > Number(ceiling)) return `the uncovered count rose above the ceiling ${ceiling}`
-  if (uncovered < Number(ceiling))
-    return `the uncovered count fell; lower --${program} to ${uncovered}`
-  return ''
-}
-/**
-@param {string[]} args
-*/
-function reportTypecov(args) {
-  const { values } = parseArgs({
-    args,
-    options: Object.fromEntries(TYPECOV_PROGRAMS.map((program) => [program, { type: 'string' }]))
-  })
-  let isOk = true
-  for (const program of TYPECOV_PROGRAMS) {
-    const label = `typecov ${program}`
-    const run = npmRun(`typecov:${program}`)
-    const groups = /\((?<covered>\d+) \/ (?<total>\d+)\) (?<pct>[\d.]+)%/v.exec(run.out)?.groups
-    if (groups === undefined || Number(groups['total']) === 0) {
-      printFailedRun(label, 'no summary or nothing scanned', run)
-      isOk = false
-      continue
-    }
-    const { covered, total, pct } = groups
-    const uncovered = Number(total) - Number(covered)
-    const ceiling = values[program]
-    print(
-      `${label}: (${covered} / ${total}) ${pct}%, uncovered ${uncovered}, ` +
-        `ceiling ${ceiling ?? 'none'}`
-    )
-    const problem = typecovProblem(program, ceiling, uncovered)
-    if (problem === '' && run.status === 0) continue
-    if (problem === '') printFailedRun(label, 'the run failed', run)
-    else print(`${label}: ${problem}`)
-    isOk = false
-  }
-  return isOk
-}
-
 const [flag, kind] = process.argv.slice(2)
 /**
 @type {boolean}
@@ -701,13 +648,12 @@ const [flag, kind] = process.argv.slice(2)
 let isOk
 if (flag === '--report' && kind === 'knip') isOk = reportKnip()
 else if (flag === '--report' && kind === 'jscpd') isOk = reportJscpd(process.argv.slice(4))
-else if (flag === '--report' && kind === 'typecov') isOk = reportTypecov(process.argv.slice(4))
 else if (flag === undefined) {
   const tracked = new Set(git(['ls-files', '-z']).split('\0').filter(Boolean))
   const suppressionsOk = checkSuppressions(tracked)
   isOk = (await checkPending(tracked)) && suppressionsOk
 } else {
-  print('usage: node scripts/strictness-status.mjs [--report knip|jscpd|typecov]')
+  print('usage: node scripts/strictness-status.mjs [--report knip|jscpd]')
   isOk = false
 }
 process.exitCode = isOk ? 0 : 1
