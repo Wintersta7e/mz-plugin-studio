@@ -5,6 +5,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { typeScriptPrograms } from '../helpers/typescript-programs'
+import { readJobs } from '../helpers/workflow-reader'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
@@ -49,6 +51,8 @@ const NODE_SCRIPT = /^node (scripts\/\S+)(?: .+)?$/
 const NODE_MODULE = /^node node_modules\/((?:@[^/\s]+\/)?[^/\s]+)\/(\S+)(?: .+)?$/
 
 const commandsOf = (body: string): string[] => body.split('&&').map((c) => c.trim())
+// The toolchain check runs in CI only: it holds the running Node to the version CI installs
+const TOOLCHAIN = 'npm run ci:toolchain'
 
 function binPaths(name: string): string[] {
   const bin = member(readJson(`node_modules/${name}/package.json`), 'bin')
@@ -151,7 +155,7 @@ describe('package.json scripts', () => {
 
   it('check runs the local gate and leaves out the toolchain check', () => {
     expect(scripts.get('check')).toBeDefined()
-    expect(commandsOf(script('check'))).not.toContain('npm run ci:toolchain')
+    expect(commandsOf(script('check'))).not.toContain(TOOLCHAIN)
   })
 
   it('check runs the golden project once besides the full suite, with coverage', () => {
@@ -163,19 +167,15 @@ describe('package.json scripts', () => {
   })
 
   it('check runs the static gates in their CI order', () => {
-    const gates = [
-      'npm run ci:runtime-deps',
-      'npm run lint',
-      'npm run typecheck',
-      'npm run typecov:report',
-      'npm run deps',
-      'npm run knip:report',
-      'npm run jscpd:report',
-      'npm run format:check',
-      'npm run strictness:status',
-      'npm run licenses -- --check'
-    ]
+    const staticJob = readJobs(path.join(ROOT, '.github/workflows/ci.yml')).find(
+      (job) => job.id === 'static'
+    )
+    const gates = (staticJob?.steps ?? [])
+      .flatMap((step) => step.run)
+      .filter((line) => line.startsWith('npm run ') && line !== TOOLCHAIN)
+    process.stdout.write(`check: static gates ${String(gates.length)}\n`)
 
+    expect(gates.length).toBeGreaterThan(0)
     expect(commandsOf(script('check')).slice(0, gates.length)).toStrictEqual(gates)
   })
 
@@ -212,6 +212,28 @@ describe('package.json scripts', () => {
 
   it('the Windows package script never publishes', () => {
     expect(scripts.get('package:win')).toMatch(/ --publish never(?: |$)/)
+  })
+})
+
+describe('package.json scripts: TypeScript programs', () => {
+  it('typecheck and type coverage name exactly the TypeScript programs', () => {
+    const programs = typeScriptPrograms(ROOT).map((program) => program.name)
+    const named = (prefix: string): Set<string> =>
+      new Set(
+        scripts
+          .keys()
+          .filter((name) => name.startsWith(prefix))
+          .map((name) => name.slice(prefix.length))
+      )
+    process.stdout.write(`programs ${String(programs.length)}\n`)
+
+    expect(programs.length).toBeGreaterThan(0)
+    expect(commandsOf(script('typecheck'))).toStrictEqual(
+      programs.map((name) => `npm run typecheck:${name}`)
+    )
+    expect(named('typecheck:')).toStrictEqual(new Set(programs))
+    // The report holds the ceilings of the program runs; it runs no program itself
+    expect(named('typecov:').difference(new Set(['report']))).toStrictEqual(new Set(programs))
   })
 })
 

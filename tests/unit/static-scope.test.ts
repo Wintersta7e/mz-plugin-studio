@@ -13,6 +13,7 @@ import { getFileInfo } from 'prettier'
 import * as ts from 'typescript'
 import { beforeAll, describe, expect, it } from 'vitest'
 import scope from '../../lint-scope.json'
+import { typeScriptPrograms } from '../helpers/typescript-programs'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
 const STRICT_FILE = 'tsconfig.strict.json'
@@ -42,15 +43,12 @@ interface Program {
   config: string
   pending: string
 }
-// Root `tsconfig.json` references these, in this order; a flag a program does not meet yet waits in its pending file.
-const PROGRAMS: Program[] = [
-  { name: 'node', config: 'tsconfig.node.json', pending: 'tsconfig.node.pending.json' },
-  { name: 'web', config: 'tsconfig.web.json', pending: 'tsconfig.web.pending.json' },
-  { name: 'test', config: 'tsconfig.test.json', pending: 'tsconfig.test.pending.json' },
-  { name: 'tools', config: 'tools/tsconfig.json', pending: 'tsconfig.tools.pending.json' },
-  { name: 'scripts', config: 'tsconfig.scripts.json', pending: 'tsconfig.scripts.pending.json' },
-  { name: 'e2e', config: 'tsconfig.e2e.json', pending: 'tsconfig.e2e.pending.json' }
-]
+// The programs root `tsconfig.json` references, in its order; a flag a program does not meet yet
+// waits in its pending file.
+const PROGRAMS: Program[] = typeScriptPrograms(ROOT).map((program) => ({
+  ...program,
+  pending: `tsconfig.${program.name}.pending.json`
+}))
 
 // The only files more than one program may hold, each with the programs allowed to hold it.
 const PROGRAM_OVERLAPS: { glob: string; programs: string[] }[] = [
@@ -214,7 +212,11 @@ describe('static scope: TypeScript programs', () => {
     const references = (rawConfig('tsconfig.json').references ?? []).map((ref) => ref.path)
     report(`programs ${String(references.length)}`)
 
-    expect(references).toStrictEqual(PROGRAMS.map((program) => `./${program.config}`))
+    expect(references.length).toBeGreaterThan(0)
+    expect(PROGRAMS.map((program) => path.join(ROOT, program.config))).toStrictEqual(
+      references.map((reference) => path.join(ROOT, reference))
+    )
+    expect(new Set(PROGRAMS.map((program) => program.name)).size).toBe(PROGRAMS.length)
 
     const lastBases = PROGRAMS.map((program) => extendsList(program.config).at(-1))
 
