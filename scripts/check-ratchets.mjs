@@ -10,8 +10,10 @@
 //          ceiling). Fails a ceiling that rose, a floor that fell, a ratchet the base holds and
 //          the tree does not, a number outside the known sections, a base that is not a commit or
 //          holds an unreadable file, and a comparison of nothing. A ratchet the base does not hold
-//          passes, so a new one can land. The exact checks alone pass a commit that raises a count
-//          and its ceiling together; this one does not.
+//          passes, so a new one can land. A floor keyed by a path (a suite directory, a golden
+//          file) whose path was renamed since the base is compared under its new key; one whose
+//          path was deleted is dropped, printing so. The exact checks alone pass a commit that
+//          raises a count and its ceiling together; this one does not.
 // `node scripts/check-ratchets.mjs` runs both: the base is RATCHETS_BASE (CI names the pushed
 // range's base: a push's previous tip, a pull request's base); an empty or all-zero value, or none,
 // stands for the merge-base with origin/main, else HEAD's parent. `--base <ref>` runs the
@@ -32,6 +34,7 @@ const OUTPUT_TAIL = 20
 @typedef {{ sources: number, clones: number, duplicatedLines: number, percentage: number }} JscpdTotal
 @typedef {'ceiling' | 'floor'} Direction
 @typedef {{ value: number, direction: Direction }} Ratchet
+@typedef {{ renamed: Map<string, string>, deleted: Set<string> }} Moves
 */
 
 // Which way the numbers of each ratchets.json section may move: a ceiling only down, a floor up.
@@ -51,6 +54,12 @@ const SECTION_NAMES = SECTION_DIRECTIONS.map(([name]) => name).join(', ')
 const SCRIPT_FLAGS = [
   ['--at-least', /--at-least (?<value>\d+(?:\.\d+)?)/v, 'floor'],
   ['--max-warnings', /--max-warnings (?<value>\d+)/v, 'ceiling']
+]
+// The ratchets.json keys that name a repository path: a suite directory's floors and a golden
+// file's floor.
+const PATH_KEYS = [
+  /^(?<parent>coverage\.suite\.)(?<file>.+)(?<metric>\.[^.]+)$/v,
+  /^(?<parent>coverage\.golden\.files\.)(?<file>.+)$/v
 ]
 
 /**
@@ -283,6 +292,96 @@ function showFile(commit, file) {
 }
 
 /**
+The paths renamed (old → new) and deleted between `commit` and HEAD.
+@param {string} commit
+@returns {Moves}
+*/
+function movedPaths(commit) {
+  const result = spawnSync('git', ['diff', '-M', '--name-status', '-z', commit, 'HEAD'], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024
+  })
+  /**
+  @type {Moves}
+  */
+  const moves = { renamed: new Map(), deleted: new Set() }
+  const fields = result.stdout.split('\0').values()
+  for (const status of fields) {
+    const from = fields.next().value ?? ''
+    if (status.startsWith('R')) moves.renamed.set(from, fields.next().value ?? '')
+    else if (status === 'D') moves.deleted.add(from)
+  }
+  return moves
+}
+
+/**
+The repository path a ratchets.json key names, and the key it takes when that path becomes `to`;
+undefined for a key that names no path.
+@param {string} key
+*/
+function namedPath(key) {
+  const groups = PATH_KEYS.map((pattern) => pattern.exec(key)?.groups).find(
+    (found) => found !== undefined
+  )
+  const { parent, file, metric = '' } = groups ?? {}
+  return parent === undefined || file === undefined
+    ? undefined
+    : { file, keyAt: (/** @type {string} */ to) => `${parent}${to}${metric}` }
+}
+
+/**
+Where the path of a ratchet the tree no longer holds went since the base: its new path and key when
+the path, or every file of a directory that moved, was renamed to one place; `deleted` when the path
+is gone from HEAD's tree and nothing under it was renamed; otherwise undefined (the key names no
+path, the path is still in HEAD's tree, or its files moved to more than one place).
+@param {string} key
+@param {Moves} moves
+@returns {{ to: string, key: string } | 'deleted' | undefined}
+*/
+function moveOf(key, moves) {
+  const named = namedPath(key)
+  if (named === undefined) return
+  const { file, keyAt } = named
+  const isUnder = (/** @type {string} */ from) => from === file || from.startsWith(`${file}/`)
+  if (spawnSync('git', ['cat-file', '-e', `HEAD:${file}`]).status === 0) return
+  /**
+  @type {Set<string>}
+  */
+  const targets = new Set()
+  for (const [from, to] of moves.renamed) {
+    const inner = from.slice(file.length)
+    if (isUnder(from)) targets.add(to.endsWith(inner) ? to.slice(0, to.length - inner.length) : '')
+  }
+  const [target = ''] = targets
+  if (target !== '' && targets.size === 1) return { to: target, key: keyAt(target) }
+  return targets.size === 0 && [...moves.deleted].some((from) => isUnder(from))
+    ? 'deleted'
+    : undefined
+}
+
+/**
+The key and value a base ratchet is compared with: its own key, or for one the tree no longer holds
+under it, the key its renamed path gives it; undefined when its path was deleted, which drops it.
+Prints each rename and drop.
+@param {string} key
+@param {Map<string, Ratchet>} now
+@param {Moves} moves
+@returns {{ key: string, current: number | undefined } | undefined}
+*/
+function comparedAs(key, now, moves) {
+  const current = now.get(key)?.value
+  if (current !== undefined) return { key, current }
+  const move = moveOf(key, moves)
+  if (move === 'deleted') {
+    print(`dropped ${key} (path deleted)`)
+    return
+  }
+  if (move === undefined) return { key, current }
+  print(`${key} is compared as ${move.key} (path renamed to ${move.to})`)
+  return { key: move.key, current: now.get(move.key)?.value }
+}
+
+/**
 The ratchets a commit holds; undefined, printing why, when one of its files is not readable.
 @param {string} commit
 */
@@ -336,8 +435,11 @@ function checkDirection(base, ratchets) {
     print(`${key} is in no section ${RATCHETS} knows (${SECTION_NAMES})`)
   }
   let isOk = store.unknown.length === 0
-  for (const [key, { value, direction }] of before) {
-    const current = now.get(key)?.value
+  const moves = movedPaths(commit)
+  for (const [baseKey, { value, direction }] of before) {
+    const compared = comparedAs(baseKey, now, moves)
+    if (compared === undefined) continue
+    const { key, current } = compared
     const moved = direction === 'ceiling' ? 'a ceiling rose' : 'a floor fell'
     if (current === undefined) {
       print(`${key} ${value} → none: the ratchet vanished since ${commit}`)

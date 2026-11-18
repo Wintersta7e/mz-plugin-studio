@@ -53,6 +53,23 @@ const packageJson = (atLeast: string, maxWarnings: string): string =>
   })
 const BASE_PACKAGE = packageJson('100', '0')
 const ZERO_SHA = '0'.repeat(40)
+// The base of the path cases: a suite directory floor over two files and a golden file floor.
+const APP = 'export const app = 1\n'
+const CLI = 'export const cli = 2\n'
+const GENERATOR = 'export const generate = 3\n'
+const PATH_FILES = { 'src/main/app.ts': APP, 'src/main/cli.ts': CLI, 'src/gen/index.ts': GENERATOR }
+// A ratchets.json holding the line floor of each suite directory and the floor of each golden file.
+const floors = (suite: Record<string, number>, golden: Record<string, number>): string =>
+  JSON.stringify({
+    jscpd: CEILINGS,
+    coverage: {
+      suite: Object.fromEntries(
+        Object.entries(suite).map(([directory, lines]) => [directory, { lines }])
+      ),
+      golden: { files: golden }
+    }
+  })
+const PATH_RATCHETS = floors({ 'src/main': 90 }, { 'src/gen/index.ts': 95 })
 
 const directories: string[] = []
 
@@ -83,9 +100,17 @@ const fakeJscpd = (total: JscpdTotal | undefined, clones: Clone[]): string => {
   ].join('\n')
 }
 
-// Commits `files` on top of the repository's HEAD; the new commit's id.
-const commit = (directory: string, files: Record<string, string>): string => {
-  for (const [file, text] of Object.entries(files)) writeFileSync(path.join(directory, file), text)
+// Commits `files` and the deletion of `removed` on top of the repository's HEAD; the new commit's id.
+const commit = (
+  directory: string,
+  files: Record<string, string>,
+  removed: string[] = []
+): string => {
+  for (const file of removed) rmSync(path.join(directory, file))
+  for (const [file, text] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(directory, file)), { recursive: true })
+    writeFileSync(path.join(directory, file), text)
+  }
   git(directory, ['add', '.'])
   git(directory, ['commit', '-q', '--allow-empty', '-m', 'change'])
   return git(directory, ['rev-parse', 'HEAD'])
@@ -136,6 +161,19 @@ const since = (
   const directory = repository(files, total)
   const base = git(directory, ['rev-parse', 'HEAD'])
   commit(directory, head)
+  return { directory, base }
+}
+
+// A repository whose base commit holds PATH_RATCHETS over PATH_FILES and whose HEAD applies `head`
+// and deletes `removed`; the repository and the base commit's id.
+const moved = (
+  head: Record<string, string>,
+  removed: string[] = []
+): { directory: string; base: string } => {
+  const files = { 'ratchets.json': PATH_RATCHETS, 'package.json': BASE_PACKAGE, ...PATH_FILES }
+  const directory = repository(files, AT_CEILINGS)
+  const base = git(directory, ['rev-parse', 'HEAD'])
+  commit(directory, head, removed)
   return { directory, base }
 }
 
@@ -339,5 +377,88 @@ describe('ratchets: the base compared with', () => {
     )
     expect(runs.map((result) => result.status)).toStrictEqual(runs.map(() => 1))
     expect(run(directory, [], { RATCHETS_BASE: 'HEAD' }).status).toBe(0)
+  })
+})
+
+describe('ratchets: a path renamed or deleted since the base', () => {
+  afterEach(removeRepositories)
+
+  const renamed = { 'src/app/app.ts': APP, 'src/app/cli.ts': CLI, 'src/gen/main.ts': GENERATOR }
+  const removedAll = Object.keys(PATH_FILES)
+
+  it('compares the floor of a renamed file or directory under its new key', () => {
+    const kept = moved(
+      { ...renamed, 'ratchets.json': floors({ 'src/app': 90 }, { 'src/gen/main.ts': 96 }) },
+      removedAll
+    )
+    const passed = run(kept.directory, ['--base', kept.base])
+
+    expect(passed.out).toContain(
+      'ratchets: coverage.suite.src/main.lines is compared as coverage.suite.src/app.lines (path renamed to src/app)'
+    )
+    expect(passed.out).toContain(
+      'ratchets: coverage.golden.files.src/gen/index.ts is compared as coverage.golden.files.src/gen/main.ts (path renamed to src/gen/main.ts)'
+    )
+    expect(passed.status).toBe(0)
+  })
+
+  it('fails the floor of a renamed path that fell, or that its new key does not hold', () => {
+    const lowered = moved(
+      { ...renamed, 'ratchets.json': floors({ 'src/app': 89 }, { 'src/gen/main.ts': 94 }) },
+      removedAll
+    )
+    const unnamed = moved(
+      { ...renamed, 'ratchets.json': floors({ 'src/app': 90 }, {}) },
+      removedAll
+    )
+    const fell = run(lowered.directory, ['--base', lowered.base])
+    const missing = run(unnamed.directory, ['--base', unnamed.base])
+
+    expect(fell.out).toContain(
+      `ratchets: coverage.suite.src/app.lines 90 → 89: a floor fell since ${lowered.base}`
+    )
+    expect(fell.out).toContain(
+      `ratchets: coverage.golden.files.src/gen/main.ts 95 → 94: a floor fell since ${lowered.base}`
+    )
+    expect(fell.status).toBe(1)
+    expect(missing.out).toContain(
+      `ratchets: coverage.golden.files.src/gen/main.ts 95 → none: the ratchet vanished since ${unnamed.base}`
+    )
+    expect(missing.status).toBe(1)
+  })
+
+  it('drops the floor of a deleted file or directory, printing it', () => {
+    const { directory, base } = moved({ 'ratchets.json': floors({}, {}) }, removedAll)
+    const result = run(directory, ['--base', base])
+
+    expect(result.out).toContain('ratchets: dropped coverage.suite.src/main.lines (path deleted)')
+    expect(result.out).toContain(
+      'ratchets: dropped coverage.golden.files.src/gen/index.ts (path deleted)'
+    )
+    expect(result.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(result.status).toBe(0)
+  })
+
+  it('fails a vanished floor whose path still exists or moved to more than one place', () => {
+    const kept = moved({ 'ratchets.json': floors({ 'src/main': 90 }, {}) })
+    const split = moved(
+      {
+        'src/app/app.ts': APP,
+        'src/lib/cli.ts': CLI,
+        'ratchets.json': floors({ 'src/app': 90 }, { 'src/gen/index.ts': 95 })
+      },
+      ['src/main/app.ts', 'src/main/cli.ts']
+    )
+    const present = run(kept.directory, ['--base', kept.base])
+    const parted = run(split.directory, ['--base', split.base])
+
+    expect(present.out).toContain(
+      `ratchets: coverage.golden.files.src/gen/index.ts 95 → none: the ratchet vanished since ${kept.base}`
+    )
+    expect(present.status).toBe(1)
+    expect(parted.out).toContain(
+      `ratchets: coverage.suite.src/main.lines 90 → none: the ratchet vanished since ${split.base}`
+    )
+    expect(parted.status).toBe(1)
   })
 })
