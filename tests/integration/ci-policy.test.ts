@@ -357,7 +357,7 @@ describe('ci-policy usage', () => {
       const { status, out } = runPolicy(args)
 
       expect(out).toContain(
-        'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | diff-coverage <lcov.info> <diff-cover.json> | osv-ignores | fuses <executable>>'
+        'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | diff-coverage <lcov.info> <diff-cover.json> | codeql <sarif-dir> | osv-ignores | fuses <executable>>'
       )
       expect(status).toBe(1)
     }

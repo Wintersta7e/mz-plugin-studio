@@ -253,6 +253,63 @@ describe('ci workflow: changed lines coverage', () => {
   })
 })
 
+describe('ci workflow: CodeQL', () => {
+  const CODEQL_PIN = /^github\/codeql-action\/(\w+)@[0-9a-f]{40} # v4\.39\.1$/
+
+  it('the codeql job may read the code and actions and write only security events', () => {
+    const job = jobOf('codeql')
+
+    expect({
+      runner: job.keys.get('runs-on'),
+      timeout: job.keys.get('timeout-minutes'),
+      permissions: job.nested.get('permissions')
+    }).toStrictEqual({
+      runner: 'ubuntu-24.04',
+      timeout: '20',
+      permissions: ['actions: read', 'contents: read', 'security-events: write']
+    })
+  })
+
+  it('the codeql job analyses with the extended security queries from one pinned release', () => {
+    const job = jobOf('codeql')
+    const codeqlSteps = job.steps.filter((step) =>
+      (step.keys.get('uses') ?? '').startsWith('github/codeql-action/')
+    )
+    const uses = codeqlSteps.map((step) => step.keys.get('uses') ?? '')
+    const shas = new Set(uses.map((line) => line.split('@', 2).at(1)))
+
+    expect({
+      actions: uses.map((line) => CODEQL_PIN.exec(line)?.at(1)),
+      oneSha: shas.size,
+      init: codeqlSteps.at(0)?.nested,
+      analyze: codeqlSteps.at(1)?.nested
+    }).toStrictEqual({
+      actions: ['init', 'analyze'],
+      oneSha: 1,
+      init: [
+        'languages: javascript-typescript, actions',
+        'build-mode: none',
+        'queries: security-extended'
+      ],
+      analyze: ['output: ${{ runner.temp }}/codeql']
+    })
+  })
+
+  it('the codeql job fails on any result in the SARIF files it wrote', () => {
+    const job = jobOf('codeql')
+    const analyze = job.steps.findIndex((step) =>
+      (step.keys.get('uses') ?? '').startsWith('github/codeql-action/analyze@')
+    )
+    const count = indexOfRun(job, /^node scripts\/ci-policy\.mjs codeql "\$RUNNER_TEMP\/codeql"$/)
+
+    expect({ analyzeFound: analyze !== -1, countAfterAnalyze: count > analyze }).toStrictEqual({
+      analyzeFound: true,
+      countAfterAnalyze: true
+    })
+    expect(job.steps.at(count)?.keys.has('if')).toBe(false)
+  })
+})
+
 describe('mutation testing workflow', () => {
   it('runs weekly and by hand on the changed source, apart from the CI it would slow down', () => {
     const [job, ...others] = readJobs('mutation.yml')

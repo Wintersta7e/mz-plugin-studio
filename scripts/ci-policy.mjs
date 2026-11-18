@@ -103,6 +103,7 @@ const SUBCOMMANDS = new Map([
   ['toolchain', checkToolchain],
   ['needs', checkNeeds],
   ['diff-coverage', checkDiffCoverage],
+  ['codeql', checkCodeql],
   ['osv-ignores', checkOsvIgnores],
   ['fuses', checkFuses]
 ])
@@ -134,7 +135,7 @@ function printError(line) {
 
 function usage() {
   printError(
-    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | diff-coverage <lcov.info> <diff-cover.json> | osv-ignores | fuses <executable>>'
+    'usage: ci-policy <package <app.asar> | runtime-deps | toolchain [--electron] | needs | diff-coverage <lcov.info> <diff-cover.json> | codeql <sarif-dir> | osv-ignores | fuses <executable>>'
   )
   return 1
 }
@@ -167,6 +168,12 @@ function listLine(label, items) {
 function isObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
+
+/**
+@param {unknown} value
+@returns {value is unknown[]}
+*/
+const isArray = (value) => Array.isArray(value)
 
 /**
 The fields of a JSON object or a thrown error; anything else has none.
@@ -902,6 +909,79 @@ function checkDiffCoverage(args) {
     problems.push('report has no total_num_lines count')
   }
   return finish('diff-coverage', problems)
+}
+
+/**
+`file:line` of a SARIF result's first location, or `(no location)`.
+@param {unknown} result
+*/
+function resultLocation(result) {
+  const { locations } = fieldsOf(result)
+  const location = isArray(locations) ? locations.at(0) : undefined
+  const { physicalLocation } = fieldsOf(location)
+  const { artifactLocation, region } = fieldsOf(physicalLocation)
+  const { uri } = fieldsOf(artifactLocation)
+  const { startLine } = fieldsOf(region)
+  if (typeof uri !== 'string') return '(no location)'
+  return typeof startLine === 'number' ? `${uri}:${startLine}` : uri
+}
+
+/**
+Prints each result of one SARIF report and records a report without runs or results lists.
+@param {string} name
+@param {unknown} report
+@param {string[]} problems
+@returns {{ runs: number, results: number }}
+*/
+function readSarif(name, report, problems) {
+  const { runs } = fieldsOf(report)
+  const reportRuns = isArray(runs) ? runs : []
+  if (reportRuns.length === 0) problems.push(`${name} holds no run`)
+  let resultCount = 0
+  for (const [index, run] of reportRuns.entries()) {
+    const { results } = fieldsOf(run)
+    if (!isArray(results)) {
+      problems.push(`${name} run ${index + 1} has no results list`)
+      continue
+    }
+    for (const result of results) {
+      const { ruleId } = fieldsOf(result)
+      print(`codeql: ${String(ruleId)} ${resultLocation(result)}`)
+    }
+    resultCount += results.length
+  }
+  return { runs: reportRuns.length, results: resultCount }
+}
+
+/**
+Checks the SARIF files a CodeQL analysis wrote into one directory: at least one file, every file
+holding at least one run with a results list, and no result in any of them.
+@param {readonly string[]} args
+*/
+function checkCodeql(args) {
+  if (args.length !== 1) return usage()
+  const [directory = ''] = args
+  const names = readInput(directory, (input) => readdirSync(input))
+  if (names === undefined) return 1
+
+  /**
+  @type {string[]}
+  */
+  const problems = []
+  const sarifNames = names.filter((name) => name.endsWith('.sarif')).toSorted(byCodeUnit)
+  let runCount = 0
+  let resultCount = 0
+  for (const name of sarifNames) {
+    const report = readJson(path.join(directory, name))
+    if (report === undefined) return 1
+    const counts = readSarif(name, report, problems)
+    runCount += counts.runs
+    resultCount += counts.results
+  }
+  print(`codeql: files ${sarifNames.length}, runs ${runCount}, results ${resultCount}`)
+  if (sarifNames.length === 0) problems.push('no SARIF file: the analysis wrote nothing')
+  if (resultCount > 0) problems.push(`${resultCount} result${resultCount === 1 ? '' : 's'}`)
+  return finish('codeql', problems)
 }
 
 /**
