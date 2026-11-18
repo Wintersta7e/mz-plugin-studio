@@ -76,7 +76,7 @@
           "text": "Map",
           "desc": "",
           "type": "map",
-          "default": 1
+          "default": "1"
         },
         {
           "id": "<id:9>",

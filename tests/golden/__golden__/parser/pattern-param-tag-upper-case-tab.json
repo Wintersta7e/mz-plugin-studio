@@ -22,7 +22,7 @@
       "text": "Label",
       "desc": "",
       "type": "string",
-      "default": true
+      "default": "True"
     }
   ],
   "commands": [],

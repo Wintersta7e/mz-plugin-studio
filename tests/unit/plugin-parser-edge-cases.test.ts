@@ -693,3 +693,60 @@ describe('a star at the end of a tag value', () => {
     expect(lastAsset.meta.requiredAssets).toStrictEqual(['img/pictures/Sun'])
   })
 })
+
+// The defaults read from one parameter of `type` per written default
+const defaults = (type: string, values: string[]): unknown[] => {
+  const lines = values.flatMap((value, index) => [
+    ` * @param p${String(index)}`,
+    ` * @type ${type}`,
+    ` * @default ${value}`
+  ])
+  return PluginParser.parsePlugin(
+    ['/*:', ' * @plugindesc x', ...lines, ' */', ''].join('\n')
+  ).parameters.map((p) => p.default)
+}
+
+describe('a default is read by the type of its parameter', () => {
+  it('a text, list or ID default keeps the text as written', () => {
+    expect(defaults('string', ['007', '1.50', '-0', 'TRUE', 'false', '12'])).toStrictEqual([
+      '007',
+      '1.50',
+      '-0',
+      'TRUE',
+      'false',
+      '12'
+    ])
+    expect(defaults('actor', ['1'])).toStrictEqual(['1'])
+    expect(defaults('number[]', ['["1"]'])).toStrictEqual(['["1"]'])
+  })
+
+  it('a number default is a number only when the number reads back as the same text', () => {
+    expect(defaults('number', ['3', '-2.5', '0', '007', '1.50', '-0', '1e3', 'NaN'])).toStrictEqual(
+      [3, -2.5, 0, '007', '1.50', '-0', '1e3', 'NaN']
+    )
+  })
+
+  it('a boolean default is a boolean only when written as true or false', () => {
+    expect(defaults('boolean', ['true', 'false', 'TRUE', 'False', 'on'])).toStrictEqual([
+      true,
+      false,
+      'TRUE',
+      'False',
+      'on'
+    ])
+  })
+
+  it('a default the generator writes comes back on reopening', () => {
+    const plugin = createEmptyPlugin()
+    plugin.parameters = [
+      { ...createEmptyParameter(), name: 'code', default: '007' },
+      { ...createEmptyParameter(), name: 'rate', default: '1.50' },
+      { ...createEmptyParameter(), name: 'flag', default: 'TRUE' },
+      { ...createEmptyParameter(), name: 'count', type: 'number', default: 7 }
+    ]
+
+    const again = PluginParser.parsePlugin(generatePlugin(plugin))
+
+    expect(again.parameters.map((p) => p.default)).toStrictEqual(['007', '1.50', 'TRUE', 7])
+  })
+})

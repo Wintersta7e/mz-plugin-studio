@@ -399,7 +399,8 @@ describe('a5: icon parameter type', () => {
     const result = PluginParser.parsePlugin(content)
 
     expect(result.parameters.at(0)?.type).toBe('icon')
-    expect(result.parameters.at(0)?.default).toBe(16)
+    // The text as written: only a number parameter's default is read as a number
+    expect(result.parameters.at(0)?.default).toBe('16')
   })
 
   it('generator emits @type icon', () => {
@@ -439,7 +440,7 @@ describe('a6: map parameter type', () => {
     const result = PluginParser.parsePlugin(content)
 
     expect(result.parameters.at(0)?.type).toBe('map')
-    expect(result.parameters.at(0)?.default).toBe(1)
+    expect(result.parameters.at(0)?.default).toBe('1')
   })
 
   it('generator emits @type map and parses as Number', () => {

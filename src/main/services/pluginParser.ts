@@ -691,7 +691,7 @@ function readEntry(name: string, block: string): PluginParameter {
     text: extractTag(block, 'text') || name,
     desc: extractTag(block, 'desc'),
     type,
-    default: parseDefault(block),
+    default: parseDefault(block, type),
     rawType: rawTypeString === type ? undefined : rawTypeString
   }
 
@@ -1005,21 +1005,26 @@ function parseSingleType(normalizedType: string): ParamType {
   return SINGLE_TYPES.get(normalizedType) ?? 'string'
 }
 
-// A default written as a decimal number
-const DEFAULT_NUMBER = /^-?\d+(?:\.\d+)?$/
+/**
+The `@default` value, '' without the tag. A boolean reads exactly `true` or `false` as a boolean,
+the way RPG Maker MZ compares it; a number reads a text that a number writes back unchanged as
+that number (`3`, `-2.5`, not `007` or `1.50`). Any other default, and any other text, stays as
+written, so saving the plugin again writes the same text.
+*/
+function parseDefault(block: string, type: ParamType): string | number | boolean {
+  const value = tagValue(block, 'default') ?? ''
+  let result: string | number | boolean = value
+  if (type === 'boolean' && (value === 'true' || value === 'false')) result = value === 'true'
+  else if (type === 'number' && isNumberText(value)) result = Number(value)
+  return result
+}
 
 /**
-The `@default` value: `true`/`false` (any case) as a boolean, a decimal number as a number, any
-other text as written, '' without the tag.
+Whether a text is the one a finite number writes: `Number` reads it back to that same number.
 */
-function parseDefault(block: string): string | number | boolean {
-  const value = tagValue(block, 'default') ?? ''
-  const lower = value.toLowerCase()
-  let result: string | number | boolean = value
-  if (lower === 'true') result = true
-  else if (lower === 'false') result = false
-  else if (DEFAULT_NUMBER.test(value)) result = Number(value)
-  return result
+function isNumberText(value: string): boolean {
+  const number = Number(value)
+  return Number.isFinite(number) && String(number) === value
 }
 
 function parseOptions(block: string): { value: string; text: string }[] {
