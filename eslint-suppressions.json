@@ -48,15 +48,5 @@
     "unicorn/filename-case": {
       "count": 1
     }
-  },
-  "tests/setup/console.ts": {
-    "vitest/require-top-level-describe": {
-      "count": 2
-    }
-  },
-  "tests/setup/dom.ts": {
-    "vitest/require-top-level-describe": {
-      "count": 1
-    }
   }
 }

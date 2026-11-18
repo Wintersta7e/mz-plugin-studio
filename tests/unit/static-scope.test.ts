@@ -904,6 +904,12 @@ describe('static scope: ESLint directives, test rules and suppressions', () => {
 
     expect(rules.filter((rule) => barred.has(rule))).toStrictEqual([])
     expect(files.filter((file) => isData(file) || ownFiles.has(file))).toStrictEqual([])
+
+    // Setup files register global hooks and are not test files: no test rule applies to them.
+    const setupKeys = files.filter((file) => file.startsWith('tests/setup/'))
+    report(`suppressions under tests/setup: ${String(setupKeys.length)}`)
+
+    expect(setupKeys).toStrictEqual([])
   })
 })
 

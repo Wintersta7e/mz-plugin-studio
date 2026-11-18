@@ -64,7 +64,7 @@
     },
     {
       "id": "@vitest/eslint-plugin all",
-      "files": ["tests/**"]
+      "files": ["tests/**/*.test.{ts,tsx}"]
     },
     {
       "id": "eslint-plugin-testing-library flat/react",
@@ -144,7 +144,7 @@
       }
     },
     {
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "rules": {
         "vitest/prefer-strict-equal": "error",
         "vitest/require-mock-type-parameters": "error",
@@ -452,49 +452,49 @@
     },
     {
       "rule": "vitest/padding-around-after-all-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-after-each-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-before-all-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-before-each-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-describe-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-expect-groups",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/padding-around-test-blocks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "vitest/padding-around-all owns the same check"
     },
     {
       "rule": "vitest/no-hooks",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "code": "D",
       "reason": "Inverse of vitest/require-hook, which owns where setup goes: the suites set up in hooks"
     },
@@ -561,7 +561,7 @@
     },
     {
       "rule": "@typescript-eslint/unbound-method",
-      "files": ["tests/**"],
+      "files": ["tests/**/*.test.{ts,tsx}"],
       "replacement": "vitest/unbound-method"
     }
   ],
