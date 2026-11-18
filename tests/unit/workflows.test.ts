@@ -59,8 +59,14 @@ describe('ci workflow: inventory', () => {
     expect(stepCount).toBeGreaterThan(0)
   })
 
-  it('holds only the CI, release, mutation testing and supply-chain score workflows', () => {
-    expect(files).toStrictEqual(['ci.yml', 'mutation.yml', 'release.yml', 'scorecard.yml'])
+  it('holds only the CI, release, mutation testing, supply-chain score and dependency review workflows', () => {
+    expect(files).toStrictEqual([
+      'ci.yml',
+      'dependency-review.yml',
+      'mutation.yml',
+      'release.yml',
+      'scorecard.yml'
+    ])
   })
 
   it('the aggregate test job always runs and needs every other job', () => {
@@ -348,6 +354,28 @@ describe('supply-chain score workflow', () => {
         'github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1',
       uploadInputs: ['sarif_file: results.sarif', 'category: scorecard'],
       token: false
+    })
+  })
+})
+
+describe('dependency review workflow', () => {
+  it('fails a pull request to main that adds a dependency with any known advisory', () => {
+    const [job, ...others] = readJobs('dependency-review.yml')
+    const text = readFileSync(join(WORKFLOWS, 'dependency-review.yml'), 'utf8')
+
+    expect(others).toStrictEqual([])
+    expect({
+      triggers: /^on:\n {2}pull_request:\n {4}branches: \[main\]\n\n/mv.test(text),
+      readOnly: /^permissions:\n {2}contents: read$/mv.test(text),
+      jobPermissions: job?.nested.has('permissions'),
+      steps: job?.steps.map((step) => step.keys.get('uses')),
+      inputs: job?.steps.at(0)?.nested
+    }).toStrictEqual({
+      triggers: true,
+      readOnly: true,
+      jobPermissions: false,
+      steps: ['actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0'],
+      inputs: ['fail-on-severity: low', 'comment-summary-in-pr: never']
     })
   })
 })
