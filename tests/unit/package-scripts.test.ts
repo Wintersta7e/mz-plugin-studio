@@ -1,7 +1,8 @@
 // A bare tool name in a script resolves to whatever is on PATH; on a tree installed
 // without bin links that is a global install of another version.
 import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -9,7 +10,8 @@ import { typeScriptPrograms } from '../../scripts/typecov.mjs'
 import { readJobs } from '../helpers/workflow-reader'
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url))
-const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
+const readJsonAt = (file: string): unknown => JSON.parse(readFileSync(file, 'utf8'))
+const readJson = (file: string): unknown => readJsonAt(path.join(ROOT, file))
 
 /**
 A member of a value parsed from JSON; undefined when the value holds no such member.
@@ -302,5 +304,102 @@ describe('package.json scripts: README and workflows', () => {
     expect(PACKAGE_JOBS.map(([file, job]) => [file, job, doesJobPackage(file, job)])).toStrictEqual(
       PACKAGE_JOBS.map(([file, job]) => [file, job, true])
     )
+  })
+})
+
+// The package.json override that installs the jsx-a11y ESLint plugin beside an ESLint its peer
+// range does not admit. npm stays silent once a release of the plugin admits that ESLint, so the
+// override would outlive its need unnoticed.
+const A11Y_PLUGIN = 'eslint-plugin-jsx-a11y'
+interface A11yFiles {
+  manifest: string
+  plugin: string
+  eslint: string
+}
+const A11Y_FILES: A11yFiles = {
+  manifest: path.join(ROOT, 'package.json'),
+  plugin: path.join(ROOT, 'node_modules', A11Y_PLUGIN, 'package.json'),
+  eslint: path.join(ROOT, 'node_modules', 'eslint', 'package.json')
+}
+
+// The majors a peer range of `^N` alternatives admits; undefined for a range of any other form.
+const caretMajors = (range: string): number[] | undefined => {
+  const majors = range
+    .split('||')
+    .map((part) => /^\^(?<major>\d+)(?:\.\d+){0,2}$/v.exec(part.trim())?.groups?.['major'])
+  return majors.every((major): major is string => major !== undefined)
+    ? majors.map(Number)
+    : undefined
+}
+
+// The plugin's peer range for ESLint, the installed ESLint major, and what to do with the
+// override: empty while the override is present exactly when the range excludes that major.
+const a11yOverride = (files: A11yFiles): { range: string; major: number; action: string } => {
+  const range = member(member(readJsonAt(files.plugin), 'peerDependencies'), 'eslint')
+  const version = member(readJsonAt(files.eslint), 'version')
+  const major = Number(String(version).split('.', 1)[0])
+  const hasOverride =
+    member(member(readJsonAt(files.manifest), 'overrides'), A11Y_PLUGIN) !== undefined
+  const majors = typeof range === 'string' ? caretMajors(range) : undefined
+  const shown = String(range)
+  let action = ''
+  if (majors === undefined) {
+    action = `read the ${A11Y_PLUGIN} peer range ${shown} by hand: it is not a list of ^N ranges`
+  } else if (hasOverride && majors.includes(major)) {
+    action = `remove the override: ${A11Y_PLUGIN} admits ESLint ${String(major)} (${shown})`
+  } else if (!hasOverride && !majors.includes(major)) {
+    action = `add back the override: ${A11Y_PLUGIN} excludes ESLint ${String(major)} (${shown})`
+  }
+  return { range: shown, major, action }
+}
+
+// The override's verdict on copies of the three manifests, with `change` applied to the copy
+// of the one it names.
+const a11yOverrideOn = (
+  name: keyof A11yFiles,
+  change: (value: Record<string, unknown>) => Record<string, unknown>
+): string => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'a11y-override-'))
+  const copyOf = (key: keyof A11yFiles): string => {
+    const copy = path.join(directory, `${key}.json`)
+    const parsed = readJsonAt(A11Y_FILES[key])
+    const value = typeof parsed === 'object' && parsed !== null ? { ...parsed } : {}
+    writeFileSync(copy, JSON.stringify(key === name ? change(value) : value))
+    return copy
+  }
+  try {
+    return a11yOverride({
+      manifest: copyOf('manifest'),
+      plugin: copyOf('plugin'),
+      eslint: copyOf('eslint')
+    }).action
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
+}
+
+describe('package.json overrides', () => {
+  it('the jsx-a11y override stays only while its peer range excludes the installed ESLint', () => {
+    const { range, major, action } = a11yOverride(A11Y_FILES)
+    process.stdout.write(`jsx-a11y peer eslint ${range}, installed ${String(major)}\n`)
+
+    expect(major).toBeGreaterThan(0)
+    expect(action).toBe('')
+  })
+
+  it('names the jsx-a11y override to remove once the peer range admits the installed ESLint, or to add back', () => {
+    const admitted = a11yOverrideOn('plugin', (plugin) => ({
+      ...plugin,
+      peerDependencies: { eslint: '^10' }
+    }))
+    const missing = a11yOverrideOn('manifest', (manifest) => ({ ...manifest, overrides: {} }))
+    const unread = a11yOverrideOn('plugin', (plugin) => ({
+      ...plugin,
+      peerDependencies: { eslint: '>=9' }
+    }))
+
+    expect(admitted).toContain(`remove the override: ${A11Y_PLUGIN} admits ESLint`)
+    expect(missing).toContain(`add back the override: ${A11Y_PLUGIN} excludes ESLint`)
+    expect(unread).toContain('by hand: it is not a list of ^N ranges')
   })
 })
