@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The app is smaller and has less to unpack each time it starts: its window code ships minified, without the source maps.
+
 ### Fixed
 
 - Opening a plugin file keeps a `*` at the end of a parameter or argument name, a display name, a description or a required asset. Before, that last `*` was cut off, so `Rank*` came back as `Rank` and a parameter named `*` was lost; saving the plugin again wrote the shortened text.

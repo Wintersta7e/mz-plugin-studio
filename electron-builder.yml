@@ -5,6 +5,7 @@ directories:
   buildResources: build
 files:
   - out/**
+  - '!**/*.map'
   - resources/**
   - package.json
   - LICENSE

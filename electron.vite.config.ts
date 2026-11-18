@@ -26,6 +26,14 @@ export default defineConfig({
         }
       ]
     },
+    // The portable app unpacks its files on every start, so the renderer ships minified; its
+    // source maps are written for the start-script check and left out of the package. Licence
+    // headers stay: minifying drops them by default, and they name each bundled copy's release
+    build: {
+      minify: true,
+      sourcemap: 'hidden',
+      rolldownOptions: { output: { comments: { legal: true } } }
+    },
     plugins: [react(), tailwindcss()]
   }
 })

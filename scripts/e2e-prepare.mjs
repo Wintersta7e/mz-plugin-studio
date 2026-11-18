@@ -1,7 +1,8 @@
 // Prepares the packaged builds the end-to-end tests drive, from the repository root:
 //   1. builds dist/<platform>-unpacked/ with the release configuration; with --reuse, reuses it
 //      if present (for a build made earlier in the same job), and fails if a script the renderer
-//      page loads at start holds the code editor (out/renderer, printing each script's bytes);
+//      page loads at start holds the code editor (out/renderer, attributed by each script's
+//      source map; prints each script's bytes and sources);
 //   2. copies it to dist/e2e-twin/ and enables EnableNodeCliInspectArguments there, the fuse
 //      Playwright's Electron launch needs and the release keeps off;
 //   3. fails unless the two fuse wires differ in that fuse only and every other file is identical;
@@ -43,6 +44,12 @@ const print = (line) => process.stdout.write(`${line}\n`)
 @returns {value is Record<string, unknown>}
 */
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
+
+/**
+@param {unknown} value
+@returns {value is unknown[]}
+*/
+const isArray = (value) => Array.isArray(value)
 
 // The order Array#sort uses without a compare function, for strings: by UTF-16 code unit
 /**
@@ -191,15 +198,35 @@ export async function diffTrees(releaseDirectory, twinDirectory, executablePath)
   return { compared, differing }
 }
 
-// The comment the bundler writes above each module of an unminified chunk, naming its source
-const MODULE_MARKER = /^\/\/ (?:node_modules\/|src\/|\\0)/
-const EDITOR_MODULE = '// node_modules/monaco-editor/'
+// The renderer bundle is minified with hidden source maps: each script's .map lists the modules
+// it holds, and a source under this path is the code editor
+const EDITOR_SOURCE = 'node_modules/monaco-editor/'
+
+/**
+The sources a script's source map lists; fails when the map is missing or lists none.
+@param {string} rendererDirectory
+@param {string} file the script, relative to the page
+@returns {string[]}
+*/
+function mapSources(rendererDirectory, file) {
+  const mapFile = path.join(rendererDirectory, `${file}.map`)
+  if (!existsSync(mapFile)) throw new Error(`${file}: no source map to attribute its modules by`)
+  /**
+  @type {unknown}
+  */
+  const map = JSON.parse(readFileSync(mapFile, 'utf8'))
+  const { sources } = isRecord(map) ? map : {}
+  const listed = isArray(sources) ? sources.filter((source) => typeof source === 'string') : []
+  if (listed.length === 0) throw new Error(`${file}.map lists no source`)
+  return listed
+}
 
 /**
 Fails if a script the renderer page loads at start holds the code editor, which loads with the
-first editor shown, or if a script holds no module comment to attribute its bytes by.
+first editor shown, or if a script has no source map to attribute its modules by.
 @param {string} rendererDirectory the built renderer, holding index.html
-@returns {{ file: string; bytes: number; editorBytes: number }[]} each script the page loads
+@returns {{ file: string; bytes: number; sources: number; editorSources: number }[]} each script
+  the page loads
 */
 export function checkStartScripts(rendererDirectory) {
   const html = readFileSync(path.join(rendererDirectory, 'index.html'), 'utf8')
@@ -210,24 +237,15 @@ export function checkStartScripts(rendererDirectory) {
   for (const [, file = ''] of html.matchAll(/\b(?:src|href)="([^"]+\.js)"/g)) files.push(file)
   if (files.length === 0) throw new Error(`${rendererDirectory}/index.html loads no script`)
   return files.map((file) => {
-    const text = readFileSync(path.join(rendererDirectory, file), 'utf8')
-    const bytes = Buffer.byteLength(text)
-    let editorBytes = 0
-    let modules = 0
-    let isInEditor = false
-    for (const line of text.split('\n')) {
-      if (MODULE_MARKER.test(line)) {
-        modules++
-        isInEditor = line.startsWith(EDITOR_MODULE)
-      }
-      // The line and its newline; the last line's missing newline overcounts by one at most
-      if (isInEditor) editorBytes += Buffer.byteLength(line) + 1
-    }
-    if (modules === 0) throw new Error(`${file}: no module comment to attribute its bytes by`)
-    const share = ((100 * editorBytes) / bytes).toFixed(1)
-    print(`renderer start script ${file}: ${bytes} bytes, code editor ${editorBytes} (${share}%)`)
-    if (editorBytes > 0) throw new Error(`${file} loads the code editor at start`)
-    return { file, bytes, editorBytes }
+    const { size: bytes } = statSync(path.join(rendererDirectory, file))
+    const sources = mapSources(rendererDirectory, file)
+    const editorSources = sources.filter((source) => source.includes(EDITOR_SOURCE)).length
+    print(
+      `renderer start script ${file}: ${bytes} bytes, sources ${sources.length}, ` +
+        `code editor sources ${editorSources}`
+    )
+    if (editorSources > 0) throw new Error(`${file} loads the code editor at start`)
+    return { file, bytes, sources: sources.length, editorSources }
   })
 }
 

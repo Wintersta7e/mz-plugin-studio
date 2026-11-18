@@ -77,6 +77,10 @@ const page = (...scripts: string[]): string =>
     '</head>'
   ].join('\n')
 
+// The hidden source map beside a minified script, which lists the modules the script holds
+const map = (...sources: string[]): string =>
+  JSON.stringify({ version: 3, sources, names: [], mappings: '' })
+
 describe(compareWires, () => {
   afterAll(printCounts)
 
@@ -192,21 +196,25 @@ describe(checkStartScripts, () => {
 
   afterAll(printCounts)
 
-  const app = '// src/renderer/src/main.tsx\nrender();\n'
-  const editor = '// node_modules/monaco-editor/esm/vs/editor/editor.api.js\nvar editor = {};\n'
+  const app = '../../src/renderer/src/main.tsx'
+  const react = '../../node_modules/react/index.js'
+  const editor = '../../node_modules/monaco-editor/esm/vs/editor/editor.api.js'
 
   it('passes when the code editor sits only in a chunk loaded later, giving each size', () => {
     counts.start++
     const directory = tree({
       'index.html': page('./assets/index-a1.js', './assets/vendor-b2.js'),
-      'assets/index-a1.js': `${app}import('./editor-d4.js');\n`,
-      'assets/vendor-b2.js': '// node_modules/react/index.js\nvar react = {};\n',
-      'assets/editor-d4.js': editor
+      'assets/index-a1.js': 'render();import("./editor-d4.js");\n',
+      'assets/index-a1.js.map': map(app),
+      'assets/vendor-b2.js': 'var react={};\n',
+      'assets/vendor-b2.js.map': map(react, app),
+      'assets/editor-d4.js': 'var editor={};\n',
+      'assets/editor-d4.js.map': map(editor)
     })
 
     expect(checkStartScripts(directory)).toStrictEqual([
-      { file: './assets/index-a1.js', bytes: 65, editorBytes: 0 },
-      { file: './assets/vendor-b2.js', bytes: 47, editorBytes: 0 }
+      { file: './assets/index-a1.js', bytes: 35, sources: 1, editorSources: 0 },
+      { file: './assets/vendor-b2.js', bytes: 14, sources: 2, editorSources: 0 }
     ])
   })
 
@@ -214,8 +222,10 @@ describe(checkStartScripts, () => {
     counts.start++
     const directory = tree({
       'index.html': page('./assets/index-a1.js', './assets/vendor-b2.js'),
-      'assets/index-a1.js': app,
-      'assets/vendor-b2.js': `${app}${editor}`
+      'assets/index-a1.js': 'render();\n',
+      'assets/index-a1.js.map': map(app),
+      'assets/vendor-b2.js': 'render();var editor={};\n',
+      'assets/vendor-b2.js.map': map(app, editor)
     })
 
     expect(() => checkStartScripts(directory)).toThrow(
@@ -230,13 +240,26 @@ describe(checkStartScripts, () => {
     expect(() => checkStartScripts(directory)).toThrow(/loads no script/)
   })
 
-  it('fails when a script has no module comment to attribute its bytes by', () => {
+  it('fails when a script has no source map to attribute its modules by', () => {
     counts.start++
     const directory = tree({
       'index.html': page('./assets/index-a1.js'),
-      'assets/index-a1.js': 'var a=1;render();\n'
+      'assets/index-a1.js': '// src/renderer/src/main.tsx\nrender();\n'
     })
 
-    expect(() => checkStartScripts(directory)).toThrow(/no module comment/)
+    expect(() => checkStartScripts(directory)).toThrow(
+      './assets/index-a1.js: no source map to attribute its modules by'
+    )
+  })
+
+  it('fails when a source map lists no source', () => {
+    counts.start++
+    const directory = tree({
+      'index.html': page('./assets/index-a1.js'),
+      'assets/index-a1.js': 'render();\n',
+      'assets/index-a1.js.map': map()
+    })
+
+    expect(() => checkStartScripts(directory)).toThrow('./assets/index-a1.js.map lists no source')
   })
 })
