@@ -71,6 +71,10 @@ async function setUp(): Promise<void> {
 }
 
 async function tearDown(): Promise<void> {
+  // A toast's countdown left running would update the still-mounted app outside act()
+  act(() => {
+    useToastStore.getState().dismissAll()
+  })
   vi.unstubAllGlobals()
   await rm(temporary.root, { recursive: true, force: true })
   for (const directory of cleanups.splice(0)) await rm(directory, { recursive: true, force: true })
@@ -1239,5 +1243,37 @@ describe('app save: undo and redo', APP_TIMEOUT, () => {
     pressRedo()
 
     expect(plugin().meta.name).toBe('Alpha')
+  })
+})
+
+describe('app save: the end of a test', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('leaves no toast whose countdown can fire after the test', async () => {
+    expect.hasAssertions()
+
+    vi.stubGlobal('api', createMainApi())
+    render(<App />)
+    await settle()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      act(() => {
+        useToastStore.getState().addToast({ type: 'success', message: 'Plugin saved' })
+      })
+
+      expect(screen.getByText('Plugin saved')).toBeInTheDocument()
+
+      await tearDown()
+      // The toast's countdown runs out after the test, outside any act()
+      vi.advanceTimersByTime(3000)
+    } finally {
+      vi.useRealTimers()
+    }
+
+    expect(toasts()).toStrictEqual([])
   })
 })
