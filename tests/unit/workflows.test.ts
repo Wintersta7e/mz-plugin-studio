@@ -59,8 +59,8 @@ describe('ci workflow: inventory', () => {
     expect(stepCount).toBeGreaterThan(0)
   })
 
-  it('holds only the CI, release and mutation testing workflows', () => {
-    expect(files).toStrictEqual(['ci.yml', 'mutation.yml', 'release.yml'])
+  it('holds only the CI, release, mutation testing and supply-chain score workflows', () => {
+    expect(files).toStrictEqual(['ci.yml', 'mutation.yml', 'release.yml', 'scorecard.yml'])
   })
 
   it('the aggregate test job always runs and needs every other job', () => {
@@ -307,6 +307,48 @@ describe('ci workflow: CodeQL', () => {
       countAfterAnalyze: true
     })
     expect(job.steps.at(count)?.keys.has('if')).toBe(false)
+  })
+})
+
+describe('supply-chain score workflow', () => {
+  it('scores the repository weekly and on main, keeping the result private to code scanning', () => {
+    const [job, ...others] = readJobs('scorecard.yml')
+    const text = readFileSync(join(WORKFLOWS, 'scorecard.yml'), 'utf8')
+    const usesOf = (prefix: string): Step | undefined =>
+      job?.steps.find((step) => (step.keys.get('uses') ?? '').startsWith(prefix))
+    const scorecard = usesOf('ossf/scorecard-action@')
+    const upload = usesOf('github/codeql-action/upload-sarif@')
+
+    expect(others).toStrictEqual([])
+    expect({
+      triggers:
+        /^on:\n {2}push:\n {4}branches: \[main\]\n {2}schedule:\n {4}- cron: '[\d *]+'\n {2}branch_protection_rule:\n {2}workflow_dispatch:\n\n/mv.test(
+          text
+        ),
+      readAll: /^permissions: read-all$/mv.test(text),
+      jobPermissions: job?.nested.get('permissions'),
+      noCredentials: job?.steps.at(0)?.nested.includes('persist-credentials: false'),
+      scorecard: scorecard?.keys.get('uses'),
+      scorecardInputs: scorecard?.nested,
+      upload: upload?.keys.get('uses'),
+      uploadInputs: upload?.nested,
+      token: /\b(?:repo_token|secrets\.)/v.test(text)
+    }).toStrictEqual({
+      triggers: true,
+      readAll: true,
+      jobPermissions: ['actions: read', 'contents: read', 'security-events: write'],
+      noCredentials: true,
+      scorecard: 'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0',
+      scorecardInputs: [
+        'results_file: results.sarif',
+        'results_format: sarif',
+        'publish_results: false'
+      ],
+      upload:
+        'github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1',
+      uploadInputs: ['sarif_file: results.sarif', 'category: scorecard'],
+      token: false
+    })
   })
 })
 
