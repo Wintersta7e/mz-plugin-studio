@@ -9,8 +9,10 @@ const ROOT = process.cwd()
 const WRAPPERS = ['src/main/ipc/registration.ts', 'src/preload/ipc.ts']
 const IMPORTS = 'no-restricted-imports'
 const SYNTAX = 'no-restricted-syntax'
+// The rules these tests read: linting with every other rule only costs time
+const RULES = new Set([IMPORTS, SYNTAX])
 
-const eslint = new ESLint({ cwd: ROOT })
+const eslint = new ESLint({ cwd: ROOT, ruleFilter: ({ ruleId }) => RULES.has(ruleId) })
 
 function byCodeUnit(left: string, right: string): number {
   if (left === right) return 0
@@ -243,5 +245,17 @@ describe('raw IPC lint ban', () => {
     expect(WRAPPERS.filter((wrapper) => !existsSync(path.join(ROOT, wrapper)))).toStrictEqual([])
 
     expect(exempt).toStrictEqual(WRAPPERS.toSorted(byCodeUnit))
+  })
+
+  it('lints the snippets with the restriction rules alone', { timeout: 60_000 }, async () => {
+    // Under the full config this snippet also breaks the floating-promise rule
+    const results = await eslint.lintText(RENDERER_INVOKE, {
+      filePath: path.join(ROOT, 'src/renderer/src/main.tsx')
+    })
+    const reported = new Set(results.flatMap((result) => result.messages).map((m) => m.ruleId))
+    process.stdout.write(`ipc ban: rules checked ${String(RULES.size)}\n`)
+
+    expect(RULES.size).toBeGreaterThan(0)
+    expect(reported).toStrictEqual(RULES)
   })
 })

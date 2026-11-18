@@ -624,10 +624,16 @@ const SNIPPETS = [
     rule: '@typescript-eslint/ban-ts-comment'
   }
 ]
+// The rules the snippets are read for: linting them with every other rule only costs time
+const SNIPPET_RULES = new Set(SNIPPETS.map((snippet) => snippet.rule))
+const snippetLint = new ESLint({
+  cwd: ROOT,
+  ruleFilter: ({ ruleId }) => SNIPPET_RULES.has(ruleId)
+})
 const missedSnippets = async (): Promise<string[]> => {
   const missed: string[] = []
   for (const snippet of SNIPPETS) {
-    const results = await eslint.lintText(snippet.source, {
+    const results = await snippetLint.lintText(snippet.source, {
       filePath: path.join(ROOT, snippet.file)
     })
     const rules = results.flatMap((result) => result.messages.map((message) => message.ruleId))
@@ -818,6 +824,27 @@ describe('static scope: ESLint departures from the presets', () => {
       expect(scope.ipcExempt.filter((file) => !tracked.includes(file))).toStrictEqual([])
     }
   )
+})
+
+describe('static scope: restriction snippets', () => {
+  it('lints the snippets with the checked rules alone', { timeout: 300_000 }, async () => {
+    const others: string[] = []
+    for (const snippet of SNIPPETS) {
+      const results = await snippetLint.lintText(snippet.source, {
+        filePath: path.join(ROOT, snippet.file)
+      })
+      others.push(
+        ...results
+          .flatMap((result) => result.messages)
+          .filter((message) => message.ruleId === null || !SNIPPET_RULES.has(message.ruleId))
+          .map((message) => `${snippet.file}: ${String(message.ruleId)}`)
+      )
+    }
+    report(`snippet rules checked ${String(SNIPPET_RULES.size)}`)
+
+    expect(SNIPPET_RULES.size).toBeGreaterThan(0)
+    expect(others).toStrictEqual([])
+  })
 })
 
 describe('static scope: ESLint directives, test rules and suppressions', () => {
