@@ -414,7 +414,11 @@ describe('dependency review workflow', () => {
       readOnly: true,
       jobPermissions: false,
       steps: ['actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0'],
-      inputs: ['fail-on-severity: low', 'comment-summary-in-pr: never']
+      inputs: [
+        'fail-on-severity: low',
+        'fail-on-scopes: runtime, development, unknown',
+        'comment-summary-in-pr: never'
+      ]
     })
   })
 })
