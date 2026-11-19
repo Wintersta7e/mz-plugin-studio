@@ -63,21 +63,30 @@ const sha = (bytes: string | Buffer): string => createHash('sha256').update(byte
 const fileIn = (name: string, project = temporary.root): string =>
   path.join(project, 'js', 'plugins', name)
 
-async function setUp(): Promise<void> {
+/**
+Returns the removal of the test's folders: a function `beforeEach` returns runs after every
+`afterEach`, the automatic unmount included, so no timer of the app can fire outside act while
+the removal waits on the disk.
+*/
+async function setUp(): Promise<() => Promise<void>> {
   resetStores()
   // The build defines this; the status bar shows it.
   vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
-  temporary.root = await mkdtemp(path.join(tmpdir(), 'app-save-'))
+  const root = await mkdtemp(path.join(tmpdir(), 'app-save-'))
+  temporary.root = root
+  return async () => {
+    await rm(root, { recursive: true, force: true })
+    for (const directory of cleanups.splice(0))
+      await rm(directory, { recursive: true, force: true })
+  }
 }
 
-async function tearDown(): Promise<void> {
+function tearDown(): void {
   // A toast's countdown left running would update the still-mounted app outside act()
   act(() => {
     useToastStore.getState().dismissAll()
   })
   vi.unstubAllGlobals()
-  await rm(temporary.root, { recursive: true, force: true })
-  for (const directory of cleanups.splice(0)) await rm(directory, { recursive: true, force: true })
 }
 
 async function openProject(project = temporary.root): Promise<void> {
@@ -1267,7 +1276,7 @@ describe('app save: the end of a test', APP_TIMEOUT, () => {
 
       expect(screen.getByText('Plugin saved')).toBeInTheDocument()
 
-      await tearDown()
+      tearDown()
       // The toast's countdown runs out after the test, outside any act()
       vi.advanceTimersByTime(3000)
     } finally {
