@@ -69,10 +69,7 @@ export interface LaunchedRelease {
 }
 
 export type DialogMethod =
-  | 'showOpenDialog'
-  | 'showSaveDialog'
-  | 'showMessageBox'
-  | 'showMessageBoxSync'
+  'showOpenDialog' | 'showSaveDialog' | 'showMessageBox' | 'showMessageBoxSync'
 
 /**
 A message-box answer: the box's cancelId, the one other button of two, or a button index

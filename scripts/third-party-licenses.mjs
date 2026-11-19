@@ -265,7 +265,7 @@ function importedPackages() {
 */
 function resolve(from, dependency) {
   const bases = [from]
-  for (let base = from; base; ) {
+  for (let base = from; base;) {
     const index = base.lastIndexOf('/node_modules/')
     base = index === -1 ? '' : base.slice(0, index)
     bases.push(base)

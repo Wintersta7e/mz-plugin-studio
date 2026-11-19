@@ -17,11 +17,7 @@ What a channel may touch: a project folder to load, the open project, a file cho
 dialog, a file to read, or nothing on disk
 */
 export type AccessClass =
-  | 'project-load'
-  | 'current-project'
-  | 'granted-write'
-  | 'granted-read'
-  | 'none'
+  'project-load' | 'current-project' | 'granted-write' | 'granted-read' | 'none'
 
 /**
 Paths returned by a save dialog this session; kept until the app quits, never consumed

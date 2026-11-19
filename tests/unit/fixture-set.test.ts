@@ -229,28 +229,26 @@ const ROWS: Row[] = [
       )
     }
   },
-  ...Object.entries(DATA_FIELDS).map(
-    ([name, fields]): Row => ({
-      file: `data/${name}`,
-      property: '[null, entry, entry] with the fields its loader maps',
-      holds: (t) => {
-        const data: unknown = JSON.parse(t)
-        return (
-          isArray(data) &&
-          data.length === 3 &&
-          data[0] === null &&
-          data
-            .slice(1)
-            .every(
-              (entry, index) =>
-                isObject(entry) &&
-                Reflect.get(entry, 'id') === index + 1 &&
-                fields.every((field) => Reflect.has(entry, field))
-            )
-        )
-      }
-    })
-  ),
+  ...Object.entries(DATA_FIELDS).map(([name, fields]): Row => ({
+    file: `data/${name}`,
+    property: '[null, entry, entry] with the fields its loader maps',
+    holds: (t) => {
+      const data: unknown = JSON.parse(t)
+      return (
+        isArray(data) &&
+        data.length === 3 &&
+        data[0] === null &&
+        data
+          .slice(1)
+          .every(
+            (entry, index) =>
+              isObject(entry) &&
+              Reflect.get(entry, 'id') === index + 1 &&
+              fields.every((field) => Reflect.has(entry, field))
+          )
+      )
+    }
+  })),
   {
     file: 'data/Actors.json',
     property: 'both actors carry note tags',
@@ -291,38 +289,34 @@ const ROWS: Row[] = [
           .map((entry) => entry.name)
       ) === '["Fixture_Structs"]'
   },
-  ...ALL_FILES.map(
-    (file): Row =>
-      file === plugin(CRLF_TWIN)
-        ? {
-            file,
-            property: 'CRLF line endings only',
-            holds: (t) => t.includes('\r\n') && !LONE_LF.test(t)
-          }
-        : {
-            file,
-            property: 'LF line endings only',
-            holds: (t) => t.includes('\n') && !t.includes('\r')
-          }
+  ...ALL_FILES.map((file): Row =>
+    file === plugin(CRLF_TWIN)
+      ? {
+          file,
+          property: 'CRLF line endings only',
+          holds: (t) => t.includes('\r\n') && !LONE_LF.test(t)
+        }
+      : {
+          file,
+          property: 'LF line endings only',
+          holds: (t) => t.includes('\n') && !t.includes('\r')
+        }
   ),
-  ...ALL_FILES.map(
-    (file): Row =>
-      file === plugin(BOM_FILE)
-        ? {
-            file,
-            property: 'starts with a UTF-8 BOM',
-            holds: (_t, b) => b.subarray(0, 3).equals(BOM)
-          }
-        : { file, property: 'no BOM', holds: (_t, b) => !b.subarray(0, 3).equals(BOM) }
+  ...ALL_FILES.map((file): Row =>
+    file === plugin(BOM_FILE)
+      ? {
+          file,
+          property: 'starts with a UTF-8 BOM',
+          holds: (_t, b) => b.subarray(0, 3).equals(BOM)
+        }
+      : { file, property: 'no BOM', holds: (_t, b) => !b.subarray(0, 3).equals(BOM) }
   ),
   // The two files without a bare or `/*:en` block have no main block to carry them.
-  ...PLUGIN_FILES.filter((f) => ![CRLF_TWIN, JA_ONLY, NO_BLOCK].includes(f)).map(
-    (file): Row => ({
-      file: plugin(file),
-      property: 'header tags, number and string params, command argument, referenced struct',
-      holds: (t) => hasEditTargets(t)
-    })
-  ),
+  ...PLUGIN_FILES.filter((f) => ![CRLF_TWIN, JA_ONLY, NO_BLOCK].includes(f)).map((file): Row => ({
+    file: plugin(file),
+    property: 'header tags, number and string params, command argument, referenced struct',
+    holds: (t) => hasEditTargets(t)
+  })),
   {
     file: plugin(HAND_WRITTEN),
     property: 'licence comment before the header',

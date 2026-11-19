@@ -1116,8 +1116,15 @@ describe('static scope: format gate, transitional files and gate scripts', () =>
       const manifest = readJson('package.json')
       const { devDependencies } = isRecord(manifest) ? manifest : {}
       const { prettier: pinned } = isRecord(devDependencies) ? devDependencies : {}
+      const installed = readJson('node_modules/prettier/package.json')
+      const { version } = isRecord(installed) ? installed : {}
+      report(`prettier: pinned ${String(pinned)}, installed ${String(version)}`)
 
-      expect(pinned).toBe('3.8.3')
+      // package.json owns the version: the test checks it is exact and is what runs the format gate.
+      expect({ exact: /^\d+\.\d+\.\d+$/v.test(String(pinned)), installed: version }).toStrictEqual({
+        exact: true,
+        installed: pinned
+      })
 
       const lines = readFileSync(path.join(ROOT, '.prettierignore'), 'utf8')
         .split('\n')

@@ -61,9 +61,11 @@ interface Row {
 const longName = (length: number): string => `${'a'.repeat(length - 3)}.js`
 
 const CLASS_ROWS: Row[] = [
-  ...['Plugin.js', 'Plugin.d.ts', 'My Plugin.mzparams', longName(255)].map(
-    (input): Row => ({ input, platforms: BOTH, expected: 'filename' })
-  ),
+  ...['Plugin.js', 'Plugin.d.ts', 'My Plugin.mzparams', longName(255)].map((input): Row => ({
+    input,
+    platforms: BOTH,
+    expected: 'filename'
+  })),
   ...[
     'Plugin.txt',
     '..',

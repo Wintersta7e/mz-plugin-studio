@@ -486,7 +486,7 @@ function clauseSource(text, start, failed) {
   @type {ClauseSource | undefined}
   */
   let found
-  for (let at = start; found === undefined && at >= 0 && !failed.has(at); ) {
+  for (let at = start; found === undefined && at >= 0 && !failed.has(at);) {
     const source = sourceAt(text, at)
     walked.push(at)
     if (source) {

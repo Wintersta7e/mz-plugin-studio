@@ -311,15 +311,13 @@ const ROWS: Row[] = [
     'C:\\Games\\Proj:hidden\\js\\plugins\\Synthetic.js',
     'C:/Games/Proj/js/plugins/Synthetic.js::$DATA.js',
     '\\\\host\\share\\Proj\\Synthetic.js:hidden.js'
-  ].map(
-    (input): Row => ({
-      fn: assertSafeFilePath,
-      input,
-      platform: 'win32',
-      today: 'reject',
-      error: "Invalid path: ':' is allowed only after the drive letter"
-    })
-  ),
+  ].map((input): Row => ({
+    fn: assertSafeFilePath,
+    input,
+    platform: 'win32',
+    today: 'reject',
+    error: "Invalid path: ':' is allowed only after the drive letter"
+  })),
   ...[
     'C:\\Games\\Proj\\js\\plugins\\CON.js',
     'C:\\Games\\Proj\\js\\plugins\\con.js',
@@ -336,18 +334,19 @@ const ROWS: Row[] = [
     'C:\\Games\\LPT\u{B2}\\Synthetic.js',
     'C:\\Games\\Proj\\js\\plugins\\CONOUT$.js',
     'C:\\Games\\conin$\\Synthetic.js'
-  ].map(
-    (input): Row => ({
-      fn: assertSafeFilePath,
-      input,
-      platform: 'win32',
-      today: 'reject',
-      error: /^Invalid path: ".+" is a device name on Windows$/
-    })
-  ),
-  ...['C:\\Games\\AUX', 'C:\\Games\\nul.proj', 'C:\\Games\\Proj:hidden'].map(
-    (input): Row => ({ fn: assertSafeProjectPath, input, platform: 'win32', today: 'reject' })
-  ),
+  ].map((input): Row => ({
+    fn: assertSafeFilePath,
+    input,
+    platform: 'win32',
+    today: 'reject',
+    error: /^Invalid path: ".+" is a device name on Windows$/
+  })),
+  ...['C:\\Games\\AUX', 'C:\\Games\\nul.proj', 'C:\\Games\\Proj:hidden'].map((input): Row => ({
+    fn: assertSafeProjectPath,
+    input,
+    platform: 'win32',
+    today: 'reject'
+  })),
   ...[
     'C:\\Games\\Proj\\js\\plugins\\Console.js',
     'C:\\Games\\CONFIG\\Synthetic.js',
@@ -381,15 +380,13 @@ const ROWS: Row[] = [
       'COM\u{B3} .js',
       'CONIN$.js',
       'conout$.backup.js'
-    ].map(
-      (input): Row => ({
-        fn: assertSafeFilename,
-        input,
-        platform,
-        today: 'reject',
-        error: `Invalid filename: ${JSON.stringify(input)} is a device name on Windows`
-      })
-    ),
+    ].map((input): Row => ({
+      fn: assertSafeFilename,
+      input,
+      platform,
+      today: 'reject',
+      error: `Invalid filename: ${JSON.stringify(input)} is a device name on Windows`
+    })),
     ...[
       'Console.js',
       'CONFIG.js',
@@ -404,9 +401,13 @@ const ROWS: Row[] = [
   // Input that is not a usable path: the guard's own error, never a TypeError from path
   ...(['posix', 'win32'] as const).flatMap((platform) =>
     [assertSafeFilePath, assertSafeFilename, assertSafeProjectPath].flatMap((guard) =>
-      ['', 'a\0.js', undefined].map(
-        (input): Row => ({ fn: guard, input, platform, today: 'reject', error: /^Invalid/ })
-      )
+      ['', 'a\0.js', undefined].map((input): Row => ({
+        fn: guard,
+        input,
+        platform,
+        today: 'reject',
+        error: /^Invalid/
+      }))
     )
   )
 ]

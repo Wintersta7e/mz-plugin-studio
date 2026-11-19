@@ -18,8 +18,7 @@ export type OutputRefusal =
   | 'duplicate-struct'
 
 export type PluginOutput =
-  | { ok: true; code: string }
-  | { ok: false; refusal: OutputRefusal; message: string }
+  { ok: true; code: string } | { ok: false; refusal: OutputRefusal; message: string }
 
 /**
 Loaded from a file, as opposed to created in the app.

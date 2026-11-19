@@ -479,10 +479,7 @@ The methods of Electron's `dialog` the handlers call
 export type DialogPort = Pick<Dialog, 'showOpenDialog' | 'showSaveDialog' | 'showMessageBox'>
 
 type DialogChannel =
-  | 'dialog:open-folder'
-  | 'dialog:save-file'
-  | 'dialog:open-file'
-  | 'dialog:message'
+  'dialog:open-folder' | 'dialog:save-file' | 'dialog:open-file' | 'dialog:message'
 
 /**
 Each handler reads `dialog`'s method when it runs, so a method replaced later is the one used.
