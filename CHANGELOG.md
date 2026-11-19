@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-19
+
 ### Added
 
 - Each release carries a `SHA256SUMS` file to check the download against, and `sbom.cdx.json`, a list of the third-party packages inside the app. The release also holds signed records that its own build workflow made the exe from this repository; `gh attestation verify` checks them. The README's Quick start shows how.
@@ -10,11 +12,14 @@
 
 - The app is smaller and has less to unpack each time it starts: its window code ships minified, without the source maps.
 - Under the hood, the build now fails on any break of a strict lint, type or dependency rule, and no rule is switched off for any file.
+- Electron 45.2.1 → 45.3.1.
 
 ### Fixed
 
 - The **MZ** mark in the title bar and the comments in the dark code editor are easier to read: their colours are a shade lighter in the dark theme, and the mark a shade darker in the light theme, so they stand out from their background as clearly as other small text.
 - Opening a plugin file keeps a `*` at the end of a parameter or argument name, a display name, a description or a required asset. Before, that last `*` was cut off, so `Rank*` came back as `Rank` and a parameter named `*` was lost; saving the plugin again wrote the shortened text.
+- Screen readers name each icon-only button by what it does: the title bar's minimize and maximize buttons, the panel close buttons, and the delete, details and remove buttons of parameter, command and argument rows, which also say whose they are. Before, each was announced as a bare "button". The maximize button reads "Restore" while the window is maximized. The type select of an argument or struct field row and a parameter card's selection checkbox are named too.
+- Each field label is tied to the field it names: a screen reader announces the label with the field, and clicking a label puts the cursor in its field. The theme buttons and a struct's default fields are announced as named groups.
 - Opening a plugin file keeps each parameter's default value as written. Before, a text parameter whose default looked like a number or a yes/no value was changed: `007` came back as `7`, `1.50` as `1.5` and `TRUE` as `true`, and saving the plugin again wrote the changed value. A number parameter still reads a plain number such as `3` or `-2.5` as a number, and a boolean parameter reads `true` and `false`.
 
 ## [1.8.2] - 2026-11-06
