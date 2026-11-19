@@ -63,8 +63,14 @@ function binPaths(name: string): string[] {
   return paths.flatMap((p) => (typeof p === 'string' ? p.replace(/^\.\//, '') : []))
 }
 
-const isTracked = (file: string): boolean =>
-  execFileSync('git', ['ls-files', '--', file], { cwd: ROOT, encoding: 'utf8' }).trim() !== ''
+// Every tracked path, listed once: a git process per command ran the test past its timeout on a
+// loaded host
+const TRACKED = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0')
+// Whether a file is tracked, or a folder holds a tracked file
+function isTracked(file: string): boolean {
+  const at = path.posix.normalize(file).replace(/\/$/v, '')
+  return TRACKED.some((tracked) => tracked === at || tracked.startsWith(`${at}/`))
+}
 
 const CD = /^cd ([\w.-]+)$/
 // Each command of a script with the folder an earlier `cd` in that script moved it to
