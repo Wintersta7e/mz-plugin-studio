@@ -197,6 +197,56 @@ describe('ci workflow: execution', () => {
   })
 })
 
+// A run line that throws its command's failure away; a bare `exit 0` that ends a clean early
+// return is not one
+const DISCARDS_FAILURE = /\|\|\s*(?:true|:|exit 0)\s*(?:$|#)|\|\|\s*echo\b|;\s*exit 0\s*(?:$|#)/v
+const doesDiscardFailure = (line: string): boolean => DISCARDS_FAILURE.test(line)
+const doesContinueOnError = (keys: Map<string, string>): boolean =>
+  (keys.get('continue-on-error') ?? 'false') !== 'false'
+
+describe('workflows: a failed command fails its job', () => {
+  it('no job or step continues on error and no run line discards a failure', () => {
+    const all = files.flatMap((file) => readJobs(file).map((job) => ({ file, job })))
+    const runLines = all.flatMap(({ file, job }) =>
+      job.steps.flatMap((step) => step.run.map((line) => `${file} ${job.id}: ${line}`))
+    )
+    const continuing = all.flatMap(({ file, job }) => [
+      ...(doesContinueOnError(job.keys) ? [`${file} ${job.id}`] : []),
+      ...job.steps
+        .filter((step) => doesContinueOnError(step.keys))
+        .map((step) => `${file} ${job.id}: ${step.keys.get('name') ?? ''}`)
+    ])
+    process.stdout.write(
+      `workflows: failure discarding scanned files ${String(files.length)}, run lines ${String(runLines.length)}\n`
+    )
+
+    expect(runLines.length).toBeGreaterThan(0)
+    expect(runLines.filter((line) => doesDiscardFailure(line))).toStrictEqual([])
+    expect(continuing).toStrictEqual([])
+  })
+
+  it('the scan catches every discarding form and passes a bare early exit', () => {
+    const discarding = [
+      'npm audit || true',
+      'npm audit || :',
+      'npm audit || exit 0',
+      'npm audit; exit 0',
+      'npm audit || echo "advisories found"',
+      'npm audit || true # report only'
+    ]
+    const failing = ['exit 0', 'npm audit', 'test -n "$BASE" || exit 1', 'echo "a || b" > out.txt']
+
+    expect(discarding.filter((line) => doesDiscardFailure(line))).toStrictEqual(discarding)
+    expect(failing.filter((line) => doesDiscardFailure(line))).toStrictEqual([])
+    expect(
+      ['true', '${{ matrix.experimental }}', 'false'].map((value) =>
+        doesContinueOnError(new Map([['continue-on-error', value]]))
+      )
+    ).toStrictEqual([true, true, false])
+    expect(doesContinueOnError(new Map())).toBe(false)
+  })
+})
+
 describe('ci workflow: changed lines coverage', () => {
   it('the unit job checks nine in ten changed source lines run under the suite', () => {
     const job = jobOf('unit')

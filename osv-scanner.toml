@@ -1,7 +1,2 @@
 # Each [[IgnoredVulns]] entry needs an id, an ignoreUntil at most 90 days ahead and a reason.
 # Checked by: node scripts/ci-policy.mjs osv-ignores
-
-[[IgnoredVulns]]
-id = "GHSA-g3hv-75wg-m249"
-ignoreUntil = 2027-01-30
-reason = "Every minimatch copy (3.1.5, 5.1.9, 9.0.9, 10.2.4, 10.2.6) comes only from development tools (eslint with its configs and plugins, and electron-builder), none ships in the app, and the fix exists only in 11.0.1, outside each copy's allowed range."
