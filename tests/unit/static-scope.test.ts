@@ -1,7 +1,7 @@
 // Every tracked code file is type-checked by a program on the one strict flag set, linted and
 // formatted; data files are in no program and read by neither tool.
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -915,36 +915,12 @@ describe('static scope: ESLint directives, test rules and suppressions', () => {
     expect(pinned).toStrictEqual([])
   })
 
+  // ESLint reads its suppressions from this file; without it no finding of any rule is frozen.
   it('freezes no evaluation, builtin or command-path finding, no data file and no new file', () => {
-    const suppressions: unknown = JSON.parse(
-      readFileSync(path.join(ROOT, 'eslint-suppressions.json'), 'utf8')
-    )
-    const entries = isRecord(suppressions) ? suppressions : {}
-    const files = Object.keys(entries)
-    const rules = Object.values(entries).flatMap((value) =>
-      isRecord(value) ? Object.keys(value) : []
-    )
-    report(
-      `eslint-suppressions: files ${String(files.length)}, rule entries ${String(rules.length)}`
-    )
+    const isPresent = existsSync(path.join(ROOT, 'eslint-suppressions.json'))
+    report(`eslint-suppressions: present ${String(isPresent)}`)
 
-    expect({ files: files.length, rules: rules.length }).toStrictEqual({ files: 0, rules: 0 })
-
-    const barred = new Set([
-      'sonarjs/code-eval',
-      'n/no-unsupported-features/node-builtins',
-      'sonarjs/no-os-command-from-path'
-    ])
-    const ownFiles = new Set(['eslint.config.mjs', 'tests/unit/static-scope.test.ts'])
-
-    expect(rules.filter((rule) => barred.has(rule))).toStrictEqual([])
-    expect(files.filter((file) => isData(file) || ownFiles.has(file))).toStrictEqual([])
-
-    // Setup files register global hooks and are not test files: no test rule applies to them.
-    const setupKeys = files.filter((file) => file.startsWith('tests/setup/'))
-    report(`suppressions under tests/setup: ${String(setupKeys.length)}`)
-
-    expect(setupKeys).toStrictEqual([])
+    expect(isPresent).toBe(false)
   })
 })
 
@@ -955,12 +931,15 @@ const CRUISE_ROOTS = ['src', 'tests', 'tools', 'scripts', 'e2e']
 // Files that exist only until the strict configuration is met in full. A commit that deletes one
 // removes it here; deleting the known-violations file also drops `--ignore-known` from `deps`.
 const KNOWN_VIOLATIONS = '.dependency-cruiser-known-violations.json'
-const TRANSITIONAL_ARTEFACTS: string[] = [
+const TRANSITIONAL_ARTEFACTS: string[] = []
+// The transitional files the strict configuration replaced; none of them may come back.
+const REMOVED_ARTEFACTS = [
   'eslint-suppressions.json',
   'tsconfig.tools.pending.json',
   'tsconfig.scripts.pending.json',
   'pending-ceilings.json',
-  'scripts/strictness-status.mjs'
+  'scripts/strictness-status.mjs',
+  'tests/integration/strictness-status.test.ts'
 ]
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8'))
@@ -1150,11 +1129,7 @@ describe('static scope: format gate, transitional files and gate scripts', () =>
         `.prettierignore: lines ${String(lines.length)}; data globs Prettier parses ${String(parsedGlobs.length)} of ${String(scope.dataGlobs.length)}`
       )
 
-      expect(lines).toStrictEqual([
-        'THIRD_PARTY_LICENSES.md',
-        ...parsedGlobs,
-        'eslint-suppressions.json'
-      ])
+      expect(lines).toStrictEqual(['THIRD_PARTY_LICENSES.md', ...parsedGlobs])
     }
   )
 
@@ -1172,10 +1147,22 @@ describe('static scope: format gate, transitional files and gate scripts', () =>
     )
   })
 
+  // On disk, not in git: an untracked copy would still be read by the tool it configures.
+  it('keeps every removed transitional artefact off the disk', () => {
+    const present = REMOVED_ARTEFACTS.filter((file) => existsSync(path.join(ROOT, file)))
+    report(
+      `removed transitional artefacts ${String(REMOVED_ARTEFACTS.length)}: present ${String(present.length)}`
+    )
+
+    expect(present).toStrictEqual([])
+  })
+
   it('lets no gate script cache lint results, pass unpruned suppressions or skip known cycles', () => {
     const scripts = Object.entries(packageScripts())
     const loose = scripts
-      .filter(([, command]) => /--cache\b|--pass-on-unpruned-suppressions/v.test(command))
+      .filter(([, command]) =>
+        /--cache\b|--pass-on-unpruned-suppressions|--suppress/v.test(command)
+      )
       .map(([name]) => name)
     const ignoringKnown = scripts
       .filter(([, command]) => command.includes('--ignore-known'))

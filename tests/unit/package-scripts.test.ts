@@ -52,7 +52,8 @@ const NPM_TEST = /^npm test(?: -- .+)?$/
 const NODE_SCRIPT = /^node (scripts\/\S+)(?: .+)?$/
 const NODE_MODULE = /^node node_modules\/((?:@[^/\s]+\/)?[^/\s]+)\/(\S+)(?: .+)?$/
 
-const commandsOf = (body: string): string[] => body.split('&&').map((c) => c.trim())
+// Every command a shell would run, so one behind `||`, `;` or a pipe is checked like one behind `&&`
+const commandsOf = (body: string): string[] => body.split(/&&|\|\||;|\|/v).map((c) => c.trim())
 // The toolchain check runs in CI only: it holds the running Node to the version CI installs
 const TOOLCHAIN = 'npm run ci:toolchain'
 
