@@ -3,7 +3,17 @@
 // answered from per-method queues (twin), and a bounded teardown that kills the process tree
 // before deleting files.
 import { execFile, spawn, type ChildProcess } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import {
+  closeSync,
+  existsSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync
+} from 'node:fs'
 import path from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import {
@@ -584,6 +594,46 @@ export async function killTree(pid: number): Promise<void> {
 }
 
 /**
+Whether another process holds `file` open: opening it for writing or renaming it fails
+*/
+function isLocked(file: string): boolean {
+  try {
+    closeSync(openSync(file, 'r+'))
+    const probe = `${file}.lock-probe`
+    renameSync(file, probe)
+    renameSync(probe, file)
+    return false
+  } catch {
+    return true
+  }
+}
+
+/**
+Deletes a launch's directory; when Windows refuses, prints which files under it are still
+locked before rethrowing the original error, so the failure names its holder's files
+*/
+function removeDirectory(directory: string): void {
+  try {
+    rmSync(directory, { recursive: true, force: true, maxRetries: 3 })
+  } catch (error) {
+    const code = codeOf(error)
+    if (process.platform === 'win32' && (code === 'EPERM' || code === 'EBUSY')) {
+      const locked = readdirSync(directory, { encoding: 'utf8', recursive: true }).filter(
+        (entry) => {
+          const file = path.join(directory, entry)
+          // An entry the removal deleted meanwhile is no longer locked
+          return statSync(file, { throwIfNoEntry: false })?.isFile() === true && isLocked(file)
+        }
+      )
+      process.stdout.write(
+        `e2e: locked after teardown ${String(locked.length)}: ${locked.join(', ')}\n`
+      )
+    }
+    throw error
+  }
+}
+
+/**
 Asserts the dialogs drained, lets the app close with its unload prompts answered "leave",
 bounded, then kills the tree, waits for it and only then deletes the launch's directories.
 Stopping the trace with `tracePath` keeps it there.
@@ -634,9 +684,7 @@ export async function teardown(
     failure ??= error
   } finally {
     if (pid !== undefined) await killTree(pid)
-    for (const directory of launch.directories) {
-      rmSync(directory, { recursive: true, force: true, maxRetries: 3 })
-    }
+    for (const directory of launch.directories) removeDirectory(directory)
     launches.delete(app)
   }
   if (failure !== undefined) {
@@ -796,9 +844,7 @@ export async function launchRelease(
       // The browser connection may already be gone; the kill below ends the app either way
     } finally {
       if (child.pid !== undefined) await killTree(child.pid)
-      for (const directory of directories) {
-        rmSync(directory, { recursive: true, force: true, maxRetries: 3 })
-      }
+      for (const directory of directories) removeDirectory(directory)
     }
   }
   try {
