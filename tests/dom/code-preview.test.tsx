@@ -41,16 +41,24 @@ const temporary = { root: '' }
 
 const fileIn = (...parts: string[]): string => path.join(temporary.root, ...parts)
 
-async function setUp(): Promise<void> {
+/**
+Returns the removal of the folder: a function `beforeEach` returns runs after every `afterEach`,
+the automatic unmount included, so the badge bounce and Copied! timers cannot fire outside act
+while the removal waits on the disk.
+*/
+async function setUp(): Promise<() => Promise<void>> {
   resetStores()
-  temporary.root = await mkdtemp(path.join(tmpdir(), 'code-preview-'))
+  const root = await mkdtemp(path.join(tmpdir(), 'code-preview-'))
+  temporary.root = root
   const plugin = createEmptyPlugin()
   usePluginStore.getState().openPlugin({ ...plugin, meta: { ...plugin.meta, name: 'Alpha' } })
+  return async () => {
+    await rm(root, { recursive: true, force: true })
+  }
 }
 
-async function tearDown(): Promise<void> {
+function tearDown(): void {
   vi.unstubAllGlobals()
-  await rm(temporary.root, { recursive: true, force: true })
 }
 
 /**
@@ -318,10 +326,11 @@ describe('code preview export under another file name', () => {
   }
 
   beforeEach(async () => {
-    await setUp()
+    const removeFolder = await setUp()
     act(() => {
       usePluginStore.getState().addCommand(createEmptyCommand())
     })
+    return removeFolder
   })
 
   afterEach(tearDown)
