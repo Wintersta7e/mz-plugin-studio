@@ -9,6 +9,7 @@
 ### Changed
 
 - The app is smaller and has less to unpack each time it starts: its window code ships minified, without the source maps.
+- Under the hood, the build now fails on any break of a strict lint, type or dependency rule, and no rule is switched off for any file.
 
 ### Fixed
 
