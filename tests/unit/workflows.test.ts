@@ -45,6 +45,16 @@ function jobOf(id: string): Job {
 const isSetupNode = (step: Step): boolean =>
   (step.keys.get('uses') ?? '').startsWith('actions/setup-node@')
 
+// A third-party action is pinned to a full commit SHA with its release in a comment. The
+// workflow owns both values, so the tests check the shape and never restate them.
+const PINNED_ACTION = /^([^\s@]+)@[0-9a-f]{40} # v\d+\.\d+\.\d+$/
+const pinnedAction = (uses = ''): string | undefined => PINNED_ACTION.exec(uses)?.at(1)
+const pinOf = (uses: string): string | undefined => uses.split('@', 2).at(1)
+const codeqlUses = (job: Job | undefined): string[] =>
+  (job?.steps ?? [])
+    .map((step) => step.keys.get('uses') ?? '')
+    .filter((uses) => uses.startsWith('github/codeql-action/'))
+
 describe('ci workflow: inventory', () => {
   it('reads every job and step of every workflow', () => {
     const all = files.map((file) => readJobs(file))
@@ -299,8 +309,6 @@ describe('ci workflow: changed lines coverage', () => {
 })
 
 describe('ci workflow: CodeQL', () => {
-  const CODEQL_PIN = /^github\/codeql-action\/(\w+)@[0-9a-f]{40} # v4\.39\.1$/
-
   it('the codeql job may read the code and actions and write only security events', () => {
     const job = jobOf('codeql')
 
@@ -320,16 +328,15 @@ describe('ci workflow: CodeQL', () => {
     const codeqlSteps = job.steps.filter((step) =>
       (step.keys.get('uses') ?? '').startsWith('github/codeql-action/')
     )
-    const uses = codeqlSteps.map((step) => step.keys.get('uses') ?? '')
-    const shas = new Set(uses.map((line) => line.split('@', 2).at(1)))
+    const uses = codeqlUses(job)
 
     expect({
-      actions: uses.map((line) => CODEQL_PIN.exec(line)?.at(1)),
-      oneSha: shas.size,
+      actions: uses.map((line) => pinnedAction(line)),
+      oneSha: new Set(uses.map((line) => pinOf(line))).size,
       init: codeqlSteps.at(0)?.nested,
       analyze: codeqlSteps.at(1)?.nested
     }).toStrictEqual({
-      actions: ['init', 'analyze'],
+      actions: ['github/codeql-action/init', 'github/codeql-action/analyze'],
       oneSha: 1,
       init: [
         'languages: javascript-typescript, actions',
@@ -363,6 +370,9 @@ describe('supply-chain score workflow', () => {
       job?.steps.find((step) => (step.keys.get('uses') ?? '').startsWith(prefix))
     const scorecard = usesOf('ossf/scorecard-action@')
     const upload = usesOf('github/codeql-action/upload-sarif@')
+    const codeqlPins = [...codeqlUses(jobOf('codeql')), ...codeqlUses(job)].map((line) =>
+      pinOf(line)
+    )
 
     expect(others).toStrictEqual([])
     expect({
@@ -373,25 +383,26 @@ describe('supply-chain score workflow', () => {
       readAll: /^permissions: read-all$/mv.test(text),
       jobPermissions: job?.nested.get('permissions'),
       noCredentials: job?.steps.at(0)?.nested.includes('persist-credentials: false'),
-      scorecard: scorecard?.keys.get('uses'),
+      scorecard: pinnedAction(scorecard?.keys.get('uses')),
       scorecardInputs: scorecard?.nested,
-      upload: upload?.keys.get('uses'),
+      upload: pinnedAction(upload?.keys.get('uses')),
       uploadInputs: upload?.nested,
+      codeqlReleases: new Set(codeqlPins).size,
       token: /\b(?:repo_token|secrets\.)/v.test(text)
     }).toStrictEqual({
       triggers: true,
       readAll: true,
       jobPermissions: ['actions: read', 'contents: read', 'security-events: write'],
       noCredentials: true,
-      scorecard: 'ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0',
+      scorecard: 'ossf/scorecard-action',
       scorecardInputs: [
         'results_file: results.sarif',
         'results_format: sarif',
         'publish_results: false'
       ],
-      upload:
-        'github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1',
+      upload: 'github/codeql-action/upload-sarif',
       uploadInputs: ['sarif_file: results.sarif', 'category: scorecard'],
+      codeqlReleases: 1,
       token: false
     })
   })
@@ -686,9 +697,9 @@ describe('release workflow: attestations', () => {
         )
         .map((each) => each.id),
       permissions: permissionsOf(job),
-      provenance: provenance?.keys.get('uses'),
+      provenance: pinnedAction(provenance?.keys.get('uses')),
       provenanceInputs: provenance?.nested,
-      sbom: sbom?.keys.get('uses'),
+      sbom: pinnedAction(sbom?.keys.get('uses')),
       sbomInputs: sbom?.nested,
       beforeRelease: [provenance, sbom].every(
         (step) => step !== undefined && job.steps.indexOf(step) < create
@@ -697,10 +708,9 @@ describe('release workflow: attestations', () => {
       attestingJobs: ['publish'],
       signingJobs: ['publish'],
       permissions: ['contents: write', 'id-token: write', 'attestations: write'],
-      provenance:
-        'actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2',
+      provenance: 'actions/attest-build-provenance',
       provenanceInputs: ['subject-path: ${{ steps.assets.outputs.exe }}'],
-      sbom: 'actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0',
+      sbom: 'actions/attest-sbom',
       sbomInputs: [
         'subject-path: ${{ steps.assets.outputs.exe }}',
         'sbom-path: dist/sbom.cdx.json'
