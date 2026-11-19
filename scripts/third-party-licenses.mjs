@@ -2,6 +2,7 @@
 // --sbom <file> writes the same packages as a CycloneDX 1.6 software bill of materials instead.
 // Covered: the lockfile closure of the root `dependencies` (shipped in the app's node_modules) and of every
 // package value-imported from src/ (bundled into out/), plus GENERATED_INTO_APP, without electron and Node builtins.
+import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { builtinModules } from 'node:module'
 import path from 'node:path'
@@ -508,14 +509,25 @@ function writeSbom(file, rows) {
   const name = String(manifest['name'])
   const version = String(manifest['version'])
   const components = sbomComponents(rows)
-  const bom = {
-    bomFormat: 'CycloneDX',
-    specVersion: '1.6',
+  const body = {
     version: 1,
     metadata: {
       component: { type: 'application', 'bom-ref': `${name}@${version}`, name, version }
     },
     components
+  }
+  // SBOM attestation rejects a CycloneDX file without a serial number. A name-based UUID taken
+  // from the content keeps the file the same for the same packages.
+  const digest = createHash('sha256').update(JSON.stringify(body)).digest()
+  digest[6] = (digest.readUInt8(6) & 0x0f) | 0x50
+  digest[8] = (digest.readUInt8(8) & 0x3f) | 0x80
+  const hex = digest.toString('hex')
+  const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
+  const bom = {
+    bomFormat: 'CycloneDX',
+    specVersion: '1.6',
+    serialNumber: `urn:uuid:${uuid}`,
+    ...body
   }
   writeFileSync(file, `${JSON.stringify(bom, undefined, 2)}\n`)
   process.stdout.write(`sbom components ${components.length}\n`)

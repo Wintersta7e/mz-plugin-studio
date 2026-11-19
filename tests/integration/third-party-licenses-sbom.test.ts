@@ -131,6 +131,32 @@ describe('third-party-licenses --sbom', () => {
     expect(problems).toStrictEqual([])
   })
 
+  // SBOM attestation accepts a CycloneDX file only when bomFormat, serialNumber and specVersion are all set
+  it('carries the serial number SBOM attestation requires, the same on every run', () => {
+    const first = sbom(true).bom
+    const second = sbom(true).bom
+    const serial = isRecord(first) ? first['serialNumber'] : undefined
+
+    expect(
+      {
+        bomFormat: isRecord(first) && first['bomFormat'],
+        specVersion: isRecord(first) && first['specVersion'],
+        serialNumber:
+          typeof serial === 'string' &&
+          /^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/v.test(
+            serial
+          ),
+        repeatable: JSON.stringify(first) === JSON.stringify(second)
+      },
+      'SBOM attestation rejects a CycloneDX file without bomFormat, serialNumber and specVersion'
+    ).toStrictEqual({
+      bomFormat: 'CycloneDX',
+      specVersion: '1.6',
+      serialNumber: true,
+      repeatable: true
+    })
+  })
+
   it('fails without a file to write to', () => {
     const { status, out } = sbom(false)
 
