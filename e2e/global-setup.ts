@@ -32,8 +32,10 @@ export default async function globalSetup(): Promise<void> {
   const { diff } = compareWires(releaseWire, twinWire)
   process.stdout.write(`e2e: fuse diff ${diff.join(', ')} (${String(diff.length)} fuse)\n`)
 
+  // Read before the root exists: a failing `git status` then leaves no folder behind
+  const status = treeStatus()
   const root = mkdtempSync(path.join(tmpdir(), 'mz-e2e-run-'))
   Object.assign(process.env, { E2E_RUN_ROOT: root, E2E_RUN_START: String(Date.now()) })
-  writeFileSync(path.join(root, TREE_SNAPSHOT), treeStatus())
+  writeFileSync(path.join(root, TREE_SNAPSHOT), status)
   process.stdout.write(`e2e: run root ${root}\n`)
 }
