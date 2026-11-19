@@ -429,6 +429,72 @@ describe('package.json overrides: qs', () => {
   })
 })
 
+// The Dependabot hold that keeps TypeScript on the minor the installed typescript-eslint supports.
+// Its comment, the exact pin and the peer range agree; the hold goes once the range admits the
+// next minor.
+const TYPESCRIPT_HOLD =
+  /^\s*# Hold TypeScript at (\d+\.\d+)\.x: typescript-eslint \S+ supports typescript (.+)\. Remove when/v
+const COMPARATOR = /^([<>]=?|=)?(\d+\.\d+\.\d+)$/v
+const COMPARES = new Map<string, (version: string, bound: string) => boolean>([
+  ['>=', (version, bound) => !isOlder(version, bound)],
+  ['>', (version, bound) => isOlder(bound, version)],
+  ['<=', (version, bound) => !isOlder(bound, version)],
+  ['<', (version, bound) => isOlder(version, bound)],
+  ['=', (version, bound) => version === bound]
+])
+
+// Whether a version satisfies a range of `||` alternatives, each of space-separated comparators;
+// undefined when a comparator has another form (read the range by hand then)
+function satisfies(version: string, range: string): boolean | undefined {
+  const alternatives = range.split('||').map((alternative) =>
+    alternative
+      .trim()
+      .split(/\s+/v)
+      .map((part) => COMPARATOR.exec(part))
+  )
+  const isAdmitted = (comparators: (RegExpExecArray | null)[]): boolean =>
+    comparators.every(
+      (match) => COMPARES.get(match?.at(1) ?? '=')?.(version, match?.at(2) ?? '') === true
+    )
+  return alternatives.flat().includes(null)
+    ? undefined
+    : alternatives.some((comparators) => isAdmitted(comparators))
+}
+
+describe('dependabot: the TypeScript hold', () => {
+  it('holds TypeScript on its pinned minor while the installed typescript-eslint excludes the next', () => {
+    const lines = readFileSync(path.join(ROOT, '.github/dependabot.yml'), 'utf8').split('\n')
+    const at = lines.findIndex((line) => line.trim() === '- dependency-name: typescript')
+    const hold = TYPESCRIPT_HOLD.exec(lines.at(at - 1) ?? '')
+    const devDependencies = member(readJson('package.json'), 'devDependencies')
+    const pinned = String(member(devDependencies, 'typescript'))
+    const linter = readJson('node_modules/typescript-eslint/package.json')
+    const range = String(member(member(linter, 'peerDependencies'), 'typescript'))
+    const [major = 0, minor = 0] = versionParts(pinned)
+    const next = `${String(major)}.${String(minor + 1)}.0`
+    process.stdout.write(
+      `typescript ${pinned}, hold ${String(hold?.at(1))}.x, typescript-eslint ${String(member(linter, 'version'))} peer typescript ${range}\n`
+    )
+
+    expect(at).toBeGreaterThan(0)
+    expect({
+      updateTypes: lines.at(at + 1)?.trim(),
+      exactPin: /^\d+\.\d+\.\d+$/v.test(pinned),
+      heldMinor: hold?.at(1),
+      commentRange: hold?.at(2),
+      pinAdmitted: satisfies(pinned, range),
+      nextMinorAdmitted: satisfies(next, range)
+    }).toStrictEqual({
+      updateTypes: 'update-types: [version-update:semver-major, version-update:semver-minor]',
+      exactPin: true,
+      heldMinor: `${String(major)}.${String(minor)}`,
+      commentRange: range,
+      pinAdmitted: true,
+      nextMinorAdmitted: false
+    })
+  })
+})
+
 // What is wrong with a Stryker config's thresholds; empty when high, low and break are all
 // numbers with break <= low <= high <= 100.
 const thresholdProblem = (config: unknown): string => {

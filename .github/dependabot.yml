@@ -1,12 +1,25 @@
 version: 2
 
 updates:
-  # Version updates are paused; security updates follow the repository setting.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      vitest:
+        patterns: [vitest, '@vitest/*']
+      npm-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+        exclude-patterns:
+          [prettier, typescript, electron, '@playwright/test', lucide-react, vitest, '@vitest/*']
+    ignore:
+      # Hold TypeScript at 6.0.x: typescript-eslint 8.72.1 supports typescript >=4.8.4 <6.1.0. Remove when its range admits the next minor.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major, version-update:semver-minor]
 
   - package-ecosystem: github-actions
     directory: /
