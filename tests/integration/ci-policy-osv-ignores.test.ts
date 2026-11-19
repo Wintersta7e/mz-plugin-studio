@@ -76,6 +76,27 @@ describe('ci-policy osv-ignores', () => {
     expect(status).toBe(1)
   })
 
+  // osv-scanner stops honouring an entry at the start of its date and reports the advisory again,
+  // so the entry would claim a waiver that no longer exists
+  it.each([
+    ['yesterday', -1],
+    ['today', 0]
+  ])('fails an entry dated %s, naming its id', (_day, days) => {
+    const until = daysAhead(days)
+    const { status, out } = osvIgnores(
+      configDirectory(entry([ID, `ignoreUntil = ${until}`, REASON]))
+    )
+
+    expect(out).toContain(`GHSA-xxxx-xxxx-xxxx expired on ${until}`)
+    expect(status).toBe(1)
+  })
+
+  it('passes an entry that expires tomorrow', () => {
+    const text = entry([ID, `ignoreUntil = ${daysAhead(1)}`, REASON])
+
+    expect(osvIgnores(configDirectory(text)).status).toBe(0)
+  })
+
   it('fails an empty reason', () => {
     const text = entry([ID, `ignoreUntil = ${daysAhead(30)}`, 'reason = ""'])
 

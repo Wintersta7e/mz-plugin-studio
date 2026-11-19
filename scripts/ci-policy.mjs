@@ -1047,6 +1047,10 @@ function osvEntryProblems({ where, keys }, today) {
     problems.push(`${where}: not a date: ${until}`)
   } else if (day > today + OSV_MAX_DAYS * DAY_MS) {
     problems.push(`${where}: ignoreUntil ${until} is more than ${OSV_MAX_DAYS} days ahead`)
+  } else if (day <= today) {
+    // osv-scanner stops honouring the entry at the start of its date, so from then on it would
+    // claim a waiver that does not exist
+    problems.push(`${where}: ${keys.get('id') ?? 'the entry'} expired on ${until}`)
   }
   return problems
 }
