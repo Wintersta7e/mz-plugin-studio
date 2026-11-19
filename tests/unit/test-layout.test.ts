@@ -200,7 +200,7 @@ describe('test layout', () => {
   it('reports routed imports outside the DOM folders', { timeout: 60_000 }, async () => {
     const q = "'"
     const sources = [
-      `import { usePluginStore } from ${q}../../src/renderer/src/stores/pluginStore${q}\nusePluginStore()\n`,
+      `import { usePluginStore } from ${q}../../src/renderer/src/stores/plugin-store${q}\nusePluginStore()\n`,
       `import { render } from ${q}@testing-library/react${q}\nrender(null)\n`
     ]
     const eslint = new ESLint({ cwd: process.cwd() })

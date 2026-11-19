@@ -3,7 +3,7 @@
 // part of the comment, an empty tag, an unknown type, a struct with no single definition, a
 // parent that names nothing, a default that does not read as its type, and a header that parses
 // back to other names or a shorter help than the definition it was written from.
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import {
   ALL_PARAM_TYPES,

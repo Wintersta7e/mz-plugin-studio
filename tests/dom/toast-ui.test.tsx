@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { act, render, screen, fireEvent } from '@testing-library/react'
 import { ToastContainer } from '../../src/renderer/src/components/ui/toast'
-import { NOTICE_MS, useToastStore } from '../../src/renderer/src/stores/toastStore'
+import { NOTICE_MS, useToastStore } from '../../src/renderer/src/stores/toast-store'
 
 function setUp(): void {
   useToastStore.getState().dismissAll()

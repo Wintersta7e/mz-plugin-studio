@@ -80,8 +80,8 @@ describe('raw-mode switches of closed tabs on load', () => {
     expect.assertions(2)
 
     seed({ 'mz-plugin-studio-plugin': pluginPayload, [UI_KEY]: uiPayload({ A: true, Z: true }) })
-    await import('../../src/renderer/src/stores/pluginStore')
-    const { useUIStore } = await import('../../src/renderer/src/stores/uiStore')
+    await import('../../src/renderer/src/stores/plugin-store')
+    const { useUIStore } = await import('../../src/renderer/src/stores/ui-store')
     await flushPrune()
 
     expect(useUIStore.getState().rawModeByPluginId).toStrictEqual({ A: true })

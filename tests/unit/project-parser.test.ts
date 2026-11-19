@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, it, expect, onTestFinished } from 'vitest'
-import { ProjectParser } from '../../src/main/services/projectParser'
+import { ProjectParser } from '../../src/main/services/project-parser'
 
 describe('parseNoteTags', () => {
   it('parses tag with value', () => {

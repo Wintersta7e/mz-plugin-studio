@@ -1,7 +1,7 @@
 // What the parser makes of each fixture plugin and each synthetic pattern case, with its random
 // ids numbered by appearance.
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { normaliseIds } from './corpus/normalise'
 import { parserPatternCases } from './corpus/parser-patterns'
 import { fixturePlugins, loadFixture } from './corpus/raw-mode'

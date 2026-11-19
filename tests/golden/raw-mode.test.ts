@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import { generateRawMode, scriptParseError } from '../../src/renderer/src/lib/generator/index'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { extractOverrides, stripCommentsAndStrings } from '../../src/shared/override-extractor'
 import {
   toBaseline,

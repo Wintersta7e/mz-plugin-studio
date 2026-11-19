@@ -2,7 +2,7 @@
 import { createElement } from 'react'
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Toast } from '../../src/renderer/src/stores/toastStore'
+import type { Toast } from '../../src/renderer/src/stores/toast-store'
 import { createFakeApi } from '../helpers/fake-api'
 
 function firstToastMessage(toasts: readonly Toast[]): string {
@@ -34,7 +34,7 @@ describe('restore report at startup', () => {
     )
     vi.resetModules()
     const { default: App } = await import('../../src/renderer/src/App')
-    const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
+    const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
 
     render(createElement(App))
 
@@ -85,7 +85,7 @@ describe('restore report at startup', () => {
     )
     vi.resetModules()
     const { default: App } = await import('../../src/renderer/src/App')
-    const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
+    const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
 
     render(createElement(App))
     const message = firstToastMessage(useToastStore.getState().toasts)

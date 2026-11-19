@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useUIStore } from '../../src/renderer/src/stores/uiStore'
+import { useUIStore } from '../../src/renderer/src/stores/ui-store'
 import { savedStateOf } from './support/persisted-state'
 
 function resetUIStore() {

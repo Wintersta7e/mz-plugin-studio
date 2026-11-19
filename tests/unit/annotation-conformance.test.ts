@@ -4,7 +4,7 @@
 // parses back to the definition's names and help. Each rule is first shown to catch a plugin
 // broken on purpose.
 import { describe, expect, it } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import {

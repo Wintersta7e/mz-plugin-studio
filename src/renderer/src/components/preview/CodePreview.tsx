@@ -21,7 +21,7 @@ import {
 } from '../../lib/plugin-output'
 import { didReloadFromProject } from '../../lib/raw-mode'
 import { savePlugin } from '../../lib/save-plugin'
-import { NOTICE_MS } from '../../stores/toastStore'
+import { NOTICE_MS } from '../../stores/toast-store'
 import { DiffView } from './DiffView'
 import { ExportMenu } from './ExportMenu'
 import { cn, refusalReason, userMessage } from '../../lib/utilities'

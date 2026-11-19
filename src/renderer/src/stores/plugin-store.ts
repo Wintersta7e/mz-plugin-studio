@@ -30,9 +30,9 @@ import {
   type MigrationStep
 } from './persist'
 // None of these stores imports this one, so each is fully set up before this module runs.
-import { useUIStore } from './uiStore'
-import { useHistoryStore } from './historyStore'
-import { useSettingsStore } from './settingsStore'
+import { useUIStore } from './ui-store'
+import { useHistoryStore } from './history-store'
+import { useSettingsStore } from './settings-store'
 
 interface PluginState {
   plugin: PluginDefinition

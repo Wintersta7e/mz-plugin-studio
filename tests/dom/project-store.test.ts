@@ -27,7 +27,7 @@ vi.mock<{ default: RendererLoggerView }>(import('electron-log/renderer'), () => 
   }
 }))
 
-import { useProjectStore } from '../../src/renderer/src/stores/projectStore'
+import { useProjectStore } from '../../src/renderer/src/stores/project-store'
 
 type ScanHeaders = Window['api']['plugin']['scanHeaders']
 

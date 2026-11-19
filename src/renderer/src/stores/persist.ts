@@ -3,7 +3,7 @@
 // quota is reported instead of thrown out of `set()`.
 import log from 'electron-log/renderer'
 import type { PersistOptions, PersistStorage } from 'zustand/middleware'
-import { useToastStore } from './toastStore'
+import { useToastStore } from './toast-store'
 
 /**
 @internal exported for tests

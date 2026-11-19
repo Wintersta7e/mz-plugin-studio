@@ -4,7 +4,7 @@
 // (the validator warns of both), and the ends of the line are trimmed.
 import * as fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { COMPACT_PARAM_TAG } from '../../src/shared/compact-param'

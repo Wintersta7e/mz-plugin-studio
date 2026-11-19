@@ -15,7 +15,7 @@ import {
   generatePluginsJsonEntry,
   generateReadme,
   generateTypeDeclaration
-} from '../../src/renderer/src/lib/exportFormats'
+} from '../../src/renderer/src/lib/export-formats'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { usePluginStore, useSettingsStore, useUIStore } from '../../src/renderer/src/stores'
 import {

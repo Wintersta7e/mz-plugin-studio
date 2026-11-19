@@ -2,7 +2,7 @@
 // its JSDoc comment, so the declarations are the ones a plain description produces.
 import { describe, it, expect } from 'vitest'
 import * as ts from 'typescript'
-import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
+import { generateTypeDeclaration } from '../../src/renderer/src/lib/export-formats'
 import type { PluginDefinition, PluginParameter } from '../../src/shared/types/plugin'
 
 const FILE = 'plugin.d.ts'

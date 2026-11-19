@@ -14,7 +14,7 @@ import type {
   PluginParameter,
   PluginStruct
 } from '../../src/renderer/src/types/plugin'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { createEmptyCommand, createEmptyParameter, toBaseline } from '../../src/shared/types/plugin'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'

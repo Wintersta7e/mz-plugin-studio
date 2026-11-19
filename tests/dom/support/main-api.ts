@@ -10,7 +10,7 @@ import {
   savePluginFile,
   savePluginToPath
 } from '../../../src/main/ipc/plugin'
-import { PluginParser } from '../../../src/main/services/pluginParser'
+import { PluginParser } from '../../../src/main/services/plugin-parser'
 import { IPC_CHANNELS } from '../../../src/shared/ipc-types'
 import { createFakeApi, type FakeApiOverrides } from '../../helpers/fake-api'
 

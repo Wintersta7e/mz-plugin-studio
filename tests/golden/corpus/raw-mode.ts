@@ -1,7 +1,7 @@
 // The fixture plugins as the app loads them, and the kinds of edit a user makes before raw mode
 // writes the file back. Edits are total: one with no target returns the copy unchanged.
 import { readdirSync, readFileSync } from 'node:fs'
-import { PluginParser } from '../../../src/main/services/pluginParser'
+import { PluginParser } from '../../../src/main/services/plugin-parser'
 import type { PluginDefinition } from '../../../src/shared/types/plugin'
 import { fixturePath } from '../../helpers/fixture-project'
 import { byCodeUnit } from './normalise'

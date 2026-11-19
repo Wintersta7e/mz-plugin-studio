@@ -9,7 +9,7 @@ import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
 import { useSettingsStore, useProjectStore, useTemplateStore, useToastStore } from '../../stores'
 import { deleteBackup, listBackups, type SavedBackup } from '../../stores/persist'
-import { NOTICE_MS } from '../../stores/toastStore'
+import { NOTICE_MS } from '../../stores/toast-store'
 import { userMessage } from '../../lib/utilities'
 
 interface SettingsDialogProps {

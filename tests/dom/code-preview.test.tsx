@@ -12,7 +12,7 @@ import { showSaveFileDialog } from '../../src/main/ipc/dialog'
 import { readFileByPath, savePluginFile, savePluginToPath } from '../../src/main/ipc/plugin'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { ToastContainer } from '../../src/renderer/src/components/ui/toast'
-import { generateTypeDeclaration } from '../../src/renderer/src/lib/exportFormats'
+import { generateTypeDeclaration } from '../../src/renderer/src/lib/export-formats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { savePlugin } from '../../src/renderer/src/lib/save-plugin'
 import {

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin'
 import { EDITS, type Edit } from '../golden/corpus/raw-mode'

@@ -14,14 +14,14 @@ import {
   generatePluginsJsonEntry,
   generateReadme,
   generateTypeDeclaration
-} from '../../../src/renderer/src/lib/exportFormats'
+} from '../../../src/renderer/src/lib/export-formats'
 import { deserializeParams, serializeParams } from '../../../src/renderer/src/lib/param-io'
 import {
   fileNameMismatch,
   generatePluginOutput,
   isRawMode
 } from '../../../src/renderer/src/lib/plugin-output'
-import { PluginParser } from '../../../src/main/services/pluginParser'
+import { PluginParser } from '../../../src/main/services/plugin-parser'
 import {
   ALL_PARAM_TYPES,
   toBaseline,

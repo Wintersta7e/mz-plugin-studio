@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import log from 'electron-log/main'
-import { PluginParser } from '../services/pluginParser'
+import { PluginParser } from '../services/plugin-parser'
 import { compileCheck } from '../services/syntax-check'
 import type { PluginDefinition } from '../../shared/types/plugin'
 import type {

@@ -1,9 +1,9 @@
 // Typed views of persisted state: the store hooks the last `loadStores` imported, and saved JSON
 // read through checks, so a wrong shape fails by name instead of a cast hiding it.
 import { isRecord } from '../../../src/renderer/src/stores/persist'
-import type { usePluginStore } from '../../../src/renderer/src/stores/pluginStore'
-import type { useSettingsStore } from '../../../src/renderer/src/stores/settingsStore'
-import type { useUIStore } from '../../../src/renderer/src/stores/uiStore'
+import type { usePluginStore } from '../../../src/renderer/src/stores/plugin-store'
+import type { useSettingsStore } from '../../../src/renderer/src/stores/settings-store'
+import type { useUIStore } from '../../../src/renderer/src/stores/ui-store'
 import type { PersistedKey } from '../../helpers/persist-v160'
 import type { PersistedHook } from './load-persisted'
 
@@ -46,10 +46,10 @@ same module registry, and each must be the very hook `stores` holds.
 export async function typedStores(
   stores: Record<PersistedKey, PersistedHook>
 ): Promise<TypedStores> {
-  const { usePluginStore: plugin } = await import('../../../src/renderer/src/stores/pluginStore')
-  const { useUIStore: ui } = await import('../../../src/renderer/src/stores/uiStore')
+  const { usePluginStore: plugin } = await import('../../../src/renderer/src/stores/plugin-store')
+  const { useUIStore: ui } = await import('../../../src/renderer/src/stores/ui-store')
   const { useSettingsStore: settings } =
-    await import('../../../src/renderer/src/stores/settingsStore')
+    await import('../../../src/renderer/src/stores/settings-store')
   const isSame =
     Object.is(plugin, stores['mz-plugin-studio-plugin']) &&
     Object.is(ui, stores['mz-plugin-studio-ui']) &&

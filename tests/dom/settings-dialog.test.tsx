@@ -50,7 +50,7 @@ The settings store imported afresh over localStorage, with the report it made wh
 */
 async function loadSettings() {
   vi.resetModules()
-  await import('../../src/renderer/src/stores/settingsStore')
+  await import('../../src/renderer/src/stores/settings-store')
   const persist = await import('../../src/renderer/src/stores/persist')
   return persist.takeRestoreReport()
 }
@@ -181,7 +181,7 @@ describe('saved-state backups in settings: export', { timeout: 30_000 }, () => {
 
     localStorage.setItem(KEY, '{"state":')
     await loadSettings()
-    const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
+    const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
     const denied = new Error("Error invoking remote method 'plugin:save-to-path': Error: disk full")
     vi.stubGlobal(
       'api',

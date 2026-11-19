@@ -38,11 +38,11 @@ Imports every persisted store afresh; each hydrates from localStorage on import.
 */
 export async function loadStores(): Promise<Record<PersistedKey, PersistedHook>> {
   vi.resetModules()
-  const plugin = await import('../../../src/renderer/src/stores/pluginStore')
-  const ui = await import('../../../src/renderer/src/stores/uiStore')
-  const settings = await import('../../../src/renderer/src/stores/settingsStore')
-  const project = await import('../../../src/renderer/src/stores/projectStore')
-  const templates = await import('../../../src/renderer/src/stores/templateStore')
+  const plugin = await import('../../../src/renderer/src/stores/plugin-store')
+  const ui = await import('../../../src/renderer/src/stores/ui-store')
+  const settings = await import('../../../src/renderer/src/stores/settings-store')
+  const project = await import('../../../src/renderer/src/stores/project-store')
+  const templates = await import('../../../src/renderer/src/stores/template-store')
   return {
     'mz-plugin-studio-plugin': persistedHook(plugin.usePluginStore),
     'mz-plugin-studio-ui': persistedHook(ui.useUIStore),

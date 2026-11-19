@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
-import { ProjectParser } from '../../src/main/services/projectParser'
+import { ProjectParser } from '../../src/main/services/project-parser'
 
 const logError: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.error)
 const logDebug: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.debug)

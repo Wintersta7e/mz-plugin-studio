@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useHistoryStore } from '../../src/renderer/src/stores/historyStore'
-import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
+import { useHistoryStore } from '../../src/renderer/src/stores/history-store'
+import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
   createEmptyPlugin,
   type PluginCommand,

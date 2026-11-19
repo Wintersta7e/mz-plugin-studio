@@ -2,7 +2,7 @@
 // captured localStorage, so the real persist middleware hydrates it.
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput, isRawMode } from '../../src/renderer/src/lib/plugin-output'
 import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'

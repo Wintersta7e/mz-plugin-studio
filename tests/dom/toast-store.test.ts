@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { useToastStore } from '../../src/renderer/src/stores/toastStore'
+import { useToastStore } from '../../src/renderer/src/stores/toast-store'
 import { resetStores } from './support/reset-stores'
 
 function toastAt(index: number): ReturnType<typeof useToastStore.getState>['toasts'][number] {

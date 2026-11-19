@@ -1,13 +1,13 @@
 // Tests for export format generators (plugins.json entry, .d.ts, README)
 import { describe, it, expect } from 'vitest'
 import * as ts from 'typescript'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import {
   generatePluginsJsonEntry,
   generateTypeDeclaration,
   generateReadme,
   typeDeclaration
-} from '../../src/renderer/src/lib/exportFormats'
+} from '../../src/renderer/src/lib/export-formats'
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import { conformanceCases, refusedCommandNames } from '../helpers/mz-conformance'

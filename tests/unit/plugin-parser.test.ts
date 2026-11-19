@@ -1,9 +1,9 @@
 // Tests for PluginParser
-// Note: pluginParser.ts lives in src/main/services/ and imports types
+// Note: plugin-parser.ts lives in src/main/services/ and imports types
 // from ../../renderer/src/types/plugin via relative path. This works
 // in Vitest's node environment.
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { loadFixture } from '../golden/corpus/raw-mode'
 
 const HELP_THEN_TAG = `/*:

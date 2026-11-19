@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { usePluginStore } from '../../src/renderer/src/stores/pluginStore'
+import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
   createEmptyPlugin,
   type PluginDefinition,
@@ -8,7 +8,7 @@ import {
   type PluginStruct
 } from '../../src/renderer/src/types/plugin'
 import { toBaseline } from '../../src/shared/types/plugin'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
 import { recordOf, recordsOf, savedStateOf } from './support/persisted-state'
 

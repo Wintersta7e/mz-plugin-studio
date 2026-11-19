@@ -2,7 +2,7 @@
 // write it back unchanged, and what it writes back over this version's state loads again here.
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { isImported } from '../../src/renderer/src/lib/plugin-output'
 import { fixturePath } from '../helpers/fixture-project'
 import {

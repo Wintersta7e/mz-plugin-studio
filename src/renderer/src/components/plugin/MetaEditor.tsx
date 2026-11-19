@@ -7,7 +7,7 @@ import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { usePluginStore, useProjectStore } from '../../stores'
-import { generateHelpText } from '../../lib/exportFormats'
+import { generateHelpText } from '../../lib/export-formats'
 import type { LocalizedContent, NoteParam } from '../../types/plugin'
 import {
   RAW_MODE_HEADER_READ_ONLY_NOTICE,

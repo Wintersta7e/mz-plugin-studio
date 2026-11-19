@@ -66,7 +66,7 @@ function onlyOf<T>(items: T[]): T {
 // The plugin store imported afresh over localStorage.
 async function loadPlugins() {
   vi.resetModules()
-  const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
+  const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
   const persist = await import('../../src/renderer/src/stores/persist')
   return { usePluginStore, persist }
 }
@@ -84,9 +84,9 @@ function failBackupWrites(): void {
 // The settings store imported afresh over localStorage, with the modules it reports through.
 async function loadSettings() {
   vi.resetModules()
-  const { useSettingsStore } = await import('../../src/renderer/src/stores/settingsStore')
+  const { useSettingsStore } = await import('../../src/renderer/src/stores/settings-store')
   const persist = await import('../../src/renderer/src/stores/persist')
-  const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
+  const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
   const { default: log } = await import('electron-log/renderer')
   return { useSettingsStore, persist, useToastStore, log }
 }
@@ -332,8 +332,8 @@ describe('damaged saved state: open tabs', () => {
     try {
       vi.resetModules()
       const { default: App } = await import('../../src/renderer/src/App')
-      const { useToastStore } = await import('../../src/renderer/src/stores/toastStore')
-      const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
+      const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
+      const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
 
       expect(() => render(createElement(App))).not.toThrow()
       expect(usePluginStore.getState().plugin.meta.dependencies).toStrictEqual([])
@@ -500,7 +500,7 @@ describe('damaged saved state: presets and full storage', () => {
     expect.hasAssertions()
 
     const { useSettingsStore, useToastStore, log } = await loadSettings()
-    const { usePluginStore } = await import('../../src/renderer/src/stores/pluginStore')
+    const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
     const errors = vi.spyOn(log, 'error')
     errors.mockClear()
     const full = fullStorage()

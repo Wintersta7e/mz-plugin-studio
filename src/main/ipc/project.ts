@@ -1,6 +1,6 @@
 import type { Dialog } from 'electron'
 import log from 'electron-log/main'
-import { ProjectParser } from '../services/projectParser'
+import { ProjectParser } from '../services/project-parser'
 import {
   PROJECT_OPEN_CANCELLED,
   accessDenied,

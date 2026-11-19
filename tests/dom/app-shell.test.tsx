@@ -7,7 +7,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock } from 'vitest'
 import App from '../../src/renderer/src/App'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import * as generator from '../../src/renderer/src/lib/generator'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'

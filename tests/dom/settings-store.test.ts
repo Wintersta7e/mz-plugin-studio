@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSettingsStore } from '../../src/renderer/src/stores/settingsStore'
+import { useSettingsStore } from '../../src/renderer/src/stores/settings-store'
 import type { PluginParameter } from '../../src/renderer/src/types/plugin'
 
 function resetSettingsStore() {

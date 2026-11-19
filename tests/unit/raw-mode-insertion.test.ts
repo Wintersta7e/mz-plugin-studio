@@ -4,7 +4,7 @@
 // output that is not JavaScript, is refused instead of written.
 import { describe, it, expect } from 'vitest'
 import { Script, createContext } from 'node:vm'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput, type PluginOutput } from '../../src/renderer/src/lib/plugin-output'
 import {
   createEmptyParameter,

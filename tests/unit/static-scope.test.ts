@@ -61,7 +61,7 @@ const PROGRAM_OVERLAPS: { glob: string; programs: string[] }[] = [
   { glob: 'src/shared/types/{mz,plugin}.ts', programs: ['node', 'web', 'test', 'e2e'] },
   { glob: 'src/shared/**', programs: ['node', 'web', 'test'] },
   { glob: 'src/preload/**', programs: ['node', 'test'] },
-  { glob: 'src/renderer/src/stores/{persist,toastStore}.ts', programs: ['web', 'test', 'e2e'] },
+  { glob: 'src/renderer/src/stores/{persist,toast-store}.ts', programs: ['web', 'test', 'e2e'] },
   { glob: 'src/renderer/src/**', programs: ['web', 'test'] },
   { glob: 'tests/helpers/**', programs: ['test', 'e2e'] },
   { glob: 'tools/analyze-plugins.ts', programs: ['tools', 'test'] },
@@ -623,7 +623,7 @@ const SNIPPETS = [
   },
   {
     file: 'tests/unit/static-scope.test.ts',
-    source: `import { usePluginStore } from ${quoted('../../src/renderer/src/stores/pluginStore')}\nexport const probe = usePluginStore.getState()\n`,
+    source: `import { usePluginStore } from ${quoted('../../src/renderer/src/stores/plugin-store')}\nexport const probe = usePluginStore.getState()\n`,
     rule: 'no-restricted-imports'
   },
   {
@@ -928,7 +928,7 @@ describe('static scope: ESLint directives, test rules and suppressions', () => {
       `eslint-suppressions: files ${String(files.length)}, rule entries ${String(rules.length)}`
     )
 
-    expect(files.length).toBeGreaterThan(0)
+    expect({ files: files.length, rules: rules.length }).toStrictEqual({ files: 0, rules: 0 })
 
     const barred = new Set([
       'sonarjs/code-eval',

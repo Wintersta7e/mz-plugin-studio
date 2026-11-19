@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react'
-import { useToastStore, type ToastAction, type ToastType } from '../../stores/toastStore'
+import { useToastStore, type ToastAction, type ToastType } from '../../stores/toast-store'
 import { cn } from '@/lib/utilities'
 import { Button } from './button'
 

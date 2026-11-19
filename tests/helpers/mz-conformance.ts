@@ -11,7 +11,7 @@ import {
 } from '../../src/renderer/src/lib/generator/index'
 import { annotationText } from '../../src/renderer/src/lib/generator/escape'
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { findAnnotationBlocks } from '../../src/shared/annotation-blocks'
 import {
   ID_BASED_PARAM_TYPES,

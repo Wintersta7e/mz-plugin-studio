@@ -9,8 +9,8 @@ import {
   matchPlugindesc,
   matchScriptName,
   stripTrailingStar
-} from '../../src/main/services/pluginParser'
-import { ProjectParser } from '../../src/main/services/projectParser'
+} from '../../src/main/services/plugin-parser'
+import { ProjectParser } from '../../src/main/services/project-parser'
 
 const BOUND_MS = 250
 

@@ -1,6 +1,6 @@
 // Edge case tests for PluginParser and raw mode round-trip
 import { describe, it, expect } from 'vitest'
-import { PluginParser } from '../../src/main/services/pluginParser'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePlugin, generateRawMode } from '../../src/renderer/src/lib/generator/index'
 import {
   createEmptyParameter,
