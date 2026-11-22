@@ -1,7 +1,6 @@
 // COV-07: scanDependencies, COV-08: setProject/addRecentProject/clearProject
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MZProject } from '../../src/shared/types/mz'
-import { createFakeApi } from '../helpers/fake-api'
+import { createFakeApi, sampleProject } from '../helpers/fake-api'
 
 type LogLine = (...params: unknown[]) => void
 
@@ -41,28 +40,6 @@ function tearDown(): void {
   vi.unstubAllGlobals()
 }
 
-function makeProject(path = '/games/project'): MZProject {
-  return {
-    path,
-    gameTitle: 'Test Game',
-    switches: [],
-    variables: [],
-    actors: [],
-    items: [],
-    maps: [],
-    skills: [],
-    weapons: [],
-    armors: [],
-    enemies: [],
-    states: [],
-    animations: [],
-    tilesets: [],
-    commonEvents: [],
-    classes: [],
-    troops: []
-  }
-}
-
 // `window.api` with `scanHeaders` as the plugin header scan
 function stubScanHeaders(scanHeaders: ScanHeaders): void {
   vi.stubGlobal('api', createFakeApi({ plugin: { scanHeaders } }))
@@ -76,7 +53,7 @@ describe('projectStore: setProject', () => {
 
   it('sets the project and clears error', () => {
     useProjectStore.setState({ error: 'old error' })
-    const project = makeProject()
+    const project = sampleProject()
     useProjectStore.getState().setProject(project)
     const state = useProjectStore.getState()
 
@@ -86,7 +63,7 @@ describe('projectStore: setProject', () => {
 
   it('setProject(null) clears dependencyReport and conflictReport', () => {
     useProjectStore.setState({
-      project: makeProject(),
+      project: sampleProject(),
       dependencyReport: {
         issues: [],
         health: 'healthy' as const,
@@ -156,7 +133,7 @@ describe('projectStore: clearProject', () => {
 
   it('resets all project state to empty', () => {
     useProjectStore.setState({
-      project: makeProject(),
+      project: sampleProject(),
       switches: [{ id: 1, name: 'SW1' }],
       variables: [{ id: 1, name: 'VAR1' }],
       dependencyReport: {
@@ -226,7 +203,7 @@ describe('projectStore: scanDependencies', () => {
     const scanHeadersMock = vi.fn<ScanHeaders>().mockResolvedValue(mockHeaders)
     stubScanHeaders(scanHeadersMock)
 
-    useProjectStore.setState({ project: makeProject('/games/project') })
+    useProjectStore.setState({ project: sampleProject('/games/project') })
 
     await useProjectStore.getState().scanDependencies()
 
@@ -256,7 +233,7 @@ describe('projectStore: scanDependencies', () => {
     const scanHeadersMock = vi.fn<ScanHeaders>().mockReturnValueOnce(firstScan)
     stubScanHeaders(scanHeadersMock)
 
-    useProjectStore.setState({ project: makeProject('/games/p') })
+    useProjectStore.setState({ project: sampleProject('/games/p') })
 
     const p1 = useProjectStore.getState().scanDependencies()
     const p2 = useProjectStore.getState().scanDependencies()
@@ -273,7 +250,7 @@ describe('projectStore: scanDependencies', () => {
     const scanHeadersMock = vi.fn<ScanHeaders>().mockRejectedValue(new Error('Scan failed'))
     stubScanHeaders(scanHeadersMock)
 
-    useProjectStore.setState({ project: makeProject('/games/p') })
+    useProjectStore.setState({ project: sampleProject('/games/p') })
 
     await useProjectStore.getState().scanDependencies()
 
