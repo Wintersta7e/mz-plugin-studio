@@ -598,7 +598,11 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   }),
   ...COMMENT_PAYLOADS.map((p) => ({ name: `hostile-${p.name}`, def: hostileDefinition(p.text) })),
   { name: 'hostile-control', def: hostileDefinition('Safe') },
-  loadedEntry()
+  loadedEntry(),
+  // A plugin name that is a file name but not an identifier: a space, a hyphen, a leading digit
+  row('plugin-name-file-name', (definition) => {
+    definition.meta.name = '2nd My-Plugin'
+  })
 ]
 
 // A header-only source, so raw mode regenerates the annotation block around nothing else.
