@@ -571,6 +571,20 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   row('custom-code', (definition) => {
     definition.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
   }),
+  // Custom code registering both commands itself, each beside slashes a comment stripper
+  // misreads: `//` inside a string, and `/*` inside a regex literal
+  row('custom-register-literals', (definition) => {
+    definition.commands.push(
+      { id: 'go', name: 'go', text: 'Go', desc: 'Goes.', args: [] },
+      { id: 'stop', name: 'stop', text: 'Stop', desc: 'Stops.', args: [] }
+    )
+    definition.customCode = [
+      "const u = 'a//b'; PluginManager.registerCommand(PLUGIN_NAME, 'go', function () {})",
+      String.raw`const re = /a\/*b/`,
+      "PluginManager.registerCommand(PLUGIN_NAME, 'stop', function () {})",
+      '/* end */'
+    ].join('\n')
+  }),
   ...COMMENT_PAYLOADS.map((p) => ({ name: `hostile-${p.name}`, def: hostileDefinition(p.text) })),
   { name: 'hostile-control', def: hostileDefinition('Safe') },
   loadedEntry()
