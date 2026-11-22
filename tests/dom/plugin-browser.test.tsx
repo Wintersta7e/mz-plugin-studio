@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PluginBrowser } from '../../src/renderer/src/components/plugin/PluginBrowser'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import type { MZProject } from '../../src/renderer/src/types/mz'
+import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { copyFixtureProject } from '../helpers/fixture-project'
 import { createMainApi } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -313,5 +314,115 @@ describe('plugin browser: the plugin list', () => {
     await user.click(screen.getByRole('button', { name: 'Close plugin browser' }))
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+// The names the rows show, in the order shown
+const rowNames = (): (string | null)[] =>
+  screen.getAllByTestId('plugin-browser-row').map((button) => button.textContent)
+
+// A plugin named Alpha made in the app, which has no file yet
+function createdAlpha(): PluginDefinition {
+  const plugin = createEmptyPlugin()
+  plugin.meta.name = 'Alpha'
+  return plugin
+}
+
+// Clicks the row of Alpha.js and waits until its tab is open
+async function openAlphaFromRow(): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: 'Alpha' }))
+  await screen.findByRole('button', { name: 'Close Alpha' })
+}
+
+describe('plugin browser: rows by source file', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('a plugin made in the app with the name of a project file is its own row, and the file row opens the file', async () => {
+    expect.hasAssertions()
+
+    await listAlphaAndBeta()
+    act(() => {
+      usePluginStore.getState().openPlugin(createdAlpha())
+    })
+    renderBrowser()
+    await screen.findByRole('button', { name: 'Beta' })
+    const alphaRows = screen.getAllByRole('button', { name: /^Alpha/ })
+    const fileRow = first(alphaRows, 'Alpha file row')
+
+    expect({
+      names: rowNames(),
+      fileRowShown: fileRow.hasAttribute('aria-current'),
+      tabRowShown: alphaRows.at(1)?.getAttribute('aria-current')
+    }).toStrictEqual({
+      names: ['Alpha', 'Beta', 'Alpha'],
+      fileRowShown: false,
+      tabRowShown: 'page'
+    })
+
+    fireEvent.click(fileRow)
+    await waitFor(() => {
+      expect(usePluginStore.getState().plugin.importedFrom).toBe('Alpha.js')
+    })
+
+    expect(usePluginStore.getState().openPlugins).toHaveLength(2)
+  })
+
+  it('a renamed tab opened from a project file is still that file row', async () => {
+    expect.hasAssertions()
+
+    await listAlphaAndBeta()
+    renderBrowser()
+    await openAlphaFromRow()
+    act(() => {
+      usePluginStore.getState().updateMeta({ name: 'Renamed' })
+    })
+
+    expect({
+      names: rowNames(),
+      shown: row('Alpha').getAttribute('aria-current')
+    }).toStrictEqual({ names: ['Alpha', 'Beta'], shown: 'page' })
+  })
+})
+
+describe('plugin browser: rows of tabs from other files', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it("a tab read from another project's file of the same name is not that file row", async () => {
+    expect.hasAssertions()
+
+    await listAlphaAndBeta()
+    const other = path.join(path.dirname(fixture.project), 'other', 'js', 'plugins', 'Alpha.js')
+    act(() => {
+      usePluginStore
+        .getState()
+        .openPlugin({ ...createdAlpha(), importedFrom: 'Alpha.js' }, { path: other, sha256: '0' })
+    })
+    renderBrowser()
+    await screen.findByRole('button', { name: 'Beta' })
+    const fileRow = first(screen.getAllByRole('button', { name: /^Alpha/ }), 'Alpha file row')
+
+    expect({
+      names: rowNames(),
+      fileRowShown: fileRow.hasAttribute('aria-current')
+    }).toStrictEqual({ names: ['Alpha', 'Beta', 'Alpha'], fileRowShown: false })
+  })
+
+  it('clicking the row of a file already open opens no second tab', async () => {
+    expect.hasAssertions()
+
+    await listAlphaAndBeta()
+    renderBrowser()
+    await openAlphaFromRow()
+    const tabs = usePluginStore.getState().openPlugins.length
+    fireEvent.click(row('Alpha'))
+
+    expect({
+      tabs: usePluginStore.getState().openPlugins.length,
+      loads: vi.mocked(globalThis.api.plugin.load).mock.calls.length
+    }).toStrictEqual({ tabs, loads: 1 })
   })
 })

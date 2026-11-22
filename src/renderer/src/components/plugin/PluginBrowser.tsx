@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useProjectStore, usePluginStore, useToastStore } from '../../stores'
 import { NOTICE_MS } from '../../stores/toast-store'
 import type { DependencyIssue } from '../../lib/dependency-analyzer'
+import { tabOfFile } from '../../lib/raw-mode'
 import { cn, userMessage } from '../../lib/utilities'
 import log from 'electron-log/renderer'
 
@@ -33,6 +34,7 @@ type OpenState = Readonly<{ id: string; isActive: boolean; isDirty: boolean }>
 type RowCounts = Readonly<{ total: number; open: number; dirty: number; errors: number }>
 
 interface PluginRow {
+  key: string // the file's name for a file row, the tab's id for a tab row
   name: string // filename without .js
   filename: string
   fileOrder: number // index from list() — preserves on-disk order
@@ -112,7 +114,7 @@ function buildRow(
   fileOrder: number,
   openState: OpenState | undefined,
   issues: DependencyIssue[]
-): PluginRow {
+): Omit<PluginRow, 'key'> {
   return {
     name,
     filename,
@@ -142,9 +144,11 @@ const isDirtyPlugin = (
   id: string
 ): boolean => dirtyByPluginId[id] === true
 
-// One row per plugin file in list order, then the open plugins not on disk yet (new or unsaved)
-function usePluginRows(files: readonly string[]): PluginRow[] {
+// One row per plugin file in list order, showing the tab read from or saved to that file; then
+// each open tab no file row shows (new, unsaved, or from another folder), named by its plugin
+function usePluginRows(files: readonly string[], projectPath: string | undefined): PluginRow[] {
   const openPlugins = usePluginStore((s) => s.openPlugins)
+  const baseByPluginId = usePluginStore((s) => s.baseByPluginId)
   const activePluginId = usePluginStore((s) => s.activePluginId)
   const dirtyByPluginId = usePluginStore((s) => s.dirtyByPluginId)
   const issuesByPlugin = useIssuesByPlugin()
@@ -154,19 +158,38 @@ function usePluginRows(files: readonly string[]): PluginRow[] {
       isActive: activePluginId === id,
       isDirty: isDirtyPlugin(dirtyByPluginId, id)
     })
-    const openByName = new Map(openPlugins.map((p) => [p.meta.name, openState(p.id)]))
+    const shownIds = new Set<string>()
     const rows = files.map((filename, index) => {
       const name = filename.replace(/\.js$/, '')
-      return buildRow(name, filename, index, openByName.get(name), issuesByPlugin.get(name) ?? [])
+      const id =
+        projectPath === undefined
+          ? null
+          : tabOfFile(`${projectPath}/js/plugins/${filename}`, { openPlugins, baseByPluginId })
+      if (id !== null) shownIds.add(id)
+      const open = id === null ? undefined : openState(id)
+      return {
+        key: filename,
+        ...buildRow(name, filename, index, open, issuesByPlugin.get(name) ?? [])
+      }
     })
-    const seenNames = new Set(rows.map((row) => row.name))
     for (const p of openPlugins) {
-      if (seenNames.has(p.meta.name)) continue
+      if (shownIds.has(p.id)) continue
       const name = p.meta.name === '' ? '(unnamed)' : p.meta.name
-      rows.push(buildRow(name, `${p.meta.name}.js`, Number.MAX_SAFE_INTEGER, openState(p.id), []))
+      rows.push({
+        key: `tab:${p.id}`,
+        ...buildRow(name, `${p.meta.name}.js`, Number.MAX_SAFE_INTEGER, openState(p.id), [])
+      })
     }
     return rows
-  }, [files, openPlugins, activePluginId, dirtyByPluginId, issuesByPlugin])
+  }, [
+    files,
+    projectPath,
+    openPlugins,
+    baseByPluginId,
+    activePluginId,
+    dirtyByPluginId,
+    issuesByPlugin
+  ])
 }
 
 function isInFilter(row: PluginRow, filterMode: FilterMode): boolean {
@@ -431,7 +454,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
   const project = useProjectStore((s) => s.project)
   const projectPath = project === null || project.path === '' ? undefined : project.path
   const { files, isLoading, refresh } = usePluginFiles(projectPath)
-  const allRows = usePluginRows(files)
+  const allRows = usePluginRows(files, projectPath)
   const [search, setSearch] = useState('')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [sortMode, setSortMode] = useState<SortMode>('order')
@@ -482,7 +505,7 @@ export function PluginBrowser({ onClose }: PluginBrowserProps) {
         ) : (
           <ul className="py-1">
             {shownRows.map((row) => (
-              <PluginRowItem key={row.filename} row={row} projectPath={projectPath} />
+              <PluginRowItem key={row.key} row={row} projectPath={projectPath} />
             ))}
           </ul>
         )}

@@ -137,6 +137,22 @@ export function isSameFile(a: string, b: string): boolean {
   return normal(a) === normal(b)
 }
 
+type TabFiles = Pick<ReturnType<typeof usePluginStore.getState>, 'openPlugins' | 'baseByPluginId'>
+
+/**
+The open tab whose file is `file`: the first whose last read or save was that file, else null
+*/
+export function tabOfFile(
+  file: string,
+  state: TabFiles = usePluginStore.getState()
+): string | null {
+  const tab = state.openPlugins.find((p) => {
+    const base = Object.hasOwn(state.baseByPluginId, p.id) ? state.baseByPluginId[p.id] : undefined
+    return base !== undefined && isSameFile(base.path, file)
+  })
+  return tab?.id ?? null
+}
+
 /**
 Reads an imported tab's file from the open project again and makes it the tab's file text,
 baseline and the file it was read from. A tab last read or saved outside the open project asks
