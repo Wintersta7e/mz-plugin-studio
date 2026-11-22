@@ -15,12 +15,50 @@ const RETRY_BOUND_MS = 300
 
 const launchFolder = (): string => mkdtempSync(path.join(tmpdir(), 'mz-teardown-'))
 
+// How long a holder may take to start and print its ready line
+const READY_BOUND_MS = 20_000
+const READY_LINE = /^ready\r?$/m
+
 /**
-Starts `command` and resolves once it printed its first output: it holds what it opened by then
+Starts `command` and resolves once it printed its ready line, which it prints only after it holds
+what it opens; rejects with what it printed when it ends first or stays silent past the bound
 */
-async function holder(command: string, args: string[], cwd: string): Promise<ChildProcess> {
-  const child = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'ignore'] })
-  await once(child.stdout, 'data')
+async function holder(
+  command: string,
+  args: string[],
+  cwd: string,
+  environment: NodeJS.ProcessEnv = process.env
+): Promise<ChildProcess> {
+  const child = spawn(command, args, { cwd, env: environment, stdio: ['ignore', 'pipe', 'pipe'] })
+  const printed = { out: '', all: '' }
+  const ready = Promise.withResolvers<undefined>()
+  const failed = (why: string): void => {
+    ready.reject(
+      new Error(`${command} ${why} before it printed ready; it printed:\n${printed.all}`)
+    )
+  }
+  child.stdout.setEncoding('utf8').on('data', (text: string) => {
+    printed.out += text
+    printed.all += text
+    if (READY_LINE.test(printed.out)) ready.resolve(undefined)
+  })
+  child.stderr.setEncoding('utf8').on('data', (text: string) => {
+    printed.all += text
+  })
+  child.on('exit', (code) => {
+    failed(`exited with code ${String(code)}`)
+  })
+  const timer = setTimeout(() => {
+    failed(`printed nothing ready for ${String(READY_BOUND_MS)} ms`)
+  }, READY_BOUND_MS)
+  try {
+    await ready.promise
+  } catch (error) {
+    child.kill()
+    throw error
+  } finally {
+    clearTimeout(timer)
+  }
   return child
 }
 
@@ -89,8 +127,13 @@ const expectedHeld = (held: string): ReturnType<typeof report> =>
     : { outcome: 'removed', locked: [], isHolderNamed: false, hasHoldTime: false }
 
 const NODE_HOLD = "process.stdout.write('ready'); setInterval(() => {}, 1000)"
-// Opens the file with no sharing, so no other process may open, rename or delete it
-const POWERSHELL_HOLD = `$f = [IO.File]::Open($args[0], 'Open', 'Read', 'None'); 'ready'; Start-Sleep 60`
+// A holder whose open fails: it prints, but never its ready line
+const FAILED_OPEN =
+  "process.stdout.write('opening\\n'); process.stderr.write('cannot open held.log\\n'); process.exit(1)"
+// Opens the file named by MZ_HELD_FILE with no sharing, so no other process may open, rename or
+// delete it, and prints ready only once it holds it: `-Command` passes no `$args`, and a failed
+// open stops the script before the ready line
+const POWERSHELL_HOLD = `$ErrorActionPreference = 'Stop'; $f = [IO.File]::Open($env:MZ_HELD_FILE, 'Open', 'Read', 'None'); 'ready'; Start-Sleep 60`
 
 /**
 On Windows a PowerShell process holding `file` open with no sharing; elsewhere nothing holds it,
@@ -98,7 +141,10 @@ since an open file never stops its removal there
 */
 async function fileHolder(file: string, folder: string): Promise<ChildProcess | undefined> {
   return IS_WINDOWS
-    ? holder('powershell', ['-NoProfile', '-Command', POWERSHELL_HOLD, file], folder)
+    ? holder('powershell', ['-NoProfile', '-Command', POWERSHELL_HOLD], folder, {
+        ...process.env,
+        MZ_HELD_FILE: file
+      })
     : undefined
 }
 
@@ -168,6 +214,19 @@ describe('e2e teardown', () => {
       process.stdout.write(`e2e teardown locked entries: ${String(locked.length)}\n`)
 
       expect(locked).toStrictEqual([`held${path.sep}`])
+    } finally {
+      rmSync(folder, { recursive: true, force: true })
+    }
+  })
+
+  it('a holder that ends before it says it is ready fails with what it printed', async () => {
+    expect.hasAssertions()
+
+    const folder = launchFolder()
+    try {
+      await expect(holder(process.execPath, ['-e', FAILED_OPEN], folder)).rejects.toThrow(
+        /exited with code 1 before it printed ready[\s\S]*opening[\s\S]*cannot open held\.log/
+      )
     } finally {
       rmSync(folder, { recursive: true, force: true })
     }
