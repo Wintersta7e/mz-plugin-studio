@@ -147,33 +147,7 @@ DataManager.processSampleNotetags = function(database) {
 
 // ==== case: type-violating: tagName=null,defaultValue=null {"tagFormat":"simple","valueType":"number","databaseType":"$dataActors","tagName":null,"defaultValue":null}
 // rejects: Field "Tag Name" is required
-// Notetag Parser: null
-// Database: Actors ($dataActors)
-// Access via: item.meta.
-//
-// Usage: <null: value>
-// Example: <null: 50>
-
-const _DataManager_onLoad = DataManager.onLoad;
-DataManager.onLoad = function(object) {
-    _DataManager_onLoad.call(this, object);
-    if (object === $dataActors) {
-        this.processNotetags(object);
-    }
-};
-
-DataManager.processNotetags = function(database) {
-    const regex = /<null:\s*(.+?)>/i;
-    for (const item of database) {
-        if (item) {
-            item.meta. = 0;
-            const match = item.note.match(regex);
-            if (match) {
-                item.meta. = Number(match[1]);
-            }
-        }
-    }
-};
+// throws: TypeError
 
 // ==== case: type-violating: tagName="note",tagFormat="boolean",propertyName=null {"tagFormat":"boolean","valueType":"number","databaseType":"$dataActors","tagName":"note","propertyName":null}
 // rejects: "note" may conflict with existing properties. Consider a more unique name.
@@ -298,51 +272,11 @@ DataManager.processSampleNotetags = function(database) {
 
 // ==== case: type-violating: tagFormat=7 {"tagFormat":7,"valueType":"number","databaseType":"$dataActors","tagName":"Sample"}
 // rejects: Field "Tag Format" must be text
-// Notetag Parser: Sample
-// Database: Actors ($dataActors)
-// Access via: item.meta.sample
-//
-
-const _DataManager_onLoad = DataManager.onLoad;
-DataManager.onLoad = function(object) {
-    _DataManager_onLoad.call(this, object);
-    if (object === $dataActors) {
-        this.processSampleNotetags(object);
-    }
-};
-
-DataManager.processSampleNotetags = function(database) {
-};
+// throws: TypeError
 
 // ==== case: type-violating: valueType=7 {"tagFormat":"simple","valueType":7,"databaseType":"$dataActors","tagName":"Sample"}
 // rejects: Field "Value Type" must be text
-// Notetag Parser: Sample
-// Database: Actors ($dataActors)
-// Access via: item.meta.sample
-//
-// Usage: <Sample: value>
-// Example: <Sample: 50>
-
-const _DataManager_onLoad = DataManager.onLoad;
-DataManager.onLoad = function(object) {
-    _DataManager_onLoad.call(this, object);
-    if (object === $dataActors) {
-        this.processSampleNotetags(object);
-    }
-};
-
-DataManager.processSampleNotetags = function(database) {
-    const regex = /<Sample:\s*(.+?)>/i;
-    for (const item of database) {
-        if (item) {
-            item.meta.sample = null;
-            const match = item.note.match(regex);
-            if (match) {
-                item.meta.sample = match[1];
-            }
-        }
-    }
-};
+// throws: TypeError
 
 // ==== case: type-violating: valueType="number",defaultValue="abc" {"tagFormat":"simple","valueType":"number","databaseType":"$dataActors","tagName":"Sample","defaultValue":"abc"}
 // rejects: Default value for number type must be a valid number

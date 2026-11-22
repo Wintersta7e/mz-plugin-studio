@@ -5,7 +5,7 @@ Generates code for safely extending existing RPG Maker MZ class methods
 while preserving original behavior through aliasing.
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { getMethodInfo } from '../class-registry'
 import { valueOr } from './values'
 
@@ -126,7 +126,7 @@ function generateAliasCode(
   return lines.join('\n')
 }
 
-const methodAliasTemplate: CodeTemplate = {
+const methodAliasTemplate = defineTemplate({
   id: 'method-alias-basic',
   category: 'method-alias',
   name: 'Alias Method',
@@ -173,29 +173,29 @@ const methodAliasTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const className = values['className']
-    const methodName = values['methodName']
-    const timing = valueOr(values['timing'], 'after')
-    const isCallOriginal = values['callOriginal'] !== false // Default to true
+    const className = values.className
+    const methodName = values.methodName
+    const timing = valueOr(values.timing, 'after')
+    const isCallOriginal = values.callOriginal !== false // Default to true
 
     // Get method info for accurate parameter names
     const methodInfo = methodInfoOf(className, methodName)
     const params = methodInfo?.params ?? []
 
-    return generateAliasCode(String(className), String(methodName), timing, isCallOriginal, params)
+    return generateAliasCode(className, methodName, timing, isCallOriginal, params)
   },
   validate: (values) => {
     const errors: string[] = []
 
     // Verify the method exists on the class
-    const className = values['className']
-    const methodName = values['methodName']
+    const className = values.className
+    const methodName = values.methodName
     const hasClassName = Boolean(className)
     const hasMethodName = Boolean(methodName)
     if (hasClassName && hasMethodName) {
       const methodInfo = methodInfoOf(className, methodName)
       if (!methodInfo) {
-        errors.push(`Method "${String(methodName)}" not found on class "${String(className)}"`)
+        errors.push(`Method "${methodName}" not found on class "${className}"`)
       }
     }
 
@@ -204,7 +204,7 @@ const methodAliasTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const methodAliasTemplates: readonly CodeTemplate[] = [methodAliasTemplate]

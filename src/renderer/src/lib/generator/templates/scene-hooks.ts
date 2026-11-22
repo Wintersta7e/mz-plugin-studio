@@ -3,9 +3,9 @@ Scene Hooks Template
 Provides templates for hooking into RPG Maker MZ scene lifecycle methods
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 
-const sceneHooksTemplate: CodeTemplate = {
+const sceneHooksTemplate = defineTemplate({
   id: 'scene-hook-basic',
   category: 'scene-hooks',
   name: 'Scene Lifecycle Hook',
@@ -53,8 +53,8 @@ const sceneHooksTemplate: CodeTemplate = {
   ],
   generate: (values) => {
     // Both are only written into the code as text
-    const sceneName = String(values['sceneName'])
-    const hookPoint = String(values['hookPoint'])
+    const sceneName = values.sceneName
+    const hookPoint = values.hookPoint
 
     return `// Hook: ${sceneName}.${hookPoint}
 const _${sceneName}_${hookPoint} = ${sceneName}.prototype.${hookPoint};
@@ -65,7 +65,7 @@ ${sceneName}.prototype.${hookPoint} = function() {
 
 };`
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const sceneHooksTemplates: readonly CodeTemplate[] = [sceneHooksTemplate]

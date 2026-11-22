@@ -1,29 +1,14 @@
 // ==== case: type-violating: wrong types {"hookType":7,"stateId":42}
 // rejects: Field "Hook Type" must be text | Field "State ID (optional)" must be text
-
+// throws: TypeError
 
 // ==== case: type-violating: null {"hookType":null,"stateId":null}
 // rejects: Field "Hook Type" is required
-// State Added Hook
-const _Game_Battler_addState = Game_Battler.prototype.addState;
-Game_Battler.prototype.addState = function(stateId) {
-    const hadState = this.isStateAffected(stateId);
-    _Game_Battler_addState.call(this, stateId);
-
-    if (!hadState && this.isStateAffected(stateId)) {
-        // State was newly added
-        this.onStateAdded(stateId);
-    }
-};
-
-Game_Battler.prototype.onStateAdded = function(stateId) {
-    // Your code here
-    console.log('State', stateId, 'added to', this.name());
-};
+// throws: TypeError
 
 // ==== case: type-violating: arrays {"hookType":["a","b"],"stateId":["a","b"]}
 // rejects: Field "Hook Type" must be text | Field "State ID (optional)" must be text
-
+// throws: TypeError
 
 // ==== case: type-violating: null where not required {"hookType":"add","stateId":null}
 // State Added Hook
@@ -85,24 +70,7 @@ Game_Battler.prototype.onStateAdded = function(stateId) {
 
 // ==== case: type-violating: hookType=null,stateId="3" {"hookType":null,"stateId":"3"}
 // rejects: Field "Hook Type" is required
-// State Added Hook
-const _Game_Battler_addState = Game_Battler.prototype.addState;
-Game_Battler.prototype.addState = function(stateId) {
-    const hadState = this.isStateAffected(stateId);
-    _Game_Battler_addState.call(this, stateId);
-
-    if (!hadState && this.isStateAffected(stateId)) {
-        // State was newly added
-        if (stateId === 3) {
-            this.onStateAdded(stateId);
-        }
-    }
-};
-
-Game_Battler.prototype.onStateAdded = function(stateId) {
-    // Your code here
-    console.log('State', stateId, 'added to', this.name());
-};
+// throws: TypeError
 
 // ==== case: type-violating: hookType="remove",stateId="3" {"hookType":"remove","stateId":"3"}
 // State Removed Hook

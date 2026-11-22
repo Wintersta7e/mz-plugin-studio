@@ -5,7 +5,7 @@ Generates code for handling keyboard and gamepad input in RPG Maker MZ.
 Supports key mapping registration, scene-specific handlers, and multiple trigger types.
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { expectText, valueOr } from './values'
 
 /**
@@ -141,7 +141,7 @@ function generateGlobalHandler(keyName: string, triggerType: string): string {
   return lines.join('\n')
 }
 
-const inputHandlerTemplate: CodeTemplate = {
+const inputHandlerTemplate = defineTemplate({
   id: 'input-handler-basic',
   category: 'input-handler',
   name: 'Key Input Handler',
@@ -194,33 +194,33 @@ const inputHandlerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const keyName = values['keyName']
+    const keyName = values.keyName
     // Used only as an object key and written into the code as text
-    const triggerType = String(valueOr(values['triggerType'], 'isTriggered'))
-    const activeScene = valueOr(values['activeScene'], 'Scene_Map')
+    const triggerType = String(valueOr(values.triggerType, 'isTriggered'))
+    const activeScene = valueOr(values.activeScene, 'Scene_Map')
 
     // The global handler calls a string method on the key name before it writes anything
     return activeScene === 'all'
       ? generateGlobalHandler(expectText(keyName), triggerType)
-      : generateSceneHandler(String(keyName), triggerType, String(activeScene))
+      : generateSceneHandler(keyName, triggerType, String(activeScene))
   },
   validate: (values) => {
     const errors: string[] = []
 
-    const keyName: unknown = values['keyName']
+    const keyName = values.keyName
     const hasKeyName = Boolean(keyName)
     if (hasKeyName && !isKnownKey(keyName)) {
-      errors.push(`Unknown key: ${String(keyName)}`)
+      errors.push(`Unknown key: ${keyName}`)
     }
 
-    const triggerType: unknown = values['triggerType']
+    const triggerType: unknown = values.triggerType
     const hasTriggerType = Boolean(triggerType)
     const validTriggers: readonly unknown[] = ['isTriggered', 'isPressed', 'isRepeated']
     if (hasTriggerType && !validTriggers.includes(triggerType)) {
       errors.push(`Invalid trigger type: ${String(triggerType)}`)
     }
 
-    const activeScene: unknown = values['activeScene']
+    const activeScene: unknown = values.activeScene
     const hasActiveScene = Boolean(activeScene)
     const validScenes: readonly unknown[] = ['Scene_Map', 'Scene_Battle', 'Scene_Menu', 'all']
     if (hasActiveScene && !validScenes.includes(activeScene)) {
@@ -232,7 +232,7 @@ const inputHandlerTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const inputHandlerTemplates: readonly CodeTemplate[] = [inputHandlerTemplate]

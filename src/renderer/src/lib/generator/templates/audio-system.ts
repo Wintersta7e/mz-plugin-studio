@@ -7,7 +7,7 @@ Templates for RPG Maker MZ audio control:
 - Audio fade and crossfade effects
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString, escapeLineComment } from '../escape'
 import { expectText, providedOr, valueOr } from './values'
 
@@ -19,12 +19,20 @@ function bgmNameText(filename: unknown, placeholder: string): string {
 }
 
 /**
+The values of a template that can wrap its code in a named function.
+*/
+interface FunctionWrapValues {
+  readonly wrapInFunction: boolean | null | undefined
+  readonly functionName: string | null | undefined
+}
+
+/**
 The error for a function name the code is wrapped in that is not a JavaScript identifier.
 */
-function functionNameErrors(values: Record<string, unknown>): string[] {
-  const hasFunctionName = Boolean(values['wrapInFunction']) && Boolean(values['functionName'])
+function functionNameErrors(values: FunctionWrapValues): string[] {
+  const hasFunctionName = Boolean(values.wrapInFunction) && Boolean(values.functionName)
   if (!hasFunctionName) return []
-  const isIdentifier = /^[a-z_$][\w$]*$/i.test(String(values['functionName']))
+  const isIdentifier = /^[a-z_$][\w$]*$/i.test(String(values.functionName))
   return isIdentifier ? [] : ['Function name must be a valid JavaScript identifier']
 }
 
@@ -38,13 +46,22 @@ function rangeErrors(value: unknown, min: number, max: number, message: string):
 }
 
 /**
+The values of a sound's volume, pitch and pan.
+*/
+interface SoundValues {
+  readonly volume: number | null | undefined
+  readonly pitch: number | null | undefined
+  readonly pan: number | null | undefined
+}
+
+/**
 The errors for a sound's volume, pitch and pan, in that order.
 */
-function soundRangeErrors(values: Record<string, unknown>): string[] {
+function soundRangeErrors(values: SoundValues): string[] {
   return [
-    ...rangeErrors(values['volume'], 0, 100, 'Volume must be between 0 and 100'),
-    ...rangeErrors(values['pitch'], 50, 150, 'Pitch must be between 50 and 150'),
-    ...rangeErrors(values['pan'], -100, 100, 'Pan must be between -100 and 100')
+    ...rangeErrors(values.volume, 0, 100, 'Volume must be between 0 and 100'),
+    ...rangeErrors(values.pitch, 50, 150, 'Pitch must be between 50 and 150'),
+    ...rangeErrors(values.pan, -100, 100, 'Pan must be between -100 and 100')
   ]
 }
 
@@ -125,7 +142,7 @@ function crossfadeTypeLabel(crossfadeType: unknown): string {
 Template 1: BGM Control
 Play, stop, fade, save/restore BGM
 */
-const bgmControlTemplate: CodeTemplate = {
+const bgmControlTemplate = defineTemplate({
   id: 'audio-bgm-control',
   category: 'audio-system',
   name: 'BGM Control',
@@ -213,15 +230,15 @@ const bgmControlTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = valueOr(values['operation'], 'play')
-    const filename = values['filename']
-    const volume = String(providedOr(values['volume'], 90))
-    const pitch = String(providedOr(values['pitch'], 100))
-    const pan = String(providedOr(values['pan'], 0))
-    const fadeDuration = String(providedOr(values['fadeDuration'], 1))
-    const fadeInDuration = String(providedOr(values['fadeInDuration'], 1))
-    const isWrapInFunction = values['wrapInFunction'] !== false
-    const functionName = String(valueOr(values['functionName'], 'customBgmControl'))
+    const operation = valueOr(values.operation, 'play')
+    const filename = values.filename
+    const volume = String(providedOr(values.volume, 90))
+    const pitch = String(providedOr(values.pitch, 100))
+    const pan = String(providedOr(values.pan, 0))
+    const fadeDuration = String(providedOr(values.fadeDuration, 1))
+    const fadeInDuration = String(providedOr(values.fadeInDuration, 1))
+    const isWrapInFunction = values.wrapInFunction !== false
+    const functionName = String(valueOr(values.functionName, 'customBgmControl'))
 
     const lines: string[] = []
 
@@ -304,8 +321,8 @@ const bgmControlTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const operation = values['operation']
-    const hasFilename = Boolean(values['filename'])
+    const operation = values.operation
+    const hasFilename = Boolean(values.filename)
 
     if (operation === 'play' && !hasFilename) {
       errors.push('BGM filename is required for Play operation')
@@ -319,13 +336,13 @@ const bgmControlTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 Template 2: Sound Effect Player
 Play SE with pitch/volume/pan options
 */
-const sePlayerTemplate: CodeTemplate = {
+const sePlayerTemplate = defineTemplate({
   id: 'audio-se-player',
   category: 'audio-system',
   name: 'Sound Effect Player',
@@ -393,14 +410,14 @@ const sePlayerTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const filename = values['filename']
-    const volume = String(providedOr(values['volume'], 90))
-    const pitch = String(providedOr(values['pitch'], 100))
-    const pan = String(providedOr(values['pan'], 0))
-    const isWrapInFunction = values['wrapInFunction'] !== false
-    const functionName = String(valueOr(values['functionName'], 'playCustomSE'))
-    const isRandomizePitch = values['randomizePitch'] === true
-    const pitchVariation = String(providedOr(values['pitchVariation'], 10))
+    const filename = values.filename
+    const volume = String(providedOr(values.volume, 90))
+    const pitch = String(providedOr(values.pitch, 100))
+    const pan = String(providedOr(values.pan, 0))
+    const isWrapInFunction = values.wrapInFunction !== false
+    const functionName = String(valueOr(values.functionName, 'playCustomSE'))
+    const isRandomizePitch = values.randomizePitch === true
+    const pitchVariation = String(providedOr(values.pitchVariation, 10))
 
     const lines: string[] = []
 
@@ -446,7 +463,7 @@ const sePlayerTemplate: CodeTemplate = {
     const errors = [
       ...soundRangeErrors(values),
       ...functionNameErrors(values),
-      ...rangeErrors(values['pitchVariation'], 0, 50, 'Pitch variation should be between 0 and 50')
+      ...rangeErrors(values.pitchVariation, 0, 50, 'Pitch variation should be between 0 and 50')
     ]
 
     return {
@@ -454,13 +471,13 @@ const sePlayerTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 Template 3: Audio Fade/Crossfade
 Fade out current BGM and fade in new BGM
 */
-const audioCrossfadeTemplate: CodeTemplate = {
+const audioCrossfadeTemplate = defineTemplate({
   id: 'audio-crossfade',
   category: 'audio-system',
   name: 'Audio Fade/Crossfade',
@@ -541,15 +558,15 @@ const audioCrossfadeTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const crossfadeType = valueOr(values['crossfadeType'], 'crossfade')
-    const newBgmFilename = values['newBgmFilename']
-    const fadeFromSilenceBgm = values['fadeFromSilenceBgm']
-    const fadeOutDuration = String(providedOr(values['fadeOutDuration'], 2))
-    const fadeInDuration = String(providedOr(values['fadeInDuration'], 2))
-    const newBgmVolume = String(providedOr(values['newBgmVolume'], 90))
-    const newBgmPitch = String(providedOr(values['newBgmPitch'], 100))
-    const isWrapInFunction = values['wrapInFunction'] !== false
-    const functionName = String(valueOr(values['functionName'], 'crossfadeBgm'))
+    const crossfadeType = valueOr(values.crossfadeType, 'crossfade')
+    const newBgmFilename = values.newBgmFilename
+    const fadeFromSilenceBgm = values.fadeFromSilenceBgm
+    const fadeOutDuration = String(providedOr(values.fadeOutDuration, 2))
+    const fadeInDuration = String(providedOr(values.fadeInDuration, 2))
+    const newBgmVolume = String(providedOr(values.newBgmVolume, 90))
+    const newBgmPitch = String(providedOr(values.newBgmPitch, 100))
+    const isWrapInFunction = values.wrapInFunction !== false
+    const functionName = String(valueOr(values.functionName, 'crossfadeBgm'))
 
     const lines: string[] = []
     const settings = { fadeOutDuration, fadeInDuration, newBgmVolume, newBgmPitch }
@@ -597,9 +614,9 @@ const audioCrossfadeTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const crossfadeType = values['crossfadeType']
-    const hasNewBgmFilename = Boolean(values['newBgmFilename'])
-    const hasFadeFromSilenceBgm = Boolean(values['fadeFromSilenceBgm'])
+    const crossfadeType = values.crossfadeType
+    const hasNewBgmFilename = Boolean(values.newBgmFilename)
+    const hasFadeFromSilenceBgm = Boolean(values.fadeFromSilenceBgm)
 
     // Validate BGM filename based on crossfade type
     if (crossfadeType === 'crossfade' && !hasNewBgmFilename) {
@@ -613,19 +630,19 @@ const audioCrossfadeTemplate: CodeTemplate = {
     // Validate durations, then volume and pitch
     errors.push(
       ...rangeErrors(
-        values['fadeOutDuration'],
+        values.fadeOutDuration,
         0,
         60,
         'Fade out duration must be between 0 and 60 seconds'
       ),
       ...rangeErrors(
-        values['fadeInDuration'],
+        values.fadeInDuration,
         0,
         60,
         'Fade in duration must be between 0 and 60 seconds'
       ),
-      ...rangeErrors(values['newBgmVolume'], 0, 100, 'Volume must be between 0 and 100'),
-      ...rangeErrors(values['newBgmPitch'], 50, 150, 'Pitch must be between 50 and 150')
+      ...rangeErrors(values.newBgmVolume, 0, 100, 'Volume must be between 0 and 100'),
+      ...rangeErrors(values.newBgmPitch, 50, 150, 'Pitch must be between 50 and 150')
     )
 
     // Validate function name
@@ -636,7 +653,7 @@ const audioCrossfadeTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const audioSystemTemplates: readonly CodeTemplate[] = [

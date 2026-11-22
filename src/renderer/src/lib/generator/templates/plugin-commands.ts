@@ -7,7 +7,7 @@ Templates for creating RPG Maker MZ plugin commands:
 - Command with input validation and error handling
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
 import { JS_RESERVED } from '../index'
 import { definedOr, expectText, valueOr } from './values'
@@ -40,11 +40,19 @@ function generateArgParsing(args: { name: string; type: unknown }[]): string[] {
 }
 
 /**
+The values naming a command and the plugin that registers it, which every command template has.
+*/
+interface CommandNameValues {
+  readonly commandName: string | null | undefined
+  readonly pluginName: string | null | undefined
+}
+
+/**
 The command name as the code writes it. The check reads the name trimmed, so the code is written
 with the same text.
 */
-function commandNameText(values: Record<string, unknown>): string {
-  return String(definedOr(values['commandName'], '')).trim()
+function commandNameText(values: CommandNameValues): string {
+  return String(definedOr(values.commandName, '')).trim()
 }
 
 /**
@@ -66,8 +74,11 @@ const COMMAND_GLOBALS: ReadonlySet<string> = new Set(['String', 'Number', 'JSON'
 
 // The argument names the command cannot declare, and a name both arguments share; compared
 // trimmed, as the code is written with them trimmed
-function argNameErrors(values: Record<string, unknown>): string[] {
-  const names = [values['arg1Name'], values['arg2Name']].map((name) =>
+function argNameErrors(values: {
+  readonly arg1Name: string | null | undefined
+  readonly arg2Name: string | null | undefined
+}): string[] {
+  const names = [values.arg1Name, values.arg2Name].map((name) =>
     typeof name === 'string' ? name.trim() : ''
   )
   const errors: string[] = []
@@ -86,9 +97,9 @@ function argNameErrors(values: Record<string, unknown>): string[] {
 
 // The command and plugin name checks every command template runs first; `identifierError` is the
 // template's message for a command name that is not an identifier
-function commandNameErrors(values: Record<string, unknown>, identifierError: string): string[] {
+function commandNameErrors(values: CommandNameValues, identifierError: string): string[] {
   const errors: string[] = []
-  const commandName = values['commandName']
+  const commandName = values.commandName
   const hasCommandName = Boolean(commandName)
   if (hasCommandName && !expectText(commandName).trim()) {
     errors.push('Command name is required')
@@ -96,7 +107,7 @@ function commandNameErrors(values: Record<string, unknown>, identifierError: str
     errors.push(identifierError)
   }
 
-  const pluginName = values['pluginName']
+  const pluginName = values.pluginName
   const hasPluginName = Boolean(pluginName)
   if (hasPluginName && !expectText(pluginName).trim()) {
     errors.push('Plugin name is required')
@@ -108,7 +119,7 @@ function commandNameErrors(values: Record<string, unknown>, identifierError: str
 Template 1: Basic Plugin Command
 Simple command registration with arguments
 */
-const basicCommandTemplate: CodeTemplate = {
+const basicCommandTemplate = defineTemplate({
   id: 'plugin-command-basic',
   category: 'plugin-command',
   name: 'Basic Plugin Command',
@@ -176,11 +187,11 @@ const basicCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const commandName = commandNameText(values)
-    const pluginName = values['pluginName']
-    const arg1Name = values['arg1Name']
-    const arg1Type = valueOr(values['arg1Type'], 'string')
-    const arg2Name = values['arg2Name']
-    const arg2Type = valueOr(values['arg2Type'], 'number')
+    const pluginName = values.pluginName
+    const arg1Name = values.arg1Name
+    const arg1Type = valueOr(values.arg1Type, 'string')
+    const arg2Name = values.arg2Name
+    const arg2Type = valueOr(values.arg2Type, 'number')
 
     const lines: string[] = []
 
@@ -233,8 +244,8 @@ const basicCommandTemplate: CodeTemplate = {
     )
 
     // Validate argument names if provided
-    const arg1Name = values['arg1Name']
-    const arg2Name = values['arg2Name']
+    const arg1Name = values.arg1Name
+    const arg2Name = values.arg2Name
 
     const hasArg1Name = Boolean(arg1Name)
     if (
@@ -261,7 +272,7 @@ const basicCommandTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The async command that waits on a custom wait mode until its operation completes.
@@ -377,7 +388,7 @@ function asyncWaitLines(
 Template 2: Async Command with Wait
 Command that uses async/await with interpreter wait
 */
-const asyncCommandTemplate: CodeTemplate = {
+const asyncCommandTemplate = defineTemplate({
   id: 'plugin-command-async',
   category: 'plugin-command',
   name: 'Async Command with Wait',
@@ -425,9 +436,9 @@ const asyncCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const commandName = commandNameText(values)
-    const pluginName = values['pluginName']
-    const waitType = valueOr(values['waitType'], 'callback')
-    const waitDuration = valueOr(values['waitDuration'], 60)
+    const pluginName = values.pluginName
+    const waitType = valueOr(values.waitType, 'callback')
+    const waitDuration = valueOr(values.waitDuration, 60)
 
     return [
       `// Async Plugin Command: ${commandName}`,
@@ -439,8 +450,8 @@ const asyncCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors = commandNameErrors(values, 'Command name must be a valid identifier')
 
-    const waitType = values['waitType']
-    const waitDuration = values['waitDuration']
+    const waitType = values.waitType
+    const waitDuration = values.waitDuration
 
     if (waitType === 'waitCount') {
       if (waitDuration === undefined || Number(waitDuration) < 1) {
@@ -455,7 +466,7 @@ const asyncCommandTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The validated command's error handler for its error handling mode; a warning is the default.
@@ -566,7 +577,7 @@ function commandLogicLines(commandName: string, checks: CommandChecks): string[]
 Template 3: Command with Validation
 Command with input validation and error handling
 */
-const validatedCommandTemplate: CodeTemplate = {
+const validatedCommandTemplate = defineTemplate({
   id: 'plugin-command-validated',
   category: 'plugin-command',
   name: 'Command with Validation',
@@ -637,14 +648,14 @@ const validatedCommandTemplate: CodeTemplate = {
   ],
   generate: (values): string => {
     const commandName = commandNameText(values)
-    const pluginName = values['pluginName']
+    const pluginName = values.pluginName
     const checks: CommandChecks = {
-      isValidateActorId: Boolean(values['validateActorId']),
-      isValidateNumberRange: Boolean(values['validateNumberRange']),
-      minValue: definedOr(values['minValue'], 0),
-      maxValue: definedOr(values['maxValue'], 9999)
+      isValidateActorId: Boolean(values.validateActorId),
+      isValidateNumberRange: Boolean(values.validateNumberRange),
+      minValue: definedOr(values.minValue, 0),
+      maxValue: definedOr(values.maxValue, 9999)
     }
-    const errorHandling = valueOr(values['errorHandling'], 'warning')
+    const errorHandling = valueOr(values.errorHandling, 'warning')
 
     const lines: string[] = [
       `// Plugin Command with Validation: ${commandName}`,
@@ -686,9 +697,9 @@ const validatedCommandTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors = commandNameErrors(values, 'Command name must be a valid identifier')
 
-    const isValidateNumberRange = Boolean(values['validateNumberRange'])
-    const minValue = values['minValue']
-    const maxValue = values['maxValue']
+    const isValidateNumberRange = Boolean(values.validateNumberRange)
+    const minValue = values.minValue
+    const maxValue = values.maxValue
 
     if (
       isValidateNumberRange &&
@@ -704,7 +715,7 @@ const validatedCommandTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const pluginCommandsTemplates: readonly CodeTemplate[] = [

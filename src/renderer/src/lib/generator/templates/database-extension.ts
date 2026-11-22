@@ -5,7 +5,7 @@ Generates code for parsing custom notetags from RPG Maker MZ database entries.
 Notetags are custom metadata added to the note field of database items.
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
 /**
@@ -291,7 +291,7 @@ function defaultValueErrors(valueType: unknown, defaultValue: unknown): string[]
   }
 }
 
-const databaseExtensionTemplate: CodeTemplate = {
+const databaseExtensionTemplate = defineTemplate({
   id: 'database-ext-notetag',
   category: 'database-ext',
   name: 'Notetag Parser',
@@ -369,12 +369,12 @@ const databaseExtensionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const databaseType = values['databaseType']
-    const tagName = values['tagName']
-    const tagFormat = valueOr(values['tagFormat'], 'simple')
-    const valueType = valueOr(values['valueType'], 'number')
-    const propertyName = values['propertyName']
-    const defaultValue = values['defaultValue']
+    const databaseType = values.databaseType
+    const tagName = values.tagName
+    const tagFormat = valueOr(values.tagFormat, 'simple')
+    const valueType = valueOr(values.valueType, 'number')
+    const propertyName = values.propertyName
+    const defaultValue = values.defaultValue
 
     return generateNotetagCode(
       databaseType,
@@ -389,22 +389,22 @@ const databaseExtensionTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // Validate tag name
-    const tagName: unknown = values['tagName']
+    const tagName: unknown = values.tagName
     const hasTagName = Boolean(tagName)
     if (hasTagName) {
       errors.push(...tagNameErrors(tagName))
     }
 
     // Validate property name if provided
-    const propertyName: unknown = values['propertyName']
+    const propertyName: unknown = values.propertyName
     const hasPropertyName = Boolean(propertyName)
     if (hasPropertyName && !/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
       errors.push('Property Name must be a valid JavaScript identifier')
     }
 
     // Validate default value format based on value type
-    const defaultValue = values['defaultValue']
-    const valueType = values['valueType']
+    const defaultValue = values.defaultValue
+    const valueType = values.valueType
     const hasDefaultValue = Boolean(defaultValue)
     const hasValueType = Boolean(valueType)
     if (hasDefaultValue && hasValueType) {
@@ -416,7 +416,7 @@ const databaseExtensionTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const databaseExtensionTemplates: readonly CodeTemplate[] = [databaseExtensionTemplate]

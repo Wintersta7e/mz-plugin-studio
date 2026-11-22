@@ -7,7 +7,13 @@ Templates for modifying RPG Maker MZ message and text systems:
 - Choice window handling and styling
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import {
+  defineTemplate,
+  templateFields,
+  type CodeTemplate,
+  type TemplateValues,
+  type ValidationResult
+} from './types'
 import { escapeJSString, isOneLineExpression } from '../escape'
 import { definedOr, expectText, valueOr } from './values'
 
@@ -118,7 +124,7 @@ function effectCodeLines(escapeChar: string, hasParameter: boolean, effectType: 
 Template 1: Custom Text Code
 Add a new escape code for message text processing
 */
-const customTextCodeTemplate: CodeTemplate = {
+const customTextCodeTemplate = defineTemplate({
   id: 'message-custom-text-code',
   category: 'message-system',
   name: 'Custom Text Code',
@@ -176,11 +182,11 @@ const customTextCodeTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const escapeChar = expectText(values['escapeChar']).toUpperCase()
-    const hasParameter = Boolean(values['hasParameter'])
-    const codeType = valueOr(values['codeType'], 'replace')
-    const replacementText = valueOr(values['replacementText'], "''")
-    const effectType = valueOr(values['effectType'], 'color')
+    const escapeChar = expectText(values.escapeChar).toUpperCase()
+    const hasParameter = Boolean(values.hasParameter)
+    const codeType = valueOr(values.codeType, 'replace')
+    const replacementText = valueOr(values.replacementText, "''")
+    const effectType = valueOr(values.effectType, 'color')
 
     return [
       `// Custom Text Code: \\${escapeChar}${hasParameter ? '[n]' : ''}`,
@@ -193,9 +199,9 @@ const customTextCodeTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const hasEscapeChar = Boolean(values['escapeChar'])
+    const hasEscapeChar = Boolean(values.escapeChar)
     if (hasEscapeChar) {
-      const escapeChar = expectText(values['escapeChar'])
+      const escapeChar = expectText(values.escapeChar)
       // Validate escape character format
       if (!/^[A-Z]+$/i.test(escapeChar)) {
         errors.push('Escape character must contain only letters (A-Z)')
@@ -209,8 +215,8 @@ const customTextCodeTemplate: CodeTemplate = {
       }
     }
 
-    const codeType = values['codeType']
-    const replacementText = values['replacementText']
+    const codeType = values.codeType
+    const replacementText = values.replacementText
     const hasReplacementText = Boolean(replacementText)
     if (codeType === 'replace' && !hasReplacementText) {
       errors.push('Replacement expression is required for text replacement codes')
@@ -229,7 +235,7 @@ const customTextCodeTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The line that moves the message window to the top, the middle or (by default) the bottom.
@@ -250,10 +256,10 @@ function forcedPositionLines(positionType: unknown): string[] {
 /**
 The position mode: the message window at a custom position, or forced to one edge or the middle.
 */
-function windowPositionLines(values: Record<string, unknown>): string[] {
-  const positionType = valueOr(values['positionType'], 'top')
-  const customX = valueOr(values['customX'], 0)
-  const customY = valueOr(values['customY'], 0)
+function windowPositionLines(values: MessageWindowModuleValues): string[] {
+  const positionType = valueOr(values.positionType, 'top')
+  const customX = valueOr(values.customX, 0)
+  const customY = valueOr(values.customY, 0)
   const header = [
     '// Message Window Position Modification',
     '// Changes the default position of the message window',
@@ -287,9 +293,9 @@ function windowPositionLines(values: Record<string, unknown>): string[] {
 /**
 The size mode: the message window's width and the number of text lines its height fits.
 */
-function windowSizeLines(values: Record<string, unknown>): string[] {
-  const windowWidth = valueOr(values['windowWidth'], 816)
-  const numberLines = valueOr(values['numLines'], 4)
+function windowSizeLines(values: MessageWindowModuleValues): string[] {
+  const windowWidth = valueOr(values.windowWidth, 816)
+  const numberLines = valueOr(values.numLines, 4)
 
   return [
     '// Message Window Size Modification',
@@ -319,9 +325,9 @@ function backgroundTypeValue(bgType: unknown): number {
 The background mode: a custom fill colour, or one of the message background types for every
 message.
 */
-function windowBackgroundLines(values: Record<string, unknown>): string[] {
-  const bgType = valueOr(values['bgType'], 'dim')
-  const bgColor = valueOr(values['bgColor'], 'rgba(0, 0, 0, 0.6)')
+function windowBackgroundLines(values: MessageWindowModuleValues): string[] {
+  const bgType = valueOr(values.bgType, 'dim')
+  const bgColor = valueOr(values.bgColor, 'rgba(0, 0, 0, 0.6)')
   const header = [
     '// Message Window Background Modification',
     '// Changes the visual style of the message window background',
@@ -358,8 +364,8 @@ function windowBackgroundLines(values: Record<string, unknown>): string[] {
 /**
 The opacity mode: the message window's opacity, set when it is made and kept on every update.
 */
-function windowOpacityLines(values: Record<string, unknown>): string[] {
-  const opacityValue = definedOr(values['opacityValue'], 255)
+function windowOpacityLines(values: MessageWindowModuleValues): string[] {
+  const opacityValue = definedOr(values.opacityValue, 255)
 
   return [
     '// Message Window Opacity Modification',
@@ -402,8 +408,8 @@ function nameBoxPlacementLines(nameBoxPosition: unknown): string[] {
 /**
 The name box mode: where the speaker name sits relative to the message window.
 */
-function windowNameBoxLines(values: Record<string, unknown>): string[] {
-  const nameBoxPosition = valueOr(values['nameBoxPosition'], 'center')
+function windowNameBoxLines(values: MessageWindowModuleValues): string[] {
+  const nameBoxPosition = valueOr(values.nameBoxPosition, 'center')
 
   return [
     '// Name Box Position Modification',
@@ -422,8 +428,8 @@ function windowNameBoxLines(values: Record<string, unknown>): string[] {
 /**
 The message window code for its modification type; an unknown type writes nothing.
 */
-function windowModificationLines(values: Record<string, unknown>): string[] {
-  switch (valueOr(values['modType'], 'position')) {
+function windowModificationLines(values: MessageWindowModuleValues): string[] {
+  switch (valueOr(values.modType, 'position')) {
     case 'position': {
       return windowPositionLines(values)
     }
@@ -448,8 +454,8 @@ function windowModificationLines(values: Record<string, unknown>): string[] {
 /**
 The errors for the size mode's width and visible lines, in that order.
 */
-function windowSizeErrors(values: Record<string, unknown>): string[] {
-  const windowWidth = values['windowWidth']
+function windowSizeErrors(values: MessageWindowModuleValues): string[] {
+  const windowWidth = values.windowWidth
   const errors: string[] = []
 
   if (windowWidth !== undefined && Number(windowWidth) <= 0) {
@@ -458,7 +464,7 @@ function windowSizeErrors(values: Record<string, unknown>): string[] {
   if (windowWidth !== undefined && Number(windowWidth) > 1920) {
     errors.push('Window width exceeds maximum screen width (1920)')
   }
-  if (isOutOfRange(values['numLines'], 1, 10)) {
+  if (isOutOfRange(values.numLines, 1, 10)) {
     errors.push('Visible lines must be between 1 and 10')
   }
   return errors
@@ -467,139 +473,144 @@ function windowSizeErrors(values: Record<string, unknown>): string[] {
 /**
 The errors for the setting the modification type reads.
 */
-function windowModificationErrors(values: Record<string, unknown>): string[] {
-  const moduleType = values['modType']
-  const hasBgColor = Boolean(values['bgColor'])
+function windowModificationErrors(values: MessageWindowModuleValues): string[] {
+  const moduleType = values.modType
+  const hasBgColor = Boolean(values.bgColor)
 
   if (moduleType === 'size') {
     return windowSizeErrors(values)
   }
   if (moduleType === 'opacity') {
-    return isOutOfRange(values['opacityValue'], 0, 255) ? ['Opacity must be between 0 and 255'] : []
+    return isOutOfRange(values.opacityValue, 0, 255) ? ['Opacity must be between 0 and 255'] : []
   }
-  if (!hasBgColor && moduleType === 'background' && values['bgType'] === 'custom') {
+  if (!hasBgColor && moduleType === 'background' && values.bgType === 'custom') {
     return ['Background color is required for custom background']
   }
   return []
 }
 
+// The fields of the template below, which its helpers read by type
+const messageWindowModuleFields = templateFields([
+  {
+    id: 'modType',
+    label: 'Modification Type',
+    type: 'select',
+    options: [
+      { value: 'position', label: 'Window Position - Change default position' },
+      { value: 'size', label: 'Window Size - Modify dimensions' },
+      { value: 'background', label: 'Background Style - Custom background appearance' },
+      { value: 'opacity', label: 'Opacity - Window transparency' },
+      { value: 'nameBox', label: 'Name Box - Modify speaker name display' }
+    ],
+    default: 'position',
+    required: true,
+    help: 'Which aspect of the message window to modify'
+  },
+  {
+    id: 'positionType',
+    label: 'Position',
+    type: 'select',
+    options: [
+      { value: 'top', label: 'Top of screen' },
+      { value: 'middle', label: 'Middle of screen' },
+      { value: 'bottom', label: 'Bottom of screen (default)' },
+      { value: 'custom', label: 'Custom position' }
+    ],
+    default: 'top',
+    dependsOn: { field: 'modType', value: 'position' },
+    help: 'Where to position the message window'
+  },
+  {
+    id: 'customX',
+    label: 'X Position',
+    type: 'number',
+    default: 0,
+    dependsOn: { field: 'positionType', value: 'custom' },
+    help: 'Custom X coordinate (pixels from left)'
+  },
+  {
+    id: 'customY',
+    label: 'Y Position',
+    type: 'number',
+    default: 0,
+    dependsOn: { field: 'positionType', value: 'custom' },
+    help: 'Custom Y coordinate (pixels from top)'
+  },
+  {
+    id: 'windowWidth',
+    label: 'Window Width',
+    type: 'number',
+    default: 816,
+    dependsOn: { field: 'modType', value: 'size' },
+    help: 'Width in pixels (default 816 for MZ)'
+  },
+  {
+    id: 'numLines',
+    label: 'Visible Lines',
+    type: 'number',
+    default: 4,
+    dependsOn: { field: 'modType', value: 'size' },
+    help: 'Number of text lines to display (default 4)'
+  },
+  {
+    id: 'bgType',
+    label: 'Background Type',
+    type: 'select',
+    options: [
+      { value: 'window', label: 'Window (default frame)' },
+      { value: 'dim', label: 'Dim (darkened overlay)' },
+      { value: 'transparent', label: 'Transparent (no background)' },
+      { value: 'custom', label: 'Custom color' }
+    ],
+    default: 'dim',
+    dependsOn: { field: 'modType', value: 'background' },
+    help: 'Visual style of the window background'
+  },
+  {
+    id: 'bgColor',
+    label: 'Background Color',
+    type: 'text',
+    default: 'rgba(0, 0, 0, 0.6)',
+    placeholder: 'rgba(0, 0, 0, 0.6)',
+    dependsOn: { field: 'bgType', value: 'custom' },
+    help: 'CSS color value for custom background'
+  },
+  {
+    id: 'opacityValue',
+    label: 'Opacity (0-255)',
+    type: 'number',
+    default: 255,
+    dependsOn: { field: 'modType', value: 'opacity' },
+    help: 'Window opacity (0 = invisible, 255 = fully opaque)'
+  },
+  {
+    id: 'nameBoxPosition',
+    label: 'Name Box Position',
+    type: 'select',
+    options: [
+      { value: 'left', label: 'Left side (default)' },
+      { value: 'center', label: 'Centered above window' },
+      { value: 'right', label: 'Right side' }
+    ],
+    default: 'center',
+    dependsOn: { field: 'modType', value: 'nameBox' },
+    help: 'Position of the speaker name box'
+  }
+])
+
+type MessageWindowModuleValues = TemplateValues<typeof messageWindowModuleFields>
+
 /**
 Template 2: Message Window Mod
 Modify message window appearance (position, size, background)
 */
-const messageWindowModuleTemplate: CodeTemplate = {
+const messageWindowModuleTemplate = defineTemplate({
   id: 'message-window-mod',
   category: 'message-system',
   name: 'Message Window Mod',
   description: 'Modify message window appearance (position, size, background)',
   icon: 'MessageSquare',
-  fields: [
-    {
-      id: 'modType',
-      label: 'Modification Type',
-      type: 'select',
-      options: [
-        { value: 'position', label: 'Window Position - Change default position' },
-        { value: 'size', label: 'Window Size - Modify dimensions' },
-        { value: 'background', label: 'Background Style - Custom background appearance' },
-        { value: 'opacity', label: 'Opacity - Window transparency' },
-        { value: 'nameBox', label: 'Name Box - Modify speaker name display' }
-      ],
-      default: 'position',
-      required: true,
-      help: 'Which aspect of the message window to modify'
-    },
-    {
-      id: 'positionType',
-      label: 'Position',
-      type: 'select',
-      options: [
-        { value: 'top', label: 'Top of screen' },
-        { value: 'middle', label: 'Middle of screen' },
-        { value: 'bottom', label: 'Bottom of screen (default)' },
-        { value: 'custom', label: 'Custom position' }
-      ],
-      default: 'top',
-      dependsOn: { field: 'modType', value: 'position' },
-      help: 'Where to position the message window'
-    },
-    {
-      id: 'customX',
-      label: 'X Position',
-      type: 'number',
-      default: 0,
-      dependsOn: { field: 'positionType', value: 'custom' },
-      help: 'Custom X coordinate (pixels from left)'
-    },
-    {
-      id: 'customY',
-      label: 'Y Position',
-      type: 'number',
-      default: 0,
-      dependsOn: { field: 'positionType', value: 'custom' },
-      help: 'Custom Y coordinate (pixels from top)'
-    },
-    {
-      id: 'windowWidth',
-      label: 'Window Width',
-      type: 'number',
-      default: 816,
-      dependsOn: { field: 'modType', value: 'size' },
-      help: 'Width in pixels (default 816 for MZ)'
-    },
-    {
-      id: 'numLines',
-      label: 'Visible Lines',
-      type: 'number',
-      default: 4,
-      dependsOn: { field: 'modType', value: 'size' },
-      help: 'Number of text lines to display (default 4)'
-    },
-    {
-      id: 'bgType',
-      label: 'Background Type',
-      type: 'select',
-      options: [
-        { value: 'window', label: 'Window (default frame)' },
-        { value: 'dim', label: 'Dim (darkened overlay)' },
-        { value: 'transparent', label: 'Transparent (no background)' },
-        { value: 'custom', label: 'Custom color' }
-      ],
-      default: 'dim',
-      dependsOn: { field: 'modType', value: 'background' },
-      help: 'Visual style of the window background'
-    },
-    {
-      id: 'bgColor',
-      label: 'Background Color',
-      type: 'text',
-      default: 'rgba(0, 0, 0, 0.6)',
-      placeholder: 'rgba(0, 0, 0, 0.6)',
-      dependsOn: { field: 'bgType', value: 'custom' },
-      help: 'CSS color value for custom background'
-    },
-    {
-      id: 'opacityValue',
-      label: 'Opacity (0-255)',
-      type: 'number',
-      default: 255,
-      dependsOn: { field: 'modType', value: 'opacity' },
-      help: 'Window opacity (0 = invisible, 255 = fully opaque)'
-    },
-    {
-      id: 'nameBoxPosition',
-      label: 'Name Box Position',
-      type: 'select',
-      options: [
-        { value: 'left', label: 'Left side (default)' },
-        { value: 'center', label: 'Centered above window' },
-        { value: 'right', label: 'Right side' }
-      ],
-      default: 'center',
-      dependsOn: { field: 'modType', value: 'nameBox' },
-      help: 'Position of the speaker name box'
-    }
-  ],
+  fields: messageWindowModuleFields,
   generate: (values): string => windowModificationLines(values).join('\n'),
   validate: (values): ValidationResult => {
     const errors = windowModificationErrors(values)
@@ -609,7 +620,7 @@ const messageWindowModuleTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The lines that place the choice window: centred, left, above, below or (by default) right of the
@@ -657,8 +668,8 @@ function choicePlacementLines(choicePosition: unknown): string[] {
 /**
 The position mode: where the choice window appears on screen.
 */
-function choicePositionLines(values: Record<string, unknown>): string[] {
-  const choicePosition = valueOr(values['choicePosition'], 'center')
+function choicePositionLines(values: ChoiceHandlerValues): string[] {
+  const choicePosition = valueOr(values.choicePosition, 'center')
 
   return [
     '// Choice Window Position Modification',
@@ -677,9 +688,9 @@ function choicePositionLines(values: Record<string, unknown>): string[] {
 /**
 The column mode: the choice window's column count and width.
 */
-function choiceColumnLines(values: Record<string, unknown>): string[] {
-  const numberColumns = valueOr(values['numColumns'], 2)
-  const choiceWidth = valueOr(values['choiceWidth'], 400)
+function choiceColumnLines(values: ChoiceHandlerValues): string[] {
+  const numberColumns = valueOr(values.numColumns, 2)
+  const choiceWidth = valueOr(values.choiceWidth, 400)
 
   return [
     '// Choice Window Column Layout',
@@ -703,11 +714,11 @@ function choiceColumnLines(values: Record<string, unknown>): string[] {
 /**
 The style mode: the text colours of selected, normal and disabled choices, and the window opacity.
 */
-function choiceStyleLines(values: Record<string, unknown>): string[] {
-  const highlightColor = definedOr(values['highlightColor'], 17)
-  const normalColor = definedOr(values['normalColor'], 0)
-  const disabledColor = definedOr(values['disabledColor'], 8)
-  const windowOpacity = definedOr(values['windowOpacity'], 255)
+function choiceStyleLines(values: ChoiceHandlerValues): string[] {
+  const highlightColor = definedOr(values.highlightColor, 17)
+  const normalColor = definedOr(values.normalColor, 0)
+  const disabledColor = definedOr(values.disabledColor, 8)
+  const windowOpacity = definedOr(values.windowOpacity, 255)
 
   return [
     '// Choice Window Visual Style',
@@ -801,9 +812,9 @@ const REMEMBER_CHOICE_LINES: readonly string[] = [
 The behavior mode: selection without wrap-around, a remembered last choice, or a note that the
 default wrapping needs no change.
 */
-function choiceBehaviorLines(values: Record<string, unknown>): string[] {
-  const isWrapAround = Boolean(values['wrapAround'])
-  const isRememberChoice = Boolean(values['rememberChoice'])
+function choiceBehaviorLines(values: ChoiceHandlerValues): string[] {
+  const isWrapAround = Boolean(values.wrapAround)
+  const isRememberChoice = Boolean(values.rememberChoice)
 
   return [
     '// Choice Window Selection Behavior',
@@ -824,8 +835,8 @@ function choiceBehaviorLines(values: Record<string, unknown>): string[] {
 /**
 The choice window code for its modification type; an unknown type writes nothing.
 */
-function choiceModificationLines(values: Record<string, unknown>): string[] {
-  switch (valueOr(values['modType'], 'position')) {
+function choiceModificationLines(values: ChoiceHandlerValues): string[] {
+  switch (valueOr(values.modType, 'position')) {
     case 'position': {
       return choicePositionLines(values)
     }
@@ -847,11 +858,11 @@ function choiceModificationLines(values: Record<string, unknown>): string[] {
 /**
 The errors for the column mode's column count and width, in that order.
 */
-function choiceColumnErrors(values: Record<string, unknown>): string[] {
-  const choiceWidth = values['choiceWidth']
+function choiceColumnErrors(values: ChoiceHandlerValues): string[] {
+  const choiceWidth = values.choiceWidth
   const errors: string[] = []
 
-  if (isOutOfRange(values['numColumns'], 1, 4)) {
+  if (isOutOfRange(values.numColumns, 1, 4)) {
     errors.push('Number of columns must be between 1 and 4')
   }
   if (choiceWidth !== undefined && Number(choiceWidth) <= 0) {
@@ -863,19 +874,19 @@ function choiceColumnErrors(values: Record<string, unknown>): string[] {
 /**
 The errors for the style mode's three colour indexes and window opacity, in that order.
 */
-function choiceStyleErrors(values: Record<string, unknown>): string[] {
+function choiceStyleErrors(values: ChoiceHandlerValues): string[] {
   const errors: string[] = []
 
-  if (isOutOfRange(values['highlightColor'], 0, 31)) {
+  if (isOutOfRange(values.highlightColor, 0, 31)) {
     errors.push('Highlight color index must be between 0 and 31')
   }
-  if (isOutOfRange(values['normalColor'], 0, 31)) {
+  if (isOutOfRange(values.normalColor, 0, 31)) {
     errors.push('Normal text color index must be between 0 and 31')
   }
-  if (isOutOfRange(values['disabledColor'], 0, 31)) {
+  if (isOutOfRange(values.disabledColor, 0, 31)) {
     errors.push('Disabled color index must be between 0 and 31')
   }
-  if (isOutOfRange(values['windowOpacity'], 0, 255)) {
+  if (isOutOfRange(values.windowOpacity, 0, 255)) {
     errors.push('Window opacity must be between 0 and 255')
   }
   return errors
@@ -884,8 +895,8 @@ function choiceStyleErrors(values: Record<string, unknown>): string[] {
 /**
 The errors for the settings the modification type reads.
 */
-function choiceModificationErrors(values: Record<string, unknown>): string[] {
-  const moduleType = values['modType']
+function choiceModificationErrors(values: ChoiceHandlerValues): string[] {
+  const moduleType = values.modType
 
   if (moduleType === 'columns') {
     return choiceColumnErrors(values)
@@ -896,111 +907,116 @@ function choiceModificationErrors(values: Record<string, unknown>): string[] {
   return []
 }
 
+// The fields of the template below, which its helpers read by type
+const choiceHandlerFields = templateFields([
+  {
+    id: 'modType',
+    label: 'Modification Type',
+    type: 'select',
+    options: [
+      { value: 'position', label: 'Choice Position - Where choices appear' },
+      { value: 'columns', label: 'Column Layout - Multi-column choices' },
+      { value: 'style', label: 'Visual Style - Colors and appearance' },
+      { value: 'behavior', label: 'Selection Behavior - Input handling' }
+    ],
+    default: 'position',
+    required: true,
+    help: 'Which aspect of the choice window to modify'
+  },
+  {
+    id: 'choicePosition',
+    label: 'Choice Position',
+    type: 'select',
+    options: [
+      { value: 'right', label: 'Right of message (default)' },
+      { value: 'left', label: 'Left of message' },
+      { value: 'center', label: 'Center of screen' },
+      { value: 'above', label: 'Above message window' },
+      { value: 'below', label: 'Below message window' }
+    ],
+    default: 'center',
+    dependsOn: { field: 'modType', value: 'position' },
+    help: 'Where to display the choice window'
+  },
+  {
+    id: 'numColumns',
+    label: 'Number of Columns',
+    type: 'number',
+    default: 2,
+    dependsOn: { field: 'modType', value: 'columns' },
+    help: 'Number of columns for choice layout (1-4)'
+  },
+  {
+    id: 'choiceWidth',
+    label: 'Choice Window Width',
+    type: 'number',
+    default: 400,
+    dependsOn: { field: 'modType', value: 'columns' },
+    help: 'Width of the choice window in pixels'
+  },
+  {
+    id: 'highlightColor',
+    label: 'Highlight Color Index',
+    type: 'number',
+    default: 17,
+    dependsOn: { field: 'modType', value: 'style' },
+    help: 'Color index (0-31) for selected choice highlight'
+  },
+  {
+    id: 'normalColor',
+    label: 'Normal Text Color Index',
+    type: 'number',
+    default: 0,
+    dependsOn: { field: 'modType', value: 'style' },
+    help: 'Color index (0-31) for unselected choices'
+  },
+  {
+    id: 'disabledColor',
+    label: 'Disabled Color Index',
+    type: 'number',
+    default: 8,
+    dependsOn: { field: 'modType', value: 'style' },
+    help: 'Color index (0-31) for disabled choices'
+  },
+  {
+    id: 'windowOpacity',
+    label: 'Window Opacity',
+    type: 'number',
+    default: 255,
+    dependsOn: { field: 'modType', value: 'style' },
+    help: 'Choice window opacity (0-255)'
+  },
+  {
+    id: 'wrapAround',
+    label: 'Wrap Around Selection',
+    type: 'boolean',
+    default: true,
+    dependsOn: { field: 'modType', value: 'behavior' },
+    help: 'Whether selection wraps from last to first choice'
+  },
+  {
+    id: 'rememberChoice',
+    label: 'Remember Last Choice',
+    type: 'boolean',
+    default: false,
+    dependsOn: { field: 'modType', value: 'behavior' },
+    help: 'Remember and restore the last selected choice index'
+  }
+])
+
+type ChoiceHandlerValues = TemplateValues<typeof choiceHandlerFields>
+
 /**
 Template 3: Choice Handler
 Custom choice window handling and styling
 */
-const choiceHandlerTemplate: CodeTemplate = {
+const choiceHandlerTemplate = defineTemplate({
   id: 'message-choice-handler',
   category: 'message-system',
   name: 'Choice Handler',
   description: 'Custom choice window handling and styling',
   icon: 'MessageSquare',
-  fields: [
-    {
-      id: 'modType',
-      label: 'Modification Type',
-      type: 'select',
-      options: [
-        { value: 'position', label: 'Choice Position - Where choices appear' },
-        { value: 'columns', label: 'Column Layout - Multi-column choices' },
-        { value: 'style', label: 'Visual Style - Colors and appearance' },
-        { value: 'behavior', label: 'Selection Behavior - Input handling' }
-      ],
-      default: 'position',
-      required: true,
-      help: 'Which aspect of the choice window to modify'
-    },
-    {
-      id: 'choicePosition',
-      label: 'Choice Position',
-      type: 'select',
-      options: [
-        { value: 'right', label: 'Right of message (default)' },
-        { value: 'left', label: 'Left of message' },
-        { value: 'center', label: 'Center of screen' },
-        { value: 'above', label: 'Above message window' },
-        { value: 'below', label: 'Below message window' }
-      ],
-      default: 'center',
-      dependsOn: { field: 'modType', value: 'position' },
-      help: 'Where to display the choice window'
-    },
-    {
-      id: 'numColumns',
-      label: 'Number of Columns',
-      type: 'number',
-      default: 2,
-      dependsOn: { field: 'modType', value: 'columns' },
-      help: 'Number of columns for choice layout (1-4)'
-    },
-    {
-      id: 'choiceWidth',
-      label: 'Choice Window Width',
-      type: 'number',
-      default: 400,
-      dependsOn: { field: 'modType', value: 'columns' },
-      help: 'Width of the choice window in pixels'
-    },
-    {
-      id: 'highlightColor',
-      label: 'Highlight Color Index',
-      type: 'number',
-      default: 17,
-      dependsOn: { field: 'modType', value: 'style' },
-      help: 'Color index (0-31) for selected choice highlight'
-    },
-    {
-      id: 'normalColor',
-      label: 'Normal Text Color Index',
-      type: 'number',
-      default: 0,
-      dependsOn: { field: 'modType', value: 'style' },
-      help: 'Color index (0-31) for unselected choices'
-    },
-    {
-      id: 'disabledColor',
-      label: 'Disabled Color Index',
-      type: 'number',
-      default: 8,
-      dependsOn: { field: 'modType', value: 'style' },
-      help: 'Color index (0-31) for disabled choices'
-    },
-    {
-      id: 'windowOpacity',
-      label: 'Window Opacity',
-      type: 'number',
-      default: 255,
-      dependsOn: { field: 'modType', value: 'style' },
-      help: 'Choice window opacity (0-255)'
-    },
-    {
-      id: 'wrapAround',
-      label: 'Wrap Around Selection',
-      type: 'boolean',
-      default: true,
-      dependsOn: { field: 'modType', value: 'behavior' },
-      help: 'Whether selection wraps from last to first choice'
-    },
-    {
-      id: 'rememberChoice',
-      label: 'Remember Last Choice',
-      type: 'boolean',
-      default: false,
-      dependsOn: { field: 'modType', value: 'behavior' },
-      help: 'Remember and restore the last selected choice index'
-    }
-  ],
+  fields: choiceHandlerFields,
   generate: (values): string => choiceModificationLines(values).join('\n'),
   validate: (values): ValidationResult => {
     const errors = choiceModificationErrors(values)
@@ -1010,7 +1026,7 @@ const choiceHandlerTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const messageSystemTemplates: readonly CodeTemplate[] = [

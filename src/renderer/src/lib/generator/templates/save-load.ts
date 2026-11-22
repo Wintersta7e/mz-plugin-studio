@@ -5,7 +5,7 @@ Generates code for persisting custom data in RPG Maker MZ save files.
 Data is automatically saved and loaded with the game's save system.
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
 /**
@@ -169,21 +169,17 @@ function dataNameErrors(dataName: unknown): string[] {
 }
 
 /**
-The errors of a default value that is set, checked against its data type. An object, array or
-boolean default is read as text, so a default of another type has an invalid format.
+The errors of a default value that is set, checked against its data type.
 */
-function defaultValueErrors(dataType: unknown, defaultValue: unknown): string[] {
-  const typesReadAsText: readonly unknown[] = ['object', 'array', 'boolean']
-  const isReadAsText = typesReadAsText.includes(dataType)
-  if (isReadAsText && typeof defaultValue !== 'string') return ['Invalid default value format']
+function defaultValueErrors(dataType: string, defaultValue: string): string[] {
   switch (dataType) {
     case 'object': {
-      return expectText(defaultValue).trimStart().startsWith('{')
+      return defaultValue.trimStart().startsWith('{')
         ? []
         : ['Default value for object should be JSON format starting with {']
     }
     case 'array': {
-      return expectText(defaultValue).trimStart().startsWith('[')
+      return defaultValue.trimStart().startsWith('[')
         ? []
         : ['Default value for array should be JSON format starting with [']
     }
@@ -193,7 +189,7 @@ function defaultValueErrors(dataType: unknown, defaultValue: unknown): string[] 
         : []
     }
     case 'boolean': {
-      return ['true', 'false'].includes(expectText(defaultValue).toLowerCase())
+      return ['true', 'false'].includes(defaultValue.toLowerCase())
         ? []
         : ['Default value for boolean must be true or false']
     }
@@ -203,7 +199,7 @@ function defaultValueErrors(dataType: unknown, defaultValue: unknown): string[] 
   }
 }
 
-const saveLoadTemplate: CodeTemplate = {
+const saveLoadTemplate = defineTemplate({
   id: 'save-load-basic',
   category: 'save-load',
   name: 'Custom Save Data',
@@ -266,30 +262,28 @@ const saveLoadTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const dataName = values['dataName']
+    const dataName = values.dataName
     // The code calls a string method on the location before it writes anything, so any value
     // but text fails here as it fails there
-    const storageLocation = expectText(valueOr(values['storageLocation'], 'Game_System'))
-    const dataType = valueOr(values['dataType'], 'object')
-    const defaultValue = values['defaultValue']
+    const storageLocation = expectText(valueOr(values.storageLocation, 'Game_System'))
+    const dataType = valueOr(values.dataType, 'object')
+    const defaultValue = values.defaultValue
 
     return generateSaveLoadCode(dataName, storageLocation, dataType, defaultValue)
   },
   validate: (values) => {
     const errors: string[] = []
 
-    const dataName: unknown = values['dataName']
+    const dataName: unknown = values.dataName
     const hasDataName = Boolean(dataName)
     if (hasDataName) {
       errors.push(...dataNameErrors(dataName))
     }
 
     // Validate default value format based on type
-    const defaultValue = values['defaultValue']
-    const dataType = values['dataType']
-    const hasDefaultValue = Boolean(defaultValue)
-    const hasDataType = Boolean(dataType)
-    if (hasDefaultValue && hasDataType) {
+    const defaultValue = values.defaultValue ?? ''
+    const dataType = values.dataType
+    if (defaultValue !== '' && dataType !== '') {
       errors.push(...defaultValueErrors(dataType, defaultValue))
     }
 
@@ -298,7 +292,7 @@ const saveLoadTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const saveLoadTemplates: readonly CodeTemplate[] = [saveLoadTemplate]

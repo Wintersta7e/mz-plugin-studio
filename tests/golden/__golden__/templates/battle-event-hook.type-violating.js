@@ -4,14 +4,7 @@
 
 // ==== case: type-violating: null {"eventType":null}
 // rejects: Field "Event" is required
-// Victory Hook
-const _BattleManager_processVictory = BattleManager.processVictory;
-BattleManager.processVictory = function() {
-    // Your code here (before victory processing)
-    console.log('Battle victory!');
-
-    _BattleManager_processVictory.call(this);
-};
+// throws: TypeError
 
 // ==== case: type-violating: arrays {"eventType":["a","b"]}
 // rejects: Field "Event" must be text

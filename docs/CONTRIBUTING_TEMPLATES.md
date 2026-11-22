@@ -61,7 +61,7 @@ If you need a new category, see the "Adding a New Category" section below first.
 
 ### Step 2: Define the Template Object
 
-Every template implements the `CodeTemplate` interface:
+Every template is defined through `defineTemplate`, which reads the type of each value from the template's own fields and returns a `CodeTemplate`:
 
 ```typescript
 interface CodeTemplate {
@@ -70,18 +70,20 @@ interface CodeTemplate {
   name: string              // Display name shown in the template list
   description: string       // Brief explanation shown below the name
   icon: string              // Lucide icon name (e.g., 'Save', 'GitBranch')
-  fields: TemplateField[]   // User-configurable input fields
+  fields: readonly TemplateField[]   // User-configurable input fields
   generate: (values: Record<string, unknown>) => string  // Code generator function
   validate?: (values: Record<string, unknown>) => ValidationResult  // Optional validation
 }
 ```
 
+Inside `defineTemplate`, `generate` and `validate` get typed values: a `text`, `select`, `class-select`, `method-select` or `key-select` field holds a `string`, a `number` field a `number`, a `boolean` field a `boolean`. A required field is always set; any other field may also be `null` or `undefined`. Given a value of another type, or a required field left unset, the template's `generate` throws `TypeError` naming the field and its `validate` returns that error, so the code never reads a value as a type it is not.
+
 Here is a minimal template definition:
 
 ```typescript
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 
-const myTemplate: CodeTemplate = {
+const myTemplate = defineTemplate({
   id: 'my-category-my-feature',
   category: 'save-load',
   name: 'My Feature',
@@ -98,18 +100,17 @@ const myTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const propertyName = String(values['propertyName'])
+    const propertyName = values.propertyName // string: the field is required text
     return `// Generated code for ${propertyName}\n// Add your implementation here`
   },
   validate: (values) => {
     const errors: string[] = []
-    const hasPropertyName = Boolean(values['propertyName'])
-    if (!hasPropertyName) {
+    if (values.propertyName.trim() === '') {
       errors.push('Property Name is required')
     }
     return { valid: errors.length === 0, errors }
   }
-}
+})
 
 export const myCategoryTemplates: readonly CodeTemplate[] = [myTemplate]
 ```
@@ -365,11 +366,11 @@ Always provide fallbacks when reading field values in the `generate` function:
 
 ```typescript
 generate: (values): string => {
-  const dataName = expectText(values['dataName'])   // Text for string methods; another type throws TypeError
-  const hasDataType = Boolean(values['dataType'])
-  const dataType = hasDataType ? values['dataType'] : 'object'  // Fallback to default
-  const hasWidth = Boolean(values['width'])
-  const width = hasWidth ? Number(values['width']) : 300     // Fallback for numbers
+  const dataName = expectText(values.dataName)   // Text for string methods; another type throws TypeError
+  const hasDataType = Boolean(values.dataType)
+  const dataType = hasDataType ? values.dataType : 'object'  // Fallback to default
+  const hasWidth = Boolean(values.width)
+  const width = hasWidth ? Number(values.width) : 300     // Fallback for numbers
   const showFrame = values.showFrame !== 'false'    // Boolean from string select
 }
 ```
@@ -406,7 +407,7 @@ Check that all required fields have values:
 validate: (values) => {
   const errors: string[] = []
 
-  const hasPropertyName = Boolean(values['propertyName'])
+  const hasPropertyName = Boolean(values.propertyName)
   if (!hasPropertyName) {
     errors.push('Property Name is required')
   }
@@ -422,7 +423,7 @@ Note: The registry's `validateTemplateValues()` function already checks `require
 When a field becomes a variable or property name in generated code, validate it:
 
 ```typescript
-const name = String(values['propertyName'])
+const name = String(values.propertyName)
 if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
   errors.push('Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
 }
@@ -444,11 +445,11 @@ if (reservedWords.includes(name.toLowerCase())) {
 For number fields that represent pixel dimensions, opacity, or frame counts:
 
 ```typescript
-if (values['width'] !== undefined && Number(values['width']) <= 0) {
+if (values.width !== undefined && Number(values.width) <= 0) {
   errors.push('Width must be a positive number')
 }
 
-const opacity = values['opacity']
+const opacity = values.opacity
 if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
   errors.push('Opacity must be between 0 and 255')
 }
@@ -459,11 +460,11 @@ if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
 When a field has contextual meaning depending on another field:
 
 ```typescript
-const hasDefaultValue = Boolean(values['defaultValue'])
-const hasDataType = Boolean(values['dataType'])
+const hasDefaultValue = Boolean(values.defaultValue)
+const hasDataType = Boolean(values.dataType)
 if (hasDefaultValue && hasDataType) {
-  const defaultValue = expectText(values['defaultValue'])
-  const dataType = values['dataType']
+  const defaultValue = expectText(values.defaultValue)
+  const dataType = values.dataType
 
   switch (dataType) {
     case 'number':
@@ -512,7 +513,7 @@ Below is a complete, annotated template that adds a "Custom Game Variable" patte
  * change notification support.
  */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { expectText } from './values'
 
 // --------------------------------------------------------------------------
@@ -602,7 +603,7 @@ function generateManagedVariable(
 // Template definition
 // --------------------------------------------------------------------------
 
-const customGameVariableTemplate: CodeTemplate = {
+const customGameVariableTemplate = defineTemplate({
   // Unique identifier in kebab-case.
   // Convention: '<category>-<specific-name>'
   id: 'save-load-managed-variable',
@@ -677,13 +678,13 @@ const customGameVariableTemplate: CodeTemplate = {
   // to update the live preview.
   generate: (values): string => {
     // Each value is `unknown`: read it in the form its use needs
-    const variableName = expectText(values['variableName'])
-    const hasVariableId = Boolean(values['variableId'])
-    const variableId = hasVariableId ? Number(values['variableId']) : 1
-    const enableClamping = Boolean(values['enableClamping'])
-    const minValue = Number(values['minValue'] ?? 0)
-    const maxValue = Number(values['maxValue'] ?? 100)
-    const enableNotify = Boolean(values['enableNotify'])
+    const variableName = expectText(values.variableName)
+    const hasVariableId = Boolean(values.variableId)
+    const variableId = hasVariableId ? Number(values.variableId) : 1
+    const enableClamping = Boolean(values.enableClamping)
+    const minValue = Number(values.minValue ?? 0)
+    const maxValue = Number(values.maxValue ?? 100)
+    const enableNotify = Boolean(values.enableNotify)
 
     return generateManagedVariable(
       variableName,
@@ -702,7 +703,7 @@ const customGameVariableTemplate: CodeTemplate = {
     const errors: string[] = []
 
     // -- Validate variable name --
-    const variableName = values['variableName']
+    const variableName = values.variableName
     const hasVariableName = Boolean(variableName)
     if (!hasVariableName) {
       errors.push('Variable Name is required')
@@ -724,18 +725,18 @@ const customGameVariableTemplate: CodeTemplate = {
     }
 
     // -- Validate variable ID --
-    if (values['variableId'] !== undefined) {
-      const id = values['variableId']
+    if (values.variableId !== undefined) {
+      const id = values.variableId
       if (!Number.isInteger(id) || Number(id) < 1) {
         errors.push('Variable ID must be a positive integer')
       }
     }
 
     // -- Validate clamping range --
-    const enableClamping = Boolean(values['enableClamping'])
+    const enableClamping = Boolean(values.enableClamping)
     if (enableClamping) {
-      const min = values['minValue']
-      const max = values['maxValue']
+      const min = values.minValue
+      const max = values.maxValue
       if (min !== undefined && max !== undefined && Number(min) >= Number(max)) {
         errors.push('Minimum Value must be less than Maximum Value')
       }
@@ -746,7 +747,7 @@ const customGameVariableTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The category's list: the registry (`index.ts`) reads it, and the dialog lists it in this order.
 export const gameVariableTemplates: readonly CodeTemplate[] = [customGameVariableTemplate]

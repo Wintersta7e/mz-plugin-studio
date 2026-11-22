@@ -7,7 +7,7 @@ Templates for RPG Maker MZ sprite manipulation:
 - Sprite animation (frame-based)
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
 import { decimalIntegerOf, expectText, valueOr } from './values'
 
@@ -112,7 +112,7 @@ function spriteUpdateLines(fullClassName: string, parentClassText: string): stri
 Template 1: Custom Sprite Class
 Creates a new Sprite subclass with initialize, update methods
 */
-const customSpriteClassTemplate: CodeTemplate = {
+const customSpriteClassTemplate = defineTemplate({
   id: 'sprite-custom-class',
   category: 'sprite-system',
   name: 'Custom Sprite Class',
@@ -183,14 +183,14 @@ const customSpriteClassTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const rawName = expectText(values['spriteName'])
+    const rawName = expectText(values.spriteName)
     const spriteName = sanitizeSpriteName(rawName)
-    const parentClass = valueOr(values['parentClass'], 'Sprite')
-    const width = valueOr(values['width'], 48)
-    const height = valueOr(values['height'], 48)
-    const useBitmap = valueOr(values['useBitmap'], 'none')
-    const fillColor = valueOr(values['fillColor'], '#ffffff')
-    const isIncludeUpdate = values['includeUpdate'] !== false
+    const parentClass = valueOr(values.parentClass, 'Sprite')
+    const width = valueOr(values.width, 48)
+    const height = valueOr(values.height, 48)
+    const useBitmap = valueOr(values.useBitmap, 'none')
+    const fillColor = valueOr(values.fillColor, '#ffffff')
+    const isIncludeUpdate = values.includeUpdate !== false
 
     const fullClassName = `Sprite_${spriteName}`
     const parentClassText = String(parentClass)
@@ -244,14 +244,14 @@ const customSpriteClassTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = spriteNameErrors(values['spriteName'])
+    const errors = spriteNameErrors(values.spriteName)
 
-    const width = values['width']
+    const width = values.width
     if (width !== undefined && Number(width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    const height = values['height']
+    const height = values.height
     if (height !== undefined && Number(height) <= 0) {
       errors.push('Height must be a positive number')
     }
@@ -261,7 +261,7 @@ const customSpriteClassTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The picture values as the generated calls print them.
@@ -506,7 +506,7 @@ function pictureOperationLines(operation: unknown, picture: PictureArgs): string
 Template 2: Picture Manipulation
 Show, move, rotate, and tint pictures programmatically
 */
-const pictureManipulationTemplate: CodeTemplate = {
+const pictureManipulationTemplate = defineTemplate({
   id: 'sprite-picture-manipulation',
   category: 'sprite-system',
   name: 'Picture Manipulation',
@@ -654,24 +654,24 @@ const pictureManipulationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const operation = valueOr(values['operation'], 'show')
+    const operation = valueOr(values.operation, 'show')
     const picture: PictureArgs = {
-      id: String(valueOr(values['pictureId'], 1)),
-      imageName: valueOr(values['imageName'], 'Picture1'),
-      origin: decimalIntegerOf(String(valueOr(values['origin'], '0'))),
-      x: String(valueOr(values['x'], 0)),
-      y: String(valueOr(values['y'], 0)),
-      scaleX: String(valueOr(values['scaleX'], 100)),
-      scaleY: String(valueOr(values['scaleY'], 100)),
-      opacity: String(valueOr(values['opacity'], 255)),
-      blendMode: decimalIntegerOf(String(valueOr(values['blendMode'], '0'))),
-      duration: String(valueOr(values['duration'], 60)),
-      rotationSpeed: String(valueOr(values['rotationSpeed'], 1)),
+      id: String(valueOr(values.pictureId, 1)),
+      imageName: valueOr(values.imageName, 'Picture1'),
+      origin: decimalIntegerOf(String(valueOr(values.origin, '0'))),
+      x: String(valueOr(values.x, 0)),
+      y: String(valueOr(values.y, 0)),
+      scaleX: String(valueOr(values.scaleX, 100)),
+      scaleY: String(valueOr(values.scaleY, 100)),
+      opacity: String(valueOr(values.opacity, 255)),
+      blendMode: decimalIntegerOf(String(valueOr(values.blendMode, '0'))),
+      duration: String(valueOr(values.duration, 60)),
+      rotationSpeed: String(valueOr(values.rotationSpeed, 1)),
       tint: [
-        valueOr(values['tintRed'], 0),
-        valueOr(values['tintGreen'], 0),
-        valueOr(values['tintBlue'], 0),
-        valueOr(values['tintGray'], 0)
+        valueOr(values.tintRed, 0),
+        valueOr(values.tintGreen, 0),
+        valueOr(values.tintBlue, 0),
+        valueOr(values.tintGray, 0)
       ]
         .map(String)
         .join(', ')
@@ -682,18 +682,18 @@ const pictureManipulationTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const pictureId = values['pictureId']
-    if (pictureId === undefined || Number(pictureId) < 1 || Number(pictureId) > 100) {
+    const pictureId = values.pictureId
+    if (pictureId < 1 || pictureId > 100) {
       errors.push('Picture ID must be between 1 and 100')
     }
 
-    const opacity = values['opacity']
+    const opacity = values.opacity
     if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
 
-    const operation = values['operation']
-    const hasImageName = Boolean(values['imageName'])
+    const operation = values.operation
+    const hasImageName = Boolean(values.imageName)
     if (operation === 'show' && !hasImageName) {
       errors.push('Image Name is required for Show Picture operation')
     }
@@ -703,7 +703,7 @@ const pictureManipulationTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The frame animation settings as the generated code uses them.
@@ -1014,7 +1014,7 @@ function animatedClassControlLines(fullClassName: string): string[] {
 Template 3: Sprite Animation
 Add frame-based animation to sprites
 */
-const spriteAnimationTemplate: CodeTemplate = {
+const spriteAnimationTemplate = defineTemplate({
   id: 'sprite-frame-animation',
   category: 'sprite-system',
   name: 'Sprite Animation',
@@ -1103,19 +1103,19 @@ const spriteAnimationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const animationType = valueOr(values['animationType'], 'horizontal')
-    const rawName = expectText(values['spriteName'])
+    const animationType = valueOr(values.animationType, 'horizontal')
+    const rawName = expectText(values.spriteName)
     const spriteName = sanitizeSpriteName(rawName)
     const animation: FrameAnimation = {
-      frameCount: valueOr(values['frameCount'], 4),
-      frameWidth: String(valueOr(values['frameWidth'], 48)),
-      frameHeight: String(valueOr(values['frameHeight'], 48)),
-      columns: valueOr(values['columns'], 4),
-      frameDelay: valueOr(values['frameDelay'], 12),
-      isLoop: values['loop'] !== false,
-      isAutoPlay: values['autoPlay'] !== false
+      frameCount: valueOr(values.frameCount, 4),
+      frameWidth: String(valueOr(values.frameWidth, 48)),
+      frameHeight: String(valueOr(values.frameHeight, 48)),
+      columns: valueOr(values.columns, 4),
+      frameDelay: valueOr(values.frameDelay, 12),
+      isLoop: values.loop !== false,
+      isAutoPlay: values.autoPlay !== false
     }
-    const targetClass = valueOr(values['targetClass'], 'Sprite_Base')
+    const targetClass = valueOr(values.targetClass, 'Sprite_Base')
 
     if (animationType === 'mixin') {
       const target = String(targetClass)
@@ -1131,36 +1131,33 @@ const spriteAnimationTemplate: CodeTemplate = {
     ].join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = spriteNameErrors(values['spriteName'])
+    const errors = spriteNameErrors(values.spriteName)
 
-    const frameCount = values['frameCount']
+    const frameCount = values.frameCount
     if (frameCount !== undefined && Number(frameCount) < 1) {
       errors.push('Frame Count must be at least 1')
     }
 
-    const frameWidth = values['frameWidth']
+    const frameWidth = values.frameWidth
     if (frameWidth !== undefined && Number(frameWidth) <= 0) {
       errors.push('Frame Width must be a positive number')
     }
 
-    const frameHeight = values['frameHeight']
+    const frameHeight = values.frameHeight
     if (frameHeight !== undefined && Number(frameHeight) <= 0) {
       errors.push('Frame Height must be a positive number')
     }
 
-    const frameDelay = values['frameDelay']
+    const frameDelay = values.frameDelay
     if (frameDelay !== undefined && Number(frameDelay) < 1) {
       errors.push('Frame Delay must be at least 1')
     }
 
-    const animationType = values['animationType']
-    const hasTargetClass = Boolean(values['targetClass'])
+    const animationType = values.animationType
+    const hasTargetClass = Boolean(values.targetClass)
     if (animationType === 'mixin' && !hasTargetClass) {
       errors.push('Target Sprite Class is required for Animation Mixin')
-    } else if (
-      animationType === 'mixin' &&
-      !/^[A-Z_$][\w$]*$/i.test(String(values['targetClass']))
-    ) {
+    } else if (animationType === 'mixin' && !/^[A-Z_$][\w$]*$/i.test(String(values.targetClass))) {
       errors.push('Target Sprite Class must be a class name (letters, numbers, _ or $)')
     }
 
@@ -1169,7 +1166,7 @@ const spriteAnimationTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const spriteSystemTemplates: readonly CodeTemplate[] = [

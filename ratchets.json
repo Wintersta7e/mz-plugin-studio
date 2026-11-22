@@ -53,7 +53,7 @@
         "src/renderer/src/lib/generator/class-registry.ts": 100,
         "src/renderer/src/lib/generator/naming.ts": 100,
         "src/renderer/src/lib/generator/custom-code.ts": 0,
-        "src/renderer/src/lib/generator/templates/index.ts": 93,
+        "src/renderer/src/lib/generator/templates/index.ts": 100,
         "src/renderer/src/lib/generator/templates/types.ts": 100,
         "src/renderer/src/lib/generator/templates/actor-party.ts": 100,
         "src/renderer/src/lib/generator/templates/audio-system.ts": 100,

@@ -23,7 +23,7 @@ const KIND: Record<TemplateField['type'], string> = {
 const typeError = (field: TemplateField): string =>
   `Field "${field.label}" must be ${KIND[field.type]}`
 
-function fieldsOf(id: string): TemplateField[] {
+function fieldsOf(id: string): readonly TemplateField[] {
   const template = getTemplate(id)
   if (template === undefined) throw new Error(`no template ${id}`)
   return template.fields

@@ -55,22 +55,43 @@ describe('save-load template', () => {
     expect(out).not.toMatch(/WARNING/i)
   })
 
-  it('lists a default that is not text as an invalid format for the types read as text', () => {
-    // The template's own check, called directly: the shared check rejects a wrong type before it
+  it('refuses a default that is not text before the template reads it as text', () => {
+    // The template's own check, called directly, is given only values its fields hold
     const validate = getTemplate('save-load-basic')?.validate
 
     expect(validate).toBeDefined()
 
-    for (const dataType of ['object', 'array', 'boolean']) {
-      const result = validate?.({ dataName: 'questData', dataType, defaultValue: 5 })
+    for (const dataType of ['object', 'array', 'boolean', 'number']) {
+      const values = { dataName: 'questData', storageLocation: 'Game_System', dataType }
+      const result = validate?.({ ...values, defaultValue: 5 })
 
-      expect(result).toStrictEqual({ valid: false, errors: ['Invalid default value format'] })
+      expect(result).toStrictEqual({
+        valid: false,
+        errors: ['Field "Default Value" must be text']
+      })
     }
+  })
 
-    // A number default is converted, not read as text
-    const numberResult = validate?.({ dataName: 'questData', dataType: 'number', defaultValue: 5 })
+  it('checks a text default against the format its data type reads', () => {
+    const validate = templateOf('save-load-basic').validate
+    const values = { dataName: 'questData', storageLocation: 'Game_System' }
+    const errorsOf = (dataType: string, defaultValue: string): string[] | undefined =>
+      validate?.({ ...values, dataType, defaultValue }).errors
 
-    expect(numberResult).toStrictEqual({ valid: true, errors: [] })
+    expect(errorsOf('object', 'x')).toStrictEqual([
+      'Default value for object should be JSON format starting with {'
+    ])
+    expect(errorsOf('array', 'x')).toStrictEqual([
+      'Default value for array should be JSON format starting with ['
+    ])
+    expect(errorsOf('boolean', 'x')).toStrictEqual([
+      'Default value for boolean must be true or false'
+    ])
+    expect([
+      errorsOf('object', ' {}'),
+      errorsOf('array', '[]'),
+      errorsOf('boolean', 'TRUE')
+    ]).toStrictEqual([[], [], []])
   })
 })
 
@@ -134,7 +155,7 @@ describe('battle-system damage modifier', () => {
     const tpl = templateOf('battle-damage-modifier')
     const out = tpl.generate({
       modifyType: 'multiply',
-      modifyValue: 1.5,
+      modifyValue: '1.5',
       condition: 'always'
     })
 

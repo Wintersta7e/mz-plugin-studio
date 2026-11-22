@@ -97,22 +97,7 @@ Window_Base.prototype.convertEscapeCharacters = function(text) {
 
 // ==== case: type-violating: codeType=null,replacementText=null {"hasParameter":true,"codeType":null,"effectType":"color","replacementText":null,"escapeChar":"Sample"}
 // rejects: Field "Code Type" is required
-// Custom Text Code: \SAMPLE[n]
-// Replaces the escape code with dynamic text during message processing
-
-const _Window_Base_convertEscapeCharacters = Window_Base.prototype.convertEscapeCharacters;
-Window_Base.prototype.convertEscapeCharacters = function(text) {
-    text = _Window_Base_convertEscapeCharacters.call(this, text);
-
-    // Process \SAMPLE[n] codes
-    text = text.replace(/\x1bSAMPLE\[(\d+)\]/gi, (_, param) => {
-        param = parseInt(param);
-        // Return the replacement text based on the parameter
-        return '';
-    });
-
-    return text;
-};
+// throws: TypeError
 
 // ==== case: type-violating: codeType="effect",hasParameter=null,effectType=null {"hasParameter":null,"codeType":"effect","effectType":null,"replacementText":"$gameParty.gold()","escapeChar":"Sample"}
 // Custom Text Code: \SAMPLE

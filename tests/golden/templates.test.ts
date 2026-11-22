@@ -2,7 +2,9 @@
 // before any generator change.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import {
+  createTemplateRegistry,
   getTemplate,
+  getTemplateDefaults,
   validateTemplateValues,
   type CodeTemplate
 } from '../../src/renderer/src/lib/generator/templates/index'
@@ -98,5 +100,18 @@ describe('template goldens', () => {
     expect(ids.length).toBeGreaterThan(0)
     expect(rejectedBases).toStrictEqual([])
     expect(problems).toStrictEqual([])
+  })
+
+  it('names an unknown template id, gives it no defaults, and refuses an id defined twice', () => {
+    const first = template(ids[0] ?? '')
+
+    expect(validateTemplateValues('no-such-template', {})).toStrictEqual({
+      valid: false,
+      errors: ['Template "no-such-template" not found']
+    })
+    expect(getTemplateDefaults('no-such-template')).toStrictEqual({})
+    expect(() => createTemplateRegistry([first, first])).toThrow(
+      `Template id "${first.id}" is defined twice`
+    )
   })
 })

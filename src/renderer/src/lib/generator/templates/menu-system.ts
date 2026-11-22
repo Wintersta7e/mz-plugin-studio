@@ -8,7 +8,7 @@ Templates for RPG Maker MZ menu and scene customization:
 - Options menu additions
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
 import { expectText } from './values'
 
@@ -195,7 +195,7 @@ function menuSceneWindowLines(
 Template 1: Custom Menu Scene
 Create a new Scene_MenuBase subclass with custom windows
 */
-const customMenuSceneTemplate: CodeTemplate = {
+const customMenuSceneTemplate = defineTemplate({
   id: 'menu-custom-scene',
   category: 'menu-system',
   name: 'Custom Menu Scene',
@@ -247,12 +247,12 @@ const customMenuSceneTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const sceneName = toValidIdentifier(expectText(values['sceneName']))
-    const windowName = toValidIdentifier(expectText(values['windowName']))
-    const hasWindowType = Boolean(values['windowType'])
-    const windowType = hasWindowType ? values['windowType'] : 'selectable'
-    const isIncludeHelp = Boolean(values['includeHelp'])
-    const isIncludeGold = Boolean(values['includeGold'])
+    const sceneName = toValidIdentifier(expectText(values.sceneName))
+    const windowName = toValidIdentifier(expectText(values.windowName))
+    const hasWindowType = Boolean(values.windowType)
+    const windowType = hasWindowType ? values.windowType : 'selectable'
+    const isIncludeHelp = Boolean(values.includeHelp)
+    const isIncludeGold = Boolean(values.includeGold)
 
     const sceneClass = `Scene_${sceneName}`
     const windowClass = `Window_${windowName}`
@@ -308,10 +308,10 @@ const customMenuSceneTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const sceneName = values['sceneName']
+    const sceneName = values.sceneName
     const hasSceneName = Boolean(sceneName)
     if (hasSceneName) {
-      const text = String(sceneName)
+      const text = sceneName
       if (!/^[a-z_]\w*$/i.test(text)) {
         errors.push(
           'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
@@ -319,10 +319,10 @@ const customMenuSceneTemplate: CodeTemplate = {
       }
     }
 
-    const windowName = values['windowName']
+    const windowName = values.windowName
     const hasWindowName = Boolean(windowName)
     if (hasWindowName) {
-      const text = String(windowName)
+      const text = windowName
       if (!/^[a-z_]\w*$/i.test(text)) {
         errors.push('Window name must be a valid JavaScript identifier')
       }
@@ -333,7 +333,7 @@ const customMenuSceneTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 A title screen command of the player's own: the command, its handler, and the method it calls.
@@ -483,7 +483,7 @@ function titleCreateHookLines(): string[] {
 Template 2: Title Screen Mod
 Add commands or modify the title screen
 */
-const titleScreenModuleTemplate: CodeTemplate = {
+const titleScreenModuleTemplate = defineTemplate({
   id: 'menu-title-mod',
   category: 'menu-system',
   name: 'Title Screen Mod',
@@ -534,18 +534,18 @@ const titleScreenModuleTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const hasChosenType = Boolean(values['modType'])
-    const moduleType = hasChosenType ? values['modType'] : 'addCommand'
+    const hasChosenType = Boolean(values.modType)
+    const moduleType = hasChosenType ? values.modType : 'addCommand'
 
     switch (moduleType) {
       case 'addCommand': {
-        return titleAddCommandLines(values['commandName'], values['commandSymbol']).join('\n')
+        return titleAddCommandLines(values.commandName, values.commandSymbol).join('\n')
       }
       case 'replaceBackground': {
         return titleBackgroundLines().join('\n')
       }
       case 'hideCommand': {
-        return titleHideCommandLines(values['hideTarget']).join('\n')
+        return titleHideCommandLines(values.hideTarget).join('\n')
       }
       case 'customCreate': {
         return titleCreateHookLines().join('\n')
@@ -557,14 +557,14 @@ const titleScreenModuleTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const moduleType = values['modType']
+    const moduleType = values.modType
 
     if (moduleType === 'addCommand') {
-      const hasCommandName = Boolean(values['commandName'])
+      const hasCommandName = Boolean(values.commandName)
       if (!hasCommandName) {
         errors.push('Command name is required')
       }
-      const commandSymbol = values['commandSymbol']
+      const commandSymbol = values.commandSymbol
       const hasCommandSymbol = Boolean(commandSymbol)
       if (hasCommandSymbol) {
         const symbol = String(commandSymbol)
@@ -581,7 +581,7 @@ const titleScreenModuleTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The symbol of the main menu command the new command goes next to, for its insert position;
@@ -695,7 +695,7 @@ function menuCommandHandlerLines(
 Template 3: Menu Command Addition
 Add new commands to the main menu (Scene_Menu)
 */
-const menuCommandAdditionTemplate: CodeTemplate = {
+const menuCommandAdditionTemplate = defineTemplate({
   id: 'menu-command-addition',
   category: 'menu-system',
   name: 'Menu Command Addition',
@@ -764,15 +764,15 @@ const menuCommandAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const commandName = values['commandName']
-    const commandSymbol = values['commandSymbol']
-    const hasInsertPosition = Boolean(values['insertPosition'])
-    const insertPosition = hasInsertPosition ? values['insertPosition'] : 'beforeOptions'
-    const requiresActor = Boolean(values['requiresActor'])
-    const hasEnableCondition = Boolean(values['enableCondition'])
-    const enableCondition = hasEnableCondition ? values['enableCondition'] : 'always'
-    const hasSwitchId = Boolean(values['switchId'])
-    const switchId = hasSwitchId ? values['switchId'] : 1
+    const commandName = values.commandName
+    const commandSymbol = values.commandSymbol
+    const hasInsertPosition = Boolean(values.insertPosition)
+    const insertPosition = hasInsertPosition ? values.insertPosition : 'beforeOptions'
+    const requiresActor = Boolean(values.requiresActor)
+    const hasEnableCondition = Boolean(values.enableCondition)
+    const enableCondition = hasEnableCondition ? values.enableCondition : 'always'
+    const hasSwitchId = Boolean(values.switchId)
+    const switchId = hasSwitchId ? values.switchId : 1
 
     const symbolId = toValidIdentifier(expectText(commandSymbol))
     const lines = [`// Menu Command Addition: ${escapeLineComment(expectText(commandName))}`, '']
@@ -841,18 +841,18 @@ const menuCommandAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const commandSymbol = values['commandSymbol']
+    const commandSymbol = values.commandSymbol
     const hasCommandSymbol = Boolean(commandSymbol)
     if (hasCommandSymbol) {
-      const symbol = String(commandSymbol)
+      const symbol = commandSymbol
       if (!/^[a-z_]\w*$/i.test(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
       }
     }
 
-    const enableCondition = values['enableCondition']
+    const enableCondition = values.enableCondition
     if (enableCondition === 'switch') {
-      const switchId = values['switchId']
+      const switchId = values.switchId
       const hasSwitchId = Boolean(switchId)
       if (!hasSwitchId || Number(switchId) < 1) {
         errors.push('Switch ID must be a positive number')
@@ -864,7 +864,7 @@ const menuCommandAdditionTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The option's default value as code for its type.
@@ -1045,7 +1045,7 @@ function optionTypeLines(
 Template 4: Options Menu Addition
 Add custom options to the options menu
 */
-const optionsMenuAdditionTemplate: CodeTemplate = {
+const optionsMenuAdditionTemplate = defineTemplate({
   id: 'menu-options-addition',
   category: 'menu-system',
   name: 'Options Menu Addition',
@@ -1105,17 +1105,17 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const optionName = values['optionName']
-    const optionSymbolValue = values['optionSymbol']
+    const optionName = values.optionName
+    const optionSymbolValue = values.optionSymbol
     // The symbol as written into code; the escapes below take the value itself
-    const optionSymbol = String(optionSymbolValue)
-    const hasOptionType = Boolean(values['optionType'])
-    const optionType = hasOptionType ? values['optionType'] : 'boolean'
-    const defaultValue = values['defaultValue']
+    const optionSymbol = optionSymbolValue
+    const hasOptionType = Boolean(values.optionType)
+    const optionType = hasOptionType ? values.optionType : 'boolean'
+    const defaultValue = values.defaultValue
     const hasDefaultValue = Boolean(defaultValue)
-    const choices = values['choices']
+    const choices = values.choices
     const hasChoices = Boolean(choices)
-    const isPersistToConfig = values['persistToConfig'] !== false
+    const isPersistToConfig = values.persistToConfig !== false
 
     const lines = [`// Options Menu Addition: ${escapeLineComment(expectText(optionName))}`, '']
 
@@ -1171,23 +1171,23 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const optionSymbol = values['optionSymbol']
+    const optionSymbol = values.optionSymbol
     const hasOptionSymbol = Boolean(optionSymbol)
     if (hasOptionSymbol) {
-      const symbol = String(optionSymbol)
+      const symbol = optionSymbol
       if (!/^[a-z_]\w*$/i.test(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
       }
     }
 
-    const optionType = values['optionType']
-    const hasChoices = Boolean(values['choices'])
+    const optionType = values.optionType
+    const hasChoices = Boolean(values.choices)
     if (optionType === 'select' && !hasChoices) {
       errors.push('Choices are required for select-type options')
     }
 
     // Written as code for these two types: a volume, or the index of the chosen choice.
-    const defaultValue = values['defaultValue']
+    const defaultValue = values.defaultValue
     const hasDefaultValue = Boolean(defaultValue)
     if (
       hasDefaultValue &&
@@ -1202,7 +1202,7 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const menuSystemTemplates: readonly CodeTemplate[] = [

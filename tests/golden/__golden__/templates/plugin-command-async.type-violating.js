@@ -146,35 +146,11 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 
 // ==== case: type-violating: waitType="waitCount",waitDuration="abc" {"waitType":"waitCount","waitDuration":"abc","commandName":"Sample","pluginName":"Sample"}
 // rejects: Field "Wait Duration (frames)" must be a number
-// Async Plugin Command: Sample
-// This command pauses event execution until the async operation completes
-
-PluginManager.registerCommand('Sample', 'Sample', function(args) {
-    const interpreter = this;
-
-    // Wait for abc frames (NaN seconds at 60fps)
-    interpreter.wait(abc);
-
-    // Your command logic here
-    // Note: Code here runs immediately, wait only affects event flow
-    console.log('Sample initiated abc frame wait');
-});
+// throws: TypeError
 
 // ==== case: type-violating: waitType="waitCount",commandName=null {"waitType":"waitCount","waitDuration":60,"commandName":null,"pluginName":"Sample"}
 // rejects: Field "Command Name" is required
-// Async Plugin Command: 
-// This command pauses event execution until the async operation completes
-
-PluginManager.registerCommand('Sample', '', function(args) {
-    const interpreter = this;
-
-    // Wait for 60 frames (1 seconds at 60fps)
-    interpreter.wait(60);
-
-    // Your command logic here
-    // Note: Code here runs immediately, wait only affects event flow
-    console.log(' initiated 60 frame wait');
-});
+// throws: TypeError
 
 // ==== case: type-violating: waitType="waitCount",waitDuration=0 {"waitType":"waitCount","waitDuration":0,"commandName":"Sample","pluginName":"Sample"}
 // rejects: Wait duration must be at least 1 frame

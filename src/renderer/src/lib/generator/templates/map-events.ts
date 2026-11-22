@@ -8,7 +8,7 @@ Templates for RPG Maker MZ map and event manipulation:
 - Parallel process updates on the map
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { definedOr, expectText, valueOr } from './values'
 
 /**
@@ -215,7 +215,7 @@ function restoreSpawnedLines(): string[] {
 Template 1: Event Spawn
 Dynamically spawn events at runtime
 */
-const eventSpawnTemplate: CodeTemplate = {
+const eventSpawnTemplate = defineTemplate({
   id: 'map-event-spawn',
   category: 'map-events',
   name: 'Event Spawn',
@@ -255,10 +255,10 @@ const eventSpawnTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = String(valueOr(values['functionName'], 'spawnEvent'))
-    const templateEventId = values['templateEventId']
-    const isPersistAcrossTransfer = Boolean(values['persistAcrossTransfer'])
-    const maxSpawnedEvents = String(valueOr(values['maxSpawnedEvents'], 100))
+    const functionName = String(valueOr(values.functionName, 'spawnEvent'))
+    const templateEventId = values.templateEventId
+    const isPersistAcrossTransfer = Boolean(values.persistAcrossTransfer)
+    const maxSpawnedEvents = String(valueOr(values.maxSpawnedEvents, 100))
 
     return [
       '// Event Spawn System',
@@ -288,9 +288,9 @@ const eventSpawnTemplate: CodeTemplate = {
     ].join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = identifierErrors(values['functionName'], 'Function name')
+    const errors = identifierErrors(values.functionName, 'Function name')
 
-    const maxSpawned = values['maxSpawnedEvents']
+    const maxSpawned = values.maxSpawnedEvents
     if (maxSpawned !== undefined && Number(maxSpawned) < 1) {
       errors.push('Max spawned events must be at least 1')
     }
@@ -300,7 +300,7 @@ const eventSpawnTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The route command codes and the start of the function that applies a route to an event.
@@ -475,7 +475,7 @@ function presetRouteLines(functionName: string): string[] {
 Template 2: Movement Route
 Create custom movement routes programmatically
 */
-const movementRouteTemplate: CodeTemplate = {
+const movementRouteTemplate = defineTemplate({
   id: 'map-movement-route',
   category: 'map-events',
   name: 'Movement Route',
@@ -507,9 +507,9 @@ const movementRouteTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const functionName = String(valueOr(values['functionName'], 'setCustomRoute'))
-    const isIncludeHelpers = Boolean(values['includeHelpers'])
-    const isWaitForCompletion = Boolean(values['waitForCompletion'])
+    const functionName = String(valueOr(values.functionName, 'setCustomRoute'))
+    const isIncludeHelpers = Boolean(values.includeHelpers)
+    const isWaitForCompletion = Boolean(values.waitForCompletion)
 
     return [
       ...routeFunctionStartLines(functionName),
@@ -543,14 +543,14 @@ const movementRouteTemplate: CodeTemplate = {
     ].join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = identifierErrors(values['functionName'], 'Function name')
+    const errors = identifierErrors(values.functionName, 'Function name')
 
     return {
       valid: errors.length === 0,
       errors
     }
   }
-}
+})
 
 /**
 The hook that runs before the player leaves a map, for every map or only the filter map.
@@ -659,7 +659,7 @@ function afterTransferLines(filterMapId: string, isIncludeDirection: boolean): s
 Template 3: Map Transfer Hook
 Hook into map transfers with before/after timing
 */
-const mapTransferHookTemplate: CodeTemplate = {
+const mapTransferHookTemplate = defineTemplate({
   id: 'map-transfer-hook',
   category: 'map-events',
   name: 'Map Transfer Hook',
@@ -702,10 +702,10 @@ const mapTransferHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = valueOr(values['timing'], 'after')
-    const filterMapId = String(definedOr(values['filterMapId'], '')).trim()
-    const isIncludeFadeInfo = Boolean(values['includeFadeInfo'])
-    const isIncludeDirection = Boolean(values['includeDirection'])
+    const timing = valueOr(values.timing, 'after')
+    const filterMapId = String(definedOr(values.filterMapId, '')).trim()
+    const isIncludeFadeInfo = Boolean(values.includeFadeInfo)
+    const isIncludeDirection = Boolean(values.includeDirection)
 
     const lines = [
       '// Map Transfer Hook',
@@ -726,7 +726,7 @@ const mapTransferHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const filterMapId = values['filterMapId']
+    const filterMapId = values.filterMapId
     const hasFilterMapId = Boolean(filterMapId)
 
     // Validate map ID if provided
@@ -744,7 +744,7 @@ const mapTransferHookTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The body of the process's active check for the active condition.
@@ -897,7 +897,7 @@ function processControlLines(
 Template 4: Parallel Process
 Create a parallel update process on the map
 */
-const parallelProcessTemplate: CodeTemplate = {
+const parallelProcessTemplate = defineTemplate({
   id: 'map-parallel-process',
   category: 'map-events',
   name: 'Parallel Process',
@@ -966,13 +966,13 @@ const parallelProcessTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const processName = valueOr(values['processName'], 'myParallelProcess')
-    const updateInterval = valueOr(values['updateInterval'], 1)
-    const activeCondition = valueOr(values['activeCondition'], 'always')
-    const conditionId = String(valueOr(values['conditionId'], 1))
-    const conditionValue = String(valueOr(values['conditionValue'], 1))
-    const isPauseInMenu = Boolean(values['pauseInMenu'])
-    const isPauseInBattle = Boolean(values['pauseInBattle'])
+    const processName = valueOr(values.processName, 'myParallelProcess')
+    const updateInterval = valueOr(values.updateInterval, 1)
+    const activeCondition = valueOr(values.activeCondition, 'always')
+    const conditionId = String(valueOr(values.conditionId, 1))
+    const conditionValue = String(valueOr(values.conditionValue, 1))
+    const isPauseInMenu = Boolean(values.pauseInMenu)
+    const isPauseInBattle = Boolean(values.pauseInBattle)
 
     const processText = expectText(processName)
     const capitalName = processText.charAt(0).toUpperCase() + processText.slice(1)
@@ -1011,15 +1011,15 @@ const parallelProcessTemplate: CodeTemplate = {
     ].join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = identifierErrors(values['processName'], 'Process name')
+    const errors = identifierErrors(values.processName, 'Process name')
 
-    const updateInterval = values['updateInterval']
+    const updateInterval = values.updateInterval
     if (updateInterval !== undefined && Number(updateInterval) < 1) {
       errors.push('Update interval must be at least 1 frame')
     }
 
-    const activeCondition = values['activeCondition']
-    const conditionId = values['conditionId']
+    const activeCondition = values.activeCondition
+    const conditionId = values.conditionId
 
     if (
       (activeCondition === 'switch' || activeCondition === 'variable') &&
@@ -1033,7 +1033,7 @@ const parallelProcessTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const mapEventsTemplates: readonly CodeTemplate[] = [

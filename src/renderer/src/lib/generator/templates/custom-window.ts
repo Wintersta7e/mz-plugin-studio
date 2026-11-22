@@ -5,7 +5,7 @@ Generates code for creating custom window classes in RPG Maker MZ
 and optionally integrating them into existing scenes.
 */
 
-import type { CodeTemplate } from './types'
+import { defineTemplate, type CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
 import { decimalIntegerOf, expectText, valueOr } from './values'
 
@@ -229,7 +229,7 @@ function generateSceneIntegration(
   return lines.join('\n')
 }
 
-const customWindowTemplate: CodeTemplate = {
+const customWindowTemplate = defineTemplate({
   id: 'custom-window-basic',
   category: 'custom-window',
   name: 'Custom Window',
@@ -287,11 +287,11 @@ const customWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const windowName = sanitizeWindowName(expectText(values['windowName']))
-    const parentClass = valueOr(values['parentClass'], 'Window_Base')
-    const width = valueOr(values['width'], 300)
-    const height = valueOr(values['height'], 200)
-    const addToScene = valueOr(values['addToScene'], 'none')
+    const windowName = sanitizeWindowName(expectText(values.windowName))
+    const parentClass = valueOr(values.parentClass, 'Window_Base')
+    const width = valueOr(values.width, 300)
+    const height = valueOr(values.height, 200)
+    const addToScene = valueOr(values.addToScene, 'none')
 
     // Generate window class
     let code = generateWindowClass(windowName, parentClass)
@@ -311,14 +311,14 @@ const customWindowTemplate: CodeTemplate = {
   },
   validate: (values) => {
     // Check for valid identifier
-    const errors = windowNameErrors(values['windowName'])
+    const errors = windowNameErrors(values.windowName)
 
     // Validate width and height are positive
-    if (values['width'] !== undefined && Number(values['width']) <= 0) {
+    if (values.width !== undefined && Number(values.width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    if (values['height'] !== undefined && Number(values['height']) <= 0) {
+    if (values.height !== undefined && Number(values.height) <= 0) {
       errors.push('Height must be a positive number')
     }
 
@@ -327,7 +327,7 @@ const customWindowTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The `needsRefresh` method of a HUD window: whether the content of its type changed.
@@ -438,7 +438,7 @@ HUD Overlay Window Template
 Creates a window that displays on the map screen as a HUD element
 (health bars, status indicators, mini-map placeholders, etc.)
 */
-const hudOverlayWindowTemplate: CodeTemplate = {
+const hudOverlayWindowTemplate = defineTemplate({
   id: 'hud-overlay-window',
   category: 'custom-window',
   name: 'HUD Overlay Window',
@@ -515,14 +515,14 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const windowName = sanitizeWindowName(expectText(values['windowName']))
-    const hudType = valueOr(values['hudType'], 'health')
-    const posX = valueOr(values['positionX'], 10)
-    const posY = valueOr(values['positionY'], 10)
-    const width = valueOr(values['width'], 200)
-    const height = valueOr(values['height'], 80)
-    const opacity: unknown = values['opacity'] ?? 255
-    const isShowFrame = values['showFrame'] !== 'false'
+    const windowName = sanitizeWindowName(expectText(values.windowName))
+    const hudType = valueOr(values.hudType, 'health')
+    const posX = valueOr(values.positionX, 10)
+    const posY = valueOr(values.positionY, 10)
+    const width = valueOr(values.width, 200)
+    const height = valueOr(values.height, 80)
+    const opacity: unknown = values.opacity ?? 255
+    const isShowFrame = values.showFrame !== 'false'
 
     const fullClassName = `Window_${windowName}`
     const lines: string[] = [
@@ -595,9 +595,9 @@ const hudOverlayWindowTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values['windowName'])
+    const errors = windowNameErrors(values.windowName)
 
-    const opacity = values['opacity']
+    const opacity = values.opacity
     if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
       errors.push('Opacity must be between 0 and 255')
     }
@@ -607,7 +607,7 @@ const hudOverlayWindowTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The popup window class up to its custom background: header, constructor, the static `show`
@@ -744,7 +744,7 @@ Popup Notification Window Template
 
 Creates a temporary popup window that displays a message and auto-closes
 */
-const popupNotificationTemplate: CodeTemplate = {
+const popupNotificationTemplate = defineTemplate({
   id: 'popup-notification-window',
   category: 'custom-window',
   name: 'Popup Notification',
@@ -820,14 +820,14 @@ const popupNotificationTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const windowName = sanitizeWindowName(expectText(values['windowName']))
-    const duration = valueOr(values['defaultDuration'], 120)
-    const width = valueOr(values['width'], 400)
-    const height = valueOr(values['height'], 60)
-    const position = valueOr(values['position'], 'top')
-    const fadeEffect = valueOr(values['fadeEffect'], 'fade')
-    const bgColor = valueOr(values['bgColor'], '#000000')
-    const textColor = valueOr(values['textColor'], '#ffffff')
+    const windowName = sanitizeWindowName(expectText(values.windowName))
+    const duration = valueOr(values.defaultDuration, 120)
+    const width = valueOr(values.width, 400)
+    const height = valueOr(values.height, 60)
+    const position = valueOr(values.position, 'top')
+    const fadeEffect = valueOr(values.fadeEffect, 'fade')
+    const bgColor = valueOr(values.bgColor, '#000000')
+    const textColor = valueOr(values.textColor, '#ffffff')
 
     const fullClassName = `Window_${windowName}`
     const lines = popupClassLines(fullClassName, windowName, duration, bgColor)
@@ -895,9 +895,9 @@ const popupNotificationTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values['windowName'])
+    const errors = windowNameErrors(values.windowName)
 
-    const duration = values['defaultDuration']
+    const duration = values.defaultDuration
     if (duration !== undefined && Number(duration) <= 0) {
       errors.push('Duration must be a positive number')
     }
@@ -907,7 +907,7 @@ const popupNotificationTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 A gauge's label and gradient colors as the template values give them.
@@ -1141,7 +1141,7 @@ Gauge Window Template
 
 Creates a window with HP/MP style gauge bars
 */
-const gaugeWindowTemplate: CodeTemplate = {
+const gaugeWindowTemplate = defineTemplate({
   id: 'gauge-window',
   category: 'custom-window',
   name: 'Gauge Window',
@@ -1295,25 +1295,25 @@ const gaugeWindowTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const windowName = sanitizeWindowName(expectText(values['windowName']))
-    const gaugeCountText = String(valueOr(values['gaugeCount'], '2'))
+    const windowName = sanitizeWindowName(expectText(values.windowName))
+    const gaugeCountText = String(valueOr(values.gaugeCount, '2'))
     const gaugeCount = decimalIntegerOf(gaugeCountText)
-    const gauge1Label = valueOr(values['gauge1Label'], 'HP')
-    const gauge1Color1 = valueOr(values['gauge1Color1'], '#e08040')
-    const gauge1Color2 = valueOr(values['gauge1Color2'], '#f0c040')
-    const gauge2Label = valueOr(values['gauge2Label'], 'MP')
-    const gauge2Color1 = valueOr(values['gauge2Color1'], '#4080c0')
-    const gauge2Color2 = valueOr(values['gauge2Color2'], '#40c0f0')
-    const gauge3Label = valueOr(values['gauge3Label'], 'TP')
-    const gauge3Color1 = valueOr(values['gauge3Color1'], '#40c040')
-    const gauge3Color2 = valueOr(values['gauge3Color2'], '#80f080')
-    const posX = valueOr(values['positionX'], 10)
-    const posY = valueOr(values['positionY'], 10)
-    const width = valueOr(values['width'], 300)
-    const gaugeHeight = valueOr(values['gaugeHeight'], 12)
-    const isShowLabels = values['showLabels'] !== 'false'
-    const isShowValues = values['showValues'] !== 'false'
-    const dataSource = valueOr(values['dataSource'], 'actor')
+    const gauge1Label = valueOr(values.gauge1Label, 'HP')
+    const gauge1Color1 = valueOr(values.gauge1Color1, '#e08040')
+    const gauge1Color2 = valueOr(values.gauge1Color2, '#f0c040')
+    const gauge2Label = valueOr(values.gauge2Label, 'MP')
+    const gauge2Color1 = valueOr(values.gauge2Color1, '#4080c0')
+    const gauge2Color2 = valueOr(values.gauge2Color2, '#40c0f0')
+    const gauge3Label = valueOr(values.gauge3Label, 'TP')
+    const gauge3Color1 = valueOr(values.gauge3Color1, '#40c040')
+    const gauge3Color2 = valueOr(values.gauge3Color2, '#80f080')
+    const posX = valueOr(values.positionX, 10)
+    const posY = valueOr(values.positionY, 10)
+    const width = valueOr(values.width, 300)
+    const gaugeHeight = valueOr(values.gaugeHeight, 12)
+    const isShowLabels = values.showLabels !== 'false'
+    const isShowValues = values.showValues !== 'false'
+    const dataSource = valueOr(values.dataSource, 'actor')
 
     const gauges: GaugeSettings = [
       { label: gauge1Label, color1: gauge1Color1, color2: gauge1Color2 },
@@ -1365,14 +1365,14 @@ const gaugeWindowTemplate: CodeTemplate = {
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values['windowName'])
+    const errors = windowNameErrors(values.windowName)
 
-    const width = values['width']
+    const width = values.width
     if (width !== undefined && Number(width) <= 0) {
       errors.push('Width must be a positive number')
     }
 
-    const gaugeHeight = values['gaugeHeight']
+    const gaugeHeight = values.gaugeHeight
     if (gaugeHeight !== undefined && Number(gaugeHeight) <= 0) {
       errors.push('Gauge Height must be a positive number')
     }
@@ -1382,7 +1382,7 @@ const gaugeWindowTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const customWindowTemplates: readonly CodeTemplate[] = [

@@ -1,28 +1,14 @@
 // ==== case: type-violating: wrong types {"operation":7,"filename":42,"volume":"abc","pitch":"abc","pan":"abc","fadeDuration":"abc","fadeInDuration":"abc","wrapInFunction":"yes","functionName":42}
 // rejects: Field "Operation" must be text | Field "BGM Filename" must be text | Field "Volume" must be a number | Field "Pitch" must be a number | Field "Pan" must be a number | Field "Fade Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
-// BGM Control Function: 7
-function 42() {
-}
+// throws: TypeError
 
 // ==== case: type-violating: null {"operation":null,"filename":null,"volume":null,"pitch":null,"pan":null,"fadeDuration":null,"fadeInDuration":null,"wrapInFunction":null,"functionName":null}
-// rejects: Field "Operation" is required | Pitch must be between 50 and 150
-// BGM Control Function: play
-function customBgmControl() {
-    // Play BGM with specified settings
-    const bgm = {
-        name: 'BGM_NAME',
-        volume: null,
-        pitch: null,
-        pan: null
-    };
-    AudioManager.playBgm(bgm);
-}
+// rejects: Field "Operation" is required
+// throws: TypeError
 
 // ==== case: type-violating: arrays {"operation":["a","b"],"filename":["a","b"],"volume":["a","b"],"pitch":["a","b"],"pan":["a","b"],"fadeDuration":["a","b"],"fadeInDuration":["a","b"],"wrapInFunction":["a","b"],"functionName":["a","b"]}
 // rejects: Field "Operation" must be text | Field "BGM Filename" must be text | Field "Volume" must be a number | Field "Pitch" must be a number | Field "Pan" must be a number | Field "Fade Duration (seconds)" must be a number | Field "Fade In Duration (seconds)" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text
-// BGM Control Function: a,b
-function a,b() {
-}
+// throws: TypeError
 
 // ==== case: type-violating: null where not required {"operation":"play","filename":null,"volume":null,"pitch":null,"pan":null,"fadeDuration":null,"fadeInDuration":null,"wrapInFunction":null,"functionName":null}
 // rejects: BGM filename is required for Play operation | Pitch must be between 50 and 150
@@ -87,6 +73,4 @@ function playTheme() {
 
 // ==== case: type-violating: operation=7 {"operation":7,"volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"filename":"Theme1"}
 // rejects: Field "Operation" must be text
-// BGM Control Function: 7
-function customBgmControl() {
-}
+// throws: TypeError

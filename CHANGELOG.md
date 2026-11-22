@@ -15,6 +15,7 @@
 - A folder picked with Open Project that is not an RPG Maker MZ project is no longer trusted as a project folder. Before, any picked folder, even an empty one or a project's `js/plugins` folder, was kept as trusted, so if that folder later held a project, the app opened it without asking, as it asks for a folder it has no record of. Opening such a folder still shows the same error as before.
 - The dependency and conflict check of a project's plugins no longer drops every plugin when one file in `js/plugins` cannot be read, such as a file that is not UTF-8, a folder named like a plugin, or a file another program holds locked. That file is left out and the others are checked. Before, the check found no plugins at all and reported nothing.
 - When a project's `js/plugins` cannot be listed, for example because it is a file or access to it is denied, the plugin browser and the reload offer record the error in the log instead of taking it as a folder with no plugins. A project with no `js/plugins` folder still shows no plugins.
+- A code template given a field value of the wrong type, such as a number in a text field, or with a required field left unset, now refuses to write code and names the field. Before, it wrote the value into the generated code, which could leave a plugin that fails to load. The template dialog checks the fields first, so this reached only values set outside it, such as a hand-edited saved value.
 
 ## [1.9.0] - 2026-11-19
 

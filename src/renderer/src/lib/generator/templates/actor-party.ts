@@ -7,7 +7,7 @@ Templates for modifying RPG Maker MZ actor and party systems:
 - Equipment hooks (equip/unequip events)
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { defaultLiteralOf, definedOr, expectText, valueOr } from './values'
 
 /**
@@ -25,7 +25,7 @@ function toPascalCase(value: unknown): string {
 Template 1: Custom Actor Property
 Add a new property to Game_Actor with getter/setter
 */
-const customActorPropertyTemplate: CodeTemplate = {
+const customActorPropertyTemplate = defineTemplate({
   id: 'actor-custom-property',
   category: 'actor-party',
   name: 'Custom Actor Property',
@@ -85,15 +85,15 @@ const customActorPropertyTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const propertyName = String(values['propertyName'])
-    const dataType = valueOr(values['dataType'], 'number')
+    const propertyName = values.propertyName
+    const dataType = valueOr(values.dataType, 'number')
     // Number() in the check ignores surrounding whitespace; the code gets the trimmed text.
-    const minValue = String(definedOr(values['minValue'], '')).trim()
-    const maxValue = String(definedOr(values['maxValue'], '')).trim()
-    const isIncludeChange = values['includeChange'] !== false
+    const minValue = String(definedOr(values.minValue, '')).trim()
+    const maxValue = String(definedOr(values.maxValue, '')).trim()
+    const isIncludeChange = values.includeChange !== false
 
-    const pascalName = toPascalCase(values['propertyName'])
-    const defaultLiteral = defaultLiteralOf(dataType, values['defaultValue'])
+    const pascalName = toPascalCase(values.propertyName)
+    const defaultLiteral = defaultLiteralOf(dataType, values.defaultValue)
     const isNumber = dataType === 'number'
     const hasMin = isNumber && minValue !== ''
     const hasMax = isNumber && maxValue !== ''
@@ -161,11 +161,11 @@ const customActorPropertyTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const propertyName = values['propertyName']
+    const propertyName = values.propertyName
     const hasPropertyName = Boolean(propertyName)
     if (hasPropertyName) {
       // Check for valid JavaScript identifier
-      if (!/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
+      if (!/^[a-z_$][\w$]*$/i.test(propertyName)) {
         errors.push('Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
       }
 
@@ -198,10 +198,10 @@ const customActorPropertyTemplate: CodeTemplate = {
     }
 
     // Validate min/max for numbers
-    const dataType = values['dataType']
+    const dataType = values.dataType
     if (dataType === 'number') {
-      const minValue = values['minValue']
-      const maxValue = values['maxValue']
+      const minValue = values.minValue
+      const maxValue = values.maxValue
       const hasMin = Boolean(minValue)
       const hasMax = Boolean(maxValue)
 
@@ -221,7 +221,7 @@ const customActorPropertyTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 The size limit hooks: a full party refuses a new member, and a party at a minimum size above 1
@@ -437,7 +437,7 @@ function reservePartyLines(maxReserve: string): string[] {
 Template 2: Party Management
 Add/remove party members with optional size limits
 */
-const partyManagementTemplate: CodeTemplate = {
+const partyManagementTemplate = defineTemplate({
   id: 'party-management',
   category: 'actor-party',
   name: 'Party Management',
@@ -498,16 +498,16 @@ const partyManagementTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const featureType = valueOr(values['featureType'], 'sizeLimit')
+    const featureType = valueOr(values.featureType, 'sizeLimit')
 
     switch (featureType) {
       case 'sizeLimit': {
-        const maxSize = String(valueOr(values['maxSize'], 4))
-        const minSize = valueOr(values['minSize'], 1)
+        const maxSize = String(valueOr(values.maxSize, 4))
+        const minSize = valueOr(values.minSize, 1)
         return sizeLimitLines(maxSize, minSize).join('\n')
       }
       case 'addRemoveHook': {
-        const hookTiming = valueOr(values['hookTiming'], 'after')
+        const hookTiming = valueOr(values.hookTiming, 'after')
         return [
           '// Party Member Change Hooks',
           '',
@@ -516,7 +516,7 @@ const partyManagementTemplate: CodeTemplate = {
         ].join('\n')
       }
       case 'reserveParty': {
-        const maxReserve = String(valueOr(values['maxReserve'], 10))
+        const maxReserve = String(valueOr(values.maxReserve, 10))
         return reservePartyLines(maxReserve).join('\n')
       }
       default: {
@@ -526,11 +526,11 @@ const partyManagementTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const featureType = values['featureType']
+    const featureType = values.featureType
 
     if (featureType === 'sizeLimit') {
-      const maxSize = values['maxSize']
-      const minSize = values['minSize']
+      const maxSize = values.maxSize
+      const minSize = values.minSize
 
       if (maxSize !== undefined && Number(maxSize) < 1) {
         errors.push('Maximum Party Size must be at least 1')
@@ -542,7 +542,7 @@ const partyManagementTemplate: CodeTemplate = {
         errors.push('Minimum Party Size cannot be greater than Maximum Party Size')
       }
     } else if (featureType === 'reserveParty') {
-      const maxReserve = values['maxReserve']
+      const maxReserve = values.maxReserve
       if (maxReserve !== undefined && Number(maxReserve) < 1) {
         errors.push('Maximum Reserve Size must be at least 1')
       }
@@ -553,7 +553,7 @@ const partyManagementTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 const SLOT_NAMES: Record<string, string> = {
   '0': 'Weapon',
@@ -812,7 +812,7 @@ function unequipLines(hook: EquipHook, isUnequipOnly: boolean): string[] {
 Template 3: Equipment Hook
 Hook into equip/unequip events with before/after timing
 */
-const equipmentHookTemplate: CodeTemplate = {
+const equipmentHookTemplate = defineTemplate({
   id: 'actor-equipment-hook',
   category: 'actor-party',
   name: 'Equipment Hook',
@@ -863,9 +863,9 @@ const equipmentHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = valueOr(values['eventType'], 'both')
-    const timing = valueOr(values['timing'], 'after')
-    const slotFilter = valueOr(values['slotFilter'], 'all')
+    const eventType = valueOr(values.eventType, 'both')
+    const timing = valueOr(values.timing, 'after')
+    const slotFilter = valueOr(values.slotFilter, 'all')
     const slotText = String(slotFilter)
     const hook: EquipHook = {
       slotText,
@@ -891,7 +891,7 @@ const equipmentHookTemplate: CodeTemplate = {
 
     return lines.join('\n')
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const actorPartyTemplates: readonly CodeTemplate[] = [

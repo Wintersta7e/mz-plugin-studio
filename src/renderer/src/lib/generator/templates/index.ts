@@ -3,7 +3,13 @@ Template Registry
 Every code template, built once from each category's list
 */
 
-import type { CodeTemplate, TemplateCategory, TemplateField } from './types'
+import {
+  FIELD_KINDS,
+  isValuesOf,
+  type CodeTemplate,
+  type TemplateCategory,
+  type TemplateField
+} from './types'
 import { methodAliasTemplates } from './method-alias'
 import { sceneHooksTemplates } from './scene-hooks'
 import { customWindowTemplates } from './custom-window'
@@ -35,17 +41,6 @@ export interface TemplateRegistry {
     values: Record<string, unknown>
   ) => { valid: boolean; errors: string[] }
   readonly getTemplateDefaults: (templateId: string) => Record<string, unknown>
-}
-
-// The JavaScript type a value of each field type holds, and how an error names it.
-const FIELD_KINDS: Record<TemplateField['type'], { type: string; name: string }> = {
-  text: { type: 'string', name: 'text' },
-  select: { type: 'string', name: 'text' },
-  'class-select': { type: 'string', name: 'text' },
-  'method-select': { type: 'string', name: 'text' },
-  'key-select': { type: 'string', name: 'text' },
-  number: { type: 'number', name: 'a number' },
-  boolean: { type: 'boolean', name: 'true or false' }
 }
 
 // Whether a value is one a field can hold by its choices: always, unless the field is a select
@@ -85,12 +80,10 @@ function validateValues(
 
   // A value of another type than its field is rejected here, before the template's own check
   // reads it as the declared type
-  let hasWrongType = false
   for (const field of template.fields) {
     const value = values[field.id]
     const kind = FIELD_KINDS[field.type]
     if (value === undefined || value === null || typeof value === kind.type) continue
-    hasWrongType = true
     errors.push(`Field "${field.label}" must be ${kind.name}`)
   }
 
@@ -101,8 +94,8 @@ function validateValues(
     }
   }
 
-  // Run custom validator if present
-  if (!hasWrongType && template.validate) {
+  // Run custom validator if present, on values its fields hold
+  if (template.validate && isValuesOf(template.fields, values)) {
     const customValidation = template.validate(values)
     errors.push(...customValidation.errors)
   }

@@ -8,7 +8,7 @@ Templates for modifying RPG Maker MZ battle mechanics:
 - Action execution hooks
 */
 
-import type { CodeTemplate, ValidationResult } from './types'
+import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { isOneLineExpression } from '../escape'
 import { definedOr, expectText, valueOr } from './values'
 
@@ -114,7 +114,7 @@ function closeConditionCheck(condition: unknown): string {
 Template 1: Damage Formula Modifier
 Modifies damage calculation in battle with various options
 */
-const damageModifierTemplate: CodeTemplate = {
+const damageModifierTemplate = defineTemplate({
   id: 'battle-damage-modifier',
   category: 'battle-system',
   name: 'Damage Modifier',
@@ -158,10 +158,10 @@ const damageModifierTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const modifyType = valueOr(values['modifyType'], 'multiply')
+    const modifyType = valueOr(values.modifyType, 'multiply')
     // The check reads the value trimmed, so the code is written with the same text.
-    const modifyValue = String(definedOr(values['modifyValue'], '')).trim()
-    const condition = valueOr(values['condition'], 'always')
+    const modifyValue = String(definedOr(values.modifyValue, '')).trim()
+    const condition = valueOr(values.condition, 'always')
 
     // Header comment
     const conditionLabel = conditionLabelOf(condition)
@@ -207,10 +207,10 @@ const damageModifierTemplate: CodeTemplate = {
   validate: (values): ValidationResult => {
     const errors: string[] = []
 
-    const hasModifyValue = Boolean(values['modifyValue'])
+    const hasModifyValue = Boolean(values.modifyValue)
     if (hasModifyValue) {
-      const modifyType = values['modifyType']
-      const modifyValue: unknown = values['modifyValue']
+      const modifyType = values.modifyType
+      const modifyValue: unknown = values.modifyValue
 
       // Validate numeric input for multiply and add
       if (modifyType === 'multiply' || modifyType === 'add') {
@@ -231,13 +231,13 @@ const damageModifierTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 Template 2: Battle Event Hook
 React to battle events (victory, defeat, escape, etc.)
 */
-const battleEventTemplate: CodeTemplate = {
+const battleEventTemplate = defineTemplate({
   id: 'battle-event-hook',
   category: 'battle-system',
   name: 'Battle Event Hook',
@@ -262,7 +262,7 @@ const battleEventTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const eventType = valueOr(values['eventType'], 'victory')
+    const eventType = valueOr(values.eventType, 'victory')
     const lines: string[] = []
 
     // Map event types to their MZ methods and appropriate timing
@@ -338,13 +338,13 @@ const battleEventTemplate: CodeTemplate = {
 
     return lines.join('\n')
   }
-}
+})
 
 /**
 Template 3: State Change Hook
 React when states are added or removed from battlers
 */
-const stateHookTemplate: CodeTemplate = {
+const stateHookTemplate = defineTemplate({
   id: 'battle-state-hook',
   category: 'battle-system',
   name: 'State Change Hook',
@@ -373,8 +373,8 @@ const stateHookTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const hookType = valueOr(values['hookType'], 'add')
-    const stateId = String(definedOr(values['stateId'], '')).trim()
+    const hookType = valueOr(values.hookType, 'add')
+    const stateId = String(definedOr(values.stateId, '')).trim()
     const lines: string[] = []
 
     const hasStateFilter = stateId !== ''
@@ -444,7 +444,7 @@ const stateHookTemplate: CodeTemplate = {
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
-    const stateId = values['stateId']
+    const stateId = values.stateId
     const hasStateId = Boolean(stateId)
 
     // Validate state ID if provided
@@ -462,13 +462,13 @@ const stateHookTemplate: CodeTemplate = {
       errors
     }
   }
-}
+})
 
 /**
 Template 4: Action Execution Hook
 React before or after battle actions execute
 */
-const actionSequenceTemplate: CodeTemplate = {
+const actionSequenceTemplate = defineTemplate({
   id: 'battle-action-hook',
   category: 'battle-system',
   name: 'Action Execution Hook',
@@ -503,8 +503,8 @@ const actionSequenceTemplate: CodeTemplate = {
     }
   ],
   generate: (values): string => {
-    const timing = valueOr(values['timing'], 'after')
-    const actionType = valueOr(values['actionType'], 'all')
+    const timing = valueOr(values.timing, 'after')
+    const actionType = valueOr(values.actionType, 'all')
     const lines: string[] = []
 
     // Determine action type check
@@ -575,7 +575,7 @@ const actionSequenceTemplate: CodeTemplate = {
 
     return lines.join('\n')
   }
-}
+})
 
 // The templates of this category, in the order the dialog lists them
 export const battleSystemTemplates: readonly CodeTemplate[] = [

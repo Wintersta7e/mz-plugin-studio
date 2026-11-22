@@ -42,25 +42,14 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 
 // ==== case: type-violating: arg1Name="target",arg1Type=7,arg2Name="value",arg2Type=["a","b"] {"arg1Type":7,"arg2Type":["a","b"],"commandName":"Sample","pluginName":"Sample","arg1Name":"target","arg2Name":"value"}
 // rejects: Field "Argument 1 Type" must be text | Field "Argument 2 Type" must be text
-// Plugin Command: Sample
-// Arguments:
-//   target (7) - First argument
-//   value (a,b) - Second argument
-PluginManager.registerCommand('Sample', 'Sample', function(args) {
-    // Parse arguments
-    const target = String(args.target);
-    const value = String(args.value);
-
-    // Your command logic here
-    console.log('Sample called with:', target, value);
-});
+// throws: TypeError
 
 // ==== case: type-violating: arg1Name="target",arg2Name=42 {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"target","arg2Name":42}
 // rejects: Field "Argument 2 Name" must be text
 // throws: TypeError
 
 // ==== case: type-violating: commandName=" ",pluginName=null {"arg1Type":"string","arg2Type":"number","commandName":" ","pluginName":null}
-// rejects: Field "Plugin Name" is required | Command name is required
+// rejects: Field "Plugin Name" is required
 // throws: TypeError
 
 // ==== case: type-violating: commandName="1st",arg1Type=null {"arg1Type":null,"arg2Type":"number","commandName":"1st","pluginName":"Sample"}
@@ -81,31 +70,11 @@ PluginManager.registerCommand(' ', 'Sample', function(args) {
 
 // ==== case: type-violating: commandName=null,arg1Name="target",arg1Type="number",arg2Name="data",arg2Type="json" {"arg1Type":"number","arg2Type":"json","commandName":null,"pluginName":"Sample","arg1Name":"target","arg2Name":"data"}
 // rejects: Field "Command Name" is required
-// Plugin Command: 
-// Arguments:
-//   target (number) - First argument
-//   data (json) - Second argument
-PluginManager.registerCommand('Sample', '', function(args) {
-    // Parse arguments
-    const target = Number(args.target);
-    const data = JSON.parse(args.data);
-
-    // Your command logic here
-    console.log(' called with:', target, data);
-});
+// throws: TypeError
 
 // ==== case: type-violating: commandName=42,arg1Name="flag",arg1Type="boolean" {"arg1Type":"boolean","arg2Type":"number","commandName":42,"pluginName":"Sample","arg1Name":"flag"}
 // rejects: Field "Command Name" must be text
-// Plugin Command: 42
-// Arguments:
-//   flag (boolean) - First argument
-PluginManager.registerCommand('Sample', '42', function(args) {
-    // Parse arguments
-    const flag = args.flag === 'true';
-
-    // Your command logic here
-    console.log('42 called with:', flag);
-});
+// throws: TypeError
 
 // ==== case: type-violating: arg1Name="target",arg1Type="number",arg2Name="data",arg2Type="json" {"arg1Type":"number","arg2Type":"json","commandName":"Sample","pluginName":"Sample","arg1Name":"target","arg2Name":"data"}
 // Plugin Command: Sample

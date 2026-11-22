@@ -176,54 +176,7 @@ PluginManager.registerCommand('Sample', 'Sample', function(args) {
 
 // ==== case: type-violating: minValue=null,maxValue="abc" {"validateActorId":true,"validateNumberRange":true,"minValue":null,"maxValue":"abc","errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}
 // rejects: Field "Maximum Value" must be a number
-// Plugin Command with Validation: Sample
-// Includes input validation and error handling
-
-// Error handling helper
-function Sample_handleError(message) {
-    console.warn('[Sample] ' + message);
-    return false;
-}
-
-// Validation helper
-function Sample_validate(args) {
-    // Validate actor ID
-    const actorId = Number(args.actorId);
-    if (isNaN(actorId) || actorId < 1) {
-        return Sample_handleError('Invalid actor ID: ' + args.actorId);
-    }
-    if (!$dataActors[actorId]) {
-        return Sample_handleError('Actor not found: ' + actorId);
-    }
-
-    // Validate number range
-    const value = Number(args.value);
-    if (isNaN(value)) {
-        return Sample_handleError('Value must be a number: ' + args.value);
-    }
-    if (value < 0 || value > abc) {
-        return Sample_handleError('Value out of range (0-abc): ' + value);
-    }
-
-    return true; // All validations passed
-}
-
-PluginManager.registerCommand('Sample', 'Sample', function(args) {
-    // Run validation
-    if (!Sample_validate(args)) {
-        return; // Validation failed
-    }
-
-    // Parse validated arguments
-    const actorId = Number(args.actorId);
-    const actor = $gameActors.actor(actorId);
-    const value = Number(args.value);
-
-    // Your command logic here
-    // Example: Set a stat on the actor
-    console.log('Setting value', value, 'on actor', actor.name());
-    // actor.setHp(value);  // Uncomment and modify as needed
-});
+// throws: TypeError
 
 // ==== case: type-violating: minValue=5,maxValue=null {"validateActorId":true,"validateNumberRange":true,"minValue":5,"maxValue":null,"errorHandling":"warning","commandName":"Sample","pluginName":"Sample"}
 // rejects: Minimum value cannot be greater than maximum value
