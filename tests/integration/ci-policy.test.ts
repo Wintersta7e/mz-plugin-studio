@@ -5,6 +5,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { ownImportScanners } from '../helpers/import-scanners'
+
 const SCRIPT = path.resolve('scripts/ci-policy.mjs')
 
 interface AsarTree {
@@ -348,6 +350,14 @@ describe('ci-policy runtime-deps', () => {
     expect(lineStarting('unclassified imports')).toBe('unclassified imports 0:')
     expect(out).toMatch(/files scanned [1-9]\d* \(/)
     expect(status).toBe(0)
+  })
+})
+
+describe('ci-policy runtime-deps import reader', () => {
+  it('reads imports through the shared reader and declares no scanner of its own', () => {
+    expect(ownImportScanners('scripts/ci-policy.mjs')).toBe(
+      'import scanners declared in scripts/ci-policy.mjs: 0 of 18 counted (); shared reader imported: true'
+    )
   })
 })
 

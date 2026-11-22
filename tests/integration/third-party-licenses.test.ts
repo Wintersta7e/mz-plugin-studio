@@ -5,6 +5,8 @@ import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import { ownImportScanners } from '../helpers/import-scanners'
+
 const SCRIPT = path.resolve(process.cwd(), 'scripts/third-party-licenses.mjs')
 // The script always lists these build-time packages, so every fixture installs them
 const ALWAYS = ['tailwindcss', 'tw-animate-css']
@@ -28,6 +30,10 @@ function run(source: string): Run {
   mkdirSync(path.join(directory, 'scripts'))
   const script = path.join(directory, 'scripts/third-party-licenses.mjs')
   copyFileSync(SCRIPT, script)
+  copyFileSync(
+    path.join(path.dirname(SCRIPT), 'import-reader.mjs'),
+    path.join(directory, 'scripts/import-reader.mjs')
+  )
   const installed = [...ALWAYS, 'value-pkg']
   const lock = {
     packages: Object.fromEntries(installed.map((n) => [`node_modules/${n}`, { license: 'MIT' }]))
@@ -76,5 +82,11 @@ describe('third-party-licenses source imports', () => {
 
     expect(result.status).toBe(1)
     expect(result.stderr).toContain('src/a.ts imports "absent", which is not in package-lock.json')
+  })
+
+  it('reads imports through the shared reader and declares no scanner of its own', () => {
+    expect(ownImportScanners('scripts/third-party-licenses.mjs')).toBe(
+      'import scanners declared in scripts/third-party-licenses.mjs: 0 of 18 counted (); shared reader imported: true'
+    )
   })
 })

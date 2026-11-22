@@ -11,6 +11,8 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { createRequire, isBuiltin } from 'node:module'
 import path from 'node:path'
 
+import { valueImports } from './import-reader.mjs'
+
 const NODE_MODULES_BUDGET = 2_097_152
 // The app's own built code: the measured out/ bytes with a tenth to spare, rounded up to 64 KiB.
 // Raised only in a commit that says why the code grew
@@ -30,27 +32,6 @@ const REQUIRED_FILES = ['LICENSE', 'THIRD_PARTY_LICENSES.md']
 const SOURCE_ROOTS = ['src/main', 'src/preload', 'src/shared']
 const SOURCE_EXTENSION = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/
 const DECLARATION_FILE = /\.d\.(?:ts|mts|cts)$/
-
-// Every statement read is line-anchored or call-shaped. An import clause may hold comments but
-// not the `import`/`export` of a following statement, so a misread clause can only add a
-// package to the value set; a `from '<package>'` that no statement reads fails the check with
-// its file:line. `import(…)`, `require(…)` and `import '…'` are read in their one-line form only.
-const COMMENT = /\/\/[^\n]*(?![^\n])|\/\*[\s\S]*?\*\//g
-const BARE_IMPORT = /^[ \t]*import[ \t]*(['"])([^'"\n]+)\1/gm
-const CALL_IMPORT = /\b(?:import|require)\([ \t]*(['"])([^'"\n]+)\1[ \t]*\)/g
-const FROM_SPECIFIER = /\bfrom\s*(['"])([^'"\n]+)\1/g
-
-// The characters a `… from '…'` statement is read by, one at a time.
-const BLANK = /[ \t]/
-const SPACE = /\s/
-const WORD = /\w/
-const CLAUSE_CHAR = /[\w$\s{},*]/
-const QUOTE = /['"]/
-const SOURCE_CHAR = /[^'"\n]/
-const COMMENT_CHAR = /[^\n]/
-const LINE_CHAR = /[^\n\r\u{2028}\u{2029}]/u
-const KEYWORDS = ['import', 'export']
-const KEYWORD_LENGTH = 6
 
 const CARET_RANGE = /^\^(\d+)\.(\d+)\.(\d+)$/
 const VERSION = /^v?(\d+)\.(\d+)\.(\d+)/
@@ -111,8 +92,6 @@ const SUBCOMMANDS = new Map([
 /**
 @typedef {{ segments: string[], size: number }} Leaf
 @typedef {{ name: string, kind: string }} TopLevelEntry
-@typedef {{ clauseEnd: number, specifier: string, end: number }} ClauseSource
-@typedef {{ start: number, end: number, isTypeKeyword: boolean, clause: string, specifier: string }} FromStatement
 @typedef {{ counts: string[], scanned: number, imported: Set<string>, unclassified: string[] }} Scan
 @typedef {[number, number, number]} VersionParts
 @typedef {{ where: string, keys: Map<string, string> }} OsvEntry
@@ -415,187 +394,6 @@ function listSources(root) {
 }
 
 /**
-One character of `text` against a one-character class; outside the text reads as no match.
-@param {RegExp} pattern
-@param {string} text
-@param {number} index
-*/
-const isAt = (pattern, text, index) => pattern.test(text.charAt(index))
-
-/**
-@param {RegExp} pattern
-@param {string} text
-@param {number} index
-@returns {number} the index after the run of `pattern` characters that starts at `index`
-*/
-function skip(pattern, text, index) {
-  let end = index
-  while (isAt(pattern, text, end)) end += 1
-  return end
-}
-
-/**
-`from '<specifier>'` after any spaces at `start`: one or more characters up to the matching
-quote, on one line.
-@param {string} text
-@param {number} start
-@returns {{ specifier: string, end: number } | undefined}
-*/
-function sourceAt(text, start) {
-  const from = skip(SPACE, text, start)
-  const open = skip(BLANK, text, from + 4)
-  const close = skip(SOURCE_CHAR, text, open + 1)
-  const isSource =
-    text.startsWith('from', from) &&
-    isAt(QUOTE, text, open) &&
-    close > open + 1 &&
-    text.charAt(close) === text.charAt(open)
-  return isSource ? { specifier: text.slice(open + 1, close), end: close + 1 } : undefined
-}
-
-/**
-The index the clause walk moves to from `at`: past a line comment to its line end, else one
-clause character on; -1 at any other character and at the `import`/`export` keyword of a later
-statement.
-@param {string} text
-@param {number} at
-*/
-function clauseStep(text, at) {
-  if (text.startsWith('//', at)) return skip(COMMENT_CHAR, text, at)
-  const isKeyword =
-    KEYWORDS.some((word) => text.startsWith(word, at)) &&
-    !isAt(WORD, text, at - 1) &&
-    !isAt(WORD, text, at + KEYWORD_LENGTH)
-  return !isKeyword && isAt(CLAUSE_CHAR, text, at) ? at + 1 : -1
-}
-
-/**
-The first `from '…'` the clause starting at `start` reaches. A block comment is tried as
-ending at each later `*\/` in turn, the first ending first.
-@param {string} text
-@param {number} start
-@param {Set<number>} failed the starts already walked without reaching a source
-@returns {ClauseSource | undefined}
-*/
-function clauseSource(text, start, failed) {
-  /**
-  @type {number[]}
-  */
-  const walked = []
-  /**
-  @type {ClauseSource | undefined}
-  */
-  let found
-  for (let at = start; found === undefined && at >= 0 && !failed.has(at);) {
-    const source = sourceAt(text, at)
-    walked.push(at)
-    if (source) {
-      found = { clauseEnd: at, ...source }
-    } else if (text.startsWith('/*', at)) {
-      found = blockCommentSource(text, at, failed)
-      at = -1
-    } else {
-      at = clauseStep(text, at)
-    }
-  }
-  if (found === undefined) for (const index of walked) failed.add(index)
-  return found
-}
-
-/**
-@param {string} text
-@param {number} at the start of the block comment
-@param {Set<number>} failed
-@returns {ClauseSource | undefined}
-*/
-function blockCommentSource(text, at, failed) {
-  /**
-  @type {ClauseSource | undefined}
-  */
-  let found
-  for (
-    let close = text.indexOf('*/', at + 2);
-    found === undefined && close >= 0;
-    close = text.indexOf('*/', close + 1)
-  ) {
-    found = clauseSource(text, close + 2, failed)
-  }
-  return found
-}
-
-/**
-The `import … from '…'` or `export … from '…'` statement on the line starting at `lineStart`.
-@param {string} text
-@param {number} lineStart
-@param {Set<number>} failed
-@returns {FromStatement | undefined}
-*/
-function statementAt(text, lineStart, failed) {
-  const keyword = skip(BLANK, text, lineStart)
-  const keywordEnd = skip(BLANK, text, keyword + KEYWORD_LENGTH)
-  const typeEnd = skip(BLANK, text, keywordEnd + 4)
-  const isTypeKeyword = text.startsWith('type', keywordEnd) && typeEnd > keywordEnd + 4
-  const clauseStart = isTypeKeyword ? typeEnd : keywordEnd
-  const isStatement =
-    KEYWORDS.some((word) => text.startsWith(word, keyword)) && keywordEnd > keyword + KEYWORD_LENGTH
-  const source = isStatement ? clauseSource(text, clauseStart, failed) : undefined
-  return (
-    source && {
-      start: lineStart,
-      end: source.end,
-      isTypeKeyword,
-      clause: text.slice(clauseStart, source.clauseEnd),
-      specifier: source.specifier
-    }
-  )
-}
-
-/**
-Every `… from '…'` statement, each read at a line start after the end of the one before.
-@param {string} text
-*/
-function fromStatements(text) {
-  /**
-  @type {FromStatement[]}
-  */
-  const statements = []
-  /**
-  @type {Set<number>}
-  */
-  const failed = new Set()
-  let readEnd = 0
-  for (
-    let lineStart = 0;
-    lineStart < text.length;
-    lineStart = skip(LINE_CHAR, text, lineStart) + 1
-  ) {
-    const statement = lineStart >= readEnd ? statementAt(text, lineStart, failed) : undefined
-    if (statement === undefined) continue
-    statements.push(statement)
-    readEnd = statement.end
-  }
-  return statements
-}
-
-// TypeScript and esbuild elide `import type …` and a clause of only `{ type … }` items;
-// `import type from '…'` imports a default export named `type`.
-/**
-@param {boolean} isTypeKeyword
-@param {string} clause
-*/
-function isTypeOnly(isTypeKeyword, clause) {
-  const bindings = clause.replaceAll(COMMENT, ' ').trim()
-  const [, named = ''] = /^\{([^{}]*)\}$/.exec(bindings) ?? []
-  const items = named
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-  return isTypeKeyword
-    ? bindings !== ''
-    : items.length > 0 && items.every((item) => /^type\s/.test(item))
-}
-
-/**
 @param {string} specifier
 */
 function packageOf(specifier) {
@@ -609,38 +407,6 @@ function packageOf(specifier) {
   const segments = specifier.split('/')
   const name = specifier.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0]
   return isOutside ? undefined : name
-}
-
-/**
-Value specifiers in one source, and the lines of every `from '<package>'` outside a
-`… from '…'` statement read.
-@param {string} source
-*/
-function readImports(source) {
-  /**
-  @type {string[]}
-  */
-  const specifiers = []
-  const statements = fromStatements(source)
-  for (const statement of statements) {
-    if (!isTypeOnly(statement.isTypeKeyword, statement.clause)) {
-      specifiers.push(statement.specifier)
-    }
-  }
-  for (const match of source.matchAll(BARE_IMPORT)) specifiers.push(match.at(2) ?? '')
-  for (const match of source.matchAll(CALL_IMPORT)) specifiers.push(match.at(2) ?? '')
-  /**
-  @type {number[]}
-  */
-  const unclassified = []
-  for (const match of source.matchAll(FROM_SPECIFIER)) {
-    const specifier = match.at(2) ?? ''
-    const isRead = statements.some(({ start, end }) => match.index >= start && match.index < end)
-    if (!isRead && packageOf(specifier) !== undefined) {
-      unclassified.push(source.slice(0, match.index).split('\n').length)
-    }
-  }
-  return { specifiers, unclassified }
 }
 
 /**
@@ -673,12 +439,15 @@ function scanRoot(root, files, scan) {
   return files.every((file) => {
     const source = readInput(file, (input) => readFileSync(input, 'utf8'))
     if (source === undefined) return false
-    const imports = readImports(source)
+    const imports = valueImports(source)
     for (const specifier of imports.specifiers) {
       const name = packageOf(specifier)
       if (name) scan.imported.add(name)
     }
-    for (const line of imports.unclassified) scan.unclassified.push(`${file}:${line}`)
+    // A `from '<package>'` no statement read: a statement shape the reader does not know.
+    for (const { line, specifier } of imports.unread) {
+      if (packageOf(specifier) !== undefined) scan.unclassified.push(`${file}:${line}`)
+    }
     return true
   })
 }

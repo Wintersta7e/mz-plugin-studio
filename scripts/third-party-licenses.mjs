@@ -8,6 +8,8 @@ import { builtinModules } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { bundledImports } from './import-reader.mjs'
+
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const OUTPUT = path.join(ROOT, 'THIRD_PARTY_LICENSES.md')
 // Build-time packages whose output ships: the app's CSS is generated from them (globals.css)
@@ -29,14 +31,6 @@ const HASH_ALGORITHMS = new Map([
 // An SPDX license id or expression; anything else is named as free text
 const SPDX_EXPRESSION = /^[\w.+\-() ]+$/
 
-// The characters an import is read by. A statement starts at the start of the text or after a
-// space or `;`; a stylesheet `@import` starts anywhere.
-const LEAD = /[\s;]/
-const SPACE = /\s/
-const WORD = /\w/
-const CLAUSE_CHAR = /[\w*{}\s,$]/
-const QUOTE = /['"]/
-
 /**
 @param {unknown} value
 @returns {value is Record<string, unknown>}
@@ -48,153 +42,6 @@ const isRecord = (value) => typeof value === 'object' && value !== null && !Arra
 @returns {unknown}
 */
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'))
-
-/**
-@param {RegExp} pattern a one-character class
-@param {string} text
-@param {number} index
-*/
-const isAt = (pattern, text, index) =>
-  index >= 0 && index < text.length && pattern.test(text.charAt(index))
-
-/**
-@param {RegExp} pattern
-@param {string} text
-@param {number} index
-@returns {number} the index after the run of `pattern` characters starting at `index`
-*/
-function skip(pattern, text, index) {
-  let end = index
-  while (isAt(pattern, text, end)) end++
-  return end
-}
-
-/**
-@param {string} text
-@param {number} end
-@returns {number} the index of the run of spaces that ends at `end`
-*/
-function spacesBefore(text, end) {
-  let start = end
-  while (isAt(SPACE, text, start - 1)) start--
-  return start
-}
-
-/**
-The specifier quoted at `quote`: one or more characters up to the next quote of either kind.
-@param {string} text
-@param {number | undefined} quote
-@returns {{ specifier: string, end: number } | undefined}
-*/
-function quoted(text, quote) {
-  // No quote there: an empty run at the end of the text, which reads nothing
-  const start = quote !== undefined && isAt(QUOTE, text, quote) ? quote + 1 : text.length
-  let end = start
-  while (end < text.length && !isAt(QUOTE, text, end)) end++
-  return end > start && end < text.length
-    ? { specifier: text.slice(start, end), end: end + 1 }
-    : undefined
-}
-
-/**
-The quote after `<keyword> <clause> from `. The clause starts after the keyword's spaces, does
-not start with the word `type`, and runs over `[\w*{}\s,$]` up to the space ahead of `from`.
-@param {string} text
-@param {number} keywordEnd
-@returns {number | undefined}
-*/
-function clauseQuote(text, keywordEnd) {
-  const clauseStart = skip(SPACE, text, keywordEnd)
-  const isTypeWord = text.startsWith('type', clauseStart) && !isAt(WORD, text, clauseStart + 4)
-  const quote = skip(CLAUSE_CHAR, text, clauseStart)
-  const fromEnd = spacesBefore(text, quote)
-  const isClause =
-    clauseStart > keywordEnd &&
-    !isTypeWord &&
-    fromEnd < quote &&
-    text.slice(fromEnd - 4, fromEnd) === 'from' &&
-    isAt(SPACE, text, fromEnd - 5) &&
-    clauseStart <= fromEnd - 5
-  return isClause && isAt(QUOTE, text, quote) ? quote : undefined
-}
-
-/**
-`import 'x'`, else `import <clause> from 'x'`.
-@param {string} text
-@param {number} keywordEnd
-*/
-function importQuote(text, keywordEnd) {
-  const next = skip(SPACE, text, keywordEnd)
-  return next > keywordEnd && isAt(QUOTE, text, next) ? next : clauseQuote(text, keywordEnd)
-}
-
-/**
-`import(…)`, with or without spaces around the parenthesis.
-@param {string} text
-@param {number} keywordEnd
-*/
-function callQuote(text, keywordEnd) {
-  const parenthesis = skip(SPACE, text, keywordEnd)
-  return text.charAt(parenthesis) === '(' ? skip(SPACE, text, parenthesis + 1) : undefined
-}
-
-/**
-The import or export statement whose keyword starts at `start`.
-@param {string} text
-@param {number} start
-*/
-function statementAt(text, start) {
-  if (text.startsWith('export', start)) return quoted(text, clauseQuote(text, start + 6))
-  const isImport = text.startsWith('import', start)
-  const read = isImport ? quoted(text, importQuote(text, start + 6)) : undefined
-  return isImport ? (read ?? quoted(text, callQuote(text, start + 6))) : undefined
-}
-
-/**
-A stylesheet `@import 'x'` or `@import url('x')`.
-@param {string} text
-@param {number} start
-*/
-function stylesheetAt(text, start) {
-  const next = skip(SPACE, text, start + 7)
-  const isImport = text.startsWith('@import', start) && next > start + 7
-  const inUrl = isImport && text.startsWith('url(', next) ? quoted(text, next + 4) : undefined
-  return isImport ? (inUrl ?? quoted(text, next)) : undefined
-}
-
-/**
-The import read at `start`, if one starts there.
-@param {string} text
-@param {number} start
-*/
-function importAt(text, start) {
-  const keyword = start === 0 && !isAt(LEAD, text, 0) ? 0 : start + 1
-  const isLead = keyword === 0 || isAt(LEAD, text, start)
-  return (isLead ? statementAt(text, keyword) : undefined) ?? stylesheetAt(text, start)
-}
-
-/**
-Every specifier a source imports, in text order; reading resumes after an import's closing quote.
-@param {string} text
-@returns {string[]}
-*/
-function importSpecifiers(text) {
-  /**
-  @type {string[]}
-  */
-  const specifiers = []
-  let index = 0
-  while (index < text.length) {
-    const found = importAt(text, index)
-    if (found === undefined) {
-      index++
-    } else {
-      specifiers.push(found.specifier)
-      index = found.end
-    }
-  }
-  return specifiers
-}
 
 const lockfile = readJson(path.join(ROOT, 'package-lock.json'))
 const { packages: lockPackages } = isRecord(lockfile) ? lockfile : {}
@@ -238,7 +85,7 @@ function importedPackages() {
   const names = new Set()
   const files = sourceFiles(path.join(ROOT, 'src'))
   for (const file of files) {
-    const specifiers = importSpecifiers(readFileSync(file, 'utf8'))
+    const specifiers = bundledImports(readFileSync(file, 'utf8'))
     for (const specifier of specifiers) {
       const [spec = ''] = specifier.split('?', 1)
       if (isLocal(spec)) continue
