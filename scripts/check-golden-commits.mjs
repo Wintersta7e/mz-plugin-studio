@@ -3,7 +3,8 @@
 //     header that only loses fields is the same case, not an added one);
 //   - a commit that changes no src/ file deletes no golden line;
 //   - a changed user-visible golden (generated output) comes with a CHANGELOG.md change,
-//     unless a commit that changes no src/ file only adds whole cases (or index lines) to it.
+//     unless a commit that changes no src/ file only adds whole cases (or index lines) to it;
+//   - a commit whose subject type is `refactor` adds, deletes or changes no golden line.
 // And the commit-message rules over the same range (older history predates them):
 //   - a subject is at most 72 characters;
 //   - the only trailer is `Co-Authored-By:` (exact case), naming an allowed co-author, read from
@@ -22,6 +23,7 @@ const USER_VISIBLE = ['templates/', 'generator/', 'raw-mode/', 'mzparams/'].map(
 const CASE_HEADER = '+// ==== case:'
 const REMOVED_CASE_HEADER = '-// ==== case:'
 const NO_COMMIT = /^0+$/
+const SUBJECT_TYPE = /^(\w+)[(:]/
 const MAX_SUBJECT = 72
 const CO_AUTHOR_KEY = 'Co-Authored-By'
 const CO_AUTHORS = ['Rooty', 'Leafy']
@@ -306,7 +308,7 @@ const isBotCommit = ({ email, committer }, openedBy) =>
   (openedBy === undefined ? committer === HOST_COMMITTER_EMAIL : openedBy === BOT_LOGIN)
 
 /**
-@typedef {{ src: number, x: number, y: number, z: number, w: number, subjects: number, trailers: number, coAuthors: number, bots: number }} RuleCounts
+@typedef {{ src: number, refactors: number, refactorLines: number, x: number, y: number, z: number, w: number, subjects: number, trailers: number, coAuthors: number, bots: number }} RuleCounts
 @typedef {(sha: string, rule: string, file: string) => void} Fail
 @typedef {{ sha: string, touchesSource: boolean, touchesChangelog: boolean, counts: RuleCounts, fail: Fail }} CommitScope
 @typedef {{ status: string, file: string }} Change
@@ -374,12 +376,45 @@ function checkExistingGolden(scope, { status, file }, deleted) {
 }
 
 /**
+The golden lines a commit adds or deletes, per golden file (a binary file counts one line).
+@param {string} sha
+*/
+function goldenLineCounts(sha) {
+  return git(['show', '--format=', '--numstat', '--no-renames', sha, '--', GOLDEN])
+    .split('\n')
+    .filter((line) => line !== '')
+    .map((line) => {
+      const [added = '', deleted = '', file = ''] = line.split('\t', 3)
+      const lines = added === '-' ? 1 : Number(added) + Number(deleted)
+      return { file, lines }
+    })
+}
+
+/**
+The refactor rule on one commit: a commit whose subject type is `refactor` changes no golden line.
+@param {string} sha
+@param {RuleCounts} counts
+@param {Fail} fail
+*/
+function checkRefactor(sha, counts, fail) {
+  const [subject = ''] = git(['show', '-s', '--format=%s', sha]).split('\n', 1)
+  if (SUBJECT_TYPE.exec(subject)?.[1] !== 'refactor') return
+  counts.refactors++
+  for (const { file, lines } of goldenLineCounts(sha)) {
+    if (lines === 0) continue
+    counts.refactorLines += lines
+    fail(sha, 'refactor commit changes a golden', file)
+  }
+}
+
+/**
 The golden-file rules on one commit.
 @param {string} sha
 @param {RuleCounts} counts
 @param {Fail} fail
 */
 function checkGoldens(sha, counts, fail) {
+  checkRefactor(sha, counts, fail)
   const changes = changedPaths(sha)
   const touchesSource = changes.some(({ file }) => file.startsWith('src/'))
   const touchesChangelog = changes.some(({ file }) => file === 'CHANGELOG.md')
@@ -419,7 +454,19 @@ function checkRange(range, openedBy) {
   /**
   @type {RuleCounts}
   */
-  const counts = { src: 0, x: 0, y: 0, z: 0, w: 0, subjects: 0, trailers: 0, coAuthors: 0, bots: 0 }
+  const counts = {
+    src: 0,
+    refactors: 0,
+    refactorLines: 0,
+    x: 0,
+    y: 0,
+    z: 0,
+    w: 0,
+    subjects: 0,
+    trailers: 0,
+    coAuthors: 0,
+    bots: 0
+  }
   /**
   @type {string[]}
   */
@@ -436,6 +483,8 @@ function checkRange(range, openedBy) {
   }
   print(
     `commits ${commits.length}; src commits ${counts.src}; ` +
+      `refactor commits ${counts.refactors}; ` +
+      `golden lines changed in refactor commits ${counts.refactorLines}; ` +
       `golden files added in src commits ${counts.x}; case headers added in src commits ${counts.y}; ` +
       `user-visible golden changes without CHANGELOG ${counts.z}; ` +
       `golden lines deleted in test-only commits ${counts.w}; ` +
@@ -445,7 +494,7 @@ function checkRange(range, openedBy) {
   for (const line of failures) print(line)
   const messages = counts.subjects + counts.trailers + counts.coAuthors
   if (messages > 0) print(RULES)
-  const golden = counts.x + counts.y + counts.z + counts.w
+  const golden = counts.x + counts.y + counts.z + counts.w + counts.refactorLines
   return golden + messages > 0 ? 1 : 0
 }
 

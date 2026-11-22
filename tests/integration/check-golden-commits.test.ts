@@ -61,9 +61,11 @@ const counts = (
   y: number,
   z: number,
   w: number,
-  { subjects = 0, trailers = 0, bots = 0 } = {}
+  { subjects = 0, trailers = 0, bots = 0, refactors = 0, refactorLines = 0 } = {}
 ): string =>
-  `commits ${String(n)}; src commits ${String(s)}; golden files added in src commits ${String(x)}; ` +
+  `commits ${String(n)}; src commits ${String(s)}; refactor commits ${String(refactors)}; ` +
+  `golden lines changed in refactor commits ${String(refactorLines)}; ` +
+  `golden files added in src commits ${String(x)}; ` +
   `case headers added in src commits ${String(y)}; ` +
   `user-visible golden changes without CHANGELOG ${String(z)}; ` +
   `golden lines deleted in test-only commits ${String(w)}; subjects over 72 ${String(subjects)}; ` +
@@ -364,6 +366,55 @@ describe('golden commit check: added cases and index entries', () => {
     write(directory, 'src/a.ts', 'export const a = 1\n')
     write(directory, `${GOLDEN}/parser/p.json`, '{\n  "a": 2\n}\n')
     commit(directory, 'fix: change parser output')
+
+    expect(check(directory, [`${base}..HEAD`])).toStrictEqual({
+      status: 0,
+      lines: [counts(2, 1, 0, 0, 0, 0)]
+    })
+  })
+})
+
+describe('golden commit check: refactor commits', () => {
+  afterEach(removeRepositories)
+
+  it('fails a refactor commit that changes a golden line', () => {
+    const { directory, base } = makeRepository()
+    write(directory, `${GOLDEN}/parser/p.js`, '// ==== case: base\nlet a\n')
+    commit(directory, 'test: add a golden')
+    write(directory, 'src/a.ts', 'export const a = 1\n')
+    write(directory, `${GOLDEN}/parser/p.js`, '// ==== case: base\nlet b\n')
+    const sha = commit(directory, 'refactor(a): move a')
+
+    expect(check(directory, [`${base}..HEAD`])).toStrictEqual({
+      status: 1,
+      lines: [
+        counts(2, 1, 0, 0, 0, 0, { refactors: 1, refactorLines: 2 }),
+        `FAIL ${short(sha)} refactor commit changes a golden: ${GOLDEN}/parser/p.js`
+      ]
+    })
+  })
+
+  it('passes a refactor commit that changes only src', () => {
+    const { directory, base } = makeRepository()
+    write(directory, `${GOLDEN}/templates/a.js`, '// ==== case: base\nlet a\n')
+    commit(directory, 'test: add a golden')
+    write(directory, 'src/a.ts', 'export const a = 1\n')
+    commit(directory, 'refactor: move a')
+
+    expect(check(directory, [`${base}..HEAD`])).toStrictEqual({
+      status: 0,
+      lines: [counts(2, 1, 0, 0, 0, 0, { refactors: 1 })]
+    })
+  })
+
+  it('passes a fix commit that changes a golden with a CHANGELOG change', () => {
+    const { directory, base } = makeRepository()
+    write(directory, `${GOLDEN}/templates/a.js`, '// ==== case: base\nlet a\n')
+    commit(directory, 'test: add a golden')
+    write(directory, 'src/a.ts', 'export const a = 1\n')
+    write(directory, 'CHANGELOG.md', '- Fixed a\n')
+    write(directory, `${GOLDEN}/templates/a.js`, '// ==== case: base\nlet b\n')
+    commit(directory, 'fix(a): write b')
 
     expect(check(directory, [`${base}..HEAD`])).toStrictEqual({
       status: 0,
