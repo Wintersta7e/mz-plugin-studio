@@ -61,6 +61,14 @@ function helpText(line: string): string {
 }
 
 /**
+A parameter, argument or command name as the single-quoted string generated code reads it by:
+the text MZ reads from its annotation line, so the key matches what MZ passes in.
+*/
+function quotedAnnotationName(name: string): string {
+  return `'${escapeJSString(annotationText(name))}'`
+}
+
+/**
 Find names of `PluginManager.registerCommand(...)` calls already present in
 comment-stripped source. Both quote styles, both PLUGIN_NAME and the literal
 plugin name. Used to skip re-emitting commands the user already wrote.
@@ -1047,7 +1055,7 @@ function parameterEdits(
   }
   lines.push(`    // --- New parameters (added by MZ Plugin Studio) ---`)
   for (const param of newParams) {
-    const accessor = `${variable}['${escapeJSString(annotationText(param.name))}']`
+    const accessor = `${variable}[${quotedAnnotationName(param.name)}]`
     const constant = freeName(place, camelCase(param.name))
     lines.push(`    const ${constant} = ${generateAccessorParser(accessor, param)};`)
   }
@@ -1071,7 +1079,7 @@ An added command's registration, its arguments parsed into constants with distin
 */
 function registrationLines(command: PluginCommand, name: string): string[] {
   const lines = [
-    `    PluginManager.registerCommand(${name}, '${escapeJSString(annotationText(command.name))}', function(args) {`
+    `    PluginManager.registerCommand(${name}, ${quotedAnnotationName(command.name)}, function(args) {`
   ]
   const argNames = new Set<string>()
   const constants: string[] = []
@@ -1255,11 +1263,11 @@ function jsonFallback(shown: string, empty: string): string {
 }
 
 function generateParamParser(param: PluginParameter): string {
-  return generateAccessorParser(`params['${escapeJSString(annotationText(param.name))}']`, param)
+  return generateAccessorParser(`params[${quotedAnnotationName(param.name)}]`, param)
 }
 
 function generateArgParser(arg: PluginParameter): string {
-  return generateAccessorParser(`args['${escapeJSString(annotationText(arg.name))}']`, arg)
+  return generateAccessorParser(`args[${quotedAnnotationName(arg.name)}]`, arg)
 }
 
 /**
@@ -1788,7 +1796,7 @@ Generate a command skeleton for insertion into customCode
 export function generateCommandSkeleton(command: PluginCommand): string {
   const lines = [
     `// --- ${escapeLineComment(command.name)} ---`,
-    `PluginManager.registerCommand(PLUGIN_NAME, '${escapeJSString(annotationText(command.name))}', function(args) {`,
+    `PluginManager.registerCommand(PLUGIN_NAME, ${quotedAnnotationName(command.name)}, function(args) {`,
     `    // TODO: Implement ${escapeJSString(command.name)} logic`,
     '});'
   ]

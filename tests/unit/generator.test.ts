@@ -796,6 +796,29 @@ describe('non-ASCII parameter names', () => {
   })
 })
 
+describe('quoted annotation names', () => {
+  it('quotes an annotation name for generated code in one function only', () => {
+    const generatorRoot = path.join(SOURCE_ROOT, 'renderer/src/lib/generator')
+    const owner = /^function quotedAnnotationName\(.+?\n\}$/msu
+    const sources = readdirSync(generatorRoot, { recursive: true, encoding: 'utf8' })
+      .filter((p) => p.endsWith('.ts'))
+      .map((p) => readFileSync(path.join(generatorRoot, p), 'utf8'))
+    const owners = sources.filter((source) => owner.test(source))
+    const outside = sources
+      .map((source) => source.replace(owner, '').split('escapeJSString(annotationText(').length - 1)
+      .reduce((sum, count) => sum + count, 0)
+
+    expect(sources.length).toBeGreaterThan(0)
+    expect(
+      outside,
+      `quoted annotation names composed outside their owner: ${String(outside)}`
+    ).toBe(0)
+    expect(owners, `modules defining quotedAnnotationName: ${String(owners.length)}`).toHaveLength(
+      1
+    )
+  })
+})
+
 /**
 Each parameter type, the name its parameter gets, the reader the generated plugin must hold
 and the default the parameter carries.
