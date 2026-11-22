@@ -23,25 +23,16 @@ import { validateDependencies, type DependencyReport } from '../lib/dependency-a
 import { detectConflicts, type ConflictReport } from '../lib/conflict-detector'
 import mzClasses from '../data/mz-classes.json'
 
-interface ProjectState {
+/**
+A loaded project's game data: the project's lists, without its path, title and map list
+*/
+type GameData = Omit<MZProject, 'path' | 'gameTitle' | 'maps'>
+
+interface ProjectState extends GameData {
   project: MZProject | null
   recentProjects: string[]
   isLoading: boolean
   error: string | null
-  switches: MZSwitch[]
-  variables: MZVariable[]
-  actors: MZActor[]
-  items: MZItem[]
-  skills: MZSkill[]
-  weapons: MZWeapon[]
-  armors: MZArmor[]
-  enemies: MZEnemy[]
-  states: MZState[]
-  animations: MZAnimation[]
-  tilesets: MZTileset[]
-  commonEvents: MZCommonEvent[]
-  classes: MZClass[]
-  troops: MZTroop[]
   dependencyReport: DependencyReport | null
   conflictReport: ConflictReport | null
   isScanning: boolean
@@ -72,24 +63,6 @@ interface ProjectState {
   scanDependencies: () => Promise<void>
   clearDependencyReport: () => void
 }
-
-type GameData = Pick<
-  ProjectState,
-  | 'switches'
-  | 'variables'
-  | 'actors'
-  | 'items'
-  | 'skills'
-  | 'weapons'
-  | 'armors'
-  | 'enemies'
-  | 'states'
-  | 'animations'
-  | 'tilesets'
-  | 'commonEvents'
-  | 'classes'
-  | 'troops'
->
 
 // A project's game data before one is loaded: every list empty, fresh on each call
 const noGameData = (): GameData => ({
