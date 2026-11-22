@@ -9,6 +9,7 @@ import { byCodeUnit } from './normalise'
 export type EditName =
   | 'none'
   | 'meta-description'
+  | 'meta-version'
   | 'param-added'
   | 'param-removed'
   | 'param-default'
@@ -38,6 +39,9 @@ export const EDITS: readonly Edit[] = [
   }),
   edit('meta-description', (definition) => {
     definition.meta.description = 'Edited description'
+  }),
+  edit('meta-version', (definition) => {
+    definition.meta.version = '2.5.0'
   }),
   edit('param-added', (definition) => {
     definition.parameters.push({

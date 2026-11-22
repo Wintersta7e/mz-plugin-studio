@@ -602,6 +602,12 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   // A plugin name that is a file name but not an identifier: a space, a hyphen, a leading digit
   row('plugin-name-file-name', (definition) => {
     definition.meta.name = '2nd My-Plugin'
+  }),
+  row('meta-version', (definition) => {
+    definition.meta.version = '2.5.0'
+  }),
+  row('meta-version-empty', (definition) => {
+    definition.meta.version = ''
   })
 ]
 
