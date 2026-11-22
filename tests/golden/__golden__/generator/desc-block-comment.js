@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc a *\/ b
  * @author Example Author
+ * @version 1.0.0
  * @url https://example.invalid/rows
  *
  * @param Label

@@ -2,15 +2,10 @@
  * @target MZ
  * @plugindesc Fixture plugin written without a wrapping function.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_NoIife
  *
- * @help Fixture_NoIife.js
- *
- * Moves the player a few tiles when the command runs.
- * The code sits at the top level of the file.
- *
  * @param Step
- * @text Step
  * @desc Tiles moved per command.
  * @type number
  * @min 1
@@ -18,19 +13,16 @@
  * @default 2
  *
  * @param Title
- * @text Title
  * @desc Name shown in the log.
  * @type string
  * @default Fixture
  *
  * @param Start
- * @text Start
  * @desc Tile the player returns to.
  * @type struct<Start>
  * @default {"mapId":"1","x":"0","y":"0"}
  *
  * @command Nudge
- * @text Nudge
  * @desc Moves the player in a direction.
  *
  * @arg direction
@@ -40,6 +32,12 @@
  * @min 2
  * @max 8
  * @default 2
+ *
+ * @help
+ * Fixture_NoIife.js
+ * 
+ * Moves the player a few tiles when the command runs.
+ * The code sits at the top level of the file.
  */
 
 /*~struct~Start:

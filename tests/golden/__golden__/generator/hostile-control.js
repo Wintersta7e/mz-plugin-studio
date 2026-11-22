@@ -2,6 +2,7 @@
  * @target Safe
  * @plugindesc Safe
  * @author Safe
+ * @version Safe
  * @url Safe
  * @base Safe
  * @orderAfter Safe

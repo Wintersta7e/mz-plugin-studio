@@ -115,14 +115,19 @@ export function generatePlugin(plugin: PluginDefinition): string {
 /**
 Generate the plugin header comment block with all metadata, parameters, and commands.
 `shouldKeepRequire` writes the `@noteRequire` and `@require` lines an imported file had, which
-raw mode keeps when it rewrites the file's blocks.
+raw mode keeps when it rewrites the file's blocks. `isVersionShown` false leaves `@version` out.
 */
 function generateHeader(
   plugin: PluginDefinition,
   sink?: BlockSink,
-  shouldKeepRequire = false
+  shouldKeepRequire = false,
+  isVersionShown = true
 ): string {
-  const lines: string[] = ['/*:', ...headerMetaLines(plugin.meta, sink, shouldKeepRequire), ' *']
+  const lines: string[] = [
+    '/*:',
+    ...headerMetaLines(plugin.meta, sink, shouldKeepRequire, isVersionShown),
+    ' *'
+  ]
 
   // Parameters
   for (const param of plugin.parameters) {
@@ -152,12 +157,14 @@ function generateHeader(
 }
 
 /**
-The header's plugin-level tags, from `@target` to `@requiredAssets`.
+The header's plugin-level tags, from `@target` to `@requiredAssets`; `@version` only when
+`isVersionShown` and the version is set.
 */
 function headerMetaLines(
   meta: PluginMeta,
   sink: BlockSink | undefined,
-  shouldKeepRequire: boolean
+  shouldKeepRequire: boolean,
+  isVersionShown: boolean
 ): string[] {
   const lines: string[] = []
 
@@ -174,6 +181,11 @@ function headerMetaLines(
   // Author
   if (meta.author) {
     lines.push(` * @author ${blockValue(sink, 'Plugin @author', meta.author)}`)
+  }
+
+  // Version
+  if (isVersionShown && meta.version) {
+    lines.push(` * @version ${blockValue(sink, 'Plugin @version', meta.version)}`)
   }
 
   // URL
@@ -946,7 +958,13 @@ export function generateRawMode(plugin: PluginDefinition, baseline: PluginBaseli
 }
 
 /**
-The main block, rewritten when its rendering changed since `baseline`.
+A `@version` line in an annotation block.
+*/
+const VERSION_LINE = /^[^\S\r\n]*(?:\*[^\S\r\n]*)?@version(?!\S)/m
+
+/**
+The main block, rewritten when its rendering changed since `baseline`. It carries `@version`
+when the file's block held one or the version was edited, so a file without the tag gains none.
 */
 function mainBlockEdits(
   plugin: PluginDefinition,
@@ -955,11 +973,12 @@ function mainBlockEdits(
   blocks: readonly AnnotationBlock[]
 ): SourceEdit[] {
   const main = blocks.find((b) => b.kind === 'main')
-  const header = generateHeader(plugin, undefined, true)
-  if (main === undefined || header === generateHeader(baseline, undefined, true)) return []
-  const preamble = extractHeaderPreamble(
-    source.slice(main.start, main.end).replaceAll('\r\n', '\n')
-  )
+  if (main === undefined) return []
+  const block = source.slice(main.start, main.end).replaceAll('\r\n', '\n')
+  const isVersionShown = VERSION_LINE.test(block) || plugin.meta.version !== baseline.meta.version
+  const header = generateHeader(plugin, undefined, true, isVersionShown)
+  if (header === generateHeader(baseline, undefined, true, isVersionShown)) return []
+  const preamble = extractHeaderPreamble(block)
   const rest = header.slice(header.indexOf('\n') + 1)
   return [{ start: main.start, end: main.end, text: `${main.opener}\n${preamble}${rest}` }]
 }
@@ -1164,7 +1183,7 @@ function extractHeaderPreamble(blockContent: string): string {
 
   // Known MZ annotation tags that mark the end of the preamble
   const mzAnnotation =
-    /^\s*\*\s*@(?:target|plugindesc|author|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
+    /^\s*\*\s*@(?:target|plugindesc|author|version|url|base|orderAfter|orderBefore|param|command|help|noteParam|noteType|noteDir|noteData|noteRequire|requiredAssets|require)\b/
 
   const preambleLines: string[] = []
   for (const line of lines.slice(1)) {

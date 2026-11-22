@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Output rows
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/rows
  *
  * @param Label

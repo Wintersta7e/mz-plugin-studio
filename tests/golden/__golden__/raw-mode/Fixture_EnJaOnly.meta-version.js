@@ -2,14 +2,10 @@
  * @target MZ
  * @plugindesc Fixture plugin with English and Japanese blocks only.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_EnJaOnly
  *
- * @help Fixture_EnJaOnly.js
- *
- * Changes the battle speed and draws a frame around the status window.
- *
  * @param Rate
- * @text Rate
  * @desc Battle speed multiplier.
  * @type number
  * @min 1
@@ -17,13 +13,11 @@
  * @default 2
  *
  * @param Title
- * @text Title
  * @desc Title drawn above the status window.
  * @type string
  * @default Status
  *
  * @param Frame
- * @text Frame
  * @desc Frame drawn around the status window.
  * @type struct<Frame>
  * @default {"thickness":"2","color":"#ffffff"}
@@ -39,6 +33,11 @@
  * @min 1
  * @max 4
  * @default 1
+ *
+ * @help
+ * Fixture_EnJaOnly.js
+ * 
+ * Changes the battle speed and draws a frame around the status window.
  */
 
 /*:ja

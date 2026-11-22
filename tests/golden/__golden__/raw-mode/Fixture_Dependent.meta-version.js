@@ -2,17 +2,12 @@
  * @target MZ
  * @plugindesc Fixture plugin that builds on Fixture_HandWritten.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_Dependent
  * @base Fixture_HandWritten
  * @orderAfter Fixture_HandWritten
  *
- * @help Fixture_Dependent.js
- *
- * Needs Fixture_HandWritten above it in the plugin list. Both plugins
- * extend the map scene's update.
- *
  * @param Delay
- * @text Delay
  * @desc Frames before the badge appears.
  * @type number
  * @min 0
@@ -20,13 +15,11 @@
  * @default 60
  *
  * @param Badge
- * @text Badge
  * @desc Text of the badge.
  * @type string
  * @default New
  *
  * @param Placement
- * @text Placement
  * @desc Where the badge is drawn.
  * @type struct<Placement>
  * @default {"x":"16","y":"16"}
@@ -41,6 +34,12 @@
  * @type number
  * @min 1
  * @default 60
+ *
+ * @help
+ * Fixture_Dependent.js
+ * 
+ * Needs Fixture_HandWritten above it in the plugin list. Both plugins
+ * extend the map scene's update.
  */
 
 /*~struct~Placement:

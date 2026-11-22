@@ -518,7 +518,7 @@ function parseMeta(content: string, header: string, languages: [string, string][
 }
 
 /**
-Reads @plugindesc, @author, @target, @url and @help into `meta`.
+Reads @plugindesc, @author, @version, @target, @url and @help into `meta`.
 */
 function readHeaderText(meta: ParsedMeta, header: string): void {
   // Parse @plugindesc (written last in the block, it runs to the end of the header)
@@ -531,6 +531,12 @@ function readHeaderText(meta: ParsedMeta, header: string): void {
   const author = matchTagValue(header, 'author')
   if (author !== undefined) {
     meta.author = author.trim()
+  }
+
+  // Parse @version; a file without it keeps the default
+  const version = matchTagValue(header, 'version')
+  if (version !== undefined) {
+    meta.version = version.trim()
   }
 
   // Parse @target

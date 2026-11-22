@@ -2,14 +2,10 @@
  * @target MZ
  * @plugindesc Fixture plugin saved with a byte order mark.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_Bom
  *
- * @help Fixture_Bom.js
- *
- * Plays a sound effect with a prefix in the log.
- *
  * @param Volume
- * @text Volume
  * @desc Volume of the sound effect.
  * @type number
  * @min 0
@@ -17,13 +13,11 @@
  * @default 90
  *
  * @param Prefix
- * @text Prefix
  * @desc Text written before each log line.
  * @type string
  * @default Bom
  *
  * @param Offset
- * @text Offset
  * @desc Pan and pitch offsets.
  * @type struct<Offset>
  * @default {"pan":"0","pitch":"100"}
@@ -37,6 +31,11 @@
  * @desc Name of the sound effect.
  * @type string
  * @default Cursor1
+ *
+ * @help
+ * Fixture_Bom.js
+ * 
+ * Plays a sound effect with a prefix in the log.
  */
 
 /*~struct~Offset:

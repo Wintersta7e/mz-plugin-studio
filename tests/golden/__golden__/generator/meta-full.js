@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Every metadata field
  * @author Example Author
+ * @version 2.1.0
  * @url https://example.invalid/meta-full
  * @base Fixture_Base
  * @orderAfter Fixture_Before

@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Holds imported parameters
  * @author Example Author
+ * @version 1.0.0
  * @url https://example.invalid/params-host
  *
  * @param Speed

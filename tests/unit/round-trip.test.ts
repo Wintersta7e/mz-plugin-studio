@@ -7,8 +7,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput } from '../../src/renderer/src/lib/plugin-output'
+import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin'
 import { EDITS, type Edit } from '../golden/corpus/raw-mode'
+import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { fixturePath } from '../helpers/fixture-project'
 
@@ -205,6 +207,7 @@ function load(file: string): Loaded {
 
 const HEADER_EDITS = new Set([
   'meta-description',
+  'meta-version',
   'param-added',
   'param-removed',
   'param-default',
@@ -455,5 +458,108 @@ describe('round trip of imported plugins', () => {
 
     expect(FIXTURES.length).toBeGreaterThan(0)
     expect(Object.keys(KNOWN_FAILING).filter((f) => !FIXTURES.includes(f))).toStrictEqual([])
+  })
+})
+
+// ---- The plugin version ----
+
+const PLUGIN_CODE = ['(() => {', "  PluginManager.parameters('Versioned');", '})();', '']
+const VERSIONED = [
+  '/*:',
+  ' * @target MZ',
+  ' * @plugindesc Has a version',
+  ' * @author Example Author',
+  ' * @version 3.0',
+  ' */',
+  ...PLUGIN_CODE
+].join('\n')
+const VERSION_FIRST = [
+  '/*:',
+  ' * @version 3.0',
+  ' * @target MZ',
+  ' * @plugindesc Version above the other tags',
+  ' */',
+  ...PLUGIN_CODE
+].join('\n')
+const JA_BLOCK = ['/*:ja', ' * @plugindesc バージョンなし', ' */'].join('\n')
+const UNVERSIONED = [
+  '/*:',
+  ' * @target MZ',
+  ' * @plugindesc No version',
+  ' */',
+  JA_BLOCK,
+  ...PLUGIN_CODE
+].join('\n')
+
+const versionLines = (text: string): string[] =>
+  text.split('\n').filter((line) => /^\s*\*\s*@version(?!\S)/.test(line))
+
+function generatorDefinition(name: string): PluginDefinition {
+  const entry = GENERATOR_ENTRIES.find((candidate) => candidate.name === name)
+  if (entry === undefined) throw new Error(`no generator entry ${name}`)
+  return entry.def
+}
+
+/**
+The file saved after `change`, and the version read back from it.
+*/
+function savedAfter(
+  source: string,
+  change: (plugin: PluginDefinition) => void
+): { out: string; version: string } {
+  const opened = open(source, 'Versioned.js')
+  const edited = structuredClone(opened)
+  change(edited)
+  const out = save(edited, opened)
+  return { out, version: open(out, 'Versioned.js').meta.version }
+}
+
+describe('the plugin version', () => {
+  it('reads back the version a generated plugin writes', () => {
+    const code = generatePlugin(generatorDefinition('meta-version'))
+
+    expect(versionLines(code)).toStrictEqual([' * @version 2.5.0'])
+    expect(PluginParser.parsePlugin(code, 'Fixture_Rows.js').meta.version).toBe('2.5.0')
+  })
+
+  it('reads the default version from a file without the tag', () => {
+    expect(open(UNVERSIONED, 'Versioned.js').meta.version).toBe('1.0.0')
+  })
+
+  it('writes an unedited file with a version back byte for byte', () => {
+    const opened = open(VERSIONED, 'Versioned.js')
+
+    expect(opened.meta.version).toBe('3.0')
+    expect(save(opened, opened)).toBe(VERSIONED)
+  })
+
+  it.each([
+    ['after the author', VERSIONED],
+    ['above the other tags', VERSION_FIRST]
+  ])('keeps a version line written %s when the description is edited', (_where, source) => {
+    const { out, version } = savedAfter(source, (plugin) => {
+      plugin.meta.description = 'Edited description'
+    })
+
+    expect(versionLines(out)).toStrictEqual([' * @version 3.0'])
+    expect(version).toBe('3.0')
+  })
+
+  it('adds no version line to a file without one when the description is edited', () => {
+    const { out } = savedAfter(UNVERSIONED, (plugin) => {
+      plugin.meta.description = 'Edited description'
+    })
+
+    expect(versionLines(out)).toStrictEqual([])
+  })
+
+  it('writes the version line when the version is edited, and none into a translated block', () => {
+    const { out, version } = savedAfter(UNVERSIONED, (plugin) => {
+      plugin.meta.version = '2.0.0'
+    })
+
+    expect(versionLines(out)).toStrictEqual([' * @version 2.0.0'])
+    expect(version).toBe('2.0.0')
+    expect(out).toContain(`\n${JA_BLOCK}\n`)
   })
 })

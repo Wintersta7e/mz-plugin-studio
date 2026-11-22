@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Holds imported parameters of the wrong type
  * @author Example Author
+ * @version 1.0.0
  * @url https://example.invalid/loaded
  * @base Fixture_Base
  * @orderAfter Fixture_Core

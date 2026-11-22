@@ -177,6 +177,7 @@ globalThis.__pwn = 1; /* Y - Initial release
  * @target X *\/ globalThis.__pwn = 1; /* Y
  * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
  * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @version X *\/ globalThis.__pwn = 1; /* Y
  * @url X *\/ globalThis.__pwn = 1; /* Y
  * @base X *\/ globalThis.__pwn = 1; /* Y
  * @orderAfter X *\/ globalThis.__pwn = 1; /* Y
@@ -247,6 +248,8 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/ globalThis.__pwn = 1; /* Y', 
     "Plugin @plugindesc: a line break is written as a space, because each annotation is one line.",
     "Plugin @author: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @author: a line break is written as a space, because each annotation is one line.",
+    "Plugin @version: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @version: a line break is written as a space, because each annotation is one line.",
     "Plugin @url: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @url: a line break is written as a space, because each annotation is one line.",
     "Plugin @base: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
@@ -343,6 +346,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/ globalThis.__pwn = 1; /* Y', 
  * @target X *\/ globalThis.__pwn = 1; /* Y
  * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
  * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @version X *\/ globalThis.__pwn = 1; /* Y
  * @url X *\/ globalThis.__pwn = 1; /* Y
  * @base X *\/ globalThis.__pwn = 1; /* Y
  * @orderAfter X *\/ globalThis.__pwn = 1; /* Y

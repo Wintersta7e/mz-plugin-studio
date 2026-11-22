@@ -2,11 +2,8 @@
  * @target MZ
  * @plugindesc Fixture plugin with non-ASCII text — café, naïve, 日本語 ★
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_NonAscii
- *
- * @help Fixture_NonAscii.js
- *
- * Greets the party in several scripts: Grüße, Привет, こんにちは.
  *
  * @param Pause
  * @text 待機フレーム
@@ -37,6 +34,11 @@
  * @desc Name added after the greeting.
  * @type string
  * @default Zoë
+ *
+ * @help
+ * Fixture_NonAscii.js
+ * 
+ * Greets the party in several scripts: Grüße, Привет, こんにちは.
  */
 
 /*~struct~Glyph:

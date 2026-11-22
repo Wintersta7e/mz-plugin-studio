@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Generated fixture plugin
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/fixture-generated
  *
  * @param Speed

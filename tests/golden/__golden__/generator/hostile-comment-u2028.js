@@ -2,6 +2,7 @@
  * @target X *\/ globalThis.__pwn = 1; /* Y
  * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
  * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @version X *\/ globalThis.__pwn = 1; /* Y
  * @url X *\/ globalThis.__pwn = 1; /* Y
  * @base X *\/ globalThis.__pwn = 1; /* Y
  * @orderAfter X *\/ globalThis.__pwn = 1; /* Y

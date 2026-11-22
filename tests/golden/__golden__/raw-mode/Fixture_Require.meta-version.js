@@ -2,23 +2,14 @@
  * @target MZ
  * @plugindesc Fixture plugin that declares the assets it needs.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_Require
- *
- * @help Fixture_Require.js
- *
- * Shows a picture with a caption. The picture parameter and the
- * actor note tag both name files kept by "Exclude unused files".
- *
- * Actor note tag:
- *   <FixtureFace:Fixture_Face>
- *
  * @noteParam FixtureFace
- * @noteDir img/faces/
  * @noteType file
+ * @noteDir img/faces/
  * @noteData actors
  *
  * @param Picture
- * @text Picture
  * @desc Picture shown by the command.
  * @type file
  * @dir img/pictures/
@@ -26,7 +17,6 @@
  * @default FixturePicture
  *
  * @param Opacity
- * @text Opacity
  * @desc Opacity of the picture.
  * @type number
  * @min 0
@@ -34,13 +24,11 @@
  * @default 255
  *
  * @param Caption
- * @text Caption
  * @desc Text written under the picture.
  * @type string
  * @default Fixture
  *
  * @param Anchor
- * @text Anchor
  * @desc Screen position of the picture.
  * @type struct<Anchor>
  * @default {"x":"408","y":"312"}
@@ -56,6 +44,15 @@
  * @min 1
  * @max 100
  * @default 1
+ *
+ * @help
+ * Fixture_Require.js
+ * 
+ * Shows a picture with a caption. The picture parameter and the
+ * actor note tag both name files kept by "Exclude unused files".
+ * 
+ * Actor note tag:
+ *   <FixtureFace:Fixture_Face>
  */
 
 /*~struct~Anchor:

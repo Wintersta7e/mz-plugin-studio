@@ -43,14 +43,10 @@
  * @target MZ
  * @plugindesc Fixture plugin whose Japanese block comes first.
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_JaFirst
  *
- * @help Fixture_JaFirst.js
- *
- * Counts steps inside an area.
- *
  * @param Limit
- * @text Limit
  * @desc Highest step count.
  * @type number
  * @min 1
@@ -58,13 +54,11 @@
  * @default 3
  *
  * @param Caption
- * @text Caption
  * @desc Text shown before the step count.
  * @type string
  * @default Steps
  *
  * @param Area
- * @text Area
  * @desc Area in which steps are counted.
  * @type struct<Area>
  * @default {"width":"5","height":"5"}
@@ -78,6 +72,11 @@
  * @desc Step count after the reset.
  * @type number
  * @default 0
+ *
+ * @help
+ * Fixture_JaFirst.js
+ * 
+ * Counts steps inside an area.
  */
 
 /*~struct~Area:

@@ -2,6 +2,7 @@
  * @target MZ
  * @plugindesc Every parameter type
  * @author Example Author
+ * @version 1.0.0
  * @url https://example.invalid/all-param-types
  *
  * @param param_string

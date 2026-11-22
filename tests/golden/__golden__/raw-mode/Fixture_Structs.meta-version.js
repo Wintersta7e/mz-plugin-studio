@@ -2,27 +2,20 @@
  * @target MZ
  * @plugindesc Struct fixture whose lists close with ];
  * @author Example Author
+ * @version 2.5.0
  * @url https://example.invalid/Fixture_Structs
  *
- * @help Fixture_Structs.js
- *
- * Keeps a list of entries and highlights the newest one.
- * The struct definitions sit after the code.
- *
  * @param Entries
- * @text Entries
  * @desc Entries listed at the start.
  * @type struct<Entry>[]
  * @default []
  *
  * @param Highlight
- * @text Highlight
  * @desc Color of the newest entry.
  * @type struct<Color>
  * @default {"red":"255","green":"224","blue":"128"}
  *
  * @param Count
- * @text Count
  * @desc Number of entries kept.
  * @type number
  * @min 0
@@ -30,7 +23,6 @@
  * @default 4
  *
  * @param Heading
- * @text Heading
  * @desc Text drawn above the list.
  * @type string
  * @default Entries
@@ -53,6 +45,12 @@
  *
  * @command ClearEntries
  * @desc Removes every entry.
+ *
+ * @help
+ * Fixture_Structs.js
+ * 
+ * Keeps a list of entries and highlights the newest one.
+ * The struct definitions sit after the code.
  */
 
 (() => {

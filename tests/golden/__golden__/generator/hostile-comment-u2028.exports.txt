@@ -145,6 +145,7 @@ X */ globalThis.__pwn = 1; /* Y
  * @target X *\/ globalThis.__pwn = 1; /* Y
  * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
  * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @version X *\/ globalThis.__pwn = 1; /* Y
  * @url X *\/ globalThis.__pwn = 1; /* Y
  * @base X *\/ globalThis.__pwn = 1; /* Y
  * @orderAfter X *\/ globalThis.__pwn = 1; /* Y
@@ -211,6 +212,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/\u2028globalThis.__pwn = 1; /*
     "Plugin @target: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @author: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
+    "Plugin @version: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @url: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @base: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @orderAfter: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
@@ -264,6 +266,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/\u2028globalThis.__pwn = 1; /*
  * @target X *\/ globalThis.__pwn = 1; /* Y
  * @plugindesc X *\/ globalThis.__pwn = 1; /* Y
  * @author X *\/ globalThis.__pwn = 1; /* Y
+ * @version X *\/ globalThis.__pwn = 1; /* Y
  * @url X *\/ globalThis.__pwn = 1; /* Y
  * @base X *\/ globalThis.__pwn = 1; /* Y
  * @orderAfter X *\/ globalThis.__pwn = 1; /* Y
