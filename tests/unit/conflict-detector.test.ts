@@ -1,6 +1,7 @@
 // Tests for conflict detector — override extraction + conflict detection
 import { describe, it, expect } from 'vitest'
 import { extractOverrides, detectConflicts } from '../../src/renderer/src/lib/conflict-detector'
+import { scanLiterals } from '../../src/shared/override-extractor'
 
 describe(extractOverrides, () => {
   // --- Basic extraction ---
@@ -414,5 +415,98 @@ describe(detectConflicts, () => {
     const report = detectConflicts(headers, mockMzClasses)
 
     expect(report.health).toBe('conflicts')
+  })
+})
+
+// Code whose slashes and quotes a string-only stripper misreads, and the overrides it holds
+const REGEX_LITERAL_ROWS: [title: string, code: string, overrides: string[]][] = [
+  [
+    'a quote inside a regex literal',
+    [
+      'Scene_Map.prototype.start = function () {',
+      "  name = name.replace(/'/g, '')",
+      '}',
+      'Scene_Map.prototype.update = function () {',
+      "  log('update')",
+      '}'
+    ].join('\n'),
+    ['Scene_Map.prototype.start', 'Scene_Map.prototype.update']
+  ],
+  [
+    'a regex literal after an if condition',
+    "if (a) /'/.test(s); Scene_Map.prototype.update = function () { log('x') }",
+    ['Scene_Map.prototype.update']
+  ],
+  [
+    'a template nested in a template substitution',
+    "const t = `${`'`}`; Scene_Map.prototype.update = function () { log('x') }",
+    ['Scene_Map.prototype.update']
+  ],
+  [
+    'two divisions on one line',
+    "const r = a / b / c; Scene_Map.prototype.update = function () { log('x') }",
+    ['Scene_Map.prototype.update']
+  ]
+]
+
+describe(scanLiterals, () => {
+  it('finds every override after a regex literal, a nested template or a division', () => {
+    expect(
+      REGEX_LITERAL_ROWS.map(([title, code]) => [title, extractOverrides(code)]),
+      `regex-literal rows: ${String(REGEX_LITERAL_ROWS.length)}`
+    ).toStrictEqual(REGEX_LITERAL_ROWS.map(([title, , overrides]) => [title, overrides]))
+  })
+
+  it('reads a slash after a value as division and after a condition as a regex', () => {
+    expect({
+      division: scanLiterals('x = a / b / c'),
+      condition: scanLiterals('if (a) /b/g.test(s)'),
+      call: scanLiterals('f(a) / b / c')
+    }).toStrictEqual({
+      division: [],
+      condition: [{ kind: 'regex', start: 7, end: 11 }],
+      call: []
+    })
+  })
+
+  it('ends a template at its own backtick, not at one nested in a substitution', () => {
+    expect(scanLiterals("`a${`b${'}'}`}c` // d")).toStrictEqual([
+      { kind: 'template', start: 0, end: 16 },
+      { kind: 'comment', start: 17, end: 21 }
+    ])
+  })
+
+  it('reads escapes, character classes, braces and unclosed literals to their end', () => {
+    expect({
+      escapedQuote: scanLiterals(String.raw`'a\'b'`),
+      regexClass: scanLiterals(String.raw`x = /[/]\//`),
+      escapedBacktick: scanLiterals('`a\\`b`'),
+      unclosedTemplate: scanLiterals('`abc'),
+      unclosedComment: scanLiterals('/* a'),
+      bracesInSubstitution: scanLiterals('`${ {a: 1} }`'),
+      afterKeyword: scanLiterals('return /a/'),
+      afterPlus: scanLiterals('a + /b/')
+    }).toStrictEqual({
+      escapedQuote: [{ kind: 'string', start: 0, end: 6 }],
+      regexClass: [{ kind: 'regex', start: 4, end: 11 }],
+      escapedBacktick: [{ kind: 'template', start: 0, end: 6 }],
+      unclosedTemplate: [{ kind: 'template', start: 0, end: 4 }],
+      unclosedComment: [{ kind: 'comment', start: 0, end: 4 }],
+      bracesInSubstitution: [{ kind: 'template', start: 0, end: 13 }],
+      afterKeyword: [{ kind: 'regex', start: 7, end: 10 }],
+      afterPlus: [{ kind: 'regex', start: 4, end: 7 }]
+    })
+  })
+
+  it('reads a slash after an index, an increment or an unmatched parenthesis as division', () => {
+    expect({
+      index: scanLiterals('a[0] / 2 / b'),
+      increment: scanLiterals('a++ / 2 / b'),
+      unmatched: scanLiterals('a) / 2 / b')
+    }).toStrictEqual({ index: [], increment: [], unmatched: [] })
+  })
+
+  it('reads a candidate regex that meets a line break as division', () => {
+    expect(scanLiterals("x = (\n/ a\n'b'")).toStrictEqual([{ kind: 'string', start: 10, end: 13 }])
   })
 })
