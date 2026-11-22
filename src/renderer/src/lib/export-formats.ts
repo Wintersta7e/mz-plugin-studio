@@ -11,6 +11,7 @@ import {
   type PluginStruct
 } from '../types/plugin'
 import { annotationText, escapeBlockComment, escapeLineComment } from './generator/escape'
+import { isIdentifierName } from './generator/naming'
 
 /**
 Generates a JSON entry for plugins.js
@@ -47,10 +48,6 @@ function paramTypeToTS(type: ParamType): string {
   if (type === 'array') return 'unknown[]'
   return 'string'
 }
-
-// A name TypeScript reads as one identifier, as ECMAScript defines it: wider than the
-// validator's rule, which is also what the generated code's own names must follow
-const TS_IDENTIFIER = /^[\p{ID_Start}$_][\p{ID_Continue}$\u{200C}\u{200D}]*$/u
 
 // Identifiers TypeScript refuses as a namespace name, though a member key may be any of them:
 // the reserved words, and `undefined`, which the global of that name already declares
@@ -102,7 +99,7 @@ function memberLines(params: PluginParameter[]): string[] {
     const description = param.desc || param.text
     return [
       `    /** ${escapeBlockComment(description)} */`,
-      `    ${TS_IDENTIFIER.test(key) ? key : JSON.stringify(key)}: ${paramTypeToTS(param.type)}`
+      `    ${isIdentifierName(key) ? key : JSON.stringify(key)}: ${paramTypeToTS(param.type)}`
     ]
   })
 }
@@ -114,7 +111,7 @@ replaced by `_`
 */
 function namespaceName(name: string): string {
   if (TS_RESERVED.has(name)) return `${name}_`
-  if (TS_IDENTIFIER.test(name)) return name
+  if (isIdentifierName(name)) return name
   const repaired = name
     .replaceAll(/[^\p{ID_Continue}$\u{200C}\u{200D}]/gu, '_')
     .replace(/^(?=[^\p{ID_Start}$_])/u, '_')
@@ -148,7 +145,7 @@ export function typeDeclaration(plugin: PluginDefinition): { content: string; no
   // Generate command arg interfaces; a name that is not an identifier cannot name one
   for (const command of plugin.commands) {
     if (command.args.length === 0) continue
-    if (!TS_IDENTIFIER.test(command.name)) {
+    if (!isIdentifierName(command.name)) {
       notes.push(`command "${command.name}" has no Args interface: its name is not an identifier`)
       continue
     }

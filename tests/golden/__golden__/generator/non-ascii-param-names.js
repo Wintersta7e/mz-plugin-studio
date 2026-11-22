@@ -40,9 +40,9 @@
     // Parse plugin parameters
     const params = PluginManager.parameters(PLUGIN_NAME);
 
-    const unnamed = params['速度'] ?? 'Hello';
+    const 速度 = params['速度'] ?? 'Hello';
     const pair = JSON.parse(params['Pair'] || '{"a":"b"}');
-    const unnamed = Number(params['高さ'] || 48);
+    const 高さ = Number(params['高さ'] || 48);
 
     // Register plugin commands
 

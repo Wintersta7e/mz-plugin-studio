@@ -47,6 +47,7 @@
         "src/renderer/src/lib/generator/index.ts": 97,
         "src/renderer/src/lib/generator/escape.ts": 97,
         "src/renderer/src/lib/generator/class-registry.ts": 100,
+        "src/renderer/src/lib/generator/naming.ts": 100,
         "src/renderer/src/lib/generator/templates/index.ts": 92,
         "src/renderer/src/lib/generator/templates/types.ts": 100,
         "src/renderer/src/lib/generator/templates/actor-party.ts": 100,

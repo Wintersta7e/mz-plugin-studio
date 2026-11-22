@@ -128,10 +128,7 @@ export interface ConformanceReport {
 Pairs that fail today, by case: each is removed by the change that fixes it, and a listed
 pair that holds fails the check as surely as an unlisted pair that fails.
 */
-export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {
-  // Both non-ASCII parameter names become the same constant, declared twice
-  'generator:non-ascii-param-names': ['load-error']
-}
+export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {}
 
 // --- Cases ---------------------------------------------------------------------------------
 

@@ -18,6 +18,7 @@ import {
   type Program
 } from 'acorn'
 import { annotationText, escapeBlockComment, escapeJSString, escapeLineComment } from './escape'
+import { isIdentifierName } from './naming'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks, type AnnotationBlock } from '../../../../shared/annotation-blocks'
 import { COMPACT_PARAM_TAG } from '../../../../shared/compact-param'
@@ -49,11 +50,6 @@ function tagLine(sink: BlockSink | undefined, owner: string, tag: string, value:
 Whether a help line would be read as a tag: its first non-space character is `@`.
 */
 const HELP_TAG_LINE = /^(\s*)@/
-
-/**
-A plugin or command name the validator accepts: an identifier, as code that names it uses it.
-*/
-const isIdentifierName = (name: string): boolean => /^[A-Z_]\w*$/i.test(name)
 
 /**
 A help line as written: a zero-width space goes before a leading `@`, so MZ shows the line
@@ -1341,19 +1337,20 @@ export const JS_RESERVED: ReadonlySet<string> = new Set([
 /**
 Convert parameter name to a valid JS camelCase identifier.
 Guarantees: output is always a syntactically legal strict-mode identifier
-(never a reserved word, never starts with a digit, never empty).
+(never a reserved word, never starts with a character an identifier cannot start with, never
+empty). Letters of any script are kept.
 */
 function camelCase(string_: string): string {
   if (!string_) return 'unnamed'
   // Fast path: already a valid identifier with no separators (e.g. myCombo → myCombo)
-  if (/^[a-z$][a-z0-9$]*$/i.test(string_)) {
+  if (isIdentifierName(string_) && !string_.includes('_')) {
     const normalized = string_.charAt(0).toLowerCase() + string_.slice(1)
     return sanitizeIdentifier(normalized)
   }
-  // Strip leading/trailing underscores, split on non-alphanumeric
+  // Strip leading/trailing underscores, split on what an identifier cannot hold, `_` and `$`
   const stripped = string_.replaceAll(/^_+|_+$/g, '')
   const words = stripped
-    .replaceAll(/[^a-z0-9]/gi, ' ')
+    .replaceAll(/[^\p{ID_Continue}\u{200C}\u{200D}]|_/gu, ' ')
     .split(' ')
     .filter(Boolean)
   const result = words
@@ -1369,8 +1366,9 @@ function camelCase(string_: string): string {
 
 function sanitizeIdentifier(name: string): string {
   if (!name) return 'unnamed'
-  // Digit-start: prefix with underscore so `const 123abc` becomes `const _123abc`
-  if (/^\d/.test(name)) {
+  // A start an identifier cannot have, such as a digit of any script: prefix with underscore so
+  // `const 123abc` becomes `const _123abc`
+  if (/^[^\p{ID_Start}$_]/u.test(name)) {
     return '_' + name
   }
   // Reserved word: suffix with underscore so `const class` becomes `const class_`

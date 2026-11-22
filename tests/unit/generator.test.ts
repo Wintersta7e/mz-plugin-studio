@@ -1,11 +1,16 @@
 // Tests for generator
 import { describe, it, expect } from 'vitest'
+import { readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import {
   generatePlugin,
   generateRawMode,
   validatePlugin,
-  generateHeaderOnly
+  generateHeaderOnly,
+  scriptParseError
 } from '../../src/renderer/src/lib/generator/index'
+import { IDENTIFIER_NAME, isIdentifierName } from '../../src/renderer/src/lib/generator/naming'
+import { GENERATOR_ENTRIES } from '../golden/corpus/generator'
 import { parameterConstant } from '../helpers/generated-names'
 import type {
   LocalizedContent,
@@ -749,6 +754,45 @@ describe('camelCase', () => {
 
   it('handles empty string', () => {
     expect(parameterConstant('')).toBe('unnamed')
+  })
+})
+
+const SOURCE_ROOT = path.join(import.meta.dirname, '../../src')
+
+describe('non-ASCII parameter names', () => {
+  it('keeps the letters, so two names give two constants that parse', () => {
+    const entry = GENERATOR_ENTRIES.find(
+      (corpusEntry) => corpusEntry.name === 'non-ascii-param-names'
+    )
+    const output = entry === undefined ? '' : generatePlugin(entry.def)
+    const constants = output
+      .matchAll(/^ {4}const (\S+) = .*params\['/gmu)
+      .map((match) => match[1])
+      .toArray()
+
+    expect(constants).toStrictEqual(['速度', 'pair', '高さ'])
+    expect(scriptParseError(output)).toBeUndefined()
+    expect(entry && validatePlugin(entry.def).errors).toStrictEqual([])
+  })
+
+  it('splits on what an identifier cannot hold and never starts with a non-start character', () => {
+    expect(parameterConstant('最大 速度')).toBe('最大速度')
+    expect(parameterConstant('速度-x')).toBe('速度X')
+    expect(parameterConstant('\u{661}x')).toBe('_\u{661}x')
+  })
+
+  it('has one owner of the identifier pattern among the source modules', () => {
+    const holders = readdirSync(SOURCE_ROOT, { recursive: true, encoding: 'utf8' })
+      .filter((p) => /\.tsx?$/u.test(p))
+      .filter((p) =>
+        readFileSync(path.join(SOURCE_ROOT, p), 'utf8').includes(IDENTIFIER_NAME.source)
+      )
+      .map((p) => p.split(path.sep).join('/'))
+
+    expect(holders, `IdentifierName pattern modules: ${String(holders.length)}`).toStrictEqual([
+      'renderer/src/lib/generator/naming.ts'
+    ])
+    expect(isIdentifierName('速度')).toBe(true)
   })
 })
 
