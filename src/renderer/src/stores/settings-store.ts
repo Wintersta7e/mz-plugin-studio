@@ -10,6 +10,7 @@ import {
   checkRecordOf,
   checkString,
   definePersist,
+  type FieldCheck,
   type MigrationStep
 } from './persist'
 
@@ -70,6 +71,12 @@ const clampFontSize = (size: number): number =>
     Math.min(EDITOR_FONT_SIZE_RANGE.max, Number.isFinite(size) ? size : EDITOR_FONT_SIZE_RANGE.min)
   )
 
+// A saved size outside the range loads clamped, as the setter would have stored it
+const checkFontSize: FieldCheck<number> = (value, drop) => {
+  const size = checkFiniteNumber(value, drop)
+  return size === undefined ? undefined : clampFontSize(size)
+}
+
 // The preload's log bridge; absent where the renderer runs without the app's preload (tests)
 interface LogLevelBridge {
   log?: { setLevel?: (isDebug: boolean) => void }
@@ -89,7 +96,7 @@ const SETTINGS_PERSIST = definePersist<SettingsState, SettingsPersisted>({
   migrations: SETTINGS_MIGRATIONS,
   fields: {
     theme: checkOneOf(['dark', 'light'] as const),
-    editorFontSize: checkFiniteNumber,
+    editorFontSize: checkFontSize,
     editorWordWrap: checkBoolean,
     editorMinimap: checkBoolean,
     editorLineNumbers: checkBoolean,

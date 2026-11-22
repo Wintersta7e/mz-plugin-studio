@@ -28,6 +28,16 @@ function first<T>(values: readonly T[]): T {
   return value
 }
 
+// Loads a saved payload holding only `size` as the editor font size, and returns the size loaded
+async function loadSavedSize(size: number): Promise<number> {
+  localStorage.setItem(
+    'mz-plugin-studio-settings',
+    JSON.stringify({ state: { editorFontSize: size, schemaVersion: 1 }, version: 0 })
+  )
+  await useSettingsStore.persist.rehydrate()
+  return useSettingsStore.getState().editorFontSize
+}
+
 function preset(name: string): PluginParameter[] {
   const value = new Map(Object.entries(useSettingsStore.getState().parameterPresets)).get(name)
   if (value === undefined) throw new Error(`missing preset: ${name}`)
@@ -151,6 +161,24 @@ describe('settingsStore: editor font size', () => {
       useSettingsStore.getState().setEditorFontSize(EDITOR_FONT_SIZE_RANGE.max + 1)
 
       expect(useSettingsStore.getState().editorFontSize).toBe(EDITOR_FONT_SIZE_RANGE.max)
+    })
+  })
+
+  describe('loading a saved size', () => {
+    it('loads a saved size below the range as the bottom of the range', async () => {
+      expect.assertions(1)
+
+      await expect(loadSavedSize(EDITOR_FONT_SIZE_RANGE.min - 1)).resolves.toBe(
+        EDITOR_FONT_SIZE_RANGE.min
+      )
+    })
+
+    it('loads a saved size above the range as the top of the range', async () => {
+      expect.assertions(1)
+
+      await expect(loadSavedSize(EDITOR_FONT_SIZE_RANGE.max + 1)).resolves.toBe(
+        EDITOR_FONT_SIZE_RANGE.max
+      )
     })
   })
 
