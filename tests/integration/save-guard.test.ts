@@ -406,11 +406,17 @@ describe('the save guard: retries and failed reads', () => {
 
     const root = await freshProject()
     const target = await projectFile(root, 'A')
+    // On win32 chmod sets only the read-only attribute, so the file stays readable and the guard
+    // finds an unrelated file there; elsewhere the read itself fails
     await chmod(target, 0o200)
     try {
-      await expect(savePluginFile(root, 'Foo.js', 'B', guard(null))).rejects.toMatchObject({
-        code: 'EACCES'
-      })
+      const [outcome] = await Promise.allSettled([savePluginFile(root, 'Foo.js', 'B', guard(null))])
+
+      expect(outcome).toMatchObject(
+        process.platform === 'win32'
+          ? { status: 'fulfilled', value: { success: false, conflict: 'exists-unrelated' } }
+          : { status: 'rejected', reason: { code: 'EACCES' } }
+      )
     } finally {
       await chmod(target, 0o600)
     }
@@ -516,7 +522,8 @@ describe('replacing a file: what it keeps', () => {
     await expectWritten(await savePluginFile(root, 'Foo.js', 'B', unchanged(target)), target, 'B')
     const { mode } = await stat(target)
 
-    expect(mode & 0o777).toBe(0o640)
+    // win32 keeps only the read-only attribute, so a writable file reads back as 0o666 there
+    expect(mode & 0o777).toBe(process.platform === 'win32' ? 0o666 : 0o640)
   })
 
   it('writes through a link to the file it names', async () => {

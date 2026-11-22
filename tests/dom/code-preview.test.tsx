@@ -28,6 +28,7 @@ import {
   type PluginMeta
 } from '../../src/renderer/src/types/plugin'
 import { ACCESS_DENIED, IPC_CHANNELS } from '../../src/shared/ipc-types'
+import type { PlatformPath } from '../../src/shared/path-safety'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
 import { viaIpc } from './support/main-api'
@@ -492,24 +493,39 @@ describe('code preview export', () => {
   })
 })
 
-const SAVED = '/saved/Alpha.js'
-const CHOSEN = '/chosen/Alpha.js'
+// A plugin file path absolute under `pathImpl`'s rules: Windows wants a drive, as a rooted
+// `\saved` is refused there before any read check
+const absoluteFile = (folder: string, pathImpl: PlatformPath = path): string =>
+  pathImpl.join(pathImpl.sep === '\\' ? 'C:\\' : '/', folder, 'Alpha.js')
+const SAVED = absoluteFile('saved')
+const CHOSEN = absoluteFile('chosen')
 const NOTICE = "The saved file can't be opened automatically. Choose it to compare."
 const LAST_COPY = 'Left: the copy this app last read or wrote'
 
 // Main's own refusal of a file it may not read without a dialog
-const denied = (file: string): never => {
-  authorize('granted-read', file)
+const denied = (file: string, pathImpl: PlatformPath): never => {
+  authorize('granted-read', file, pathImpl)
   throw new Error(`${file} should have been refused`)
+}
+
+interface DeniedSave {
+  readChosen?: ReadFile
+  // The saved file and the path rules main checks it by
+  saved?: string
+  pathImpl?: PlatformPath
 }
 
 // The saved file is out of read-by-path's reach; `chosen` answers the Choose file dialog
 function wireDeniedSave(
   chosen: string | null,
-  readChosen: ReadFile = vi.fn<ReadFile>().mockResolvedValue('// chosen')
+  {
+    readChosen = vi.fn<ReadFile>().mockResolvedValue('// chosen'),
+    saved = SAVED,
+    pathImpl = path
+  }: DeniedSave = {}
 ): void {
   const readByPath = viaIpc(IPC_CHANNELS.PLUGIN_READ_BY_PATH, async (file: string) =>
-    file === SAVED ? denied(file) : readChosen(file)
+    file === saved ? denied(file, pathImpl) : readChosen(file)
   )
   vi.stubGlobal(
     'api',
@@ -518,7 +534,7 @@ function wireDeniedSave(
       dialog: { openFile: vi.fn<Api['dialog']['openFile']>().mockResolvedValue(chosen) }
     })
   )
-  usePluginStore.setState({ savedPath: SAVED })
+  usePluginStore.setState({ savedPath: saved })
 }
 
 const clickDiff = (): void => {
@@ -606,7 +622,9 @@ describe('code preview diff: reading the saved file', () => {
   it('keeps the notice and says why when the chosen file cannot be read', async () => {
     expect.hasAssertions()
 
-    wireDeniedSave(CHOSEN, vi.fn<ReadFile>().mockRejectedValue(new Error('Alpha.js is not UTF-8')))
+    wireDeniedSave(CHOSEN, {
+      readChosen: vi.fn<ReadFile>().mockRejectedValue(new Error('Alpha.js is not UTF-8'))
+    })
     render(<CodePreview />)
     clickDiff()
     fireEvent.click(await screen.findByRole('button', { name: 'Choose file' }))
@@ -614,6 +632,24 @@ describe('code preview diff: reading the saved file', () => {
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument()
     expect(screen.queryByTestId('monaco-diff-original')).not.toBeInTheDocument()
+  })
+})
+
+describe('code preview diff: Windows path rules', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('asks for the saved file when Windows path rules put it out of reach', async () => {
+    expect.hasAssertions()
+
+    wireDeniedSave(CHOSEN, { saved: absoluteFile('saved', path.win32), pathImpl: path.win32 })
+    render(<CodePreview />)
+    clickDiff()
+    const notice = await screen.findByText(NOTICE)
+
+    expect(notice).toBeInTheDocument()
+    expect(errorToasts()).toStrictEqual([])
   })
 })
 

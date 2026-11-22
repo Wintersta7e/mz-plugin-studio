@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import * as ts from 'typescript'
 import { sourceFiles } from '../helpers/source-files'
 import type { Session } from 'electron'
@@ -175,16 +175,20 @@ describe('file request filter', () => {
   })
 
   it('cancels every file request the predicate rejects', () => {
+    // The installed filter reads this machine's paths: on Windows they start with a drive
+    const rendererRoot = path.resolve('/app/out/renderer')
     const { session, recorded } = fakeSession()
-    installFileRequestFilter(session, '/app/out/renderer')
+    installFileRequestFilter(session, rendererRoot)
 
     expect(recorded.filter).toStrictEqual({ urls: ['file://*/*'] })
 
     const answers: { cancel: boolean }[] = []
-    recorded.listener?.({ url: 'file:///app/out/renderer/index.html' }, (response) => {
+    const inside = pathToFileURL(path.join(rendererRoot, 'index.html')).href
+    recorded.listener?.({ url: inside }, (response) => {
       answers.push(response)
     })
-    recorded.listener?.({ url: 'file:///etc/passwd' }, (response) => {
+    const outside = pathToFileURL(path.resolve('/etc/passwd')).href
+    recorded.listener?.({ url: outside }, (response) => {
       answers.push(response)
     })
 

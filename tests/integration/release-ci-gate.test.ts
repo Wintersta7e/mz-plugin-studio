@@ -36,50 +36,60 @@ function stepScript(): string {
   return `${body.join('\n')}\n`
 }
 
-const FAKE_GH = `#!/bin/sh
-echo "gh $*" >> "$FAKE_LOG"
-case "$1 $2" in
-  "run list")
-    if [ "\${FAKE_LIST_EXIT:-0}" -ne 0 ]; then exit "$FAKE_LIST_EXIT"; fi
-    if [ -n "$FAKE_RUN_ID" ]; then echo "$FAKE_RUN_ID"; fi
-    ;;
-  "run watch")
-    for arg in "$@"; do
-      if [ "$arg" = "--exit-status" ]; then exit "\${FAKE_WATCH_EXIT:-0}"; fi
-    done
-    ;;
-esac
-exit 0
+// Shell functions, defined ahead of the step: bash runs a function before any command of the same
+// name, wherever PATH puts the system's own `sleep`
+const FAKES = `gh() {
+  echo "gh $*" >> "$FAKE_LOG"
+  case "$1 $2" in
+    "run list")
+      if [ "\${FAKE_LIST_EXIT:-0}" -ne 0 ]; then return "$FAKE_LIST_EXIT"; fi
+      if [ -n "$FAKE_RUN_ID" ]; then echo "$FAKE_RUN_ID"; fi
+      ;;
+    "run watch")
+      for arg in "$@"; do
+        if [ "$arg" = "--exit-status" ]; then return "\${FAKE_WATCH_EXIT:-0}"; fi
+      done
+      ;;
+  esac
+  return 0
+}
+sleep() {
+  echo "sleep $*" >> "$FAKE_LOG"
+}
 `
-const FAKE_SLEEP = `#!/bin/sh
-echo "sleep $*" >> "$FAKE_LOG"
+
+// Stands for the shell's own `sleep`: Git for Windows' bash puts its own folders ahead of PATH
+const SYSTEM_SLEEP = `#!/bin/sh
+echo "system sleep $*" >> "$FAKE_LOG"
 `
 
 const temporaryFolders: string[] = []
 const counted = { cases: 0 }
 
-function runStep(variables: Record<string, string>): {
+function runStep(
+  variables: Record<string, string>,
+  { isSystemFirst = false }: { isSystemFirst?: boolean } = {}
+): {
   status: number | null
   out: string
   log: string[]
 } {
   const folder = mkdtempSync(path.join(tmpdir(), 'release-ci-gate-'))
   temporaryFolders.push(folder)
-  const bin = path.join(folder, 'bin')
+  const system = path.join(folder, 'system')
   const script = path.join(folder, 'step.sh')
   const log = path.join(folder, 'calls.log')
-  writeFileSync(script, stepScript())
-  mkdirSync(bin)
-  writeFileSync(path.join(bin, 'gh'), FAKE_GH)
-  writeFileSync(path.join(bin, 'sleep'), FAKE_SLEEP)
-  chmodSync(path.join(bin, 'gh'), 0o755)
-  chmodSync(path.join(bin, 'sleep'), 0o755)
+  writeFileSync(script, FAKES + stepScript())
+  mkdirSync(system)
+  writeFileSync(path.join(system, 'sleep'), SYSTEM_SLEEP)
+  chmodSync(path.join(system, 'sleep'), 0o755)
   const { PATH: searchPath = '' } = process.env
+  const folders = [...(isSystemFirst ? [system] : []), searchPath]
   const result = spawnSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', script], {
     encoding: 'utf8',
     env: {
       ...process.env,
-      PATH: `${bin}${path.delimiter}${searchPath}`,
+      PATH: folders.join(path.delimiter),
       GITHUB_SHA: SHA,
       FAKE_LOG: log,
       ...variables
@@ -138,6 +148,15 @@ describe('release CI gate', () => {
     const { status, log } = runStep({ FAKE_LIST_EXIT: '1', FAKE_RUN_ID: '42' })
 
     expect(log.filter((line) => line.startsWith('gh run watch'))).toStrictEqual([])
+    expect(status).toBe(1)
+  })
+
+  it("waits with the fake sleep when the shell's own folders come first on PATH", () => {
+    const { status, log } = runStep({ FAKE_RUN_ID: '' }, { isSystemFirst: true })
+
+    expect(log.filter((line) => line.includes('sleep '))).toStrictEqual(
+      Array.from({ length: 6 }, () => 'sleep 10')
+    )
     expect(status).toBe(1)
   })
 })
