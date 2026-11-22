@@ -44,6 +44,10 @@ interface HistoryState {
   redo: (current: PluginDefinition) => HistoryPluginSnapshot | null
   clear: () => void
   /**
+  Empties the history when it belongs to the plugin `id`, as when that plugin's tab closes
+  */
+  forget: (id: string) => void
+  /**
   Call when switching plugins to reset history for the new context
   */
   setActivePluginId: (id: string | null) => void
@@ -114,5 +118,9 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 
   clear: () => {
     set({ past: [], future: [], activePluginId: null })
+  },
+
+  forget: (id) => {
+    if (get().activePluginId === id) set({ past: [], future: [], activePluginId: null })
   }
 }))

@@ -412,3 +412,51 @@ describe('duplicate pushes', () => {
     expect(entries.map((entry) => entry.plugin.rawSource)).toStrictEqual([undefined])
   })
 })
+
+// Opens Beta, then Alpha with one edit recorded after its first state, so Alpha is shown
+// and has a step to undo.
+function openBetaThenEditedAlpha(): { alpha: PluginDefinition; beta: PluginDefinition } {
+  const beta = createPlugin('Beta')
+  const alpha = createPlugin('Alpha')
+  usePluginStore.getState().openPlugin(beta)
+  usePluginStore.getState().openPlugin(alpha)
+  useHistoryStore.getState().push(shownPlugin())
+  usePluginStore.getState().updateMeta({ description: 'edited' })
+  useHistoryStore.getState().push(shownPlugin())
+  return { alpha, beta }
+}
+
+describe('closing a tab', () => {
+  beforeEach(resetStores)
+
+  it('closing a background tab keeps the undo of the tab shown', () => {
+    const { alpha, beta } = openBetaThenEditedAlpha()
+    usePluginStore.getState().closePlugin(beta.id)
+    const undone = undoShown()
+
+    expect({
+      id: undone?.id,
+      description: undone?.meta.description,
+      shown: shownPlugin().meta.description
+    }).toStrictEqual({ id: alpha.id, description: '', shown: '' })
+  })
+
+  it('closing the tab shown leaves no undo that brings it back into the next tab', () => {
+    const { alpha, beta } = openBetaThenEditedAlpha()
+    usePluginStore.getState().closePlugin(alpha.id)
+    const before = shownPlugin()
+    const undone = undoShown()
+
+    expect({
+      undone,
+      shownId: shownPlugin().id,
+      unchanged: shownPlugin() === before,
+      history: historyLengths()
+    }).toStrictEqual({
+      undone: null,
+      shownId: beta.id,
+      unchanged: true,
+      history: { past: 0, future: 0 }
+    })
+  })
+})

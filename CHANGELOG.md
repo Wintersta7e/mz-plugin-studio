@@ -9,6 +9,7 @@
 - A parameter, plugin or command name written in letters other than A–Z, such as `速度`, keeps those letters in the generated code and is no longer flagged as an invalid identifier. Before, each such parameter became a constant named `unnamed`, so two of them declared the same constant twice and the plugin failed to load in RPG Maker MZ.
 - A plugin command that your own code already registers is no longer registered a second time when a string or regex before it holds `//` or `/*`, such as `'a//b'`. Before, the generator read the rest of that line, or up to the next `*/`, as a comment, missed the registration and added an empty one of its own, and the validator warned that the command had no implementation.
 - Saving an opened plugin with raw mode off now names, in its confirmation, each translated block the save removes from the file, such as a `/*:ja` block holding parameters or commands, or a struct block in another language. Before, the confirmation said only that code outside the Code tab would go, and the translated parameter and command text was lost without a word. When the file text is not loaded, the confirmation says the translated blocks could not be checked.
+- Closing a tab no longer wipes the undo history of the tab you are working in. Before, closing any tab, even one in the background, emptied undo and redo. Closing the tab you are working in still empties them, so an undo in the tab shown next cannot bring back the closed tab's state.
 
 ## [1.9.0] - 2026-11-19
 

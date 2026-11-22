@@ -658,9 +658,9 @@ function tabActions(
       })
     },
     closePlugin: (id) => {
-      // Clean up raw mode and history BEFORE state switch (synchronous)
+      // Clean up raw mode and the closed tab's history BEFORE state switch (synchronous)
       useUIStore.getState().clearRawModeForPlugin(id)
-      useHistoryStore.getState().clear()
+      useHistoryStore.getState().forget(id)
       set((state) => {
         const newOpenPlugins = state.openPlugins.filter((p) => p.id !== id)
         const maps = filterTabMaps(state, (key) => key !== id)
