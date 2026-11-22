@@ -6,7 +6,8 @@ import {
   escapeBlockComment,
   escapeJSDoubleQuote,
   escapeJSString,
-  escapeLineComment
+  escapeLineComment,
+  isOneLineExpression
 } from '../../src/renderer/src/lib/generator/escape'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { propertyRuns } from '../helpers/property-runs'
@@ -22,6 +23,25 @@ const text = fc.string({
     fc.string({ unit: 'binary', minLength: 1, maxLength: 1 })
   )
 })
+
+// An expression of names, numbers and string literals of any text, nested in calls, arrays,
+// objects and parentheses, so every bracket outside the literals is closed
+const { expression } = fc.letrec<{ expression: string; operand: string }>((tie) => ({
+  operand: fc.oneof(
+    { depthSize: 'small', withCrossShrink: true },
+    fc.constantFrom('a', '$gameParty', 'value_1'),
+    fc.nat().map(String),
+    text.map((value) => `'${escapeJSString(value)}'`),
+    text.map((value) => `"${escapeJSDoubleQuote(value)}"`),
+    tie('expression').map((inner) => `(${inner})`),
+    tie('expression').map((inner) => `f(${inner})`),
+    fc.array(tie('expression'), { maxLength: 3 }).map((items) => `[${items.join(', ')}]`),
+    tie('expression').map((inner) => `{ key: ${inner} }`)
+  ),
+  expression: fc
+    .array(tie('operand'), { minLength: 1, maxLength: 3 })
+    .map((operands) => operands.join(' + '))
+}))
 
 // A line break or line separator, which ends a line comment. Evaluating back alone would miss
 // one: a line or paragraph separator is legal inside a string literal.
@@ -86,6 +106,17 @@ describe('escape properties', () => {
 
         expect(escaped).not.toMatch(LINE_END)
         expect(evaluate(`// ${escaped}\n1`)).toBe(1)
+      }),
+      RUNS
+    )
+  })
+
+  it('an expression whose brackets are balanced is one expression on one line', () => {
+    expect.hasAssertions()
+
+    fc.assert(
+      fc.property(expression, (value) => {
+        expect([value, isOneLineExpression(value)]).toStrictEqual([value, true])
       }),
       RUNS
     )

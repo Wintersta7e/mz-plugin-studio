@@ -106,7 +106,9 @@ const NOT_EXPRESSIONS = [
   "x' + y + 'z",
   "'a' 'b'",
   'a\nb',
-  'a\u{2028}b'
+  'a\u{2028}b',
+  '0) || (1',
+  'x), alert(1), (y'
 ]
 
 describe(isOneLineExpression, () => {

@@ -58,10 +58,33 @@ export function escapeLineComment(string_: string): string {
 // Its type holds undefined, as an indexed read of `text` does where indexed access is checked
 const QUOTES: ReadonlySet<string | undefined> = new Set(["'", '"', '`'])
 
+// How each bracket changes the nesting depth
+const BRACKET_DEPTH: ReadonlyMap<string, number> = new Map([
+  ['(', 1],
+  ['[', 1],
+  ['{', 1],
+  [')', -1],
+  [']', -1],
+  ['}', -1]
+])
+
+/**
+Whether each bracket in the text closes one opened before it, and every one opened is closed.
+*/
+function hasBalancedBrackets(text: string): boolean {
+  let depth = 0
+  for (const char of text) {
+    depth += BRACKET_DEPTH.get(char) ?? 0
+    if (depth < 0) return false
+  }
+  return depth === 0
+}
+
 /**
 Whether text a template writes as a JavaScript expression stays one expression on one line:
 no line break, every string literal closed, and outside the literals no `;`, no comment
-marker and no literal written against a name or value (as in `x' + y + 'z`). A check, not a
+marker, no bracket that closes one the text did not open or is left open (as in `0) || (1`)
+and no literal written against a name or value (as in `x' + y + 'z`). A check, not a
 parser: a few valid expressions fail it, such as `'a' in obj`.
 */
 export function isOneLineExpression(text: string): boolean {
@@ -84,7 +107,7 @@ export function isOneLineExpression(text: string): boolean {
     outside += "'"
     index = end + 1
   }
-  return !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(]/.test(outside)
+  return hasBalancedBrackets(outside) && !/;|\/\/|\/\*|\*\/|[\w$)\]']\s*'|'\s*[\w$(]/.test(outside)
 }
 
 // The literal of each type when the default is empty; any other type gets `null`
