@@ -6,6 +6,7 @@ import type { PluginParameter, ParamType, PluginStruct } from '../../types/plugi
 import { normalizeOptions, optionsText, parseOptions } from '../../lib/select-options'
 import { useTypedText } from '../../lib/typed-text'
 import { cn } from '../../lib/utilities'
+import { GAME_DATA_TYPES } from './param-types'
 import { StructDefaultEditor } from './StructDefaultEditor'
 
 interface TypeFieldsProps {
@@ -52,20 +53,7 @@ const ARRAY_ELEMENT_TYPES: readonly { value: ParamType; label: string }[] = [
   { value: 'boolean', label: 'Boolean' },
   { value: 'note', label: 'Note (Multiline)' },
   { value: 'select', label: 'Select/Combo' },
-  { value: 'variable', label: 'Variable' },
-  { value: 'switch', label: 'Switch' },
-  { value: 'actor', label: 'Actor' },
-  { value: 'class', label: 'Class' },
-  { value: 'skill', label: 'Skill' },
-  { value: 'item', label: 'Item' },
-  { value: 'weapon', label: 'Weapon' },
-  { value: 'armor', label: 'Armor' },
-  { value: 'enemy', label: 'Enemy' },
-  { value: 'troop', label: 'Troop' },
-  { value: 'state', label: 'State' },
-  { value: 'animation', label: 'Animation' },
-  { value: 'tileset', label: 'Tileset' },
-  { value: 'common_event', label: 'Common Event' },
+  ...GAME_DATA_TYPES,
   { value: 'file', label: 'File' },
   { value: 'struct', label: 'Struct' }
 ]

@@ -18,10 +18,10 @@ import {
   FieldDefaultInput,
   FieldRowHeader,
   FieldTextInput,
-  LimitInput,
+  NumberLimitInputs,
   type FieldProps
 } from './EditorParts'
-import { toLimit } from './param-types'
+import { GAME_DATA_TYPES } from './param-types'
 import { TypeFields } from './TypeFields'
 
 const PARAM_TYPES: { value: ParamType; label: string }[] = [
@@ -34,20 +34,7 @@ const PARAM_TYPES: { value: ParamType; label: string }[] = [
   { value: 'note', label: 'Note (Multiline)' },
   { value: 'select', label: 'Select' },
   { value: 'combo', label: 'Combo' },
-  { value: 'variable', label: 'Variable' },
-  { value: 'switch', label: 'Switch' },
-  { value: 'actor', label: 'Actor' },
-  { value: 'class', label: 'Class' },
-  { value: 'skill', label: 'Skill' },
-  { value: 'item', label: 'Item' },
-  { value: 'weapon', label: 'Weapon' },
-  { value: 'armor', label: 'Armor' },
-  { value: 'enemy', label: 'Enemy' },
-  { value: 'troop', label: 'Troop' },
-  { value: 'state', label: 'State' },
-  { value: 'animation', label: 'Animation' },
-  { value: 'tileset', label: 'Tileset' },
-  { value: 'common_event', label: 'Common Event' },
+  ...GAME_DATA_TYPES,
   { value: 'map', label: 'Map' },
   { value: 'icon', label: 'Icon' },
   { value: 'file', label: 'File' },
@@ -265,7 +252,11 @@ function StructParamDetails({
       />
 
       {/* Number-specific fields */}
-      {param.type === 'number' && <NumberLimitFields param={param} onUpdate={onUpdate} />}
+      {param.type === 'number' && (
+        <div className="grid grid-cols-3 gap-2">
+          <NumberLimitInputs param={param} onUpdate={onUpdate} />
+        </div>
+      )}
 
       <TypeFields
         param={param}
@@ -285,38 +276,6 @@ function StructParamDetails({
           }}
         />
       )}
-    </div>
-  )
-}
-
-function NumberLimitFields({ param, onUpdate }: FieldProps) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      <LimitInput
-        label="Min"
-        value={param.min}
-        placeholder="No min"
-        onChange={(text) => {
-          onUpdate({ min: toLimit(text) })
-        }}
-      />
-      <LimitInput
-        label="Max"
-        value={param.max}
-        placeholder="No max"
-        onChange={(text) => {
-          onUpdate({ max: toLimit(text) })
-        }}
-      />
-      <LimitInput
-        label="Decimals"
-        value={param.decimals}
-        placeholder="0"
-        min={0}
-        onChange={(text) => {
-          onUpdate({ decimals: toLimit(text) })
-        }}
-      />
     </div>
   )
 }

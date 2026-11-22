@@ -1,5 +1,5 @@
 import { useState, useLayoutEffect, useRef, useMemo, useCallback, memo, useId } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   Plus,
   Trash2,
@@ -43,7 +43,7 @@ import { RAW_MODE_HEADER_READ_ONLY_NOTICE, useIsHeaderReadOnly } from '../../lib
 import { cn, userMessage } from '../../lib/utilities'
 import { PARAM_TYPE_GROUPS, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
-import { FieldDefaultInput } from './EditorParts'
+import { ExpandingContent, FieldDefaultInput } from './EditorParts'
 import { isIdentifierName } from '../../lib/generator/naming'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
@@ -1138,26 +1138,16 @@ const ParameterCard = memo(function ParameterCard({
       <ParamCardHeader param={param} expanded={expanded} {...rest} />
 
       {/* Expanded content */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-            className="overflow-hidden"
-          >
-            <ParamCardBody
-              param={param}
-              showAdvanced={showAdvanced}
-              onToggleAdvanced={() => {
-                setShowAdvanced(!showAdvanced)
-              }}
-              {...rest}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ExpandingContent expanded={expanded}>
+        <ParamCardBody
+          param={param}
+          showAdvanced={showAdvanced}
+          onToggleAdvanced={() => {
+            setShowAdvanced(!showAdvanced)
+          }}
+          {...rest}
+        />
+      </ExpandingContent>
     </div>
   )
 })

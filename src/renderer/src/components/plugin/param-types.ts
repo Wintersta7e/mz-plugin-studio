@@ -85,6 +85,26 @@ so these are the parameter types, without their groups.
 export const ARG_TYPES: ParamTypeOption[] = PARAM_TYPE_GROUPS.flatMap((g) => g.types)
 
 /**
+The database and game-data types, in the order the struct-field and array-element pickers list them
+*/
+export const GAME_DATA_TYPES: readonly { value: ParamType; label: string }[] = [
+  { value: 'variable', label: 'Variable' },
+  { value: 'switch', label: 'Switch' },
+  { value: 'actor', label: 'Actor' },
+  { value: 'class', label: 'Class' },
+  { value: 'skill', label: 'Skill' },
+  { value: 'item', label: 'Item' },
+  { value: 'weapon', label: 'Weapon' },
+  { value: 'armor', label: 'Armor' },
+  { value: 'enemy', label: 'Enemy' },
+  { value: 'troop', label: 'Troop' },
+  { value: 'state', label: 'State' },
+  { value: 'animation', label: 'Animation' },
+  { value: 'tileset', label: 'Tileset' },
+  { value: 'common_event', label: 'Common Event' }
+]
+
+/**
 The text a default shows in its plain input: none for an empty, zero or false default
 */
 export function defaultText(value: PluginParameter['default']): string {

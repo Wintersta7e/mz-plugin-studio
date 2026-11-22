@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch'
 import type { ParamType, PluginParameter } from '../../types/plugin'
 import { cn } from '../../lib/utilities'
-import { defaultText } from './param-types'
+import { defaultText, toLimit } from './param-types'
 
 type ExpandableCardProps = Readonly<{
   // The name the card shows and its expand control is announced by
@@ -70,20 +70,32 @@ export function ExpandableCard({
       </div>
 
       {/* Expanded content */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-            className="overflow-hidden"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ExpandingContent expanded={expanded}>{children}</ExpandingContent>
     </div>
+  )
+}
+
+/**
+The content of a card while it is open, growing in when it opens and out when it closes
+*/
+export function ExpandingContent({
+  expanded,
+  children
+}: Readonly<{ expanded: boolean; children: ReactNode }>) {
+  return (
+    <AnimatePresence initial={false}>
+      {expanded && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+          className="overflow-hidden"
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
@@ -209,14 +221,14 @@ type LimitInputProps = Readonly<{
   value: number | undefined
   placeholder: string
   onChange: (text: string) => void
-  className?: string
+  className?: string | undefined
   min?: number
 }>
 
 /**
 A small labelled number input for a min, max or decimals limit
 */
-export function LimitInput({
+function LimitInput({
   label,
   value,
   placeholder,
@@ -238,6 +250,46 @@ export function LimitInput({
         className="h-8"
       />
     </div>
+  )
+}
+
+/**
+The min, max and decimals inputs of a number argument or struct field
+*/
+export function NumberLimitInputs({
+  param,
+  onUpdate,
+  decimalsClassName
+}: FieldProps & Readonly<{ decimalsClassName?: string }>) {
+  return (
+    <>
+      <LimitInput
+        label="Min"
+        value={param.min}
+        placeholder="No min"
+        onChange={(text) => {
+          onUpdate({ min: toLimit(text) })
+        }}
+      />
+      <LimitInput
+        label="Max"
+        value={param.max}
+        placeholder="No max"
+        onChange={(text) => {
+          onUpdate({ max: toLimit(text) })
+        }}
+      />
+      <LimitInput
+        label="Decimals"
+        value={param.decimals}
+        placeholder="0"
+        min={0}
+        className={decimalsClassName}
+        onChange={(text) => {
+          onUpdate({ decimals: toLimit(text) })
+        }}
+      />
+    </>
   )
 }
 

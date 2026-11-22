@@ -1,10 +1,10 @@
 {
   "jscpd": {
-    "clones": 34,
-    "duplicatedLines": 398,
+    "clones": 30,
+    "duplicatedLines": 341,
     "src": {
-      "clones": 5,
-      "duplicatedLines": 68
+      "clones": 1,
+      "duplicatedLines": 11
     }
   },
   "coverage": {
@@ -27,7 +27,7 @@
       },
       "src/renderer/src/lib": {
         "lines": 96,
-        "branches": 90
+        "branches": 91
       },
       "src/renderer/src/lib/generator": {
         "lines": 99,

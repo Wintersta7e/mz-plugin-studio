@@ -18,10 +18,10 @@ import {
   FieldDefaultInput,
   FieldRowHeader,
   FieldTextInput,
-  LimitInput,
+  NumberLimitInputs,
   type FieldProps
 } from './EditorParts'
-import { ARG_TYPES, toLimit } from './param-types'
+import { ARG_TYPES } from './param-types'
 import { TypeFields } from './TypeFields'
 
 /**
@@ -334,7 +334,13 @@ function ArgumentDetails({
       {param.type === 'boolean' && <BooleanLabelFields param={param} onUpdate={onUpdate} />}
 
       {/* Number-specific: min, max, decimals */}
-      {param.type === 'number' && <NumberLimitFields param={param} onUpdate={onUpdate} />}
+      {param.type === 'number' && (
+        <NumberLimitInputs
+          param={param}
+          onUpdate={onUpdate}
+          decimalsClassName="col-span-2 space-y-1"
+        />
+      )}
 
       {/* File-specific: directory */}
       {param.type === 'file' && (
@@ -369,39 +375,6 @@ function BooleanLabelFields({ param, onUpdate }: FieldProps) {
         placeholder="OFF"
         onChange={(value) => {
           onUpdate({ offLabel: value || undefined })
-        }}
-      />
-    </>
-  )
-}
-
-function NumberLimitFields({ param, onUpdate }: FieldProps) {
-  return (
-    <>
-      <LimitInput
-        label="Min"
-        value={param.min}
-        placeholder="No min"
-        onChange={(text) => {
-          onUpdate({ min: toLimit(text) })
-        }}
-      />
-      <LimitInput
-        label="Max"
-        value={param.max}
-        placeholder="No max"
-        onChange={(text) => {
-          onUpdate({ max: toLimit(text) })
-        }}
-      />
-      <LimitInput
-        label="Decimals"
-        value={param.decimals}
-        placeholder="0"
-        min={0}
-        className="col-span-2 space-y-1"
-        onChange={(text) => {
-          onUpdate({ decimals: toLimit(text) })
         }}
       />
     </>

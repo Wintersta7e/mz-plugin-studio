@@ -3,6 +3,7 @@ import '../../lib/monaco-setup'
 import { useMemo, useCallback, useState, useRef, useEffect, useDeferredValue } from 'react'
 import { Editor } from '@monaco-editor/react'
 import { editorTheme } from '../../lib/editor-theme'
+import { useEditorOptions } from '../../lib/editor-options'
 import { Copy, Download, Check, FileCode2, GitCompare } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -395,25 +396,8 @@ function PreviewBody({
   code,
   chooseDiffFile
 }: Readonly<{ diff: OpenedDiff | null; code: string; chooseDiffFile: () => Promise<void> }>) {
-  const editorFontSize = useSettingsStore((s) => s.editorFontSize)
-  const isEditorWordWrap = useSettingsStore((s) => s.editorWordWrap)
-  const isEditorMinimap = useSettingsStore((s) => s.editorMinimap)
-  const isEditorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
   const theme = useSettingsStore((s) => s.theme)
-
-  const previewOptions = useMemo(
-    () => ({
-      readOnly: true,
-      minimap: { enabled: isEditorMinimap },
-      fontSize: editorFontSize,
-      lineNumbers: isEditorLineNumbers ? ('on' as const) : ('off' as const),
-      scrollBeyondLastLine: false,
-      wordWrap: isEditorWordWrap ? ('on' as const) : ('off' as const),
-      automaticLayout: true,
-      padding: { top: 16, bottom: 16 }
-    }),
-    [isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
-  )
+  const previewOptions = useEditorOptions(true)
 
   if (diff !== null && diff.original !== null) {
     if (diff.label === null) return <DiffView original={diff.original} modified={code} />

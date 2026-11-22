@@ -1,6 +1,6 @@
 // The editor setup runs before the wrapper below can mount an editor
 import '../../lib/monaco-setup'
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Editor, type Monaco } from '@monaco-editor/react'
 import type { editor, IDisposable } from 'monaco-editor'
 import { Wand2 } from 'lucide-react'
@@ -9,6 +9,7 @@ import { Button } from '../ui/button'
 import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
 import { editorTheme } from '../../lib/editor-theme'
+import { useEditorOptions } from '../../lib/editor-options'
 import { RAW_MODE_READ_ONLY_NOTICE, useIsRawModeActive } from '../../lib/raw-mode'
 import { appendTemplateCode } from '../../lib/generator/templates'
 
@@ -38,27 +39,6 @@ function insertIntoEditor(ed: editor.IStandaloneCodeEditor, code: string): void 
     ed.executeEdits('template', [{ range, text: '\n\n' + code, forceMoveMarkers: true }])
   }
   ed.focus()
-}
-
-// The editor options the settings and raw mode ask for
-function useEditorOptions(isRawMode: boolean): editor.IStandaloneEditorConstructionOptions {
-  const editorFontSize = useSettingsStore((s) => s.editorFontSize)
-  const isEditorWordWrap = useSettingsStore((s) => s.editorWordWrap)
-  const isEditorMinimap = useSettingsStore((s) => s.editorMinimap)
-  const isEditorLineNumbers = useSettingsStore((s) => s.editorLineNumbers)
-  return useMemo(
-    () => ({
-      readOnly: isRawMode,
-      minimap: { enabled: isEditorMinimap },
-      fontSize: editorFontSize,
-      lineNumbers: isEditorLineNumbers ? 'on' : 'off',
-      wordWrap: isEditorWordWrap ? 'on' : 'off',
-      automaticLayout: true,
-      scrollBeyondLastLine: false,
-      padding: { top: 16, bottom: 16 }
-    }),
-    [isRawMode, isEditorMinimap, editorFontSize, isEditorLineNumbers, isEditorWordWrap]
-  )
 }
 
 // Registers the completion provider once and disposes it when the tab goes away
