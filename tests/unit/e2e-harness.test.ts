@@ -497,7 +497,7 @@ describe('e2e harness: Windows', () => {
     expect({
       jobs: windowsJobs.map((each) => each.id).toSorted(byCodeUnit),
       pixelLines
-    }).toStrictEqual({ jobs: ['build', 'package-win'], pixelLines: [] })
+    }).toStrictEqual({ jobs: ['build', 'package-win', 'unit-win'], pixelLines: [] })
 
     const needs = jobIn('ci.yml', 'test').keys.get('needs') ?? ''
 

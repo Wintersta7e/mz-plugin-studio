@@ -150,6 +150,29 @@ jobs:
           fi
           echo "git status --porcelain: empty"
 
+  unit-win:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+          cache: ${{ github.event_name != 'schedule' && 'npm' || '' }}
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Clean tree after tests
+        shell: bash
+        run: |
+          status="$(git status --porcelain)"
+          if [ -n "$status" ]; then
+            echo "$status"
+            exit 1
+          fi
+          echo "git status --porcelain: empty"
+
   package-win:
     runs-on: windows-2025
     timeout-minutes: 30
@@ -240,7 +263,7 @@ jobs:
 
   test:
     if: always()
-    needs: [static, unit, package-win, e2e-linux, codeql]
+    needs: [static, unit, unit-win, package-win, e2e-linux, codeql]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

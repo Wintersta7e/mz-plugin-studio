@@ -207,6 +207,38 @@ describe('ci workflow: execution', () => {
   })
 })
 
+describe('ci workflow: Windows unit job', () => {
+  it('the Windows unit job runs the whole suite with no argument and a clean tree', () => {
+    const job = byId.get('unit-win')
+    const jobSteps = job?.steps ?? []
+    const jobRuns = jobSteps.flatMap((step) => step.run)
+    const suite = jobSteps.findIndex((step) => step.run.includes('npm test'))
+    const clean = jobOf('unit').steps.find(
+      (step) => step.keys.get('name') === 'Clean tree after tests'
+    )
+
+    expect(clean).toBeDefined()
+    expect({
+      runner: job?.keys.get('runs-on'),
+      timeout: job?.keys.get('timeout-minutes'),
+      isCheckoutWithoutCredentials:
+        jobSteps.at(0)?.nested.includes('persist-credentials: false') === true,
+      suiteRuns: jobRuns.filter((line) => /^npm (?:run )?test\b/.test(line)),
+      stepAfterSuite: suite === -1 ? undefined : jobSteps.at(suite + 1),
+      extras: jobRuns.filter((line) =>
+        /electron\/install\.js|coverage|MZ_CORESCRIPT_DIR/.test(line)
+      )
+    }).toStrictEqual({
+      runner: 'windows-2025',
+      timeout: '20',
+      isCheckoutWithoutCredentials: true,
+      suiteRuns: ['npm test'],
+      stepAfterSuite: clean,
+      extras: []
+    })
+  })
+})
+
 // A run line that throws its command's failure away; a bare `exit 0` that ends a clean early
 // return is not one
 const DISCARDS_FAILURE = /\|\|\s*(?:true|:|exit 0)\s*(?:$|#)|\|\|\s*echo\b|;\s*exit 0\s*(?:$|#)/v
