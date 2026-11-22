@@ -9,7 +9,7 @@ Templates for RPG Maker MZ sprite manipulation:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
-import { decimalIntegerOf, expectText, valueOr } from './values'
+import { classNameErrors, decimalIntegerOf, expectText, valueOr } from './values'
 
 /**
 Converts a sprite name to a valid identifier
@@ -20,19 +20,6 @@ function sanitizeSpriteName(name: string): string {
     .trim()
     .replaceAll(/[^a-z0-9]/gi, '')
     .replace(/^[a-z]/, (c) => c.toUpperCase())
-}
-
-/**
-The error for a sprite name that is set but is not a letter followed by letters and digits.
-*/
-function spriteNameErrors(value: unknown): string[] {
-  const hasName = Boolean(value)
-  if (!hasName) return []
-  const name = expectText(value)
-  const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
-  return isValid
-    ? []
-    : ['Sprite Name must start with a letter and contain only letters and numbers']
 }
 
 /**
@@ -244,7 +231,7 @@ const customSpriteClassTemplate = defineTemplate({
     return lines.join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = spriteNameErrors(values.spriteName)
+    const errors = classNameErrors(values.spriteName, 'Sprite Name')
 
     const width = values.width
     if (width !== undefined && Number(width) <= 0) {
@@ -1131,7 +1118,7 @@ const spriteAnimationTemplate = defineTemplate({
     ].join('\n')
   },
   validate: (values): ValidationResult => {
-    const errors = spriteNameErrors(values.spriteName)
+    const errors = classNameErrors(values.spriteName, 'Sprite Name')
 
     const frameCount = values.frameCount
     if (frameCount !== undefined && Number(frameCount) < 1) {

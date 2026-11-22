@@ -5,9 +5,9 @@ Generates code for creating custom window classes in RPG Maker MZ
 and optionally integrating them into existing scenes.
 */
 
-import { defineTemplate, type CodeTemplate } from './types'
+import { defineTemplate, templateFields, type CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
-import { decimalIntegerOf, expectText, valueOr } from './values'
+import { classNameErrors, decimalIntegerOf, expectText, valueOr } from './values'
 
 /**
 Converts a window name to a valid identifier
@@ -29,17 +29,24 @@ function toCamelCase(name: string): string {
 }
 
 /**
-The error for a window name that is set but is not a letter followed by letters and digits.
+The fields for a window's position on screen, in pixels from the top left.
 */
-function windowNameErrors(value: unknown): string[] {
-  const hasName = Boolean(value)
-  if (!hasName) return []
-  const name = expectText(value)
-  const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
-  return isValid
-    ? []
-    : ['Window Name must start with a letter and contain only letters and numbers']
-}
+const SCREEN_POSITION_FIELDS = templateFields([
+  {
+    id: 'positionX',
+    label: 'X Position',
+    type: 'number',
+    default: 10,
+    help: 'X position on screen (pixels from left)'
+  },
+  {
+    id: 'positionY',
+    label: 'Y Position',
+    type: 'number',
+    default: 10,
+    help: 'Y position on screen (pixels from top)'
+  }
+])
 
 /**
 Generates the window class definition code
@@ -311,7 +318,7 @@ const customWindowTemplate = defineTemplate({
   },
   validate: (values) => {
     // Check for valid identifier
-    const errors = windowNameErrors(values.windowName)
+    const errors = classNameErrors(values.windowName, 'Window Name')
 
     // Validate width and height are positive
     if (values.width !== undefined && Number(values.width) <= 0) {
@@ -467,20 +474,7 @@ const hudOverlayWindowTemplate = defineTemplate({
       default: 'health',
       help: 'Type of HUD content to display'
     },
-    {
-      id: 'positionX',
-      label: 'X Position',
-      type: 'number',
-      default: 10,
-      help: 'X position on screen (pixels from left)'
-    },
-    {
-      id: 'positionY',
-      label: 'Y Position',
-      type: 'number',
-      default: 10,
-      help: 'Y position on screen (pixels from top)'
-    },
+    ...SCREEN_POSITION_FIELDS,
     {
       id: 'width',
       label: 'Width',
@@ -595,7 +589,7 @@ const hudOverlayWindowTemplate = defineTemplate({
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values.windowName)
+    const errors = classNameErrors(values.windowName, 'Window Name')
 
     const opacity = values.opacity
     if (opacity !== undefined && (Number(opacity) < 0 || Number(opacity) > 255)) {
@@ -895,7 +889,7 @@ const popupNotificationTemplate = defineTemplate({
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values.windowName)
+    const errors = classNameErrors(values.windowName, 'Window Name')
 
     const duration = values.defaultDuration
     if (duration !== undefined && Number(duration) <= 0) {
@@ -1231,20 +1225,7 @@ const gaugeWindowTemplate = defineTemplate({
       default: '#80f080',
       help: 'Gradient end color (hex format)'
     },
-    {
-      id: 'positionX',
-      label: 'X Position',
-      type: 'number',
-      default: 10,
-      help: 'X position on screen (pixels from left)'
-    },
-    {
-      id: 'positionY',
-      label: 'Y Position',
-      type: 'number',
-      default: 10,
-      help: 'Y position on screen (pixels from top)'
-    },
+    ...SCREEN_POSITION_FIELDS,
     {
       id: 'width',
       label: 'Width',
@@ -1365,7 +1346,7 @@ const gaugeWindowTemplate = defineTemplate({
     return lines.join('\n')
   },
   validate: (values) => {
-    const errors = windowNameErrors(values.windowName)
+    const errors = classNameErrors(values.windowName, 'Window Name')
 
     const width = values.width
     if (width !== undefined && Number(width) <= 0) {

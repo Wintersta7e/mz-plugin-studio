@@ -73,3 +73,15 @@ export function toPascalCase(value: unknown): string {
   const text = expectText(value)
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
+
+/**
+The error for a class name that is set but is not a letter followed by letters and digits, once
+its white space is removed. `label` names the field in the message.
+*/
+export function classNameErrors(value: unknown, label: string): string[] {
+  const hasName = Boolean(value)
+  if (!hasName) return []
+  const name = expectText(value)
+  const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
+  return isValid ? [] : [`${label} must start with a letter and contain only letters and numbers`]
+}

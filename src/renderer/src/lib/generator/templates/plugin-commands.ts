@@ -116,6 +116,16 @@ function commandNameErrors(values: CommandNameValues, identifierError: string): 
 }
 
 /**
+The types a command argument can be read as.
+*/
+const ARG_TYPE_OPTIONS = [
+  { value: 'string', label: 'String' },
+  { value: 'number', label: 'Number' },
+  { value: 'boolean', label: 'Boolean' },
+  { value: 'json', label: 'JSON (array/object)' }
+]
+
+/**
 Template 1: Basic Plugin Command
 Simple command registration with arguments
 */
@@ -153,12 +163,7 @@ const basicCommandTemplate = defineTemplate({
       id: 'arg1Type',
       label: 'Argument 1 Type',
       type: 'select',
-      options: [
-        { value: 'string', label: 'String' },
-        { value: 'number', label: 'Number' },
-        { value: 'boolean', label: 'Boolean' },
-        { value: 'json', label: 'JSON (array/object)' }
-      ],
+      options: ARG_TYPE_OPTIONS,
       default: 'string',
       dependsOn: { field: 'arg1Name', value: true },
       help: 'Data type for argument 1'
@@ -174,12 +179,7 @@ const basicCommandTemplate = defineTemplate({
       id: 'arg2Type',
       label: 'Argument 2 Type',
       type: 'select',
-      options: [
-        { value: 'string', label: 'String' },
-        { value: 'number', label: 'Number' },
-        { value: 'boolean', label: 'Boolean' },
-        { value: 'json', label: 'JSON (array/object)' }
-      ],
+      options: ARG_TYPE_OPTIONS,
       default: 'number',
       dependsOn: { field: 'arg2Name', value: true },
       help: 'Data type for argument 2'
