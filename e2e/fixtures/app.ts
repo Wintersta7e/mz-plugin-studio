@@ -14,6 +14,13 @@ import {
   type ElectronApplication,
   type Page
 } from '@playwright/test'
+import type {
+  BaseWindow,
+  MessageBoxOptions,
+  MessageBoxSyncOptions,
+  OpenDialogOptions,
+  SaveDialogOptions
+} from 'electron'
 import type { API } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../../tests/helpers/fixture-project'
 import {
@@ -91,11 +98,20 @@ export interface DialogAnswers {
   showMessageBoxSync: ButtonAnswer
 }
 
-export interface DialogCall {
-  method: DialogMethod
-  options: unknown
-  error?: string
+// The options each dialog method takes, as Electron types them
+interface DialogOptions {
+  showOpenDialog: OpenDialogOptions
+  showSaveDialog: SaveDialogOptions
+  showMessageBox: MessageBoxOptions
+  showMessageBoxSync: MessageBoxSyncOptions
 }
+
+/**
+One recorded dialog call: its method and the options the app passed it
+*/
+export type DialogCall = {
+  [M in DialogMethod]: { method: M; options: DialogOptions[M]; error?: string }
+}[DialogMethod]
 
 /**
 A file written in the main process just before the dialog answers
@@ -276,38 +292,33 @@ app calls `dialog.<method>` at call time, so replacing the module's properties r
 */
 export async function stubDialogs(app: ElectronApplication): Promise<void> {
   await app.evaluate(({ dialog }, key) => {
-    interface Box {
-      buttons?: string[]
-      cancelId?: number
-    }
+    // Declared here: the callback runs in the main process and reaches nothing of this module.
+    // Callers pass (window, options) or (options): the options come last
+    type DialogArgs<O> = [window: BaseWindow, options: O] | [options: O]
+    type BoxOptions = MessageBoxOptions | MessageBoxSyncOptions
     const state: DialogState = { queues: {}, calls: [], uncaught: [] }
     Reflect.set(globalThis, key, state)
     const fs = process.getBuiltinModule('node:fs')
 
-    // Callers pass (window, options) or (options): the options come last
-    const answer = (
-      method: DialogMethod,
-      args: unknown[],
-      resolve = (raw: unknown): unknown => raw
-    ): unknown => {
-      const options = args.at(-1)
+    const optionsOf = <O>(args: DialogArgs<O>): O => (args.length === 2 ? args[1] : args[0])
+    const answer = (call: DialogCall, resolve = (raw: unknown): unknown => raw): unknown => {
       try {
-        const entry = state.queues[method]?.shift()
-        if (entry === undefined) throw new Error(`e2e dialog stub: empty queue for ${method}`)
+        const entry = state.queues[call.method]?.shift()
+        if (entry === undefined) throw new Error(`e2e dialog stub: empty queue for ${call.method}`)
         const value = resolve(entry.answer)
         if (entry.writeBefore) fs.writeFileSync(entry.writeBefore.path, entry.writeBefore.content)
-        state.calls.push({ method, options })
+        state.calls.push(call)
         return value
       } catch (error) {
-        state.calls.push({ method, options, error: String(error) })
+        state.calls.push({ ...call, error: String(error) })
         throw error
       }
     }
     const button =
-      (method: DialogMethod, args: unknown[]) =>
+      (method: DialogMethod, options: BoxOptions) =>
       (raw: unknown): number => {
         if (typeof raw === 'number') return raw
-        const { buttons = [], cancelId } = (args.at(-1) ?? {}) as Box
+        const { buttons = [], cancelId } = options
         if (cancelId === undefined) {
           throw new Error(`e2e dialog stub: ${method} answered ${String(raw)}, but has no cancelId`)
         }
@@ -322,17 +333,28 @@ export async function stubDialogs(app: ElectronApplication): Promise<void> {
 
     // A throwing answer rejects the returned promise
     Object.assign(dialog, {
-      showOpenDialog: async (...args: unknown[]) =>
-        Promise.try(() => answer('showOpenDialog', args)),
-      showSaveDialog: async (...args: unknown[]) =>
-        Promise.try(() => answer('showSaveDialog', args)),
-      showMessageBox: async (...args: unknown[]) =>
-        Promise.try(() => ({
-          response: answer('showMessageBox', args, button('showMessageBox', args)),
-          checkboxChecked: false
-        })),
-      showMessageBoxSync: (...args: unknown[]) =>
-        answer('showMessageBoxSync', args, button('showMessageBoxSync', args))
+      showOpenDialog: async (...args: DialogArgs<OpenDialogOptions>) =>
+        Promise.try(() => answer({ method: 'showOpenDialog', options: optionsOf(args) })),
+      showSaveDialog: async (...args: DialogArgs<SaveDialogOptions>) =>
+        Promise.try(() => answer({ method: 'showSaveDialog', options: optionsOf(args) })),
+      showMessageBox: async (...args: DialogArgs<MessageBoxOptions>) =>
+        Promise.try(() => {
+          const options = optionsOf(args)
+          return {
+            response: answer(
+              { method: 'showMessageBox', options },
+              button('showMessageBox', options)
+            ),
+            checkboxChecked: false
+          }
+        }),
+      showMessageBoxSync: (...args: DialogArgs<MessageBoxSyncOptions>) => {
+        const options = optionsOf(args)
+        return answer(
+          { method: 'showMessageBoxSync', options },
+          button('showMessageBoxSync', options)
+        )
+      }
     })
     // Recorded instead of Electron's own error box
     process.on('uncaughtException', (error) => {

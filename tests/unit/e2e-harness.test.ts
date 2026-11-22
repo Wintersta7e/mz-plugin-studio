@@ -683,3 +683,19 @@ describe('e2e harness: process list', () => {
     }).toStrictEqual({ ppid: process.ppid, executable: process.execPath.toLowerCase() })
   })
 })
+
+describe('e2e harness: owned values', () => {
+  it('derives the visual baseline count from the snapshot list, with no number of its own', () => {
+    const literals = read('e2e/visual/inventory.e2e.ts').match(/(?<![\w.])\d+(?![\w.])/g) ?? []
+
+    expect(literals).toStrictEqual([])
+  })
+
+  it('types the recorded dialog options by method', () => {
+    const untyped = read(FIXTURE_MODULE)
+      .split('\n')
+      .filter((line) => /\boptions\??:\s*unknown\b/.test(line))
+
+    expect(untyped).toStrictEqual([])
+  })
+})

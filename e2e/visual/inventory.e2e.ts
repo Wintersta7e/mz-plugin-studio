@@ -3,7 +3,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { expect, test } from '../fixtures/app'
-import { SNAPSHOTS } from './states'
+import { SNAPSHOTS, STATES, THEMES } from './states'
 
 /**
 The PNG files in `directory`, none when it does not exist
@@ -21,5 +21,6 @@ test('baselines match the snapshot list one to one', () => {
     `visual: comparisons ${String(SNAPSHOTS.length)}, baselines ${String(baselines.length)}, orphans ${String(orphans.length)}\n`
   )
   expect({ orphans, missing }).toEqual({ orphans: [], missing: [] })
-  expect([SNAPSHOTS.length, baselines.length]).toEqual([16, 16])
+  const expected = STATES.length * THEMES.length
+  expect([SNAPSHOTS.length, baselines.length]).toEqual([expected, expected])
 })
