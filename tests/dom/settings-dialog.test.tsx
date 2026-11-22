@@ -9,6 +9,7 @@ import { MetaEditor } from '../../src/renderer/src/components/plugin/MetaEditor'
 import { CodePreview } from '../../src/renderer/src/components/preview/CodePreview'
 import { SettingsDialog } from '../../src/renderer/src/components/settings/SettingsDialog'
 import { useProjectStore, useSettingsStore, useTemplateStore } from '../../src/renderer/src/stores'
+import { EDITOR_FONT_SIZE_RANGE } from '../../src/renderer/src/stores/settings-store'
 import { createEmptyParameter } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { monacoStub } from '../setup/monaco-stub'
@@ -367,6 +368,14 @@ describe('settings: font size', () => {
     await user.tab()
 
     expect(input).toHaveValue(10)
+  })
+
+  it('the font size field is bounded by the range the store keeps sizes in', () => {
+    showSettings()
+    const input = screen.getByLabelText('Font Size')
+
+    expect(input).toHaveAttribute('min', String(EDITOR_FONT_SIZE_RANGE.min))
+    expect(input).toHaveAttribute('max', String(EDITOR_FONT_SIZE_RANGE.max))
   })
 })
 

@@ -9,6 +9,7 @@ import { Switch } from '../ui/switch'
 import { Button } from '../ui/button'
 import { useSettingsStore, useProjectStore, useTemplateStore, useToastStore } from '../../stores'
 import { deleteBackup, listBackups, type SavedBackup } from '../../stores/persist'
+import { EDITOR_FONT_SIZE_RANGE } from '../../stores/settings-store'
 import { NOTICE_MS } from '../../stores/toast-store'
 import { userMessage } from '../../lib/utilities'
 
@@ -203,14 +204,19 @@ function FontSizeField({
       <Input
         id="fontSize"
         type="number"
-        min={10}
-        max={24}
+        min={EDITOR_FONT_SIZE_RANGE.min}
+        max={EDITOR_FONT_SIZE_RANGE.max}
         value={draft ?? editorFontSize}
         onChange={(event) => {
           setDraft(event.target.value)
           const size = Number(event.target.value)
           // A size already in range applies as it is typed
-          if (event.target.value && size >= 10 && size <= 24) setEditorFontSize(size)
+          if (
+            event.target.value &&
+            size >= EDITOR_FONT_SIZE_RANGE.min &&
+            size <= EDITOR_FONT_SIZE_RANGE.max
+          )
+            setEditorFontSize(size)
         }}
         onBlur={commitFontSize}
         onKeyDown={(event) => {

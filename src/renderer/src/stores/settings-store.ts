@@ -56,8 +56,19 @@ type SettingsPersisted = Pick<
 // Schema 1 began checking each preset parameter; that check is the field check, run on every load.
 const SETTINGS_MIGRATIONS: readonly MigrationStep[] = [(state) => state]
 
+/**
+The sizes the editor font can take; a size outside them is clamped to the nearer end
+*/
+export const EDITOR_FONT_SIZE_RANGE: { readonly min: number; readonly max: number } = {
+  min: 10,
+  max: 24
+}
+
 const clampFontSize = (size: number): number =>
-  Math.max(10, Math.min(24, Number.isFinite(size) ? size : 10))
+  Math.max(
+    EDITOR_FONT_SIZE_RANGE.min,
+    Math.min(EDITOR_FONT_SIZE_RANGE.max, Number.isFinite(size) ? size : EDITOR_FONT_SIZE_RANGE.min)
+  )
 
 // The preload's log bridge; absent where the renderer runs without the app's preload (tests)
 interface LogLevelBridge {

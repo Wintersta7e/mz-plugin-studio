@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSettingsStore } from '../../src/renderer/src/stores/settings-store'
+import {
+  EDITOR_FONT_SIZE_RANGE,
+  useSettingsStore
+} from '../../src/renderer/src/stores/settings-store'
 import type { PluginParameter } from '../../src/renderer/src/types/plugin'
 
 function resetSettingsStore() {
@@ -142,6 +145,12 @@ describe('settingsStore: editor font size', () => {
       useSettingsStore.getState().setEditorFontSize(24)
 
       expect(useSettingsStore.getState().editorFontSize).toBe(24)
+    })
+
+    it('clamps one past the top of the stated range to the top', () => {
+      useSettingsStore.getState().setEditorFontSize(EDITOR_FONT_SIZE_RANGE.max + 1)
+
+      expect(useSettingsStore.getState().editorFontSize).toBe(EDITOR_FONT_SIZE_RANGE.max)
     })
   })
 
