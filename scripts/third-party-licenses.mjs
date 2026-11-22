@@ -248,9 +248,9 @@ function importedPackages() {
         .join('/')
       if (name === 'electron') continue
       if (!Object.hasOwn(lock, `node_modules/${name}`)) {
-        throw new Error(
-          `${path.relative(ROOT, file)} imports "${spec}", which is not in package-lock.json`
-        )
+        // The same `/`-separated path on every system
+        const shown = path.relative(ROOT, file).split(path.sep).join('/')
+        throw new Error(`${shown} imports "${spec}", which is not in package-lock.json`)
       }
       names.add(name)
     }
