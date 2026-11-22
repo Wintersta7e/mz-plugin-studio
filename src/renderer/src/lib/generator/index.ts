@@ -1443,6 +1443,7 @@ export function validatePlugin(plugin: PluginDefinition): {
   checkPluginName(plugin, problems)
   checkParameterNames(plugin.parameters, problems)
   checkCommands(plugin.commands, problems)
+  checkStructNames(plugin.structs, problems)
   checkStructReferences(plugin, problems)
   checkStructDefaults(plugin.parameters, problems)
   checkUnusedStructs(plugin, problems)
@@ -1609,6 +1610,28 @@ export function duplicateStructNames(structs: readonly PluginStruct[]): string[]
     seen.add(name)
   }
   return [...repeated]
+}
+
+/**
+Struct names the file reader cannot read back (error: it reads `\w+` only), and names with an
+underscore, which the reader keeps but RPG Maker MZ's editor refuses (warning).
+*/
+function checkStructNames(
+  structs: readonly PluginStruct[],
+  { errors, warnings }: ValidationProblems
+): void {
+  for (const { name } of structs) {
+    if (!/^\w+$/.test(name)) {
+      errors.push(
+        `Struct "${name}" has a name the studio cannot read back: use only letters, digits and underscores`
+      )
+    }
+    if (name.includes('_')) {
+      warnings.push(
+        `Struct "${name}" contains "_": RPG Maker MZ's editor accepts only letters and digits in a struct name`
+      )
+    }
+  }
 }
 
 /**

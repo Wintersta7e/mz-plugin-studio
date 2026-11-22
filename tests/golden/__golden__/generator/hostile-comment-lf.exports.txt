@@ -235,10 +235,12 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/ globalThis.__pwn = 1; /* Y', 
   "valid": false,
   "errors": [
     "Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)",
-    "Invalid command name: X */\nglobalThis.__pwn = 1; /* Y (must be valid identifier)"
+    "Invalid command name: X */\nglobalThis.__pwn = 1; /* Y (must be valid identifier)",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" has a name the studio cannot read back: use only letters, digits and underscores"
   ],
   "warnings": [
     "Parameter \"X */\nglobalThis.__pwn = 1; /* Y\" is not a valid JS identifier (will still work in MZ)",
+    "Struct \"X */\nglobalThis.__pwn = 1; /* Y\" contains \"_\": RPG Maker MZ's editor accepts only letters and digits in a struct name",
     "Plugin @target: \"*/\" is written as \"*\\/\" so it cannot end the comment.",
     "Plugin @target: a line break is written as a space, because each annotation is one line.",
     "Plugin @plugindesc: \"*/\" is written as \"*\\/\" so it cannot end the comment.",

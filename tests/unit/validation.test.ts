@@ -1,6 +1,7 @@
 // Tests for validation — extended checks
 import { describe, it, expect } from 'vitest'
-import { validatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { generatePlugin, validatePlugin } from '../../src/renderer/src/lib/generator/index'
+import { PluginParser } from '../../src/main/services/plugin-parser'
 import { createEmptyCommand, createEmptyParameter } from '../../src/shared/types/plugin'
 import type { PluginDefinition } from '../../src/renderer/src/types/plugin'
 
@@ -546,5 +547,64 @@ describe('validation - line breaks in annotation text', () => {
     expect(
       validatePlugin(plugin).warnings.filter((warning) => warning.includes('line break'))
     ).toStrictEqual([])
+  })
+})
+
+// A plugin whose one parameter is a struct of the given name, with one field.
+function pluginWithStruct(name: string): PluginDefinition {
+  return createTestPlugin({
+    parameters: [
+      {
+        id: 'p',
+        name: 'data',
+        text: 'Data',
+        desc: '',
+        type: 'struct',
+        default: '{}',
+        structType: name
+      }
+    ],
+    structs: [
+      {
+        id: 's',
+        name,
+        parameters: [{ id: 'f', name: 'x', text: 'X', desc: '', type: 'number', default: 0 }]
+      }
+    ]
+  })
+}
+
+describe('validation: struct names', () => {
+  it('errors on a struct name with a space, which a re-import cannot read back', () => {
+    expect(validatePlugin(pluginWithStruct('My Struct')).errors).toStrictEqual([
+      'Struct "My Struct" has a name the studio cannot read back: use only letters, digits and underscores'
+    ])
+  })
+
+  it('errors on an empty struct name', () => {
+    expect(validatePlugin(pluginWithStruct('')).errors).toStrictEqual([
+      'Struct "" has a name the studio cannot read back: use only letters, digits and underscores'
+    ])
+  })
+
+  it('warns on a struct name with an underscore, which re-imports unchanged', () => {
+    const plugin = pluginWithStruct('My_Struct')
+    const opened = PluginParser.parsePlugin(generatePlugin(plugin), 'TestPlugin.js')
+
+    expect({
+      validation: validatePlugin(plugin),
+      structs: opened.structs.map((s) => s.name),
+      structType: opened.parameters.map((p) => p.structType)
+    }).toStrictEqual({
+      validation: {
+        valid: true,
+        errors: [],
+        warnings: [
+          'Struct "My_Struct" contains "_": RPG Maker MZ\'s editor accepts only letters and digits in a struct name'
+        ]
+      },
+      structs: ['My_Struct'],
+      structType: ['My_Struct']
+    })
   })
 })

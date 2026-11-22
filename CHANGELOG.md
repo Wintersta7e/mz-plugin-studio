@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- The validator reports a struct name with a space, any character other than a letter, digit or underscore, or no name at all as an error: the studio writes such a name but cannot read it back when the plugin is opened again, so the struct was lost. A struct name with an underscore is now a warning, because RPG Maker MZ's editor accepts only letters and digits there.
+
 ## [1.9.0] - 2026-11-19
 
 ### Added
