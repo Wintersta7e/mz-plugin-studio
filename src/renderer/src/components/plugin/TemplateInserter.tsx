@@ -35,6 +35,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import log from 'electron-log/renderer'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { TooltipProvider } from '../ui/tooltip'
@@ -53,22 +54,6 @@ import {
 import { useTemplateStore, useUIStore } from '../../stores'
 import { HighlightedCode } from './CodeHighlight'
 import { TemplateFieldList } from './TemplateFields'
-
-// Import templates to register them
-import '../../lib/generator/templates/method-alias'
-import '../../lib/generator/templates/scene-hooks'
-import '../../lib/generator/templates/custom-window'
-import '../../lib/generator/templates/save-load'
-import '../../lib/generator/templates/input-handler'
-import '../../lib/generator/templates/database-extension'
-import '../../lib/generator/templates/battle-system'
-import '../../lib/generator/templates/plugin-commands'
-import '../../lib/generator/templates/sprite-system'
-import '../../lib/generator/templates/map-events'
-import '../../lib/generator/templates/menu-system'
-import '../../lib/generator/templates/audio-system'
-import '../../lib/generator/templates/message-system'
-import '../../lib/generator/templates/actor-party'
 
 type TemplateInserterProps = Readonly<{
   open: boolean
@@ -124,7 +109,8 @@ function buildPreview(template: CodeTemplate | undefined, values: FieldValues): 
   if (!validation.valid) return { code: '', errors: validation.errors }
   try {
     return { code: template.generate(values), errors: [] }
-  } catch {
+  } catch (error) {
+    log.error('[templates] generate failed', template.id, error)
     return { code: GENERATE_ERROR, errors: [] }
   }
 }

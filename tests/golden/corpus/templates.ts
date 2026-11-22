@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 // Cases for every code template: one base per template, one-factor variants of it, and hostile
 // text in each free-text field. Each case records whether validation rejects it and what
 // generate() returns today, on separate lines.
@@ -16,14 +15,6 @@ import {
 } from '../../../src/renderer/src/lib/generator/class-registry'
 import { ALL_PAYLOADS } from '../../helpers/hostile'
 import { byCodeUnit, oneLine } from './normalise'
-
-// Each template module registers itself when loaded.
-const TEMPLATE_MODULES = import.meta.glob(
-  '../../../src/renderer/src/lib/generator/templates/*.ts',
-  {
-    eager: true
-  }
-)
 
 export interface TemplateCase {
   name: string
@@ -130,7 +121,7 @@ function template(id: string): CodeTemplate {
 const isEmpty = (value: unknown): boolean => value === undefined || value === ''
 
 export function templateIds(): string[] {
-  if (Object.keys(TEMPLATE_MODULES).length === 0) throw new Error('no template module loaded')
+  if (getAllTemplates().length === 0) throw new Error('the template registry lists no template')
   return getAllTemplates()
     .map((t) => t.id)
     .toSorted(byCodeUnit)

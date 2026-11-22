@@ -5,7 +5,6 @@ Generates code for handling keyboard and gamepad input in RPG Maker MZ.
 Supports key mapping registration, scene-specific handlers, and multiple trigger types.
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { expectText, valueOr } from './values'
 
@@ -235,5 +234,5 @@ const inputHandlerTemplate: CodeTemplate = {
   }
 }
 
-// Register the template when this module loads
-registerTemplate(inputHandlerTemplate)
+// The templates of this category, in the order the dialog lists them
+export const inputHandlerTemplates: readonly CodeTemplate[] = [inputHandlerTemplate]

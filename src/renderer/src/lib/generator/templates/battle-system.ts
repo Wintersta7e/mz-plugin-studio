@@ -8,7 +8,6 @@ Templates for modifying RPG Maker MZ battle mechanics:
 - Action execution hooks
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { isOneLineExpression } from '../escape'
 import { definedOr, expectText, valueOr } from './values'
@@ -578,8 +577,10 @@ const actionSequenceTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(damageModifierTemplate)
-registerTemplate(battleEventTemplate)
-registerTemplate(stateHookTemplate)
-registerTemplate(actionSequenceTemplate)
+// The templates of this category, in the order the dialog lists them
+export const battleSystemTemplates: readonly CodeTemplate[] = [
+  damageModifierTemplate,
+  battleEventTemplate,
+  stateHookTemplate,
+  actionSequenceTemplate
+]

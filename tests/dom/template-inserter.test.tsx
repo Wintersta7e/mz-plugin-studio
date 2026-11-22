@@ -1,5 +1,5 @@
 // The template dialog: what it does with field text the template's own checks would refuse.
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, beforeEach, onTestFinished, vi, type Mock } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { TemplateInserter } from '../../src/renderer/src/components/plugin/TemplateInserter'
@@ -270,6 +270,26 @@ describe('template dialog actions: insertion and dismissal', () => {
       soundEffectTemplate().generate({ ...getTemplateDefaults(SE_ID), filename: 'Cursor9' })
     )
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('logs a template that throws while writing its code, naming the template', async () => {
+    expect.hasAssertions()
+
+    const failure = new Error('cannot write this code')
+    const generate = vi.spyOn(soundEffectTemplate(), 'generate').mockImplementation(() => {
+      throw failure
+    })
+    onTestFinished(() => {
+      generate.mockRestore()
+    })
+    const { default: log } = await import('electron-log/renderer')
+    const user = userEvent.setup()
+    renderInserter()
+    await pickSoundEffect(user)
+    await setFilename(user)
+
+    expect(screen.getByText(/Error generating code/)).toBeInTheDocument()
+    expect(log.error).toHaveBeenLastCalledWith('[templates] generate failed', SE_ID, failure)
   })
 
   it('cancel and a click on the backdrop close it; a click inside the panel does not', async () => {

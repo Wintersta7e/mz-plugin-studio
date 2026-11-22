@@ -51,6 +51,15 @@ export default {
       to: { path: '^(tests|tools|scripts|e2e)/' }
     },
     {
+      // A category module's templates are read through the registry, which lists each id once.
+      name: 'templates-through-registry',
+      severity: 'error',
+      from: { pathNot: String.raw`^src/renderer/src/lib/generator/templates/index\.ts$` },
+      to: {
+        path: String.raw`^src/renderer/src/lib/generator/templates/(?!index|types|values)[^/]+\.ts$`
+      }
+    },
+    {
       name: 'no-orphans',
       severity: 'error',
       from: { orphan: true, pathNot: String.raw`\.d\.ts$` },

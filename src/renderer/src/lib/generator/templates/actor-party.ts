@@ -7,7 +7,6 @@ Templates for modifying RPG Maker MZ actor and party systems:
 - Equipment hooks (equip/unequip events)
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { defaultLiteralOf, definedOr, expectText, valueOr } from './values'
 
@@ -894,7 +893,9 @@ const equipmentHookTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(customActorPropertyTemplate)
-registerTemplate(partyManagementTemplate)
-registerTemplate(equipmentHookTemplate)
+// The templates of this category, in the order the dialog lists them
+export const actorPartyTemplates: readonly CodeTemplate[] = [
+  customActorPropertyTemplate,
+  partyManagementTemplate,
+  equipmentHookTemplate
+]

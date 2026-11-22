@@ -8,7 +8,6 @@ Templates for RPG Maker MZ map and event manipulation:
 - Parallel process updates on the map
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { definedOr, expectText, valueOr } from './values'
 
@@ -1036,8 +1035,10 @@ const parallelProcessTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(eventSpawnTemplate)
-registerTemplate(movementRouteTemplate)
-registerTemplate(mapTransferHookTemplate)
-registerTemplate(parallelProcessTemplate)
+// The templates of this category, in the order the dialog lists them
+export const mapEventsTemplates: readonly CodeTemplate[] = [
+  eventSpawnTemplate,
+  movementRouteTemplate,
+  mapTransferHookTemplate,
+  parallelProcessTemplate
+]

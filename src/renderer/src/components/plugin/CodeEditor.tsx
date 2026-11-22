@@ -10,6 +10,7 @@ import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
 import { editorTheme } from '../../lib/editor-theme'
 import { RAW_MODE_READ_ONLY_NOTICE, useIsRawModeActive } from '../../lib/raw-mode'
+import { appendTemplateCode } from '../../lib/generator/templates'
 
 /**
 Inserts `code` where the editor says: over the selection, after a blank line at the end of code
@@ -134,8 +135,8 @@ export function CodeEditor() {
   const handleInsertTemplate = (code: string) => {
     const ed = editorRef.current
     if (ed === null) {
-      // Fallback: append to store value
-      setCustomCode((customCode.trim() === '' ? '' : customCode + '\n\n') + code)
+      // No editor has mounted yet: append to the store value
+      setCustomCode(appendTemplateCode(customCode, code))
       return
     }
     insertIntoEditor(ed, code)

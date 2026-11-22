@@ -7,7 +7,6 @@ Templates for RPG Maker MZ sprite manipulation:
 - Sprite animation (frame-based)
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString } from '../escape'
 import { decimalIntegerOf, expectText, valueOr } from './values'
@@ -1172,7 +1171,9 @@ const spriteAnimationTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(customSpriteClassTemplate)
-registerTemplate(pictureManipulationTemplate)
-registerTemplate(spriteAnimationTemplate)
+// The templates of this category, in the order the dialog lists them
+export const spriteSystemTemplates: readonly CodeTemplate[] = [
+  customSpriteClassTemplate,
+  pictureManipulationTemplate,
+  spriteAnimationTemplate
+]

@@ -1,55 +1,40 @@
 /**
 Template Registry
-Central registry for code generation templates
+Every code template, built once from each category's list
 */
 
-import log from 'electron-log/renderer'
 import type { CodeTemplate, TemplateCategory, TemplateField } from './types'
+import { methodAliasTemplates } from './method-alias'
+import { sceneHooksTemplates } from './scene-hooks'
+import { customWindowTemplates } from './custom-window'
+import { saveLoadTemplates } from './save-load'
+import { inputHandlerTemplates } from './input-handler'
+import { databaseExtensionTemplates } from './database-extension'
+import { battleSystemTemplates } from './battle-system'
+import { pluginCommandsTemplates } from './plugin-commands'
+import { spriteSystemTemplates } from './sprite-system'
+import { mapEventsTemplates } from './map-events'
+import { menuSystemTemplates } from './menu-system'
+import { audioSystemTemplates } from './audio-system'
+import { messageSystemTemplates } from './message-system'
+import { actorPartyTemplates } from './actor-party'
 
 // Re-export all types
 export * from './types'
-
-// Template storage
-const templates = new Map<string, CodeTemplate>()
+export { appendTemplateCode } from '../custom-code'
 
 /**
-Register a template with the registry
-@param template - The template to register
+The templates of one list, read by id or category, and the checks and defaults of their fields
 */
-export function registerTemplate(template: CodeTemplate): void {
-  if (templates.has(template.id)) {
-    log.warn(`Template with id "${template.id}" is being overwritten`)
-  }
-  templates.set(template.id, template)
-}
-
-/**
-Get all registered templates
-@returns Array of all templates
-*/
-export function getAllTemplates(): CodeTemplate[] {
-  return templates.values().toArray()
-}
-
-/**
-Get templates filtered by category
-@param category - The category to filter by
-@returns Array of templates in the specified category
-*/
-export function getTemplatesByCategory(category: TemplateCategory): CodeTemplate[] {
-  return templates
-    .values()
-    .filter((t) => t.category === category)
-    .toArray()
-}
-
-/**
-Get a single template by ID
-@param id - The template ID
-@returns The template if found, undefined otherwise
-*/
-export function getTemplate(id: string): CodeTemplate | undefined {
-  return templates.get(id)
+export interface TemplateRegistry {
+  readonly getAllTemplates: () => CodeTemplate[]
+  readonly getTemplatesByCategory: (category: TemplateCategory) => CodeTemplate[]
+  readonly getTemplate: (id: string) => CodeTemplate | undefined
+  readonly validateTemplateValues: (
+    templateId: string,
+    values: Record<string, unknown>
+  ) => { valid: boolean; errors: string[] }
+  readonly getTemplateDefaults: (templateId: string) => Record<string, unknown>
 }
 
 // The JavaScript type a value of each field type holds, and how an error names it.
@@ -76,15 +61,16 @@ function isOfferedChoice(field: TemplateField, value: unknown): boolean {
 
 /**
 Validate template values without generating code
+@param template - The template, undefined when its id names none
 @param templateId - The ID of the template
 @param values - The field values to validate
 @returns Validation result with valid flag and any errors
 */
-export function validateTemplateValues(
+function validateValues(
+  template: CodeTemplate | undefined,
   templateId: string,
   values: Record<string, unknown>
 ): { valid: boolean; errors: string[] } {
-  const template = templates.get(templateId)
   if (!template) {
     return { valid: false, errors: [`Template "${templateId}" not found`] }
   }
@@ -129,11 +115,10 @@ export function validateTemplateValues(
 
 /**
 Get default values for a template's fields
-@param templateId - The ID of the template
+@param template - The template, undefined when its id names none
 @returns Object with field IDs mapped to their default values
 */
-export function getTemplateDefaults(templateId: string): Record<string, unknown> {
-  const template = templates.get(templateId)
+function defaultsOf(template: CodeTemplate | undefined): Record<string, unknown> {
   if (!template) {
     return {}
   }
@@ -147,3 +132,55 @@ export function getTemplateDefaults(templateId: string): Record<string, unknown>
 
   return defaults
 }
+
+/**
+A registry over the given templates, in their order
+@param list - The templates, each id once
+@throws Error when two templates share an id
+@internal exported for tests
+*/
+export function createTemplateRegistry(list: readonly CodeTemplate[]): TemplateRegistry {
+  const templates = new Map<string, CodeTemplate>()
+  for (const template of list) {
+    if (templates.has(template.id)) {
+      throw new Error(`Template id "${template.id}" is defined twice`)
+    }
+    templates.set(template.id, template)
+  }
+  return {
+    getAllTemplates: () => templates.values().toArray(),
+    getTemplatesByCategory: (category) =>
+      templates
+        .values()
+        .filter((t) => t.category === category)
+        .toArray(),
+    getTemplate: (id) => templates.get(id),
+    validateTemplateValues: (templateId, values) =>
+      validateValues(templates.get(templateId), templateId, values),
+    getTemplateDefaults: (templateId) => defaultsOf(templates.get(templateId))
+  }
+}
+
+// Every category's templates, in the order the dialog lists them
+export const {
+  getAllTemplates,
+  getTemplatesByCategory,
+  getTemplate,
+  validateTemplateValues,
+  getTemplateDefaults
+} = createTemplateRegistry([
+  ...methodAliasTemplates,
+  ...sceneHooksTemplates,
+  ...customWindowTemplates,
+  ...saveLoadTemplates,
+  ...inputHandlerTemplates,
+  ...databaseExtensionTemplates,
+  ...battleSystemTemplates,
+  ...pluginCommandsTemplates,
+  ...spriteSystemTemplates,
+  ...mapEventsTemplates,
+  ...menuSystemTemplates,
+  ...audioSystemTemplates,
+  ...messageSystemTemplates,
+  ...actorPartyTemplates
+])

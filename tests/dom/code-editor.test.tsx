@@ -1,6 +1,6 @@
 // The Code tab: what is typed reaches the plugin code, a template is inserted where the editor
 // says, and the tab's completion provider lives as long as the tab.
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { CodeEditor } from '../../src/renderer/src/components/plugin/CodeEditor'
@@ -10,6 +10,14 @@ import { usePluginStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { monacoStub } from '../setup/monaco-stub'
 import { resetStores } from './support/reset-stores'
+
+// The real append rule, recorded: the tab must reach it rather than append on its own
+const appendTemplateCode = vi.hoisted(() => vi.fn<(customCode: string, code: string) => string>())
+vi.mock(import('../../src/renderer/src/lib/generator/custom-code'), async (importOriginal) => {
+  const actual = await importOriginal()
+  appendTemplateCode.mockImplementation(actual.appendTemplateCode)
+  return { appendTemplateCode }
+})
 
 const SE_ID = 'audio-se-player'
 const seCode = (): string => {
@@ -86,6 +94,23 @@ describe('code tab', () => {
     await insertSoundEffect(user)
 
     expect(editor()).toHaveValue('const a = 1;\n\n' + SE_CODE)
+  })
+
+  it('appends the template through the plugin code while no editor has mounted', async () => {
+    expect.hasAssertions()
+
+    monacoStub.mounts = false
+    appendTemplateCode.mockClear()
+    const user = openCodeTab('const a = 1;')
+    await insertSoundEffect(user)
+
+    expect({
+      code: usePluginStore.getState().plugin.customCode,
+      calls: appendTemplateCode.mock.calls
+    }).toStrictEqual({
+      code: 'const a = 1;\n\n' + SE_CODE,
+      calls: [['const a = 1;', SE_CODE]]
+    })
   })
 
   it('replaces the selected code with the template', async () => {

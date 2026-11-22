@@ -5,7 +5,6 @@ Generates code for creating custom window classes in RPG Maker MZ
 and optionally integrating them into existing scenes.
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { escapeJSString } from '../escape'
 import { decimalIntegerOf, expectText, valueOr } from './values'
@@ -1385,8 +1384,10 @@ const gaugeWindowTemplate: CodeTemplate = {
   }
 }
 
-// Register the templates when this module loads
-registerTemplate(customWindowTemplate)
-registerTemplate(hudOverlayWindowTemplate)
-registerTemplate(popupNotificationTemplate)
-registerTemplate(gaugeWindowTemplate)
+// The templates of this category, in the order the dialog lists them
+export const customWindowTemplates: readonly CodeTemplate[] = [
+  customWindowTemplate,
+  hudOverlayWindowTemplate,
+  popupNotificationTemplate,
+  gaugeWindowTemplate
+]

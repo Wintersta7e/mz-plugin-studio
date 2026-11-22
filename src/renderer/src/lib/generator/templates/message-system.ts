@@ -7,7 +7,6 @@ Templates for modifying RPG Maker MZ message and text systems:
 - Choice window handling and styling
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString, isOneLineExpression } from '../escape'
 import { definedOr, expectText, valueOr } from './values'
@@ -1013,7 +1012,9 @@ const choiceHandlerTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(customTextCodeTemplate)
-registerTemplate(messageWindowModuleTemplate)
-registerTemplate(choiceHandlerTemplate)
+// The templates of this category, in the order the dialog lists them
+export const messageSystemTemplates: readonly CodeTemplate[] = [
+  customTextCodeTemplate,
+  messageWindowModuleTemplate,
+  choiceHandlerTemplate
+]

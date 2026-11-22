@@ -5,7 +5,6 @@ Generates code for persisting custom data in RPG Maker MZ save files.
 Data is automatically saved and loaded with the game's save system.
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
@@ -301,5 +300,5 @@ const saveLoadTemplate: CodeTemplate = {
   }
 }
 
-// Register the template when this module loads
-registerTemplate(saveLoadTemplate)
+// The templates of this category, in the order the dialog lists them
+export const saveLoadTemplates: readonly CodeTemplate[] = [saveLoadTemplate]

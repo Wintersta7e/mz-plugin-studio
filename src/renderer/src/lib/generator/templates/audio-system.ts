@@ -7,7 +7,6 @@ Templates for RPG Maker MZ audio control:
 - Audio fade and crossfade effects
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString, escapeLineComment } from '../escape'
 import { expectText, providedOr, valueOr } from './values'
@@ -639,7 +638,9 @@ const audioCrossfadeTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(bgmControlTemplate)
-registerTemplate(sePlayerTemplate)
-registerTemplate(audioCrossfadeTemplate)
+// The templates of this category, in the order the dialog lists them
+export const audioSystemTemplates: readonly CodeTemplate[] = [
+  bgmControlTemplate,
+  sePlayerTemplate,
+  audioCrossfadeTemplate
+]

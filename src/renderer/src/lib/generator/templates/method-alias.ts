@@ -5,7 +5,6 @@ Generates code for safely extending existing RPG Maker MZ class methods
 while preserving original behavior through aliasing.
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { getMethodInfo } from '../class-registry'
 import { valueOr } from './values'
@@ -207,5 +206,5 @@ const methodAliasTemplate: CodeTemplate = {
   }
 }
 
-// Register the template when this module loads
-registerTemplate(methodAliasTemplate)
+// The templates of this category, in the order the dialog lists them
+export const methodAliasTemplates: readonly CodeTemplate[] = [methodAliasTemplate]

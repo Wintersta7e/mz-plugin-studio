@@ -8,7 +8,6 @@ Templates for RPG Maker MZ menu and scene customization:
 - Options menu additions
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
 import { expectText } from './values'
@@ -1205,8 +1204,10 @@ const optionsMenuAdditionTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(customMenuSceneTemplate)
-registerTemplate(titleScreenModuleTemplate)
-registerTemplate(menuCommandAdditionTemplate)
-registerTemplate(optionsMenuAdditionTemplate)
+// The templates of this category, in the order the dialog lists them
+export const menuSystemTemplates: readonly CodeTemplate[] = [
+  customMenuSceneTemplate,
+  titleScreenModuleTemplate,
+  menuCommandAdditionTemplate,
+  optionsMenuAdditionTemplate
+]

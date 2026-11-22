@@ -1,7 +1,7 @@
 {
   "jscpd": {
-    "clones": 40,
-    "duplicatedLines": 476,
+    "clones": 39,
+    "duplicatedLines": 464,
     "src": {
       "clones": 10,
       "duplicatedLines": 134
@@ -52,7 +52,8 @@
         "src/renderer/src/lib/generator/escape.ts": 97,
         "src/renderer/src/lib/generator/class-registry.ts": 100,
         "src/renderer/src/lib/generator/naming.ts": 100,
-        "src/renderer/src/lib/generator/templates/index.ts": 92,
+        "src/renderer/src/lib/generator/custom-code.ts": 0,
+        "src/renderer/src/lib/generator/templates/index.ts": 93,
         "src/renderer/src/lib/generator/templates/types.ts": 100,
         "src/renderer/src/lib/generator/templates/actor-party.ts": 100,
         "src/renderer/src/lib/generator/templates/audio-system.ts": 100,

@@ -3,7 +3,6 @@ Scene Hooks Template
 Provides templates for hooking into RPG Maker MZ scene lifecycle methods
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 
 const sceneHooksTemplate: CodeTemplate = {
@@ -68,4 +67,5 @@ ${sceneName}.prototype.${hookPoint} = function() {
   }
 }
 
-registerTemplate(sceneHooksTemplate)
+// The templates of this category, in the order the dialog lists them
+export const sceneHooksTemplates: readonly CodeTemplate[] = [sceneHooksTemplate]

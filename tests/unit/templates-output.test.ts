@@ -2,27 +2,7 @@
 // Each test validates the GENERATED output string produced by a template's
 // `generate()` function.
 
-import { describe, it, expect, vi } from 'vitest'
-
-// Mock electron-log/renderer before template files (which import it transitively)
-vi.mock<Record<'default', unknown>>(import('electron-log/renderer'), () => ({
-  default: {
-    warn: vi.fn<() => void>(),
-    info: vi.fn<() => void>(),
-    error: vi.fn<() => void>(),
-    debug: vi.fn<() => void>()
-  }
-}))
-
-// Side-effect imports register each template into the shared registry
-import '../../src/renderer/src/lib/generator/templates/method-alias'
-import '../../src/renderer/src/lib/generator/templates/save-load'
-import '../../src/renderer/src/lib/generator/templates/input-handler'
-import '../../src/renderer/src/lib/generator/templates/battle-system'
-import '../../src/renderer/src/lib/generator/templates/plugin-commands'
-import '../../src/renderer/src/lib/generator/templates/message-system'
-import '../../src/renderer/src/lib/generator/templates/audio-system'
-
+import { describe, it, expect } from 'vitest'
 import {
   getTemplate,
   getTemplateDefaults,

@@ -14,24 +14,24 @@ src/renderer/src/lib/generator/templates/
 
 Key files:
 
-| File                    | Purpose                                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------------------- |
-| `types.ts`              | TypeScript interfaces (`CodeTemplate`, `TemplateField`, `CategoryInfo`, etc.)             |
-| `index.ts`              | Template registry (`registerTemplate`, `getAllTemplates`, `getTemplatesByCategory`, etc.) |
-| `method-alias.ts`       | Method Aliasing templates                                                                 |
-| `custom-window.ts`      | Custom Windows templates                                                                  |
-| `scene-hooks.ts`        | Scene Hooks templates                                                                     |
-| `database-extension.ts` | Notetag templates                                                                         |
-| `plugin-commands.ts`    | Plugin Command templates                                                                  |
-| `save-load.ts`          | Save/Load templates                                                                       |
-| `input-handler.ts`      | Input Handler templates                                                                   |
-| `battle-system.ts`      | Battle System templates                                                                   |
-| `sprite-system.ts`      | Sprite System templates                                                                   |
-| `map-events.ts`         | Map & Events templates                                                                    |
-| `menu-system.ts`        | Menu System templates                                                                     |
-| `audio-system.ts`       | Audio System templates                                                                    |
-| `message-system.ts`     | Message System templates                                                                  |
-| `actor-party.ts`        | Actor & Party templates                                                                   |
+| File                    | Purpose                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `types.ts`              | TypeScript interfaces (`CodeTemplate`, `TemplateField`, `CategoryInfo`, etc.)                   |
+| `index.ts`              | Template registry (`createTemplateRegistry`, `getAllTemplates`, `getTemplatesByCategory`, etc.) |
+| `method-alias.ts`       | Method Aliasing templates                                                                       |
+| `custom-window.ts`      | Custom Windows templates                                                                        |
+| `scene-hooks.ts`        | Scene Hooks templates                                                                           |
+| `database-extension.ts` | Notetag templates                                                                               |
+| `plugin-commands.ts`    | Plugin Command templates                                                                        |
+| `save-load.ts`          | Save/Load templates                                                                             |
+| `input-handler.ts`      | Input Handler templates                                                                         |
+| `battle-system.ts`      | Battle System templates                                                                         |
+| `sprite-system.ts`      | Sprite System templates                                                                         |
+| `map-events.ts`         | Map & Events templates                                                                          |
+| `menu-system.ts`        | Menu System templates                                                                           |
+| `audio-system.ts`       | Audio System templates                                                                          |
+| `message-system.ts`     | Message System templates                                                                        |
+| `actor-party.ts`        | Actor & Party templates                                                                         |
 
 The UI component that renders templates is `TemplateInserter.tsx` in `src/renderer/src/components/plugin/`.
 
@@ -39,20 +39,13 @@ The UI component that renders templates is `TemplateInserter.tsx` in `src/render
 
 ## Template Architecture
 
-Templates use a self-registering module pattern. Each template file:
+Templates are static lists. Each category file:
 
-1. Imports `registerTemplate` from the registry (`./index`)
-2. Defines one or more `CodeTemplate` objects
-3. Calls `registerTemplate()` at module load time to add them to the global registry
-4. Exports the template objects for external reference
+1. Defines one or more `CodeTemplate` objects
+2. Exports them as one list, `export const <category>Templates: readonly CodeTemplate[]`, in the order the dialog lists them
+3. Imports nothing from the registry (`./index`)
 
-The `TemplateInserter.tsx` component imports every template file as a side-effect import to trigger registration:
-
-```typescript
-import '../../lib/generator/templates/method-alias'
-import '../../lib/generator/templates/custom-window'
-// ... etc.
-```
+The registry (`index.ts`) imports every category's list and builds the id map once through `createTemplateRegistry()`, which throws when two templates share an id. Everything else reads templates through the registry: importing a category file from anywhere else fails `npm run deps` (rule `templates-through-registry`).
 
 When the user opens the Template Inserter dialog, it queries the registry via `getTemplatesByCategory()` and `getAllTemplates()` to populate the UI.
 
@@ -86,7 +79,6 @@ interface CodeTemplate {
 Here is a minimal template definition:
 
 ```typescript
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 
 const myTemplate: CodeTemplate = {
@@ -119,34 +111,30 @@ const myTemplate: CodeTemplate = {
   }
 }
 
-registerTemplate(myTemplate)
-export { myTemplate }
+export const myCategoryTemplates: readonly CodeTemplate[] = [myTemplate]
 ```
 
-### Step 3: Register the Template
+### Step 3: Add the Template to Its Category's List
 
-Call `registerTemplate(myTemplate)` at the module level (outside any function). This runs when the module is first imported. The registry will warn if an ID is already taken.
+Add the template to the list the category file exports. The dialog lists templates in that order. The registry throws when the id is already taken.
 
-If you are adding to an existing file that already calls `registerTemplate` for other templates, just add your call alongside them:
+If you are adding to an existing file, add your template to the list already at its bottom:
 
 ```typescript
-// At the bottom of the file, alongside existing registrations
-registerTemplate(existingTemplate)
-registerTemplate(myTemplate)
-
-export { existingTemplate, myTemplate }
+// At the bottom of the file
+export const myCategoryTemplates: readonly CodeTemplate[] = [existingTemplate, myTemplate]
 ```
 
-### Step 4: Import in TemplateInserter.tsx (New Files Only)
+### Step 4: Add the List to the Registry (New Files Only)
 
-If you created a **new category file**, you must add a side-effect import in `TemplateInserter.tsx` so the templates get registered when the UI loads:
+If you created a **new category file**, import its list in `index.ts` and add it to the `createTemplateRegistry()` call, at the place the dialog should list it:
 
 ```typescript
-// In TemplateInserter.tsx, add alongside existing imports:
-import '../../lib/generator/templates/my-new-category'
+// In index.ts, alongside the other category imports:
+import { myCategoryTemplates } from './my-new-category'
 ```
 
-If you added your template to an existing file, no import changes are needed -- the file is already imported.
+If you added your template to an existing file, no import changes are needed -- the file's list is already in the registry.
 
 ### Step 5: Add Golden Cases
 
@@ -162,7 +150,7 @@ Review the written file, then commit it in a test-only commit (no `src/` change)
 
 ## Adding a New Category
 
-Adding a new category requires changes in three files:
+Adding a new category requires changes in three files, beside its category file's list in the registry (Step 4 above):
 
 ### 1. Add to `TemplateCategory` Union Type
 
@@ -524,7 +512,6 @@ Below is a complete, annotated template that adds a "Custom Game Variable" patte
  * change notification support.
  */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { expectText } from './values'
 
@@ -761,12 +748,8 @@ const customGameVariableTemplate: CodeTemplate = {
   }
 }
 
-// Register the template when this module is imported.
-// This must be at module scope (not inside a function).
-registerTemplate(customGameVariableTemplate)
-
-// Export so other modules can reference it if needed.
-export { customGameVariableTemplate }
+// The category's list: the registry (`index.ts`) reads it, and the dialog lists it in this order.
+export const gameVariableTemplates: readonly CodeTemplate[] = [customGameVariableTemplate]
 ```
 
 ### What this Template Generates
@@ -813,8 +796,8 @@ Before submitting a new template, verify:
 - [ ] **Unique ID**: The `id` is kebab-case and does not collide with existing template IDs
 - [ ] **Valid category**: The `category` matches an entry in the `TemplateCategory` union type
 - [ ] **Icon mapping**: The `icon` name has a corresponding entry in `ICON_MAP` (in `TemplateInserter.tsx`)
-- [ ] **Registration**: `registerTemplate()` is called at module scope
-- [ ] **Import**: If this is a new file, it is imported in `TemplateInserter.tsx`
+- [ ] **Listing**: The template is in its category file's exported list
+- [ ] **Registry**: If this is a new file, its list is imported in `index.ts` and passed to `createTemplateRegistry()`
 - [ ] **Generated code is valid**: The `generate` function produces syntactically correct JavaScript for all field combinations
 - [ ] **Edge cases**: The `generate` function handles empty/missing optional field values with sensible defaults
 - [ ] **Validation**: Required fields, identifier formats, and numeric ranges are all checked

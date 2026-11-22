@@ -1,18 +1,11 @@
 // COV-09: Template system tests
-// Tests the template registry: registerTemplate, getTemplatesByCategory,
+// Tests the template registry: building it from a list, getTemplatesByCategory,
 // validateTemplateValues, getTemplateDefaults
-import { describe, it, expect, vi } from 'vitest'
-
-// Mock electron-log/renderer before any imports that transitively use it
-vi.mock<Record<'default', unknown>>(import('electron-log/renderer'), () => ({
-  default: {
-    warn: vi.fn<() => void>(),
-    info: vi.fn<() => void>(),
-    error: vi.fn<() => void>(),
-    debug: vi.fn<() => void>()
-  }
-}))
-import type * as Registry from '../../src/renderer/src/lib/generator/templates/index'
+import { describe, it, expect } from 'vitest'
+import {
+  createTemplateRegistry,
+  type TemplateRegistry
+} from '../../src/renderer/src/lib/generator/templates/index'
 import type { CodeTemplate } from '../../src/renderer/src/lib/generator/templates/types'
 
 const textOr = (value: unknown, fallback: string): string =>
@@ -72,49 +65,44 @@ const customValidated = (): CodeTemplate =>
   })
 
 /**
-Imports the registry afresh, with the given templates registered: it is module state, so no case
-sees another's
+A registry built from the given templates alone, so no case sees another's
 */
-async function freshRegistry(...registered: CodeTemplate[]): Promise<typeof Registry> {
-  vi.resetModules()
-  const registry = await import('../../src/renderer/src/lib/generator/templates/index')
-  for (const template of registered) registry.registerTemplate(template)
-  return registry
+function freshRegistry(...registered: CodeTemplate[]): TemplateRegistry {
+  return createTemplateRegistry(registered)
 }
 
 describe('template registry: registration and listing', () => {
   describe('registerTemplate', () => {
-    it('registers a template and makes it retrievable by id', async () => {
+    it('registers a template and makes it retrievable by id', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
       const tmpl = makeTemplate()
-      registry.registerTemplate(tmpl)
+      const registry = freshRegistry(tmpl)
 
       expect(registry.getTemplate('test-template')).toStrictEqual(tmpl)
     })
 
-    it('overwrites an existing template with the same id', async () => {
+    it('throws on a template id defined twice', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
       const tmpl1 = makeTemplate({ name: 'First' })
       const tmpl2 = makeTemplate({ name: 'Second' })
-      registry.registerTemplate(tmpl1)
-      registry.registerTemplate(tmpl2)
 
-      expect(registry.getTemplate('test-template')?.name).toBe('Second')
+      expect(() => freshRegistry(tmpl1, tmpl2)).toThrow(
+        'Template id "test-template" is defined twice'
+      )
     })
   })
 
   describe('getTemplatesByCategory', () => {
-    it('returns only templates matching the category', async () => {
+    it('returns only templates matching the category', () => {
       expect.assertions(2)
 
-      const registry = await freshRegistry()
-      registry.registerTemplate(makeTemplate({ id: 'ma1', category: 'method-alias' }))
-      registry.registerTemplate(makeTemplate({ id: 'ma2', category: 'method-alias' }))
-      registry.registerTemplate(makeTemplate({ id: 'sc1', category: 'scene-hooks' }))
+      const registry = freshRegistry(
+        makeTemplate({ id: 'ma1', category: 'method-alias' }),
+        makeTemplate({ id: 'ma2', category: 'method-alias' }),
+        makeTemplate({ id: 'sc1', category: 'scene-hooks' })
+      )
 
       const methodAliasTemplates = registry.getTemplatesByCategory('method-alias')
 
@@ -122,31 +110,32 @@ describe('template registry: registration and listing', () => {
       expect(methodAliasTemplates.every((t) => t.category === 'method-alias')).toBe(true)
     })
 
-    it('returns empty array for category with no templates', async () => {
+    it('returns empty array for category with no templates', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
+      const registry = freshRegistry()
 
       expect(registry.getTemplatesByCategory('save-load')).toHaveLength(0)
     })
   })
 
   describe('getAllTemplates', () => {
-    it('returns all registered templates', async () => {
+    it('returns all registered templates', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
-      registry.registerTemplate(makeTemplate({ id: 't1' }))
-      registry.registerTemplate(makeTemplate({ id: 't2' }))
-      registry.registerTemplate(makeTemplate({ id: 't3' }))
+      const registry = freshRegistry(
+        makeTemplate({ id: 't1' }),
+        makeTemplate({ id: 't2' }),
+        makeTemplate({ id: 't3' })
+      )
 
       expect(registry.getAllTemplates()).toHaveLength(3)
     })
 
-    it('returns empty array when registry is empty', async () => {
+    it('returns empty array when registry is empty', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
+      const registry = freshRegistry()
 
       expect(registry.getAllTemplates()).toHaveLength(0)
     })
@@ -155,10 +144,10 @@ describe('template registry: registration and listing', () => {
 
 describe('template registry: validation', () => {
   describe('validateTemplateValues', () => {
-    it('returns valid when all required fields are provided', async () => {
+    it('returns valid when all required fields are provided', () => {
       expect.assertions(2)
 
-      const registry = await freshRegistry(makeTemplate())
+      const registry = freshRegistry(makeTemplate())
       const result = registry.validateTemplateValues('test-template', {
         className: 'Game_Actor',
         methodName: 'initialize'
@@ -168,10 +157,10 @@ describe('template registry: validation', () => {
       expect(result.errors).toHaveLength(0)
     })
 
-    it('returns invalid when a required field is missing', async () => {
+    it('returns invalid when a required field is missing', () => {
       expect.assertions(2)
 
-      const registry = await freshRegistry(makeTemplate())
+      const registry = freshRegistry(makeTemplate())
       const result = registry.validateTemplateValues('test-template', {
         className: 'Game_Actor'
         // methodName is required but missing
@@ -181,10 +170,10 @@ describe('template registry: validation', () => {
       expect(result.errors.some((error) => error.includes('Method Name'))).toBe(true)
     })
 
-    it('returns invalid when a required field is empty string', async () => {
+    it('returns invalid when a required field is empty string', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry(makeTemplate())
+      const registry = freshRegistry(makeTemplate())
       const result = registry.validateTemplateValues('test-template', {
         className: 'Game_Actor',
         methodName: ''
@@ -193,21 +182,20 @@ describe('template registry: validation', () => {
       expect(result.valid).toBe(false)
     })
 
-    it('returns invalid for non-existent template id', async () => {
+    it('returns invalid for non-existent template id', () => {
       expect.assertions(2)
 
-      const registry = await freshRegistry(makeTemplate())
+      const registry = freshRegistry(makeTemplate())
       const result = registry.validateTemplateValues('nonexistent', {})
 
       expect(result.valid).toBe(false)
       expect(result.errors.some((error) => error.includes('nonexistent'))).toBe(true)
     })
 
-    it('runs custom validator when provided', async () => {
+    it('runs custom validator when provided', () => {
       expect.assertions(3)
 
-      const registry = await freshRegistry(makeTemplate())
-      registry.registerTemplate(customValidated())
+      const registry = freshRegistry(makeTemplate(), customValidated())
 
       const invalid = registry.validateTemplateValues('custom-validated', {
         className: 'Game_Battler',
@@ -229,11 +217,10 @@ describe('template registry: validation', () => {
 
 describe('template registry: defaults', () => {
   describe('getTemplateDefaults', () => {
-    it('returns default values for all fields that have defaults', async () => {
+    it('returns default values for all fields that have defaults', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
-      registry.registerTemplate(makeTemplate())
+      const registry = freshRegistry(makeTemplate())
       const defaults = registry.getTemplateDefaults('test-template')
 
       expect(defaults).toStrictEqual({
@@ -243,20 +230,19 @@ describe('template registry: defaults', () => {
       })
     })
 
-    it('returns empty object for non-existent template', async () => {
+    it('returns empty object for non-existent template', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
+      const registry = freshRegistry()
       const defaults = registry.getTemplateDefaults('nonexistent')
 
       expect(defaults).toStrictEqual({})
     })
 
-    it('excludes fields with no default value', async () => {
+    it('excludes fields with no default value', () => {
       expect.assertions(1)
 
-      const registry = await freshRegistry()
-      registry.registerTemplate(
+      const registry = freshRegistry(
         makeTemplate({
           id: 'no-defaults',
           fields: [

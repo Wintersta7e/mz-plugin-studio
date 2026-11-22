@@ -6,19 +6,23 @@ import { vi, type Mock } from 'vitest'
 
 /**
 Every completion provider registered since the last reset, and whether it was disposed; every
-editor mounted since the last reset, in mount order.
+editor mounted since the last reset, in mount order; whether an editor mounts at all, false for an
+editor still loading.
 */
 export const monacoStub: {
   providers: { language: string; disposed: boolean }[]
   editors: FakeEditor[]
+  mounts: boolean
 } = {
   providers: [],
-  editors: []
+  editors: [],
+  mounts: true
 }
 
 export function resetMonacoStub(): void {
   monacoStub.providers = []
   monacoStub.editors = []
+  monacoStub.mounts = true
 }
 
 interface Disposable {
@@ -168,7 +172,7 @@ export function Editor({
   useEffect(() => {
     const { beforeMount, onMount, onChange } = mountRef.current
     const textarea = textareaRef.current
-    if (textarea === null) return
+    if (textarea === null || !monacoStub.mounts) return
     const monaco = createFakeMonaco()
     beforeMount?.(monaco)
     const editor = createFakeEditor(

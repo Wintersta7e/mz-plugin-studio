@@ -7,7 +7,6 @@ Templates for creating RPG Maker MZ plugin commands:
 - Command with input validation and error handling
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate, ValidationResult } from './types'
 import { escapeJSString } from '../escape'
 import { JS_RESERVED } from '../index'
@@ -707,7 +706,9 @@ const validatedCommandTemplate: CodeTemplate = {
   }
 }
 
-// Register all templates when this module loads
-registerTemplate(basicCommandTemplate)
-registerTemplate(asyncCommandTemplate)
-registerTemplate(validatedCommandTemplate)
+// The templates of this category, in the order the dialog lists them
+export const pluginCommandsTemplates: readonly CodeTemplate[] = [
+  basicCommandTemplate,
+  asyncCommandTemplate,
+  validatedCommandTemplate
+]

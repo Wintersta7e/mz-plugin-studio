@@ -5,7 +5,6 @@ Generates code for parsing custom notetags from RPG Maker MZ database entries.
 Notetags are custom metadata added to the note field of database items.
 */
 
-import { registerTemplate } from './index'
 import type { CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
 
@@ -419,5 +418,5 @@ const databaseExtensionTemplate: CodeTemplate = {
   }
 }
 
-// Register the template when this module loads
-registerTemplate(databaseExtensionTemplate)
+// The templates of this category, in the order the dialog lists them
+export const databaseExtensionTemplates: readonly CodeTemplate[] = [databaseExtensionTemplate]
