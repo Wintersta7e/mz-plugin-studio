@@ -23,6 +23,7 @@ import {
   recordReadGrant,
   recordWriteGrant
 } from '../file-access'
+import { ProjectParser } from '../services/project-parser'
 import { checkFilters, invalidArguments, isFilterExtension, isRecord } from './arguments'
 import type { InvokeHandlers } from './registration'
 
@@ -84,7 +85,8 @@ export async function showMessageDialog(
 
 /**
 Shows the folder picker; returns the chosen folder, or null when cancelled.
-The chosen folder becomes a project folder `project:load` opens without asking.
+A chosen folder that is an RPG Maker MZ project becomes a project folder `project:load` opens
+without asking; any other folder is returned and granted nothing.
 */
 async function openFolderDialog(
   dialog: Pick<Dialog, 'showOpenDialog'>,
@@ -103,7 +105,14 @@ async function openFolderDialog(
   }
 
   log.info(`[dialog:open-folder] Selected: ${selected}`)
-  await recordProjectRoot(selected)
+  const validation = await ProjectParser.validateProject(path.resolve(selected))
+  if (validation.valid) {
+    await recordProjectRoot(selected)
+  } else {
+    log.info(
+      `[dialog:open-folder] Not a project folder, granted nothing: ${selected} (${validation.error ?? 'not valid'})`
+    )
+  }
   return selected
 }
 

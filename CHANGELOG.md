@@ -12,6 +12,7 @@
 - Closing a tab no longer wipes the undo history of the tab you are working in. Before, closing any tab, even one in the background, emptied undo and redo. Closing the tab you are working in still empties them, so an undo in the tab shown next cannot bring back the closed tab's state.
 - The plugin browser matches each project file to the tab that was read from or saved to that file. Before, it matched by plugin name: a new plugin named like a project file took that file's row, so clicking the row switched to the new plugin instead of opening the file; a renamed tab lost its file's row; and a tab opened from another project's file of the same name showed as this project's file.
 - Save All (Ctrl+Shift+S) with no project open saves each unsaved tab as Ctrl+S would: to the file you picked for it earlier in the session, or through the save dialog, with every question Ctrl+S asks. Cancel skips that tab and Save All goes on, and one report names the tabs saved, the tabs skipped and why, and the tabs with no plugin name. Before, Save All did nothing and said nothing without a project.
+- A folder picked with Open Project that is not an RPG Maker MZ project is no longer trusted as a project folder. Before, any picked folder, even an empty one or a project's `js/plugins` folder, was kept as trusted, so if that folder later held a project, the app opened it without asking, as it asks for a folder it has no record of. Opening such a folder still shows the same error as before.
 
 ## [1.9.0] - 2026-11-19
 
