@@ -503,9 +503,7 @@
     {
       "rule": "sonarjs/no-os-command-from-path",
       "files": [
-        "e2e/fixtures/app.ts",
         "e2e/global-setup.ts",
-        "e2e/global-teardown.ts",
         "scripts/check-coverage.mjs",
         "scripts/check-golden-commits.mjs",
         "scripts/check-ratchets.mjs",

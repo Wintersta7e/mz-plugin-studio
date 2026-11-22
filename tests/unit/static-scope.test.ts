@@ -68,6 +68,7 @@ const PROGRAM_OVERLAPS: { glob: string; programs: string[] }[] = [
   { glob: 'scripts/e2e-prepare.mjs', programs: ['scripts', 'test', 'e2e'] },
   { glob: 'scripts/**', programs: ['scripts', 'test'] },
   { glob: 'e2e/{reporter,playwright.config}.ts', programs: ['test', 'e2e'] },
+  { glob: 'e2e/fixtures/teardown.ts', programs: ['test', 'e2e'] },
   { glob: 'vitest.config.ts', programs: ['node', 'test'] }
 ]
 

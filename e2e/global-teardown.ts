@@ -1,54 +1,23 @@
 // Runs once after the suite: fails the run when an app process, a fixture copy or a new file
 // in the working tree outlived the tests, after deleting the run's temp root.
-import { execFileSync } from 'node:child_process'
-import { readdirSync, readFileSync, readlinkSync, rmSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { isWithin, readArtifacts, runRoot } from './fixtures/app'
+import { appDirectories, runRoot } from './fixtures/app'
+import { isWithin, liveProcesses } from './fixtures/teardown'
 import { TREE_SNAPSHOT, treeStatus } from './global-setup'
-
-/**
-The executable of process `pid`, or undefined once it exited or when it is not ours to read
-*/
-function executableOf(pid: string): string | undefined {
-  try {
-    return readlinkSync(`/proc/${pid}/exe`)
-  } catch {
-    return undefined
-  }
-}
-
-/**
-Executables of every running process the platform lets us read
-*/
-function processExecutables(): string[] {
-  if (process.platform === 'win32') {
-    return execFileSync(
-      'powershell',
-      [
-        '-NoProfile',
-        '-Command',
-        'Get-CimInstance Win32_Process | ForEach-Object { $_.ExecutablePath }'
-      ],
-      { encoding: 'utf8' }
-    )
-      .split(/\r?\n/)
-      .filter(Boolean)
-  }
-  return readdirSync('/proc')
-    .filter((entry) => /^\d+$/.test(entry))
-    .map((pid) => executableOf(pid))
-    .filter((executable) => executable !== undefined)
-}
 
 const lines = (text: string): Set<string> => new Set(text.split('\n').filter(Boolean))
 
-export default function globalTeardown(): void {
-  const { release, twin } = readArtifacts()
-  const appDirectories = [path.dirname(release), path.dirname(twin)]
-  const left = processExecutables().filter((exe) =>
-    appDirectories.some((directory) => isWithin(exe, directory))
-  )
+export default async function globalTeardown(): Promise<void> {
+  const directories = appDirectories()
+  const live = await liveProcesses()
+  const left = live
+    .map(({ executablePath }) => executablePath)
+    .filter(
+      (exe): exe is string =>
+        exe !== undefined && directories.some((directory) => isWithin(exe, directory))
+    )
   process.stdout.write(`e2e: app processes left ${String(left.length)}\n`)
   const { E2E_RUN_ROOT: createdRoot, E2E_RUN_START: startText } = process.env
   if (createdRoot === undefined) {

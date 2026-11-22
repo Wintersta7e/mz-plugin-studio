@@ -1,11 +1,13 @@
 // Static rules of the end-to-end suite under e2e/: what it installs, where it launches the app,
 // which locators and test modifiers it may use, and why a run cannot pass with nothing tested.
-import { execFileSync } from 'node:child_process'
+import { execFile, execFileSync, spawn, type ChildProcess } from 'node:child_process'
+import { once } from 'node:events'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FullConfig, FullResult, Suite, TestCase } from '@playwright/test/reporter'
+import { isRunning, killTree, liveProcesses, type RunFile } from '../../e2e/fixtures/teardown'
 import EndToEndReporter from '../../e2e/reporter'
 import { REUSE_FLAG } from '../../scripts/e2e-prepare.mjs'
 import {
@@ -507,5 +509,177 @@ describe('e2e harness: Windows', () => {
         .split(',')
         .map((id) => id.trim())
     ).toContain('e2e-linux')
+  })
+})
+
+async function exitedChild(): Promise<ChildProcess> {
+  const child = spawn(process.execPath, ['-e', ''], { stdio: 'ignore' })
+  await once(child, 'exit')
+  return child
+}
+
+async function runningChild(): Promise<ChildProcess> {
+  // Leads its own process group off Windows, as the launched app does
+  const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+    detached: process.platform !== 'win32',
+    stdio: 'ignore'
+  })
+  await once(child, 'spawn')
+  return child
+}
+
+/**
+Kills `child` through `killTree` with a runner that records each program it is asked to run
+and hands it to `run`, and returns how many `taskkill` runs it saw and whether the child ended
+*/
+async function killedWith(
+  child: ChildProcess,
+  platform: NodeJS.Platform,
+  run: (child: ChildProcess, file: string, args: readonly string[], done: () => void) => void
+): Promise<{ taskkills: number; isEnded: boolean }> {
+  const files: string[] = []
+  const recording: RunFile = (file, args, done) => {
+    files.push(file)
+    run(child, file, args, () => {
+      done(undefined, '')
+    })
+  }
+  await killTree(child, { platform, execFile: recording })
+  if (isRunning(child)) await once(child, 'exit')
+  return {
+    taskkills: files.filter((file) => file === 'taskkill').length,
+    isEnded: !isRunning(child)
+  }
+}
+
+// Stands in for taskkill on a Linux runner: ends the child as taskkill would
+function fakeTaskkill(
+  child: ChildProcess,
+  _file: string,
+  _args: readonly string[],
+  done: () => void
+): void {
+  child.kill('SIGKILL')
+  done()
+}
+
+// This machine's own program: the real taskkill on Windows
+function realRun(
+  _child: ChildProcess,
+  file: string,
+  args: readonly string[],
+  done: () => void
+): void {
+  execFile(file, [...args], () => {
+    done()
+  })
+}
+
+const HOST_TASKKILLS = process.platform === 'win32' ? 1 : 0
+
+describe('e2e harness: teardown', () => {
+  it('runs taskkill only while the child runs, and the process-group kill off Windows', async () => {
+    expect.hasAssertions()
+
+    const rows = [
+      {
+        row: 'win32, exited child',
+        result: await killedWith(await exitedChild(), 'win32', fakeTaskkill)
+      },
+      {
+        row: 'win32, running child',
+        result: await killedWith(await runningChild(), 'win32', fakeTaskkill)
+      },
+      {
+        row: `${process.platform}, running child`,
+        result: await killedWith(await runningChild(), process.platform, realRun)
+      }
+    ]
+    process.stdout.write(`taskkill rows: ${String(rows.length)}\n`)
+
+    expect(rows).toStrictEqual([
+      { row: 'win32, exited child', result: { taskkills: 0, isEnded: true } },
+      { row: 'win32, running child', result: { taskkills: 1, isEnded: true } },
+      {
+        row: `${process.platform}, running child`,
+        result: { taskkills: HOST_TASKKILLS, isEnded: true }
+      }
+    ])
+  })
+
+  it('queries the Windows process list in one place', () => {
+    const queries = e2eModules().reduce(
+      (sum, file) => sum + count(read(file), /Get-CimInstance Win32_Process\b/),
+      0
+    )
+    process.stdout.write(`Win32_Process queries in e2e: ${String(queries)}\n`)
+
+    expect(queries).toBe(1)
+  })
+})
+
+describe('e2e harness: process list', () => {
+  it('reads the Windows process query, one process or many', async () => {
+    expect.hasAssertions()
+
+    const asked: string[][] = []
+    const answering =
+      (stdout: string): RunFile =>
+      (file, args, done) => {
+        asked.push([file, ...args])
+        done(undefined, stdout)
+      }
+    const one = JSON.stringify({
+      ProcessId: 7,
+      ParentProcessId: 1,
+      Name: 'app.exe',
+      ExecutablePath: 'C:\\app\\app.exe',
+      CommandLine: 'app.exe --flag'
+    })
+    // The query gives null for a value it may not read
+    const many =
+      '[{"ProcessId":4,"ParentProcessId":0,"Name":"System","ExecutablePath":null,"CommandLine":null},' +
+      '{"ProcessId":"not a number","ParentProcessId":0}]'
+    const read = await Promise.all(
+      [one, many].map(async (stdout) =>
+        liveProcesses({ platform: 'win32', execFile: answering(stdout) })
+      )
+    )
+
+    expect({
+      read,
+      queries: asked.map((command) =>
+        command
+          .join(' ')
+          .startsWith('powershell -NoProfile -Command Get-CimInstance Win32_Process ')
+      )
+    }).toStrictEqual({
+      read: [
+        [
+          {
+            pid: 7,
+            ppid: 1,
+            name: 'app.exe',
+            executablePath: 'C:\\app\\app.exe',
+            commandLine: 'app.exe --flag'
+          }
+        ],
+        [{ pid: 4, ppid: 0, name: 'System', executablePath: undefined, commandLine: undefined }]
+      ],
+      queries: [true, true]
+    })
+  })
+
+  it("lists this process with its parent and executable on this machine's own process list", async () => {
+    expect.hasAssertions()
+
+    const live = await liveProcesses()
+    const self = live.find(({ pid }) => pid === process.pid)
+    process.stdout.write(`e2e live processes: ${String(live.length)}\n`)
+
+    expect({
+      ppid: self?.ppid,
+      executable: self?.executablePath?.toLowerCase()
+    }).toStrictEqual({ ppid: process.ppid, executable: process.execPath.toLowerCase() })
   })
 })

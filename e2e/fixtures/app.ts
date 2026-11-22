@@ -2,20 +2,9 @@
 // wrapped below as the `twin` and `release` fixtures: a fresh profile per launch, native dialogs
 // answered from per-method queues (twin), and a bounded teardown that kills the process tree
 // before deleting files.
-import { execFile, spawn, type ChildProcess } from 'node:child_process'
-import {
-  closeSync,
-  existsSync,
-  mkdtempSync,
-  openSync,
-  readdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  statSync
-} from 'node:fs'
+import { spawn, type ChildProcess } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { setTimeout as sleep } from 'node:timers/promises'
 import {
   _electron,
   test as base,
@@ -27,6 +16,15 @@ import {
 } from '@playwright/test'
 import type { API } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../../tests/helpers/fixture-project'
+import {
+  isRunning,
+  killTree,
+  removeDirectory,
+  TEARDOWN_BOUND_MS,
+  type TeardownOptions
+} from './teardown'
+
+export { isWithin, TEARDOWN_BOUND_MS } from './teardown'
 
 export interface Artifacts {
   release: string
@@ -137,9 +135,6 @@ export const TWIN_ARGS = [
   ...OFFLINE_ARGS
 ]
 
-// How long teardown lets the app close itself before it kills the process tree
-export const TEARDOWN_BOUND_MS = 10_000
-
 // Main-process global holding the dialog stub's queues and records
 const DIALOG_STATE = 'e2eDialogs' satisfies keyof typeof globalThis
 
@@ -220,12 +215,15 @@ export function runRoot(): string {
 }
 
 /**
-True when `target` is `root` or lies below it
+The folders of the release and twin builds: a live process started from either is the app's
 */
-export function isWithin(target: string, root: string): boolean {
-  const fromRoot = path.relative(root, target)
-  return !fromRoot.startsWith('..') && !path.isAbsolute(fromRoot)
+export function appDirectories(): string[] {
+  const { release, twin } = readArtifacts()
+  return [path.dirname(release), path.dirname(twin)]
 }
+
+// What a refused folder removal names as its holders
+const teardownOptions = (): TeardownOptions => ({ appDirectories: appDirectories() })
 
 export async function launchTwin(
   options: { userDataDir?: string; args?: string[] } = {}
@@ -548,91 +546,6 @@ export async function tabNames(page: Page): Promise<(string | null)[]> {
   return page.getByTestId('plugin-tab').evaluateAll((tabs) => tabs.map((tab) => tab.ariaLabel))
 }
 
-const isRunning = (child: ChildProcess): boolean =>
-  child.exitCode === null && child.signalCode === null
-
-// The code of a failed system call, undefined for any other error
-const codeOf = (error: unknown): unknown => field(error, 'code')
-
-/**
-Whether any process of the tree is left; on Linux the tree is the launch's process group
-*/
-function isTreeAlive(pid: number): boolean {
-  try {
-    process.kill(process.platform === 'win32' ? pid : -pid, 0)
-    return true
-  } catch (error) {
-    return codeOf(error) === 'EPERM'
-  }
-}
-
-/**
-Kills a launched app's whole process tree and waits until it is gone
-*/
-export async function killTree(pid: number): Promise<void> {
-  if (process.platform === 'win32') {
-    // taskkill exits non-zero once the tree is already gone
-    await new Promise<void>((resolve) => {
-      execFile('taskkill', ['/T', '/F', '/PID', String(pid)], () => {
-        resolve()
-      })
-    })
-  } else if (isTreeAlive(pid)) {
-    // Playwright starts the app detached, so its pid leads its own process group
-    try {
-      process.kill(-pid, 'SIGKILL')
-    } catch (error) {
-      if (codeOf(error) !== 'ESRCH') throw error
-    }
-  }
-  const deadline = Date.now() + TEARDOWN_BOUND_MS
-  while (isTreeAlive(pid)) {
-    if (Date.now() > deadline)
-      throw new Error(`process tree ${String(pid)} still running after kill`)
-    await sleep(50)
-  }
-}
-
-/**
-Whether another process holds `file` open: opening it for writing or renaming it fails
-*/
-function isLocked(file: string): boolean {
-  try {
-    closeSync(openSync(file, 'r+'))
-    const probe = `${file}.lock-probe`
-    renameSync(file, probe)
-    renameSync(probe, file)
-    return false
-  } catch {
-    return true
-  }
-}
-
-/**
-Deletes a launch's directory; when Windows refuses, prints which files under it are still
-locked before rethrowing the original error, so the failure names its holder's files
-*/
-function removeDirectory(directory: string): void {
-  try {
-    rmSync(directory, { recursive: true, force: true, maxRetries: 3 })
-  } catch (error) {
-    const code = codeOf(error)
-    if (process.platform === 'win32' && (code === 'EPERM' || code === 'EBUSY')) {
-      const locked = readdirSync(directory, { encoding: 'utf8', recursive: true }).filter(
-        (entry) => {
-          const file = path.join(directory, entry)
-          // An entry the removal deleted meanwhile is no longer locked
-          return statSync(file, { throwIfNoEntry: false })?.isFile() === true && isLocked(file)
-        }
-      )
-      process.stdout.write(
-        `e2e: locked after teardown ${String(locked.length)}: ${locked.join(', ')}\n`
-      )
-    }
-    throw error
-  }
-}
-
 /**
 Asserts the dialogs drained, lets the app close with its unload prompts answered "leave",
 bounded, then kills the tree, waits for it and only then deletes the launch's directories.
@@ -645,7 +558,6 @@ export async function teardown(
   const launch = launches.get(app)
   if (launch === undefined || launch.done) return
   launch.done = true
-  const { pid } = launch.child
   let failure: unknown
   try {
     if (isRunning(launch.child)) {
@@ -683,8 +595,8 @@ export async function teardown(
   } catch (error) {
     failure ??= error
   } finally {
-    if (pid !== undefined) await killTree(pid)
-    for (const directory of launch.directories) removeDirectory(directory)
+    await killTree(launch.child)
+    for (const directory of launch.directories) await removeDirectory(directory, teardownOptions())
     launches.delete(app)
   }
   if (failure !== undefined) {
@@ -843,8 +755,8 @@ export async function launchRelease(
     } catch {
       // The browser connection may already be gone; the kill below ends the app either way
     } finally {
-      if (child.pid !== undefined) await killTree(child.pid)
-      for (const directory of directories) removeDirectory(directory)
+      await killTree(child)
+      for (const directory of directories) await removeDirectory(directory, teardownOptions())
     }
   }
   try {
