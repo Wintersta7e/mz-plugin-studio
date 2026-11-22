@@ -820,6 +820,52 @@ describe('app save: save all', APP_TIMEOUT, () => {
   })
 })
 
+describe('app save: save all without a project', APP_TIMEOUT, () => {
+  beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
+
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('save All without a project writes a tab saved earlier, asks once for a new one and names every tab in one report', async () => {
+    expect.hasAssertions()
+
+    const target = path.join(temporary.root, 'Alpha.js')
+    // The first save dialog is Alpha's own save; the second, Beta's in Save All, is cancelled
+    const chosen = [target, null]
+    vi.stubGlobal('api', createMainApi({ chosen: () => chosen.shift() ?? null }))
+    const alpha = openTab('Alpha')
+    render(<App />)
+    pressSave()
+    await toastsShow(['success: Plugin saved'])
+    editMeta({ description: 'Edited after the first save' })
+    const beta = openTab('Beta')
+    const unnamed = openTab('')
+    act(() => {
+      useToastStore.getState().dismissAll()
+    })
+    pressSaveAll()
+    await toastsShow([
+      'warning: Saved 1 (Alpha). Not saved, the save was cancelled: Beta. Not saved, no plugin name: 1 tab.'
+    ])
+
+    expect({
+      dialogs: vi
+        .mocked(globalThis.api.dialog.saveFile)
+        .mock.calls.map((call) => call[0]?.defaultPath),
+      writes: vi.mocked(globalThis.api.plugin.saveToPath).mock.calls.map((call) => call[0]),
+      dirty: [alpha, beta, unnamed].map((id) => isDirty(id)),
+      prompts: messages()
+    }).toStrictEqual({
+      dialogs: ['Alpha.js', 'Beta.js'],
+      writes: [target, target],
+      dirty: [false, true, true],
+      prompts: []
+    })
+    await expect(readFile(target, 'utf8')).resolves.toBe(generatePlugin(openTabOf(alpha)))
+  })
+})
+
 describe('app save: tabs read from a file', APP_TIMEOUT, () => {
   beforeAll(loadPreview, LOAD_PREVIEW_TIMEOUT_MS)
 

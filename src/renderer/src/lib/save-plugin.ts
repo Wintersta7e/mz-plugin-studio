@@ -17,7 +17,7 @@ type Written = Extract<SaveResult, { success: true }>
 type Refused = Extract<SaveResult, { success: false }>
 
 // A refused save of a tab that cannot tell whether the file changed since it was read or saved
-type NotSavedKind = SaveRefusal | SaveConflict | 'unconfirmed'
+type NotSavedKind = SaveRefusal | SaveConflict | 'unconfirmed' | 'cancelled'
 
 // Save All's reason for each kind of tab it did not save, shared by every tab of that kind
 const NOT_SAVED: Record<NotSavedKind, string> = {
@@ -30,7 +30,8 @@ const NOT_SAVED: Record<NotSavedKind, string> = {
   'exists-unrelated': 'the file there is not the one this tab last opened or saved',
   'changed-on-disk': 'changed on disk',
   'would-break': 'would stop the file compiling',
-  unconfirmed: 'cannot confirm the file is unchanged (save it with Ctrl+S to confirm)'
+  unconfirmed: 'cannot confirm the file is unchanged (save it with Ctrl+S to confirm)',
+  cancelled: 'the save was cancelled'
 }
 
 // Paths the save dialog returned this session: main lets the app write them again until it quits
@@ -252,34 +253,48 @@ function reportSave(
   log.info(`[save] Saved ${result.path}`)
 }
 
+// What one save of a tab did: wrote it, was refused before writing, or was cancelled in a prompt
+type TabSave =
+  | { status: 'saved'; plugin: PluginDefinition; result: Written; code: string }
+  | { status: 'refused'; refusal: SaveRefusal; reason: string }
+  | { status: 'cancelled' }
+
 /**
-Writes one open plugin's `.js`, reporting the result in a toast. Ctrl+S writes into the open
+One save of an open plugin's `.js`, asking every question it needs. Ctrl+S writes into the open
 project's `js/plugins`; Export, and Ctrl+S with no project, ask where to save.
+*/
+async function saveAsking(pluginId: string, mode: SaveMode): Promise<TabSave> {
+  const prepared = await prepareSave(pluginId, { ask: true })
+  if (prepared.status !== 'ready') return prepared
+  const { plugin, code } = prepared
+  const project = useProjectStore.getState().project
+  let write: (guard: SaveGuard) => Promise<SaveResult>
+  if (mode === 'save' && project !== null && plugin.meta.name) {
+    const filename = saveFileName(plugin)
+    write = async (guard) => globalThis.api.plugin.save(project.path, filename, code, guard)
+  } else {
+    const chosen = await chooseFilePath(plugin, mode, code)
+    if (chosen === null) return { status: 'cancelled' }
+    write = async (guard) => globalThis.api.plugin.saveToPath(chosen, code, guard)
+  }
+  const result = await writeAsking(plugin, write)
+  return result === null ? { status: 'cancelled' } : { status: 'saved', plugin, result, code }
+}
+
+/**
+Writes one open plugin's `.js`, reporting the result in a toast.
 */
 export async function savePlugin(pluginId: string, mode: SaveMode): Promise<void> {
   const addToast = useToastStore.getState().addToast
   try {
-    const prepared = await prepareSave(pluginId, { ask: true })
-    if (prepared.status === 'refused') {
-      log.warn('[save] refused', nameOf(findOpenPlugin(pluginId)), prepared.refusal)
-      addToast({ type: 'error', message: prepared.reason, duration: NOTICE_MS })
+    const saved = await saveAsking(pluginId, mode)
+    if (saved.status === 'refused') {
+      log.warn('[save] refused', nameOf(findOpenPlugin(pluginId)), saved.refusal)
+      addToast({ type: 'error', message: saved.reason, duration: NOTICE_MS })
       return
     }
-    if (prepared.status === 'cancelled') return
-    const { plugin, code } = prepared
-    const project = useProjectStore.getState().project
-    let write: (guard: SaveGuard) => Promise<SaveResult>
-    if (mode === 'save' && project !== null && plugin.meta.name) {
-      const filename = saveFileName(plugin)
-      write = async (guard) => globalThis.api.plugin.save(project.path, filename, code, guard)
-    } else {
-      const chosen = await chooseFilePath(plugin, mode, code)
-      if (chosen === null) return
-      write = async (guard) => globalThis.api.plugin.saveToPath(chosen, code, guard)
-    }
-    const result = await writeAsking(plugin, write)
-    if (result === null) return
-    reportSave(plugin, mode, project, { result, code })
+    if (saved.status === 'cancelled') return
+    reportSave(saved.plugin, mode, useProjectStore.getState().project, saved)
   } catch (error: unknown) {
     log.error('[save]', error)
     addToast({
@@ -315,42 +330,56 @@ async function saveTab(
   projectPath: string,
   outcome: SaveAllOutcome
 ): Promise<void> {
-  try {
-    const prepared = await prepareSave(tab.id, { ask: false })
-    if (prepared.status === 'refused') {
-      skip(outcome, tab, prepared.refusal, tab.meta.name)
-      return
-    }
-    if (prepared.status === 'cancelled') return
-    const { plugin, code } = prepared
-    const guard = guardFor(plugin.id)
-    const result = await globalThis.api.plugin.save(projectPath, saveFileName(plugin), code, guard)
-    if (result.success) {
-      outcome.records.push(recordOf(plugin, result, code))
-    } else {
-      const line = result.syntaxError?.line
-      skip(
-        outcome,
-        plugin,
-        isUnconfirmed(plugin, guard, result) ? 'unconfirmed' : result.conflict,
-        typeof line === 'number' ? `${plugin.meta.name} (line ${String(line)})` : plugin.meta.name
-      )
-    }
-  } catch (error: unknown) {
-    log.error('[save-all]', tab.meta.name, error)
-    outcome.failed.push(`${tab.meta.name} (${userMessage(error)})`)
+  const prepared = await prepareSave(tab.id, { ask: false })
+  if (prepared.status === 'refused') {
+    skip(outcome, tab, prepared.refusal, tab.meta.name)
+    return
+  }
+  if (prepared.status === 'cancelled') return
+  const { plugin, code } = prepared
+  const guard = guardFor(plugin.id)
+  const result = await globalThis.api.plugin.save(projectPath, saveFileName(plugin), code, guard)
+  if (result.success) {
+    outcome.records.push(recordOf(plugin, result, code))
+  } else {
+    const line = result.syntaxError?.line
+    skip(
+      outcome,
+      plugin,
+      isUnconfirmed(plugin, guard, result) ? 'unconfirmed' : result.conflict,
+      typeof line === 'number' ? `${plugin.meta.name} (line ${String(line)})` : plugin.meta.name
+    )
   }
 }
 
 /**
-Save All's one toast: how many tabs it saved, and each kind of tab it did not save.
+Save All's save of one tab with no project open, asking as Ctrl+S does, noted in `outcome`.
 */
-function reportSaveAll({ records, notSaved, failed }: SaveAllOutcome, unnamed: number): void {
+async function saveTabAsking(tab: PluginDefinition, outcome: SaveAllOutcome): Promise<void> {
+  const saved = await saveAsking(tab.id, 'save')
+  if (saved.status === 'saved') {
+    outcome.records.push(recordOf(saved.plugin, saved.result, saved.code))
+  } else {
+    skip(outcome, tab, saved.status === 'refused' ? saved.refusal : 'cancelled', tab.meta.name)
+  }
+}
+
+/**
+Save All's one toast: how many tabs it saved, by name when `isNamingSaved`, and each kind of tab
+it did not save.
+*/
+function reportSaveAll(
+  { records, notSaved, failed }: SaveAllOutcome,
+  unnamed: number,
+  isNamingSaved: boolean
+): void {
   const addToast = useToastStore.getState().addToast
   const saved = records.length
+  const names =
+    isNamingSaved && saved > 0 ? ` (${records.map((r) => r.saved.meta.name).join(', ')})` : ''
   if (notSaved.size > 0 || unnamed > 0 || failed.length > 0) {
     const reasons = [...notSaved].map(
-      ([kind, names]) => ` Not saved, ${NOT_SAVED[kind]}: ${names.join(', ')}.`
+      ([kind, labels]) => ` Not saved, ${NOT_SAVED[kind]}: ${labels.join(', ')}.`
     )
     if (unnamed > 0)
       reasons.push(` Not saved, no plugin name: ${String(unnamed)} tab${unnamed > 1 ? 's' : ''}.`)
@@ -358,27 +387,37 @@ function reportSaveAll({ records, notSaved, failed }: SaveAllOutcome, unnamed: n
     const failures = failed.length > 0 ? `, failed ${String(failed.length)}` : ''
     addToast({
       type: 'warning',
-      message: `Saved ${String(saved)}${failures}.${reasons.join('')}`,
+      message: `Saved ${String(saved)}${names}${failures}.${reasons.join('')}`,
       duration: NOTICE_MS
     })
   } else if (saved > 0) {
-    addToast({ type: 'success', message: `${String(saved)} plugin${saved > 1 ? 's' : ''} saved` })
+    addToast({
+      type: 'success',
+      message: `${String(saved)} plugin${saved > 1 ? 's' : ''} saved${names}`
+    })
   }
 }
 
 /**
-Saves every unsaved tab into the open project and reports them in one toast. Tabs are saved one
-at a time, so two tabs saving to one file meet the file check in turn; a tab whose save would
-need a prompt is not saved and is named in the report with the others of its kind.
+Saves every unsaved tab and reports them in one toast. Tabs are saved one at a time, so two tabs
+saving to one file meet the file check in turn. Into the open project, a tab whose save would
+need a prompt is not saved and is named in the report with the others of its kind; with no
+project, each tab is saved as Ctrl+S saves it, every prompt shown, and Cancel skips the tab.
 */
 export async function saveAllPlugins(): Promise<void> {
   const ps = usePluginStore.getState()
   const project = useProjectStore.getState().project
-  if (!project) return
   const dirty = ps.openPlugins.filter((p) => ps.dirtyByPluginId[p.id] === true)
   const dirtyPlugins = dirty.filter((p) => p.meta.name)
   const outcome: SaveAllOutcome = { records: [], notSaved: new Map(), failed: [] }
-  for (const tab of dirtyPlugins) await saveTab(tab, project.path, outcome)
+  for (const tab of dirtyPlugins) {
+    try {
+      await (project === null ? saveTabAsking(tab, outcome) : saveTab(tab, project.path, outcome))
+    } catch (error: unknown) {
+      log.error('[save-all]', tab.meta.name, error)
+      outcome.failed.push(`${tab.meta.name} (${userMessage(error)})`)
+    }
+  }
   if (outcome.records.length > 0) usePluginStore.getState().recordSaves(outcome.records)
-  reportSaveAll(outcome, dirty.length - dirtyPlugins.length)
+  reportSaveAll(outcome, dirty.length - dirtyPlugins.length, project === null)
 }
