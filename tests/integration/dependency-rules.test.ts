@@ -83,4 +83,32 @@ describe('dependency rules', () => {
       `templates-through-registry: to matches ${String(matched.length)} modules`
     ).toBeGreaterThan(0)
   })
+
+  it('generator-is-process-neutral refuses a generator module importing a renderer package', async () => {
+    expect.hasAssertions()
+
+    const { modules, violations } = await violationsIn('generator')
+
+    expect(modules, `modules cruised: ${String(modules)}`).toBeGreaterThan(0)
+    expect(
+      violations.filter((violation) => violation.startsWith('generator-is-process-neutral: '))
+    ).toStrictEqual([
+      'generator-is-process-neutral: src/renderer/src/lib/generator/violator.ts -> ../../../../node_modules/zustand/index.js'
+    ])
+  })
+
+  it('generator-is-process-neutral names real generator modules', async () => {
+    expect.hasAssertions()
+
+    const from = await rulePath('generator-is-process-neutral', 'from')
+    const matched = sourceModules().filter((file) => from.test(file))
+    process.stdout.write(
+      `generator-is-process-neutral: from matches ${String(matched.length)} modules\n`
+    )
+
+    expect(
+      matched.length,
+      `generator-is-process-neutral: from matches ${String(matched.length)} modules`
+    ).toBeGreaterThan(0)
+  })
 })

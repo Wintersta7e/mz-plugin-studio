@@ -260,6 +260,22 @@ describe('package.json scripts: TypeScript programs', () => {
   })
 })
 
+describe('package.json scripts: golden projects', () => {
+  it('each golden script runs the node and the persisted-state golden projects together', () => {
+    const golden = ['test:golden', 'test:golden:coverage'].map((name) =>
+      script(name)
+        .matchAll(/--project (\S+)/g)
+        .map((match) => match.at(1))
+        .toArray()
+    )
+
+    expect(golden).toStrictEqual([
+      ['golden', 'golden-persisted'],
+      ['golden', 'golden-persisted']
+    ])
+  })
+})
+
 describe('package.json scripts: README and workflows', () => {
   it('a script runs the golden commit rules outside check, and the README names it', () => {
     const runners = [...scripts]

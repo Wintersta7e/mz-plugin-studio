@@ -1,6 +1,14 @@
 // Gate logs are read by the count lines tests print; a silenced run would hide them.
+import { readdirSync } from 'node:fs'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import config from '../../vitest.config'
+
+// The one golden suite that reads what stores saved to localStorage, which only jsdom provides.
+const PERSISTED_SUITE = 'tests/golden/persisted.test.ts'
+
+const isMatchedBy = (file: string, globs: string[] | undefined): boolean =>
+  (globs ?? []).some((glob) => path.matchesGlob(file, glob))
 
 describe('vitest config', () => {
   it('keeps console output from tests', () => {
@@ -43,5 +51,35 @@ describe('vitest config', () => {
 
       expect([setupFiles ?? []].flat()).toContain('tests/setup/console.ts')
     }
+  })
+
+  it('runs every golden suite under node but the persisted-state one, which alone runs in jsdom', () => {
+    const projects = (config.test?.projects ?? []).flatMap((project) =>
+      typeof project === 'object' && 'test' in project ? [project.test] : []
+    )
+    const environments = (file: string): (string | undefined)[] =>
+      projects
+        .filter(
+          (project) => isMatchedBy(file, project.include) && !isMatchedBy(file, project.exclude)
+        )
+        .map((project) => project.environment)
+    const suites = readdirSync('tests/golden', { recursive: true, encoding: 'utf8' })
+      .filter((file) => file.endsWith('.test.ts'))
+      .map((file) => `tests/golden/${file.split(path.sep).join('/')}`)
+    const jsdomSuites = suites.filter((file) => environments(file).includes('jsdom'))
+    process.stdout.write(
+      `golden suites ${String(suites.length)}, under jsdom ${String(jsdomSuites.length)}\n`
+    )
+
+    expect(suites.length, `golden suites: ${String(suites.length)}`).toBeGreaterThan(1)
+
+    const nodeSuites = suites.filter((file) => file !== PERSISTED_SUITE)
+
+    expect(nodeSuites.map((suite) => [suite, environments(suite)])).toStrictEqual(
+      nodeSuites.map((suite) => [suite, ['node']])
+    )
+
+    expect(environments(PERSISTED_SUITE)).toStrictEqual(['jsdom'])
+    expect(jsdomSuites).toStrictEqual([PERSISTED_SUITE])
   })
 })

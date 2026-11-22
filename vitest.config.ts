@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react'
 
 const mocks = 'tests/setup/mocks.ts'
 const dom = 'tests/setup/dom.ts'
+// The golden suite of what stores save: it needs jsdom's localStorage, where every other golden
+// suite runs under node like the generator it covers.
+const persistedGolden = 'tests/golden/persisted.test.ts'
 // Fails a test on console.error/console.warn output it does not expect.
 const consoleGuard = 'tests/setup/console.ts'
 // Fails the run on a skipped, todo or expected-to-fail test, however it was written.
@@ -64,8 +67,18 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'golden',
-          environment: 'jsdom',
+          environment: 'node',
           include: ['tests/golden/**/*.test.ts'],
+          exclude: [persistedGolden],
+          setupFiles: [consoleGuard, mocks]
+        }
+      },
+      {
+        extends: true,
+        test: {
+          name: 'golden-persisted',
+          environment: 'jsdom',
+          include: [persistedGolden],
           setupFiles: [consoleGuard, mocks, dom]
         }
       },

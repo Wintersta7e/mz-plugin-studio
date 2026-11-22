@@ -60,6 +60,22 @@ export default {
       }
     },
     {
+      // Generated output depends only on its input, so the generator reads no store, component,
+      // Electron or logging module, and runs the same in either process and under node.
+      name: 'generator-is-process-neutral',
+      severity: 'error',
+      from: { path: '^src/renderer/src/lib/generator/' },
+      to: {
+        pathNot: [
+          '^src/renderer/src/lib/generator/',
+          '^src/shared/',
+          '^src/renderer/src/types/',
+          String.raw`^src/renderer/src/data/mz-classes\.json$`,
+          'node_modules/acorn/'
+        ]
+      }
+    },
+    {
       name: 'no-orphans',
       severity: 'error',
       from: { orphan: true, pathNot: String.raw`\.d\.ts$` },

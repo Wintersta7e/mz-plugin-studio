@@ -133,7 +133,7 @@ export default defineConfig(
   {
     // Mirrors the routed list owned by tests/unit/test-layout.test.ts
     files: ['tests/**/*.{ts,tsx}'],
-    ignores: ['tests/dom/**', 'tests/golden/**'],
+    ignores: ['tests/dom/**'],
     rules: {
       'no-restricted-imports': [
         'error',

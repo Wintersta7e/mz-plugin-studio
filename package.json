@@ -48,10 +48,10 @@
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:watch": "node node_modules/vitest/vitest.mjs",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --coverage && node scripts/check-coverage.mjs suite",
-    "test:golden": "node node_modules/vitest/vitest.mjs run --project golden",
+    "test:golden": "node node_modules/vitest/vitest.mjs run --project golden --project golden-persisted",
     "test:parity": "node node_modules/vitest/vitest.mjs run --project node tests/integration/mz-parity.test.ts",
     "mutation": "node scripts/mutation.mjs",
-    "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden",
+    "test:golden:coverage": "node node_modules/vitest/vitest.mjs run --project golden --project golden-persisted --coverage --coverage.reportsDirectory=coverage/golden && node scripts/check-coverage.mjs golden",
     "licenses": "node scripts/third-party-licenses.mjs",
     "postinstall": "node node_modules/electron/install.js"
   },

@@ -45,7 +45,9 @@ const ROUTED_GROUPS = [
   '@testing-library/user-event'
 ]
 
-const DOM_BOUND_DIRS = new Set(['dom', 'golden'])
+// Golden suites run under node like the generator they cover; the persisted-state one reaches the
+// stores by path, never by a routed import.
+const DOM_BOUND_DIRS = new Set(['dom'])
 
 // Timeout at three times the test's slowest CI time under coverage, rounded up to the next 5 s.
 // Importing the ESLint config loads every lint plugin it names.
@@ -176,10 +178,7 @@ describe('test layout', () => {
       const block = blocks.find((candidate) => isTestRoutingBlock(candidate))
 
       expect(block).toBeDefined()
-      expect(isRecord(block) ? member(block, 'ignores') : undefined).toStrictEqual([
-        'tests/dom/**',
-        'tests/golden/**'
-      ])
+      expect(isRecord(block) ? member(block, 'ignores') : undefined).toStrictEqual(['tests/dom/**'])
 
       const blockRules = isRecord(block) ? member(block, 'rules') : undefined
       const rules = isRecord(blockRules) ? blockRules : {}
