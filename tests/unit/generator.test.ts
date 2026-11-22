@@ -1507,6 +1507,28 @@ describe('generatePlugin - body dedup and section dividers', () => {
   })
 })
 
+describe('generatePlugin - body dedup beside literals that hold a slash', () => {
+  it.each([
+    [
+      'a string holding //',
+      "const u = 'a//b'; PluginManager.registerCommand(PLUGIN_NAME, 'go', fn)"
+    ],
+    [
+      'a regex holding /*',
+      String.raw`const re = /a\/*b/` +
+        "\nPluginManager.registerCommand(PLUGIN_NAME, 'go', fn)\n/* end */"
+    ]
+  ])('registers a command once when %s comes before its registration', (_title, customCode) => {
+    const plugin = createTestPlugin({
+      commands: [{ id: 'go', name: 'go', text: 'Go', desc: '', args: [] }],
+      customCode
+    })
+    const output = generatePlugin(plugin)
+
+    expect(output.split("registerCommand(PLUGIN_NAME, 'go'").length - 1).toBe(1)
+  })
+})
+
 describe(validatePlugin, () => {
   it('returns error for invalid plugin name', () => {
     const plugin = createTestPlugin({

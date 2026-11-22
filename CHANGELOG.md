@@ -7,6 +7,7 @@
 - The validator reports a struct name with a space, any character other than a letter, digit or underscore, or no name at all as an error: the studio writes such a name but cannot read it back when the plugin is opened again, so the struct was lost. A struct name with an underscore is now a warning, because RPG Maker MZ's editor accepts only letters and digits there.
 - The plugin conflict check finds every prototype override in a plugin whose code holds a regex literal with a quote in it, such as `/'/g`, or a template literal nested inside another. Before, the overrides after such a literal were missed, so a conflict with another plugin could go unreported.
 - A parameter, plugin or command name written in letters other than A–Z, such as `速度`, keeps those letters in the generated code and is no longer flagged as an invalid identifier. Before, each such parameter became a constant named `unnamed`, so two of them declared the same constant twice and the plugin failed to load in RPG Maker MZ.
+- A plugin command that your own code already registers is no longer registered a second time when a string or regex before it holds `//` or `/*`, such as `'a//b'`. Before, the generator read the rest of that line, or up to the next `*/`, as a comment, missed the registration and added an empty one of its own, and the validator warned that the command had no implementation.
 
 ## [1.9.0] - 2026-11-19
 

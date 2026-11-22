@@ -198,8 +198,6 @@ PluginManager.registerCommand(PLUGIN_NAME, 'stop', function(args) {
   "valid": true,
   "errors": [],
   "warnings": [
-    "Command \"Show\" has no implementation in custom code",
-    "Command \"go\" has no implementation in custom code",
-    "Command \"stop\" has no implementation in custom code"
+    "Command \"Show\" has no implementation in custom code"
   ]
 }

@@ -52,16 +52,6 @@
         // TODO: Implement command logic
     });
 
-    PluginManager.registerCommand(PLUGIN_NAME, 'go', function(args) {
-
-        // TODO: Implement command logic
-    });
-
-    PluginManager.registerCommand(PLUGIN_NAME, 'stop', function(args) {
-
-        // TODO: Implement command logic
-    });
-
     // ========== Custom Plugin Code ==========
     const u = 'a//b'; PluginManager.registerCommand(PLUGIN_NAME, 'go', function () {})
     const re = /a\/*b/

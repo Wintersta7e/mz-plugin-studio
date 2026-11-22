@@ -5,9 +5,6 @@ Extracts prototype override method names from RPG Maker MZ plugin code.
 Used by the IPC scan handler (main) and conflict detector (renderer).
 */
 
-// Block and single-line comments
-const COMMENTS = /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g
-
 /**
 A comment, string, template or regex literal: `start` is its first character, `end` one past
 its last.
@@ -320,22 +317,31 @@ extraction regexes.
 @internal exported for tests
 */
 export function stripCommentsAndStrings(code: string): string {
+  return blankRanges(code, scanLiterals(code))
+}
+
+/**
+Replace only comments (block + line) with spaces, keeping string, template and regex
+contents intact, so a `//` or `/*` inside a literal is not read as a comment. Used for
+substring matching where the search target is a string literal that must remain comparable
+(e.g. command name dedup).
+*/
+export function stripCommentsOnly(code: string): string {
+  return blankRanges(
+    code,
+    scanLiterals(code).filter((range) => range.kind === 'comment')
+  )
+}
+
+// `code` with each of `ranges` (in order, not overlapping) replaced by as many spaces
+function blankRanges(code: string, ranges: readonly LiteralRange[]): string {
   let stripped = ''
   let at = 0
-  for (const { start, end } of scanLiterals(code)) {
+  for (const { start, end } of ranges) {
     stripped += code.slice(at, start) + ' '.repeat(end - start)
     at = end
   }
   return stripped + code.slice(at)
-}
-
-/**
-Replace only comments (block + line) with spaces, keeping string contents
-intact. Used for substring matching where the search target is a string
-literal that must remain comparable (e.g. command name dedup).
-*/
-export function stripCommentsOnly(code: string): string {
-  return code.replaceAll(COMMENTS, (match) => ' '.repeat(match.length))
 }
 
 /**
