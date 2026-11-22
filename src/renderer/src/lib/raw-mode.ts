@@ -7,6 +7,7 @@ import { useUIStore } from '../stores/ui-store'
 import type { PluginDefinition } from '../types/plugin'
 import { hasMainBlock } from './generator'
 import { generatePluginOutput, isRawMode, loadedSource, type OutputRefusal } from './plugin-output'
+import { translatedBlocksNotice } from './translated-blocks'
 import { userMessage } from './utilities'
 
 export const RAW_MODE_READ_ONLY_NOTICE =
@@ -93,7 +94,7 @@ async function prepareOnce(
     const answer = await globalThis.api.dialog.message({
       type: 'warning',
       title: 'Save without raw mode?',
-      message: `Saving ${file} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
+      message: `Saving ${file} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.${translatedBlocksNotice(plugin.rawSource)}`,
       buttons: ['Cancel', 'Show Diff', 'Save']
     })
     if (answer === 1) useUIStore.getState().requestDiff(pluginId)

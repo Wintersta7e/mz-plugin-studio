@@ -32,9 +32,35 @@ const RAW_OFF = 'Raw mode OFF: the whole plugin is regenerated from the editor'
 const REGENERATION_PROMPT = {
   type: 'warning',
   title: 'Save without raw mode?',
-  message: `Saving ${FILE} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it.`,
+  message: `Saving ${FILE} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it. Its file text is not loaded, so its translated blocks could not be checked: the save may remove them too.`,
   buttons: ['Cancel', 'Show Diff', 'Save']
 }
+// An imported plugin whose Japanese parameter and Chinese command text a regenerated file drops
+const TRANSLATED_FILE = 'Synthetic_Translated.js'
+const TRANSLATED_SOURCE = [
+  '/*:',
+  ' * @target MZ',
+  ' * @plugindesc Translated blocks',
+  ' * @param speed',
+  ' * @type number',
+  ' * @default 1',
+  ' * @command go',
+  ' * @text Go',
+  ' */',
+  '/*:ja',
+  ' * @plugindesc 翻訳',
+  ' * @param speed',
+  ' * @text 速度',
+  ' */',
+  '/*:zh',
+  ' * @command go',
+  ' * @text 前进',
+  ' */',
+  '(() => {',
+  "  PluginManager.registerCommand('Synthetic_Translated', 'go', () => {})",
+  '})()',
+  ''
+].join('\n')
 
 type Stores = typeof StoresModule
 
@@ -490,5 +516,79 @@ describe('saving an imported plugin: missing save record', () => {
     } finally {
       await rm(project, { recursive: true, force: true })
     }
+  }, 60_000)
+})
+
+describe('saving an imported plugin: translated blocks', () => {
+  beforeEach(setUp)
+
+  afterEach(vi.unstubAllGlobals)
+
+  it('a save with raw mode off names the translated blocks it removes and asks first', async () => {
+    expect.hasAssertions()
+
+    const answers = [0, 2]
+    const api = savingApi()
+    const writes = (): string[][] =>
+      vi
+        .mocked(api.plugin.save)
+        .mock.calls.filter((call) => call[1] === TRANSLATED_FILE)
+        .map((call) => [call[1], call[2]])
+    const writesWhenAsked: number[] = []
+    vi.mocked(api.dialog.message).mockImplementation(async () => {
+      writesWhenAsked.push(writes().length)
+      await Promise.resolve()
+      return answers.shift() ?? 0
+    })
+    const { stores } = await startApp(api)
+    const opened = {
+      ...PluginParser.parsePlugin(TRANSLATED_SOURCE, TRANSLATED_FILE),
+      importedFrom: TRANSLATED_FILE
+    }
+    act(() => {
+      stores.usePluginStore.getState().openPlugin(opened)
+      stores.useUIStore.getState().setRawModeForPlugin(opened.id, false)
+      stores.usePluginStore.getState().updateMeta({ description: 'Edited' })
+    })
+    const tab = (): PluginDefinition => stores.usePluginStore.getState().plugin
+    const asked = (): number => vi.mocked(api.dialog.message).mock.calls.length
+
+    press(true)
+    await waitFor(() => {
+      expect(toastsOf(stores)).toHaveLength(1)
+    })
+
+    expect({
+      unconfirmed: first(toastsOf(stores)).includes(
+        'Not saved, saving regenerates the whole file (save it with Ctrl+S to confirm): Synthetic_Translated.'
+      ),
+      asked: asked(),
+      written: writes()
+    }).toStrictEqual({ unconfirmed: true, asked: 0, written: [] })
+
+    press()
+    await waitUntil(() => asked() === 1 && answers.length === 1)
+    await settle()
+
+    expect({
+      prompt: vi.mocked(api.dialog.message).mock.calls.at(0)?.at(0),
+      written: writes()
+    }).toStrictEqual({
+      prompt: {
+        type: 'warning',
+        title: 'Save without raw mode?',
+        message: `Saving ${TRANSLATED_FILE} with raw mode off regenerates the whole file: code outside the Code tab will be removed from it. It also removes these translated blocks: /*:ja (1 parameter), /*:zh (1 command).`,
+        buttons: ['Cancel', 'Show Diff', 'Save']
+      },
+      written: []
+    })
+
+    press()
+    await waitFor(() => {
+      expect({ written: writes(), writesWhenAsked }).toStrictEqual({
+        written: [[TRANSLATED_FILE, generatePlugin(tab())]],
+        writesWhenAsked: [0, 0]
+      })
+    })
   }, 60_000)
 })
