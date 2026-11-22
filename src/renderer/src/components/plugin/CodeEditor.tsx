@@ -6,6 +6,7 @@ import type { editor, IDisposable } from 'monaco-editor'
 import { Wand2 } from 'lucide-react'
 import { usePluginStore, useSettingsStore } from '../../stores'
 import { Button } from '../ui/button'
+import { HintWrapper } from '../ui/hint-wrapper'
 import { TemplateInserter } from './TemplateInserter'
 import { registerMZCompletions } from '../../lib/mz-completions'
 import { editorTheme } from '../../lib/editor-theme'
@@ -71,8 +72,7 @@ function CodeEditorHeader({
           plugin&apos;s IIFE after the auto-generated parameter parsing and command registration.
         </p>
       </div>
-      {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
-      <span title={notice} className="inline-flex shrink-0">
+      <HintWrapper hint={notice} className="shrink-0">
         <Button
           variant="outline"
           size="sm"
@@ -85,7 +85,7 @@ function CodeEditorHeader({
           <Wand2 className="h-4 w-4" />
           Insert Template
         </Button>
-      </span>
+      </HintWrapper>
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { editorTheme } from '../../lib/editor-theme'
 import { useEditorOptions } from '../../lib/editor-options'
 import { Copy, Download, Check, FileCode2, GitCompare } from 'lucide-react'
 import { Button } from '../ui/button'
+import { HintWrapper } from '../ui/hint-wrapper'
 import {
   usePluginStore,
   useProjectStore,
@@ -353,8 +354,7 @@ function SourceBanner({
     >
       <span className="flex-1">{banner}</span>
       {isSourceMissing && (
-        // A disabled button ignores the pointer, so its hint also sits on this wrapper
-        <span title={reloadHint} className="inline-flex">
+        <HintWrapper hint={reloadHint}>
           <Button
             variant="outline"
             size="sm"
@@ -367,7 +367,7 @@ function SourceBanner({
           >
             Reload from project
           </Button>
-        </span>
+        </HintWrapper>
       )}
     </div>
   )
@@ -478,8 +478,7 @@ function PreviewToolbar({
 
   return (
     <div className="flex items-center gap-2">
-      {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
-      <span title={isImportedPlugin ? undefined : RAW_UNAVAILABLE} className="inline-flex">
+      <HintWrapper hint={isImportedPlugin ? undefined : RAW_UNAVAILABLE}>
         <Button
           variant={isPreviewRawMode ? 'default' : 'outline'}
           size="sm"
@@ -492,9 +491,9 @@ function PreviewToolbar({
           <FileCode2 className="mr-1 h-4 w-4" />
           {isPreviewRawMode ? 'Raw ON' : 'Raw'}
         </Button>
-      </span>
+      </HintWrapper>
 
-      <span title={hasSavedVersion ? undefined : DIFF_UNAVAILABLE} className="inline-flex">
+      <HintWrapper hint={hasSavedVersion ? undefined : DIFF_UNAVAILABLE}>
         <Button
           variant={isShowingDiff ? 'default' : 'outline'}
           size="sm"
@@ -507,7 +506,7 @@ function PreviewToolbar({
           <GitCompare className="mr-1 h-4 w-4" />
           Diff
         </Button>
-      </span>
+      </HintWrapper>
 
       <CopyButton />
 

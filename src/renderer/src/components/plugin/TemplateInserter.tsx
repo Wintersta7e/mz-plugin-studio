@@ -37,6 +37,7 @@ import {
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import log from 'electron-log/renderer'
 import { Button } from '../ui/button'
+import { HintWrapper } from '../ui/hint-wrapper'
 import { Input } from '../ui/input'
 import { TooltipProvider } from '../ui/tooltip'
 import { cn } from '../../lib/utilities'
@@ -705,8 +706,7 @@ function InserterFooter({
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        {/* A disabled button ignores the pointer, so its hint also sits on this wrapper */}
-        <span title={notice} className="inline-flex">
+        <HintWrapper hint={notice}>
           <Button
             onClick={onInsert}
             data-testid="template-insert"
@@ -719,7 +719,7 @@ function InserterFooter({
             <Sparkles className="h-4 w-4" />
             Insert Code
           </Button>
-        </span>
+        </HintWrapper>
       </div>
     </div>
   )
