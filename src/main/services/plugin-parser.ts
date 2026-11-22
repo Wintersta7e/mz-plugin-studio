@@ -223,7 +223,7 @@ function parsePlugin(content: string, filename = ''): PluginDefinition {
     main === undefined ? '' : inner(main),
     headers.filter((b) => b.kind === 'language').map((b): [string, string] => [b.lang, inner(b)])
   )
-  const parameters = parseParameters(sourceText)
+  const parameters = parseTagBlocks(sourceText, 'param', readParameter)
   const commands = parseCommands(sourceText)
   const structs = parseStructs(
     blocks
@@ -624,26 +624,32 @@ function parseLocalizations(languages: [string, string][]): Record<string, Local
   return localizations
 }
 
-function parseParameters(header: string): PluginParameter[] {
-  const parameters: PluginParameter[] = []
+/**
+Each `@<tag>` block of `text`, up to the next block of the same tag or a `@command`, read by
+`read`. Names can include spaces; an empty tag line is a visual separator and is skipped.
+*/
+function parseTagBlocks(
+  text: string,
+  tag: 'param' | 'arg',
+  read: (name: string, block: string) => PluginParameter
+): PluginParameter[] {
+  const entries: PluginParameter[] = []
 
-  // Match @param blocks - capture full name (may include spaces) to end of line
-  // Uses [^\n\r]+ to handle both LF and CRLF line endings
-  const paramRegex = tagRegex(
-    String.raw`param(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=${LINE_START}@param\s|${LINE_START}@command\s|$)`,
+  // [^\n\r]+ handles both LF and CRLF line endings
+  const blockRegex = tagRegex(
+    String.raw`${tag}(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=${LINE_START}@${tag}\s|${LINE_START}@command\s|$)`,
     'g'
   )
   let match: RegExpExecArray | null
 
-  while ((match = paramRegex.exec(header)) !== null) {
-    const paramBlock = present(match[2])
-    const rawParamName = withoutCloserStar(present(match[1]), paramBlock === '')
-    // Skip empty @param lines (used as visual separators)
-    if (!rawParamName) continue
-    parameters.push(readParameter(rawParamName, paramBlock))
+  while ((match = blockRegex.exec(text)) !== null) {
+    const block = present(match[2])
+    const name = withoutCloserStar(present(match[1]), block === '')
+    if (!name) continue
+    entries.push(read(name, block))
   }
 
-  return parameters
+  return entries
 }
 
 function readParameter(rawParamName: string, paramBlock: string): PluginParameter {
@@ -771,33 +777,13 @@ function parseCommands(header: string): PluginCommand[] {
       name: commandName,
       text: extractTag(commandHead, 'text') || commandName,
       desc: extractTag(commandHead, 'desc'),
-      args: parseArgs(commandBlock)
+      args: parseTagBlocks(commandBlock, 'arg', readArg)
     }
 
     commands.push(command)
   }
 
   return commands
-}
-
-function parseArgs(block: string): PluginParameter[] {
-  const args: PluginParameter[] = []
-
-  // Arg names can include spaces (same as param names)
-  const argRegex = tagRegex(
-    String.raw`arg(?!\S)[^\S\r\n]*([^\n\r]*)([\s\S]*?)(?=${LINE_START}@arg\s|${LINE_START}@command\s|$)`,
-    'g'
-  )
-  let match: RegExpExecArray | null
-
-  while ((match = argRegex.exec(block)) !== null) {
-    const argBlock = present(match[2])
-    const argName = withoutCloserStar(present(match[1]), argBlock === '')
-    if (!argName) continue
-    args.push(readArg(argName, argBlock))
-  }
-
-  return args
 }
 
 function readArg(argName: string, argBlock: string): PluginParameter {
@@ -829,7 +815,7 @@ function parseStructs(blocks: [string, string, string][]): PluginStruct[] {
     return {
       id: crypto.randomUUID(),
       name,
-      parameters: parseParameters(structBlock)
+      parameters: parseTagBlocks(structBlock, 'param', readParameter)
     }
   })
 }
