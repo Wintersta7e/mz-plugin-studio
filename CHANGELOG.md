@@ -14,6 +14,7 @@
 - Save All (Ctrl+Shift+S) with no project open saves each unsaved tab as Ctrl+S would: to the file you picked for it earlier in the session, or through the save dialog, with every question Ctrl+S asks. Cancel skips that tab and Save All goes on, and one report names the tabs saved, the tabs skipped and why, and the tabs with no plugin name. Before, Save All did nothing and said nothing without a project.
 - A folder picked with Open Project that is not an RPG Maker MZ project is no longer trusted as a project folder. Before, any picked folder, even an empty one or a project's `js/plugins` folder, was kept as trusted, so if that folder later held a project, the app opened it without asking, as it asks for a folder it has no record of. Opening such a folder still shows the same error as before.
 - The dependency and conflict check of a project's plugins no longer drops every plugin when one file in `js/plugins` cannot be read, such as a file that is not UTF-8, a folder named like a plugin, or a file another program holds locked. That file is left out and the others are checked. Before, the check found no plugins at all and reported nothing.
+- When a project's `js/plugins` cannot be listed, for example because it is a file or access to it is denied, the plugin browser and the reload offer record the error in the log instead of taking it as a folder with no plugins. A project with no `js/plugins` folder still shows no plugins.
 
 ## [1.9.0] - 2026-11-19
 

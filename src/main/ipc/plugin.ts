@@ -246,20 +246,30 @@ function parsePluginText(content: string): PluginDefinition {
 }
 
 /**
-The plugin files in a project's `js/plugins`, without `_`-prefixed ones; none when it is missing
+The `.js` files in a project's `js/plugins`, without `_`-prefixed ones; none when the folder is
+missing. Any other failure to list it rejects, so it never reads as a folder with no plugins.
 */
-async function listPluginFiles(projectPath: string): Promise<string[]> {
+async function pluginFileNames(projectPath: string, channel: string): Promise<string[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
+  let files: string[]
   try {
-    const files = await readdir(pluginsDirectory)
-    const jsPlugins = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
-    log.debug(`[plugin:list] Found ${String(jsPlugins.length)} plugins in ${projectPath}`)
-    return jsPlugins
-  } catch {
-    log.debug(`[plugin:list] No plugins directory at ${projectPath}`)
-    return []
+    files = await readdir(pluginsDirectory)
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      log.debug(`[${channel}] No plugins directory at ${projectPath}`)
+      return []
+    }
+    log.error(`[${channel}] Could not list ${pluginsDirectory}:`, error)
+    throw error
   }
+  return files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+}
+
+async function listPluginFiles(projectPath: string): Promise<string[]> {
+  const jsPlugins = await pluginFileNames(projectPath, 'plugin:list')
+  log.debug(`[plugin:list] Found ${String(jsPlugins.length)} plugins in ${projectPath}`)
+  return jsPlugins
 }
 
 /**
@@ -311,20 +321,8 @@ order; a file that cannot be read or parsed is left out. None when `js/plugins` 
 any other failure to list it rejects.
 */
 async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
-  assertSafeProjectPath(projectPath)
+  const jsFiles = await pluginFileNames(projectPath, 'plugin:scan-headers')
   const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
-  let files: string[]
-  try {
-    files = await readdir(pluginsDirectory)
-  } catch (error) {
-    if (isFileNotFound(error)) {
-      log.debug(`[plugin:scan-headers] No plugins directory at ${projectPath}`)
-      return []
-    }
-    log.error(`[plugin:scan-headers] Could not list ${pluginsDirectory}:`, error)
-    throw error
-  }
-  const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
 
   // Read all plugin files in parallel for faster scanning (PERF-02)
   const results = await Promise.all(
