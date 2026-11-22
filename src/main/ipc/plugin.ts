@@ -135,21 +135,30 @@ class NotUtf8Error extends Error {}
 const utf8 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
 
 /**
+The text of a file's bytes, which must be UTF-8; a byte order mark stays in the text.
+Throws `NotUtf8Error` naming the file for any other bytes.
+*/
+function decodeUtf8Strict(bytes: Uint8Array, filePath: string): string {
+  try {
+    return utf8.decode(bytes)
+  } catch {
+    throw new NotUtf8Error(
+      `${path.basename(filePath)} is not UTF-8. The app reads only UTF-8 files, so it can save a plugin's text back unchanged; convert it to UTF-8 and try again`
+    )
+  }
+}
+
+/**
 Reads a file's bytes as UTF-8 text with their sha256; bytes that are not UTF-8 are refused
 */
 async function readWithSha(filePath: string): Promise<{ content: string; sha256: string }> {
   const bytes = await readFile(filePath)
-  let content: string
   try {
-    content = utf8.decode(bytes)
-  } catch {
-    const name = path.basename(filePath)
-    log.warn(`[plugin] ${name} is not UTF-8:`, filePath)
-    throw new NotUtf8Error(
-      `${name} is not UTF-8. The app reads only UTF-8 files, so it can save a plugin's text back unchanged; convert it to UTF-8 and try again`
-    )
+    return { content: decodeUtf8Strict(bytes, filePath), sha256: sha256Hex(bytes) }
+  } catch (error) {
+    log.warn(`[plugin] ${path.basename(filePath)} is not UTF-8:`, filePath)
+    throw error
   }
-  return { content, sha256: sha256Hex(bytes) }
 }
 
 /**
@@ -254,41 +263,85 @@ async function listPluginFiles(projectPath: string): Promise<string[]> {
 }
 
 /**
-The load-order tags and prototype overrides of every plugin file in a project
+One plugin file's header, or why the scan left the file out: a class of failure, never the
+file's text or its full path
+*/
+type ScanFileResult =
+  { ok: true; header: ScannedPluginHeader } | { ok: false; filename: string; reason: string }
+
+function readFailure(error: unknown): string {
+  if (error instanceof NotUtf8Error) return 'not UTF-8'
+  const code = error instanceof Error && 'code' in error ? error.code : undefined
+  return code === 'EISDIR' ? 'not a file' : 'could not be read'
+}
+
+/**
+Reads, decodes and parses one file of a plugins folder; a failure leaves out only this file
+*/
+async function scanPluginFile(pluginsDirectory: string, filename: string): Promise<ScanFileResult> {
+  const filePath = path.join(pluginsDirectory, filename)
+  let content: string
+  try {
+    content = decodeUtf8Strict(await readFile(filePath), filePath)
+  } catch (error) {
+    return { ok: false, filename, reason: readFailure(error) }
+  }
+  try {
+    // Read the load-order tags as the importer does, so the analyzer and editor agree
+    const { meta } = PluginParser.parsePlugin(content, filename)
+    return {
+      ok: true,
+      header: {
+        filename,
+        name: filename.replace(/\.js$/, ''),
+        base: meta.dependencies,
+        orderAfter: meta.orderAfter ?? [],
+        orderBefore: meta.orderBefore ?? [],
+        overrides: extractOverrides(content)
+      }
+    }
+  } catch {
+    return { ok: false, filename, reason: 'could not be parsed' }
+  }
+}
+
+/**
+The load-order tags and prototype overrides of every plugin file in a project, in listing
+order; a file that cannot be read or parsed is left out. None when `js/plugins` is missing;
+any other failure to list it rejects.
 */
 async function scanPluginHeaders(projectPath: string): Promise<ScannedPluginHeader[]> {
   assertSafeProjectPath(projectPath)
   const pluginsDirectory = path.join(projectPath, 'js', 'plugins')
+  let files: string[]
   try {
-    const files = await readdir(pluginsDirectory)
-    const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
-
-    // Read all plugin files in parallel for faster scanning (PERF-02)
-    const results: ScannedPluginHeader[] = await Promise.all(
-      jsFiles.map(async (file) => {
-        const filePath = path.join(pluginsDirectory, file)
-        const content = await readFile(filePath, 'utf8')
-
-        // Read the load-order tags as the importer does, so the analyzer and editor agree
-        const { meta } = PluginParser.parsePlugin(content, file)
-
-        return {
-          filename: file,
-          name: file.replace(/\.js$/, ''),
-          base: meta.dependencies,
-          orderAfter: meta.orderAfter ?? [],
-          orderBefore: meta.orderBefore ?? [],
-          overrides: extractOverrides(content)
-        }
-      })
-    )
-
-    log.info(`[plugin:scan-headers] Scanned ${String(results.length)} plugins in ${projectPath}`)
-    return results
+    files = await readdir(pluginsDirectory)
   } catch (error) {
-    log.error(`[plugin:scan-headers] Failed to scan ${projectPath}:`, error)
-    return []
+    if (isFileNotFound(error)) {
+      log.debug(`[plugin:scan-headers] No plugins directory at ${projectPath}`)
+      return []
+    }
+    log.error(`[plugin:scan-headers] Could not list ${pluginsDirectory}:`, error)
+    throw error
   }
+  const jsFiles = files.filter((f: string) => f.endsWith('.js') && !f.startsWith('_'))
+
+  // Read all plugin files in parallel for faster scanning (PERF-02)
+  const results = await Promise.all(
+    jsFiles.map(async (file) => scanPluginFile(pluginsDirectory, file))
+  )
+  const headers: ScannedPluginHeader[] = []
+  for (const result of results) {
+    if (result.ok) {
+      headers.push(result.header)
+    } else {
+      log.warn(`[plugin:scan-headers] Left out ${result.filename}: ${result.reason}`)
+    }
+  }
+  log.info(
+    `[plugin:scan-headers] Scanned ${String(headers.length)} plugins, left out ${String(results.length - headers.length)}`
+  )
+  return headers
 }
 
 type PluginChannel =

@@ -6,7 +6,7 @@
   "coverage": {
     "suite": {
       "src/main": {
-        "lines": 94,
+        "lines": 95,
         "branches": 93
       },
       "src/preload": {
