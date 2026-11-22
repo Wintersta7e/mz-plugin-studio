@@ -17,6 +17,40 @@ BattleManager.processVictory = function() {
 // rejects: Field "Event" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"eventType":"victory"}
+// Victory Hook
+const _BattleManager_processVictory = BattleManager.processVictory;
+BattleManager.processVictory = function() {
+    // Your code here (before victory processing)
+    console.log('Battle victory!');
+
+    _BattleManager_processVictory.call(this);
+};
+
+// ==== case: type-violating: unlisted choices {"eventType":"unlisted"}
+// rejects: Field "Event" must be one of its choices
+// throws: TypeError
+
+// ==== case: type-violating: empty text {"eventType":"victory"}
+// Victory Hook
+const _BattleManager_processVictory = BattleManager.processVictory;
+BattleManager.processVictory = function() {
+    // Your code here (before victory processing)
+    console.log('Battle victory!');
+
+    _BattleManager_processVictory.call(this);
+};
+
+// ==== case: type-violating: required fields only {"eventType":"victory"}
+// Victory Hook
+const _BattleManager_processVictory = BattleManager.processVictory;
+BattleManager.processVictory = function() {
+    // Your code here (before victory processing)
+    console.log('Battle victory!');
+
+    _BattleManager_processVictory.call(this);
+};
+
 // ==== case: type-violating: eventType="start" {"eventType":"start"}
 // Battle Start Hook
 const _BattleManager_startBattle = BattleManager.startBattle;

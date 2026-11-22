@@ -24,6 +24,54 @@ function customBgmControl() {
 function a,b() {
 }
 
+// ==== case: type-violating: null where not required {"operation":"play","filename":null,"volume":null,"pitch":null,"pan":null,"fadeDuration":null,"fadeInDuration":null,"wrapInFunction":null,"functionName":null}
+// rejects: BGM filename is required for Play operation | Pitch must be between 50 and 150
+// BGM Control Function: play
+function customBgmControl() {
+    // Play BGM with specified settings
+    const bgm = {
+        name: 'BGM_NAME',
+        volume: null,
+        pitch: null,
+        pan: null
+    };
+    AudioManager.playBgm(bgm);
+}
+
+// ==== case: type-violating: unlisted choices {"operation":"unlisted","filename":"Theme1","volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true}
+// rejects: Field "Operation" must be one of its choices
+// BGM Control Function: unlisted
+function customBgmControl() {
+}
+
+// ==== case: type-violating: empty text {"operation":"play","filename":"","volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"functionName":""}
+// rejects: BGM filename is required for Play operation
+// BGM Control Function: play
+function customBgmControl() {
+    // Play BGM with specified settings
+    const bgm = {
+        name: 'BGM_NAME',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+    AudioManager.playBgm(bgm);
+}
+
+// ==== case: type-violating: required fields only {"operation":"play"}
+// rejects: BGM filename is required for Play operation
+// BGM Control Function: play
+function customBgmControl() {
+    // Play BGM with specified settings
+    const bgm = {
+        name: 'BGM_NAME',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+    AudioManager.playBgm(bgm);
+}
+
 // ==== case: type-violating: pan=null,functionName="playTheme" {"operation":"play","volume":90,"pitch":100,"pan":null,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"filename":"Theme1","functionName":"playTheme"}
 // BGM Control Function: play
 function playTheme() {
@@ -35,4 +83,10 @@ function playTheme() {
         pan: null
     };
     AudioManager.playBgm(bgm);
+}
+
+// ==== case: type-violating: operation=7 {"operation":7,"volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"filename":"Theme1"}
+// rejects: Field "Operation" must be text
+// BGM Control Function: 7
+function customBgmControl() {
 }

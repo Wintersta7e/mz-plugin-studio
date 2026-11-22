@@ -18,6 +18,9 @@ const WRONG_TYPE: Record<TemplateField['type'], unknown> = {
   select: 7
 }
 
+// Text that no select offers, as a hand-edited saved value may hold.
+const UNLISTED = 'unlisted'
+
 // Every field of the template set by `value`.
 function everyField(id: string, value: (field: TemplateField) => unknown): Record<string, unknown> {
   const fields = getTemplate(id)?.fields ?? []
@@ -40,7 +43,7 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { eventType: 'change', slotFilter: 7 },
     { eventType: 'unequip', slotFilter: 7 }
   ],
-  'audio-bgm-control': [{ pan: null, functionName: 'playTheme' }],
+  'audio-bgm-control': [{ pan: null, functionName: 'playTheme' }, { operation: 7 }],
   'audio-crossfade': [
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: null },
     { crossfadeType: 'fadeFromSilence', fadeFromSilenceBgm: 7 },
@@ -51,16 +54,21 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { randomizePitch: true, pitchVariation: null },
     { pan: null, functionName: 'playCursor' }
   ],
+  'battle-action-hook': [{ timing: 'before', actionType: 'skill' }],
   'battle-damage-modifier': [
     { condition: null },
     { modifyType: 'custom', condition: null },
     { modifyType: 'add', modifyValue: '2;x', condition: null },
     { condition: 'critical', modifyValue: 'abc' },
     { condition: 'skill', modifyValue: '-1' },
-    { condition: 'physical' }
+    { condition: 'physical' },
+    { modifyType: 'custom', modifyValue: '2;x' }
   ],
   'battle-event-hook': [{ eventType: 'start' }],
-  'battle-state-hook': [{ hookType: null, stateId: '3' }],
+  'battle-state-hook': [
+    { hookType: null, stateId: '3' },
+    { hookType: 'remove', stateId: '3' }
+  ],
   'custom-window-basic': [
     { width: null },
     { parentClass: 7, width: 'abc', height: null, addToScene: 'Scene_Map' },
@@ -70,7 +78,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
       parentClass: 'Window_Selectable',
       addToScene: 'Scene_Map',
       width: null
-    }
+    },
+    { parentClass: 'Window_Command', addToScene: 'Scene_Menu' }
   ],
   'gauge-window': [
     { gaugeCount: '3', dataSource: 'variable', width: null, gaugeHeight: null },
@@ -97,14 +106,19 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { valueType: 7 },
     { valueType: 'number', defaultValue: 'abc' },
     { tagName: '1bad', tagFormat: 'other', propertyName: '9x' },
-    { valueType: 'string', defaultValue: 'abc' }
+    { valueType: 'string', defaultValue: 'abc' },
+    { valueType: 'unlisted' }
   ],
   'input-handler-basic': [
     { activeScene: 'all', triggerType: null },
     { activeScene: 'all', keyName: null },
     { keyName: 'zz', triggerType: 'isHeld', activeScene: 'Scene_Title' }
   ],
-  'map-event-spawn': [{ templateEventId: '7' }, { persistAcrossTransfer: null }],
+  'map-event-spawn': [
+    { templateEventId: '7' },
+    { persistAcrossTransfer: null },
+    { functionName: ' ' }
+  ],
   'map-parallel-process': [
     { updateInterval: '2' },
     { activeCondition: 'switch', conditionId: '3' },
@@ -113,7 +127,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
   ],
   'map-transfer-hook': [
     { filterMapId: '12', includeDirection: null },
-    { timing: 'both', includeFadeInfo: 'yes', filterMapId: null }
+    { timing: 'both', includeFadeInfo: 'yes', filterMapId: null },
+    { timing: 'both', includeFadeInfo: true }
   ],
   'menu-command-addition': [
     { enableCondition: 'switch', switchId: null },
@@ -172,7 +187,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { codeType: 'effect', hasParameter: null, effectType: null },
     { codeType: 'effect', effectType: 'size', hasParameter: null },
     { codeType: 'effect', effectType: 'icon', replacementText: null },
-    { codeType: 'effect', effectType: 'custom', replacementText: null }
+    { codeType: 'effect', effectType: 'custom', replacementText: null },
+    { escapeChar: 'C' }
   ],
   'message-window-mod': [
     { positionType: 'custom', customX: null, customY: 'abc' },
@@ -196,13 +212,15 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { featureType: 'reserveParty', maxReserve: 'abc' },
     { featureType: 'reserveParty', maxReserve: null },
     { featureType: 'addRemoveHook', maxSize: null },
-    { minSize: 0, maxReserve: null }
+    { minSize: 0, maxReserve: null },
+    { featureType: 'addRemoveHook', hookTiming: 'before' }
   ],
   'plugin-command-async': [
     { waitType: 'setWaitMode', pluginName: 42 },
     { waitType: 'waitCount', waitDuration: null },
     { waitType: 'waitCount', waitDuration: 'abc' },
-    { waitType: 'waitCount', commandName: null }
+    { waitType: 'waitCount', commandName: null },
+    { waitType: 'waitCount', waitDuration: 0 }
   ],
   'plugin-command-basic': [
     { arg1Name: 'target', arg1Type: 7, arg2Name: 'value', arg2Type: ['a', 'b'] },
@@ -217,7 +235,11 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
       arg2Name: 'data',
       arg2Type: 'json'
     },
-    { commandName: 42, arg1Name: 'flag', arg1Type: 'boolean' }
+    { commandName: 42, arg1Name: 'flag', arg1Type: 'boolean' },
+    { arg1Name: 'target', arg1Type: 'number', arg2Name: 'data', arg2Type: 'json' },
+    { arg1Name: 'flag', arg1Type: 'boolean' },
+    { commandName: ' ' },
+    { arg1Name: '', arg2Name: '' }
   ],
   'plugin-command-validated': [
     { errorHandling: 'silent', pluginName: 42 },
@@ -268,7 +290,8 @@ const PARTIAL_CASES: Record<string, Record<string, unknown>[]> = {
     { operation: 'tint', tintRed: null, tintGray: 'abc' },
     { operation: 'erase', pictureId: null },
     { operation: 'utility', pictureId: null },
-    { opacity: 300, x: null }
+    { opacity: 300, x: null },
+    { operation: 'erase', pictureId: 0 }
   ]
 }
 
@@ -279,6 +302,7 @@ const partialCaseName = (changes: Record<string, unknown>): string =>
 
 // The type-violating cases of one template, pinned in a golden file of their own.
 export function typeViolatingTemplateCases(id: string): TemplateCase[] {
+  const base = baseValues(id)
   return [
     {
       name: 'type-violating: wrong types',
@@ -287,6 +311,30 @@ export function typeViolatingTemplateCases(id: string): TemplateCase[] {
     },
     { name: 'type-violating: null', values: everyField(id, () => null), hostile: null },
     { name: 'type-violating: arrays', values: everyField(id, () => ['a', 'b']), hostile: null },
+    {
+      name: 'type-violating: null where not required',
+      values: everyField(id, (field) => (field.required === true ? base[field.id] : null)),
+      hostile: null
+    },
+    {
+      name: 'type-violating: unlisted choices',
+      values: everyField(id, (field) => (field.type === 'select' ? UNLISTED : base[field.id])),
+      hostile: null
+    },
+    {
+      name: 'type-violating: empty text',
+      values: everyField(id, (field) => (field.type === 'text' ? '' : base[field.id])),
+      hostile: null
+    },
+    {
+      name: 'type-violating: required fields only',
+      values: Object.fromEntries(
+        (getTemplate(id)?.fields ?? [])
+          .filter((field) => field.required === true)
+          .map((field) => [field.id, base[field.id]])
+      ),
+      hostile: null
+    },
     ...(PARTIAL_CASES[id] ?? []).map((changes) => ({
       name: `type-violating: ${partialCaseName(changes)}`,
       values: { ...baseValues(id), ...changes },

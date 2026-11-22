@@ -10,6 +10,129 @@
 // rejects: Field "Option Name" must be text | Field "Option Symbol" must be text | Field "Option Type" must be text | Field "Default Value" must be text | Field "Choices (comma-separated)" must be text | Field "Save to Config" must be true or false
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"optionName":"Sample","optionSymbol":"Sample","optionType":"boolean","defaultValue":null,"choices":null,"persistToConfig":null}
+// Options Menu Addition: Sample
+
+// Add to ConfigManager
+ConfigManager.Sample = true;
+
+// Save option to config
+const _ConfigManager_makeData = ConfigManager.makeData;
+ConfigManager.makeData = function() {
+    const config = _ConfigManager_makeData.call(this);
+    config.Sample = this.Sample;
+    return config;
+};
+
+// Load option from config
+const _ConfigManager_applyData = ConfigManager.applyData;
+ConfigManager.applyData = function(config) {
+    _ConfigManager_applyData.call(this, config);
+    this.Sample = this.readFlag(config, "Sample", true);
+};
+
+// Add option to options window
+const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+Window_Options.prototype.addGeneralOptions = function() {
+    _Window_Options_addGeneralOptions.call(this);
+    this.addCommand("Sample", "Sample");
+};
+
+// Boolean type uses default behavior - no additional code needed
+// Access the value with: ConfigManager.Sample
+
+// ==== case: type-violating: unlisted choices {"optionName":"Sample","optionSymbol":"Sample","optionType":"unlisted","persistToConfig":true}
+// rejects: Field "Option Type" must be one of its choices
+// Options Menu Addition: Sample
+
+// Add to ConfigManager
+ConfigManager.Sample = true;
+
+// Save option to config
+const _ConfigManager_makeData = ConfigManager.makeData;
+ConfigManager.makeData = function() {
+    const config = _ConfigManager_makeData.call(this);
+    config.Sample = this.Sample;
+    return config;
+};
+
+// Load option from config
+const _ConfigManager_applyData = ConfigManager.applyData;
+ConfigManager.applyData = function(config) {
+    _ConfigManager_applyData.call(this, config);
+};
+
+// Add option to options window
+const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+Window_Options.prototype.addGeneralOptions = function() {
+    _Window_Options_addGeneralOptions.call(this);
+    this.addCommand("Sample", "Sample");
+};
+
+
+// ==== case: type-violating: empty text {"optionName":"","optionSymbol":"","optionType":"boolean","defaultValue":"","choices":"","persistToConfig":true}
+// rejects: Field "Option Name" is required | Field "Option Symbol" is required
+// Options Menu Addition: 
+
+// Add to ConfigManager
+ConfigManager. = true;
+
+// Save option to config
+const _ConfigManager_makeData = ConfigManager.makeData;
+ConfigManager.makeData = function() {
+    const config = _ConfigManager_makeData.call(this);
+    config. = this.;
+    return config;
+};
+
+// Load option from config
+const _ConfigManager_applyData = ConfigManager.applyData;
+ConfigManager.applyData = function(config) {
+    _ConfigManager_applyData.call(this, config);
+    this. = this.readFlag(config, "", true);
+};
+
+// Add option to options window
+const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+Window_Options.prototype.addGeneralOptions = function() {
+    _Window_Options_addGeneralOptions.call(this);
+    this.addCommand("", "");
+};
+
+// Boolean type uses default behavior - no additional code needed
+// Access the value with: ConfigManager.
+
+// ==== case: type-violating: required fields only {"optionName":"Sample","optionSymbol":"Sample","optionType":"boolean"}
+// Options Menu Addition: Sample
+
+// Add to ConfigManager
+ConfigManager.Sample = true;
+
+// Save option to config
+const _ConfigManager_makeData = ConfigManager.makeData;
+ConfigManager.makeData = function() {
+    const config = _ConfigManager_makeData.call(this);
+    config.Sample = this.Sample;
+    return config;
+};
+
+// Load option from config
+const _ConfigManager_applyData = ConfigManager.applyData;
+ConfigManager.applyData = function(config) {
+    _ConfigManager_applyData.call(this, config);
+    this.Sample = this.readFlag(config, "Sample", true);
+};
+
+// Add option to options window
+const _Window_Options_addGeneralOptions = Window_Options.prototype.addGeneralOptions;
+Window_Options.prototype.addGeneralOptions = function() {
+    _Window_Options_addGeneralOptions.call(this);
+    this.addCommand("Sample", "Sample");
+};
+
+// Boolean type uses default behavior - no additional code needed
+// Access the value with: ConfigManager.Sample
+
 // ==== case: type-violating: persistToConfig=null {"optionType":"boolean","persistToConfig":null,"optionName":"Sample","optionSymbol":"Sample"}
 // Options Menu Addition: Sample
 

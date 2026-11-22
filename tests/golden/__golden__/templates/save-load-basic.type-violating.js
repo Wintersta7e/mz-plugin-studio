@@ -38,6 +38,122 @@ Game_System.prototype.setValue = function(key, value) {
 // rejects: Field "Data Property Name" must be text | Field "Storage Location" must be text | Field "Data Type" must be text | Field "Default Value" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"dataName":"Sample","storageLocation":"Game_System","dataType":"object","defaultValue":null}
+// Custom Save Data: Sample
+// Storage: $gamesystem
+// Type: object
+
+const _Game_System_initialize = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function() {
+    _Game_System_initialize.call(this);
+    this.Sample = null;
+};
+
+// Getter: $gamesystem.getSample()
+Game_System.prototype.getSample = function() {
+    return this.Sample;
+};
+
+// Setter: $gamesystem.setSample(value)
+Game_System.prototype.setSample = function(value) {
+    this.Sample = value;
+};
+
+// Get a property from the Sample object
+Game_System.prototype.getSampleValue = function(key) {
+    return this.Sample[key];
+};
+
+// Set a property on the Sample object
+Game_System.prototype.setSampleValue = function(key, value) {
+    this.Sample[key] = value;
+};
+
+// ==== case: type-violating: unlisted choices {"dataName":"Sample","storageLocation":"unlisted","dataType":"unlisted"}
+// rejects: Field "Storage Location" must be one of its choices | Field "Data Type" must be one of its choices
+// Custom Save Data: Sample
+// Storage: $unlisted
+// Type: unlisted
+
+const _unlisted_initialize = unlisted.prototype.initialize;
+unlisted.prototype.initialize = function() {
+    _unlisted_initialize.call(this);
+    this.Sample = null;
+};
+
+// Getter: $unlisted.getSample()
+unlisted.prototype.getSample = function() {
+    return this.Sample;
+};
+
+// Setter: $unlisted.setSample(value)
+unlisted.prototype.setSample = function(value) {
+    this.Sample = value;
+};
+
+// ==== case: type-violating: empty text {"dataName":"","storageLocation":"Game_System","dataType":"object","defaultValue":""}
+// rejects: Field "Data Property Name" is required
+// Custom Save Data: 
+// Storage: $gamesystem
+// Type: object
+
+const _Game_System_initialize = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function() {
+    _Game_System_initialize.call(this);
+    this. = {};
+};
+
+// Getter: $gamesystem.get()
+Game_System.prototype.get = function() {
+    return this.;
+};
+
+// Setter: $gamesystem.set(value)
+Game_System.prototype.set = function(value) {
+    this. = value;
+};
+
+// Get a property from the  object
+Game_System.prototype.getValue = function(key) {
+    return this.[key];
+};
+
+// Set a property on the  object
+Game_System.prototype.setValue = function(key, value) {
+    this.[key] = value;
+};
+
+// ==== case: type-violating: required fields only {"dataName":"Sample","storageLocation":"Game_System","dataType":"object"}
+// Custom Save Data: Sample
+// Storage: $gamesystem
+// Type: object
+
+const _Game_System_initialize = Game_System.prototype.initialize;
+Game_System.prototype.initialize = function() {
+    _Game_System_initialize.call(this);
+    this.Sample = {};
+};
+
+// Getter: $gamesystem.getSample()
+Game_System.prototype.getSample = function() {
+    return this.Sample;
+};
+
+// Setter: $gamesystem.setSample(value)
+Game_System.prototype.setSample = function(value) {
+    this.Sample = value;
+};
+
+// Get a property from the Sample object
+Game_System.prototype.getSampleValue = function(key) {
+    return this.Sample[key];
+};
+
+// Set a property on the Sample object
+Game_System.prototype.setSampleValue = function(key, value) {
+    this.Sample[key] = value;
+};
+
 // ==== case: type-violating: dataName="save",defaultValue=null {"storageLocation":"Game_System","dataType":"object","dataName":"save","defaultValue":null}
 // rejects: "save" may conflict with existing methods. Consider a more specific name.
 // Custom Save Data: save

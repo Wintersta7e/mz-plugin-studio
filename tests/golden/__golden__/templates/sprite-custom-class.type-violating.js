@@ -10,6 +10,229 @@
 // rejects: Field "Sprite Name" must be text | Field "Parent Class" must be text | Field "Width" must be a number | Field "Height" must be a number | Field "Create Bitmap" must be text | Field "Fill Color" must be text | Field "Include Update Logic" must be true or false
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"spriteName":"Sample","parentClass":"Sprite","width":null,"height":null,"useBitmap":null,"fillColor":null,"includeUpdate":null}
+// rejects: Width must be a positive number | Height must be a positive number
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Custom sprite class extending Sprite.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(Sprite.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function() {
+    Sprite.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Sample.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_Sample.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_Sample.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};
+
+// ==== case: type-violating: unlisted choices {"spriteName":"Sample","parentClass":"unlisted","width":48,"height":48,"useBitmap":"unlisted","includeUpdate":true}
+// rejects: Field "Parent Class" must be one of its choices | Field "Create Bitmap" must be one of its choices
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Custom sprite class extending unlisted.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(unlisted.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function() {
+    unlisted.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Sample.prototype.update = function() {
+    unlisted.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_Sample.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_Sample.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};
+
+// ==== case: type-violating: empty text {"spriteName":"","parentClass":"Sprite","width":48,"height":48,"useBitmap":"none","fillColor":"","includeUpdate":true}
+// rejects: Field "Sprite Name" is required
+//-----------------------------------------------------------------------------
+// Sprite_
+//
+// Custom sprite class extending Sprite.
+//-----------------------------------------------------------------------------
+
+function Sprite_() {
+    this.initialize(...arguments);
+}
+
+Sprite_.prototype = Object.create(Sprite.prototype);
+Sprite_.prototype.constructor = Sprite_;
+
+Sprite_.prototype.initialize = function() {
+    Sprite.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};
+
+// ==== case: type-violating: required fields only {"spriteName":"Sample","parentClass":"Sprite"}
+//-----------------------------------------------------------------------------
+// Sprite_Sample
+//
+// Custom sprite class extending Sprite.
+//-----------------------------------------------------------------------------
+
+function Sprite_Sample() {
+    this.initialize(...arguments);
+}
+
+Sprite_Sample.prototype = Object.create(Sprite.prototype);
+Sprite_Sample.prototype.constructor = Sprite_Sample;
+
+Sprite_Sample.prototype.initialize = function() {
+    Sprite.prototype.initialize.call(this);
+
+    // Initialize sprite properties
+    this._animationCount = 0;
+    this._pattern = 0;
+
+    // Load external image
+    // this.bitmap = ImageManager.loadPicture('your_image');
+
+    // Set anchor to center (optional)
+    this.anchor.x = 0.5;
+    this.anchor.y = 0.5;
+};
+
+Sprite_Sample.prototype.update = function() {
+    Sprite.prototype.update.call(this);
+
+    // Update animation
+    this.updateAnimation();
+};
+
+Sprite_Sample.prototype.updateAnimation = function() {
+    this._animationCount++;
+
+    // Example: Update every 12 frames
+    if (this._animationCount >= 12) {
+        this._animationCount = 0;
+        this._pattern = (this._pattern + 1) % 4;
+        // Update sprite based on pattern
+        this.updatePattern();
+    }
+};
+
+Sprite_Sample.prototype.updatePattern = function() {
+    // Override this to update sprite based on this._pattern
+    // Example: Change frame for spritesheet
+    // const frameWidth = this.bitmap.width / 4;
+    // this.setFrame(this._pattern * frameWidth, 0, frameWidth, this.bitmap.height);
+};
+
 // ==== case: type-violating: width=null {"parentClass":"Sprite","width":null,"height":48,"useBitmap":"none","includeUpdate":true,"spriteName":"Sample"}
 // rejects: Width must be a positive number
 //-----------------------------------------------------------------------------

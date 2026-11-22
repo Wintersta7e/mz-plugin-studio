@@ -21,6 +21,52 @@ Window_ChoiceList.prototype.updatePlacement = function() {
 // rejects: Field "Modification Type" must be text | Field "Choice Position" must be text | Field "Number of Columns" must be a number | Field "Choice Window Width" must be a number | Field "Highlight Color Index" must be a number | Field "Normal Text Color Index" must be a number | Field "Disabled Color Index" must be a number | Field "Window Opacity" must be a number | Field "Wrap Around Selection" must be true or false | Field "Remember Last Choice" must be true or false
 
 
+// ==== case: type-violating: null where not required {"modType":"position","choicePosition":null,"numColumns":null,"choiceWidth":null,"highlightColor":null,"normalColor":null,"disabledColor":null,"windowOpacity":null,"wrapAround":null,"rememberChoice":null}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Center on screen
+    this.x = (Graphics.boxWidth - this.width) / 2;
+    this.y = (Graphics.boxHeight - this.height) / 2;
+};
+
+// ==== case: type-violating: unlisted choices {"modType":"unlisted","choicePosition":"unlisted","numColumns":2,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// rejects: Field "Modification Type" must be one of its choices | Field "Choice Position" must be one of its choices
+
+
+// ==== case: type-violating: empty text {"modType":"position","choicePosition":"center","numColumns":2,"choiceWidth":400,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Center on screen
+    this.x = (Graphics.boxWidth - this.width) / 2;
+    this.y = (Graphics.boxHeight - this.height) / 2;
+};
+
+// ==== case: type-violating: required fields only {"modType":"position"}
+// Choice Window Position Modification
+// Changes where the choice window appears on screen
+
+const _Window_ChoiceList_updatePlacement = Window_ChoiceList.prototype.updatePlacement;
+Window_ChoiceList.prototype.updatePlacement = function() {
+    _Window_ChoiceList_updatePlacement.call(this);
+    const messageWindow = this._messageWindow;
+
+    // Center on screen
+    this.x = (Graphics.boxWidth - this.width) / 2;
+    this.y = (Graphics.boxHeight - this.height) / 2;
+};
+
 // ==== case: type-violating: modType="columns",numColumns=null,choiceWidth=null {"modType":"columns","choicePosition":"center","numColumns":null,"choiceWidth":null,"highlightColor":17,"normalColor":0,"disabledColor":8,"windowOpacity":255,"wrapAround":true,"rememberChoice":false}
 // rejects: Number of columns must be between 1 and 4 | Choice window width must be a positive number
 // Choice Window Column Layout

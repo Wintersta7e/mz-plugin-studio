@@ -21,6 +21,52 @@ Window_Message.prototype.updatePlacement = function() {
 // rejects: Field "Modification Type" must be text | Field "Position" must be text | Field "X Position" must be a number | Field "Y Position" must be a number | Field "Window Width" must be a number | Field "Visible Lines" must be a number | Field "Background Type" must be text | Field "Background Color" must be text | Field "Opacity (0-255)" must be a number | Field "Name Box Position" must be text
 
 
+// ==== case: type-violating: null where not required {"modType":"position","positionType":null,"customX":null,"customY":null,"windowWidth":null,"numLines":null,"bgType":null,"bgColor":null,"opacityValue":null,"nameBoxPosition":null}
+// Message Window Position Modification
+// Changes the default position of the message window
+
+Window_Message.prototype.updatePlacement = function() {
+    const goldWindow = this._goldWindow;
+    this._positionType = $gameMessage.positionType();
+    // Force top position
+    this.y = 0;
+    if (goldWindow) {
+        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;
+    }
+};
+
+// ==== case: type-violating: unlisted choices {"modType":"unlisted","positionType":"unlisted","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"unlisted","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"unlisted"}
+// rejects: Field "Modification Type" must be one of its choices | Field "Position" must be one of its choices | Field "Background Type" must be one of its choices | Field "Name Box Position" must be one of its choices
+
+
+// ==== case: type-violating: empty text {"modType":"position","positionType":"top","customX":0,"customY":0,"windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"","opacityValue":255,"nameBoxPosition":"center"}
+// Message Window Position Modification
+// Changes the default position of the message window
+
+Window_Message.prototype.updatePlacement = function() {
+    const goldWindow = this._goldWindow;
+    this._positionType = $gameMessage.positionType();
+    // Force top position
+    this.y = 0;
+    if (goldWindow) {
+        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;
+    }
+};
+
+// ==== case: type-violating: required fields only {"modType":"position"}
+// Message Window Position Modification
+// Changes the default position of the message window
+
+Window_Message.prototype.updatePlacement = function() {
+    const goldWindow = this._goldWindow;
+    this._positionType = $gameMessage.positionType();
+    // Force top position
+    this.y = 0;
+    if (goldWindow) {
+        goldWindow.y = this.y > 0 ? 0 : Graphics.boxHeight - goldWindow.height;
+    }
+};
+
 // ==== case: type-violating: positionType="custom",customX=null,customY="abc" {"modType":"position","positionType":"custom","customX":null,"customY":"abc","windowWidth":816,"numLines":4,"bgType":"dim","bgColor":"rgba(0, 0, 0, 0.6)","opacityValue":255,"nameBoxPosition":"center"}
 // rejects: Field "Y Position" must be a number
 // Message Window Position Modification

@@ -36,6 +36,98 @@ Game_Party.prototype.remainingSlots = function() {
 // rejects: Field "Feature Type" must be text | Field "Maximum Party Size" must be a number | Field "Minimum Party Size" must be a number | Field "Hook Timing" must be text | Field "Maximum Reserve Size" must be a number
 
 
+// ==== case: type-violating: null where not required {"featureType":"sizeLimit","maxSize":null,"minSize":null,"hookTiming":null,"maxReserve":null}
+// rejects: Maximum Party Size must be at least 1 | Minimum Party Size must be at least 1
+// Party Size Limit: 1 to 4 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 4;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
+// ==== case: type-violating: unlisted choices {"featureType":"unlisted","maxSize":4,"minSize":1,"hookTiming":"unlisted","maxReserve":10}
+// rejects: Field "Feature Type" must be one of its choices | Field "Hook Timing" must be one of its choices
+
+
+// ==== case: type-violating: empty text {"featureType":"sizeLimit","maxSize":4,"minSize":1,"hookTiming":"after","maxReserve":10}
+// Party Size Limit: 1 to 4 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 4;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
+// ==== case: type-violating: required fields only {"featureType":"sizeLimit"}
+// Party Size Limit: 1 to 4 members
+
+// Store the party size limits
+Game_Party.prototype.maxBattleMembers = function() {
+    return 4;
+};
+
+// Prevent adding members beyond the max size
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    if (this._actors.length >= this.maxBattleMembers()) {
+        // Party is full - you can customize this behavior
+        console.log('Party is full! Cannot add more members.');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Helper method to check if party can add members
+Game_Party.prototype.canAddMember = function() {
+    return this._actors.length < this.maxBattleMembers();
+};
+
+// Helper method to get remaining slots
+Game_Party.prototype.remainingSlots = function() {
+    return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
 // ==== case: type-violating: minSize="2" {"featureType":"sizeLimit","maxSize":4,"minSize":"2","hookTiming":"after","maxReserve":10}
 // rejects: Field "Minimum Party Size" must be a number
 // Party Size Limit: 2 to 4 members
@@ -348,4 +440,43 @@ Game_Party.prototype.canAddMember = function() {
 // Helper method to get remaining slots
 Game_Party.prototype.remainingSlots = function() {
     return Math.max(0, this.maxBattleMembers() - this._actors.length);
+};
+
+// ==== case: type-violating: featureType="addRemoveHook",hookTiming="before" {"featureType":"addRemoveHook","maxSize":4,"minSize":1,"hookTiming":"before","maxReserve":10}
+// Party Member Change Hooks
+
+// Hook for when a member is about to be added
+const _Game_Party_addActor = Game_Party.prototype.addActor;
+Game_Party.prototype.addActor = function(actorId) {
+    // Return false from canAddMember to prevent adding
+    if (!this.canAddThisMember(actorId)) {
+        console.log('Cannot add this member!');
+        return;
+    }
+    _Game_Party_addActor.call(this, actorId);
+};
+
+// Override to control which actors can be added
+Game_Party.prototype.canAddThisMember = function(actorId) {
+    // Add your conditions here
+    // Example: return actorId !== 5; // Cannot add actor 5
+    return true;
+};
+
+// Hook for when a member is about to be removed
+const _Game_Party_removeActor = Game_Party.prototype.removeActor;
+Game_Party.prototype.removeActor = function(actorId) {
+    // Return false from canRemoveMember to prevent removing
+    if (!this.canRemoveThisMember(actorId)) {
+        console.log('Cannot remove this member!');
+        return;
+    }
+    _Game_Party_removeActor.call(this, actorId);
+};
+
+// Override to control which actors can be removed
+Game_Party.prototype.canRemoveThisMember = function(actorId) {
+    // Add your conditions here
+    // Example: return actorId !== 1; // Cannot remove actor 1 (leader)
+    return true;
 };

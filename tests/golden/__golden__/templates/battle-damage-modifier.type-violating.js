@@ -39,6 +39,57 @@ Game_Action.prototype.makeDamageValue = function(target, critical) {
     return value;
 };
 
+// ==== case: type-violating: null where not required {"modifyType":"multiply","modifyValue":"1.5","condition":null}
+// Damage Modifier: Multiply by 1.5 (always)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    value = value >= 0 ? Math.floor(value * 1.5) : Math.ceil(value * 1.5);
+
+    return value;
+};
+
+// ==== case: type-violating: unlisted choices {"modifyType":"unlisted","modifyValue":"1.5","condition":"unlisted"}
+// rejects: Field "Modification Type" must be one of its choices | Field "Condition" must be one of its choices
+// Damage Modifier: Custom formula (for magical attacks)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    value = 1.5; // Custom formula - edit as needed
+    }
+
+    return value;
+};
+
+// ==== case: type-violating: empty text {"modifyType":"multiply","modifyValue":"","condition":"always"}
+// rejects: Field "Value" is required
+// Damage Modifier: Multiply by  (always)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    value = value >= 0 ? Math.floor(value * ) : Math.ceil(value * );
+
+    return value;
+};
+
+// ==== case: type-violating: required fields only {"modifyType":"multiply","modifyValue":"1.5"}
+// Damage Modifier: Multiply by 1.5 (always)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    value = value >= 0 ? Math.floor(value * 1.5) : Math.ceil(value * 1.5);
+
+    return value;
+};
+
 // ==== case: type-violating: condition=null {"modifyType":"multiply","condition":null,"modifyValue":"1.5"}
 // Damage Modifier: Multiply by 1.5 (always)
 const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
@@ -116,6 +167,19 @@ Game_Action.prototype.makeDamageValue = function(target, critical) {
     if (this.isPhysical()) {
         value = value >= 0 ? Math.floor(value * 1.5) : Math.ceil(value * 1.5);
     }
+
+    return value;
+};
+
+// ==== case: type-violating: modifyType="custom",modifyValue="2;x" {"modifyType":"custom","condition":"always","modifyValue":"2;x"}
+// rejects: Value must be one expression on one line (no ";" or comments)
+// Damage Modifier: Custom formula (always)
+const _Game_Action_makeDamageValue = Game_Action.prototype.makeDamageValue;
+Game_Action.prototype.makeDamageValue = function(target, critical) {
+    let value = _Game_Action_makeDamageValue.call(this, target, critical);
+
+    // Apply damage modification
+    value = 2;x; // Custom formula - edit as needed
 
     return value;
 };

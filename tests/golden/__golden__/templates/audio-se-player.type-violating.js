@@ -10,6 +10,60 @@
 // rejects: Field "SE Filename" must be text | Field "Volume" must be a number | Field "Pitch" must be a number | Field "Pan" must be a number | Field "Wrap in Function" must be true or false | Field "Function Name" must be text | Field "Randomize Pitch" must be true or false | Field "Pitch Variation" must be a number
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"filename":"Sample","volume":null,"pitch":null,"pan":null,"wrapInFunction":null,"functionName":null,"randomizePitch":null,"pitchVariation":null}
+// rejects: Pitch must be between 50 and 150
+// Sound Effect Function: Sample
+function playCustomSE() {
+    // Play sound effect
+    const se = {
+        name: 'Sample',
+        volume: null,
+        pitch: null,
+        pan: null
+    };
+    AudioManager.playSe(se);
+}
+
+// ==== case: type-violating: unlisted choices {"filename":"Sample","volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"randomizePitch":false,"pitchVariation":10}
+// Sound Effect Function: Sample
+function playCustomSE() {
+    // Play sound effect
+    const se = {
+        name: 'Sample',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+    AudioManager.playSe(se);
+}
+
+// ==== case: type-violating: empty text {"filename":"","volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"functionName":"","randomizePitch":false,"pitchVariation":10}
+// rejects: Field "SE Filename" is required
+// Sound Effect Function: 
+function playCustomSE() {
+    // Play sound effect
+    const se = {
+        name: '',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+    AudioManager.playSe(se);
+}
+
+// ==== case: type-violating: required fields only {"filename":"Sample"}
+// Sound Effect Function: Sample
+function playCustomSE() {
+    // Play sound effect
+    const se = {
+        name: 'Sample',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+    AudioManager.playSe(se);
+}
+
 // ==== case: type-violating: randomizePitch=true,pitchVariation=null {"volume":90,"pitch":100,"pan":0,"wrapInFunction":true,"randomizePitch":true,"pitchVariation":null,"filename":"Sample"}
 // Sound Effect Function: Sample
 function playCustomSE() {

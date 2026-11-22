@@ -61,6 +61,87 @@ a,b.prototype.updateCustomKeyInput = function() {
     }
 };
 
+// ==== case: type-violating: null where not required {"keyName":"q","triggerType":null,"activeScene":null}
+// Input Handler: Q key on Scene_Map
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+const _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Map.prototype.updateCustomKeyInput = function() {
+    if (Input.isTriggered('q')) {
+        // Your code here - runs when Q is pressed
+        console.log('Q key pressed!');
+    }
+};
+
+// ==== case: type-violating: unlisted choices {"keyName":"unlisted","triggerType":"unlisted","activeScene":"unlisted"}
+// rejects: Field "Key" must be one of its choices | Field "Trigger Type" must be one of its choices | Field "Active Scene" must be one of its choices | Unknown key: unlisted | Invalid trigger type: unlisted | Invalid scene: unlisted
+// Input Handler: undefined key on unlisted
+// Triggers undefined
+
+// Register the key mapping
+Input.keyMapper[undefined] = 'unlisted';  // undefined = undefined key code
+
+const _unlisted_update = unlisted.prototype.update;
+unlisted.prototype.update = function() {
+    _unlisted_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+unlisted.prototype.updateCustomKeyInput = function() {
+    if (Input.unlisted('unlisted')) {
+        // Your code here - runs when undefined is pressed
+        console.log('undefined key pressed!');
+    }
+};
+
+// ==== case: type-violating: empty text {"keyName":"q","triggerType":"isTriggered","activeScene":"Scene_Map"}
+// Input Handler: Q key on Scene_Map
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+const _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Map.prototype.updateCustomKeyInput = function() {
+    if (Input.isTriggered('q')) {
+        // Your code here - runs when Q is pressed
+        console.log('Q key pressed!');
+    }
+};
+
+// ==== case: type-violating: required fields only {"keyName":"q"}
+// Input Handler: Q key on Scene_Map
+// Triggers once when pressed
+
+// Register the key mapping
+Input.keyMapper[81] = 'q';  // 81 = Q key code
+
+const _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this);
+    this.updateCustomKeyInput();
+};
+
+Scene_Map.prototype.updateCustomKeyInput = function() {
+    if (Input.isTriggered('q')) {
+        // Your code here - runs when Q is pressed
+        console.log('Q key pressed!');
+    }
+};
+
 // ==== case: type-violating: activeScene="all",triggerType=null {"triggerType":null,"activeScene":"all","keyName":"q"}
 // Global Input Handler: Q key (all scenes)
 // Triggers once when pressed

@@ -10,6 +10,112 @@
 // rejects: Field "Database" must be text | Field "Tag Name" must be text | Field "Tag Format" must be text | Field "Value Type" must be text | Field "Property Name" must be text | Field "Default Value" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"databaseType":"$dataActors","tagName":"Sample","tagFormat":null,"valueType":null,"propertyName":null,"defaultValue":null}
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = 0;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = Number(match[1]);
+            }
+        }
+    }
+};
+
+// ==== case: type-violating: unlisted choices {"databaseType":"unlisted","tagName":"Sample","tagFormat":"unlisted","valueType":"unlisted"}
+// rejects: Field "Database" must be one of its choices | Field "Tag Format" must be one of its choices | Field "Value Type" must be one of its choices
+// Notetag Parser: Sample
+// Database: unlisted (unlisted)
+// Access via: item.meta.sample
+//
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === unlisted) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+};
+
+// ==== case: type-violating: empty text {"databaseType":"$dataActors","tagName":"","tagFormat":"simple","valueType":"number","propertyName":"","defaultValue":""}
+// rejects: Field "Tag Name" is required
+// Notetag Parser: 
+// Database: Actors ($dataActors)
+// Access via: item.meta.
+//
+// Usage: <: value>
+// Example: <: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processNotetags(object);
+    }
+};
+
+DataManager.processNotetags = function(database) {
+    const regex = /<:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta. = 0;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta. = Number(match[1]);
+            }
+        }
+    }
+};
+
+// ==== case: type-violating: required fields only {"databaseType":"$dataActors","tagName":"Sample"}
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = 0;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = Number(match[1]);
+            }
+        }
+    }
+};
+
 // ==== case: type-violating: propertyName=null {"tagFormat":"simple","valueType":"number","databaseType":"$dataActors","tagName":"Sample","propertyName":null}
 // Notetag Parser: Sample
 // Database: Actors ($dataActors)
@@ -310,6 +416,36 @@ DataManager.processSampleNotetags = function(database) {
             const match = item.note.match(regex);
             if (match) {
                 item.meta.sample = String(match[1]).trim();
+            }
+        }
+    }
+};
+
+// ==== case: type-violating: valueType="unlisted" {"tagFormat":"simple","valueType":"unlisted","databaseType":"$dataActors","tagName":"Sample"}
+// rejects: Field "Value Type" must be one of its choices
+// Notetag Parser: Sample
+// Database: Actors ($dataActors)
+// Access via: item.meta.sample
+//
+// Usage: <Sample: value>
+// Example: <Sample: 50>
+
+const _DataManager_onLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    _DataManager_onLoad.call(this, object);
+    if (object === $dataActors) {
+        this.processSampleNotetags(object);
+    }
+};
+
+DataManager.processSampleNotetags = function(database) {
+    const regex = /<Sample:\s*(.+?)>/i;
+    for (const item of database) {
+        if (item) {
+            item.meta.sample = null;
+            const match = item.note.match(regex);
+            if (match) {
+                item.meta.sample = match[1];
             }
         }
     }

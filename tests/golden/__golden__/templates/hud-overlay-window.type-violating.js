@@ -10,6 +10,271 @@
 // rejects: Field "Window Name" must be text | Field "HUD Type" must be text | Field "X Position" must be a number | Field "Y Position" must be a number | Field "Width" must be a number | Field "Height" must be a number | Field "Background Opacity" must be a number | Field "Show Window Frame" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"windowName":"Sample","hudType":"health","positionX":null,"positionY":null,"width":null,"height":null,"opacity":null,"showFrame":null}
+//-----------------------------------------------------------------------------
+// Window_Sample
+//
+// HUD overlay window that displays on the map screen.
+// This window automatically updates every frame to reflect current game state.
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Base.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.backOpacity = 255;
+    this.refresh();
+};
+
+Window_Sample.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
+    // Refresh HUD when data changes
+    if (this.needsRefresh()) {
+        this.refresh();
+    }
+};
+
+Window_Sample.prototype.needsRefresh = function() {
+    // Check if HP/MP values have changed
+    const actor = $gameParty.leader();
+    if (!actor) return false;
+    if (this._lastHp !== actor.hp || this._lastMp !== actor.mp) {
+        this._lastHp = actor.hp;
+        this._lastMp = actor.mp;
+        return true;
+    }
+    return false;
+};
+
+Window_Sample.prototype.refresh = function() {
+    this.contents.clear();
+    const actor = $gameParty.leader();
+    if (!actor) return;
+    
+    // Draw actor name
+    this.drawText(actor.name(), 0, 0, this.contentsWidth());
+    
+    // Draw HP gauge
+    const gaugeY = this.lineHeight();
+    this.drawText("HP:", 0, gaugeY, 40);
+    this.changeTextColor(ColorManager.hpColor(actor));
+    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);
+    this.resetTextColor();
+};
+
+// Add HUD to Scene_Map
+const _Scene_Map_createAllWindows_Sample = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function() {
+    _Scene_Map_createAllWindows_Sample.call(this);
+    this.createSampleWindow();
+};
+
+Scene_Map.prototype.createSampleWindow = function() {
+    const rect = new Rectangle(10, 10, 200, 80);
+    this._sampleWindow = new Window_Sample(rect);
+    this.addWindow(this._sampleWindow);
+};
+
+// ==== case: type-violating: unlisted choices {"windowName":"Sample","hudType":"unlisted","positionX":10,"positionY":10,"width":200,"height":80,"opacity":255,"showFrame":"unlisted"}
+// rejects: Field "HUD Type" must be one of its choices | Field "Show Window Frame" must be one of its choices
+//-----------------------------------------------------------------------------
+// Window_Sample
+//
+// HUD overlay window that displays on the map screen.
+// This window automatically updates every frame to reflect current game state.
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Base.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.backOpacity = 255;
+    this.refresh();
+};
+
+Window_Sample.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
+    // Refresh HUD when data changes
+    if (this.needsRefresh()) {
+        this.refresh();
+    }
+};
+
+Window_Sample.prototype.needsRefresh = function() {
+    // Override this method to control when the HUD refreshes
+    return false;
+};
+
+Window_Sample.prototype.refresh = function() {
+    this.contents.clear();
+    // Custom HUD content - add your drawing code here
+    this.drawText('Custom HUD', 0, 0, this.contentsWidth(), 'center');
+};
+
+// Add HUD to Scene_Map
+const _Scene_Map_createAllWindows_Sample = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function() {
+    _Scene_Map_createAllWindows_Sample.call(this);
+    this.createSampleWindow();
+};
+
+Scene_Map.prototype.createSampleWindow = function() {
+    const rect = new Rectangle(10, 10, 200, 80);
+    this._sampleWindow = new Window_Sample(rect);
+    this.addWindow(this._sampleWindow);
+};
+
+// ==== case: type-violating: empty text {"windowName":"","hudType":"health","positionX":10,"positionY":10,"width":200,"height":80,"opacity":255,"showFrame":"true"}
+// rejects: Field "Window Name" is required
+//-----------------------------------------------------------------------------
+// Window_
+//
+// HUD overlay window that displays on the map screen.
+// This window automatically updates every frame to reflect current game state.
+//-----------------------------------------------------------------------------
+
+function Window_() {
+    this.initialize(...arguments);
+}
+
+Window_.prototype = Object.create(Window_Base.prototype);
+Window_.prototype.constructor = Window_;
+
+Window_.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.backOpacity = 255;
+    this.refresh();
+};
+
+Window_.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
+    // Refresh HUD when data changes
+    if (this.needsRefresh()) {
+        this.refresh();
+    }
+};
+
+Window_.prototype.needsRefresh = function() {
+    // Check if HP/MP values have changed
+    const actor = $gameParty.leader();
+    if (!actor) return false;
+    if (this._lastHp !== actor.hp || this._lastMp !== actor.mp) {
+        this._lastHp = actor.hp;
+        this._lastMp = actor.mp;
+        return true;
+    }
+    return false;
+};
+
+Window_.prototype.refresh = function() {
+    this.contents.clear();
+    const actor = $gameParty.leader();
+    if (!actor) return;
+    
+    // Draw actor name
+    this.drawText(actor.name(), 0, 0, this.contentsWidth());
+    
+    // Draw HP gauge
+    const gaugeY = this.lineHeight();
+    this.drawText("HP:", 0, gaugeY, 40);
+    this.changeTextColor(ColorManager.hpColor(actor));
+    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);
+    this.resetTextColor();
+};
+
+// Add HUD to Scene_Map
+const _Scene_Map_createAllWindows_ = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function() {
+    _Scene_Map_createAllWindows_.call(this);
+    this.createWindow();
+};
+
+Scene_Map.prototype.createWindow = function() {
+    const rect = new Rectangle(10, 10, 200, 80);
+    this._Window = new Window_(rect);
+    this.addWindow(this._Window);
+};
+
+// ==== case: type-violating: required fields only {"windowName":"Sample","hudType":"health"}
+//-----------------------------------------------------------------------------
+// Window_Sample
+//
+// HUD overlay window that displays on the map screen.
+// This window automatically updates every frame to reflect current game state.
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Base.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.backOpacity = 255;
+    this.refresh();
+};
+
+Window_Sample.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
+    // Refresh HUD when data changes
+    if (this.needsRefresh()) {
+        this.refresh();
+    }
+};
+
+Window_Sample.prototype.needsRefresh = function() {
+    // Check if HP/MP values have changed
+    const actor = $gameParty.leader();
+    if (!actor) return false;
+    if (this._lastHp !== actor.hp || this._lastMp !== actor.mp) {
+        this._lastHp = actor.hp;
+        this._lastMp = actor.mp;
+        return true;
+    }
+    return false;
+};
+
+Window_Sample.prototype.refresh = function() {
+    this.contents.clear();
+    const actor = $gameParty.leader();
+    if (!actor) return;
+    
+    // Draw actor name
+    this.drawText(actor.name(), 0, 0, this.contentsWidth());
+    
+    // Draw HP gauge
+    const gaugeY = this.lineHeight();
+    this.drawText("HP:", 0, gaugeY, 40);
+    this.changeTextColor(ColorManager.hpColor(actor));
+    this.drawText(actor.hp + "/" + actor.mhp, 45, gaugeY, this.contentsWidth() - 45);
+    this.resetTextColor();
+};
+
+// Add HUD to Scene_Map
+const _Scene_Map_createAllWindows_Sample = Scene_Map.prototype.createAllWindows;
+Scene_Map.prototype.createAllWindows = function() {
+    _Scene_Map_createAllWindows_Sample.call(this);
+    this.createSampleWindow();
+};
+
+Scene_Map.prototype.createSampleWindow = function() {
+    const rect = new Rectangle(10, 10, 200, 80);
+    this._sampleWindow = new Window_Sample(rect);
+    this.addWindow(this._sampleWindow);
+};
+
 // ==== case: type-violating: positionY=null,opacity=null {"hudType":"health","positionX":10,"positionY":null,"width":200,"height":80,"opacity":null,"showFrame":"true","windowName":"Sample"}
 //-----------------------------------------------------------------------------
 // Window_Sample

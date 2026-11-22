@@ -33,6 +33,91 @@ Scene_Title.prototype.commandcustom = function() {
 // rejects: Field "Modification Type" must be text | Field "Command Name" must be text | Field "Command Symbol" must be text | Field "Command to Hide" must be text
 
 
+// ==== case: type-violating: null where not required {"modType":"addCommand","commandName":null,"commandSymbol":null,"hideTarget":null}
+// rejects: Command name is required | Command symbol is required
+// Title Screen Mod: Add "Custom" Command
+
+// Add command to title command window
+const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
+Window_TitleCommand.prototype.makeCommandList = function() {
+    _Window_TitleCommand_makeCommandList.call(this);
+    this.addCommand("Custom", "custom");
+};
+
+// Create handler for the new command
+const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
+Scene_Title.prototype.createCommandWindow = function() {
+    _Scene_Title_createCommandWindow.call(this);
+    this._commandWindow.setHandler("custom", this.commandcustom.bind(this));
+};
+
+Scene_Title.prototype.commandcustom = function() {
+    // Your code here when "Custom" is selected
+    console.log("Custom command selected");
+    this._commandWindow.activate();
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Custom);
+};
+
+// ==== case: type-violating: unlisted choices {"modType":"unlisted","commandName":"Extra","commandSymbol":"extra","hideTarget":"unlisted"}
+// rejects: Field "Modification Type" must be one of its choices | Field "Command to Hide" must be one of its choices
+
+
+// ==== case: type-violating: empty text {"modType":"addCommand","commandName":"","commandSymbol":""}
+// rejects: Command name is required | Command symbol is required
+// Title Screen Mod: Add "Custom" Command
+
+// Add command to title command window
+const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
+Window_TitleCommand.prototype.makeCommandList = function() {
+    _Window_TitleCommand_makeCommandList.call(this);
+    this.addCommand("Custom", "custom");
+};
+
+// Create handler for the new command
+const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
+Scene_Title.prototype.createCommandWindow = function() {
+    _Scene_Title_createCommandWindow.call(this);
+    this._commandWindow.setHandler("custom", this.commandcustom.bind(this));
+};
+
+Scene_Title.prototype.commandcustom = function() {
+    // Your code here when "Custom" is selected
+    console.log("Custom command selected");
+    this._commandWindow.activate();
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Custom);
+};
+
+// ==== case: type-violating: required fields only {"modType":"addCommand"}
+// rejects: Command name is required | Command symbol is required
+// Title Screen Mod: Add "Custom" Command
+
+// Add command to title command window
+const _Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
+Window_TitleCommand.prototype.makeCommandList = function() {
+    _Window_TitleCommand_makeCommandList.call(this);
+    this.addCommand("Custom", "custom");
+};
+
+// Create handler for the new command
+const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
+Scene_Title.prototype.createCommandWindow = function() {
+    _Scene_Title_createCommandWindow.call(this);
+    this._commandWindow.setHandler("custom", this.commandcustom.bind(this));
+};
+
+Scene_Title.prototype.commandcustom = function() {
+    // Your code here when "Custom" is selected
+    console.log("Custom command selected");
+    this._commandWindow.activate();
+    
+    // Example: Push a custom scene
+    // SceneManager.push(Scene_Custom);
+};
+
 // ==== case: type-violating: modType="hideCommand",hideTarget=7 {"modType":"hideCommand","commandName":"Extra","commandSymbol":"extra","hideTarget":7}
 // rejects: Field "Command to Hide" must be text
 // Title Screen Mod: Hide "Options" Command

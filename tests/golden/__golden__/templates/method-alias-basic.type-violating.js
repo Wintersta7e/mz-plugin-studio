@@ -34,6 +34,51 @@ a,b.prototype.a,b = function() {
     return result;
 };
 
+// ==== case: type-violating: null where not required {"className":"Scene_Map","methodName":"start","timing":null,"callOriginal":null}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};
+
+// ==== case: type-violating: unlisted choices {"className":"Scene_Map","methodName":"start","timing":"unlisted","callOriginal":true}
+// rejects: Field "When to run your code" must be one of its choices
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here
+    
+    return result;
+};
+
+// ==== case: type-violating: empty text {"className":"Scene_Map","methodName":"start","timing":"after","callOriginal":true}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};
+
+// ==== case: type-violating: required fields only {"className":"Scene_Map","methodName":"start"}
+// Alias: Scene_Map.start
+const _Scene_Map_start = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    const result = _Scene_Map_start.apply(this, arguments);
+    
+    // Your code here (after original)
+    
+    return result;
+};
+
 // ==== case: type-violating: timing=null {"timing":null,"callOriginal":true,"className":"Scene_Map","methodName":"start"}
 // Alias: Scene_Map.start
 const _Scene_Map_start = Scene_Map.prototype.start;

@@ -10,6 +10,36 @@
 // rejects: Field "Command Name" must be text | Field "Plugin Name" must be text | Field "Argument 1 Name" must be text | Field "Argument 1 Type" must be text | Field "Argument 2 Name" must be text | Field "Argument 2 Type" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"commandName":"Sample","pluginName":"Sample","arg1Name":null,"arg1Type":null,"arg2Name":null,"arg2Type":null}
+// Plugin Command: Sample
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Your command logic here
+    console.log('Sample called');
+});
+
+// ==== case: type-violating: unlisted choices {"commandName":"Sample","pluginName":"Sample","arg1Type":"unlisted","arg2Type":"unlisted"}
+// rejects: Field "Argument 1 Type" must be one of its choices | Field "Argument 2 Type" must be one of its choices
+// Plugin Command: Sample
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Your command logic here
+    console.log('Sample called');
+});
+
+// ==== case: type-violating: empty text {"commandName":"","pluginName":"","arg1Name":"","arg1Type":"string","arg2Name":"","arg2Type":"number"}
+// rejects: Field "Command Name" is required | Field "Plugin Name" is required
+// Plugin Command: 
+PluginManager.registerCommand('', '', function(args) {
+    // Your command logic here
+    console.log(' called');
+});
+
+// ==== case: type-violating: required fields only {"commandName":"Sample","pluginName":"Sample"}
+// Plugin Command: Sample
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Your command logic here
+    console.log('Sample called');
+});
+
 // ==== case: type-violating: arg1Name="target",arg1Type=7,arg2Name="value",arg2Type=["a","b"] {"arg1Type":7,"arg2Type":["a","b"],"commandName":"Sample","pluginName":"Sample","arg1Name":"target","arg2Name":"value"}
 // rejects: Field "Argument 1 Type" must be text | Field "Argument 2 Type" must be text
 // Plugin Command: Sample
@@ -75,4 +105,45 @@ PluginManager.registerCommand('Sample', '42', function(args) {
 
     // Your command logic here
     console.log('42 called with:', flag);
+});
+
+// ==== case: type-violating: arg1Name="target",arg1Type="number",arg2Name="data",arg2Type="json" {"arg1Type":"number","arg2Type":"json","commandName":"Sample","pluginName":"Sample","arg1Name":"target","arg2Name":"data"}
+// Plugin Command: Sample
+// Arguments:
+//   target (number) - First argument
+//   data (json) - Second argument
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Parse arguments
+    const target = Number(args.target);
+    const data = JSON.parse(args.data);
+
+    // Your command logic here
+    console.log('Sample called with:', target, data);
+});
+
+// ==== case: type-violating: arg1Name="flag",arg1Type="boolean" {"arg1Type":"boolean","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"flag"}
+// Plugin Command: Sample
+// Arguments:
+//   flag (boolean) - First argument
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Parse arguments
+    const flag = args.flag === 'true';
+
+    // Your command logic here
+    console.log('Sample called with:', flag);
+});
+
+// ==== case: type-violating: commandName=" " {"arg1Type":"string","arg2Type":"number","commandName":" ","pluginName":"Sample"}
+// rejects: Command name is required
+// Plugin Command: 
+PluginManager.registerCommand('Sample', '', function(args) {
+    // Your command logic here
+    console.log(' called');
+});
+
+// ==== case: type-violating: arg1Name="",arg2Name="" {"arg1Type":"string","arg2Type":"number","commandName":"Sample","pluginName":"Sample","arg1Name":"","arg2Name":""}
+// Plugin Command: Sample
+PluginManager.registerCommand('Sample', 'Sample', function(args) {
+    // Your command logic here
+    console.log('Sample called');
 });

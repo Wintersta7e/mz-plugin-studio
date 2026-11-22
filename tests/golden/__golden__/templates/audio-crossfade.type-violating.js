@@ -38,6 +38,96 @@ function crossfadeBgm() {
 function a,b() {
 }
 
+// ==== case: type-violating: null where not required {"crossfadeType":"crossfade","newBgmFilename":null,"fadeFromSilenceBgm":null,"fadeOutDuration":null,"fadeInDuration":null,"newBgmVolume":null,"newBgmPitch":null,"wrapInFunction":null,"functionName":null}
+// rejects: New BGM filename is required for crossfade | Pitch must be between 50 and 150
+// Crossfade Function
+function crossfadeBgm() {
+    // Crossfade: Fade out current BGM, then play and fade in new BGM
+    const fadeOutDuration = null; // seconds
+    const fadeInDuration = null; // seconds
+
+    // Define the new BGM settings
+    const newBgm = {
+        name: 'NEW_BGM_NAME',
+        volume: null,
+        pitch: null,
+        pan: 0
+    };
+
+    // Fade out current BGM
+    AudioManager.fadeOutBgm(fadeOutDuration);
+
+    // Schedule the new BGM to play after fade out completes
+    setTimeout(function() {
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
+        // Fade in to target volume
+        AudioManager.fadeInBgm(fadeInDuration);
+    }, fadeOutDuration * 1000);
+}
+
+// ==== case: type-violating: unlisted choices {"crossfadeType":"unlisted","newBgmFilename":"Theme2","fadeOutDuration":2,"fadeInDuration":2,"newBgmVolume":90,"newBgmPitch":100,"wrapInFunction":true}
+// rejects: Field "Crossfade Type" must be one of its choices
+// Fade from Silence Function
+function crossfadeBgm() {
+}
+
+// ==== case: type-violating: empty text {"crossfadeType":"crossfade","newBgmFilename":"","fadeFromSilenceBgm":"","fadeOutDuration":2,"fadeInDuration":2,"newBgmVolume":90,"newBgmPitch":100,"wrapInFunction":true,"functionName":""}
+// rejects: New BGM filename is required for crossfade
+// Crossfade Function
+function crossfadeBgm() {
+    // Crossfade: Fade out current BGM, then play and fade in new BGM
+    const fadeOutDuration = 2; // seconds
+    const fadeInDuration = 2; // seconds
+
+    // Define the new BGM settings
+    const newBgm = {
+        name: 'NEW_BGM_NAME',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+
+    // Fade out current BGM
+    AudioManager.fadeOutBgm(fadeOutDuration);
+
+    // Schedule the new BGM to play after fade out completes
+    setTimeout(function() {
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
+        // Fade in to target volume
+        AudioManager.fadeInBgm(fadeInDuration);
+    }, fadeOutDuration * 1000);
+}
+
+// ==== case: type-violating: required fields only {"crossfadeType":"crossfade"}
+// rejects: New BGM filename is required for crossfade
+// Crossfade Function
+function crossfadeBgm() {
+    // Crossfade: Fade out current BGM, then play and fade in new BGM
+    const fadeOutDuration = 2; // seconds
+    const fadeInDuration = 2; // seconds
+
+    // Define the new BGM settings
+    const newBgm = {
+        name: 'NEW_BGM_NAME',
+        volume: 90,
+        pitch: 100,
+        pan: 0
+    };
+
+    // Fade out current BGM
+    AudioManager.fadeOutBgm(fadeOutDuration);
+
+    // Schedule the new BGM to play after fade out completes
+    setTimeout(function() {
+        // Play new BGM, then fade it in from silence
+        AudioManager.playBgm(newBgm);
+        // Fade in to target volume
+        AudioManager.fadeInBgm(fadeInDuration);
+    }, fadeOutDuration * 1000);
+}
+
 // ==== case: type-violating: crossfadeType="fadeFromSilence",fadeFromSilenceBgm=null {"crossfadeType":"fadeFromSilence","fadeOutDuration":2,"fadeInDuration":2,"newBgmVolume":90,"newBgmPitch":100,"wrapInFunction":true,"newBgmFilename":"Theme2","fadeFromSilenceBgm":null}
 // rejects: BGM filename is required for fade from silence
 // Fade from Silence Function

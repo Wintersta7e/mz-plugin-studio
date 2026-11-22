@@ -34,6 +34,110 @@ Game_Actor.prototype.change = function(amount) {
 // rejects: Field "Property Name" must be text | Field "Data Type" must be text | Field "Default Value" must be text | Field "Minimum Value (for numbers)" must be text | Field "Maximum Value (for numbers)" must be text | Field "Include Change Method" must be true or false
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"propertyName":"Sample","dataType":"number","defaultValue":null,"minValue":null,"maxValue":null,"includeChange":null}
+// Custom Actor Property: Sample
+// Type: number, Default: 0
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = 0;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    this._Sample = value;
+};
+
+// Change method: actor.changeSample(amount)
+// Use positive values to increase, negative to decrease
+Game_Actor.prototype.changeSample = function(amount) {
+    this.setSample(this._Sample + amount);
+};
+
+// ==== case: type-violating: unlisted choices {"propertyName":"Sample","dataType":"unlisted","includeChange":true}
+// rejects: Field "Data Type" must be one of its choices
+// Custom Actor Property: Sample
+// Type: unlisted, Default: null
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = null;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    this._Sample = value;
+};
+
+// ==== case: type-violating: empty text {"propertyName":"","dataType":"number","defaultValue":"","minValue":"","maxValue":"","includeChange":true}
+// rejects: Field "Property Name" is required
+// Custom Actor Property: 
+// Type: number, Default: 0
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._ = 0;
+};
+
+// Getter: actor.()
+Game_Actor.prototype. = function() {
+    return this._;
+};
+
+// Setter: actor.set(value)
+Game_Actor.prototype.set = function(value) {
+    this._ = value;
+};
+
+// Change method: actor.change(amount)
+// Use positive values to increase, negative to decrease
+Game_Actor.prototype.change = function(amount) {
+    this.set(this._ + amount);
+};
+
+// ==== case: type-violating: required fields only {"propertyName":"Sample","dataType":"number"}
+// Custom Actor Property: Sample
+// Type: number, Default: 0
+
+// Initialize the property when actor is created
+const _Game_Actor_initMembers = Game_Actor.prototype.initMembers;
+Game_Actor.prototype.initMembers = function() {
+    _Game_Actor_initMembers.call(this);
+    this._Sample = 0;
+};
+
+// Getter: actor.Sample()
+Game_Actor.prototype.Sample = function() {
+    return this._Sample;
+};
+
+// Setter: actor.setSample(value)
+Game_Actor.prototype.setSample = function(value) {
+    this._Sample = value;
+};
+
+// Change method: actor.changeSample(amount)
+// Use positive values to increase, negative to decrease
+Game_Actor.prototype.changeSample = function(amount) {
+    this.setSample(this._Sample + amount);
+};
+
 // ==== case: type-violating: minValue=null {"dataType":"number","includeChange":true,"propertyName":"Sample","minValue":null}
 // Custom Actor Property: Sample
 // Type: number, Default: 0

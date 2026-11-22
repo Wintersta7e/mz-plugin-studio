@@ -10,6 +10,108 @@
 // rejects: Field "Window Name" must be text | Field "Parent Class" must be text | Field "Width" must be a number | Field "Height" must be a number | Field "Add to Scene" must be text
 // throws: TypeError
 
+// ==== case: type-violating: null where not required {"windowName":"Sample","parentClass":"Window_Base","width":null,"height":null,"addToScene":null}
+// rejects: Width must be a positive number | Height must be a positive number
+//-----------------------------------------------------------------------------
+// Window_Sample
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Base.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.refresh();
+};
+
+Window_Sample.prototype.refresh = function() {
+    this.contents.clear();
+    // Draw your content here
+    this.drawText('Content', 0, 0, this.contentsWidth());
+};
+
+// ==== case: type-violating: unlisted choices {"windowName":"Sample","parentClass":"unlisted","width":300,"height":200,"addToScene":"unlisted"}
+// rejects: Field "Parent Class" must be one of its choices | Field "Add to Scene" must be one of its choices
+//-----------------------------------------------------------------------------
+// Window_Sample
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(unlisted.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    unlisted.prototype.initialize.call(this, rect);
+    this.refresh();
+};
+
+// Add to unlisted
+const _unlisted_createAllWindows = unlisted.prototype.createAllWindows;
+unlisted.prototype.createAllWindows = function() {
+    _unlisted_createAllWindows.call(this);
+    this.createSampleWindow();
+};
+
+unlisted.prototype.createSampleWindow = function() {
+    const rect = new Rectangle(0, 0, 300, 200);
+    this._sampleWindow = new Window_Sample(rect);
+    this.addWindow(this._sampleWindow);
+};
+
+// ==== case: type-violating: empty text {"windowName":"","parentClass":"Window_Base","width":300,"height":200,"addToScene":"none"}
+// rejects: Field "Window Name" is required
+//-----------------------------------------------------------------------------
+// Window_
+//-----------------------------------------------------------------------------
+
+function Window_() {
+    this.initialize(...arguments);
+}
+
+Window_.prototype = Object.create(Window_Base.prototype);
+Window_.prototype.constructor = Window_;
+
+Window_.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.refresh();
+};
+
+Window_.prototype.refresh = function() {
+    this.contents.clear();
+    // Draw your content here
+    this.drawText('Content', 0, 0, this.contentsWidth());
+};
+
+// ==== case: type-violating: required fields only {"windowName":"Sample","parentClass":"Window_Base"}
+//-----------------------------------------------------------------------------
+// Window_Sample
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Base.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Base.prototype.initialize.call(this, rect);
+    this.refresh();
+};
+
+Window_Sample.prototype.refresh = function() {
+    this.contents.clear();
+    // Draw your content here
+    this.drawText('Content', 0, 0, this.contentsWidth());
+};
+
 // ==== case: type-violating: width=null {"parentClass":"Window_Base","width":null,"height":200,"addToScene":"none","windowName":"Sample"}
 // rejects: Width must be a positive number
 //-----------------------------------------------------------------------------
@@ -193,4 +295,57 @@ Scene_Map.prototype.onListWindowOk = function() {
 Scene_Map.prototype.onListWindowCancel = function() {
     // Handle cancel
     this._listWindowWindow.deactivate();
+};
+
+// ==== case: type-violating: parentClass="Window_Command",addToScene="Scene_Menu" {"parentClass":"Window_Command","width":300,"height":200,"addToScene":"Scene_Menu","windowName":"Sample"}
+//-----------------------------------------------------------------------------
+// Window_Sample
+//-----------------------------------------------------------------------------
+
+function Window_Sample() {
+    this.initialize(...arguments);
+}
+
+Window_Sample.prototype = Object.create(Window_Command.prototype);
+Window_Sample.prototype.constructor = Window_Sample;
+
+Window_Sample.prototype.initialize = function(rect) {
+    Window_Command.prototype.initialize.call(this, rect);
+    // Commands are created in makeCommandList
+};
+
+Window_Sample.prototype.makeCommandList = function() {
+    this.addCommand('Command 1', 'command1');
+    this.addCommand('Command 2', 'command2');
+    this.addCommand('Command 3', 'command3');
+};
+// Add to Scene_Menu
+const _Scene_Menu_createAllWindows = Scene_Menu.prototype.createAllWindows;
+Scene_Menu.prototype.createAllWindows = function() {
+    _Scene_Menu_createAllWindows.call(this);
+    this.createSampleWindow();
+};
+
+Scene_Menu.prototype.createSampleWindow = function() {
+    const rect = new Rectangle(0, 0, 300, 200);
+    this._sampleWindow = new Window_Sample(rect);
+    this._sampleWindow.setHandler('command1', this.onCommand1.bind(this));
+    this._sampleWindow.setHandler('command2', this.onCommand2.bind(this));
+    this._sampleWindow.setHandler('command3', this.onCommand3.bind(this));
+    this.addWindow(this._sampleWindow);
+};
+
+Scene_Menu.prototype.onCommand1 = function() {
+    // Handle command 1
+    this._sampleWindow.activate();
+};
+
+Scene_Menu.prototype.onCommand2 = function() {
+    // Handle command 2
+    this._sampleWindow.activate();
+};
+
+Scene_Menu.prototype.onCommand3 = function() {
+    // Handle command 3
+    this._sampleWindow.activate();
 };
