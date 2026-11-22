@@ -568,6 +568,17 @@ export const GENERATOR_ENTRIES: GeneratorEntry[] = [
   row('localization-key-comment', (definition) => {
     definition.meta.localizations = { 'ja */ x': { description: 'Localized description' } }
   }),
+  row('non-ascii-param-names', (definition) => {
+    itemAt(definition.parameters, 0).name = '速度'
+    definition.parameters.push({
+      id: 'height',
+      name: '高さ',
+      text: '高さ',
+      desc: 'Height in pixels.',
+      type: 'number',
+      default: 48
+    })
+  }),
   row('custom-code', (definition) => {
     definition.customCode = 'const rate = 2\n\nfunction scaled(value) {\n  return value * rate\n}'
   }),

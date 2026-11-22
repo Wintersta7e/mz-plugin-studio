@@ -128,7 +128,10 @@ export interface ConformanceReport {
 Pairs that fail today, by case: each is removed by the change that fixes it, and a listed
 pair that holds fails the check as surely as an unlisted pair that fails.
 */
-export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {}
+export const KNOWN_NONCONFORMING: Record<string, ConformanceKind[]> = {
+  // Both non-ASCII parameter names become the same constant, declared twice
+  'generator:non-ascii-param-names': ['load-error']
+}
 
 // --- Cases ---------------------------------------------------------------------------------
 
@@ -396,6 +399,10 @@ export interface Observation {
   Command names the observed code registers, in order.
   */
   commandNames: string[]
+  /**
+  Why the code does not parse, when it does not: nothing is then observed.
+  */
+  parseError?: string
 }
 
 const isList = (value: unknown): value is readonly unknown[] => Array.isArray(value)
@@ -520,7 +527,8 @@ function registeredCommand(node: AnyNode): { name: string; body: AnyNode[]; end:
 /**
 Inserts statements that record what the plugin computed: after its parameter constants, and
 at the end of each command it registers. Raw mode output is observed only where the app
-added code; the rest is the file's own. The code is otherwise unchanged.
+added code; the rest is the file's own. The code is otherwise unchanged; code that does not
+parse is not observed, and its parse error is returned instead of thrown.
 */
 export function observe(code: string, kind: ConformanceCase['kind']): Observation {
   const regions: [number, number][] = []
@@ -561,7 +569,14 @@ export function observe(code: string, kind: ConformanceCase['kind']): Observatio
     }
     for (const child of children(node)) visit(child)
   }
-  visit(parse(code, { ecmaVersion: 'latest', sourceType: 'script' }))
+  let program: AnyNode
+  try {
+    program = parse(code, { ecmaVersion: 'latest', sourceType: 'script' })
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error
+    return { ...observation, parseError: `${error.name}: ${error.message}` }
+  }
+  visit(program)
 
   let observed = code
   const latestFirst = observation.insertions.toSorted((a, b) => b.at - a.at)
@@ -888,10 +903,13 @@ function runGeneratedCommand(
   }
 }
 
-function runGenerated(createRuntime: () => MzRuntime, run_: CaseRun): void {
+function runGenerated(
+  createRuntime: () => MzRuntime,
+  run_: CaseRun,
+  observation: Observation
+): void {
   const { c, report } = run_
   const header = PluginParser.parsePlugin(c.code, c.fileName)
-  const observation = observe(c.code, c.kind)
   const stem = stemOf(c.fileName)
   const declaredCommands = new Set(header.commands.map((command) => command.name))
   // A command name the app refuses (validatePlugin's identifier rule) is read from the header in
@@ -1020,11 +1038,11 @@ function runRawModeCommands(
 function runRawMode(
   createRuntime: () => MzRuntime,
   run_: CaseRun,
+  observation: Observation,
   ranUnedited: ReadonlySet<string> | undefined
 ): Set<string> {
   const { c, report } = run_
   const header = PluginParser.parsePlugin(c.code, c.fileName)
-  const observation = observe(c.code, c.kind)
   // A file whose own code reads its parameters under another name is loaded under that name,
   // the only one under which its code finds them; events still call its commands by file name
   const stem = stemOf(c.fileName)
@@ -1093,10 +1111,15 @@ export function runConformance(
   const ranUnedited = new Map<string, Set<string>>()
   for (const c of cases) {
     const caseRun = new CaseRun(c, report, seen)
-    if (c.kind === 'generated') {
-      runGenerated(createRuntime, caseRun)
+    const observation = observe(c.code, c.kind)
+    // Code that does not parse loads nothing: one finding of its own, not a throw that stops
+    // every later case
+    if (observation.parseError !== undefined) {
+      caseRun.addFinding('load-error', observation.parseError)
+    } else if (c.kind === 'generated') {
+      runGenerated(createRuntime, caseRun, observation)
     } else {
-      const ran = runRawMode(createRuntime, caseRun, ranUnedited.get(c.fileName))
+      const ran = runRawMode(createRuntime, caseRun, observation, ranUnedited.get(c.fileName))
       if (c.id.endsWith('.none')) ranUnedited.set(c.fileName, ran)
     }
     report.traces[c.id] = caseRun.trace

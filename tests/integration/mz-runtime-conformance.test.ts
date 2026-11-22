@@ -257,9 +257,11 @@ describe('every generated and raw-mode plugin in the plugin loader', () => {
 
   it('loses the commands under a case-swapped file name, and everything under another name', () => {
     const { renames } = corpusReport()
+    // A case listed as failing to load is never loaded under another name
     const withSomething = cases.filter(
       (c) =>
         c.kind === 'generated' &&
+        !(KNOWN_NONCONFORMING[c.id] ?? []).includes('load-error') &&
         (c.definition.parameters.length > 0 || c.definition.commands.length > 0)
     )
 
