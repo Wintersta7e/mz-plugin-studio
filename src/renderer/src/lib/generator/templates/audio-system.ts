@@ -10,6 +10,7 @@ Templates for RPG Maker MZ audio control:
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString, escapeLineComment } from '../escape'
 import { expectText, providedOr, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 A BGM filename as the text of a single-quoted string, or the placeholder when it is not set.
@@ -32,7 +33,7 @@ The error for a function name the code is wrapped in that is not a JavaScript id
 function functionNameErrors(values: FunctionWrapValues): string[] {
   const hasFunctionName = Boolean(values.wrapInFunction) && Boolean(values.functionName)
   if (!hasFunctionName) return []
-  const isIdentifier = /^[a-z_$][\w$]*$/i.test(String(values.functionName))
+  const isIdentifier = isIdentifierName(String(values.functionName))
   return isIdentifier ? [] : ['Function name must be a valid JavaScript identifier']
 }
 

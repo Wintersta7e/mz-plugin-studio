@@ -7,6 +7,7 @@ Notetags are custom metadata added to the note field of database items.
 
 import { defineTemplate, type CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 Convert a string to camelCase
@@ -246,8 +247,10 @@ and a name the database entries already use is warned about.
 function tagNameErrors(tagName: unknown): string[] {
   const errors: string[] = []
 
-  // Check for valid tag name (letters, numbers, underscores)
-  if (!/^[a-z_]\w*$/i.test(String(tagName))) {
+  // A tag name names a property and a method, so it is an identifier; `$` is refused, as the
+  // note reader writes the name into a regex, where `$` matches the end of the note
+  const name = String(tagName)
+  if (!isIdentifierName(name) || name.includes('$')) {
     errors.push(
       'Tag Name must start with a letter or underscore and contain only letters, numbers, and underscores'
     )
@@ -398,7 +401,7 @@ const databaseExtensionTemplate = defineTemplate({
     // Validate property name if provided
     const propertyName: unknown = values.propertyName
     const hasPropertyName = Boolean(propertyName)
-    if (hasPropertyName && !/^[a-z_$][\w$]*$/i.test(String(propertyName))) {
+    if (hasPropertyName && !isIdentifierName(String(propertyName))) {
       errors.push('Property Name must be a valid JavaScript identifier')
     }
 

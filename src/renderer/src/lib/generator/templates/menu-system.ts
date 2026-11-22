@@ -11,13 +11,17 @@ Templates for RPG Maker MZ menu and scene customization:
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSDoubleQuote, escapeLineComment } from '../escape'
 import { expectText } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
-Helper to convert a name to a valid JavaScript identifier
+A name as a JavaScript identifier: each character an identifier cannot hold is removed, a
+letter of any script is kept, and a start an identifier cannot have, such as a digit, gets `_`
+before it
 */
 function toValidIdentifier(name: string): string {
-  // Remove special characters and replace spaces with nothing
-  return name.replaceAll(/\W/g, '').replace(/^\d/, '_$&')
+  return name
+    .replaceAll(/[^\p{ID_Continue}$\u{200C}\u{200D}]/gu, '')
+    .replace(/^[^\p{ID_Start}$_]/u, '_$&')
 }
 
 /**
@@ -312,7 +316,7 @@ const customMenuSceneTemplate = defineTemplate({
     const hasSceneName = Boolean(sceneName)
     if (hasSceneName) {
       const text = sceneName
-      if (!/^[a-z_]\w*$/i.test(text)) {
+      if (!isIdentifierName(text)) {
         errors.push(
           'Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)'
         )
@@ -323,7 +327,7 @@ const customMenuSceneTemplate = defineTemplate({
     const hasWindowName = Boolean(windowName)
     if (hasWindowName) {
       const text = windowName
-      if (!/^[a-z_]\w*$/i.test(text)) {
+      if (!isIdentifierName(text)) {
         errors.push('Window name must be a valid JavaScript identifier')
       }
     }
@@ -568,7 +572,7 @@ const titleScreenModuleTemplate = defineTemplate({
       const hasCommandSymbol = Boolean(commandSymbol)
       if (hasCommandSymbol) {
         const symbol = String(commandSymbol)
-        if (!/^[a-z_]\w*$/i.test(symbol)) {
+        if (!isIdentifierName(symbol)) {
           errors.push('Command symbol must be a valid JavaScript identifier')
         }
       } else {
@@ -845,7 +849,7 @@ const menuCommandAdditionTemplate = defineTemplate({
     const hasCommandSymbol = Boolean(commandSymbol)
     if (hasCommandSymbol) {
       const symbol = commandSymbol
-      if (!/^[a-z_]\w*$/i.test(symbol)) {
+      if (!isIdentifierName(symbol)) {
         errors.push('Command symbol must be a valid JavaScript identifier')
       }
     }
@@ -1175,7 +1179,7 @@ const optionsMenuAdditionTemplate = defineTemplate({
     const hasOptionSymbol = Boolean(optionSymbol)
     if (hasOptionSymbol) {
       const symbol = optionSymbol
-      if (!/^[a-z_]\w*$/i.test(symbol)) {
+      if (!isIdentifierName(symbol)) {
         errors.push('Option symbol must be a valid JavaScript identifier')
       }
     }

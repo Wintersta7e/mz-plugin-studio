@@ -44,6 +44,7 @@ import { cn, userMessage } from '../../lib/utilities'
 import { PARAM_TYPE_GROUPS, toLimit } from './param-types'
 import { TypeFields } from './TypeFields'
 import { FieldDefaultInput } from './EditorParts'
+import { isIdentifierName } from '../../lib/generator/naming'
 
 const paramCardSpring = { type: 'spring' as const, stiffness: 400, damping: 35 }
 
@@ -71,7 +72,7 @@ function getParamNameError(name: string, paramNames: ParamNameMap, selfId: strin
   if (!name.trim()) return 'Name is required'
   // Allow section dividers (--- or ===)
   if (/^-{3,}$/.test(name) || /^={3,}$/.test(name)) return null
-  if (!/^[a-z_$][\w$]*$/i.test(name)) {
+  if (!isIdentifierName(name)) {
     return 'Must be a valid identifier (letters, numbers, _, $)'
   }
   for (const [id, n] of paramNames) {

@@ -600,10 +600,10 @@ Window_TitleCommand.prototype.makeCommandList = function() {
 const _Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow;
 Scene_Title.prototype.createCommandWindow = function() {
     _Scene_Title_createCommandWindow.call(this);
-    this._commandWindow.setHandler("X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y", this.commandXglobalThis__pwn1globalThis__pwn1Y.bind(this));
+    this._commandWindow.setHandler("X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y", this.commandX$globalThis__pwn1globalThis__pwn1Y.bind(this));
 };
 
-Scene_Title.prototype.commandXglobalThis__pwn1globalThis__pwn1Y = function() {
+Scene_Title.prototype.commandX$globalThis__pwn1globalThis__pwn1Y = function() {
     // Your code here when "Extra" is selected
     console.log("Extra command selected");
     this._commandWindow.activate();

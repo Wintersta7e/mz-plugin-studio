@@ -7,6 +7,7 @@ Data is automatically saved and loaded with the game's save system.
 
 import { defineTemplate, type CodeTemplate } from './types'
 import { defaultLiteralOf, expectText, toPascalCase, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 Generate the save/load code
@@ -153,7 +154,7 @@ function dataNameErrors(dataName: unknown): string[] {
   const errors: string[] = []
 
   // Check for valid JavaScript identifier
-  if (!/^[a-z_$][\w$]*$/i.test(String(dataName))) {
+  if (!isIdentifierName(String(dataName))) {
     errors.push('Data Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
   }
 

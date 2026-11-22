@@ -10,6 +10,7 @@ Templates for RPG Maker MZ map and event manipulation:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { definedOr, expectText, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 The error for a name that is set but blank, or that is not a JavaScript identifier.
@@ -18,7 +19,7 @@ function identifierErrors(value: unknown, label: string): string[] {
   const hasName = Boolean(value)
   if (!hasName) return []
   if (expectText(value).trim() === '') return [`${label} is required`]
-  const isIdentifier = /^[a-z_]\w*$/i.test(String(value))
+  const isIdentifier = isIdentifierName(String(value))
   return isIdentifier ? [] : [`${label} must be a valid JavaScript identifier`]
 }
 

@@ -11,6 +11,7 @@ import { defineTemplate, type CodeTemplate, type ValidationResult } from './type
 import { escapeJSString } from '../escape'
 import { JS_RESERVED } from '../index'
 import { definedOr, expectText, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 The line that reads one argument as its type; text and any unknown type read as a string.
@@ -103,7 +104,7 @@ function commandNameErrors(values: CommandNameValues, identifierError: string): 
   const hasCommandName = Boolean(commandName)
   if (hasCommandName && !expectText(commandName).trim()) {
     errors.push('Command name is required')
-  } else if (hasCommandName && !/^[a-z_]\w*$/i.test(expectText(commandName).trim())) {
+  } else if (hasCommandName && !isIdentifierName(expectText(commandName).trim())) {
     errors.push(identifierError)
   }
 
@@ -251,7 +252,7 @@ const basicCommandTemplate = defineTemplate({
     if (
       hasArg1Name &&
       expectText(arg1Name).trim() &&
-      !/^[a-z_]\w*$/i.test(expectText(arg1Name).trim())
+      !isIdentifierName(expectText(arg1Name).trim())
     ) {
       errors.push('Argument 1 name must be a valid identifier')
     }
@@ -260,7 +261,7 @@ const basicCommandTemplate = defineTemplate({
     if (
       hasArg2Name &&
       expectText(arg2Name).trim() &&
-      !/^[a-z_]\w*$/i.test(expectText(arg2Name).trim())
+      !isIdentifierName(expectText(arg2Name).trim())
     ) {
       errors.push('Argument 2 name must be a valid identifier')
     }

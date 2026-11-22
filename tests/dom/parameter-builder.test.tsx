@@ -551,6 +551,16 @@ async function addParameter(user: UserEvent): Promise<void> {
   await user.click(screen.getByRole('button', { name: 'Add Parameter' }))
 }
 
+// Adds a parameter beside a parameter named speed and types its name; the name input
+async function nameNewParameter(text: string): Promise<{ user: UserEvent; name: HTMLElement }> {
+  const user = openTab([param('speed', 'Speed')])
+  await addParameter(user)
+  const name = screen.getByPlaceholderText('paramName')
+  await user.clear(name)
+  await user.type(name, text)
+  return { user, name }
+}
+
 describe('parameter rows: name and label', () => {
   beforeEach(setUp)
 
@@ -589,11 +599,7 @@ describe('parameter rows: name and label', () => {
   it('says why a name is not an identifier, is empty or is taken', async () => {
     expect.hasAssertions()
 
-    const user = openTab([param('speed', 'Speed')])
-    await addParameter(user)
-    const name = screen.getByPlaceholderText('paramName')
-    await user.clear(name)
-    await user.type(name, '1abc')
+    const { user, name } = await nameNewParameter('1abc')
 
     expect(screen.getByText(/^Must be a valid identifier/)).toBeInTheDocument()
 
@@ -604,6 +610,15 @@ describe('parameter rows: name and label', () => {
     await user.type(name, 'speed')
 
     expect(screen.getByText('Duplicate parameter name')).toBeInTheDocument()
+    expect(screen.queryByText(/^Must be a valid identifier/)).not.toBeInTheDocument()
+  })
+
+  it('takes a name in letters other than A-Z as an identifier', async () => {
+    expect.hasAssertions()
+
+    const { name } = await nameNewParameter('速度')
+
+    expect(name).toHaveValue('速度')
     expect(screen.queryByText(/^Must be a valid identifier/)).not.toBeInTheDocument()
   })
 })

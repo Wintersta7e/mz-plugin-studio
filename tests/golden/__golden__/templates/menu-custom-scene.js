@@ -943,13 +943,13 @@ Scene_XglobalThis__pwn1Y.prototype.onItemOk = function() {
 
 // ==== case: sceneName=quote-backtick {"windowType":"selectable","includeHelp":false,"includeGold":false,"sceneName":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y","windowName":"Sample"}
 // rejects: Scene name must be a valid JavaScript identifier (letters, numbers, underscores, cannot start with a number)
-// Custom Menu Scene: Scene_XglobalThis__pwn1globalThis__pwn1Y
+// Custom Menu Scene: Scene_X$globalThis__pwn1globalThis__pwn1Y
 // A custom scene with Window_Sample based on Window_Selectable
 
 //-----------------------------------------------------------------------------
 // Window_Sample
 //
-// The window for displaying custom content in Scene_XglobalThis__pwn1globalThis__pwn1Y.
+// The window for displaying custom content in Scene_X$globalThis__pwn1globalThis__pwn1Y.
 
 function Window_Sample() {
     this.initialize(...arguments);
@@ -976,27 +976,27 @@ Window_Sample.prototype.drawItem = function(index) {
 };
 
 //-----------------------------------------------------------------------------
-// Scene_XglobalThis__pwn1globalThis__pwn1Y
+// Scene_X$globalThis__pwn1globalThis__pwn1Y
 //
 // A custom menu scene.
 
-function Scene_XglobalThis__pwn1globalThis__pwn1Y() {
+function Scene_X$globalThis__pwn1globalThis__pwn1Y() {
     this.initialize(...arguments);
 }
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype = Object.create(Scene_MenuBase.prototype);
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.constructor = Scene_XglobalThis__pwn1globalThis__pwn1Y;
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype = Object.create(Scene_MenuBase.prototype);
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.constructor = Scene_X$globalThis__pwn1globalThis__pwn1Y;
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.initialize = function() {
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.initialize = function() {
     Scene_MenuBase.prototype.initialize.call(this);
 };
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.create = function() {
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.create = function() {
     Scene_MenuBase.prototype.create.call(this);
     this.createSampleWindow();
 };
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.createSampleWindow = function() {
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.createSampleWindow = function() {
     const rect = this.sampleWindowRect();
     this._sampleWindow = new Window_Sample(rect);
     this._sampleWindow.setHandler('ok', this.onItemOk.bind(this));
@@ -1004,7 +1004,7 @@ Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.createSampleWindow = function
     this.addWindow(this._sampleWindow);
 };
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.sampleWindowRect = function() {
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.sampleWindowRect = function() {
     const wx = 0;
     const wy = this.mainAreaTop();
     const ww = Graphics.boxWidth;
@@ -1012,14 +1012,14 @@ Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.sampleWindowRect = function()
     return new Rectangle(wx, wy, ww, wh);
 };
 
-Scene_XglobalThis__pwn1globalThis__pwn1Y.prototype.onItemOk = function() {
+Scene_X$globalThis__pwn1globalThis__pwn1Y.prototype.onItemOk = function() {
     const index = this._sampleWindow.index();
     // Handle item selection
     console.log('Selected item at index:', index);
     this._sampleWindow.activate();
 };
 
-// To open this scene, use: SceneManager.push(Scene_XglobalThis__pwn1globalThis__pwn1Y);
+// To open this scene, use: SceneManager.push(Scene_X$globalThis__pwn1globalThis__pwn1Y);
 
 // ==== case: windowName=comment-space {"windowType":"selectable","includeHelp":false,"includeGold":false,"sceneName":"Sample","windowName":"X */ globalThis.__pwn = 1; /* Y"}
 // rejects: Window name must be a valid JavaScript identifier
@@ -1504,33 +1504,33 @@ Scene_Sample.prototype.onItemOk = function() {
 // ==== case: windowName=quote-backtick {"windowType":"selectable","includeHelp":false,"includeGold":false,"sceneName":"Sample","windowName":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y"}
 // rejects: Window name must be a valid JavaScript identifier
 // Custom Menu Scene: Scene_Sample
-// A custom scene with Window_XglobalThis__pwn1globalThis__pwn1Y based on Window_Selectable
+// A custom scene with Window_X$globalThis__pwn1globalThis__pwn1Y based on Window_Selectable
 
 //-----------------------------------------------------------------------------
-// Window_XglobalThis__pwn1globalThis__pwn1Y
+// Window_X$globalThis__pwn1globalThis__pwn1Y
 //
 // The window for displaying custom content in Scene_Sample.
 
-function Window_XglobalThis__pwn1globalThis__pwn1Y() {
+function Window_X$globalThis__pwn1globalThis__pwn1Y() {
     this.initialize(...arguments);
 }
 
-Window_XglobalThis__pwn1globalThis__pwn1Y.prototype = Object.create(Window_Selectable.prototype);
-Window_XglobalThis__pwn1globalThis__pwn1Y.prototype.constructor = Window_XglobalThis__pwn1globalThis__pwn1Y;
+Window_X$globalThis__pwn1globalThis__pwn1Y.prototype = Object.create(Window_Selectable.prototype);
+Window_X$globalThis__pwn1globalThis__pwn1Y.prototype.constructor = Window_X$globalThis__pwn1globalThis__pwn1Y;
 
-Window_XglobalThis__pwn1globalThis__pwn1Y.prototype.initialize = function(rect) {
+Window_X$globalThis__pwn1globalThis__pwn1Y.prototype.initialize = function(rect) {
     Window_Selectable.prototype.initialize.call(this, rect);
     this.refresh();
     this.select(0);
     this.activate();
 };
 
-Window_XglobalThis__pwn1globalThis__pwn1Y.prototype.maxItems = function() {
+Window_X$globalThis__pwn1globalThis__pwn1Y.prototype.maxItems = function() {
     // Return the number of items in your list
     return 10;
 };
 
-Window_XglobalThis__pwn1globalThis__pwn1Y.prototype.drawItem = function(index) {
+Window_X$globalThis__pwn1globalThis__pwn1Y.prototype.drawItem = function(index) {
     const rect = this.itemLineRect(index);
     this.drawText('Item ' + (index + 1), rect.x, rect.y, rect.width);
 };
@@ -1553,18 +1553,18 @@ Scene_Sample.prototype.initialize = function() {
 
 Scene_Sample.prototype.create = function() {
     Scene_MenuBase.prototype.create.call(this);
-    this.createXglobalThis__pwn1globalThis__pwn1YWindow();
+    this.createX$globalThis__pwn1globalThis__pwn1YWindow();
 };
 
-Scene_Sample.prototype.createXglobalThis__pwn1globalThis__pwn1YWindow = function() {
-    const rect = this.xglobalthis__pwn1globalthis__pwn1yWindowRect();
-    this._xglobalthis__pwn1globalthis__pwn1yWindow = new Window_XglobalThis__pwn1globalThis__pwn1Y(rect);
-    this._xglobalthis__pwn1globalthis__pwn1yWindow.setHandler('ok', this.onItemOk.bind(this));
-    this._xglobalthis__pwn1globalthis__pwn1yWindow.setHandler('cancel', this.popScene.bind(this));
-    this.addWindow(this._xglobalthis__pwn1globalthis__pwn1yWindow);
+Scene_Sample.prototype.createX$globalThis__pwn1globalThis__pwn1YWindow = function() {
+    const rect = this.x$globalthis__pwn1globalthis__pwn1yWindowRect();
+    this._x$globalthis__pwn1globalthis__pwn1yWindow = new Window_X$globalThis__pwn1globalThis__pwn1Y(rect);
+    this._x$globalthis__pwn1globalthis__pwn1yWindow.setHandler('ok', this.onItemOk.bind(this));
+    this._x$globalthis__pwn1globalthis__pwn1yWindow.setHandler('cancel', this.popScene.bind(this));
+    this.addWindow(this._x$globalthis__pwn1globalthis__pwn1yWindow);
 };
 
-Scene_Sample.prototype.xglobalthis__pwn1globalthis__pwn1yWindowRect = function() {
+Scene_Sample.prototype.x$globalthis__pwn1globalthis__pwn1yWindowRect = function() {
     const wx = 0;
     const wy = this.mainAreaTop();
     const ww = Graphics.boxWidth;
@@ -1573,10 +1573,10 @@ Scene_Sample.prototype.xglobalthis__pwn1globalthis__pwn1yWindowRect = function()
 };
 
 Scene_Sample.prototype.onItemOk = function() {
-    const index = this._xglobalthis__pwn1globalthis__pwn1yWindow.index();
+    const index = this._x$globalthis__pwn1globalthis__pwn1yWindow.index();
     // Handle item selection
     console.log('Selected item at index:', index);
-    this._xglobalthis__pwn1globalthis__pwn1yWindow.activate();
+    this._x$globalthis__pwn1globalthis__pwn1yWindow.activate();
 };
 
 // To open this scene, use: SceneManager.push(Scene_Sample);

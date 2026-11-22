@@ -9,6 +9,7 @@ Templates for modifying RPG Maker MZ actor and party systems:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { defaultLiteralOf, definedOr, expectText, valueOr } from './values'
+import { isIdentifierName } from '../naming'
 
 /**
 Convert a property name to PascalCase for method names
@@ -165,7 +166,7 @@ const customActorPropertyTemplate = defineTemplate({
     const hasPropertyName = Boolean(propertyName)
     if (hasPropertyName) {
       // Check for valid JavaScript identifier
-      if (!/^[a-z_$][\w$]*$/i.test(propertyName)) {
+      if (!isIdentifierName(propertyName)) {
         errors.push('Property Name must be a valid JavaScript identifier (letters, numbers, _, $)')
       }
 
