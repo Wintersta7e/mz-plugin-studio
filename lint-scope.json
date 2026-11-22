@@ -174,7 +174,8 @@
     {
       "rule": "unicorn/prefer-single-call",
       "files": [
-        "src/renderer/src/lib/generator/index.ts",
+        "src/renderer/src/lib/generator/body.ts",
+        "src/renderer/src/lib/generator/header.ts",
         "src/renderer/src/lib/generator/templates/**"
       ],
       "ignores": [

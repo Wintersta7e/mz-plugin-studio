@@ -9,9 +9,8 @@ Templates for creating RPG Maker MZ plugin commands:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
-import { JS_RESERVED } from '../index'
 import { definedOr, expectText, valueOr } from './values'
-import { isIdentifierName } from '../naming'
+import { JS_RESERVED, isIdentifierName } from '../naming'
 
 /**
 The line that reads one argument as its type; text and any unknown type read as a string.

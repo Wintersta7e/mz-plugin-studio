@@ -443,8 +443,9 @@ describe('check-coverage golden', () => {
   })
 
   it('fails a generator file a whole point or more above its floor, naming the floor to write', () => {
-    const index = 'src/renderer/src/lib/generator/index.ts'
-    const repository = makeRepository([], [index])
+    // A file whose floor is below 100, so a point above it is a coverage a file can have
+    const target = 'src/renderer/src/lib/generator/escape.ts'
+    const repository = makeRepository([], [target])
     const floors = new Map(
       checkGolden(repository, {}).lines.flatMap((line): [string, number][] => {
         const match = /^golden coverage (\S+): missing \(floor (\d+)%\)$/.exec(line)
@@ -460,15 +461,18 @@ describe('check-coverage golden', () => {
     expect(floors.size).toBeGreaterThan(1)
     expect(checkGolden(repository, atFloor).status).toBe(0)
 
-    const floor = floors.get(index) ?? 0
+    const floor = floors.get(target) ?? 0
+
+    expect(floor).toBeLessThan(100)
+
     const run = checkGolden(repository, {
       ...atFloor,
-      [index]: { lines: { covered: floor + 1, total: 100 } }
+      [target]: { lines: { covered: floor + 1, total: 100 } }
     })
 
     expect(run.status).toBe(1)
     expect(run.lines).toContain(
-      `coverage floor ${index} lines: raise the floor in ratchets.json to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
+      `coverage floor ${target} lines: raise the floor in ratchets.json to ${String(floor + 1)} (measured ${String(floor + 1)}.00%)`
     )
   })
 })
