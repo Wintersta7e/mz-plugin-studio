@@ -32,13 +32,17 @@ interface Run {
   status: number | null
   out: string
 }
-const CEILINGS = { clones: 2, duplicatedLines: 20 }
+// The whole tree's ceilings and, under `src`, the ceilings of the run over `src` alone.
+const SOURCE_CEILINGS = { clones: 1, duplicatedLines: 8 }
+const CEILINGS = { clones: 2, duplicatedLines: 20, src: SOURCE_CEILINGS }
 const JSCPD_CEILINGS = { jscpd: CEILINGS }
 const AT_CEILINGS: JscpdTotal = { sources: 3, clones: 2, duplicatedLines: 20 }
+const AT_SOURCE_CEILINGS: JscpdTotal = { sources: 2, clones: 1, duplicatedLines: 8 }
 const CLONES: Clone[] = [
   { first: 'src/a.ts:1-12', second: 'src/b.ts:4-15' },
   { first: 'src/a.ts:30-37', second: 'src/c.ts:9-16' }
 ]
+const SOURCE_CLONES: Clone[] = [{ first: 'a.ts:1-12', second: 'b.ts:4-15' }]
 // The base of the range cases: two ceilings, two floors and two package.json script flags.
 const BASE_RATCHETS = {
   jscpd: CEILINGS,
@@ -86,17 +90,26 @@ const duplicate = ({ first, second }: Clone): Record<string, unknown> => {
   return { firstFile: side(first), secondFile: side(second) }
 }
 
-// A fake jscpd that writes a report with these totals and clones into the folder `--output` names,
-// or no report.
-const fakeJscpd = (total: JscpdTotal | undefined, clones: Clone[]): string => {
-  const report = JSON.stringify({
+// A jscpd JSON report with these totals and clones.
+const jscpdReport = (total: JscpdTotal, clones: Clone[]): string =>
+  JSON.stringify({
     statistics: { total: { ...total, percentage: 2.5 } },
     duplicates: clones.map((clone) => duplicate(clone))
   })
+
+// A fake jscpd that writes a report into the folder `--output` names: with these totals and
+// clones, or none; with `sourceTotal` and SOURCE_CLONES when it is asked to scan `src` alone.
+const fakeJscpd = (
+  total: JscpdTotal | undefined,
+  clones: Clone[],
+  sourceTotal: JscpdTotal
+): string => {
+  const report = total === undefined ? '' : jscpdReport(total, clones)
   return [
     "import { writeFileSync } from 'node:fs'",
     "const output = process.argv[process.argv.indexOf('--output') + 1]",
-    total === undefined ? '' : `writeFileSync(\`\${output}/jscpd-report.json\`, '${report}')`
+    `const report = process.argv.includes('src') ? '${jscpdReport(sourceTotal, SOURCE_CLONES)}' : '${report}'`,
+    "if (report !== '') writeFileSync(`${output}/jscpd-report.json`, report)"
   ].join('\n')
 }
 
@@ -120,13 +133,17 @@ const commit = (
 const repository = (
   files: Record<string, string>,
   total: JscpdTotal | undefined,
-  clones: Clone[] = CLONES
+  clones: Clone[] = CLONES,
+  sourceTotal: JscpdTotal = AT_SOURCE_CEILINGS
 ): string => {
   const directory = mkdtempSync(path.join(tmpdir(), 'check-ratchets-'))
   directories.push(directory)
   git(directory, ['init', '-q'])
   mkdirSync(path.join(directory, 'node_modules/jscpd'), { recursive: true })
-  writeFileSync(path.join(directory, 'node_modules/jscpd/run-jscpd.js'), fakeJscpd(total, clones))
+  writeFileSync(
+    path.join(directory, 'node_modules/jscpd/run-jscpd.js'),
+    fakeJscpd(total, clones, sourceTotal)
+  )
   commit(directory, files)
   return directory
 }
@@ -145,9 +162,10 @@ const run = (directory: string, args: string[], variables: Record<string, string
 const check = (
   total: JscpdTotal | undefined,
   ratchets: Record<string, unknown> = JSCPD_CEILINGS,
-  clones: Clone[] = CLONES
+  clones: Clone[] = CLONES,
+  sourceTotal: JscpdTotal = AT_SOURCE_CEILINGS
 ): Run =>
-  run(repository({ 'ratchets.json': JSON.stringify(ratchets) }, total, clones), [], {
+  run(repository({ 'ratchets.json': JSON.stringify(ratchets) }, total, clones, sourceTotal), [], {
     RATCHETS_BASE: 'HEAD'
   })
 
@@ -250,6 +268,54 @@ describe('ratchets: jscpd', () => {
   })
 })
 
+describe('ratchets: jscpd over src alone', () => {
+  afterEach(removeRepositories)
+
+  it('passes the src clones and duplicated lines at their ceilings, printing both runs', () => {
+    const result = check(AT_CEILINGS)
+
+    expect(result.out).toContain(
+      'ratchets: jscpd files scanned 3, clones 2, duplicated lines 20 (2.50%), ceilings clones 2, duplicated lines 20'
+    )
+    expect(result.out).toContain(
+      'ratchets: jscpd.src files scanned 2, clones 1, duplicated lines 8 (2.50%), ceilings clones 1, duplicated lines 8'
+    )
+    expect(result.status).toBe(0)
+  })
+
+  it('fails a src clone above the jscpd.src ceiling, naming the clone', () => {
+    const ratchets = { jscpd: { ...CEILINGS, src: { ...SOURCE_CEILINGS, clones: 0 } } }
+    const result = check(AT_CEILINGS, ratchets)
+
+    expect(result.out).toContain(
+      'ratchets: jscpd.src.clones 1 rose above the ceiling 0 in ratchets.json'
+    )
+    expect(result.out).toContain('ratchets: clone a.ts:1-12 ↔ b.ts:4-15')
+    expect(result.status).toBe(1)
+  })
+
+  it('fails without jscpd.src ceilings', () => {
+    const { clones, duplicatedLines } = CEILINGS
+    const result = check(AT_CEILINGS, { jscpd: { clones, duplicatedLines } })
+
+    expect(result.out).toContain('ratchets: ratchets.json holds no jscpd.src.clones ceiling')
+    expect(result.out).toContain(
+      'ratchets: ratchets.json holds no jscpd.src.duplicatedLines ceiling'
+    )
+    expect(result.status).toBe(1)
+  })
+
+  it('fails a src run that scanned no file', () => {
+    const result = check(AT_CEILINGS, JSCPD_CEILINGS, CLONES, {
+      ...AT_SOURCE_CEILINGS,
+      sources: 0
+    })
+
+    expect(result.out).toContain('ratchets: the jscpd.src run scanned no file')
+    expect(result.status).toBe(1)
+  })
+})
+
 describe('ratchets: direction since the base', () => {
   afterEach(removeRepositories)
 
@@ -261,7 +327,7 @@ describe('ratchets: direction since the base', () => {
 
     expect(exact.status).toBe(0)
     expect(range.out).toContain(`ratchets: jscpd.clones 2 → 3: a ceiling rose since ${base}`)
-    expect(range.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(range.out).toContain(`ratchets: compared 8 against ${base}`)
     expect(range.status).toBe(1)
   })
 
@@ -297,7 +363,7 @@ describe('ratchets: direction since the base', () => {
 
   it('passes a ratchet the base does not hold, and values moved toward strict', () => {
     const added = JSON.stringify({
-      jscpd: { clones: 1, duplicatedLines: 20 },
+      jscpd: { clones: 1, duplicatedLines: 20, src: SOURCE_CEILINGS },
       coverage: {
         suite: { global: { lines: 91, branches: 80 } },
         golden: { files: { 'src/new.ts': 90 } }
@@ -306,7 +372,7 @@ describe('ratchets: direction since the base', () => {
     const { directory, base } = since({ 'ratchets.json': added })
     const result = run(directory, ['--base', base])
 
-    expect(result.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(result.out).toContain(`ratchets: compared 8 against ${base}`)
     expect(result.status).toBe(0)
   })
 
@@ -372,7 +438,7 @@ describe('ratchets: the base compared with', () => {
       parent
     ]
 
-    expect(runs.map((result) => result.out.includes(`compared 6 against ${base}`))).toStrictEqual(
+    expect(runs.map((result) => result.out.includes(`compared 8 against ${base}`))).toStrictEqual(
       runs.map(() => true)
     )
     expect(runs.map((result) => result.status)).toStrictEqual(runs.map(() => 1))
@@ -435,7 +501,7 @@ describe('ratchets: a path renamed or deleted since the base', () => {
     expect(result.out).toContain(
       'ratchets: dropped coverage.golden.files.src/gen/index.ts (path deleted)'
     )
-    expect(result.out).toContain(`ratchets: compared 6 against ${base}`)
+    expect(result.out).toContain(`ratchets: compared 8 against ${base}`)
     expect(result.status).toBe(0)
   })
 

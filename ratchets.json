@@ -1,7 +1,11 @@
 {
   "jscpd": {
     "clones": 41,
-    "duplicatedLines": 494
+    "duplicatedLines": 494,
+    "src": {
+      "clones": 10,
+      "duplicatedLines": 134
+    }
   },
   "coverage": {
     "suite": {

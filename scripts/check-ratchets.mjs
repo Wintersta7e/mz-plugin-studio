@@ -4,6 +4,8 @@
 //          does a fall, naming the ceiling to write, so a ceiling only moves down with the copies
 //          it counts. A share would let new copies through as the code around them grows. A run
 //          that wrote no report or scanned no file fails, printing how it ended and its last lines.
+//          A second run over `src` alone, under the same config, holds the production code's
+//          clones and duplicated lines exactly at `jscpd.src` the same way.
 //   direction: compares every ratchet with its value at the base commit, the start of the change
 //          under test: each number in ratchets.json (`jscpd` holds ceilings, `coverage` floors)
 //          and each package.json script's `--at-least` (a floor) and `--max-warnings` (a
@@ -151,13 +153,16 @@ function clonesOf(report) {
 }
 
 /**
-Runs jscpd with a JSON report into a temporary folder; its parsed report, or undefined after
-printing how a run without one ended.
+Runs jscpd over `paths` (none: the config's) with a JSON report into a temporary folder; its
+parsed report, or undefined after printing how a run without one ended.
+@param {string} name the run's name, as printed
+@param {string[]} paths
 */
-function runJscpd() {
+function runJscpd(name, paths) {
   const output = mkdtempSync(path.join(tmpdir(), 'ratchets-jscpd-'))
   try {
-    const result = spawnSync(process.execPath, [JSCPD, '--reporters', 'json', '--output', output], {
+    const args = [JSCPD, ...paths, '--reporters', 'json', '--output', output]
+    const result = spawnSync(process.execPath, args, {
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024
     })
@@ -165,7 +170,7 @@ function runJscpd() {
     if (result.status === 0 && jscpdTotal(report) !== undefined) return report
     const ending =
       result.error === undefined ? (result.signal ?? `exit ${result.status}`) : result.error.message
-    print(`the jscpd run ${result.status === 0 ? 'wrote no report' : 'failed'} (${ending})`)
+    print(`the ${name} run ${result.status === 0 ? 'wrote no report' : 'failed'} (${ending})`)
     const tail = `${result.stdout}${result.stderr}`
       .split('\n')
       .filter((line) => line.trim() !== '')
@@ -178,28 +183,30 @@ function runJscpd() {
 }
 
 /**
-Whether jscpd's clones and duplicated lines sit exactly at their ceilings.
-@param {unknown} ratchets
+Whether one jscpd run's clones and duplicated lines sit exactly at the ceilings the `name`
+member of ratchets.json holds.
+@param {string} name the dotted key of the ceilings, as printed
+@param {unknown} ceilings
+@param {string[]} paths the paths the run scans; none for the config's
 */
-function checkJscpd(ratchets) {
-  const ceilings = member(ratchets, 'jscpd')
+function checkJscpdRun(name, ceilings, paths) {
   /**
   @type {[string, unknown][]}
   */
   const named = ['clones', 'duplicatedLines'].map((key) => [key, member(ceilings, key)])
   const missing = named.filter(([, ceiling]) => typeof ceiling !== 'number')
-  for (const [key] of missing) print(`${RATCHETS} holds no jscpd.${key} ceiling`)
-  const report = runJscpd()
+  for (const [key] of missing) print(`${RATCHETS} holds no ${name}.${key} ceiling`)
+  const report = runJscpd(name, paths)
   const total = jscpdTotal(report)
   if (total === undefined) return false
   const { sources, clones, duplicatedLines, percentage } = total
   print(
-    `jscpd files scanned ${sources}, clones ${clones}, duplicated lines ${duplicatedLines} ` +
+    `${name} files scanned ${sources}, clones ${clones}, duplicated lines ${duplicatedLines} ` +
       `(${percentage.toFixed(2)}%), ceilings clones ${String(member(ceilings, 'clones'))}, ` +
       `duplicated lines ${String(member(ceilings, 'duplicatedLines'))}`
   )
   if (sources === 0) {
-    print('the jscpd run scanned no file')
+    print(`the ${name} run scanned no file`)
     return false
   }
   /**
@@ -212,15 +219,27 @@ function checkJscpd(ratchets) {
     const count = counts[key] ?? 0
     if (typeof ceiling !== 'number' || count === ceiling) continue
     if (count > ceiling) {
-      print(`jscpd.${key} ${count} rose above the ceiling ${ceiling} in ${RATCHETS}`)
+      print(`${name}.${key} ${count} rose above the ceiling ${ceiling} in ${RATCHETS}`)
       hasRisen = true
     } else {
-      print(`lower jscpd.${key} in ${RATCHETS} to ${count}`)
+      print(`lower ${name}.${key} in ${RATCHETS} to ${count}`)
     }
     isOk = false
   }
   if (hasRisen) for (const clone of clonesOf(report)) print(`clone ${clone}`)
   return isOk
+}
+
+/**
+Whether jscpd's clones and duplicated lines sit exactly at their ceilings, over the tree and over
+`src` alone.
+@param {unknown} ratchets
+*/
+function checkJscpd(ratchets) {
+  const ceilings = member(ratchets, 'jscpd')
+  const isTreeOk = checkJscpdRun('jscpd', ceilings, [])
+  const isSourceOk = checkJscpdRun('jscpd.src', member(ceilings, 'src'), ['src'])
+  return isTreeOk && isSourceOk
 }
 
 /**
