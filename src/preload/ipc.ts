@@ -38,17 +38,10 @@ export function onMainLogLine(callback: (line: LogLine) => void): void {
 /**
 Electron's invoke typed by the contract: main's handler for each channel answers with its result
 */
-const invokeChannel: <C extends InvokeChannel>(
+export const invoke: <C extends InvokeChannel>(
   channel: C,
   ...args: InvokeArgs<C>
 ) => Promise<InvokeResult<C>> = ipcRenderer.invoke.bind(ipcRenderer)
-
-export async function invoke<C extends InvokeChannel>(
-  channel: C,
-  ...args: InvokeArgs<C>
-): Promise<InvokeResult<C>> {
-  return invokeChannel(channel, ...args)
-}
 
 export function send<C extends SendChannel>(channel: C, ...args: SendArgs<C>): void {
   ipcRenderer.send(channel, ...args)
