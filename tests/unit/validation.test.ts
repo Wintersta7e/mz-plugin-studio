@@ -64,6 +64,17 @@ describe('validation: basic checks', () => {
     expect(result.errors.length).toBeGreaterThan(0)
   })
 
+  it.each(['My Plugin', 'my-plugin', '2nd'])(
+    'accepts %s, a plugin name that is a file name but not an identifier',
+    (name) => {
+      const plugin = createTestPlugin({ meta: { ...createTestPlugin().meta, name } })
+      const result = validatePlugin(plugin)
+
+      expect(result.errors).toStrictEqual([])
+      expect(result.valid).toBe(true)
+    }
+  )
+
   it('duplicate param names return error', () => {
     const plugin = createTestPlugin({
       parameters: [

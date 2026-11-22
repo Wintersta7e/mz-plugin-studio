@@ -618,10 +618,10 @@ const commandKey = (stem: string, name: string): string => show(`${stem}:${name}
 const UNDECLARED_COMMAND = 'UndeclaredCommand'
 
 /**
-Whether `validatePlugin` refuses the plugin's name as not being an identifier.
+Whether `validatePlugin` refuses the plugin's name, as empty or as no file name.
 */
 function isPluginNameRefused(definition: PluginDefinition): boolean {
-  return validatePlugin(definition).errors.some((error) => error.startsWith('Plugin name must be'))
+  return validatePlugin(definition).errors.some((error) => error.startsWith('Plugin name '))
 }
 
 /**

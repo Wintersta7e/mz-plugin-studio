@@ -201,7 +201,7 @@ PluginManager.registerCommand(PLUGIN_NAME, 'X *\\/\u2029globalThis.__pwn = 1; /*
 {
   "valid": false,
   "errors": [
-    "Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)",
+    "Plugin name cannot be used as a file name: Invalid filename: must not contain path separators or traversal",
     "Invalid command name: X */ globalThis.__pwn = 1; /* Y (must be valid identifier)",
     "Struct \"X */ globalThis.__pwn = 1; /* Y\" has a name the studio cannot read back: use only letters, digits and underscores"
   ],

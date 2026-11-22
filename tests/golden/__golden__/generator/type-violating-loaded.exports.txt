@@ -416,10 +416,8 @@ PluginManager.registerCommand(PLUGIN_NAME, 'ShowLabel', function(args) {
 
 // ==== case: validatePlugin
 {
-  "valid": false,
-  "errors": [
-    "Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)"
-  ],
+  "valid": true,
+  "errors": [],
   "warnings": []
 }
 

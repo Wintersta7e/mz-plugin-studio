@@ -22,6 +22,7 @@ import { isIdentifierName } from './naming'
 import { stripCommentsOnly } from '../../../../shared/override-extractor'
 import { findAnnotationBlocks, type AnnotationBlock } from '../../../../shared/annotation-blocks'
 import { COMPACT_PARAM_TAG } from '../../../../shared/compact-param'
+import { unsafeFileNameReason } from '../../../../shared/file-name'
 
 /**
 Receives each field's text as it is written into an annotation comment, with its label.
@@ -1464,11 +1465,14 @@ export function validatePlugin(plugin: PluginDefinition): {
 The plugin name and the localization keys, which code and MZ read.
 */
 function checkPluginName(plugin: PluginDefinition, { errors }: ValidationProblems): void {
-  // Plugin name must be a valid identifier (used in PluginManager.parameters())
-  if (!isIdentifierName(plugin.meta.name)) {
-    errors.push(
-      'Plugin name must be a valid identifier (letters, numbers, underscores, cannot start with number)'
-    )
+  // The code passes the name to PluginManager.parameters() as a quoted string, and MZ loads the
+  // plugin from `<name>.js`, so the name follows the file-name rule
+  const name = plugin.meta.name
+  const reason = unsafeFileNameReason(`${name}.js`)
+  if (name === '') {
+    errors.push('Plugin name is required')
+  } else if (reason !== undefined) {
+    errors.push(`Plugin name cannot be used as a file name: ${reason}`)
   }
 
   const languages = Object.keys(plugin.meta.localizations ?? {})

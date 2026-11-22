@@ -1556,7 +1556,7 @@ describe(validatePlugin, () => {
   it('returns error for invalid plugin name', () => {
     const plugin = createTestPlugin({
       meta: {
-        name: '123bad',
+        name: 'bad/name',
         version: '1.0.0',
         author: '',
         description: '',

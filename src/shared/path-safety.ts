@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { WIN32_DEVICE_NAME, unsafeFileNameReason } from './file-name'
 
 /**
 The path module or one of its flavours, `path.posix` and `path.win32`
@@ -16,14 +17,6 @@ Win32 absolute paths the guard accepts: drive-absolute `C:\` and UNC `\\host\sha
 const WIN32_DRIVE_ABSOLUTE = /^[A-Z]:[\\/]/i
 const WIN32_UNC = /^[\\/]{2}[^\\/?.]/
 const WIN32_DRIVE = /^[A-Z]:/i
-
-/**
-A name Windows opens as a device in any folder: CON, PRN, AUX, NUL, CONIN$, CONOUT$, COM1-9,
-LPT1-9 and COM or LPT with a superscript 1-3, in any case, also with spaces after it or an
-extension (`NUL.js`, `aux .js`). COM0 and LPT0 are not on Node's own list for `path.win32`.
-*/
-const WIN32_DEVICE_NAME =
-  /^(?:con|prn|aux|nul|conin\$|conout\$|(?:com|lpt)[1-9\u{B9}\u{B2}\u{B3}]) *(?:\..*)?$/iu
 
 /**
 Whether the text starts with two separators: a network path (`\\host\share`, `//host/share`)
@@ -97,19 +90,8 @@ Validate that a filename is a simple name (no path separators, NUL, ':', travers
 device name). It is checked for both platforms at once, so it takes no path implementation.
 */
 export function assertSafeFilename(filename: string): void {
-  // ':' would open an alternate data stream on NTFS (x.js:ads.js)
-  if (typeof filename !== 'string' || filename.includes('\0') || filename.includes(':')) {
-    throw new Error(`Invalid filename: ${JSON.stringify(filename)}`)
-  }
-  if (filename === '.' || filename === '..' || /[\\/]/.test(filename)) {
-    throw new Error('Invalid filename: must not contain path separators or traversal')
-  }
-  if (WIN32_DEVICE_NAME.test(filename)) {
-    throw new Error(`Invalid filename: ${JSON.stringify(filename)} is a device name on Windows`)
-  }
-  if (!filename.endsWith('.js')) {
-    throw new Error('Invalid filename: must have .js extension')
-  }
+  const reason = unsafeFileNameReason(filename)
+  if (reason !== undefined) throw new Error(reason)
 }
 
 /**
