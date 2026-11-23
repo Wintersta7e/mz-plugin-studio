@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPersistedState, isRecord } from '../../src/renderer/src/stores/persist'
 import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
@@ -863,5 +863,199 @@ describe('pluginStore type edits on an imported plugin', () => {
     expect(typesOf(named(saved.structs, 'Entry').parameters)).toStrictEqual([
       ['label', 'string', undefined]
     ])
+  })
+})
+
+// A tab holding one of each item, every one of them named by its id
+function tabWithItems(): PluginDefinition {
+  return {
+    ...createPlugin('Items'),
+    parameters: [makeParam('p1', 'alpha')],
+    commands: [{ ...makeCommand('c1', 'run'), args: [makeParam('a1', 'mode')] }],
+    structs: [{ ...makeStruct('s1', 'Entry'), parameters: [makeParam('sp1', 'label')] }]
+  }
+}
+
+// Each action that names an item by id, called with an id no item of the tab has
+const NO_ITEM_EDITS: readonly { name: string; edit: (store: PluginState) => void }[] = [
+  {
+    name: 'updateParameter',
+    edit: (s) => {
+      s.updateParameter('gone', { desc: 'x' })
+    }
+  },
+  {
+    name: 'removeParameter',
+    edit: (s) => {
+      s.removeParameter('gone')
+    }
+  },
+  {
+    name: 'removeParameters (none named)',
+    edit: (s) => {
+      s.removeParameters([])
+    }
+  },
+  {
+    name: 'removeParameters (all gone)',
+    edit: (s) => {
+      s.removeParameters(['gone', 'lost'])
+    }
+  },
+  {
+    name: 'reorderParameters (past the end)',
+    edit: (s) => {
+      s.reorderParameters(0, 1)
+    }
+  },
+  {
+    name: 'reorderParameters (before the start)',
+    edit: (s) => {
+      s.reorderParameters(-1, 0)
+    }
+  },
+  {
+    name: 'updateCommand',
+    edit: (s) => {
+      s.updateCommand('gone', { desc: 'x' })
+    }
+  },
+  {
+    name: 'removeCommand',
+    edit: (s) => {
+      s.removeCommand('gone')
+    }
+  },
+  {
+    name: 'addCommandArg',
+    edit: (s) => {
+      s.addCommandArg('gone', makeParam('a2', 'extra'))
+    }
+  },
+  {
+    name: 'updateCommandArg (command)',
+    edit: (s) => {
+      s.updateCommandArg('gone', 'a1', {})
+    }
+  },
+  {
+    name: 'updateCommandArg (argument)',
+    edit: (s) => {
+      s.updateCommandArg('c1', 'gone', {})
+    }
+  },
+  {
+    name: 'removeCommandArg (command)',
+    edit: (s) => {
+      s.removeCommandArg('gone', 'a1')
+    }
+  },
+  {
+    name: 'removeCommandArg (argument)',
+    edit: (s) => {
+      s.removeCommandArg('c1', 'gone')
+    }
+  },
+  {
+    name: 'updateStruct',
+    edit: (s) => {
+      s.updateStruct('gone', { name: 'x' })
+    }
+  },
+  {
+    name: 'removeStruct',
+    edit: (s) => {
+      s.removeStruct('gone')
+    }
+  },
+  {
+    name: 'addStructParam',
+    edit: (s) => {
+      s.addStructParam('gone', makeParam('sp2', 'extra'))
+    }
+  },
+  {
+    name: 'updateStructParam (struct)',
+    edit: (s) => {
+      s.updateStructParam('gone', 'sp1', {})
+    }
+  },
+  {
+    name: 'updateStructParam (field)',
+    edit: (s) => {
+      s.updateStructParam('s1', 'gone', {})
+    }
+  },
+  {
+    name: 'removeStructParam (struct)',
+    edit: (s) => {
+      s.removeStructParam('gone', 'sp1')
+    }
+  },
+  {
+    name: 'removeStructParam (field)',
+    edit: (s) => {
+      s.removeStructParam('s1', 'gone')
+    }
+  },
+  {
+    name: 'setActivePlugin',
+    edit: (s) => {
+      s.setActivePlugin('gone')
+    }
+  },
+  {
+    name: 'reattachSource',
+    edit: (s) => {
+      const { text, parsed, base } = reattachFixture()
+      s.reattachSource('gone', text, parsed, { keepTab: false, base })
+    }
+  }
+]
+
+describe('an edit that names no item', () => {
+  beforeEach(() => {
+    resetPluginStore()
+    usePluginStore.getState().openPlugin(tabWithItems())
+    flushPersistedState()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('covers every action that names an item', () => {
+    expect.hasAssertions()
+
+    process.stdout.write(`actions ${String(NO_ITEM_EDITS.length)}\n`)
+
+    expect(NO_ITEM_EDITS.length).toBeGreaterThan(0)
+  })
+
+  it.for(NO_ITEM_EDITS)('$name leaves the store untouched and the tab clean', ({ edit }) => {
+    const writes = vi.spyOn(Storage.prototype, 'setItem')
+    const before = usePluginStore.getState()
+    let notified = 0
+    const unsubscribe = usePluginStore.subscribe(() => {
+      notified += 1
+    })
+    edit(before)
+    unsubscribe()
+    flushPersistedState()
+    const after = usePluginStore.getState()
+
+    expect({
+      isSameState: after === before,
+      notified,
+      isDirty: after.isDirty,
+      dirtyByPluginId: after.dirtyByPluginId,
+      writes: writes.mock.calls.length
+    }).toStrictEqual({
+      isSameState: true,
+      notified: 0,
+      isDirty: false,
+      dirtyByPluginId: {},
+      writes: 0
+    })
   })
 })

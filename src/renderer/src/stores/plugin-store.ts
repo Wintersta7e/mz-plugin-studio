@@ -540,64 +540,85 @@ function updateActivePluginState(
 }
 
 type SetPluginState = (update: (state: PluginState) => Partial<PluginState>) => void
-type EditActivePlugin = (update: (plugin: PluginDefinition) => PluginDefinition) => void
+type GetPluginState = () => PluginState
+type EditActivePlugin = (
+  update: (plugin: PluginDefinition) => PluginDefinition,
+  hasTarget?: (plugin: PluginDefinition) => boolean
+) => void
 
+/**
+Edits the active plugin. An edit whose target the plugin does not hold changes nothing: the store
+is left as it is, so no listener runs, nothing is saved and the tab stays clean.
+*/
 const editActive =
-  (set: SetPluginState): EditActivePlugin =>
-  (update) => {
+  (set: SetPluginState, get: GetPluginState): EditActivePlugin =>
+  (update, hasTarget = () => true) => {
+    if (!hasTarget(get().plugin)) return
     set((state) => updateActivePluginState(state, update))
   }
 
+const hasItem = (items: readonly { id: string }[] | undefined, id: string): boolean =>
+  items?.some((item) => item.id === id) === true
+
+const argsOf = (plugin: PluginDefinition, commandId: string): PluginParameter[] | undefined =>
+  plugin.commands.find((c) => c.id === commandId)?.args
+
+const fieldsOf = (plugin: PluginDefinition, structId: string): PluginParameter[] | undefined =>
+  plugin.structs.find((s) => s.id === structId)?.parameters
+
+const isIndexIn = (index: number, items: readonly unknown[]): boolean =>
+  index >= 0 && index < items.length
+
 function parameterActions(
-  set: SetPluginState
+  set: SetPluginState,
+  get: GetPluginState
 ): Pick<
   PluginState,
   'addParameter' | 'updateParameter' | 'removeParameter' | 'removeParameters' | 'reorderParameters'
 > {
-  const edit = editActive(set)
+  const edit = editActive(set, get)
   return {
     addParameter: (param) => {
       edit((plugin) => ({ ...plugin, parameters: [...plugin.parameters, param] }))
     },
     updateParameter: (id, param) => {
-      edit((plugin) => ({
-        ...plugin,
-        parameters: plugin.parameters.map((p) => (p.id === id ? editParameter(p, param) : p))
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          parameters: plugin.parameters.map((p) => (p.id === id ? editParameter(p, param) : p))
+        }),
+        (plugin) => hasItem(plugin.parameters, id)
+      )
     },
     removeParameter: (id) => {
-      edit((plugin) => ({ ...plugin, parameters: plugin.parameters.filter((p) => p.id !== id) }))
+      edit(
+        (plugin) => ({ ...plugin, parameters: plugin.parameters.filter((p) => p.id !== id) }),
+        (plugin) => hasItem(plugin.parameters, id)
+      )
     },
     removeParameters: (ids) => {
-      set((state) => {
-        if (ids.length === 0) return {}
-        const idSet = new Set(ids)
-        const filtered = state.plugin.parameters.filter((p) => !idSet.has(p.id))
-        return filtered.length === state.plugin.parameters.length
-          ? {}
-          : updateActivePluginState(state, (plugin) => ({ ...plugin, parameters: filtered }))
-      })
+      const idSet = new Set(ids)
+      edit(
+        (plugin) => ({ ...plugin, parameters: plugin.parameters.filter((p) => !idSet.has(p.id)) }),
+        (plugin) => plugin.parameters.some((p) => idSet.has(p.id))
+      )
     },
     reorderParameters: (fromIndex, toIndex) => {
-      set((state) => {
-        const { parameters } = state.plugin
-        if (
-          fromIndex < 0 ||
-          fromIndex >= parameters.length ||
-          toIndex < 0 ||
-          toIndex >= parameters.length
-        )
-          return {}
-        const params = [...parameters]
-        params.splice(toIndex, 0, ...params.splice(fromIndex, 1))
-        return updateActivePluginState(state, (plugin) => ({ ...plugin, parameters: params }))
-      })
+      edit(
+        (plugin) => {
+          const params = [...plugin.parameters]
+          params.splice(toIndex, 0, ...params.splice(fromIndex, 1))
+          return { ...plugin, parameters: params }
+        },
+        ({ parameters }) => isIndexIn(fromIndex, parameters) && isIndexIn(toIndex, parameters)
+      )
     }
   }
 }
 
 function commandActions(
-  set: SetPluginState
+  set: SetPluginState,
+  get: GetPluginState
 ): Pick<
   PluginState,
   | 'addCommand'
@@ -607,51 +628,67 @@ function commandActions(
   | 'updateCommandArg'
   | 'removeCommandArg'
 > {
-  const edit = editActive(set)
+  const edit = editActive(set, get)
   return {
     addCommand: (command) => {
       edit((plugin) => ({ ...plugin, commands: [...plugin.commands, command] }))
     },
     updateCommand: (id, command) => {
-      edit((plugin) => ({
-        ...plugin,
-        commands: plugin.commands.map((c) => (c.id === id ? { ...c, ...command } : c))
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          commands: plugin.commands.map((c) => (c.id === id ? { ...c, ...command } : c))
+        }),
+        (plugin) => hasItem(plugin.commands, id)
+      )
     },
     removeCommand: (id) => {
-      edit((plugin) => ({ ...plugin, commands: plugin.commands.filter((c) => c.id !== id) }))
+      edit(
+        (plugin) => ({ ...plugin, commands: plugin.commands.filter((c) => c.id !== id) }),
+        (plugin) => hasItem(plugin.commands, id)
+      )
     },
     addCommandArg: (commandId, arg) => {
-      edit((plugin) => ({
-        ...plugin,
-        commands: plugin.commands.map((c) =>
-          c.id === commandId ? { ...c, args: [...c.args, arg] } : c
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          commands: plugin.commands.map((c) =>
+            c.id === commandId ? { ...c, args: [...c.args, arg] } : c
+          )
+        }),
+        (plugin) => hasItem(plugin.commands, commandId)
+      )
     },
     updateCommandArg: (commandId, argId, arg) => {
-      edit((plugin) => ({
-        ...plugin,
-        commands: plugin.commands.map((c) =>
-          c.id === commandId
-            ? { ...c, args: c.args.map((a) => (a.id === argId ? editParameter(a, arg) : a)) }
-            : c
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          commands: plugin.commands.map((c) =>
+            c.id === commandId
+              ? { ...c, args: c.args.map((a) => (a.id === argId ? editParameter(a, arg) : a)) }
+              : c
+          )
+        }),
+        (plugin) => hasItem(argsOf(plugin, commandId), argId)
+      )
     },
     removeCommandArg: (commandId, argId) => {
-      edit((plugin) => ({
-        ...plugin,
-        commands: plugin.commands.map((c) =>
-          c.id === commandId ? { ...c, args: c.args.filter((a) => a.id !== argId) } : c
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          commands: plugin.commands.map((c) =>
+            c.id === commandId ? { ...c, args: c.args.filter((a) => a.id !== argId) } : c
+          )
+        }),
+        (plugin) => hasItem(argsOf(plugin, commandId), argId)
+      )
     }
   }
 }
 
 function structActions(
-  set: SetPluginState
+  set: SetPluginState,
+  get: GetPluginState
 ): Pick<
   PluginState,
   | 'addStruct'
@@ -661,56 +698,82 @@ function structActions(
   | 'updateStructParam'
   | 'removeStructParam'
 > {
-  const edit = editActive(set)
+  const edit = editActive(set, get)
   return {
     addStruct: (struct) => {
       edit((plugin) => ({ ...plugin, structs: [...plugin.structs, struct] }))
     },
     updateStruct: (id, struct) => {
-      edit((plugin) => ({
-        ...plugin,
-        structs: plugin.structs.map((s) => (s.id === id ? { ...s, ...struct } : s))
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          structs: plugin.structs.map((s) => (s.id === id ? { ...s, ...struct } : s))
+        }),
+        (plugin) => hasItem(plugin.structs, id)
+      )
     },
     removeStruct: (id) => {
-      edit((plugin) => ({ ...plugin, structs: plugin.structs.filter((s) => s.id !== id) }))
+      edit(
+        (plugin) => ({ ...plugin, structs: plugin.structs.filter((s) => s.id !== id) }),
+        (plugin) => hasItem(plugin.structs, id)
+      )
     },
     addStructParam: (structId, param) => {
-      edit((plugin) => ({
-        ...plugin,
-        structs: plugin.structs.map((s) =>
-          s.id === structId ? { ...s, parameters: [...s.parameters, param] } : s
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          structs: plugin.structs.map((s) =>
+            s.id === structId ? { ...s, parameters: [...s.parameters, param] } : s
+          )
+        }),
+        (plugin) => hasItem(plugin.structs, structId)
+      )
     },
     updateStructParam: (structId, paramId, param) => {
-      edit((plugin) => ({
-        ...plugin,
-        structs: plugin.structs.map((s) =>
-          s.id === structId
-            ? {
-                ...s,
-                parameters: s.parameters.map((p) =>
-                  p.id === paramId ? editParameter(p, param) : p
-                )
-              }
-            : s
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          structs: plugin.structs.map((s) =>
+            s.id === structId
+              ? {
+                  ...s,
+                  parameters: s.parameters.map((p) =>
+                    p.id === paramId ? editParameter(p, param) : p
+                  )
+                }
+              : s
+          )
+        }),
+        (plugin) => hasItem(fieldsOf(plugin, structId), paramId)
+      )
     },
     removeStructParam: (structId, paramId) => {
-      edit((plugin) => ({
-        ...plugin,
-        structs: plugin.structs.map((s) =>
-          s.id === structId ? { ...s, parameters: s.parameters.filter((p) => p.id !== paramId) } : s
-        )
-      }))
+      edit(
+        (plugin) => ({
+          ...plugin,
+          structs: plugin.structs.map((s) =>
+            s.id === structId
+              ? { ...s, parameters: s.parameters.filter((p) => p.id !== paramId) }
+              : s
+          )
+        }),
+        (plugin) => hasItem(fieldsOf(plugin, structId), paramId)
+      )
     }
   }
 }
 
+// The open tabs with the plugin in the editor written back into its tab
+const syncedOpenPlugins = (state: PluginState): PluginDefinition[] =>
+  state.activePluginId !== null &&
+  state.activePluginId !== '' &&
+  state.plugin.id === state.activePluginId
+    ? upsertOpenPlugin(state.openPlugins, state.plugin)
+    : state.openPlugins
+
 function tabActions(
-  set: SetPluginState
+  set: SetPluginState,
+  get: GetPluginState
 ): Pick<PluginState, 'openPlugin' | 'closePlugin' | 'setActivePlugin'> {
   return {
     openPlugin: (plugin, base) => {
@@ -760,37 +823,33 @@ function tabActions(
       })
     },
     setActivePlugin: (id) => {
-      set((state) => {
-        const syncedOpenPlugins =
-          state.activePluginId !== null &&
-          state.activePluginId !== '' &&
-          state.plugin.id === state.activePluginId
-            ? upsertOpenPlugin(state.openPlugins, state.plugin)
-            : state.openPlugins
-        const plugin = syncedOpenPlugins.find((p) => p.id === id)
-        if (plugin) {
-          // Sync history to new plugin context before state switch
-          useHistoryStore.getState().setActivePluginId(id)
-          return {
-            openPlugins: syncedOpenPlugins,
-            activePluginId: id,
-            plugin,
-            isDirty: isPluginDirty(state.dirtyByPluginId, id),
-            savedPath: getPluginSavedPath(state.savedPathsByPluginId, id)
-          }
-        }
-        return {}
-      })
+      const openPlugins = syncedOpenPlugins(get())
+      const plugin = openPlugins.find((p) => p.id === id)
+      // a tab that is not open is not switched to, and the store is left as it is
+      if (plugin === undefined) return
+      // Sync history to new plugin context before state switch
+      useHistoryStore.getState().setActivePluginId(id)
+      set((state) => ({
+        openPlugins,
+        activePluginId: id,
+        plugin,
+        isDirty: isPluginDirty(state.dirtyByPluginId, id),
+        savedPath: getPluginSavedPath(state.savedPathsByPluginId, id)
+      }))
     }
   }
 }
 
-function fileActions(set: SetPluginState): Pick<PluginState, 'reattachSource' | 'recordSaves'> {
+function fileActions(
+  set: SetPluginState,
+  get: GetPluginState
+): Pick<PluginState, 'reattachSource' | 'recordSaves'> {
   return {
     reattachSource: (id, rawSource, parsed, { keepTab, base }) => {
+      // a tab that is not open has no file to reattach, and the store is left as it is
+      const tab = get().openPlugins.find((p) => p.id === id)
+      if (tab === undefined) return
       set((state) => {
-        const tab = state.openPlugins.find((p) => p.id === id)
-        if (tab === undefined) return {}
         const { importedFrom } = tab
         const fileName = (importedFrom ?? '').replace(/\.js$/i, '')
         const fromFile: PluginDefinition = {
@@ -912,7 +971,7 @@ const PLUGIN_PERSIST = definePersist<PluginState, PluginPersisted>({
 
 export const usePluginStore = create<PluginState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       plugin: createEmptyPlugin(),
       openPlugins: [],
       activePluginId: null,
@@ -951,11 +1010,11 @@ export const usePluginStore = create<PluginState>()(
             meta: { ...plugin.meta, ...meta }
           }))
         ),
-      ...parameterActions(set),
-      ...commandActions(set),
-      ...structActions(set),
+      ...parameterActions(set, get),
+      ...commandActions(set, get),
+      ...structActions(set, get),
       // Multi-plugin
-      ...tabActions(set),
+      ...tabActions(set, get),
       setCustomCode: (code) =>
         set((state) =>
           updateActivePluginState(state, (plugin) => ({
@@ -963,7 +1022,7 @@ export const usePluginStore = create<PluginState>()(
             customCode: code
           }))
         ),
-      ...fileActions(set),
+      ...fileActions(set, get),
 
       // State
       setDirty: (isDirty) =>
