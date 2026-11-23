@@ -1,6 +1,9 @@
 // The user's MZ project, as the runtime test reaches it: checked, walked for links, copied, and
-// compared with its own manifest when the copy is gone; every write goes to the copy. Imports no
-// test library, so the unit suite calls the same functions the fixtures do.
+// compared with its own manifest when the copy is gone; every write goes to the copy. Also starts
+// the engine on the copy, once per boot. Imports no test library, so the unit suite calls the
+// same functions the fixtures do.
+import { spawn } from 'node:child_process'
+import { once } from 'node:events'
 import {
   cpSync,
   existsSync,
@@ -17,7 +20,7 @@ import { createServer, type ServerResponse } from 'node:http'
 import path from 'node:path'
 import { unsafeFileNameReason } from '../../src/shared/file-name'
 import type { PluginParameter } from '../../src/shared/types/plugin'
-import { isWithin, removeDirectory } from './teardown'
+import { isWithin, killTree, removeDirectory } from './teardown'
 
 /**
 Files every MZ project folder holds, relative to it.
@@ -140,6 +143,10 @@ export interface CaseInstall {
   observer: { file: string; source: string }
   plugin?: { file: string; source: string; parameters: Record<string, string> }
   /**
+  Scripts the observer loads itself, written beside the plugins and listed nowhere.
+  */
+  scripts?: { file: string; source: string }[]
+  /**
   The commands the added common event runs, in order.
   */
   commands: { name: string; args: Record<string, string> }[]
@@ -239,8 +246,9 @@ function readPluginList(text: string): { head: string; entries: unknown[] } {
 /**
 Writes the case's plugins into the copy and lists them, the observer first and the case last
 after the stock entries, one entry per line as the editor writes them; appends a common event
-calling each command, and a placeholder for each image the copy lacks. Returns that event's id.
-Refuses a plugin file the project holds, and an image outside the copy or not a `.png`.
+calling each command, and a placeholder for each image the copy lacks; writes the scripts beside
+the plugins, unlisted. Returns that event's id. Refuses a plugin or script file the project
+holds, and an image outside the copy or not a `.png`.
 */
 export function installCase(copy: string, install: CaseInstall): { commonEventId: number } {
   const stock = stockOf(copy)
@@ -248,7 +256,8 @@ export function installCase(copy: string, install: CaseInstall): { commonEventId
     { ...install.observer, parameters: {} },
     ...(install.plugin === undefined ? [] : [install.plugin])
   ]
-  for (const plugin of plugins) {
+  const written = [...plugins, ...(install.scripts ?? [])]
+  for (const plugin of written) {
     const file = `js/plugins/${plugin.file}.js`
     if (!stock.installed.includes(file) && existsSync(path.join(copy, file))) {
       throw new Error(`the MZ project already holds ${file}`)
@@ -283,7 +292,7 @@ export function installCase(copy: string, install: CaseInstall): { commonEventId
     switchId: 1,
     trigger: 0
   }
-  for (const plugin of plugins) {
+  for (const plugin of written) {
     const file = `js/plugins/${plugin.file}.js`
     writeFileSync(path.join(copy, file), plugin.source)
     if (!stock.installed.includes(file)) stock.installed.push(file)
@@ -397,5 +406,51 @@ export async function serveCopy(
           else reject(error)
         })
       })
+  }
+}
+
+/**
+The editor's playtest command: the engine runs the copy's folder with the test option.
+*/
+export function nwjsCommand(exe: string, copy: string): [string, string[]] {
+  return [exe, [copy, 'test']]
+}
+
+/**
+Runs `command` once, after deleting a report an earlier launch left, and returns the report it
+wrote at `reportFile`, parsed, or undefined when it wrote none. At `timeoutMs` it kills the command's
+whole process tree.
+*/
+export async function launchOnce(
+  command: [string, string[]],
+  reportFile: string,
+  timeoutMs: number
+): Promise<{ report: unknown; timedOut: boolean }> {
+  rmSync(reportFile, { force: true })
+  const [file, args] = command
+  const child = spawn(file, args, {
+    // Leads its own process group off Windows, so the kill reaches every process it starts
+    detached: process.platform !== 'win32',
+    stdio: 'ignore'
+  })
+  let timer: NodeJS.Timeout | undefined
+  const bound = new Promise<boolean>((resolve) => {
+    timer = setTimeout(() => {
+      resolve(true)
+    }, timeoutMs)
+  })
+  const isExitTimedOut = async (): Promise<boolean> => {
+    await once(child, 'exit')
+    return false
+  }
+  try {
+    const isTimedOut = await Promise.race([isExitTimedOut(), bound])
+    if (isTimedOut) await killTree(child)
+    const report: unknown = existsSync(reportFile)
+      ? JSON.parse(readFileSync(reportFile, 'utf8'))
+      : undefined
+    return { report, timedOut: isTimedOut }
+  } finally {
+    clearTimeout(timer)
   }
 }

@@ -235,6 +235,12 @@ npm run e2e:prepare
 MZ_PROJECT_DIR=<project-path> xvfb-run -a npm run e2e:mz
 ```
 
+On Windows, `MZ_NWJS_EXE` also runs every case in MZ's own engine: it names the NW.js executable MZ playtests with. That level opens a game window per case, so run it while you can leave the machine alone. It also records which JavaScript syntax the engine compiles. Without the variable that level is left out of the run:
+
+```bash
+MZ_PROJECT_DIR=<project-path> MZ_NWJS_EXE=<project-path> npm run e2e:mz
+```
+
 ## Architecture
 
 The renderer is sandboxed and reaches files only through the preload bridge; every main-process

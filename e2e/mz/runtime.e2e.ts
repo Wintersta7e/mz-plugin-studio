@@ -2,97 +2,8 @@
 // test saved through the app (that file runs first), and each conformance case under each value
 // set, booted once each and judged on every check. The run prints what it
 // ran and fails on a shortfall against the registry or a count of 0 where cases ran.
-import path from 'node:path'
-import { CATEGORIES, getAllTemplates } from '../../src/renderer/src/lib/generator/templates/index'
-import { authoredCases, corpusCases, templateCases, type CaseVerdict, type MzCase } from './cases'
-import { expect, test, type MzHarness } from './fixtures'
-
-interface CaseRun {
-  kase: MzCase
-  verdict: CaseVerdict
-}
-
-const fileOf = (id: string): string => id.replaceAll(/[^\w.-]/g, '_')
-
-async function runEvery(mz: MzHarness, output: string): Promise<CaseRun[]> {
-  const runs: CaseRun[] = []
-  for (const kase of [...templateCases(), ...authoredCases(), ...corpusCases()]) {
-    // One boot at a time: each one resets and installs into the same copy
-    const kept = path.join(output, fileOf(kase.id))
-    runs.push({ kase, verdict: await mz.run(kase, kept) })
-  }
-  return runs
-}
-
-// Every case boots in turn on the one copy, once: the tests below share the one run
-const shared: { every?: Promise<CaseRun[]> } = {}
-
-async function everyRun(mz: MzHarness, output: string): Promise<CaseRun[]> {
-  shared.every ??= runEvery(mz, output)
-  return shared.every
-}
-
-/**
-How many cases of the run `isCounted` keeps, a conformance case's value sets counted once.
-*/
-const distinct = (runs: readonly CaseRun[], isCounted: (kase: MzCase) => boolean): number =>
-  new Set(
-    runs
-      .filter(({ kase }) => isCounted(kase))
-      .map(({ kase }) => kase.expectation?.case.id ?? kase.id)
-  ).size
-
-function countsOf(mz: MzHarness, runs: readonly CaseRun[]): Record<string, number> {
-  const sum = (key: 'commands' | 'values'): number =>
-    runs.reduce((total, { verdict }) => total + verdict[key], 0)
-  return {
-    templates: distinct(runs, (kase) => kase.kind === 'template'),
-    corpus: distinct(runs, (kase) => kase.kind === 'generated'),
-    raw: distinct(runs, (kase) => kase.kind === 'raw-mode'),
-    categories: distinct(runs, (kase) => kase.kind === 'authored'),
-    commands: sum('commands'),
-    values: sum('values'),
-    hostile: distinct(runs, (kase) => kase.expectation?.case.hostile === true),
-    'baseline-errors': mz.baselineErrors.length,
-    'manifest-files': mz.manifestFiles,
-    ...mz.counts()
-  }
-}
-
-/**
-The level's summary line, then whether the NW.js level runs.
-*/
-function printCounts(mz: MzHarness, counts: Record<string, number>, registry: number): void {
-  const shown = (name: string): string => String(counts[name])
-  mz.print(
-    `mz-runtime: level ${mz.level} templates ${shown('templates')}/${String(registry)}` +
-      ` corpus ${shown('corpus')} raw ${shown('raw')}` +
-      ` categories ${shown('categories')}/${String(CATEGORIES.length)}` +
-      ` commands ${shown('commands')} values ${shown('values')} hostile ${shown('hostile')}` +
-      ` baseline-errors ${shown('baseline-errors')} manifest-files ${shown('manifest-files')}` +
-      ` launches ${shown('launches')} reports ${shown('reports')}`
-  )
-  if ((process.env['MZ_NWJS_EXE'] ?? '') === '') mz.print('nwjs level: not selected')
-}
-
-/**
-Every way the counts fall short: a count of 0, fewer templates than the registry holds, fewer
-plugins authored than there are categories, fewer reports read than boots started.
-*/
-function shortfalls(counts: Record<string, number>, registry: number): string[] {
-  const { templates = 0, categories = 0, launches = 0, reports = 0 } = counts
-  const categoryCount = CATEGORIES.length
-  return [
-    ...Object.entries(counts)
-      .filter(([, count]) => count === 0)
-      .map(([name]) => `${name} 0`),
-    ...(templates < registry ? [`templates ${String(templates)}/${String(registry)}`] : []),
-    ...(categories < categoryCount
-      ? [`categories ${String(categories)}/${String(categoryCount)}`]
-      : []),
-    ...(reports === launches ? [] : [`reports ${String(reports)} launches ${String(launches)}`])
-  ]
-}
+import { everyRun, failedCases, summaryShortfalls } from './every-case'
+import { expect, test } from './fixtures'
 
 test.describe('every case at the browser level', () => {
   // A failed test restarts the worker, which would boot every case again for the next test
@@ -100,27 +11,16 @@ test.describe('every case at the browser level', () => {
 
   test('prints the counts of every case it ran', async ({ mz }, testInfo) => {
     const runs = await everyRun(mz, testInfo.outputPath())
-    const counts = countsOf(mz, runs)
-    const registry = getAllTemplates().length
-    printCounts(mz, counts, registry)
 
-    expect(shortfalls(counts, registry)).toStrictEqual([])
+    expect(summaryShortfalls(mz, runs)).toStrictEqual([])
   })
 
   test('every case loads, boots and computes what its header declares', async ({
     mz
   }, testInfo) => {
     const runs = await everyRun(mz, testInfo.outputPath())
-    const failed = runs
-      .map(({ verdict }) => ({
-        id: verdict.id,
-        parts: Object.fromEntries(
-          Object.entries(verdict.parts).filter(([, found]) => found.length > 0)
-        )
-      }))
-      .filter(({ parts }) => Object.keys(parts).length > 0)
 
-    expect(failed).toStrictEqual([])
+    expect(failedCases(runs)).toStrictEqual([])
   })
 
   test('hostile cases leave the sentinel unset', async ({ mz }, testInfo) => {

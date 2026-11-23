@@ -23,6 +23,8 @@ import {
   compareManifests,
   copyProject,
   installCase,
+  launchOnce,
+  nwjsCommand,
   removeCopy,
   requireProjectFiles,
   resetCopy,
@@ -372,6 +374,37 @@ function copyWithImages(project = projectWithPicture()): string {
   return copy
 }
 
+describe('the scripts the observer loads itself', () => {
+  afterEach(removeFolders)
+
+  it('writes the scripts the observer loads itself unlisted, refusing one the project holds', () => {
+    const copy = syntheticCopy()
+    const stockList = readText(copy, 'js/plugins.js')
+    installCase(copy, {
+      observer: { file: 'Observer', source: '// observer\n' },
+      scripts: [{ file: 'Probe_a', source: '// probe a\n' }],
+      commands: []
+    })
+
+    expect(readText(copy, 'js/plugins/Probe_a.js')).toBe('// probe a\n')
+    expect(readText(copy, 'js/plugins.js')).not.toContain('Probe_a')
+
+    resetCopy(copy)
+
+    expect([
+      existsSync(path.join(copy, 'js/plugins/Probe_a.js')),
+      readText(copy, 'js/plugins.js')
+    ]).toStrictEqual([false, stockList])
+    expect(() =>
+      installCase(copy, {
+        observer: { file: 'Observer', source: '// observer\n' },
+        scripts: [{ file: 'Example', source: '// probe\n' }],
+        commands: []
+      })
+    ).toThrow('js/plugins/Example.js')
+  })
+})
+
 describe('the stored images placed in the copy', () => {
   afterEach(removeFolders)
 
@@ -463,5 +496,91 @@ describe('the copy served to the browser', () => {
     } finally {
       await server.close()
     }
+  })
+})
+
+/**
+True while a process of that id runs
+*/
+function isAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return error instanceof Error && Reflect.get(error, 'code') === 'EPERM'
+  }
+}
+
+/**
+A fake engine: Node running `source` with the report file and a second file as its arguments.
+*/
+function fakeEngine(folder: string, source: string): [string, string[]] {
+  const script = path.join(folder, 'engine.cjs')
+  writeFileSync(script, source)
+  return [process.execPath, [script, path.join(folder, 'report.json'), path.join(folder, 'pids')]]
+}
+
+describe('one launch of the engine', () => {
+  afterEach(removeFolders)
+
+  it('runs the copy as the editor playtests it', () => {
+    expect(nwjsCommand('/engine/nw', '/run/copy')).toStrictEqual([
+      '/engine/nw',
+      ['/run/copy', 'test']
+    ])
+  })
+
+  it('returns the report the engine wrote before it exited', async () => {
+    expect.hasAssertions()
+
+    const folder = temporaryFolder()
+    const command = fakeEngine(
+      folder,
+      "require('node:fs').writeFileSync(process.argv[2], JSON.stringify({ kind: 'case' }))\n"
+    )
+
+    await expect(
+      launchOnce(command, path.join(folder, 'report.json'), 30_000)
+    ).resolves.toStrictEqual({ report: { kind: 'case' }, timedOut: false })
+  })
+
+  it('returns no report when the engine exits without one, though an earlier launch left one', async () => {
+    expect.hasAssertions()
+
+    const folder = temporaryFolder()
+    writeFileSync(path.join(folder, 'report.json'), JSON.stringify({ kind: 'stale' }))
+    const command = fakeEngine(folder, '// exits at once, writing nothing\n')
+
+    await expect(
+      launchOnce(command, path.join(folder, 'report.json'), 30_000)
+    ).resolves.toStrictEqual({ report: undefined, timedOut: false })
+  })
+
+  it('kills an engine that never exits, and the process it started, at the bound', async () => {
+    expect.hasAssertions()
+
+    const folder = temporaryFolder()
+    const command = fakeEngine(
+      folder,
+      [
+        "const { spawn } = require('node:child_process')",
+        "const { writeFileSync } = require('node:fs')",
+        "const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })",
+        'writeFileSync(process.argv[3], `${process.pid} ${child.pid}`)',
+        'setInterval(() => {}, 1000)',
+        ''
+      ].join('\n')
+    )
+    const started = Date.now()
+
+    await expect(
+      launchOnce(command, path.join(folder, 'report.json'), 3000)
+    ).resolves.toStrictEqual({ report: undefined, timedOut: true })
+
+    const pids = readFileSync(path.join(folder, 'pids'), 'utf8').split(' ').map(Number)
+
+    expect(Date.now() - started).toBeLessThan(30_000)
+    expect(pids).toHaveLength(2)
+    expect(pids.filter((pid) => isAlive(pid))).toStrictEqual([])
   })
 })

@@ -142,6 +142,25 @@ export function plantedCases(): Record<
 }
 
 /**
+A script holding `source` as the body of a function it never calls: it loads only in an engine
+that compiles the source.
+*/
+export const uncalledScript = (source: string): string =>
+  `// Compiled at load, never called\n(function () {\n${source}\n});\n`
+
+/**
+A plugin holding one syntax form in a function it never calls.
+*/
+export function engineOnlyCase(source: string): MzCase {
+  return {
+    id: 'planted-engine-only',
+    kind: 'planted',
+    file: 'PlantedEngineOnly',
+    code: uncalledScript(source)
+  }
+}
+
+/**
 Every template the app registers, each inserted into a plugin of its own with the values the
 corpus inserts it with: its defaults, and a value for each required field left empty.
 */

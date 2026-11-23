@@ -21,6 +21,13 @@ export function treeStatus(): string {
 }
 
 /**
+The commit the working tree is checked out at
+*/
+export function headCommit(): string {
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: process.cwd(), encoding: 'utf8' }).trim()
+}
+
+/**
 Every tracked file, by its path relative to the working tree
 */
 export function trackedFiles(): string[] {

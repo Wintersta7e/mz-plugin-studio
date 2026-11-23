@@ -36,6 +36,47 @@ export interface ObserverConfig {
   The global a hostile payload sets when its code runs.
   */
   sentinel: string
+  /**
+  The file beside the game the report is also written to where the engine is NW.js, which then
+  quits.
+  */
+  reportFile: string
+  /**
+  Given, the observer loads each probe's script from `js/plugins/<file>.js`, as the engine loads
+  a plugin, and reports which compiled, instead of driving the game. A script defines its
+  probe's form in a function it never calls.
+  */
+  probes?: {
+    forms: readonly { id: string; year: number; file: string }[]
+    /**
+    Scripts no engine compiles: one that compiled shows the check proves nothing.
+    */
+    controls: readonly { id: string; file: string }[]
+  }
+}
+
+export interface ProbeResult {
+  id: string
+  compiled: boolean
+  /**
+  The engine's message when the source did not compile, else empty.
+  */
+  error: string
+}
+
+export interface EngineProbeReport {
+  kind: 'engine-probe'
+  /**
+  The engine's own `process.versions` entries, empty where it has none.
+  */
+  versions: { nw: string; chromium: string; node: string }
+  userAgent: string
+  probes: (ProbeResult & { year: number })[]
+  controls: ProbeResult[]
+  /**
+  Probe scripts that did not load, so compiled nothing.
+  */
+  unloaded: string[]
 }
 
 export interface ObserverReport {
@@ -252,7 +293,104 @@ async function drive(config: ObserverConfig, mark: (step: string) => void): Prom
   mark('map after load')
 }
 
+/**
+Loads `js/plugins/<file>.js` as the engine loads a plugin, and resolves whether it loaded, and
+whether it compiled with the engine's message when not.
+*/
+async function compiles(
+  file: string
+): Promise<{ isLoaded: boolean; compiled: boolean; error: string }> {
+  const url = `js/plugins/${file}.js`
+  const errors: string[] = []
+  const onError = (event: ErrorEvent): void => {
+    if (pathOf(event.filename).endsWith(`/${url}`)) errors.push(event.message)
+  }
+  return new Promise((resolve) => {
+    const script = document.createElement('script')
+    const settle = (isLoaded: boolean): void => {
+      globalThis.removeEventListener('error', onError)
+      script.remove()
+      resolve({ isLoaded, compiled: isLoaded && errors.length === 0, error: errors.join(' ') })
+    }
+    globalThis.addEventListener('error', onError)
+    script.addEventListener('load', () => {
+      settle(true)
+    })
+    script.addEventListener('error', () => {
+      settle(false)
+    })
+    script.src = url
+    document.body.append(script)
+  })
+}
+
+/**
+Which probe scripts and control scripts the engine compiles, and its versions.
+*/
+async function probeEngine(
+  probes: NonNullable<ObserverConfig['probes']>
+): Promise<EngineProbeReport> {
+  const versions = read(engine('process'), 'versions')
+  const versionOf = (key: string): string => {
+    const version = read(versions, key)
+    return typeof version === 'string' ? version : ''
+  }
+  const unloaded: string[] = []
+  const result = async (id: string, file: string): Promise<ProbeResult> => {
+    const { isLoaded, compiled, error } = await compiles(file)
+    if (!isLoaded) unloaded.push(id)
+    return { id, compiled, error }
+  }
+  const forms = await Promise.all(
+    probes.forms.map(async ({ id, year, file }) => ({ year, ...(await result(id, file)) }))
+  )
+  const controls = await Promise.all(probes.controls.map(async ({ id, file }) => result(id, file)))
+  return {
+    kind: 'engine-probe',
+    versions: { nw: versionOf('nw'), chromium: versionOf('chromium'), node: versionOf('node') },
+    userAgent: navigator.userAgent,
+    probes: forms,
+    controls,
+    unloaded
+  }
+}
+
+/**
+Where the engine is NW.js: writes `report` to `file` in the game's folder, where the engine's
+save files go, and quits. Elsewhere does nothing.
+*/
+function writeBesideGame(file: string, report: unknown): void {
+  const app = read(engine('nw'), 'App')
+  const load = engine('require')
+  if (app === undefined || typeof load !== 'function') return
+  try {
+    const fs: unknown = Reflect.apply(load, undefined, ['fs'])
+    const nodePath: unknown = Reflect.apply(load, undefined, ['path'])
+    const main = read(read(engine('process'), 'mainModule'), 'filename')
+    if (typeof main !== 'string') throw new TypeError('the engine has no main module')
+    const folder = call(nodePath, 'dirname', [main])
+    call(fs, 'writeFileSync', [call(nodePath, 'join', [folder, file]), JSON.stringify(report)])
+  } finally {
+    call(app, 'quit')
+  }
+}
+
 export function mzObserver(config: ObserverConfig): void {
+  const holder = document.createElement('script')
+  holder.type = 'application/json'
+  holder.id = config.reportId
+  document.head.append(holder)
+  const { probes } = config
+  if (probes !== undefined) {
+    const probe = async (): Promise<void> => {
+      const record = await probeEngine(probes)
+      holder.textContent = JSON.stringify(record)
+      holder.dataset['done'] = 'true'
+      writeBesideGame(config.reportFile, record)
+    }
+    void probe()
+    return
+  }
   const report: ObserverReport = {
     loadErrors: [],
     bootErrors: [],
@@ -263,10 +401,6 @@ export function mzObserver(config: ObserverConfig): void {
     isSentinelSet: false,
     isDone: false
   }
-  const holder = document.createElement('script')
-  holder.type = 'application/json'
-  holder.id = config.reportId
-  document.head.append(holder)
   const publish = (): void => {
     holder.textContent = JSON.stringify(report)
     if (report.isDone) holder.dataset['done'] = 'true'
@@ -289,6 +423,7 @@ export function mzObserver(config: ObserverConfig): void {
     report.isSentinelSet = Reflect.has(globalThis, config.sentinel)
     report.isDone = true
     publish()
+    writeBesideGame(config.reportFile, report)
   }
   publish()
   void finish()
@@ -308,6 +443,9 @@ const IN_PAGE = [
   reach,
   runEvent,
   drive,
+  compiles,
+  probeEngine,
+  writeBesideGame,
   mzObserver
 ]
 
@@ -333,13 +471,68 @@ const isRecord = (value: unknown): value is LoadRecord['calls'][number] =>
 const isRecords = (value: unknown): value is LoadRecord['calls'] =>
   isList(value) && value.every((item) => isRecord(item))
 
+const fieldOf = (parsed: unknown, key: string): unknown =>
+  typeof parsed === 'object' && parsed !== null ? Reflect.get(parsed, key) : undefined
+
+const isResult = (value: unknown): value is ProbeResult =>
+  typeof fieldOf(value, 'id') === 'string' &&
+  typeof fieldOf(value, 'compiled') === 'boolean' &&
+  typeof fieldOf(value, 'error') === 'string'
+
+const isFormResult = (value: unknown): value is ProbeResult & { year: number } =>
+  typeof fieldOf(value, 'year') === 'number' && isResult(value)
+
+/**
+The engine probe the observer reported, parsed; throws on anything else.
+*/
+export function probeReportOf(parsed: unknown): EngineProbeReport {
+  const field = (key: string): unknown => fieldOf(parsed, key)
+  const versions = field('versions')
+  const version = (key: string): unknown => fieldOf(versions, key)
+  const [nw, chromium, node] = [version('nw'), version('chromium'), version('node')]
+  const userAgent = field('userAgent')
+  const probes = field('probes')
+  const controls = field('controls')
+  const unloaded = field('unloaded')
+  if (
+    typeof nw !== 'string' ||
+    typeof chromium !== 'string' ||
+    typeof node !== 'string' ||
+    typeof userAgent !== 'string' ||
+    field('kind') !== 'engine-probe' ||
+    !isList(probes) ||
+    !isList(controls) ||
+    !isStrings(unloaded)
+  ) {
+    throw new TypeError('the observer reported no engine probe')
+  }
+  const forms = probes.filter((probe) => isFormResult(probe))
+  const checks = controls.filter((control) => isResult(control))
+  if (forms.length !== probes.length || checks.length !== controls.length) {
+    throw new TypeError('the engine probe holds a result of another shape')
+  }
+  return {
+    kind: 'engine-probe',
+    versions: { nw, chromium, node },
+    userAgent,
+    probes: forms.map(({ id, year, compiled, error }) => ({ id, year, compiled, error })),
+    controls: checks.map(({ id, compiled, error }) => ({ id, compiled, error })),
+    unloaded
+  }
+}
+
 /**
 The report the observer published, from its element's text; throws on anything else.
 */
 export function readReport(text: string): ObserverReport {
-  const parsed: unknown = JSON.parse(text)
-  const field = (key: string): unknown =>
-    typeof parsed === 'object' && parsed !== null ? Reflect.get(parsed, key) : undefined
+  return reportOf(JSON.parse(text))
+}
+
+/**
+The report the observer published, parsed; throws on anything else.
+*/
+export function reportOf(parsed: unknown): ObserverReport {
+  const field = (key: string): unknown => fieldOf(parsed, key)
   const loadErrors = field('loadErrors')
   const bootErrors = field('bootErrors')
   const errorPrinter = field('errorPrinter')
