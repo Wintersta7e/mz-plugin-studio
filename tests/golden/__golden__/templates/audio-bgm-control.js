@@ -100,6 +100,16 @@ function customBgmControl() {
     AudioManager.playBgm(bgm);
 }
 
+// ==== case: operation=save,wrapInFunction=false {"operation":"save","volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":false,"filename":"Theme1"}
+// Save current BGM for later restoration
+// The saved BGM can be restored with $gameSystem.replayBgm()
+$gameSystem.saveBgm();
+
+// ==== case: operation=restore,wrapInFunction=false {"operation":"restore","volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":false,"filename":"Theme1"}
+// Restore previously saved BGM
+// Make sure to call $gameSystem.saveBgm() first
+$gameSystem.replayBgm();
+
 // ==== case: filename=comment-space {"operation":"play","volume":90,"pitch":100,"pan":0,"fadeDuration":1,"fadeInDuration":1,"wrapInFunction":true,"filename":"X */ globalThis.__pwn = 1; /* Y"}
 // BGM Control Function: play
 function customBgmControl() {
