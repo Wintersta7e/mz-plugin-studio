@@ -703,18 +703,23 @@ describe('e2e harness: process list', () => {
     })
   })
 
-  it("lists this process with its parent and executable on this machine's own process list", async () => {
-    expect.hasAssertions()
+  // On Windows this runs a cold PowerShell process query: 3–5 s on a CI runner, at the 5 s default
+  it(
+    "lists this process with its parent and executable on this machine's own process list",
+    { timeout: 30_000 },
+    async () => {
+      expect.hasAssertions()
 
-    const live = await liveProcesses()
-    const self = live.find(({ pid }) => pid === process.pid)
-    process.stdout.write(`e2e live processes: ${String(live.length)}\n`)
+      const live = await liveProcesses()
+      const self = live.find(({ pid }) => pid === process.pid)
+      process.stdout.write(`e2e live processes: ${String(live.length)}\n`)
 
-    expect({
-      ppid: self?.ppid,
-      executable: self?.executablePath?.toLowerCase()
-    }).toStrictEqual({ ppid: process.ppid, executable: process.execPath.toLowerCase() })
-  })
+      expect({
+        ppid: self?.ppid,
+        executable: self?.executablePath?.toLowerCase()
+      }).toStrictEqual({ ppid: process.ppid, executable: process.execPath.toLowerCase() })
+    }
+  )
 })
 
 describe('e2e harness: MZ runtime project', () => {

@@ -556,31 +556,37 @@ describe('one launch of the engine', () => {
     ).resolves.toStrictEqual({ report: undefined, timedOut: false })
   })
 
-  it('kills an engine that never exits, and the process it started, at the bound', async () => {
-    expect.hasAssertions()
+  // The kill waits up to 3 s for the engine, then for its tree to go; the test allows 30 s, which
+  // the 5 s default never let it reach (3.2 s on a Windows CI runner)
+  it(
+    'kills an engine that never exits, and the process it started, at the bound',
+    { timeout: 40_000 },
+    async () => {
+      expect.hasAssertions()
 
-    const folder = temporaryFolder()
-    const command = fakeEngine(
-      folder,
-      [
-        "const { spawn } = require('node:child_process')",
-        "const { writeFileSync } = require('node:fs')",
-        "const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })",
-        'writeFileSync(process.argv[3], `${process.pid} ${child.pid}`)',
-        'setInterval(() => {}, 1000)',
-        ''
-      ].join('\n')
-    )
-    const started = Date.now()
+      const folder = temporaryFolder()
+      const command = fakeEngine(
+        folder,
+        [
+          "const { spawn } = require('node:child_process')",
+          "const { writeFileSync } = require('node:fs')",
+          "const child = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' })",
+          'writeFileSync(process.argv[3], `${process.pid} ${child.pid}`)',
+          'setInterval(() => {}, 1000)',
+          ''
+        ].join('\n')
+      )
+      const started = Date.now()
 
-    await expect(
-      launchOnce(command, path.join(folder, 'report.json'), 3000)
-    ).resolves.toStrictEqual({ report: undefined, timedOut: true })
+      await expect(
+        launchOnce(command, path.join(folder, 'report.json'), 3000)
+      ).resolves.toStrictEqual({ report: undefined, timedOut: true })
 
-    const pids = readFileSync(path.join(folder, 'pids'), 'utf8').split(' ').map(Number)
+      const pids = readFileSync(path.join(folder, 'pids'), 'utf8').split(' ').map(Number)
 
-    expect(Date.now() - started).toBeLessThan(30_000)
-    expect(pids).toHaveLength(2)
-    expect(pids.filter((pid) => isAlive(pid))).toStrictEqual([])
-  })
+      expect(Date.now() - started).toBeLessThan(30_000)
+      expect(pids).toHaveLength(2)
+      expect(pids.filter((pid) => isAlive(pid))).toStrictEqual([])
+    }
+  )
 })
