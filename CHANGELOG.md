@@ -29,6 +29,8 @@
 - Saved app state (open plugins, settings, layout) reaches the disk as soon as the app stores it. Before, it reached the disk about 5 seconds later, so killing the app, or a crash of the whole app, in that time lost edits the app had already saved.
 - Closing the app while its state could not be saved, for example because storage is full, no longer closes without a word. The first close, quit or reload is held, the error is shown again if you had dismissed it, and the app asks before it closes; a second close goes ahead. Before, the app showed the error as it closed, and the changes it could not save were lost.
 - A tab no longer shows unsaved changes after an edit that changed nothing, such as an edit of a parameter, command or struct the tab no longer holds. Before, such an edit marked the tab unsaved and stored the app state again, though the plugin was unchanged.
+- The Picture Manipulation template's Show, Move, Rotate, Tint and Erase operations put their picture call inside a function, such as `customShowPicture()`, that you call from a plugin command or a scene hook. Before, the call ran as the plugin loaded, when RPG Maker MZ has no game screen yet, so the game stopped at start with "Cannot read properties of null".
+- The BGM Control template's Save and Restore operations put their call inside a function, such as `customBgmControl()`, even with Wrap in Function turned off. Before, the unwrapped call ran as the plugin loaded, when RPG Maker MZ has no game system yet, so the game stopped at start with "Cannot read properties of null".
 
 ## [1.9.0] - 2026-11-19
 

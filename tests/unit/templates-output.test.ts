@@ -3,10 +3,12 @@
 // `generate()` function.
 
 import { describe, it, expect } from 'vitest'
+import { baseValues, templateIds } from '../golden/corpus/templates'
 import {
   getTemplate,
   getTemplateDefaults,
-  validateTemplateValues
+  validateTemplateValues,
+  type TemplateField
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { compileCheck } from '../../src/main/services/syntax-check'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
@@ -286,14 +288,21 @@ function audioCalls(code: string): unknown {
 
 describe('audio BGM control save and restore', () => {
   it('replays the BGM the save operation saved', () => {
-    const save = audioCode('audio-bgm-control', { operation: 'save' })
-    const restore = audioCode('audio-bgm-control', { operation: 'restore' })
+    const save = audioCode('audio-bgm-control', { operation: 'save', functionName: 'saveTheme' })
+    const restore = audioCode('audio-bgm-control', {
+      operation: 'restore',
+      functionName: 'restoreTheme'
+    })
 
-    expect(audioCalls(`${save}\n${restore}`)).toStrictEqual([['replayBgm', 'Theme1']])
+    expect(audioCalls(`${save}\n${restore}\nsaveTheme();\nrestoreTheme();`)).toStrictEqual([
+      ['replayBgm', 'Theme1']
+    ])
   })
 
   it('replays nothing when no BGM was saved', () => {
-    expect(audioCalls(audioCode('audio-bgm-control', { operation: 'restore' }))).toStrictEqual([])
+    const restore = audioCode('audio-bgm-control', { operation: 'restore' })
+
+    expect(audioCalls(`${restore}\ncustomBgmControl();`)).toStrictEqual([])
   })
 })
 
@@ -530,5 +539,133 @@ describe('message window visible lines', () => {
     )
 
     expect(shown).toMatchObject({ x: 108, width: 600, height })
+  })
+})
+
+// The game objects RPG Maker MZ creates only when a game starts: while the plugins load, each
+// of them is null
+const LOADING_ENGINE = [
+  '$gameTemp',
+  '$gameSystem',
+  '$gameScreen',
+  '$gameTimer',
+  '$gameMessage',
+  '$gameSwitches',
+  '$gameVariables',
+  '$gameSelfSwitches',
+  '$gameActors',
+  '$gameParty',
+  '$gameTroop',
+  '$gameMap',
+  '$gamePlayer'
+]
+  .map((name) => `var ${name} = null;`)
+  .join('\n')
+
+// A game screen that records the name of each method called on it
+const RECORDING_SCREEN = `
+var screenCalls = [];
+$gameScreen = new Proxy({}, {
+  get: function (target, name) {
+    return function () { screenCalls.push(name); return null; };
+  }
+});
+`
+
+// Each picture operation, the call a running game makes to its code, and the screen method that
+// call reaches
+const PICTURE_CALLS: readonly (readonly [string, string, string])[] = [
+  ['show', 'customShowPicture()', 'showPicture'],
+  ['move', 'customMovePicture()', 'movePicture'],
+  ['rotate', 'customRotatePicture()', 'rotatePicture'],
+  ['tint', 'customTintPicture()', 'tintPicture'],
+  ['erase', 'customErasePicture()', 'erasePicture'],
+  ['utility', "showPicture(1, 'Pic1', 0, 0)", 'showPicture']
+]
+
+function pictureCode(operation: string): string {
+  return templateOf('sprite-picture-manipulation').generate({
+    ...getTemplateDefaults('sprite-picture-manipulation'),
+    imageName: 'Pic1',
+    operation
+  })
+}
+
+describe('picture manipulation while the plugins load', () => {
+  it('checks every operation the template offers', () => {
+    const operations = templateOf('sprite-picture-manipulation')
+      .fields.find((field) => field.id === 'operation')
+      ?.options?.map((option) => option.value)
+
+    expect(operations).toStrictEqual(PICTURE_CALLS.map(([operation]) => operation))
+  })
+
+  it.each(PICTURE_CALLS)(
+    'loads with no game objects for the %s operation, and reaches the screen once called',
+    (operation, call, method) => {
+      const code = pictureCode(operation)
+      const loaded = evaluatePlugin(`${LOADING_ENGINE}\n${code}`, { mode: 'generator' })
+
+      expect(loaded.compileProblem).toBeNull()
+      expect(loaded.threw).toBeNull()
+
+      const called = evaluatePlugin(`${LOADING_ENGINE}\n${code}\n${RECORDING_SCREEN}\n${call};`, {
+        mode: 'generator'
+      })
+      const context: { screenCalls?: unknown } | null = called.context
+
+      expect(called.threw).toBeNull()
+      expect(structuredClone(context?.screenCalls)).toStrictEqual([method])
+    }
+  )
+})
+
+// The values a field offers to choose from: each option of a select, both values of a boolean,
+// none for a field of any other type
+function choicesOf(field: TemplateField): unknown[] {
+  if (field.type === 'boolean') return [true, false]
+  if (field.type === 'select') return (field.options ?? []).map((option) => option.value)
+  return []
+}
+
+// Every combination of the choices of a template's fields, with the base values for every other
+// field
+function optionCombinations(id: string): Record<string, unknown>[] {
+  let combinations: Record<string, unknown>[] = [baseValues(id)]
+  for (const field of templateOf(id).fields) {
+    const choices = choicesOf(field)
+    if (choices.length === 0) continue
+    combinations = combinations.flatMap((combination) =>
+      choices.map((choice) => ({ ...combination, [field.id]: choice }))
+    )
+  }
+  return combinations
+}
+
+// How the output of one combination fails to load with every game object null, or null when
+// it loads
+function loadFailure(id: string, values: Record<string, unknown>): string | null {
+  const code = templateOf(id).generate(values)
+  const loaded = evaluatePlugin(`${LOADING_ENGINE}\n${code}`, { mode: 'template' })
+  return loaded.compileProblem?.message ?? loaded.threw
+}
+
+describe('every template option while the plugins load', () => {
+  it('loads every output with no game objects', () => {
+    const outputs = templateIds().flatMap((id) =>
+      optionCombinations(id).map((values) => ({ id, values }))
+    )
+    const failing: string[] = []
+    for (const { id, values } of outputs) {
+      const failure = loadFailure(id, values)
+      if (failure !== null) failing.push(`${id} ${JSON.stringify(values)}: ${failure}`)
+    }
+    process.stdout.write(
+      `templates loaded at plugin load: ${String(outputs.length)} outputs, ` +
+        `${String(failing.length)} failing\n`
+    )
+
+    expect(outputs.length).toBeGreaterThan(0)
+    expect(failing).toStrictEqual([])
   })
 })

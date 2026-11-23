@@ -9,7 +9,7 @@ Templates for RPG Maker MZ sprite manipulation:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
-import { classNameErrors, decimalIntegerOf, expectText, valueOr } from './values'
+import { classNameErrors, decimalIntegerOf, expectText, functionLines, valueOr } from './values'
 
 /**
 Converts a sprite name to a valid identifier
@@ -364,100 +364,115 @@ const PICTURE_UTILITY_LINES = [
 ]
 
 /**
-A showPicture call with the picture values.
+A function making the showPicture call with the picture values.
 */
 function showPictureLines(picture: PictureArgs): string[] {
-  return [
-    '// Show Picture',
-    '//',
-    `// Displays picture ${picture.id} at position (${picture.x}, ${picture.y})`,
-    '',
-    `$gameScreen.showPicture(`,
-    `    ${picture.id},         // Picture ID`,
-    `    '${escapeJSString(expectText(picture.imageName))}',       // Image name (from img/pictures/)`,
-    `    ${picture.origin},            // Origin (0 = Upper Left, 1 = Center)`,
-    `    ${picture.x},                 // X position`,
-    `    ${picture.y},                 // Y position`,
-    `    ${picture.scaleX},            // Scale X (%)`,
-    `    ${picture.scaleY},            // Scale Y (%)`,
-    `    ${picture.opacity},           // Opacity (0-255)`,
-    `    ${picture.blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`,
-    ');'
-  ]
+  return functionLines(
+    [
+      '// Show Picture',
+      '//',
+      `// Displays picture ${picture.id} at position (${picture.x}, ${picture.y})`
+    ],
+    'customShowPicture',
+    [
+      `$gameScreen.showPicture(`,
+      `    ${picture.id},         // Picture ID`,
+      `    '${escapeJSString(expectText(picture.imageName))}',       // Image name (from img/pictures/)`,
+      `    ${picture.origin},            // Origin (0 = Upper Left, 1 = Center)`,
+      `    ${picture.x},                 // X position`,
+      `    ${picture.y},                 // Y position`,
+      `    ${picture.scaleX},            // Scale X (%)`,
+      `    ${picture.scaleY},            // Scale Y (%)`,
+      `    ${picture.opacity},           // Opacity (0-255)`,
+      `    ${picture.blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`,
+      ');'
+    ],
+    '$gameScreen'
+  )
 }
 
 /**
-A movePicture call with the picture values.
+A function making the movePicture call with the picture values.
 */
 function movePictureLines(picture: PictureArgs): string[] {
-  return [
-    '// Move Picture',
-    '//',
-    `// Moves picture ${picture.id} to (${picture.x}, ${picture.y}) over ${picture.duration} frames`,
-    '',
-    `$gameScreen.movePicture(`,
-    `    ${picture.id},         // Picture ID`,
-    `    ${picture.origin},            // Origin (0 = Upper Left, 1 = Center)`,
-    `    ${picture.x},                 // Target X position`,
-    `    ${picture.y},                 // Target Y position`,
-    `    ${picture.scaleX},            // Target Scale X (%)`,
-    `    ${picture.scaleY},            // Target Scale Y (%)`,
-    `    ${picture.opacity},           // Target Opacity (0-255)`,
-    `    ${picture.blendMode},         // Target Blend mode`,
-    `    ${picture.duration},          // Duration (frames)`,
-    `    0                     // Easing type (0 = constant speed)`,
-    ');'
-  ]
+  return functionLines(
+    [
+      '// Move Picture',
+      '//',
+      `// Moves picture ${picture.id} to (${picture.x}, ${picture.y}) over ${picture.duration} frames`
+    ],
+    'customMovePicture',
+    [
+      `$gameScreen.movePicture(`,
+      `    ${picture.id},         // Picture ID`,
+      `    ${picture.origin},            // Origin (0 = Upper Left, 1 = Center)`,
+      `    ${picture.x},                 // Target X position`,
+      `    ${picture.y},                 // Target Y position`,
+      `    ${picture.scaleX},            // Target Scale X (%)`,
+      `    ${picture.scaleY},            // Target Scale Y (%)`,
+      `    ${picture.opacity},           // Target Opacity (0-255)`,
+      `    ${picture.blendMode},         // Target Blend mode`,
+      `    ${picture.duration},          // Duration (frames)`,
+      `    0                     // Easing type (0 = constant speed)`,
+      ');'
+    ],
+    '$gameScreen'
+  )
 }
 
 /**
-A rotatePicture call with the picture values.
+A function making the rotatePicture call with the picture values.
 */
 function rotatePictureLines(picture: PictureArgs): string[] {
-  return [
-    '// Rotate Picture',
-    '//',
-    `// Rotates picture ${picture.id} at ${picture.rotationSpeed} degrees per frame`,
-    '',
-    `$gameScreen.rotatePicture(${picture.id}, ${picture.rotationSpeed});`,
-    '',
-    '// Note: Positive values rotate clockwise, negative counter-clockwise',
-    '// To stop rotation, set speed to 0:',
-    `// $gameScreen.rotatePicture(${picture.id}, 0);`
-  ]
+  return functionLines(
+    [
+      '// Rotate Picture',
+      '//',
+      `// Rotates picture ${picture.id} at ${picture.rotationSpeed} degrees per frame`
+    ],
+    'customRotatePicture',
+    [
+      `$gameScreen.rotatePicture(${picture.id}, ${picture.rotationSpeed});`,
+      '',
+      '// Note: Positive values rotate clockwise, negative counter-clockwise',
+      '// To stop rotation, set speed to 0:',
+      `// $gameScreen.rotatePicture(${picture.id}, 0);`
+    ],
+    '$gameScreen'
+  )
 }
 
 /**
-A tintPicture call with the picture values.
+A function making the tintPicture call with the picture values.
 */
 function tintPictureLines(picture: PictureArgs): string[] {
-  return [
-    '// Tint Picture',
-    '//',
-    `// Applies color tint to picture ${picture.id}`,
-    '',
-    `$gameScreen.tintPicture(`,
-    `    ${picture.id},                                   // Picture ID`,
-    `    [${picture.tint}],  // [Red, Green, Blue, Gray]`,
-    `    ${picture.duration}                                     // Duration (frames)`,
-    ');',
-    '',
-    '// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255',
-    '// To remove tint: [0, 0, 0, 0]'
-  ]
+  return functionLines(
+    ['// Tint Picture', '//', `// Applies color tint to picture ${picture.id}`],
+    'customTintPicture',
+    [
+      `$gameScreen.tintPicture(`,
+      `    ${picture.id},                                   // Picture ID`,
+      `    [${picture.tint}],  // [Red, Green, Blue, Gray]`,
+      `    ${picture.duration}                                     // Duration (frames)`,
+      ');',
+      '',
+      '// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255',
+      '// To remove tint: [0, 0, 0, 0]'
+    ],
+    '$gameScreen'
+  )
 }
 
 /**
-An erasePicture call with the picture values.
+A function making the erasePicture call with the picture values.
 */
 function erasePictureLines(picture: PictureArgs): string[] {
-  return [
-    '// Erase Picture',
-    '//',
-    `// Removes picture ${picture.id} from screen`,
-    '',
-    `$gameScreen.erasePicture(${picture.id});`
-  ]
+  return functionLines(
+    ['// Erase Picture', '//', `// Removes picture ${picture.id} from screen`],
+    'customErasePicture',
+    [`$gameScreen.erasePicture(${picture.id});`],
+    '$gameScreen'
+  )
 }
 
 /**

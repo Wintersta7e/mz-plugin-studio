@@ -20,6 +20,22 @@ export function treeStatus(): string {
   })
 }
 
+/**
+The commit the working tree is checked out at
+*/
+export function headCommit(): string {
+  return execFileSync('git', ['rev-parse', 'HEAD'], { cwd: process.cwd(), encoding: 'utf8' }).trim()
+}
+
+/**
+Every tracked file, by its path relative to the working tree
+*/
+export function trackedFiles(): string[] {
+  return execFileSync('git', ['ls-files', '-z'], { cwd: process.cwd(), encoding: 'utf8' })
+    .split('\0')
+    .filter((file) => file !== '')
+}
+
 export default async function globalSetup(): Promise<void> {
   // Loaded natively: the test transform compiles static imports to CommonJS, which rejects the
   // script's module-only syntax

@@ -6,7 +6,7 @@ import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import { deserializeParams, serializeParams } from '../../src/renderer/src/lib/param-io'
 import type { PluginParameter } from '../../src/shared/types/plugin'
 import { MZPARAMS_HOST, V160_FIXTURE, V160_PARAMS, V160_SOURCE } from './corpus/mzparams'
-import { freezeTime, restoreTime } from './corpus/normalise'
+import { freezeTime, restoreTime } from './corpus/clock'
 
 // The parameters the import path keeps of the export fixture, which it must accept
 function importedParameters(): PluginParameter[] {

@@ -212,6 +212,7 @@ The end-to-end suite drives the packaged app, and CI requires it:
 npm run e2e:prepare        # rebuild the unpacked release in dist/ that the suite drives
 npm run e2e                # Playwright flows and release smoke on that build
 npm run e2e:visual:update  # remake the visual baselines in the pinned image (Docker, Linux host)
+npm run e2e:mz             # generated plugins in RPG Maker MZ's own engine; local only, needs MZ_PROJECT_DIR
 ```
 
 - `npm run e2e:prepare` always rebuilds. `npm run e2e:prepare -- --reuse` keeps an unpacked release built earlier in the same job, as the Windows CI jobs do, and builds one if none is there.
@@ -225,6 +226,20 @@ MZ_CORESCRIPT_DIR=<core-scripts-folder> npm run test:parity
 ```
 
 Without the variable, `npm run test:parity` reports both tests skipped. It was last compared against core scripts v1.10.0 (the `rmmz_managers.js` header line), with no plugin behaving differently.
+
+`npm run e2e:mz` boots a local RPG Maker MZ project in a headless browser with test plugins installed and checks that each loads and that the game reaches its map. It copies the project into a temporary folder and never writes the project itself: before the copy and after the run it lists every file with its size and modification time, and fails if any differs. `MZ_PROJECT_DIR` names the project folder (the one holding `index.html`, `js/main.js`, `data/System.json` and `package.json`); without it the command stops and names the variable. It needs the pinned Playwright browser, installed once by hand (never in CI), and `npm run e2e:prepare` first:
+
+```bash
+node node_modules/@playwright/test/cli.js install chromium-headless-shell
+npm run e2e:prepare
+MZ_PROJECT_DIR=<project-path> xvfb-run -a npm run e2e:mz
+```
+
+On Windows, `MZ_NWJS_EXE` also runs every case in MZ's own engine: it names the NW.js executable MZ playtests with. That level opens a game window per case, so run it while you can leave the machine alone. It also records which JavaScript syntax the engine compiles. Without the variable that level is left out of the run:
+
+```bash
+MZ_PROJECT_DIR=<project-path> MZ_NWJS_EXE=<project-path> npm run e2e:mz
+```
 
 ## Architecture
 

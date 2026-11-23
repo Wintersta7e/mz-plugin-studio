@@ -65,6 +65,11 @@ export const ENABLING_VALUES: Record<string, Record<string, Record<string, unkno
 // Cases that change more than one field: a field shown only for another field's value, varied
 // under that value. One-factor variants of such a field never reach the code it controls.
 const COMBINED_CASES: Record<string, Record<string, unknown>[]> = {
+  // An operation on a game object, with the code not wrapped in a function
+  'audio-bgm-control': [
+    { operation: 'save', wrapInFunction: false },
+    { operation: 'restore', wrapInFunction: false }
+  ],
   // Text outside a select's options, as a hand-edited saved value holds: only such a value
   // reaches the template's own rejection of an unknown key, trigger or scene.
   'input-handler-basic': [

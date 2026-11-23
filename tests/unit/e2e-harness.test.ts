@@ -56,7 +56,11 @@ function byCodeUnit(left: string, right: string): number {
 }
 
 const FIXTURE_MODULE = 'e2e/fixtures/app.ts'
+// The release build and the MZ engine are spawned, not launched through the test library
+const SPAWN_MODULES = new Set([FIXTURE_MODULE, 'e2e/fixtures/mz-project.ts'])
 const CONFIG = 'e2e/playwright.config.ts'
+const MZ_PROJECT_ENV = 'MZ_PROJECT_DIR'
+const MZ_NWJS_ENV = 'MZ_NWJS_EXE'
 
 // Each rule names what an e2e module must not contain
 const BANNED: [string, RegExp][] = [
@@ -212,17 +216,45 @@ function expectReportUpload(job: Job, after: number | undefined): void {
 The project names of the real config, loaded on `platform` with `argv` as the command line
 */
 async function configProjects(platform: NodeJS.Platform, argv: string[] = []): Promise<string[]> {
+  const projects = await loadedProjects(platform, argv)
+  return projects.map((project) => project.name ?? '')
+}
+
+/**
+The projects of the real config, loaded on `platform` with `argv` as the command line
+*/
+async function loadedProjects(
+  platform: NodeJS.Platform,
+  argv: string[]
+): Promise<{ name?: string; testIgnore?: unknown }[]> {
   const saved = { platform: process.platform, argv: process.argv }
   Object.defineProperty(process, 'platform', { value: platform })
   process.argv = [...saved.argv.slice(0, 2), ...argv]
   try {
     vi.resetModules()
     const { default: config } = await import('../../e2e/playwright.config')
-    return (config.projects ?? []).map((project) => project.name ?? '')
+    return config.projects ?? []
   } finally {
     Object.defineProperty(process, 'platform', { value: saved.platform })
     process.argv = saved.argv
   }
+}
+
+/**
+What the MZ runtime project of the real config leaves out, loaded on `platform`
+*/
+async function mzRuntimeIgnore(platform: NodeJS.Platform): Promise<unknown> {
+  const projects = await loadedProjects(platform, [])
+  return projects.find((project) => project.name === 'mz-runtime')?.testIgnore
+}
+
+/**
+Unsets the variables that add the optional projects to the config
+*/
+function unsetProjectVariables(): void {
+  vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+  vi.stubEnv(MZ_PROJECT_ENV, undefined)
+  vi.stubEnv(MZ_NWJS_ENV, undefined)
 }
 
 async function verdict(tests: TestCase[]): Promise<FullResult['status'] | undefined> {
@@ -254,7 +286,8 @@ function scanModules(): {
     const spawns = count(source, /\bspawn\(/)
     launchSites += launches
     spawnSites += spawns
-    if (file !== FIXTURE_MODULE && launches + spawns > 0) violations.push(`${file}: launches`)
+    if (file !== FIXTURE_MODULE && launches > 0) violations.push(`${file}: launches`)
+    if (!SPAWN_MODULES.has(file) && spawns > 0) violations.push(`${file}: spawns`)
     for (const [rule, pattern] of BANNED)
       if (pattern.test(source)) violations.push(`${file}: ${rule}`)
     for (const imported of testImports(file, source))
@@ -301,8 +334,8 @@ describe('e2e harness', () => {
     expect(files.length).toBeGreaterThan(0)
     expect(files).toContain(FIXTURE_MODULE)
     expect(launchSites).toBe(1)
-    // The release build is spawned, not launched through the test library
-    expect(spawnSites).toBe(1)
+    // One spawn site in each module that may spawn
+    expect(spawnSites).toBe(SPAWN_MODULES.size)
     expect(violations).toStrictEqual([])
   })
 
@@ -387,7 +420,7 @@ describe('e2e harness: Linux image', () => {
     it('exists only inside the pinned image on Linux', async () => {
       expect.hasAssertions()
 
-      vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+      unsetProjectVariables()
 
       await expect(configProjects('linux')).resolves.toStrictEqual(['flows', 'release-smoke'])
 
@@ -404,7 +437,7 @@ describe('e2e harness: Linux image', () => {
     it('names the image run when selected outside the image', async () => {
       expect.hasAssertions()
 
-      vi.stubEnv(VISUAL_IMAGE_ENV, undefined)
+      unsetProjectVariables()
 
       await expect(configProjects('linux', ['--project=visual'])).rejects.toThrow(
         'npm run e2e:visual:update -- --check'
@@ -681,6 +714,83 @@ describe('e2e harness: process list', () => {
       ppid: self?.ppid,
       executable: self?.executablePath?.toLowerCase()
     }).toStrictEqual({ ppid: process.ppid, executable: process.execPath.toLowerCase() })
+  })
+})
+
+describe('e2e harness: MZ runtime project', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('exists only where MZ_PROJECT_DIR names a project', async () => {
+    expect.hasAssertions()
+
+    unsetProjectVariables()
+
+    await expect(configProjects('linux')).resolves.toStrictEqual(['flows', 'release-smoke'])
+
+    vi.stubEnv(MZ_PROJECT_ENV, '')
+
+    await expect(configProjects('linux')).resolves.toStrictEqual(['flows', 'release-smoke'])
+
+    vi.stubEnv(MZ_PROJECT_ENV, '/mz-project')
+
+    await expect(configProjects('linux')).resolves.toStrictEqual([
+      'flows',
+      'release-smoke',
+      'mz-runtime'
+    ])
+    await expect(configProjects('win32', ['--project=mz-runtime'])).resolves.toStrictEqual([
+      'flows',
+      'release-smoke',
+      'mz-runtime'
+    ])
+  })
+
+  it('names MZ_PROJECT_DIR when selected without it', async () => {
+    expect.hasAssertions()
+
+    unsetProjectVariables()
+
+    await expect(configProjects('linux', ['--project=mz-runtime'])).rejects.toThrow(
+      'the mz-runtime project needs MZ_PROJECT_DIR'
+    )
+    await expect(configProjects('win32', ['--project', 'mz-runtime'])).rejects.toThrow(
+      'the mz-runtime project needs MZ_PROJECT_DIR'
+    )
+    await expect(configProjects('linux', ['--project=flows'])).resolves.toStrictEqual([
+      'flows',
+      'release-smoke'
+    ])
+  })
+
+  it('leaves the NW.js level out unless MZ_NWJS_EXE names the engine', async () => {
+    expect.hasAssertions()
+
+    unsetProjectVariables()
+    vi.stubEnv(MZ_PROJECT_ENV, '/mz-project')
+
+    await expect(mzRuntimeIgnore('linux')).resolves.toBe('mz/nwjs.e2e.ts')
+
+    vi.stubEnv(MZ_NWJS_ENV, '')
+
+    await expect(mzRuntimeIgnore('win32')).resolves.toBe('mz/nwjs.e2e.ts')
+
+    vi.stubEnv(MZ_NWJS_ENV, String.raw`C:\engine\nw.exe`)
+
+    await expect(mzRuntimeIgnore('win32')).resolves.toBeUndefined()
+  })
+
+  it('runs the MZ runtime project from its own script, not the e2e one', () => {
+    const scripts = valueAt(readJson('package.json'), 'scripts')
+
+    expect([
+      valueAt(scripts, 'e2e:mz'),
+      text(valueAt(scripts, 'e2e')).includes('mz-runtime')
+    ]).toStrictEqual([
+      `node node_modules/@playwright/test/cli.js test -c ${CONFIG} --project=mz-runtime`,
+      false
+    ])
   })
 })
 

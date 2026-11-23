@@ -25,6 +25,10 @@ import { GENERATOR_ENTRIES, type GeneratorEntry } from '../golden/corpus/generat
 import { EDITS, fixturePlugins, loadFixture } from '../golden/corpus/raw-mode'
 import type { MzRuntime } from './mz-runtime'
 
+// The values each template is inserted with in the corpus, for a runtime that runs every
+// template: its defaults, and a value for each required field left empty
+export { baseValues as templateValues } from '../golden/corpus/templates'
+
 export interface ConformanceCase {
   id: string
   /**
@@ -242,7 +246,7 @@ export function conformanceCases(): ConformanceCase[] {
 // --- Value sets and the reading each type gets ----------------------------------------------
 
 export type ValueSetName = 'defaults' | 'absent' | 'edited'
-const VALUE_SETS: readonly ValueSetName[] = ['defaults', 'absent', 'edited']
+export const VALUE_SETS: readonly ValueSetName[] = ['defaults', 'absent', 'edited']
 
 const isNumeric = (type: ParamType | undefined): boolean =>
   type === 'number' || (type !== undefined && ID_BASED_PARAM_TYPES.has(type))
@@ -286,7 +290,7 @@ function editedValue(param: PluginParameter, structs: readonly PluginStruct[]): 
   return isNumeric(param.type) ? '0' : (EDITED[param.type]?.(param, structs) ?? '')
 }
 
-function valueSet(
+export function valueSet(
   set: ValueSetName,
   params: readonly PluginParameter[],
   structs: readonly PluginStruct[]
@@ -379,7 +383,7 @@ function expectedValue(param: PluginParameter, stored: string | undefined): unkn
 
 // --- Observation -----------------------------------------------------------------------------
 
-const OBSERVED = '__mzConformanceObserved'
+export const OBSERVED = '__mzConformanceObserved'
 const RAW_MODE_REGIONS: readonly [string, string][] = [
   ['// --- New parameters (added by MZ Plugin Studio) ---', '// --- End new parameters ---'],
   ['// --- New commands (added by MZ Plugin Studio) ---', '// --- End new commands ---']
@@ -1122,4 +1126,197 @@ export function runConformance(
     report.traces[c.id] = caseRun.trace
   }
   return report
+}
+
+// --- Another runtime ---------------------------------------------------------------------------
+
+/**
+One load of a case: its value set, the values stored for it, and the commands an event runs
+against it, with their args.
+*/
+export interface LoadPlan {
+  set: ValueSetName
+  stored: Record<string, string>
+  commands: { name: string; args: Record<string, string> }[]
+}
+
+/**
+What a case needs from a runtime other than the stand-in: the observed code, the name it is
+loaded under, and its loads. Code that does not parse has no loads, only its parse error.
+*/
+export interface CaseExpectation {
+  case: ConformanceCase
+  loadName: string
+  observedCode: string
+  loads: LoadPlan[]
+  parseError?: string
+}
+
+/**
+What another runtime recorded for one load: its load errors, each call the observed code
+pushed, with `this` reduced to whether it was the interpreter, and the commands that ran.
+*/
+export interface LoadRecord {
+  errors: string[]
+  calls: [where: string, command: string | null, isInterpreter: boolean, constants: string][]
+  ran: string[]
+}
+
+/**
+Commands the observed raw-mode code registers that its header does not declare.
+*/
+const addedCommandNames = (observation: Observation, header: PluginDefinition): string[] =>
+  observation.commandNames.filter((name) => header.commands.every((h) => h.name !== name))
+
+/**
+The loads `runConformance` gives a case, for another runtime to run: each value set under the
+file's stem (raw mode: under the name its own code reads its parameters with), with each
+header command and that set's args, then the commands no header declares: the generated
+plugin's `UndeclaredCommand`, raw mode's added commands. Renames, and raw mode's check that a
+command which ran before an edit still runs, compare loads under other names or of other
+cases, so they stay with `runConformance`.
+*/
+export function caseExpectations(c: ConformanceCase): CaseExpectation {
+  const observation = observe(c.code, c.kind)
+  const stem = stemOf(c.fileName)
+  if (observation.parseError !== undefined) {
+    return {
+      case: c,
+      loadName: stem,
+      observedCode: c.code,
+      loads: [],
+      parseError: observation.parseError
+    }
+  }
+  const header = PluginParser.parsePlugin(c.code, c.fileName)
+  const ownName = c.kind === 'raw-mode' ? ownParametersName(c.code) : null
+  const undeclared =
+    c.kind === 'generated' ? [UNDECLARED_COMMAND] : addedCommandNames(observation, header)
+  const loads = VALUE_SETS.map((set): LoadPlan => ({
+    set,
+    stored: valueSet(set, header.parameters, header.structs),
+    commands: [
+      ...header.commands.map((command) => ({
+        name: command.name,
+        args: valueSet(set, command.args, header.structs)
+      })),
+      ...undeclared.map((name) => ({ name, args: {} }))
+    ]
+  }))
+  return { case: c, loadName: ownName ?? stem, observedCode: observation.code, loads }
+}
+
+const isNotLoaded = (): never => {
+  throw new Error('a recorded load is judged, never loaded again')
+}
+
+/**
+A runtime that replays one recorded load: a command runs when the record says it ran, and
+pushes the calls recorded for it.
+*/
+function replayOf(record: LoadRecord): MzRuntime {
+  const interpreter = {}
+  const observed: Recorded[] = []
+  return {
+    context: { [OBSERVED]: observed },
+    interpreter,
+    load: isNotLoaded,
+    parameters: isNotLoaded,
+    runCommand([, command]) {
+      if (!record.ran.includes(command)) return false
+      for (const [where, name, isInterpreter, constants] of record.calls) {
+        if (where === 'command' && name === command) {
+          observed.push([where, name, isInterpreter ? interpreter : null, constants])
+        }
+      }
+      return true
+    }
+  }
+}
+
+function judgeGeneratedLoad(
+  load: SetLoad,
+  header: PluginDefinition,
+  observation: Observation,
+  stored: Record<string, string>
+): void {
+  const { run_, loaded, stem, set } = load
+  run_.compare('parameter', set, header.parameters, stored, loaded.parameters)
+  const { refused, isReadOfRefused } = refusedHeaderNames(run_.c.definition)
+  for (const name of observation.commandNames) {
+    if (refused.has(name)) run_.exempt('commandNames', name)
+    else if (header.commands.every((h) => h.name !== name)) {
+      run_.addFinding(
+        'header-code-differ',
+        `code registers ${show(name)}, which the header does not declare`
+      )
+    }
+  }
+  for (const command of header.commands) {
+    runGeneratedCommand(load, command, observation, isReadOfRefused)
+  }
+  if (run(loaded, stem, UNDECLARED_COMMAND, {}).ran) {
+    run_.addFinding('command-keys', `${show(UNDECLARED_COMMAND)} ran`)
+  }
+}
+
+function judgeRawModeLoad(
+  load: SetLoad,
+  header: PluginDefinition,
+  observation: Observation,
+  stored: Record<string, string>
+): void {
+  const { run_, loaded, stem, set } = load
+  run_.undeclaredKeysExempt = findAnnotationBlocks(run_.c.code).every((b) => b.kind !== 'main')
+  run_.compare('added parameter', set, header.parameters, stored, loaded.parameters)
+  const added = addedCommandNames(observation, header).map((name): CommandHeader => ({
+    name,
+    args: []
+  }))
+  const ran = new Set<string>()
+  runRawModeCommands(load, [...header.commands, ...added], ran)
+  for (const name of observation.commandNames) {
+    if (!ran.has(name))
+      run_.addFinding('command-keys', `added ${commandKey(stem, name)} does not run`)
+  }
+}
+
+/**
+Judges one load another runtime ran by the rules `runConformance` applies to the stand-in's,
+in a report of its own: a finding repeated within the load counts once, and merging a case's
+loads is the caller's.
+*/
+export function judgeLoad(
+  expectation: CaseExpectation,
+  load: LoadPlan,
+  record: LoadRecord
+): ConformanceFinding[] {
+  const c = expectation.case
+  // A report of no cases, which only this load's findings go into
+  const report = runConformance(() => replayOf(record), [])
+  const run_ = new CaseRun(c, report, new Set())
+  if (expectation.parseError !== undefined) {
+    run_.addFinding('load-error', expectation.parseError)
+    return report.findings
+  }
+  const header = PluginParser.parsePlugin(c.code, c.fileName)
+  const loaded: LoadedCase = {
+    runtime: replayOf(record),
+    errors: record.errors,
+    parameters: record.calls
+      .filter(([where]) => where === 'parameters')
+      .flatMap((call) => observedConstants(call[3]))
+  }
+  for (const error of loaded.errors) run_.addFinding('load-error', error)
+  const judged: SetLoad = {
+    run_,
+    loaded,
+    stem: stemOf(c.fileName),
+    set: load.set,
+    structs: header.structs
+  }
+  const observation = observe(c.code, c.kind)
+  if (c.kind === 'generated') judgeGeneratedLoad(judged, header, observation, load.stored)
+  else judgeRawModeLoad(judged, header, observation, load.stored)
+  return report.findings
 }

@@ -9,7 +9,7 @@ import {
   type CodeTemplate
 } from '../../src/renderer/src/lib/generator/templates/index'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
-import { freezeTime, restoreTime } from './corpus/normalise'
+import { freezeTime, restoreTime } from './corpus/clock'
 import {
   renderCases,
   renderTemplateCases,
