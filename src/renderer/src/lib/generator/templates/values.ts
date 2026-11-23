@@ -85,3 +85,30 @@ export function classNameErrors(value: unknown, label: string): string[] {
   const isValid = /^[a-z][a-z0-9]*$/i.test(name.trim().replaceAll(/\s+/g, ''))
   return isValid ? [] : [`${label} must start with a letter and contain only letters and numbers`]
 }
+
+/**
+The heading lines, then a function of that name with the body lines indented inside it (an empty
+line stays empty). `nullAtLoad` names a game object the body calls that is null while the plugins
+load: two comment lines before the function then say to call it from a running game.
+*/
+export function functionLines(
+  heading: readonly string[],
+  functionName: string,
+  body: readonly string[],
+  nullAtLoad?: string
+): string[] {
+  const note =
+    nullAtLoad === undefined
+      ? []
+      : [
+          `// ${nullAtLoad} is null while plugins load: call this function from a`,
+          `// plugin command or a scene hook, e.g. ${functionName}();`
+        ]
+  return [
+    ...heading,
+    ...note,
+    `function ${functionName}() {`,
+    ...body.map((line) => (line ? `    ${line}` : '')),
+    '}'
+  ]
+}

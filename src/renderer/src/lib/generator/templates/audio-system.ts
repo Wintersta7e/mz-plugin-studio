@@ -9,7 +9,7 @@ Templates for RPG Maker MZ audio control:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString, escapeLineComment } from '../escape'
-import { expectText, providedOr, valueOr } from './values'
+import { expectText, functionLines, providedOr, valueOr } from './values'
 import { isIdentifierName } from '../naming'
 
 /**
@@ -137,18 +137,6 @@ function crossfadeTypeLabel(crossfadeType: unknown): string {
   if (crossfadeType === 'crossfade') return 'Crossfade'
   if (crossfadeType === 'fadeToSilence') return 'Fade to Silence'
   return 'Fade from Silence'
-}
-
-/**
-The code, or when it is wrapped, a comment line and the code indented inside a function of that name.
-*/
-function wrappedCode(
-  coreCode: readonly string[],
-  wrap: { readonly isWrapped: boolean; readonly comment: string; readonly functionName: string }
-): string {
-  if (!wrap.isWrapped) return coreCode.join('\n')
-  const body = coreCode.map((line) => (line ? `    ${line}` : ''))
-  return [`// ${wrap.comment}`, `function ${wrap.functionName}() {`, ...body, '}'].join('\n')
 }
 
 /**
@@ -317,11 +305,10 @@ const bgmControlTemplate = defineTemplate({
       }
     }
 
-    return wrappedCode(coreCode, {
-      isWrapped: isWrapInFunction,
-      comment: `BGM Control Function: ${String(operation)}`,
-      functionName
-    })
+    const heading = [`// BGM Control Function: ${String(operation)}`]
+    return isWrapInFunction
+      ? functionLines(heading, functionName, coreCode).join('\n')
+      : coreCode.join('\n')
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []
@@ -448,11 +435,10 @@ const sePlayerTemplate = defineTemplate({
     coreCode.push('};')
     coreCode.push('AudioManager.playSe(se);')
 
-    return wrappedCode(coreCode, {
-      isWrapped: isWrapInFunction,
-      comment: `Sound Effect Function: ${escapeLineComment(expectText(filename))}`,
-      functionName
-    })
+    const heading = [`// Sound Effect Function: ${escapeLineComment(expectText(filename))}`]
+    return isWrapInFunction
+      ? functionLines(heading, functionName, coreCode).join('\n')
+      : coreCode.join('\n')
   },
   validate: (values): ValidationResult => {
     const errors = [
@@ -593,11 +579,10 @@ const audioCrossfadeTemplate = defineTemplate({
       }
     }
 
-    return wrappedCode(coreCode, {
-      isWrapped: isWrapInFunction,
-      comment: `${crossfadeTypeLabel(crossfadeType)} Function`,
-      functionName
-    })
+    const heading = [`// ${crossfadeTypeLabel(crossfadeType)} Function`]
+    return isWrapInFunction
+      ? functionLines(heading, functionName, coreCode).join('\n')
+      : coreCode.join('\n')
   },
   validate: (values): ValidationResult => {
     const errors: string[] = []

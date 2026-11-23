@@ -9,7 +9,7 @@ Templates for RPG Maker MZ sprite manipulation:
 
 import { defineTemplate, type CodeTemplate, type ValidationResult } from './types'
 import { escapeJSString } from '../escape'
-import { classNameErrors, decimalIntegerOf, expectText, valueOr } from './values'
+import { classNameErrors, decimalIntegerOf, expectText, functionLines, valueOr } from './values'
 
 /**
 Converts a sprite name to a valid identifier
@@ -364,29 +364,10 @@ const PICTURE_UTILITY_LINES = [
 ]
 
 /**
-The heading lines, then the calls inside a function of that name: `$gameScreen` is null while the
-plugins load, so the calls run only when a running game calls the function.
-*/
-function runtimeFunctionLines(
-  heading: readonly string[],
-  functionName: string,
-  calls: readonly string[]
-): string[] {
-  return [
-    ...heading,
-    '// $gameScreen is null while plugins load: call this function from a',
-    `// plugin command or a scene hook, e.g. ${functionName}();`,
-    `function ${functionName}() {`,
-    ...calls.map((line) => (line ? `    ${line}` : '')),
-    '}'
-  ]
-}
-
-/**
 A function making the showPicture call with the picture values.
 */
 function showPictureLines(picture: PictureArgs): string[] {
-  return runtimeFunctionLines(
+  return functionLines(
     [
       '// Show Picture',
       '//',
@@ -405,7 +386,8 @@ function showPictureLines(picture: PictureArgs): string[] {
       `    ${picture.opacity},           // Opacity (0-255)`,
       `    ${picture.blendMode}          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)`,
       ');'
-    ]
+    ],
+    '$gameScreen'
   )
 }
 
@@ -413,7 +395,7 @@ function showPictureLines(picture: PictureArgs): string[] {
 A function making the movePicture call with the picture values.
 */
 function movePictureLines(picture: PictureArgs): string[] {
-  return runtimeFunctionLines(
+  return functionLines(
     [
       '// Move Picture',
       '//',
@@ -433,7 +415,8 @@ function movePictureLines(picture: PictureArgs): string[] {
       `    ${picture.duration},          // Duration (frames)`,
       `    0                     // Easing type (0 = constant speed)`,
       ');'
-    ]
+    ],
+    '$gameScreen'
   )
 }
 
@@ -441,7 +424,7 @@ function movePictureLines(picture: PictureArgs): string[] {
 A function making the rotatePicture call with the picture values.
 */
 function rotatePictureLines(picture: PictureArgs): string[] {
-  return runtimeFunctionLines(
+  return functionLines(
     [
       '// Rotate Picture',
       '//',
@@ -454,7 +437,8 @@ function rotatePictureLines(picture: PictureArgs): string[] {
       '// Note: Positive values rotate clockwise, negative counter-clockwise',
       '// To stop rotation, set speed to 0:',
       `// $gameScreen.rotatePicture(${picture.id}, 0);`
-    ]
+    ],
+    '$gameScreen'
   )
 }
 
@@ -462,7 +446,7 @@ function rotatePictureLines(picture: PictureArgs): string[] {
 A function making the tintPicture call with the picture values.
 */
 function tintPictureLines(picture: PictureArgs): string[] {
-  return runtimeFunctionLines(
+  return functionLines(
     ['// Tint Picture', '//', `// Applies color tint to picture ${picture.id}`],
     'customTintPicture',
     [
@@ -474,7 +458,8 @@ function tintPictureLines(picture: PictureArgs): string[] {
       '',
       '// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255',
       '// To remove tint: [0, 0, 0, 0]'
-    ]
+    ],
+    '$gameScreen'
   )
 }
 
@@ -482,10 +467,11 @@ function tintPictureLines(picture: PictureArgs): string[] {
 A function making the erasePicture call with the picture values.
 */
 function erasePictureLines(picture: PictureArgs): string[] {
-  return runtimeFunctionLines(
+  return functionLines(
     ['// Erase Picture', '//', `// Removes picture ${picture.id} from screen`],
     'customErasePicture',
-    [`$gameScreen.erasePicture(${picture.id});`]
+    [`$gameScreen.erasePicture(${picture.id});`],
+    '$gameScreen'
   )
 }
 
