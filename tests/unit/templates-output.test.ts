@@ -532,3 +532,81 @@ describe('message window visible lines', () => {
     expect(shown).toMatchObject({ x: 108, width: 600, height })
   })
 })
+
+// The game objects RPG Maker MZ creates only when a game starts: while the plugins load, each
+// of them is null
+const LOADING_ENGINE = [
+  '$gameTemp',
+  '$gameSystem',
+  '$gameScreen',
+  '$gameTimer',
+  '$gameMessage',
+  '$gameSwitches',
+  '$gameVariables',
+  '$gameSelfSwitches',
+  '$gameActors',
+  '$gameParty',
+  '$gameTroop',
+  '$gameMap',
+  '$gamePlayer'
+]
+  .map((name) => `var ${name} = null;`)
+  .join('\n')
+
+// A game screen that records the name of each method called on it
+const RECORDING_SCREEN = `
+var screenCalls = [];
+$gameScreen = new Proxy({}, {
+  get: function (target, name) {
+    return function () { screenCalls.push(name); return null; };
+  }
+});
+`
+
+// Each picture operation, the call a running game makes to its code, and the screen method that
+// call reaches
+const PICTURE_CALLS: readonly (readonly [string, string, string])[] = [
+  ['show', 'customShowPicture()', 'showPicture'],
+  ['move', 'customMovePicture()', 'movePicture'],
+  ['rotate', 'customRotatePicture()', 'rotatePicture'],
+  ['tint', 'customTintPicture()', 'tintPicture'],
+  ['erase', 'customErasePicture()', 'erasePicture'],
+  ['utility', "showPicture(1, 'Pic1', 0, 0)", 'showPicture']
+]
+
+function pictureCode(operation: string): string {
+  return templateOf('sprite-picture-manipulation').generate({
+    ...getTemplateDefaults('sprite-picture-manipulation'),
+    imageName: 'Pic1',
+    operation
+  })
+}
+
+describe('picture manipulation while the plugins load', () => {
+  it('checks every operation the template offers', () => {
+    const operations = templateOf('sprite-picture-manipulation')
+      .fields.find((field) => field.id === 'operation')
+      ?.options?.map((option) => option.value)
+
+    expect(operations).toStrictEqual(PICTURE_CALLS.map(([operation]) => operation))
+  })
+
+  it.each(PICTURE_CALLS)(
+    'loads with no game objects for the %s operation, and reaches the screen once called',
+    (operation, call, method) => {
+      const code = pictureCode(operation)
+      const loaded = evaluatePlugin(`${LOADING_ENGINE}\n${code}`, { mode: 'generator' })
+
+      expect(loaded.compileProblem).toBeNull()
+      expect(loaded.threw).toBeNull()
+
+      const called = evaluatePlugin(`${LOADING_ENGINE}\n${code}\n${RECORDING_SCREEN}\n${call};`, {
+        mode: 'generator'
+      })
+      const context: { screenCalls?: unknown } | null = called.context
+
+      expect(called.threw).toBeNull()
+      expect(structuredClone(context?.screenCalls)).toStrictEqual([method])
+    }
+  )
+})

@@ -15,18 +15,21 @@
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Picture1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Picture1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: type-violating: unlisted choices {"operation":"unlisted","pictureId":1,"imageName":"Pic1","origin":"unlisted","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"unlisted","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0}
 // rejects: Field "Operation" must be one of its choices | Field "Origin" must be one of its choices | Field "Blend Mode" must be one of its choices
@@ -37,36 +40,42 @@ $gameScreen.showPicture(
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Picture1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Picture1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: type-violating: required fields only {"operation":"show","pictureId":1}
 // rejects: Image Name is required for Show Picture operation
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Picture1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Picture1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: type-violating: operation="move",pictureId="abc",x=null,duration=["a","b"] {"operation":"move","pictureId":"abc","origin":"0","x":null,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":["a","b"],"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // rejects: Field "Picture ID" must be a number | Field "Duration (frames)" must be a number
@@ -93,23 +102,29 @@ $gameScreen.showPicture(
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    300,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        300,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: type-violating: operation="erase",pictureId=0 {"operation":"erase","pictureId":0,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // rejects: Picture ID must be between 1 and 100
 // Erase Picture
 //
 // Removes picture 1 from screen
-
-$gameScreen.erasePicture(1);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customErasePicture();
+function customErasePicture() {
+    $gameScreen.erasePicture(1);
+}

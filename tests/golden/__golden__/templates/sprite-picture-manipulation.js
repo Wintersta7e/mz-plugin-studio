@@ -2,85 +2,103 @@
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: operation=show {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: operation=move {"operation":"move","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Move Picture
 //
 // Moves picture 1 to (0, 0) over 60 frames
-
-$gameScreen.movePicture(
-    1,         // Picture ID
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // Target X position
-    0,                 // Target Y position
-    100,            // Target Scale X (%)
-    100,            // Target Scale Y (%)
-    255,           // Target Opacity (0-255)
-    0,         // Target Blend mode
-    60,          // Duration (frames)
-    0                     // Easing type (0 = constant speed)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customMovePicture();
+function customMovePicture() {
+    $gameScreen.movePicture(
+        1,         // Picture ID
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // Target X position
+        0,                 // Target Y position
+        100,            // Target Scale X (%)
+        100,            // Target Scale Y (%)
+        255,           // Target Opacity (0-255)
+        0,         // Target Blend mode
+        60,          // Duration (frames)
+        0                     // Easing type (0 = constant speed)
+    );
+}
 
 // ==== case: operation=rotate {"operation":"rotate","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Rotate Picture
 //
 // Rotates picture 1 at 1 degrees per frame
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customRotatePicture();
+function customRotatePicture() {
+    $gameScreen.rotatePicture(1, 1);
 
-$gameScreen.rotatePicture(1, 1);
-
-// Note: Positive values rotate clockwise, negative counter-clockwise
-// To stop rotation, set speed to 0:
-// $gameScreen.rotatePicture(1, 0);
+    // Note: Positive values rotate clockwise, negative counter-clockwise
+    // To stop rotation, set speed to 0:
+    // $gameScreen.rotatePicture(1, 0);
+}
 
 // ==== case: operation=tint {"operation":"tint","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Tint Picture
 //
 // Applies color tint to picture 1
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customTintPicture();
+function customTintPicture() {
+    $gameScreen.tintPicture(
+        1,                                   // Picture ID
+        [0, 0, 0, 0],  // [Red, Green, Blue, Gray]
+        60                                     // Duration (frames)
+    );
 
-$gameScreen.tintPicture(
-    1,                                   // Picture ID
-    [0, 0, 0, 0],  // [Red, Green, Blue, Gray]
-    60                                     // Duration (frames)
-);
-
-// Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255
-// To remove tint: [0, 0, 0, 0]
+    // Tint values: Red/Green/Blue = -255 to 255, Gray = 0 to 255
+    // To remove tint: [0, 0, 0, 0]
+}
 
 // ==== case: operation=erase {"operation":"erase","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Erase Picture
 //
 // Removes picture 1 from screen
-
-$gameScreen.erasePicture(1);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customErasePicture();
+function customErasePicture() {
+    $gameScreen.erasePicture(1);
+}
 
 // ==== case: operation=utility {"operation":"utility","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Picture Manipulation Utility Functions
@@ -177,236 +195,278 @@ function fadeOutPicture(pictureId, duration = 60) {
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Picture1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Picture1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: origin=0 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: origin=1 {"operation":"show","pictureId":1,"origin":"1","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    1,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        1,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: blendMode=0 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: blendMode=1 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"1","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    1          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        1          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: blendMode=2 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"2","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    2          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        2          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: blendMode=3 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"3","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"Pic1"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'Pic1',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    3          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'Pic1',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        3          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=comment-space {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X */ globalThis.__pwn = 1; /* Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X */ globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X */ globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=comment-u2028 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X */\u2028globalThis.__pwn = 1; /* Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X */\u2028globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X */\u2028globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=comment-u2029 {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X */\u2029globalThis.__pwn = 1; /* Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X */\u2029globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X */\u2029globalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=comment-lf {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X */\nglobalThis.__pwn = 1; /* Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X */\nglobalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X */\nglobalThis.__pwn = 1; /* Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=quote-single {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X' + (globalThis.__pwn = 1) + 'Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X\' + (globalThis.__pwn = 1) + \'Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X\' + (globalThis.__pwn = 1) + \'Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=quote-double {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X\" + (globalThis.__pwn = 1) + \"Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X" + (globalThis.__pwn = 1) + "Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X" + (globalThis.__pwn = 1) + "Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
 
 // ==== case: imageName=quote-backtick {"operation":"show","pictureId":1,"origin":"0","x":0,"y":0,"scaleX":100,"scaleY":100,"opacity":255,"blendMode":"0","duration":60,"rotationSpeed":1,"tintRed":0,"tintGreen":0,"tintBlue":0,"tintGray":0,"imageName":"X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y"}
 // Show Picture
 //
 // Displays picture 1 at position (0, 0)
-
-$gameScreen.showPicture(
-    1,         // Picture ID
-    'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y',       // Image name (from img/pictures/)
-    0,            // Origin (0 = Upper Left, 1 = Center)
-    0,                 // X position
-    0,                 // Y position
-    100,            // Scale X (%)
-    100,            // Scale Y (%)
-    255,           // Opacity (0-255)
-    0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
-);
+// $gameScreen is null while plugins load: call this function from a
+// plugin command or a scene hook, e.g. customShowPicture();
+function customShowPicture() {
+    $gameScreen.showPicture(
+        1,         // Picture ID
+        'X${globalThis.__pwn = 1}` + (globalThis.__pwn = 1) + `Y',       // Image name (from img/pictures/)
+        0,            // Origin (0 = Upper Left, 1 = Center)
+        0,                 // X position
+        0,                 // Y position
+        100,            // Scale X (%)
+        100,            // Scale Y (%)
+        255,           // Opacity (0-255)
+        0          // Blend mode (0=Normal, 1=Additive, 2=Multiply, 3=Screen)
+    );
+}
