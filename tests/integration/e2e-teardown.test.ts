@@ -18,6 +18,10 @@ const launchFolder = (): string => mkdtempSync(path.join(tmpdir(), 'mz-teardown-
 // How long a holder may take to start and print its ready line
 const READY_BOUND_MS = 20_000
 const READY_LINE = /^ready\r?$/m
+// A held-entry test on Windows waits for its holder to start, then retries the removal and may run
+// a cold PowerShell process query: 3–5 s on a CI runner, at the 5 s default. Its bound covers the
+// holder's start and the query.
+const HELD_TEST_BOUND_MS = READY_BOUND_MS + 40_000
 
 /**
 Starts `command` and resolves once it printed its ready line, which it prints only after it holds
@@ -163,41 +167,49 @@ const expectedHeldFile = (entry: string): ReturnType<typeof report> & { isGone: 
     : { outcome: 'removed', locked: [], isHolderNamed: false, hasHoldTime: false, isGone: true }
 
 describe('e2e teardown', () => {
-  it('teardown names a held folder, its holder and how long it stayed held', async () => {
-    expect.hasAssertions()
+  it(
+    'teardown names a held folder, its holder and how long it stayed held',
+    { timeout: HELD_TEST_BOUND_MS },
+    async () => {
+      expect.hasAssertions()
 
-    const folder = launchFolder()
-    const held = path.join(folder, 'held')
-    mkdirSync(held)
-    const child = await holder(process.execPath, ['-e', NODE_HOLD], held)
-    try {
-      const result = await removal(folder, [path.dirname(process.execPath)])
-      process.stdout.write(`e2e teardown held folder: ${String(result.lines.length)} lines\n`)
+      const folder = launchFolder()
+      const held = path.join(folder, 'held')
+      mkdirSync(held)
+      const child = await holder(process.execPath, ['-e', NODE_HOLD], held)
+      try {
+        const result = await removal(folder, [path.dirname(process.execPath)])
+        process.stdout.write(`e2e teardown held folder: ${String(result.lines.length)} lines\n`)
 
-      expect(report(result, child.pid)).toStrictEqual(expectedHeld(`held${path.sep}`))
-    } finally {
-      await stop(child, folder)
+        expect(report(result, child.pid)).toStrictEqual(expectedHeld(`held${path.sep}`))
+      } finally {
+        await stop(child, folder)
+      }
     }
-  })
+  )
 
-  it('teardown names a file another process holds open', async () => {
-    expect.hasAssertions()
+  it(
+    'teardown names a file another process holds open',
+    { timeout: HELD_TEST_BOUND_MS },
+    async () => {
+      expect.hasAssertions()
 
-    const folder = launchFolder()
-    const file = path.join(folder, 'held.log')
-    writeFileSync(file, 'held\n')
-    const child = await fileHolder(file, folder)
-    try {
-      const result = await removal(folder)
-      process.stdout.write(`e2e teardown held file: ${String(result.lines.length)} lines\n`)
+      const folder = launchFolder()
+      const file = path.join(folder, 'held.log')
+      writeFileSync(file, 'held\n')
+      const child = await fileHolder(file, folder)
+      try {
+        const result = await removal(folder)
+        process.stdout.write(`e2e teardown held file: ${String(result.lines.length)} lines\n`)
 
-      expect({ ...report(result), isGone: !existsSync(folder) }).toStrictEqual(
-        expectedHeldFile('held.log')
-      )
-    } finally {
-      await stop(child, folder)
+        expect({ ...report(result), isGone: !existsSync(folder) }).toStrictEqual(
+          expectedHeldFile('held.log')
+        )
+      } finally {
+        await stop(child, folder)
+      }
     }
-  })
+  )
 
   it('lists a folder whose rename is refused, with the path separator', () => {
     const folder = launchFolder()
