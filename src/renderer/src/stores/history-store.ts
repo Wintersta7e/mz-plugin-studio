@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create, type StoreApi } from 'zustand'
 import type { PluginDefinition } from '../types/plugin'
 import { isRecord } from './persist'
 
@@ -23,6 +23,27 @@ export const HISTORY_TAB_LIMIT = 50
 @internal exported for tests
 */
 export const HISTORY_TOTAL_LIMIT = 200
+// How long edits to a tab pause before its state is recorded as one undo step
+/**
+@internal exported for tests
+*/
+export const HISTORY_QUIET_MS = 500
+
+// A tab's change waiting for edits to that tab to pause, by plugin id
+interface PendingChange {
+  timer: ReturnType<typeof setTimeout>
+  plugin: PluginDefinition
+}
+const pending = new Map<string, PendingChange>()
+
+function dropPending(id: string): PendingChange | undefined {
+  const change = pending.get(id)
+  if (change !== undefined) {
+    clearTimeout(change.timer)
+    pending.delete(id)
+  }
+  return change
+}
 
 function snapshotOf(plugin: PluginDefinition): HistorySnapshot {
   // The file text is left out, not kept as `undefined`, so the snapshot has the plugin's other keys
@@ -152,7 +173,58 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
   },
 
   forget: (id) => {
+    dropPending(id)
     const { [id]: forgotten, ...rest } = get().stacks
     if (forgotten !== undefined) set({ stacks: rest })
   }
 }))
+
+/**
+Records the change of tab `id` still waiting for its edits to pause, at once, as a step of its
+own.
+*/
+export function commitPending(id: string): void {
+  const change = dropPending(id)
+  if (change !== undefined) useHistoryStore.getState().push(change.plugin)
+}
+
+type RecordedStore = Pick<
+  StoreApi<{ openPlugins: readonly PluginDefinition[] }>,
+  'getState' | 'subscribe'
+>
+
+/**
+Records the undo history of every open tab of `source`: each tab's state at start, a tab opened
+later at once, and a changed tab once edits to it pause for `HISTORY_QUIET_MS`. Returns the stop.
+*/
+export function startHistoryRecording(source: RecordedStore): () => void {
+  let seen = new Map<string, PluginDefinition>()
+  const record = (openPlugins: readonly PluginDefinition[]): void => {
+    const next = new Map<string, PluginDefinition>()
+    for (const tab of openPlugins) {
+      next.set(tab.id, tab)
+      const before = seen.get(tab.id)
+      if (before === undefined) {
+        dropPending(tab.id)
+        useHistoryStore.getState().push(tab)
+      } else if (before !== tab) {
+        dropPending(tab.id)
+        const timer = setTimeout(() => {
+          commitPending(tab.id)
+        }, HISTORY_QUIET_MS)
+        pending.set(tab.id, { timer, plugin: tab })
+      }
+    }
+    for (const id of seen.keys()) if (!next.has(id)) dropPending(id)
+    seen = next
+  }
+
+  record(source.getState().openPlugins)
+  const unsubscribe = source.subscribe((state, previous) => {
+    if (state.openPlugins !== previous.openPlugins) record(state.openPlugins)
+  })
+  return () => {
+    unsubscribe()
+    for (const id of seen.keys()) dropPending(id)
+  }
+}

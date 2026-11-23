@@ -5,7 +5,7 @@
 ### Changed
 
 - Saved app state (open plugins, settings, layout) is written shortly after your edits pause instead of on every change, so typing in large plugins stays fast. A crash of the app can lose up to the last 2 seconds of edits; files on disk are never affected.
-- Each open plugin tab keeps its own undo history, and switching tabs no longer clears it: undo and redo step through the edits of the tab you are working in, and edits in one tab never enter another tab's history. When the tabs together hold a long history, the oldest steps of the tab edited least recently are dropped first.
+- Each open plugin tab keeps its own undo history, and switching tabs no longer clears it: undo and redo step through the edits of the tab you are working in, and edits in one tab never enter another tab's history. When the tabs together hold a long history, the oldest steps of the tab edited least recently are dropped first. Reloading a tab from its file on disk is its own undo step, so one undo brings back the tab as it was before the reload.
 
 ### Fixed
 

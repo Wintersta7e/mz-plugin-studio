@@ -32,7 +32,7 @@ import {
 import { PLUGIN_ID_PATTERN, pluginStorage } from './plugin-storage'
 // None of these stores imports this one, so each is fully set up before this module runs.
 import { useUIStore } from './ui-store'
-import { useHistoryStore } from './history-store'
+import { commitPending, useHistoryStore } from './history-store'
 import { useSettingsStore } from './settings-store'
 
 interface PluginState {
@@ -847,6 +847,8 @@ function fileActions(
       // a tab that is not open has no file to reattach, and the store is left as it is
       const tab = get().openPlugins.find((p) => p.id === id)
       if (tab === undefined) return
+      // An edit still waiting to be recorded is undone apart from the reload
+      commitPending(id)
       set((state) => {
         const { importedFrom } = tab
         const fileName = (importedFrom ?? '').replace(/\.js$/i, '')
@@ -877,6 +879,9 @@ function fileActions(
           dirtyByPluginId: markPluginDirty(state.dirtyByPluginId, id, false)
         }
       })
+      // The values read from the file are an undo step of their own
+      const reloaded = get().openPlugins.find((p) => p.id === id)
+      if (!keepTab && reloaded !== undefined) useHistoryStore.getState().push(reloaded)
     },
     recordSaves: (records) => {
       set((state) => {
