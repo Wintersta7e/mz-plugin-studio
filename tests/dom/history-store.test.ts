@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useHistoryStore } from '../../src/renderer/src/stores/history-store'
+import { type HistorySnapshot, useHistoryStore } from '../../src/renderer/src/stores/history-store'
 import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
   createEmptyPlugin,
@@ -47,23 +47,31 @@ function redoShown() {
   return show(useHistoryStore.getState().redo(shownPlugin()))
 }
 
-// How many entries each side of the history holds now.
+// The history of the tab `id`, empty when it has none
+function stackOf(id: string): {
+  past: readonly HistorySnapshot[]
+  future: readonly HistorySnapshot[]
+} {
+  return useHistoryStore.getState().stacks[id] ?? { past: [], future: [] }
+}
+
+// How many entries each side of the shown tab's history holds now.
 function historyLengths(): { past: number; future: number } {
-  const { past, future } = useHistoryStore.getState()
+  const { past, future } = stackOf(shownPlugin().id)
   return { past: past.length, future: future.length }
 }
 
 describe('historyStore: push', () => {
   beforeEach(resetStores)
 
-  it('adds an entry to past and sets activePluginId', () => {
+  it("adds an entry to the pushed tab's past", () => {
     const plugin = createPlugin('Alpha')
     useHistoryStore.getState().push(plugin)
 
-    expect(useHistoryStore.getState().past).toHaveLength(1)
-    expect(useHistoryStore.getState().past[0]?.plugin.id).toBe(plugin.id)
-    expect(useHistoryStore.getState().past[0]?.plugin.meta.name).toBe(plugin.meta.name)
-    expect(useHistoryStore.getState().activePluginId).toBe(plugin.id)
+    expect(stackOf(plugin.id).past).toHaveLength(1)
+    expect(stackOf(plugin.id).past[0]?.id).toBe(plugin.id)
+    expect(stackOf(plugin.id).past[0]?.meta.name).toBe(plugin.meta.name)
+    expect(Object.keys(useHistoryStore.getState().stacks)).toStrictEqual([plugin.id])
   })
 
   it('clears future on push', () => {
@@ -78,12 +86,12 @@ describe('historyStore: push', () => {
     usePluginStore.getState().openPlugin(pluginB)
     undoShown()
 
-    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(stackOf(pluginA.id).future).toHaveLength(1)
 
     // Push should clear future
     useHistoryStore.getState().push(pluginB)
 
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(stackOf(pluginA.id).future).toHaveLength(0)
   })
 
   it('skips duplicate consecutive pushes of the same state', () => {
@@ -91,7 +99,7 @@ describe('historyStore: push', () => {
     useHistoryStore.getState().push(plugin)
     useHistoryStore.getState().push(plugin)
 
-    expect(useHistoryStore.getState().past).toHaveLength(1)
+    expect(stackOf(plugin.id).past).toHaveLength(1)
   })
 
   it('allows pushes of different states', () => {
@@ -103,25 +111,25 @@ describe('historyStore: push', () => {
     useHistoryStore.getState().push(pluginA)
     useHistoryStore.getState().push(pluginB)
 
-    expect(useHistoryStore.getState().past).toHaveLength(2)
+    expect(stackOf(pluginA.id).past).toHaveLength(2)
   })
 
-  it('auto-clears history when plugin.id changes without explicit setActivePluginId', () => {
+  it("a push for another tab leaves the first tab's history intact", () => {
     const pluginA = createPlugin('Alpha')
     const pluginB = createPlugin('Beta')
 
     useHistoryStore.getState().push(pluginA)
     useHistoryStore.getState().push(pluginA) // dedup, still 1
 
-    expect(useHistoryStore.getState().past).toHaveLength(1)
+    expect(stackOf(pluginA.id).past).toHaveLength(1)
 
-    // Push a different plugin — should clear old history and start fresh
+    // Push a different plugin — it starts its own history
     useHistoryStore.getState().push(pluginB)
 
-    expect(useHistoryStore.getState().past).toHaveLength(1)
-    expect(useHistoryStore.getState().past[0]?.plugin.id).toBe(pluginB.id)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
-    expect(useHistoryStore.getState().activePluginId).toBe(pluginB.id)
+    expect(stackOf(pluginB.id).past).toHaveLength(1)
+    expect(stackOf(pluginB.id).past[0]?.id).toBe(pluginB.id)
+    expect(stackOf(pluginB.id).future).toHaveLength(0)
+    expect(stackOf(pluginA.id).past.map((entry) => entry.id)).toStrictEqual([pluginA.id])
   })
 })
 
@@ -144,9 +152,9 @@ describe('historyStore: undo', () => {
 
     expect(result?.id).toBe(pluginV1.id)
     expect(result?.meta.description).toBe('')
-    expect(useHistoryStore.getState().past).toHaveLength(1)
-    expect(useHistoryStore.getState().future).toHaveLength(1)
-    expect(useHistoryStore.getState().future[0]?.plugin.meta.description).toBe('v2')
+    expect(stackOf(pluginV1.id).past).toHaveLength(1)
+    expect(stackOf(pluginV1.id).future).toHaveLength(1)
+    expect(stackOf(pluginV1.id).future[0]?.meta.description).toBe('v2')
   })
 
   it('returns the newest entry when the state shown is not recorded yet', () => {
@@ -157,8 +165,8 @@ describe('historyStore: undo', () => {
     usePluginStore.getState().openPlugin(pluginV2)
 
     expect(useHistoryStore.getState().undo(shownPlugin())?.meta.description).toBe('')
-    expect(useHistoryStore.getState().past).toHaveLength(1)
-    expect(useHistoryStore.getState().future[0]?.plugin.meta.description).toBe('v2')
+    expect(stackOf(pluginV1.id).past).toHaveLength(1)
+    expect(stackOf(pluginV1.id).future[0]?.meta.description).toBe('v2')
   })
 
   it('returns null when past is empty', () => {
@@ -173,8 +181,8 @@ describe('historyStore: undo', () => {
     usePluginStore.getState().openPlugin(plugin)
 
     expect(useHistoryStore.getState().undo(shownPlugin())).toBeNull()
-    expect(useHistoryStore.getState().past).toHaveLength(1)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(stackOf(plugin.id).past).toHaveLength(1)
+    expect(stackOf(plugin.id).future).toHaveLength(0)
   })
 
   it('allows multiple undo operations', () => {
@@ -193,7 +201,7 @@ describe('historyStore: undo', () => {
     }
     usePluginStore.getState().openPlugin(newest)
 
-    expect(useHistoryStore.getState().past).toHaveLength(3)
+    expect(stackOf(sharedId).past).toHaveLength(3)
 
     expect(undoShown()?.meta.description).toBe('xx')
     expect(historyLengths()).toStrictEqual({ past: 2, future: 1 })
@@ -223,8 +231,8 @@ describe('historyStore: redo', () => {
     const result = redoShown()
 
     expect(result?.meta.description).toBe('v2')
-    expect(useHistoryStore.getState().future).toHaveLength(0)
-    expect(useHistoryStore.getState().past).toHaveLength(2)
+    expect(stackOf(pluginV1.id).future).toHaveLength(0)
+    expect(stackOf(pluginV1.id).past).toHaveLength(2)
     expect(undoShown()?.meta.description).toBe('')
   })
 
@@ -235,68 +243,70 @@ describe('historyStore: redo', () => {
   })
 })
 
-describe('historyStore: clear', () => {
+describe('historyStore: forget', () => {
   beforeEach(resetStores)
 
-  it('empties both past and future', () => {
+  it("forget empties that tab's past and future and leaves other tabs' stacks", () => {
     const plugin = createPlugin('Alpha')
+    const other = createPlugin('Beta')
     useHistoryStore.getState().push(plugin)
+    useHistoryStore.getState().push(other)
     usePluginStore.getState().openPlugin(plugin)
     useHistoryStore.getState().undo(shownPlugin())
 
-    expect(
-      useHistoryStore.getState().past.length + useHistoryStore.getState().future.length
-    ).toBeGreaterThan(0)
+    expect(stackOf(plugin.id).past.length + stackOf(plugin.id).future.length).toBeGreaterThan(0)
 
-    useHistoryStore.getState().clear()
+    useHistoryStore.getState().forget(plugin.id)
 
-    expect(useHistoryStore.getState().past).toHaveLength(0)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(stackOf(plugin.id).past).toHaveLength(0)
+    expect(stackOf(plugin.id).future).toHaveLength(0)
+    expect(stackOf(other.id).past).toHaveLength(1)
   })
 })
 
-describe('historyStore: setActivePluginId', () => {
+describe('historyStore: switching tabs', () => {
   beforeEach(resetStores)
 
-  it('clears history when switching to a different plugin id', () => {
+  it("switching to a different tab keeps both tabs' histories", () => {
     const pluginA = createPlugin('Alpha')
     const pluginB = createPlugin('Beta')
 
-    useHistoryStore.getState().push(pluginA)
+    usePluginStore.getState().openPlugin(pluginB)
+    useHistoryStore.getState().push(pluginB)
     usePluginStore.getState().openPlugin(pluginA)
-    useHistoryStore.getState().undo(shownPlugin())
+    useHistoryStore.getState().push(pluginA)
 
-    expect(
-      useHistoryStore.getState().past.length + useHistoryStore.getState().future.length
-    ).toBeGreaterThan(0)
+    expect(stackOf(pluginA.id).past.length + stackOf(pluginB.id).past.length).toBeGreaterThan(0)
 
-    useHistoryStore.getState().setActivePluginId(pluginB.id)
+    usePluginStore.getState().setActivePlugin(pluginB.id)
 
-    expect(useHistoryStore.getState().past).toHaveLength(0)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
-    expect(useHistoryStore.getState().activePluginId).toBe(pluginB.id)
+    expect(stackOf(pluginA.id).past).toHaveLength(1)
+    expect(stackOf(pluginB.id).past).toHaveLength(1)
+    expect(usePluginStore.getState().activePluginId).toBe(pluginB.id)
   })
 
-  it('does not clear history when called with the same id', () => {
+  it('pushing the same tab again keeps its history', () => {
     const plugin = createPlugin('Alpha')
 
     useHistoryStore.getState().push(plugin)
-    const pastBefore = useHistoryStore.getState().past.length
+    const pastBefore = stackOf(plugin.id).past
 
-    useHistoryStore.getState().setActivePluginId(plugin.id)
+    useHistoryStore.getState().push({ ...plugin, customCode: 'edited' })
 
-    expect(useHistoryStore.getState().past).toHaveLength(pastBefore)
+    expect(stackOf(plugin.id).past.slice(0, pastBefore.length)).toStrictEqual(pastBefore)
   })
 
-  it('clears history when switching to null', () => {
+  it("with no tab active, undo and redo change nothing and every tab's history stays", () => {
     const plugin = createPlugin('Alpha')
     useHistoryStore.getState().push(plugin)
+    const before = useHistoryStore.getState().stacks
 
-    useHistoryStore.getState().setActivePluginId(null)
-
-    expect(useHistoryStore.getState().past).toHaveLength(0)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
-    expect(useHistoryStore.getState().activePluginId).toBeNull()
+    expect(usePluginStore.getState().activePluginId).toBeNull()
+    expect({
+      undone: useHistoryStore.getState().undo(shownPlugin()),
+      redone: useHistoryStore.getState().redo(shownPlugin())
+    }).toStrictEqual({ undone: null, redone: null })
+    expect(useHistoryStore.getState().stacks).toBe(before)
   })
 })
 
@@ -321,9 +331,9 @@ describe('historyStore: history cap', () => {
       useHistoryStore.getState().push(plugin)
     }
 
-    expect(useHistoryStore.getState().past).toHaveLength(50)
+    expect(stackOf(baseId).past).toHaveLength(50)
     // The oldest entry should have been dropped (the one with 0 params)
-    expect(useHistoryStore.getState().past[0]?.plugin.parameters).toHaveLength(1)
+    expect(stackOf(baseId).past[0]?.parameters).toHaveLength(1)
   })
 })
 
@@ -369,7 +379,7 @@ describe('duplicate pushes', () => {
     for (const each of [state(''), state('abc'), newest]) useHistoryStore.getState().push(each)
     usePluginStore.getState().openPlugin(newest)
 
-    expect(useHistoryStore.getState().past).toHaveLength(3)
+    expect(stackOf(id).past).toHaveLength(3)
     expect(undoShown()?.customCode).toBe('abc')
     expect(undoShown()?.customCode).toBe('')
   })
@@ -397,7 +407,7 @@ describe('duplicate pushes', () => {
       useHistoryStore.getState().push(base)
       useHistoryStore.getState().push(edit)
 
-      expect(useHistoryStore.getState().past).toHaveLength(2)
+      expect(stackOf(base.id).past).toHaveLength(2)
     }
   })
 
@@ -407,9 +417,9 @@ describe('duplicate pushes', () => {
 
     useHistoryStore.getState().push(plugin)
 
-    const entries = useHistoryStore.getState().past
+    const entries = stackOf(plugin.id).past
 
-    expect(entries.map((entry) => entry.plugin.rawSource)).toStrictEqual([undefined])
+    expect(entries.map((entry) => Object.hasOwn(entry, 'rawSource'))).toStrictEqual([false])
   })
 })
 

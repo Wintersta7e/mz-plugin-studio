@@ -827,8 +827,6 @@ function tabActions(
       const plugin = openPlugins.find((p) => p.id === id)
       // a tab that is not open is not switched to, and the store is left as it is
       if (plugin === undefined) return
-      // Sync history to new plugin context before state switch
-      useHistoryStore.getState().setActivePluginId(id)
       set((state) => ({
         openPlugins,
         activePluginId: id,

@@ -239,10 +239,14 @@ const guards = () => saveCalls().map((call) => call[3])
 const messages = (): MessageDialogOptions[] =>
   vi.mocked(globalThis.api.dialog.message).mock.calls.map((call) => call[0])
 
+// The undo history of the tab shown, empty when it has none
+const shownHistory = (): { past: readonly unknown[]; future: readonly unknown[] } =>
+  useHistoryStore.getState().stacks[plugin().id] ?? { past: [], future: [] }
+
 // Waits for the app's delayed history record to hold `count` states of the tab.
 const historyHolds = async (count: number): Promise<void> => {
   await waitFor(() => {
-    expect(useHistoryStore.getState().past).toHaveLength(count)
+    expect(shownHistory().past).toHaveLength(count)
   })
 }
 
@@ -730,10 +734,10 @@ describe('app save: storage writes', APP_TIMEOUT, () => {
     flushPersistedState()
 
     await expect(pluginWrites(pressUndo)).resolves.toStrictEqual(ONCE)
-    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(shownHistory().future).toHaveLength(1)
     expect(isDirty(plugin().id)).toBe(true)
     await expect(pluginWrites(pressRedo)).resolves.toStrictEqual(ONCE)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(shownHistory().future).toHaveLength(0)
   })
 
   it('one reload writes the open plugins to storage once', async () => {
@@ -1207,7 +1211,7 @@ describe('app save: undo and redo around a save', APP_TIMEOUT, () => {
 
     pressUndo()
 
-    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(shownHistory().future).toHaveLength(1)
     expect(isDirty(id)).toBe(true)
   })
 
@@ -1228,7 +1232,7 @@ describe('app save: undo and redo around a save', APP_TIMEOUT, () => {
 
     pressRedo()
 
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(shownHistory().future).toHaveLength(0)
     expect(isDirty(id)).toBe(true)
   })
 
