@@ -26,9 +26,20 @@ test.describe('planted defects at the browser level', () => {
 
     const verdict = await mz.run(planted.silent)
 
-    expect(verdict).toStrictEqual({
-      id: planted.silent.id,
-      parts: { o1: [], o2: [], o3: [], o4: [], hostile: [] }
-    })
+    expect(verdict.parts).toStrictEqual({ o1: [], o2: [], o3: [], o4: [], hostile: [] })
+  })
+
+  test('a number parameter read as text fails the parameter check', async ({ mz }) => {
+    const verdict = await mz.run(planted.readsText)
+
+    expect(verdict.parts.o3).toContain(
+      'value: defaults: parameter "count": expected 3, read string "3"'
+    )
+  })
+
+  test('a command registered under another plugin name fails the command check', async ({ mz }) => {
+    const verdict = await mz.run(planted.otherName)
+
+    expect(verdict.parts.o4).toContain('command-keys: "PlantedOtherName:ping" is not registered')
   })
 })

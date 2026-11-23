@@ -25,6 +25,10 @@ import { GENERATOR_ENTRIES, type GeneratorEntry } from '../golden/corpus/generat
 import { EDITS, fixturePlugins, loadFixture } from '../golden/corpus/raw-mode'
 import type { MzRuntime } from './mz-runtime'
 
+// The values each template is inserted with in the corpus, for a runtime that runs every
+// template: its defaults, and a value for each required field left empty
+export { baseValues as templateValues } from '../golden/corpus/templates'
+
 export interface ConformanceCase {
   id: string
   /**

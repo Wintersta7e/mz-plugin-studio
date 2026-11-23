@@ -73,10 +73,14 @@ const PROGRAM_OVERLAPS: { glob: string; programs: string[] }[] = [
     programs: ['web', 'test', 'e2e']
   },
   { glob: 'src/renderer/src/types/plugin.ts', programs: ['web', 'test', 'e2e'] },
+  { glob: 'src/renderer/src/data/mz-classes.json', programs: ['web', 'test', 'e2e'] },
   { glob: 'src/renderer/src/**', programs: ['web', 'test'] },
   { glob: 'tests/helpers/**', programs: ['test', 'e2e'] },
   // Not clock.ts, the corpus module that imports vitest
-  { glob: 'tests/golden/corpus/{generator,normalise,raw-mode}.ts', programs: ['test', 'e2e'] },
+  {
+    glob: 'tests/golden/corpus/{generator,normalise,raw-mode,templates}.ts',
+    programs: ['test', 'e2e']
+  },
   { glob: 'tools/analyze-plugins.ts', programs: ['tools', 'test'] },
   { glob: 'scripts/e2e-prepare.mjs', programs: ['scripts', 'test', 'e2e'] },
   { glob: 'scripts/**', programs: ['scripts', 'test'] },

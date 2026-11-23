@@ -600,7 +600,7 @@ describe('round-trip: all new types together', () => {
 const REQUIRED_ASSETS_SOURCE = `/*:
  * @target MZ
  * @plugindesc Test plugin
- * @author Tester
+ * @author Sample Author
  * @requiredAssets img/pictures/title
  * @requiredAssets audio/bgm/overworld
  */`
@@ -608,7 +608,7 @@ const REQUIRED_ASSETS_SOURCE = `/*:
 const LOCATION_SOURCE = `/*:
  * @target MZ
  * @plugindesc Test
- * @author Tester
+ * @author Sample Author
  *
  * @param spawn
  * @type location
