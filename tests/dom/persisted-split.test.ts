@@ -129,6 +129,27 @@ async function fourTabs(): Promise<Record<string, string>> {
 
 const FOUR_TABS: { value?: Record<string, string> } = {}
 
+const IMPORTED_TAB = 'tab-I'
+const FILE_TEXT = '/*:\n * @target MZ\n * @plugindesc Synthetic imported plugin\n */\n'
+const FILE_PATH = '/fixture/mz-project/js/plugins/Synthetic_Imported.js'
+
+// Tab A and an imported tab holding its file text, the imported one active, as this version
+// writes them
+async function importedTabs(): Promise<Record<string, string>> {
+  seed({})
+  const { plugin: store } = await load()
+  store.getState().openPlugin(plugin('tab-A', 'A'))
+  store.getState().openPlugin({
+    ...plugin(IMPORTED_TAB, 'I'),
+    rawSource: FILE_TEXT,
+    importedFrom: 'Synthetic_Imported.js'
+  })
+  flushStores()
+  return storage()
+}
+
+const IMPORTED: { value?: Record<string, string> } = {}
+
 const CUT_CASES: CutCase[] = [
   {
     name: 'a flush that changes two tabs, closes a third and switches the active tab',
@@ -153,7 +174,25 @@ const CUT_CASES: CutCase[] = [
       store.getState().setActivePlugin('00000000-0000-4000-8000-000000000101')
       store.getState().updateMeta({ description: 'later saved' })
     }
-  }))
+  })),
+  {
+    name: 'a save of an imported tab',
+    mode: 'process gone',
+    start: () => IMPORTED.value ?? {},
+    change: ({ plugin: store }) => {
+      store.getState().updateMeta({ description: 'saved later' })
+      const saved = store.getState().plugin
+      store.getState().recordSaves([
+        {
+          id: IMPORTED_TAB,
+          saved,
+          path: FILE_PATH,
+          sha256: 'a'.repeat(64),
+          written: `${FILE_TEXT}// saved later\n`
+        }
+      ])
+    }
+  }
 ]
 
 // Loads `start`, makes the case's changes and flushes them with only `landing` writes landing,
@@ -192,6 +231,7 @@ const restoreMocks = (): void => {
 describe('split saved state: a flush cut off at every write', () => {
   beforeEach(async () => {
     FOUR_TABS.value ??= await fourTabs()
+    IMPORTED.value ??= await importedTabs()
     localStorage.clear()
   })
 
@@ -410,4 +450,137 @@ describe('split saved state: a damaged tab key', () => {
       expect(persist.listBackups().filter((backup) => backup.key === BACKUP)).toHaveLength(1)
     }
   )
+})
+
+// The key holding the imported tab's file text and last-saved copy
+const contentKeys = (keys: Record<string, string>): string[] =>
+  Object.keys(keys).filter((key) => key.startsWith(`${INDEX}.src.${IMPORTED_TAB}.`))
+
+describe('split saved state: a damaged file-text key', () => {
+  beforeEach(clearStorage)
+
+  afterEach(restoreMocks)
+
+  // Each damage changes `keys` and returns the text the store should keep as its backup
+  it.each([
+    {
+      damage: 'is missing',
+      apply: (keys: Record<string, string>, contentKey: string) => {
+        Reflect.deleteProperty(keys, contentKey)
+        return keys[tabKey(IMPORTED_TAB)]
+      }
+    },
+    {
+      damage: 'cannot be read',
+      apply: (keys: Record<string, string>, contentKey: string) => {
+        keys[contentKey] = '{"schemaVersion":'
+        return keys[contentKey]
+      }
+    },
+    {
+      damage: 'holds no record',
+      apply: (keys: Record<string, string>, contentKey: string) => {
+        keys[contentKey] = '5'
+        return keys[contentKey]
+      }
+    },
+    {
+      damage: 'is named by no number',
+      apply: (keys: Record<string, string>) => {
+        const raw = keys[tabKey(IMPORTED_TAB)] ?? ''
+        keys[tabKey(IMPORTED_TAB)] = raw.replace(/"content":\d+/, '"content":"one"')
+        return keys[tabKey(IMPORTED_TAB)]
+      }
+    }
+  ])(
+    'an imported tab whose file-text key $damage opens without its file text, reported and backed up',
+    async ({ apply }) => {
+      expect.hasAssertions()
+
+      const keys = await importedTabs()
+      const [contentKey, ...others] = contentKeys(keys)
+
+      expect([contentKey, others]).toStrictEqual([expect.any(String), []])
+
+      const backedUp = apply(keys, contentKey ?? '')
+      seed(keys)
+      const { plugin: store, persist } = await load()
+      const state = store.getState()
+      const imported = state.openPlugins.find((tab) => tab.id === IMPORTED_TAB)
+
+      expect([
+        state.openPlugins.map((tab) => tab.id),
+        imported?.rawSource,
+        state.baselineByPluginId[IMPORTED_TAB]
+      ]).toStrictEqual([['tab-A', IMPORTED_TAB], undefined, undefined])
+      expect(localStorage.getItem(BACKUP)).toBe(backedUp)
+      expect(persist.takeRestoreReport()).toMatchObject([{ name: INDEX, kind: 'entries-dropped' }])
+      expect(persist.listBackups().filter((backup) => backup.key === BACKUP)).toHaveLength(1)
+    }
+  )
+})
+
+describe('split saved state: file-text keys under other indexes and versions', () => {
+  beforeEach(clearStorage)
+
+  afterEach(restoreMocks)
+
+  it('removes a file-text key no tab names, once the stores write', async () => {
+    expect.hasAssertions()
+
+    const keys = await importedTabs()
+    const [contentKey = ''] = contentKeys(keys)
+    const unnamed = `${INDEX}.src.${IMPORTED_TAB}.9`
+    // a key under the same prefix that names no number is not one of the store's
+    const foreign = `${INDEX}.src.${IMPORTED_TAB}.draft`
+    keys[unnamed] = keys[contentKey] ?? ''
+    keys[foreign] = 'kept'
+    seed(keys)
+    const { plugin: store } = await load()
+    store.setState({})
+    flushStores()
+
+    expect(contentKeys(storage()).toSorted(byCodeUnit)).toStrictEqual(
+      [contentKey, foreign].toSorted(byCodeUnit)
+    )
+  })
+
+  it('opens a file-text key a newer version wrote, with its text, and reports it', async () => {
+    expect.hasAssertions()
+
+    const keys = await importedTabs()
+    const [contentKey = ''] = contentKeys(keys)
+    const saved = recordOf(JSON.parse(keys[contentKey] ?? ''), 'content key')
+    keys[contentKey] = JSON.stringify({
+      ...saved,
+      schemaVersion: Number(saved['schemaVersion']) + 1
+    })
+    seed(keys)
+    const { plugin: store, persist } = await load()
+    const imported = store.getState().openPlugins.find((tab) => tab.id === IMPORTED_TAB)
+
+    expect([imported?.rawSource, localStorage.getItem(BACKUP)]).toStrictEqual([
+      FILE_TEXT,
+      keys[contentKey]
+    ])
+    expect(persist.takeRestoreReport()).toMatchObject([{ name: INDEX, kind: 'newer-schema' }])
+  })
+
+  it('opens a tab without its file text under an index that cannot be read', async () => {
+    expect.hasAssertions()
+
+    const keys = await importedTabs()
+    const [contentKey = ''] = contentKeys(keys)
+    Reflect.deleteProperty(keys, contentKey)
+    keys[INDEX] = '{"state":'
+    seed(keys)
+    const { plugin: store, persist } = await load()
+    const state = store.getState()
+
+    expect([
+      state.openPlugins.map((tab) => tab.id),
+      state.openPlugins.find((tab) => tab.id === IMPORTED_TAB)?.rawSource
+    ]).toStrictEqual([['tab-A', IMPORTED_TAB], undefined])
+    expect(persist.takeRestoreReport().map((entry) => entry.kind)).toContain('entries-dropped')
+  })
 })

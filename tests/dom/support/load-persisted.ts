@@ -2,7 +2,7 @@
 import { vi } from 'vitest'
 import { flushPersistedState, isRecord } from '../../../src/renderer/src/stores/persist'
 import type * as Persist from '../../../src/renderer/src/stores/persist'
-import { TAB_KEY_PREFIX } from '../../../src/renderer/src/stores/plugin-storage'
+import { CONTENT_KEY_PREFIX, TAB_KEY_PREFIX } from '../../../src/renderer/src/stores/plugin-storage'
 import { PERSISTED_KEYS, type PersistedKey } from '../../helpers/persist-v160'
 
 export interface PersistedHook {
@@ -116,7 +116,10 @@ export function writeAll(
     if (value === null) throw new Error(`store ${key} did not persist`)
     written[key] = value
   }
-  const tabKeys = Object.keys(localStorage).filter((key) => key.startsWith(TAB_KEY_PREFIX))
+  // each tab's own keys: its tab key and the content key holding its file text
+  const tabKeys = Object.keys(localStorage).filter(
+    (key) => key.startsWith(TAB_KEY_PREFIX) || key.startsWith(CONTENT_KEY_PREFIX)
+  )
   return {
     ...written,
     ...Object.fromEntries(tabKeys.map((key) => [key, localStorage.getItem(key) ?? '']))

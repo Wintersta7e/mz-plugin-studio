@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput, isRawMode } from '../../src/renderer/src/lib/plugin-output'
-import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
+import { CONTENT_KEY_PREFIX, TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'
 import { PERSISTED_KEYS, readV160Payloads, type PersistedKey } from '../helpers/persist-v160'
@@ -136,7 +136,7 @@ const schemaOf = (written: Record<PersistedKey, string>, key: PersistedKey): unk
 function withoutSchemaNumber(written: Partial<Record<string, string>>): Record<string, string> {
   return Object.fromEntries(
     Object.entries(written).map(([key, raw = '']) => {
-      if (key.startsWith(TAB_KEY_PREFIX)) return [key, raw]
+      if (key.startsWith(TAB_KEY_PREFIX) || key.startsWith(CONTENT_KEY_PREFIX)) return [key, raw]
       const state = Object.entries(savedStateOf(raw, key)).filter(
         ([field]) => field !== 'schemaVersion'
       )

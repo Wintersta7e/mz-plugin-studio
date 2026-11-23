@@ -78,6 +78,13 @@ async function freshStore(modulePath: string, exportName: string): Promise<Store
 
 const PLUGIN_KEY = 'mz-plugin-studio-plugin'
 
+// Calls the action `name` of `store` with `args`
+function callAction(store: StoreHook, name: string, args: unknown[]): void {
+  const action: unknown = store.getState()[name]
+  if (typeof action !== 'function') throw new TypeError(`the store has no action ${name}`)
+  Reflect.apply(action, undefined, args)
+}
+
 // Every value the plugin store keeps in localStorage, by key in code-unit order, parsed.
 function pluginStorage(): Record<string, unknown> {
   const keys: string[] = []
@@ -209,5 +216,46 @@ describe('persisted plugin seeds', () => {
     await expect(normaliseIds(text) + '\n').toMatchFileSnapshot(
       `__golden__/persisted/seed-${name}.json`
     )
+  })
+
+  it('an edit to an imported tab writes its definition, not its file text', async () => {
+    expect.assertions(3)
+
+    const seeded = PERSISTED_SEEDS.find((seed) => seed.name === 'imported-shape')?.state ?? {}
+    const tabs: unknown[] = Array.isArray(seeded['openPlugins']) ? seeded['openPlugins'] : []
+    const active: unknown = tabs.find(
+      (tab) =>
+        typeof tab === 'object' &&
+        tab !== null &&
+        'id' in tab &&
+        tab.id === seeded['activePluginId']
+    )
+    const fileText =
+      typeof active === 'object' &&
+      active !== null &&
+      'rawSource' in active &&
+      typeof active.rawSource === 'string'
+        ? active.rawSource.length
+        : 0
+    localStorage.clear()
+    const store = await freshStore(plugin?.modulePath ?? '', plugin?.exportName ?? '')
+    store.setState(seeded)
+    flushStored()
+    callAction(store, 'updateMeta', [{ description: 'typed' }])
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const calls: [string, string][] = []
+    try {
+      flushStored()
+      calls.push(...setItem.mock.calls)
+    } finally {
+      setItem.mockRestore()
+    }
+    const written = calls.map(([key]) => key)
+    const chars = calls.reduce((sum, [key, value]) => sum + key.length + value.length, 0)
+    process.stdout.write(`flush chars ${String(chars)} (file text ${String(fileText)})\n`)
+
+    expect(written.filter((key) => key.startsWith(`${PLUGIN_KEY}.src.`))).toStrictEqual([])
+    expect(fileText, 'the imported tab holds no file text').toBeGreaterThan(0)
+    expect(chars, `flush chars ${String(chars)}`).toBeLessThan(fileText)
   })
 })

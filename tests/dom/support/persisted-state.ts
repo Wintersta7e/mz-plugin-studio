@@ -53,8 +53,9 @@ const PLUGIN_INDEX: PersistedKey = 'mz-plugin-studio-plugin'
 /**
 The plugin store's saved state as one record, put together here from what storage holds once the
 stores have written every change: the index's tab order and active tab, and from the key of each
-tab it lists that tab's definition, unsaved mark, saved path, last-saved copy and file, in maps
-keyed by tab id as the store holds them.
+tab it lists that tab's definition, unsaved mark, saved path and file, with the file text and
+last-saved copy from the content key the tab names, in maps keyed by tab id as the store holds
+them.
 */
 export function storedPluginState(): Record<string, unknown> {
   const index = savedStateOf(storedText(PLUGIN_INDEX), 'the plugin index')
@@ -65,8 +66,24 @@ export function storedPluginState(): Record<string, unknown> {
     if (typeof id !== 'string') throw new TypeError('the plugin index lists a tab by no id')
     const saved = localStorage.getItem(`${PLUGIN_INDEX}.tab.${id}`)
     if (saved === null) throw new TypeError(`tab ${id} has no saved key`)
-    const parsed: unknown = JSON.parse(saved)
-    return { id, tab: recordOf(recordOf(parsed, `tab key ${id}`)['tab'], `tab ${id}`) }
+    const tab = recordOf(recordOf(JSON.parse(saved), `tab key ${id}`)['tab'], `tab ${id}`)
+    const { content: number } = tab
+    if (number === undefined) return { id, tab }
+    if (typeof number !== 'number') throw new TypeError(`tab ${id} names no file-text key`)
+    const contentKey = `${PLUGIN_INDEX}.src.${id}.${String(number)}`
+    const contentText = localStorage.getItem(contentKey)
+    if (contentText === null) throw new TypeError(`tab ${id} has no saved file text`)
+    const content = recordOf(JSON.parse(contentText), `content key ${id}`)
+    const definition = recordOf(tab['definition'], `tab ${id} definition`)
+    const { rawSource, baseline } = content
+    return {
+      id,
+      tab: {
+        ...tab,
+        definition: rawSource === undefined ? definition : { ...definition, rawSource },
+        baseline
+      }
+    }
   })
   const byTab = (field: string): Record<string, unknown> =>
     Object.fromEntries(

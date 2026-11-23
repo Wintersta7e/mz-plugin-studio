@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/plugin-parser'
-import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
+import { CONTENT_KEY_PREFIX, TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import { byCodeUnit } from '../golden/corpus/normalise'
 import { fixturePath } from '../helpers/fixture-project'
 import {
@@ -22,7 +22,8 @@ const UI_KEY = 'mz-plugin-studio-ui'
 const IMPORTED_UNSHOWN = '00000000-0000-4000-8000-000000000029'
 // The fields this version adds to the plugin store's saved state
 const NEW_FIELDS = ['"rawSource"', '"baselineByPluginId"', '"baseByPluginId"']
-// The same fields as a tab key holds them
+// The same fields as a tab's own keys hold them: its tab key and the content key holding its file
+// text
 const NEW_TAB_FIELDS = ['"rawSource"', '"baseline"', '"base"']
 
 // What localStorage holds under `key`; a missing entry fails by name
@@ -32,11 +33,15 @@ const stored = (key: string): string => {
   return value
 }
 
-// Every tab key storage holds, with its text
+// Whether `key` is one a single tab is stored under
+const isTabsOwnKey = (key: string): boolean =>
+  key.startsWith(TAB_KEY_PREFIX) || key.startsWith(CONTENT_KEY_PREFIX)
+
+// Every tab and content key storage holds, with its text
 const storedTabKeys = (): Record<string, string> =>
   Object.fromEntries(
     Object.keys(localStorage)
-      .filter((key) => key.startsWith(TAB_KEY_PREFIX))
+      .filter((key) => isTabsOwnKey(key))
       .map((key) => [key, stored(key)])
   )
 
@@ -115,15 +120,17 @@ describe('downgrade to v1.6.0', () => {
       PERSISTED_KEYS.map((key) => [key, JSON.stringify(current[key].getState())])
     )
     const written = writeAll(current)
-    const tabKeys = Object.fromEntries(
-      Object.entries(written).filter(([key]) => key.startsWith(TAB_KEY_PREFIX))
+    const tabKeys = Object.fromEntries(Object.entries(written).filter(([key]) => isTabsOwnKey(key)))
+    // only the opened tab's own keys name its id
+    const openedKeys = Object.entries(tabKeys).flatMap(([key, raw]) =>
+      key.includes(opened.id) ? raw : []
     )
 
     expect([
-      Object.keys(tabKeys).toSorted(byCodeUnit),
-      NEW_TAB_FIELDS.filter(
-        (field) => tabKeys[TAB_KEY_PREFIX + opened.id]?.includes(field) === true
-      )
+      Object.keys(tabKeys)
+        .filter((key) => key.startsWith(TAB_KEY_PREFIX))
+        .toSorted(byCodeUnit),
+      NEW_TAB_FIELDS.filter((field) => openedKeys.some((raw) => raw?.includes(field) === true))
     ]).toStrictEqual([
       [...V160_TAB_IDS, opened.id].map((id) => TAB_KEY_PREFIX + String(id)).toSorted(byCodeUnit),
       NEW_TAB_FIELDS
