@@ -29,6 +29,7 @@ import {
   type FieldPath,
   type MigrationStep
 } from './persist'
+import { PLUGIN_ID_PATTERN, pluginStorage } from './plugin-storage'
 // None of these stores imports this one, so each is fully set up before this module runs.
 import { useUIStore } from './ui-store'
 import { useHistoryStore } from './history-store'
@@ -95,13 +96,11 @@ interface PluginState {
   setDirty: (isDirty: boolean) => void
 }
 
+// The active plugin, its unsaved mark and its saved path are its tab's, so they are not stored
 type PluginPersisted = Pick<
   PluginState,
-  | 'plugin'
   | 'openPlugins'
   | 'activePluginId'
-  | 'isDirty'
-  | 'savedPath'
   | 'dirtyByPluginId'
   | 'savedPathsByPluginId'
   | 'baselineByPluginId'
@@ -153,7 +152,8 @@ const PLUGIN_MIGRATIONS: readonly MigrationStep[] = [
       .filter(([id]) => !Object.hasOwn(bases, id))
       .map(([id, path]) => [id, { path, sha256: null }])
     return { ...state, baseByPluginId: { ...bases, ...Object.fromEntries(added) } }
-  }
+  },
+  (state) => renameUnnamableTabs(foldActivePlugin(state))
 ]
 
 // This store's maps keyed by an open tab's plugin id; closing a tab removes its entry from each.
@@ -165,6 +165,83 @@ const TAB_KEYED_MAPS = [
   'baseByPluginId'
 ] as const
 type TabKeyedMaps = Pick<PluginState, (typeof TAB_KEYED_MAPS)[number]>
+
+// `map` with `[id]: value` added when it has no entry for `id`; a map of the wrong type is left to
+// its check
+function withEntry(map: unknown, id: string, value: unknown): unknown {
+  if (map === undefined) return { [id]: value }
+  return isRecord(map) && !Object.hasOwn(map, id) ? { ...map, [id]: value } : map
+}
+
+/**
+The active plugin, its unsaved mark and its saved path, which earlier versions stored beside the
+tabs, folded into its tab: the plugin is the copy the editor showed, so it replaces its tab's
+definition or is appended as a tab; a plugin that is not the active tab was never edited.
+*/
+function foldActivePlugin(state: Record<string, unknown>): Record<string, unknown> {
+  const { plugin, isDirty, savedPath, ...rest } = state
+  const active = rest['activePluginId']
+  if (typeof active !== 'string') return rest
+  const stored = rest['openPlugins']
+  if (isRecord(plugin) && plugin['id'] === active && Array.isArray(stored)) {
+    const tabs: unknown[] = stored
+    const at = tabs.findIndex((tab) => isRecord(tab) && tab['id'] === active)
+    rest['openPlugins'] = at === -1 ? [...tabs, plugin] : tabs.with(at, plugin)
+  }
+  if (isDirty === true) rest['dirtyByPluginId'] = withEntry(rest['dirtyByPluginId'], active, true)
+  if (typeof savedPath === 'string') {
+    const paths = rest['savedPathsByPluginId']
+    rest['savedPathsByPluginId'] = withEntry(paths, active, savedPath)
+    // a path the tab had no file for was saved with contents now unknown
+    if (rest['savedPathsByPluginId'] !== paths) {
+      rest['baseByPluginId'] = withEntry(rest['baseByPluginId'], active, {
+        path: savedPath,
+        sha256: null
+      })
+    }
+  }
+  return rest
+}
+
+// Ids the load replaced, old to new, for the ui store's raw-mode switches
+const replacedIds = new Map<string, string>()
+
+/**
+A tab whose id cannot name a stored key (only a hand-edited or foreign payload has one) gets a new
+id, in every tab-keyed map and in its last-saved copy too.
+*/
+function renameUnnamableTabs(state: Record<string, unknown>): Record<string, unknown> {
+  const tabs: unknown[] = Array.isArray(state['openPlugins']) ? state['openPlugins'] : []
+  for (const tab of tabs) {
+    const id = isRecord(tab) ? tab['id'] : undefined
+    if (typeof id === 'string' && !PLUGIN_ID_PATTERN.test(id) && !replacedIds.has(id)) {
+      replacedIds.set(id, crypto.randomUUID())
+    }
+  }
+  if (replacedIds.size === 0) return state
+  log.warn(`Gave ${String(replacedIds.size)} saved tabs a new id that a stored key can name`)
+  const renamed = (id: string): string => replacedIds.get(id) ?? id
+  const withId = (value: unknown): unknown =>
+    isRecord(value) && typeof value['id'] === 'string'
+      ? { ...value, id: renamed(value['id']) }
+      : value
+  const maps = TAB_KEYED_MAPS.flatMap((name): [string, Record<string, unknown>][] => {
+    const map = state[name]
+    if (!isRecord(map)) return []
+    const entries = Object.entries(map).map(([id, value]): [string, unknown] => [
+      renamed(id),
+      name === 'baselineByPluginId' ? withId(value) : value
+    ])
+    return [[name, Object.fromEntries(entries)]]
+  })
+  const active = state['activePluginId']
+  return {
+    ...state,
+    ...(Array.isArray(state['openPlugins']) && { openPlugins: tabs.map((tab) => withId(tab)) }),
+    ...(typeof active === 'string' && { activePluginId: renamed(active) }),
+    ...Object.fromEntries(maps)
+  }
+}
 
 /**
 Every tab-keyed map with only the entries whose plugin id `shouldKeep` accepts.
@@ -181,7 +258,8 @@ function filterTabMaps(maps: TabKeyedMaps, shouldKeep: (id: string) => boolean):
 }
 
 /**
-Drops the saved entries of tabs that were closed without their entries being cleared.
+Drops the saved entries of tabs that were closed without their entries being cleared, and shows
+the active tab: the plugin in the editor, its unsaved mark and its saved path are its tab's.
 */
 function pruneClosedTabs(state: PluginState): PluginState {
   const open = new Set(state.openPlugins.map((p) => p.id))
@@ -191,7 +269,16 @@ function pruneClosedTabs(state: PluginState): PluginState {
       log.debug(`Dropped ${String(closed.length)} closed-tab entries from ${name}`)
     }
   }
-  return { ...state, ...filterTabMaps(state, (id) => open.has(id)) }
+  const maps = filterTabMaps(state, (id) => open.has(id))
+  const active = state.openPlugins.find((tab) => tab.id === state.activePluginId)
+  return {
+    ...state,
+    ...maps,
+    plugin: active ?? createEmptyPlugin(),
+    activePluginId: active === undefined ? null : active.id,
+    isDirty: active !== undefined && maps.dirtyByPluginId[active.id] === true,
+    savedPath: active === undefined ? null : (maps.savedPathsByPluginId[active.id] ?? null)
+  }
 }
 
 const OPTIONAL_STRING_FIELDS = ['codeBody', 'customCode', 'rawSource', 'importedFrom'] as const
@@ -367,15 +454,6 @@ const checkFileBase: FieldCheck<FileBase> = (value) =>
   (typeof value['sha256'] === 'string' || value['sha256'] === null)
     ? { path: value['path'], sha256: value['sha256'] }
     : undefined
-
-/**
-A definition as saved: the code body is not kept, it is part of the file text.
-*/
-function toStored(plugin: PluginDefinition): PluginDefinition {
-  const stored = { ...plugin }
-  delete stored.codeBody
-  return stored
-}
 
 function upsertOpenPlugin(
   openPlugins: PluginDefinition[],
@@ -790,22 +868,16 @@ const PLUGIN_PERSIST = definePersist<PluginState, PluginPersisted>({
   area: 'Open plugins',
   migrations: PLUGIN_MIGRATIONS,
   fields: {
-    plugin: checkDefinition,
     openPlugins: checkArrayOf(checkDefinition, tabName),
     activePluginId: checkStringOrNull,
-    isDirty: checkBoolean,
-    savedPath: checkStringOrNull,
     dirtyByPluginId: checkRecordOf(checkBoolean),
     savedPathsByPluginId: checkRecordOf(checkString),
     baselineByPluginId: checkRecordOf(checkBaseline),
     baseByPluginId: checkRecordOf(checkFileBase)
   },
   labels: {
-    plugin: 'the active plugin',
     openPlugins: { all: 'open plugin tabs', one: 'open plugin' },
     activePluginId: 'the active tab',
-    isDirty: "the active plugin's unsaved-changes mark",
-    savedPath: "the active plugin's file path",
     dirtyByPluginId: { all: 'unsaved-changes marks', one: 'unsaved-changes mark of tab' },
     savedPathsByPluginId: { all: 'saved file paths', one: 'saved file path of tab' },
     baselineByPluginId: { all: 'last-saved copies', one: 'last-saved copy of tab' },
@@ -825,18 +897,17 @@ const PLUGIN_PERSIST = definePersist<PluginState, PluginPersisted>({
     importedFrom: 'source file name',
     ...PARAMETER_LABELS
   },
+  // the objects the store holds: the storage writes only the tabs whose parts changed
   partialize: (state) => ({
-    plugin: toStored(state.plugin),
-    openPlugins: state.openPlugins.map((tab) => toStored(tab)),
+    openPlugins: state.openPlugins,
     activePluginId: state.activePluginId,
-    isDirty: state.isDirty,
-    savedPath: state.savedPath,
     dirtyByPluginId: state.dirtyByPluginId,
     savedPathsByPluginId: state.savedPathsByPluginId,
     baselineByPluginId: state.baselineByPluginId,
     baseByPluginId: state.baseByPluginId
   }),
-  prune: pruneClosedTabs
+  prune: pruneClosedTabs,
+  storage: pluginStorage()
 })
 
 export const usePluginStore = create<PluginState>()(
@@ -915,5 +986,22 @@ function pruneRawMode(): void {
   useUIStore.setState({ rawModeByPluginId: Object.fromEntries(kept) })
 }
 
-if (usePluginStore.persist.hasHydrated()) pruneRawMode()
-else usePluginStore.persist.onFinishHydration(pruneRawMode)
+// A tab the load gave a new id keeps its raw-mode switch under that id
+function renameRawMode(): void {
+  if (replacedIds.size === 0) return
+  const raw = useUIStore.getState().rawModeByPluginId
+  const renamed = Object.entries(raw).map(([id, isOn]): [string, boolean] => [
+    replacedIds.get(id) ?? id,
+    isOn
+  ])
+  replacedIds.clear()
+  useUIStore.setState({ rawModeByPluginId: Object.fromEntries(renamed) })
+}
+
+function afterHydration(): void {
+  renameRawMode()
+  pruneRawMode()
+}
+
+if (usePluginStore.persist.hasHydrated()) afterHydration()
+else usePluginStore.persist.onFinishHydration(afterHydration)

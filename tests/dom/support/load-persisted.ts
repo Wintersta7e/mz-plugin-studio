@@ -2,6 +2,7 @@
 import { vi } from 'vitest'
 import { flushPersistedState, isRecord } from '../../../src/renderer/src/stores/persist'
 import type * as Persist from '../../../src/renderer/src/stores/persist'
+import { TAB_KEY_PREFIX } from '../../../src/renderer/src/stores/plugin-storage'
 import { PERSISTED_KEYS, type PersistedKey } from '../../helpers/persist-v160'
 
 export interface PersistedHook {
@@ -95,11 +96,12 @@ export const flushPrune = async (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
-Has every store write its state and returns what each wrote.
+Has every store write its state and returns what each wrote: its key's text, and the text of each
+tab key the plugin store keeps beside its own.
 */
 export function writeAll(
   stores: Record<PersistedKey, PersistedHook>
-): Record<PersistedKey, string> {
+): Record<PersistedKey, string> & Partial<Record<string, string>> {
   const written: Record<PersistedKey, string> = {
     'mz-plugin-studio-plugin': '',
     'mz-plugin-studio-ui': '',
@@ -114,5 +116,9 @@ export function writeAll(
     if (value === null) throw new Error(`store ${key} did not persist`)
     written[key] = value
   }
-  return written
+  const tabKeys = Object.keys(localStorage).filter((key) => key.startsWith(TAB_KEY_PREFIX))
+  return {
+    ...written,
+    ...Object.fromEntries(tabKeys.map((key) => [key, localStorage.getItem(key) ?? '']))
+  }
 }

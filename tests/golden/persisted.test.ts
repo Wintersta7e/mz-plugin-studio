@@ -76,6 +76,21 @@ async function freshStore(modulePath: string, exportName: string): Promise<Store
   return store
 }
 
+const PLUGIN_KEY = 'mz-plugin-studio-plugin'
+
+// Every value the plugin store keeps in localStorage, by key in code-unit order, parsed.
+function pluginStorage(): Record<string, unknown> {
+  const keys: string[] = []
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index)
+    if (key !== null && (key === PLUGIN_KEY || key.startsWith(`${PLUGIN_KEY}.`))) keys.push(key)
+  }
+  const values: [string, unknown][] = keys
+    .toSorted(byCodeUnit)
+    .map((key) => [key, JSON.parse(localStorage.getItem(key) ?? '')])
+  return Object.fromEntries(values)
+}
+
 describe('persisted store goldens', () => {
   // The ui store's load defers a prune of raw-mode entries to the next tick, and the prune saves.
   // Let one queued by an earlier case run now, not after this case has cleared storage.
@@ -105,9 +120,11 @@ describe('persisted store goldens', () => {
     store.setState(state === 'default' ? {} : (POPULATED[key] ?? {}))
     flushStored()
     const raw = localStorage.getItem(key)
+    // The plugin store keeps each open tab in a key of its own beside this one
+    const saved = key === PLUGIN_KEY ? JSON.stringify(pluginStorage()) : (raw ?? '')
 
     expect(raw, `${key} wrote nothing`).not.toBeNull()
-    await expect(normaliseIds(raw ?? '') + '\n').toMatchFileSnapshot(
+    await expect(normaliseIds(saved) + '\n').toMatchFileSnapshot(
       `__golden__/persisted/${key}.${state}.json`
     )
   })
@@ -140,21 +157,6 @@ describe('persisted store goldens', () => {
   )
 })
 
-const PLUGIN_KEY = 'mz-plugin-studio-plugin'
-
-// Every value the plugin store keeps in localStorage, by key in code-unit order, parsed.
-function pluginStorage(): Record<string, unknown> {
-  const keys: string[] = []
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index)
-    if (key !== null && (key === PLUGIN_KEY || key.startsWith(`${PLUGIN_KEY}.`))) keys.push(key)
-  }
-  const values: [string, unknown][] = keys
-    .toSorted(byCodeUnit)
-    .map((key) => [key, JSON.parse(localStorage.getItem(key) ?? '')])
-  return Object.fromEntries(values)
-}
-
 // Plugin definitions (a record with `meta` and `parameters`) anywhere in `value`.
 function definitions(value: unknown): number {
   if (typeof value !== 'object' || value === null) return 0
@@ -178,7 +180,7 @@ describe('persisted plugin seeds', () => {
   })
 
   it.each(PERSISTED_SEEDS)('seed $name', async ({ name, state }) => {
-    expect.assertions(2)
+    expect.assertions(4)
 
     localStorage.clear()
     const store = await freshStore(plugin?.modulePath ?? '', plugin?.exportName ?? '')
@@ -191,6 +193,19 @@ describe('persisted plugin seeds', () => {
     )
 
     expect(Object.keys(saved).length, `${name} wrote nothing`).toBeGreaterThan(0)
+
+    // The active tab is stored once, in its tab key: the index holds no plugin, unsaved mark or
+    // saved path of its own, and each definition is a tab key's or a baseline
+    const index = saved[PLUGIN_KEY]
+    const indexState: unknown =
+      typeof index === 'object' && index !== null && 'state' in index ? index.state : undefined
+    const indexFields =
+      typeof indexState === 'object' && indexState !== null ? Object.keys(indexState) : []
+    const tabKeys = Object.keys(saved).filter((key) => key.startsWith(`${PLUGIN_KEY}.tab.`))
+    const { baselineByPluginId } = state
+
+    expect(indexFields).toStrictEqual(['schemaVersion', 'tabIds', 'activePluginId'])
+    expect(definitions(saved)).toBe(tabKeys.length + definitions(baselineByPluginId))
     await expect(normaliseIds(text) + '\n').toMatchFileSnapshot(
       `__golden__/persisted/seed-${name}.json`
     )

@@ -1,1 +1,1 @@
-{"state":{"plugin":{"id":"<id:1>","meta":{"name":"NewPlugin","version":"1.0.0","author":"","description":"","help":"","url":"","target":"MZ","dependencies":[],"orderAfter":[],"orderBefore":[],"noteParams":[],"localizations":{}},"parameters":[],"commands":[],"structs":[]},"openPlugins":[],"activePluginId":null,"isDirty":false,"savedPath":null,"dirtyByPluginId":{},"savedPathsByPluginId":{},"baselineByPluginId":{},"baseByPluginId":{},"schemaVersion":3},"version":0}
+{"mz-plugin-studio-plugin":{"state":{"schemaVersion":4,"tabIds":[],"activePluginId":null},"version":0}}

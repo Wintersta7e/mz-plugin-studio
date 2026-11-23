@@ -8,10 +8,10 @@ import {
   expect,
   field,
   flushSavedState,
-  isRecord,
   launchTwin,
   newPlugin,
   queueDialog,
+  savedTabs,
   stubDialogs,
   teardown,
   test,
@@ -115,13 +115,11 @@ async function fillStorageWithoutLayout(page: Page): Promise<void> {
   }, LAYOUT_KEY)
 }
 
-// Whether any open tab was saved as unsaved, as the app stored it for its next start
+// Whether any open tab was saved as unsaved, as the app stored it for its next start: the tab list
+// from the plugin store's own key, each tab's unsaved mark from the key that tab is saved under
 async function hasUnsavedTab(page: Page): Promise<boolean> {
-  const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
-  if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
-  const dirty = field(field(JSON.parse(raw), 'state'), 'dirtyByPluginId')
-  if (!isRecord(dirty)) throw new Error(`no unsaved-tab record under ${PLUGIN_KEY}`)
-  return Object.values(dirty).includes(true)
+  const { tabs } = await savedTabs(page, PLUGIN_KEY)
+  return tabs.values().some((tab) => field(tab, 'dirty') === true)
 }
 
 test('holds the first close after the layout could not be saved, and closes on the next', async ({

@@ -22,7 +22,7 @@
         "branches": 100
       },
       "src/renderer/src/stores": {
-        "lines": 96,
+        "lines": 97,
         "branches": 89
       },
       "src/renderer/src/lib": {

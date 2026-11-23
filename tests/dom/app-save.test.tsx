@@ -30,6 +30,7 @@ import {
   useToastStore
 } from '../../src/renderer/src/stores'
 import { flushPersistedState } from '../../src/renderer/src/stores/persist'
+import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import {
   createEmptyCommand,
   createEmptyParameter,
@@ -212,7 +213,10 @@ async function pluginWrites(
     await run()
     await settle()
     flushPersistedState()
-    const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin').length
+    // the store keeps an index of its tabs and a key per tab
+    const writes = setItem.mock.calls.filter(
+      ([key]) => key === 'mz-plugin-studio-plugin' || key.startsWith(TAB_KEY_PREFIX)
+    ).length
     return { writes, notifications }
   } finally {
     unsubscribe()

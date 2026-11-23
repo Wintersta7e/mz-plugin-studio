@@ -52,6 +52,8 @@ export interface PersistSpec<S, P> {
   // pure; run by merge on the loaded state after the checks; never names a store (hydration runs
   // inside create())
   prune?: (state: S) => S
+  // how the state is split over several keys, for a store too large to write as one
+  storage?: StorageCodec
 }
 
 // kept: the backup entry holds this data; earlier-copy-kept: it holds older data, so this was not
@@ -64,7 +66,7 @@ export type BackupOutcome = 'kept' | 'earlier-copy-kept' | 'failed'
 export interface RestoreReportEntry {
   name: PersistedKey
   area: string
-  kind: 'unparseable' | 'newer-schema' | 'fields-reset' | 'entries-dropped'
+  kind: 'unparseable' | 'rebuilt' | 'newer-schema' | 'fields-reset' | 'entries-dropped'
   fields: FieldPath[]
   backup: BackupOutcome
 }
@@ -114,6 +116,9 @@ function loadText(kind: RestoreReportEntry['kind'], fields: string[]): string {
   switch (kind) {
     case 'unparseable': {
       return 'the saved data could not be read, so defaults were loaded'
+    }
+    case 'rebuilt': {
+      return `the saved list could not be read and was rebuilt from ${fields.join(', ')}, each recovered from a key of its own`
     }
     case 'newer-schema': {
       return 'saved by a newer version; the parts this version understands were kept'
@@ -258,7 +263,7 @@ export function checkRecordOf<T>(entry: FieldCheck<T>): FieldCheck<Record<string
 /**
 The schema a payload was written at: a non-negative integer, else 0 (written before schemas).
 */
-function schemaOf(state: Record<string, unknown>): number {
+export function schemaOf(state: Record<string, unknown>): number {
   const schema = state['schemaVersion']
   return typeof schema === 'number' && isWholeNumber(schema) && schema >= 0 ? schema : 0
 }
@@ -342,23 +347,60 @@ export const FLUSH_QUIET_MS = 500
 */
 export const FLUSH_MAX_DELAY_MS = 2000
 
-// One write of a flush: the text is built only when the step runs
-interface WriteStep {
-  key: string
-  text: () => string
+/**
+One write of a flush: a text, built only when the step runs and not written again when the key is
+known to hold it already, or the removal of the key. `onWritten` runs once the step took effect.
+*/
+export type WriteStep = { key: string; onWritten?: () => void } & (
+  { text: () => string; holds?: string | undefined } | { remove: true }
+)
+
+/**
+Phases run in order; a phase runs only when every step of the phases before it was written.
+*/
+export type WritePlan = readonly (readonly WriteStep[])[]
+
+/**
+What a storage codec reads saved data through; it never reaches storage itself.
+*/
+export interface SavedKeys {
+  schema: number // the schema this build writes
+  read: (key: string) => string | null
+  keys: () => string[]
+  // keeps `raw` as the store's backup (the first copy wins)
+  backUp: (raw: string) => BackupOutcome
+  report: (kind: RestoreReportEntry['kind'], backup: BackupOutcome, fields?: FieldPath[]) => void
 }
 
-// Phases run in order; a phase runs only when every step of the phases before it was written
-type WritePlan = readonly (readonly WriteStep[])[]
+/**
+A store's state kept in several keys: `encode` plans the writes that store a state (partialize's
+output with its schema), `decode` puts the state to check back together from the store's own key
+(`undefined` when that key is missing or cannot be read), `sourceOf` names the key a loaded field
+was read from, `recovered` names the entries the last decode found in keys of their own when the
+store's own key held nothing readable, and `settle` is told whether every loaded field passed its
+check.
+*/
+export interface StorageCodec {
+  encode: (state: Record<string, unknown>) => WritePlan
+  decode: (
+    index: Record<string, unknown> | undefined,
+    saved: SavedKeys
+  ) => Record<string, unknown> | undefined
+  sourceOf: (path: FieldPath) => string
+  recovered: () => FieldPath[]
+  settle: (isClean: boolean) => void
+}
 
-// The latest state of a store that is not written yet
+// The latest state of a store that is not written yet, as the plan that writes it
 interface PendingWrite {
-  value: unknown
+  plan: () => WritePlan
   firstAt: number // when the oldest change it holds was made
   timer: ReturnType<typeof setTimeout> | undefined
 }
 
 const pendingWrites = new Map<PersistedKey, PendingWrite>()
+// The next step of each store's flush that runs one step per task
+const flushesInSteps = new Map<PersistedKey, ReturnType<typeof setTimeout>>()
 
 // Whether storage took a write that main was not yet asked to put on disk
 const disk: { hasUnsavedWrite: boolean } = { hasUnsavedWrite: false }
@@ -403,11 +445,17 @@ function reportFailedWrite(name: PersistedKey, error: unknown): void {
 
 function didWriteStep(name: PersistedKey, step: WriteStep): boolean {
   try {
-    localStorage.setItem(step.key, step.text())
+    if ('remove' in step) {
+      localStorage.removeItem(step.key)
+    } else {
+      const text = step.text()
+      if (text !== step.holds) localStorage.setItem(step.key, text)
+    }
   } catch (error) {
     reportFailedWrite(name, error)
     return false
   }
+  step.onWritten?.()
   disk.hasUnsavedWrite = true
   const failed = quotaFailures.get(name)
   if (failed === undefined) return true
@@ -418,24 +466,77 @@ function didWriteStep(name: PersistedKey, step: WriteStep): boolean {
   return true
 }
 
-// Every step of a phase is attempted; true when every step of every phase was written
-function didWritePlan(name: PersistedKey, plan: WritePlan): boolean {
-  for (const phase of plan) {
-    const results = phase.map((step) => didWriteStep(name, step))
-    if (results.includes(false)) return false
-  }
-  return true
+// A plan being written: the step it runs next, and whether a step of the current phase failed
+interface PlanRun {
+  phases: WritePlan
+  phase: number
+  step: number
+  hasFailed: boolean
 }
 
-// Writes the store's pending state; a write that fails keeps it pending until the next change or
-// the final flush
+type RunState = 'running' | 'written' | 'failed'
+
+function startRun(write: PendingWrite): PlanRun {
+  const phases = write.plan().filter((phase) => phase.length > 0)
+  return { phases, phase: 0, step: 0, hasFailed: false }
+}
+
+// Runs the next step. Every step of a phase is attempted; the next phase starts only when all of
+// them were written.
+function runStep(name: PersistedKey, run: PlanRun): RunState {
+  const phase = run.phases[run.phase]
+  if (phase === undefined) return 'written'
+  const step = phase[run.step]
+  if (step !== undefined && !didWriteStep(name, step)) run.hasFailed = true
+  run.step += 1
+  if (run.step < phase.length) return 'running'
+  if (run.hasFailed) return 'failed'
+  run.phase += 1
+  run.step = 0
+  return run.phase < run.phases.length ? 'running' : 'written'
+}
+
+// A change made while the plan ran is newer than what it wrote, so it stays pending; so does a
+// state whose write failed, until the next change or the final flush
+function settleWrite(name: PersistedKey, write: PendingWrite, state: RunState): void {
+  if (state === 'written' && pendingWrites.get(name) === write) pendingWrites.delete(name)
+}
+
+function stopFlushInSteps(name: PersistedKey): void {
+  clearTimeout(flushesInSteps.get(name))
+  flushesInSteps.delete(name)
+}
+
+// Writes the store's pending state now, in this task
 function writePending(name: PersistedKey): void {
+  stopFlushInSteps(name)
   const write = pendingWrites.get(name)
   if (write === undefined) return
   clearTimeout(write.timer)
-  const plan: WritePlan = [[{ key: name, text: () => JSON.stringify(write.value) }]]
-  // a change made while the plan ran is newer than what it wrote, so it stays pending
-  if (didWritePlan(name, plan) && pendingWrites.get(name) === write) pendingWrites.delete(name)
+  const run = startRun(write)
+  let state = runStep(name, run)
+  while (state === 'running') state = runStep(name, run)
+  settleWrite(name, write, state)
+}
+
+// Writes the store's pending state one step per task, so no task holds more than one key's
+// write; a later flush of the store stops it and writes the newest state
+function flushInSteps(name: PersistedKey): void {
+  stopFlushInSteps(name)
+  const write = pendingWrites.get(name)
+  if (write === undefined) return
+  const run = startRun(write)
+  const next = (): void => {
+    flushesInSteps.delete(name)
+    const state = runStep(name, run)
+    if (state === 'running') {
+      flushesInSteps.set(name, setTimeout(next, 0))
+      return
+    }
+    settleWrite(name, write, state)
+    saveToDisk()
+  }
+  next()
 }
 
 // Electron puts what the page stored on disk only seconds later, so an app killed in between would
@@ -506,60 +607,150 @@ export function stopUnloadListeners(): void {
   document.removeEventListener('visibilitychange', flushWhenHidden)
 }
 
-function schedule(name: PersistedKey, value: unknown): void {
+function schedule(name: PersistedKey, plan: () => WritePlan): void {
   const now = Date.now()
   const earlier = pendingWrites.get(name)
   clearTimeout(earlier?.timer)
   const firstAt = earlier?.firstAt ?? now
   const due = Math.min(now + FLUSH_QUIET_MS, firstAt + FLUSH_MAX_DELAY_MS)
-  const write: PendingWrite = { value, firstAt, timer: undefined }
+  const write: PendingWrite = { plan, firstAt, timer: undefined }
   pendingWrites.set(name, write)
   write.timer = setTimeout(
     () => {
-      flushKey(name)
+      flushInSteps(name)
     },
     Math.max(0, due - now)
   )
   listenForUnload()
 }
 
+// The state of the envelope `raw` holds; undefined when it holds none
+function readEnvelope(
+  name: PersistedKey,
+  area: string,
+  currentSchema: number,
+  raw: string
+): Record<string, unknown> | undefined {
+  let value: unknown
+  try {
+    value = JSON.parse(raw)
+  } catch {
+    value = undefined
+  }
+  if (!isEnvelope(value)) {
+    log.error(`Saved ${name} could not be read`)
+    return undefined
+  }
+  if (schemaOf(value.state) > currentSchema) {
+    log.warn(`Saved ${name} was written by a newer version`)
+    report(name, area, 'newer-schema', backUp(name, raw))
+  }
+  return value.state
+}
+
+function savedKeys(name: PersistedKey, area: string, currentSchema: number): SavedKeys {
+  return {
+    schema: currentSchema,
+    read: (key) => localStorage.getItem(key),
+    keys: () => Object.keys(localStorage),
+    backUp: (raw) => backUp(name, raw),
+    report: (kind, backup, fields) => {
+      report(name, area, kind, backup, fields)
+    }
+  }
+}
+
 // The state read is checked field by field by merge, so the storage claims no type for it
 function guardedStorage(
   name: PersistedKey,
   area: string,
-  currentSchema: number
+  currentSchema: number,
+  codec: StorageCodec | undefined
 ): PersistStorage<unknown> {
   return {
     getItem: (key) => {
       // storage never answers with older state than memory holds
       flushKey(name)
       const raw = localStorage.getItem(key)
-      if (raw === null) return null
-      let value: unknown
-      try {
-        value = JSON.parse(raw)
-      } catch {
-        value = undefined
+      const state = raw === null ? undefined : readEnvelope(name, area, currentSchema, raw)
+      // the unreadable text is copied before any other key of the store is read
+      const backup = raw !== null && state === undefined ? backUp(name, raw) : undefined
+      const loaded =
+        codec === undefined ? state : codec.decode(state, savedKeys(name, area, currentSchema))
+      if (backup !== undefined) {
+        const recovered = loaded === undefined ? [] : (codec?.recovered() ?? [])
+        if (recovered.length === 0) report(name, area, 'unparseable', backup)
+        else report(name, area, 'rebuilt', backup, recovered)
       }
-      if (!isEnvelope(value)) {
-        log.error(`Saved ${name} could not be read; defaults loaded`)
-        report(name, area, 'unparseable', backUp(name, raw))
-        return null
-      }
-      if (schemaOf(value.state) > currentSchema) {
-        log.warn(`Saved ${name} was written by a newer version`)
-        report(name, area, 'newer-schema', backUp(name, raw))
-      }
-      return value
+      return loaded === undefined ? null : { state: loaded, version: 0 }
     },
     setItem: (_key, value) => {
-      schedule(name, value)
+      const state = isRecord(value.state) ? value.state : {}
+      schedule(
+        name,
+        codec === undefined
+          ? () => [[{ key: name, text: () => JSON.stringify(value) }]]
+          : () => codec.encode(state)
+      )
     },
     removeItem: (key) => {
+      stopFlushInSteps(name)
       clearTimeout(pendingWrites.get(name)?.timer)
       pendingWrites.delete(name)
       localStorage.removeItem(key)
     }
+  }
+}
+
+interface FailedFields {
+  reset: FieldPath[]
+  dropped: FieldPath[]
+}
+
+// The fields of `state` that passed their check; a field missing or reset is left out, so it keeps
+// the store's default, and each failure is recorded in `failed` under the key it was read from
+function checkFields<S, P extends object>(
+  spec: PersistSpec<S, P>,
+  state: Record<string, unknown>,
+  failed: Map<string, FailedFields>
+): Record<string, unknown> {
+  const sourceOf = spec.storage?.sourceOf ?? (() => spec.name)
+  const failedAt = (path: FieldPath): FailedFields => {
+    const source = sourceOf(path)
+    const fields = failed.get(source) ?? { reset: [], dropped: [] }
+    failed.set(source, fields)
+    return fields
+  }
+  const checked: Record<string, unknown> = {}
+  for (const [field, check] of Object.entries<FieldCheck<unknown>>(spec.fields)) {
+    if (!Object.hasOwn(state, field)) continue
+    const value = check(state[field], (path) => {
+      const full = [{ key: field }, ...path]
+      log.warn(`Saved ${spec.name}: dropped ${pathText(full)}`)
+      failedAt(full).dropped.push(full)
+    })
+    if (value === undefined) {
+      log.warn(`Saved ${spec.name}: ${field} had an unexpected value and was reset`)
+      failedAt([{ key: field }]).reset.push([{ key: field }])
+    } else {
+      checked[field] = value
+    }
+  }
+  return checked
+}
+
+// Backs up the text of each key a failed field was read from and reports its fields. Merge runs on
+// what the storage's getItem just read, so each key still holds that text.
+function reportFailed<S, P extends object>(
+  spec: PersistSpec<S, P>,
+  failed: Map<string, FailedFields>
+): void {
+  for (const [source, { reset, dropped }] of failed) {
+    const raw = localStorage.getItem(source)
+    if (raw === null) continue
+    const backup = backUp(spec.name, raw)
+    if (reset.length > 0) report(spec.name, spec.area, 'fields-reset', backup, reset)
+    if (dropped.length > 0) report(spec.name, spec.area, 'entries-dropped', backup, dropped)
   }
 }
 
@@ -572,38 +763,18 @@ export function definePersist<S, P extends object>(
   // schema changes are tracked by schemaVersion inside the state instead.
   return {
     name: spec.name,
-    storage: guardedStorage(spec.name, spec.area, currentSchema),
+    storage: guardedStorage(spec.name, spec.area, currentSchema, spec.storage),
     partialize: (state) => ({ ...spec.partialize(state), schemaVersion: currentSchema }),
     merge: (persisted, current) => {
       if (!isRecord(persisted)) return current
       let state = persisted
       const steps = spec.migrations.slice(schemaOf(persisted))
       for (const step of steps) state = step(state)
-      // A field missing or reset keeps the store's default: it is left out of `checked`
-      const checked: Record<string, unknown> = {}
-      const reset: FieldPath[] = []
-      const dropped: FieldPath[] = []
-      for (const [field, check] of Object.entries<FieldCheck<unknown>>(spec.fields)) {
-        if (!Object.hasOwn(state, field)) continue
-        const value = check(state[field], (path) => {
-          const full = [{ key: field }, ...path]
-          log.warn(`Saved ${spec.name}: dropped ${pathText(full)}`)
-          dropped.push(full)
-        })
-        if (value === undefined) {
-          log.warn(`Saved ${spec.name}: ${field} had an unexpected value and was reset`)
-          reset.push([{ key: field }])
-        } else {
-          checked[field] = value
-        }
-      }
-      // merge runs on what the storage's getItem just read, so the key still holds that text
-      const raw = localStorage.getItem(spec.name)
-      if (raw !== null && (reset.length > 0 || dropped.length > 0)) {
-        const backup = backUp(spec.name, raw)
-        if (reset.length > 0) report(spec.name, spec.area, 'fields-reset', backup, reset)
-        if (dropped.length > 0) report(spec.name, spec.area, 'entries-dropped', backup, dropped)
-      }
+      // by the key each failed field was read from
+      const failed = new Map<string, FailedFields>()
+      const checked = checkFields(spec, state, failed)
+      reportFailed(spec, failed)
+      spec.storage?.settle(failed.size === 0)
       const merged = { ...current, ...checked }
       return spec.prune ? spec.prune(merged) : merged
     }

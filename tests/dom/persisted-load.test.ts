@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generatePluginOutput, isRawMode } from '../../src/renderer/src/lib/plugin-output'
+import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin'
 import { fixturePath } from '../helpers/fixture-project'
 import { PERSISTED_KEYS, readV160Payloads, type PersistedKey } from '../helpers/persist-v160'
@@ -29,7 +30,7 @@ const IMPORTED_UNSHOWN = '00000000-0000-4000-8000-000000000029'
 
 // The schema each store writes now.
 const SCHEMA: Record<PersistedKey, number> = {
-  'mz-plugin-studio-plugin': 3,
+  'mz-plugin-studio-plugin': 4,
   'mz-plugin-studio-ui': 2,
   'mz-plugin-studio-settings': 1,
   'mz-plugin-studio-project': 1,
@@ -130,10 +131,12 @@ const schemaOf = (written: Record<PersistedKey, string>, key: PersistedKey): unk
   return schemaVersion
 }
 
-// What v1.6.0 writes back: every saved state without its schema number
-function withoutSchemaNumber(written: Record<PersistedKey, string>): Record<string, string> {
+// What v1.6.0 writes back: every saved state without its schema number. It knows no tab key and
+// leaves each as it was.
+function withoutSchemaNumber(written: Partial<Record<string, string>>): Record<string, string> {
   return Object.fromEntries(
-    Object.entries(written).map(([key, raw]) => {
+    Object.entries(written).map(([key, raw = '']) => {
+      if (key.startsWith(TAB_KEY_PREFIX)) return [key, raw]
       const state = Object.entries(savedStateOf(raw, key)).filter(
         ([field]) => field !== 'schemaVersion'
       )
@@ -301,7 +304,9 @@ describe('loading the state v1.6.0 saved: raw mode and restarts', () => {
     plugin.getState().openPlugin(opened)
     const written = writeAll(first)
 
-    expect(written[PLUGIN_KEY]).not.toContain('codeBody')
+    expect(
+      Object.values(written).filter((raw) => raw?.includes('codeBody') === true)
+    ).toStrictEqual([])
 
     seed(written)
     const again = await typedStores(await loadStores())

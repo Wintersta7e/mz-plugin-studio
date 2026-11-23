@@ -56,6 +56,24 @@ function savedTab(openPlugin: Record<string, unknown>): string {
   })
 }
 
+// The schema the plugin store writes its index and tab keys at
+const PLUGIN_SCHEMA = 4
+
+/**
+Stores this one tab, open and active, as this version does: an index naming it and a key of its
+own holding it. Returns the tab key's text.
+*/
+function storeTab(openPlugin: Record<string, unknown>): string {
+  const index = { schemaVersion: PLUGIN_SCHEMA, tabIds: [TAB_ID], activePluginId: TAB_ID }
+  const text = JSON.stringify({
+    schemaVersion: PLUGIN_SCHEMA,
+    tab: { definition: openPlugin, dirty: false }
+  })
+  localStorage.setItem(PLUGIN_KEY, JSON.stringify({ state: index, version: 0 }))
+  localStorage.setItem(`${PLUGIN_KEY}.tab.${TAB_ID}`, text)
+  return text
+}
+
 // The only element of a list; an empty list fails by name
 function onlyOf<T>(items: T[]): T {
   const [first] = items
@@ -337,7 +355,7 @@ describe('damaged saved state: open tabs', () => {
     const meta = Object.fromEntries(
       Object.entries(tab('NoDeps').meta).filter(([key]) => key !== 'dependencies')
     )
-    localStorage.setItem(PLUGIN_KEY, savedTab({ ...tab('NoDeps'), meta }))
+    const stored = storeTab({ ...tab('NoDeps'), meta })
     vi.stubGlobal('api', createFakeApi())
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
     try {
@@ -351,9 +369,12 @@ describe('damaged saved state: open tabs', () => {
 
       const messages = useToastStore.getState().toasts.map((toast) => toast.message)
 
-      expect(messages).toStrictEqual([expect.stringContaining('dependencies of the active plugin')])
-      expect(messages[0]).toContain('dependencies of open plugin NoDeps')
-      expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).not.toBeNull()
+      expect(messages).toStrictEqual([
+        expect.stringContaining('dependencies of open plugin NoDeps')
+      ])
+      // the tab is stored once, so it is named once
+      expect(messages[0]?.split('dependencies of open plugin NoDeps')).toHaveLength(2)
+      expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).toBe(stored)
     } finally {
       cleanup()
       unstubGlobals()
@@ -414,7 +435,7 @@ describe('damaged saved state: tab contents', () => {
         { name: 'Portrait', type: 'file', dir: 'img/faces', data: 'actors', require: true }
       ]
     }
-    localStorage.setItem(PLUGIN_KEY, savedTab({ ...tab('Notes'), meta }))
+    storeTab({ ...tab('Notes'), meta })
     const { usePluginStore, persist } = await loadPlugins()
     const { openPlugins } = usePluginStore.getState()
 
@@ -429,10 +450,9 @@ describe('damaged saved state: tab contents', () => {
     const inTab = [{ key: 'openPlugins' }, { index: 0, name: 'Notes' }, ...face]
     const dropped = persist.takeRestoreReport().find((entry) => entry.kind === 'entries-dropped')
 
+    // the tab is stored once, in its own key
     expect(dropped?.fields).toStrictEqual(
-      [[{ key: 'plugin' }, ...face], inTab].flatMap((path) =>
-        ['dir', 'data', 'require'].map((key) => [...path, { key }])
-      )
+      [inTab].flatMap((path) => ['dir', 'data', 'require'].map((key) => [...path, { key }]))
     )
     expect(() => openPlugins.map((plugin) => generatePlugin(plugin))).not.toThrow()
   })

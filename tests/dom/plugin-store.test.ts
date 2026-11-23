@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { flushPersistedState } from '../../src/renderer/src/stores/persist'
+import { flushPersistedState, isRecord } from '../../src/renderer/src/stores/persist'
 import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
   createEmptyPlugin,
@@ -11,7 +11,7 @@ import {
 import { toBaseline } from '../../src/shared/types/plugin'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
-import { recordOf, recordsOf, savedStateOf, storedText } from './support/persisted-state'
+import { recordOf, recordsOf, storedPluginState } from './support/persisted-state'
 
 type PluginState = ReturnType<typeof usePluginStore.getState>
 
@@ -583,15 +583,13 @@ describe('pluginStore baseline of an imported plugin', () => {
   it('saves the file text, file name and baseline but not the code body', () => {
     const alpha = importedWithCode('Alpha')
     usePluginStore.getState().openPlugin(alpha)
-    const { schemaVersion, plugin, openPlugins, baselineByPluginId } = savedStateOf(
-      storedText('mz-plugin-studio-plugin'),
-      'the saved plugin store'
-    )
-    const savedTabs = [
-      recordOf(plugin, 'the saved plugin'),
-      recordOf(recordsOf(openPlugins, 'the saved open plugins').at(0), 'the first open plugin')
-    ]
+    const { schemaVersion, openPlugins, baselineByPluginId } = storedPluginState()
+    // the schema the store writes, as its own persist options state it
+    const written = usePluginStore.persist.getOptions().partialize?.(usePluginStore.getState())
+    const current = isRecord(written) ? written['schemaVersion'] : undefined
+    const savedTabs = recordsOf(openPlugins, 'the saved open plugins')
 
+    expect(current).toBeTypeOf('number')
     expect({
       schemaVersion,
       tabs: savedTabs.map((tab) => {
@@ -600,11 +598,8 @@ describe('pluginStore baseline of an imported plugin', () => {
       }),
       baselines: JSON.stringify(baselineByPluginId)
     }).toStrictEqual({
-      schemaVersion: 3,
-      tabs: [
-        { rawSource: alpha.rawSource, importedFrom: 'Alpha.js', hasCodeBody: false },
-        { rawSource: alpha.rawSource, importedFrom: 'Alpha.js', hasCodeBody: false }
-      ],
+      schemaVersion: current,
+      tabs: [{ rawSource: alpha.rawSource, importedFrom: 'Alpha.js', hasCodeBody: false }],
       baselines: JSON.stringify({ [alpha.id]: toBaseline(alpha) })
     })
   })

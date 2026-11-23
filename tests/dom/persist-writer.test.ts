@@ -17,6 +17,7 @@ import {
   flushPersistedState,
   isRecord
 } from '../../src/renderer/src/stores/persist'
+import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { PERSISTED_KEYS, type PersistedKey } from '../helpers/persisted-payloads'
@@ -25,6 +26,7 @@ import { resetStores } from './support/reset-stores'
 
 const SETTINGS = 'mz-plugin-studio-settings'
 const UI = 'mz-plugin-studio-ui'
+const PLUGIN = 'mz-plugin-studio-plugin'
 
 const logError: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.error)
 
@@ -255,6 +257,67 @@ describe('saved state writer: typing', () => {
     })
 
     expect(storageWrites.mock.calls.length).toBeGreaterThan(0)
+  })
+})
+
+// The keys written since the last clear, in the order they were written
+const writtenKeys = (): string[] => storageWrites.mock.calls.map(([key]) => key)
+
+// Two open tabs, written, with no write recorded yet; returns their ids, the active one last
+function openTwoTabs(): [string, string] {
+  const first = createEmptyPlugin()
+  const second = createEmptyPlugin()
+  usePluginStore.getState().openPlugin(first)
+  usePluginStore.getState().openPlugin(second)
+  flushPersistedState()
+  storageWrites.mockClear()
+  return [first.id, second.id]
+}
+
+describe('saved state writer: tabs', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDown)
+
+  it('writes only the key of the tab being typed into', () => {
+    const [, active] = openTwoTabs()
+    usePluginStore.getState().updateMeta({ description: 'Typed' })
+    vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+
+    expect(writtenKeys()).toStrictEqual([TAB_KEY_PREFIX + active])
+  })
+
+  it('leaves the tab list unwritten when the key of a new tab fails to write', () => {
+    openTwoTabs()
+    const index = localStorage.getItem(PLUGIN)
+    storageWrites.mockImplementation((k: string, value: string) => {
+      if (k.startsWith(TAB_KEY_PREFIX)) throw new Error('disk said no')
+      realSetItem(k, value)
+    })
+    const added = createEmptyPlugin()
+    usePluginStore.getState().openPlugin(added)
+    vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+
+    expect([writtenKeys(), localStorage.getItem(PLUGIN)]).toStrictEqual([
+      [TAB_KEY_PREFIX + added.id],
+      index
+    ])
+  })
+
+  it('writes each tab key in a task of its own when the edits pause', () => {
+    const [first, second] = openTwoTabs()
+    usePluginStore.getState().updateMeta({ description: 'Second' })
+    usePluginStore.getState().setActivePlugin(first)
+    usePluginStore.getState().updateMeta({ description: 'First' })
+    const perTask: string[][] = []
+    vi.advanceTimersByTime(FLUSH_QUIET_MS - 1)
+    for (let task = 0; task < 3; task += 1) {
+      storageWrites.mockClear()
+      vi.advanceTimersToNextTimer()
+      perTask.push(writtenKeys())
+    }
+
+    expect(perTask).toStrictEqual([[TAB_KEY_PREFIX + first], [TAB_KEY_PREFIX + second], [PLUGIN]])
   })
 })
 

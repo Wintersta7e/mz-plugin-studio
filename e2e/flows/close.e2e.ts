@@ -8,11 +8,11 @@ import {
   expect,
   field,
   flushSavedState,
-  isRecord,
   loadFixtureProject,
   newPlugin,
   openFromBrowser,
   queueDialog,
+  savedTabs,
   tabNames,
   test
 } from '../fixtures/app'
@@ -26,20 +26,13 @@ interface PersistedTabs {
 }
 
 /**
-The open tabs as the app saved them for its next start
+The open tabs as the app saved them for its next start: the tab list and active tab from the
+plugin store's own key, each tab's unsaved mark from the key that tab is saved under
 */
 async function persistedTabs(page: Page): Promise<PersistedTabs> {
   await flushSavedState(page)
-  const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
-  if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
-  const parsed: unknown = JSON.parse(raw)
-  const state = field(parsed, 'state')
-  const dirtyByPluginId = field(state, 'dirtyByPluginId')
-  const dirty = isRecord(dirtyByPluginId)
-    ? Object.entries(dirtyByPluginId)
-        .filter(([, isDirty]) => isDirty === true)
-        .map(([id]) => id)
-    : []
+  const { state, tabs } = await savedTabs(page, PLUGIN_KEY)
+  const dirty = [...tabs].filter(([, tab]) => field(tab, 'dirty') === true).map(([id]) => id)
   return { activePluginId: field(state, 'activePluginId'), dirty }
 }
 
