@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { valueImports } from '../../scripts/import-reader.mjs'
 import {
   indexOfRun,
   readJobs as readWorkflow,
@@ -391,6 +392,77 @@ describe('ci workflow: CodeQL', () => {
       countAfterAnalyze: true
     })
     expect(job.steps.at(count)?.keys.has('if')).toBe(false)
+  })
+})
+
+// The paths a checkout step limits its clone to, from a one-line or a `|` block
+// `sparse-checkout:`; undefined for a full clone.
+function sparsePathsOf(step: Step): string[] | undefined {
+  if (!(step.keys.get('uses') ?? '').startsWith('actions/checkout@')) return undefined
+  const start = step.nested.findIndex((line) => line.startsWith('sparse-checkout:'))
+  if (start === -1) return undefined
+  const value = (step.nested.at(start) ?? '').slice('sparse-checkout:'.length).trim()
+  if (value !== '|') return [value]
+  const block = step.nested.slice(start + 1)
+  const end = block.findIndex((line) => /^[\w-]+:/.test(line))
+  return end === -1 ? block : block.slice(0, end)
+}
+
+// Every repository file a script loads, the script included: its relative imports, followed
+// from file to file.
+function localModulesOf(script: string): string[] {
+  const seen = new Set<string>()
+  const pending = [script]
+  while (pending.length > 0) {
+    const file = pending.pop() ?? ''
+    if (seen.has(file)) continue
+    seen.add(file)
+    const { specifiers } = valueImports(readFileSync(join(ROOT, file), 'utf8'))
+    for (const specifier of specifiers) {
+      if (specifier.startsWith('.')) {
+        pending.push(path.posix.join(path.posix.dirname(file), specifier))
+      }
+    }
+  }
+  return [...seen].toSorted((a, b) => a.localeCompare(b))
+}
+
+describe('workflows: sparse checkouts', () => {
+  it('a sparse checkout that runs a repository script holds every module the script loads', () => {
+    const checks = files.flatMap((file) =>
+      readJobs(file).flatMap((job) => {
+        const sparse = job.steps.flatMap((step) => sparsePathsOf(step) ?? [])
+        const scriptsRun = runs(job).flatMap((line) =>
+          line
+            .matchAll(/\bnode (scripts\/[\w.\-]+\.mjs)\b/gv)
+            .map((match) => match.at(1) ?? '')
+            .toArray()
+        )
+        return sparse.length === 0
+          ? []
+          : [...new Set(scriptsRun)].map((script) => ({
+              where: `${file} ${job.id}`,
+              script,
+              sparse,
+              modules: localModulesOf(script)
+            }))
+      })
+    )
+    const checked = checks.flatMap(({ modules }) => modules)
+    process.stdout.write(
+      `sparse checkouts: ${String(checks.length)} script runs, ${String(checked.length)} modules checked\n`
+    )
+
+    expect(
+      checks.map(({ where, script }) => `${where}: ${script}`),
+      'the summary job reads the other jobs with the CI policy script'
+    ).toContain('ci.yml test: scripts/ci-policy.mjs')
+    expect(
+      checks.flatMap(({ where, sparse, modules }) =>
+        modules.filter((module) => !sparse.includes(module)).map((module) => `${where}: ${module}`)
+      ),
+      `${String(checked.length)} modules checked`
+    ).toStrictEqual([])
   })
 })
 
