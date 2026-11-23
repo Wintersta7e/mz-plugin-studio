@@ -26,6 +26,7 @@ import {
   resetCopy,
   scanForLeaks,
   serveCopy,
+  UNLOAD_DISALLOWED,
   takeManifest
 } from '../../e2e/fixtures/mz-project'
 
@@ -301,6 +302,29 @@ describe('a case installed into the copy', () => {
       await expect(request(server.origin, '/js/plugins/missing.js')).resolves.toMatchObject({
         status: 404
       })
+    } finally {
+      await server.close()
+    }
+  })
+})
+
+describe('the copy served to the browser', () => {
+  it('serves every file with unload listeners disallowed', async () => {
+    expect.hasAssertions()
+
+    const copy = temporaryFolder()
+    writeFile(copy, 'index.html', '<html></html>\n')
+    const server = await serveCopy(copy)
+    try {
+      const { hostname, port } = new URL(server.origin)
+      const policy = await new Promise<string | string[] | undefined>((resolve, reject) => {
+        get({ hostname, port, path: '/' }, (response) => {
+          response.resume()
+          resolve(response.headers['permissions-policy'])
+        }).on('error', reject)
+      })
+
+      expect(policy).toBe(UNLOAD_DISALLOWED)
     } finally {
       await server.close()
     }

@@ -1,20 +1,7 @@
-// Makes generated output reproducible: a fixed clock for headers that print the date, and
-// stable placeholders for the random ids the parser and stores create.
-import { vi } from 'vitest'
+// Makes generated output reproducible: the date the fixed clock (`clock.ts`) shows, and stable
+// placeholders for the random ids the parser and stores create.
 
 export const FROZEN_TIME = '2026-01-01T00:00:00.000Z'
-
-/**
-Fakes `Date` only, so timers and promises behave as usual.
-*/
-export function freezeTime(): void {
-  vi.useFakeTimers({ toFake: ['Date'] })
-  vi.setSystemTime(new Date(FROZEN_TIME))
-}
-
-export function restoreTime(): void {
-  vi.useRealTimers()
-}
 
 /**
 Keeps a case header on one line: JSON escapes LF but not the two Unicode separators.

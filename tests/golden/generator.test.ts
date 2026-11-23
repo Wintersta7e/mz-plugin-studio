@@ -16,7 +16,7 @@ import {
   type GeneratorEntry
 } from './corpus/generator'
 import { MZPARAMS_HOST } from './corpus/mzparams'
-import { freezeTime, restoreTime } from './corpus/normalise'
+import { freezeTime, restoreTime } from './corpus/clock'
 import { typeViolatingDefaultCases, type TypeViolatingDefaultCase } from './corpus/type-violating'
 
 const HOSTILE_PAYLOADS = new Map([

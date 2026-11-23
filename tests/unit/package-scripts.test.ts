@@ -311,7 +311,12 @@ describe('package.json scripts: README and workflows', () => {
   })
 
   it('the README names the e2e commands, and that check and typecheck differ on e2e', () => {
-    const e2e = ['npm run e2e:prepare', 'npm run e2e', 'npm run e2e:visual:update']
+    const e2e = [
+      'npm run e2e:prepare',
+      'npm run e2e',
+      'npm run e2e:visual:update',
+      'npm run e2e:mz'
+    ]
     const named = e2e.filter((command) => commented(command) !== undefined)
     process.stdout.write(
       `README e2e commands: named ${String(named.length)}/${String(e2e.length)}\n`

@@ -55,15 +55,28 @@ const PROGRAM_OVERLAPS: { glob: string; programs: string[] }[] = [
   { glob: 'src/main/csp.ts', programs: ['node', 'test', 'e2e'] },
   { glob: 'src/main/services/syntax-check.ts', programs: ['node', 'test', 'e2e'] },
   { glob: 'src/main/window-size.ts', programs: ['node', 'test', 'e2e'] },
+  { glob: 'src/main/services/plugin-parser.ts', programs: ['node', 'test', 'e2e'] },
   { glob: 'src/main/**', programs: ['node', 'test'] },
   { glob: 'src/shared/annotation-blocks.ts', programs: ['node', 'web', 'test', 'e2e'] },
   { glob: 'src/shared/ipc-types.ts', programs: ['node', 'web', 'test', 'e2e'] },
   { glob: 'src/shared/types/{mz,plugin}.ts', programs: ['node', 'web', 'test', 'e2e'] },
+  {
+    glob: 'src/shared/{compact-param,file-name,override-extractor}.ts',
+    programs: ['node', 'web', 'test', 'e2e']
+  },
   { glob: 'src/shared/**', programs: ['node', 'web', 'test'] },
   { glob: 'src/preload/**', programs: ['node', 'test'] },
   { glob: 'src/renderer/src/stores/{persist,toast-store}.ts', programs: ['web', 'test', 'e2e'] },
+  { glob: 'src/renderer/src/lib/generator/**', programs: ['web', 'test', 'e2e'] },
+  {
+    glob: 'src/renderer/src/lib/{export-formats,param-io,plugin-output}.ts',
+    programs: ['web', 'test', 'e2e']
+  },
+  { glob: 'src/renderer/src/types/plugin.ts', programs: ['web', 'test', 'e2e'] },
   { glob: 'src/renderer/src/**', programs: ['web', 'test'] },
   { glob: 'tests/helpers/**', programs: ['test', 'e2e'] },
+  // Not clock.ts, the corpus module that imports vitest
+  { glob: 'tests/golden/corpus/{generator,normalise,raw-mode}.ts', programs: ['test', 'e2e'] },
   { glob: 'tools/analyze-plugins.ts', programs: ['tools', 'test'] },
   { glob: 'scripts/e2e-prepare.mjs', programs: ['scripts', 'test', 'e2e'] },
   { glob: 'scripts/**', programs: ['scripts', 'test'] },

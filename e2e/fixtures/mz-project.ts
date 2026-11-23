@@ -262,6 +262,11 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
   '.txt': 'text/plain'
 }
 
+/**
+The policy every served file carries.
+*/
+export const UNLOAD_DISALLOWED = 'unload=()'
+
 function answer(response: ServerResponse, status: number, body: Buffer | string = ''): void {
   response.writeHead(status, { 'content-length': Buffer.byteLength(body) })
   response.end(body)
@@ -296,6 +301,9 @@ async function serveFile(root: string, url: string, response: ServerResponse): P
     'content-type',
     CONTENT_TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
   )
+  // A current Chromium disallows unload listeners by default, which the pinned headless shell
+  // does not: the engine's own listener then logs the error every boot of the copy shares
+  response.setHeader('permissions-policy', UNLOAD_DISALLOWED)
   answer(response, 200, body)
 }
 
