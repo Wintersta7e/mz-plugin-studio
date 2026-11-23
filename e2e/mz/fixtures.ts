@@ -18,6 +18,7 @@ import {
   resetCopy,
   scanForLeaks,
   serveCopy,
+  storedImages,
   takeManifest
 } from '../fixtures/mz-project'
 import { trackedFiles } from '../global-setup'
@@ -179,7 +180,11 @@ function install(copy: string, kase?: MzCase): void {
     observer,
     ...(kase !== undefined && {
       plugin: { file: kase.file, source: kase.code, parameters: kase.load?.stored ?? {} },
-      commandPlugin: commandPluginOf(kase)
+      commandPlugin: commandPluginOf(kase),
+      images: storedImages(
+        kase.expectation?.case.definition.parameters ?? [],
+        kase.load?.stored ?? {}
+      )
     }),
     commands: kase?.load?.commands ?? []
   })

@@ -15,8 +15,10 @@ import {
 import { get } from 'node:http'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { crc32, inflateSync } from 'node:zlib'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  PLACEHOLDER_PNG,
   REQUIRED_FILES,
   compareManifests,
   copyProject,
@@ -26,9 +28,39 @@ import {
   resetCopy,
   scanForLeaks,
   serveCopy,
+  storedImages,
   UNLOAD_DISALLOWED,
   takeManifest
 } from '../../e2e/fixtures/mz-project'
+import { PluginParser } from '../../src/main/services/plugin-parser'
+import type { PluginParameter } from '../../src/shared/types/plugin'
+
+const PNG_SIGNATURE = '89504e470d0a1a0a'
+
+/**
+The chunks of a PNG file after its signature, each with whether its checksum matches and its
+data in hex, the image data inflated; fails on a file without the signature.
+*/
+function pngChunks(file: Buffer): { type: string; isCrcRight: boolean; data: string }[] {
+  if (file.subarray(0, 8).toString('hex') !== PNG_SIGNATURE) throw new Error('not a PNG file')
+  const chunks: { type: string; isCrcRight: boolean; data: string }[] = []
+  let offset = 8
+  while (offset < file.length) {
+    const length = file.readUInt32BE(offset)
+    const type = file.toString('latin1', offset + 4, offset + 8)
+    const data = file.subarray(offset + 8, offset + 8 + length)
+    const isCrcRight =
+      file.readUInt32BE(offset + 8 + length) ===
+      crc32(file.subarray(offset + 4, offset + 8 + length))
+    chunks.push({
+      type,
+      isCrcRight,
+      data: (type === 'IDAT' ? inflateSync(data) : data).toString('hex')
+    })
+    offset += 12 + length
+  }
+  return chunks
+}
 
 const folders: string[] = []
 
@@ -305,6 +337,109 @@ describe('a case installed into the copy', () => {
     } finally {
       await server.close()
     }
+  })
+})
+
+/**
+A file parameter of the folder `folder`.
+*/
+const fileParameter = (
+  name: string,
+  folder: string
+): Pick<PluginParameter, 'name' | 'type' | 'dir'> => ({ name, type: 'file', dir: folder })
+
+/**
+A synthetic project holding the picture `img/pictures/Kept.png`.
+*/
+function projectWithPicture(): string {
+  const project = syntheticCopy()
+  writeFile(project, 'img/pictures/Kept.png', 'a stock picture\n')
+  return project
+}
+
+/**
+A copy of `project` with an observer installed and three stored images: the project's own
+`img/pictures/Kept.png`, one it lacks in the same folder, one in a folder it lacks.
+*/
+function copyWithImages(project = projectWithPicture()): string {
+  const copy = path.join(temporaryFolder(), 'copy')
+  copyProject(project, copy)
+  installCase(copy, {
+    observer: { file: 'Observer', source: '// observer\n' },
+    commands: [],
+    images: ['img/pictures/Missing.png', 'img/pictures/Kept.png', 'img/faces/New.png']
+  })
+  return copy
+}
+
+describe('the stored images placed in the copy', () => {
+  afterEach(removeFolders)
+
+  it('writes a placeholder PNG for each stored image the copy lacks, keeping a stock one', () => {
+    const copy = copyWithImages()
+    const placeholder = readFileSync(path.join(copy, 'img/pictures/Missing.png'))
+
+    expect(pngChunks(placeholder)).toStrictEqual([
+      { type: 'IHDR', isCrcRight: true, data: '00000001000000010806000000' },
+      { type: 'IDAT', isCrcRight: true, data: '0000000000' },
+      { type: 'IEND', isCrcRight: true, data: '' }
+    ])
+    expect(readFileSync(path.join(copy, 'img/faces/New.png'))).toStrictEqual(PLACEHOLDER_PNG)
+    expect(readText(copy, 'img/pictures/Kept.png')).toBe('a stock picture\n')
+  })
+
+  it('removes the placeholders on reset, keeping the stock image and the project unchanged', () => {
+    const project = projectWithPicture()
+    const before = takeManifest(project)
+    const copy = copyWithImages(project)
+    resetCopy(copy)
+
+    expect(existsSync(path.join(copy, 'img/pictures/Missing.png'))).toBe(false)
+    expect(existsSync(path.join(copy, 'img/faces/New.png'))).toBe(false)
+    expect(readText(copy, 'img/pictures/Kept.png')).toBe('a stock picture\n')
+    expect(compareManifests(before, takeManifest(project))).toStrictEqual([])
+  })
+
+  it.each(['../Outside.png', 'img/pictures/Theme.ogg'])(
+    'refuses the stored image %s before writing anything',
+    (image) => {
+      const copy = syntheticCopy()
+
+      expect(() =>
+        installCase(copy, {
+          observer: { file: 'Observer', source: '// observer\n' },
+          commands: [],
+          images: [image]
+        })
+      ).toThrow(`no placeholder for the stored image ${image}`)
+      expect(existsSync(path.join(copy, 'js/plugins/Observer.js'))).toBe(false)
+      expect(readText(copy, 'js/plugins.js')).toBe(STOCK_PLUGINS)
+    }
+  )
+
+  it('names the image a stored file value of a picture folder loads, and no other value', () => {
+    const fixture = readFileSync(
+      path.join(import.meta.dirname, '../fixtures/mz-project/js/plugins/Fixture_Require.js'),
+      'utf8'
+    )
+    const { parameters } = PluginParser.parsePlugin(fixture, 'Fixture_Require.js')
+
+    expect(storedImages(parameters, { Picture: 'FixturePicture', Caption: 'Shown' })).toStrictEqual(
+      ['img/pictures/FixturePicture.png']
+    )
+    expect(
+      storedImages(
+        [
+          fileParameter('Sound', 'audio/se/'),
+          fileParameter('Unset', 'img/pictures/'),
+          fileParameter('Climb', 'img/pictures/'),
+          fileParameter('Device', 'img/pictures/'),
+          fileParameter('Star', 'img/pictures/'),
+          fileParameter('Face', 'img/faces')
+        ],
+        { Sound: 'Bell', Climb: '../Outside', Device: 'CON', Star: 'a*b', Face: '顔' }
+      )
+    ).toStrictEqual(['img/faces/顔.png'])
   })
 })
 

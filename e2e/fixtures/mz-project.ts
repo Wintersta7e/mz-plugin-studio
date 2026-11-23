@@ -5,6 +5,7 @@ import {
   cpSync,
   existsSync,
   lstatSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
@@ -14,6 +15,8 @@ import {
 import { readFile } from 'node:fs/promises'
 import { createServer, type ServerResponse } from 'node:http'
 import path from 'node:path'
+import { unsafeFileNameReason } from '../../src/shared/file-name'
+import type { PluginParameter } from '../../src/shared/types/plugin'
 import { isWithin, removeDirectory } from './teardown'
 
 /**
@@ -144,6 +147,58 @@ export interface CaseInstall {
   The plugin name the event calls the commands by, when it is not the case plugin's file.
   */
   commandPlugin?: string
+  /**
+  Images the case's stored values name, relative to the copy; each one the copy lacks gets a
+  placeholder.
+  */
+  images?: string[]
+}
+
+/**
+A transparent PNG of one pixel: the engine loads it as it loads any picture.
+*/
+export const PLACEHOLDER_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=',
+  'base64'
+)
+
+// A character Windows refuses in a file name, or a control character
+const UNWRITABLE = /[<>"|?*\p{Cc}]/u
+
+/**
+The images `stored` names, relative to the project: each top-level file parameter of an `img/`
+folder gives its value as the `.png` there that the engine requests. A value that is no plain
+file name on Linux and Windows names no image, and a file of any other folder is left out: a
+sound would need a real encoded stream.
+*/
+export function storedImages(
+  parameters: readonly Pick<PluginParameter, 'name' | 'type' | 'dir' | 'parent'>[],
+  stored: Readonly<Record<string, string>>
+): string[] {
+  const imageOf = (
+    parameter: Pick<PluginParameter, 'name' | 'type' | 'dir' | 'parent'>
+  ): string | undefined => {
+    const value = stored[parameter.name] ?? ''
+    const folder = parameter.dir ?? ''
+    const isImage =
+      parameter.type === 'file' && parameter.parent === undefined && folder.startsWith('img/')
+    const isPlainName =
+      value !== '' && unsafeFileNameReason(`${value}.js`) === undefined && !UNWRITABLE.test(value)
+    return isImage && isPlainName ? path.posix.join(folder, `${value}.png`) : undefined
+  }
+  return parameters.map((parameter) => imageOf(parameter)).filter((image) => image !== undefined)
+}
+
+/**
+The images of `images` the copy lacks; throws naming the first that is no `.png` or lies outside
+the copy, before anything is written.
+*/
+function missingImages(copy: string, images: readonly string[] = []): string[] {
+  const refused = images.find(
+    (image) => !image.endsWith('.png') || !isWithin(path.join(copy, image), path.resolve(copy))
+  )
+  if (refused !== undefined) throw new Error(`no placeholder for the stored image ${refused}`)
+  return images.filter((image) => !existsSync(path.join(copy, image)))
 }
 
 interface Stock {
@@ -184,7 +239,8 @@ function readPluginList(text: string): { head: string; entries: unknown[] } {
 /**
 Writes the case's plugins into the copy and lists them, the observer first and the case last
 after the stock entries, one entry per line as the editor writes them; appends a common event
-calling each command. Returns that event's id. Refuses a plugin file the project holds.
+calling each command, and a placeholder for each image the copy lacks. Returns that event's id.
+Refuses a plugin file the project holds, and an image outside the copy or not a `.png`.
 */
 export function installCase(copy: string, install: CaseInstall): { commonEventId: number } {
   const stock = stockOf(copy)
@@ -198,6 +254,7 @@ export function installCase(copy: string, install: CaseInstall): { commonEventId
       throw new Error(`the MZ project already holds ${file}`)
     }
   }
+  const missing = missingImages(copy, install.images)
   const list = readPluginList(stock.pluginList)
   const entry = (plugin: (typeof plugins)[number]): unknown => ({
     name: plugin.file,
@@ -231,6 +288,11 @@ export function installCase(copy: string, install: CaseInstall): { commonEventId
     writeFileSync(path.join(copy, file), plugin.source)
     if (!stock.installed.includes(file)) stock.installed.push(file)
   }
+  for (const image of missing) {
+    mkdirSync(path.dirname(path.join(copy, image)), { recursive: true })
+    writeFileSync(path.join(copy, image), PLACEHOLDER_PNG)
+    stock.installed.push(image)
+  }
   writeFileSync(path.join(copy, PLUGIN_LIST), `${list.head}[\n${lines.join(',\n')}\n];\n`)
   const eventLines = [...events, event].map((item) => JSON.stringify(item))
   writeFileSync(path.join(copy, COMMON_EVENTS), `[\n${eventLines.join(',\n')}\n]`)
@@ -238,7 +300,8 @@ export function installCase(copy: string, install: CaseInstall): { commonEventId
 }
 
 /**
-Restores the copy's stock plugin list and common events and removes every installed file.
+Restores the copy's stock plugin list and common events and removes every installed file, each
+placeholder image included.
 */
 export function resetCopy(copy: string): void {
   const stock = stocks.get(path.resolve(copy))
