@@ -12,6 +12,7 @@ import { flushPersistedState } from '../../src/renderer/src/stores/persist'
 import type { MZProject } from '../../src/renderer/src/types/mz'
 import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { copyFixtureProject } from '../helpers/fixture-project'
+import { unstubGlobals } from './support/load-persisted'
 import { createMainApi } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
@@ -46,7 +47,7 @@ async function tearDown(): Promise<void> {
   act(() => {
     useToastStore.getState().dismissAll()
   })
-  vi.unstubAllGlobals()
+  unstubGlobals()
   await rm(path.dirname(fixture.project), { recursive: true, force: true })
 }
 

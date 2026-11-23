@@ -18,6 +18,7 @@ import {
   isRecord
 } from '../../src/renderer/src/stores/persist'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
+import { createFakeApi } from '../helpers/fake-api'
 import { PERSISTED_KEYS, type PersistedKey } from '../helpers/persisted-payloads'
 import { resetStores } from './support/reset-stores'
 
@@ -253,5 +254,43 @@ describe('saved state writer: typing', () => {
     })
 
     expect(storageWrites.mock.calls.length).toBeGreaterThan(0)
+  })
+})
+
+describe('saved state writer: disk', () => {
+  // Main's write of saved state to disk, as the page asks for it
+  const toDisk = vi.fn<Window['api']['storage']['flush']>()
+
+  beforeEach(() => {
+    setUp()
+    toDisk.mockClear()
+    vi.stubGlobal('api', createFakeApi({ storage: { flush: toDisk } }))
+  })
+
+  afterEach(() => {
+    tearDown()
+    vi.unstubAllGlobals()
+  })
+
+  it('asks main once to write to disk after each flush that wrote', () => {
+    useSettingsStore.getState().setTheme('light')
+    useUIStore.getState().setSidebarWidth(321)
+    flushPersistedState()
+
+    expect(toDisk).toHaveBeenCalledTimes(1)
+
+    useSettingsStore.getState().setTheme('dark')
+    vi.advanceTimersByTime(FLUSH_QUIET_MS)
+
+    expect(toDisk).toHaveBeenCalledTimes(2)
+  })
+
+  it('asks main nothing after a flush that wrote nothing', () => {
+    flushPersistedState()
+    failSettingsWrites(new Error('disk said no'))
+    useSettingsStore.getState().setTheme('light')
+    vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+
+    expect(toDisk).not.toHaveBeenCalled()
   })
 })

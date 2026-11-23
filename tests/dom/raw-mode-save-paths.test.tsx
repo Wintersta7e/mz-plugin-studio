@@ -15,7 +15,7 @@ import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
-import { resetStoreModules, seed } from './support/load-persisted'
+import { resetStoreModules, seed, unstubGlobals } from './support/load-persisted'
 import { createMainApi } from './support/main-api'
 import { previewShown } from './support/preview'
 import { envelopeOf, recordOf } from './support/persisted-state'
@@ -182,7 +182,7 @@ function setUp(): void {
 describe('saving an imported plugin: unavailable source', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('no save path writes a tab in raw mode whose file text is not loaded', async () => {
     expect.hasAssertions()
@@ -259,7 +259,7 @@ describe('saving an imported plugin: unavailable source', () => {
 describe('saving an imported plugin: regeneration confirmation', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('turning raw mode off asks before the first save that regenerates the file', async () => {
     expect.hasAssertions()
@@ -352,7 +352,7 @@ describe('saving an imported plugin: regeneration confirmation', () => {
 describe('saving an imported plugin: project saves and export', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('every save into the project makes what it wrote the file text and baseline of the tab; Export writes a copy', async () => {
     expect.hasAssertions()
@@ -431,7 +431,7 @@ describe('saving an imported plugin: project saves and export', () => {
 describe('saving an imported plugin: legacy save record', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('save All names a tab last saved by v1.6.0 as unconfirmed, not changed on disk', async () => {
     expect.hasAssertions()
@@ -477,7 +477,7 @@ describe('saving an imported plugin: legacy save record', () => {
 describe('saving an imported plugin: missing save record', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('save All names an imported tab with no record of its file as unconfirmed, not a different file', async () => {
     expect.hasAssertions()
@@ -522,7 +522,7 @@ describe('saving an imported plugin: missing save record', () => {
 describe('saving an imported plugin: translated blocks', () => {
   beforeEach(setUp)
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('a save with raw mode off names the translated blocks it removes and asks first', async () => {
     expect.hasAssertions()

@@ -360,6 +360,9 @@ interface PendingWrite {
 
 const pendingWrites = new Map<PersistedKey, PendingWrite>()
 
+// Whether storage took a write that main was not yet asked to put on disk
+const disk: { hasUnsavedWrite: boolean } = { hasUnsavedWrite: false }
+
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -399,6 +402,7 @@ function didWriteStep(name: PersistedKey, step: WriteStep): boolean {
     reportFailedWrite(name, error)
     return false
   }
+  disk.hasUnsavedWrite = true
   const failed = quotaFailures.get(name)
   if (failed === undefined) return true
   quotaFailures.delete(name)
@@ -419,7 +423,7 @@ function didWritePlan(name: PersistedKey, plan: WritePlan): boolean {
 
 // Writes the store's pending state; a write that fails keeps it pending until the next change or
 // the final flush
-function flushKey(name: PersistedKey): void {
+function writePending(name: PersistedKey): void {
   const write = pendingWrites.get(name)
   if (write === undefined) return
   clearTimeout(write.timer)
@@ -428,12 +432,26 @@ function flushKey(name: PersistedKey): void {
   if (didWritePlan(name, plan) && pendingWrites.get(name) === write) pendingWrites.delete(name)
 }
 
+// Electron puts what the page stored on disk only seconds later, so an app killed in between would
+// lose it; main is asked to write it now
+function saveToDisk(): void {
+  if (!disk.hasUnsavedWrite) return
+  disk.hasUnsavedWrite = false
+  globalThis.api.storage.flush()
+}
+
+function flushKey(name: PersistedKey): void {
+  writePending(name)
+  saveToDisk()
+}
+
 /**
 Writes every pending change now.
 @internal exported for tests
 */
 export function flushPersistedState(): void {
-  for (const name of pendingWrites.keys()) flushKey(name)
+  for (const name of pendingWrites.keys()) writePending(name)
+  saveToDisk()
 }
 
 function flushWhenHidden(): void {

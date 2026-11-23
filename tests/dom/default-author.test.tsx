@@ -7,7 +7,7 @@ import { Sidebar } from '../../src/renderer/src/components/layout/Sidebar'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
-import { resetStoreModules } from './support/load-persisted'
+import { resetStoreModules, unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { resetStores } from './support/reset-stores'
 
@@ -30,7 +30,7 @@ describe('default author of a new plugin', { timeout: 30_000 }, () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('is set by the sidebar New Plugin button', async () => {

@@ -42,6 +42,15 @@ export function flushStores(): void {
 }
 
 /**
+Restores every stubbed global once the stores have written what they hold: a write asks main,
+through the stubbed `api`, to put it on disk, so a write left for later would find no `api`.
+*/
+export function unstubGlobals(): void {
+  flushStores()
+  vi.unstubAllGlobals()
+}
+
+/**
 `vi.resetModules()`, once the store modules imported so far have written what they hold and
 removed their page listeners, so no replaced copy writes into a later test's storage.
 */

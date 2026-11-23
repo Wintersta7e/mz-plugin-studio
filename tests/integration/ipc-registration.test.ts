@@ -5,11 +5,7 @@ import { pathToFileURL } from 'node:url'
 import type { MessageBoxReturnValue, OpenDialogReturnValue, SaveDialogReturnValue } from 'electron'
 import log from 'electron-log/main'
 import { afterAll, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
-import {
-  createInvokeHandlers,
-  createSendListeners,
-  type MainDependencies
-} from '../../src/main/ipc/handlers'
+import { createInvokeHandlers, createSendListeners } from '../../src/main/ipc/handlers'
 import {
   createSenderCheck,
   handleAll,
@@ -22,7 +18,12 @@ import {
 } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS } from '../../src/shared/ipc-types'
 import { afterAllTests } from '../helpers/after-all-tests'
-import { createFakeRegistrar, createFakeWindow, type FakeFrame } from '../helpers/fake-ipc'
+import {
+  createFakeRegistrar,
+  createFakeWindow,
+  fakeMainDependencies,
+  type FakeFrame
+} from '../helpers/fake-ipc'
 
 vi.mock<{ ipcMain: object }>(import('electron'), () => ({ ipcMain: {} }))
 
@@ -35,15 +36,8 @@ const entryUrl = pathToFileURL(entry).href
 const showOpenDialog = vi.fn<(...args: unknown[]) => Promise<OpenDialogReturnValue>>()
 const showSaveDialog = vi.fn<(...args: unknown[]) => Promise<SaveDialogReturnValue>>()
 const showMessageBox = vi.fn<(...args: unknown[]) => Promise<MessageBoxReturnValue>>()
-const getWindow = vi.fn<MainDependencies['getWindow']>()
-const openLogFolder = vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue()
-const setLogLevel = vi.fn<MainDependencies['setLogLevel']>()
-const dependencies: MainDependencies = {
-  dialog: { showOpenDialog, showSaveDialog, showMessageBox },
-  getWindow,
-  openLogFolder,
-  setLogLevel
-}
+const dependencies = fakeMainDependencies({ showOpenDialog, showSaveDialog, showMessageBox })
+const { getWindow, openLogFolder, setLogLevel, flushStorage } = dependencies
 const handlers = createInvokeHandlers(dependencies)
 const listeners = createSendListeners(dependencies)
 /**
@@ -57,7 +51,8 @@ const bodies = [
   showMessageBox,
   getWindow,
   openLogFolder,
-  setLogLevel
+  setLogLevel,
+  flushStorage
 ]
 const warn: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.warn)
 const logError: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.error)
@@ -245,17 +240,19 @@ describe('ipc registration: registered channels', () => {
   })
 
   it('answers the app page', async () => {
-    expect.assertions(4)
+    expect.assertions(5)
 
     await expect(ipc.invoke('window-is-maximized')).resolves.toBe(false)
     expect(handlers['window-is-maximized'].run).toHaveBeenCalledTimes(1)
 
     ipc.send('log:set-level', true)
+    ipc.send('storage:flush')
 
     expect(setLogLevel).toHaveBeenCalledWith('debug')
+    expect(flushStorage).toHaveBeenCalledTimes(1)
     expect(warn).not.toHaveBeenCalled()
 
-    counted.cases += 2
+    counted.cases += 3
   })
 })
 

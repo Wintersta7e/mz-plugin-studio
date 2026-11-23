@@ -9,7 +9,6 @@ import path from 'node:path'
 import type { MessageBoxReturnValue, OpenDialogReturnValue, SaveDialogReturnValue } from 'electron'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import type * as FileAccess from '../../src/main/file-access'
-import type { MainDependencies } from '../../src/main/ipc/handlers'
 import {
   ACCESS_DENIED,
   INVOKE_CHANNELS,
@@ -186,16 +185,14 @@ describe('project scope: channels', () => {
     expect.assertions(1)
 
     const { createInvokeHandlers } = await import('../../src/main/ipc/handlers')
-    const handlers = createInvokeHandlers({
-      dialog: {
+    const { fakeMainDependencies } = await import('../helpers/fake-ipc')
+    const handlers = createInvokeHandlers(
+      fakeMainDependencies({
         showOpenDialog: vi.fn<(...args: unknown[]) => Promise<OpenDialogReturnValue>>(),
         showSaveDialog: vi.fn<(...args: unknown[]) => Promise<SaveDialogReturnValue>>(),
         showMessageBox: vi.fn<(...args: unknown[]) => Promise<MessageBoxReturnValue>>()
-      },
-      getWindow: vi.fn<MainDependencies['getWindow']>(),
-      openLogFolder: vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue(),
-      setLogLevel: vi.fn<MainDependencies['setLogLevel']>()
-    })
+      })
+    )
     const scoped = INVOKE_CHANNELS.filter(
       (c: InvokeChannel) => handlers[c].access === 'current-project'
     )

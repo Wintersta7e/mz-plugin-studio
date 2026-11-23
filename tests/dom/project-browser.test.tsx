@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProjectBrowser } from '../../src/renderer/src/components/project/ProjectBrowser'
 import { useProjectStore } from '../../src/renderer/src/stores'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 // The header's close button beside the panel title
@@ -39,7 +40,7 @@ describe('project data browser', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('with no project open it says so, and its close button closes it', async () => {

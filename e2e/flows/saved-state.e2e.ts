@@ -1,9 +1,10 @@
 // The state the app saves for its next start is written once edits pause, so an edit made just
-// before the page goes away is written on the way out: a reload and a close without saving each
-// keep it for the next start.
+// before the page goes away is written on the way out: a reload, a close without saving and a
+// hidden window that is then killed each keep it for the next start.
 import type { Page } from '@playwright/test'
 import {
   expect,
+  flushSavedState,
   launchTwin,
   newPlugin,
   queueDialog,
@@ -12,6 +13,7 @@ import {
   test,
   type LaunchedApp
 } from '../fixtures/app'
+import { killTree } from '../fixtures/teardown'
 
 const DESCRIPTION = 'Typed just before the window went away'
 
@@ -66,6 +68,20 @@ test('keeps an edit made just before the window is closed without saving', async
   await editDescription(page)
   await page.getByTestId('title-bar-close').click()
   await closed
+
+  expect(await descriptionAtNextStart(twin)).toBe(DESCRIPTION)
+})
+
+test('keeps an edit made just before the window is hidden and the app killed', async ({ twin }) => {
+  const { app, page } = twin
+  await editDescription(page)
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.hide()
+  })
+  // The page under test can keep reporting itself visible after the hide, so the test sends the
+  // hidden signal the app answers
+  await flushSavedState(page)
+  await killTree(app.process())
 
   expect(await descriptionAtNextStart(twin)).toBe(DESCRIPTION)
 })

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, vi } from 'vitest'
+import { createFakeApi } from '../helpers/fake-api'
 import { resetMonacoStub } from './monaco-stub'
 
 // The stub's components take the props the editor hosts pass, not the library's prop types, so
@@ -22,10 +23,12 @@ class InertResizeObserver {
   disconnect = vi.fn<() => void>()
 }
 
-// Stubbed again before each test, since a test may restore every stubbed global after itself
+// Stubbed again before each test, since a test may restore every stubbed global after itself.
+// The preload's api is always there in the app; a test replaces it to drive members of its own.
 beforeEach(() => {
   resetMonacoStub()
   vi.stubGlobal('ResizeObserver', InertResizeObserver)
+  vi.stubGlobal('api', createFakeApi())
 })
 
 // jsdom has no pointer capture and no scrolling; Radix Select checks and releases the capture

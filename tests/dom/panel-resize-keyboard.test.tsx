@@ -8,6 +8,7 @@ import App from '../../src/renderer/src/App'
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { storedText } from './support/persisted-state'
 import { resetStores } from './support/reset-stores'
@@ -47,7 +48,7 @@ describe('resizing the code preview from the keyboard', { timeout: 30_000 }, () 
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('the divider takes focus and announces its position and the preview width', () => {

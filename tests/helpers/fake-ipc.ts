@@ -2,12 +2,13 @@
 // A test importing this file mocks `electron` (the registration module imports `ipcMain`).
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { vi } from 'vitest'
+import { vi, type Mock } from 'vitest'
 import {
   createInvokeHandlers,
   createSendListeners,
   type DialogPort,
-  type MainDependencies
+  type MainDependencies,
+  type WindowPort
 } from '../../src/main/ipc/handlers'
 import {
   createSenderCheck,
@@ -98,6 +99,32 @@ export function createFakeRegistrar(defaultFrame: FakeFrame | null = null): Fake
 }
 
 /**
+Main's dependencies besides its dialogs, each a recorded stand-in
+*/
+export interface FakeMainDependencies extends MainDependencies {
+  getWindow: Mock<MainDependencies['getWindow']>
+  openLogFolder: Mock<MainDependencies['openLogFolder']>
+  setLogLevel: Mock<MainDependencies['setLogLevel']>
+  flushStorage: Mock<MainDependencies['flushStorage']>
+}
+
+/**
+Main's dependencies over `dialog` and `window` (none by default), and a log folder that opens
+*/
+export function fakeMainDependencies(
+  dialog: DialogPort,
+  window?: WindowPort
+): FakeMainDependencies {
+  return {
+    dialog,
+    getWindow: vi.fn<MainDependencies['getWindow']>(() => window),
+    openLogFolder: vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue(),
+    setLogLevel: vi.fn<MainDependencies['setLogLevel']>(),
+    flushStorage: vi.fn<MainDependencies['flushStorage']>()
+  }
+}
+
+/**
 A dialog method the test left out: calling it fails the request
 */
 function unanswered(name: keyof DialogPort): () => never {
@@ -122,12 +149,7 @@ export function registerMainHandlers(dialog: Partial<DialogPort> = {}): FakeRegi
       return dialog.showMessageBox ?? unanswered('showMessageBox')
     }
   }
-  const dependencies: MainDependencies = {
-    dialog: port,
-    getWindow: vi.fn<MainDependencies['getWindow']>(),
-    openLogFolder: vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue(),
-    setLogLevel: vi.fn<MainDependencies['setLogLevel']>()
-  }
+  const dependencies = fakeMainDependencies(port)
   const page = createAppPage()
   const fake = createFakeRegistrar(page.frame)
   handleAll(createInvokeHandlers(dependencies), page.isTrustedSender, fake.registrar)

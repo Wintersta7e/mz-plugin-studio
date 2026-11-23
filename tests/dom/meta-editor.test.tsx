@@ -8,6 +8,7 @@ import { CodePreview } from '../../src/renderer/src/components/preview/CodePrevi
 import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin, type NoteParam } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 type Message = Window['api']['dialog']['message']
@@ -63,7 +64,7 @@ describe('meta editor help text', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
     vi.restoreAllMocks()
   })
 
@@ -110,7 +111,7 @@ describe('meta editor plugin name', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('is read-only for a plugin loaded from a file, raw mode on or off', () => {
@@ -171,7 +172,7 @@ describe('meta editor fields in the plugin code', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('writes the typed name, author and URL into the plugin code', async () => {
@@ -273,7 +274,7 @@ describe('meta editor note parameters', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('keeps the fields of the rows after a deleted row', async () => {

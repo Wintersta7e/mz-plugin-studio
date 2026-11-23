@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import type { FieldPath } from '../../src/renderer/src/stores/persist'
 import { createFakeApi } from '../helpers/fake-api'
-import { resetStoreModules } from './support/load-persisted'
+import { resetStoreModules, unstubGlobals } from './support/load-persisted'
 import { savedStateOf } from './support/persisted-state'
 
 const KEY = 'mz-plugin-studio-settings'
@@ -356,7 +356,7 @@ describe('damaged saved state: open tabs', () => {
       expect(localStorage.getItem(`${PLUGIN_KEY}.backup`)).not.toBeNull()
     } finally {
       cleanup()
-      vi.unstubAllGlobals()
+      unstubGlobals()
     }
   }, 30_000)
 })

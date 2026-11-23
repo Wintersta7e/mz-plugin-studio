@@ -44,6 +44,7 @@ import {
 } from '../../src/shared/ipc-types'
 import { afterAllTests } from '../helpers/after-all-tests'
 import { copyFixtureProject } from '../helpers/fixture-project'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -87,7 +88,7 @@ function tearDown(): void {
   act(() => {
     useToastStore.getState().dismissAll()
   })
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 async function openProject(project = temporary.root): Promise<void> {

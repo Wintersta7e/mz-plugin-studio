@@ -7,6 +7,7 @@ import { StatusBar } from '../../src/renderer/src/components/layout/StatusBar'
 import { usePluginStore, useProjectStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 describe('sidebar tab close', () => {
@@ -16,7 +17,7 @@ describe('sidebar tab close', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('closing an unsaved tab asks with Cancel as the default', async () => {
@@ -80,7 +81,7 @@ describe('sidebar', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('new Plugin opens a tab and makes it the active one', async () => {

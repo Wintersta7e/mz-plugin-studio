@@ -13,7 +13,7 @@ import { EDITOR_FONT_SIZE_RANGE } from '../../src/renderer/src/stores/settings-s
 import { createEmptyParameter } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { monacoStub } from '../setup/monaco-stub'
-import { resetStoreModules, seed } from './support/load-persisted'
+import { resetStoreModules, seed, unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const KEY = 'mz-plugin-studio-settings'
@@ -76,7 +76,7 @@ function backupSetUp(): void {
 
 function backupTearDown(): void {
   vi.restoreAllMocks()
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 // Each case imports the app's stores and the dialog afresh.
@@ -265,7 +265,7 @@ function setUp(): void {
 }
 
 function tearDown(): void {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 function Harness(): React.ReactElement {

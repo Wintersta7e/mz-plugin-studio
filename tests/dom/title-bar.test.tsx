@@ -7,6 +7,7 @@ import { TitleBar } from '../../src/renderer/src/components/layout/TitleBar'
 import { usePluginStore, useProjectStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 /**
@@ -31,7 +32,7 @@ describe('title bar close', () => {
     vi.stubGlobal('api', createFakeApi())
   })
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('title-bar close with no unsaved tab asks main to close the window', () => {
     openTab()
@@ -97,7 +98,7 @@ describe('title bar window controls', () => {
     resetStores()
   })
 
-  afterEach(vi.unstubAllGlobals)
+  afterEach(unstubGlobals)
 
   it('names the app, and the game once a project is open', async () => {
     expect.hasAssertions()

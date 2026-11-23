@@ -8,6 +8,7 @@ import { usePluginStore, useProjectStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import type { MessageDialogOptions, SaveResult } from '../../src/shared/ipc-types'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { resetStores } from './support/reset-stores'
 
@@ -86,7 +87,7 @@ describe('closing the window', { timeout: 30_000 }, () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('closing the window with only a background tab unsaved is held back', () => {

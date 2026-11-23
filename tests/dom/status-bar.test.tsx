@@ -8,6 +8,7 @@ import { usePluginStore, useProjectStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import type { ScannedPluginHeader } from '../../src/shared/ipc-types'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const header = (name: string, base: string[] = []): ScannedPluginHeader => ({
@@ -59,7 +60,7 @@ describe('status bar', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('names the open project once one is open', async () => {

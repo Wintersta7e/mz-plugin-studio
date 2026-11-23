@@ -13,7 +13,7 @@ import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin
 import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
-import { resetStoreModules, seed } from './support/load-persisted'
+import { resetStoreModules, seed, unstubGlobals } from './support/load-persisted'
 import { envelopeOf, recordOf, savedStateOf } from './support/persisted-state'
 import { previewShown } from './support/preview'
 
@@ -138,7 +138,7 @@ function setUp(): void {
 }
 
 function tearDown(): void {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 describe('reloading an imported plugin from the project: keeping the tab values', () => {

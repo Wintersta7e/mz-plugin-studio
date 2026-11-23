@@ -4,7 +4,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Toast } from '../../src/renderer/src/stores/toast-store'
 import { createFakeApi } from '../helpers/fake-api'
-import { resetStoreModules, seed } from './support/load-persisted'
+import { resetStoreModules, seed, unstubGlobals } from './support/load-persisted'
 
 function firstToastMessage(toasts: readonly Toast[]): string {
   const toast = toasts.at(0)
@@ -22,7 +22,7 @@ describe('restore report at startup', () => {
 
   afterEach(() => {
     cleanup()
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('one toast names every store that was not loaded as stored, once', async () => {

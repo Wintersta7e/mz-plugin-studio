@@ -33,7 +33,8 @@ const dependencies: MainDependencies = {
   dialog: { showOpenDialog, showSaveDialog, showMessageBox },
   getWindow: (): WindowPort | undefined => undefined,
   openLogFolder: vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue(),
-  setLogLevel
+  setLogLevel,
+  flushStorage: vi.fn<MainDependencies['flushStorage']>()
 }
 const handlers = createInvokeHandlers(dependencies)
 const listeners = createSendListeners(dependencies)
