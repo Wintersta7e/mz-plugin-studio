@@ -1,6 +1,8 @@
 // The plugins the MZ runtime test installs, and the verdict on one boot with a case installed,
 // judged against the errors the same copy logs when it boots with no case at all, and against
 // what the conformance expectations say the case's parameters and commands compute.
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 import { generatePlugin } from '../../src/renderer/src/lib/generator/index'
 import {
   appendTemplateCode,
@@ -9,6 +11,7 @@ import {
 import { saveFileName } from '../../src/renderer/src/lib/plugin-output'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { createEmptyPlugin } from '../../src/shared/types/plugin'
+import { runRoot } from '../fixtures/app'
 import {
   caseExpectations,
   conformanceCases,
@@ -65,10 +68,10 @@ export function commandPluginOf(kase: MzCase): string {
 }
 
 /**
-A planted plugin judged by the expectations as a generated one is: its header read from its
-own code, its first load (the header's defaults).
+A plugin judged by the expectations as a generated one is: its header read from its own code,
+its first load (the header's defaults).
 */
-function judgedPlanted(id: string, file: string, code: string): MzCase {
+function judgedCase(kind: 'planted' | 'authored', id: string, file: string, code: string): MzCase {
   const fileName = `${file}.js`
   const expectation = caseExpectations({
     id,
@@ -79,7 +82,7 @@ function judgedPlanted(id: string, file: string, code: string): MzCase {
   })
   return {
     id,
-    kind: 'planted',
+    kind,
     file,
     code: expectation.observedCode,
     expectation,
@@ -133,8 +136,8 @@ export function plantedCases(): Record<
     ),
     logsError: planted('planted-logs-error', 'PlantedLogsError', "console.error('planted');\n"),
     silent: planted('planted-silent', 'PlantedSilent', '// Loads and logs nothing\n'),
-    readsText: judgedPlanted('planted-reads-text', 'PlantedReadsText', READS_TEXT),
-    otherName: judgedPlanted('planted-other-name', 'PlantedOtherName', OTHER_NAME)
+    readsText: judgedCase('planted', 'planted-reads-text', 'PlantedReadsText', READS_TEXT),
+    otherName: judgedCase('planted', 'planted-other-name', 'PlantedOtherName', OTHER_NAME)
   }
 }
 
@@ -157,6 +160,33 @@ export function templateCases(): MzCase[] {
       code: generatePlugin(definition)
     }
   })
+}
+
+/**
+The folder the app's saved plugins are kept in, outside the copy: each install resets the copy,
+and a file the copy already holds is refused as the project's own.
+*/
+export const authoredDirectory = (): string => path.join(runRoot(), 'mz-authored')
+
+/**
+A plugin the app saved, judged as a generated one is, under the name it was saved by.
+*/
+function authoredCase(file: string): MzCase {
+  const stem = stemOf(path.basename(file))
+  return judgedCase('authored', `authored:${stem}`, stem, readFileSync(file, 'utf8'))
+}
+
+/**
+Every plugin the authoring test saved through the app this run, by file name; none before it ran.
+*/
+export function authoredCases(): MzCase[] {
+  const directory = authoredDirectory()
+  return existsSync(directory)
+    ? readdirSync(directory)
+        .filter((name) => name.endsWith('.js'))
+        .toSorted((left, right) => left.localeCompare(right))
+        .map((name) => authoredCase(path.join(directory, name)))
+    : []
 }
 
 // A case whose code does not parse loads nothing, and is judged once on nothing

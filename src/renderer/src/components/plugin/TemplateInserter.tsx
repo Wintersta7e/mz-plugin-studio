@@ -281,6 +281,7 @@ type SidebarButtonProps = Readonly<{
   isActive: boolean
   tone: Tone
   spacing: string
+  testId?: string
   onClick: () => void
 }>
 
@@ -291,11 +292,13 @@ function SidebarButton({
   isActive,
   tone,
   spacing,
+  testId,
   onClick
 }: SidebarButtonProps) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       className={cn(
         'group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-all',
@@ -370,6 +373,7 @@ function CategorySidebar({ viewMode, category, counts, onView, onCategory }: Cat
             isActive={viewMode === 'category' && category === info.id}
             tone={PRIMARY_TONE}
             spacing=""
+            testId={`template-category-${info.id}`}
             onClick={() => {
               onCategory(info.id)
             }}

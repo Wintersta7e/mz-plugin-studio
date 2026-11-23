@@ -1,9 +1,10 @@
-// Every case at the browser level: each template the app registers, and each conformance case
-// under each value set, booted once each and judged on every check. The run prints what it
+// Every case at the browser level: each template the app registers, each plugin the authoring
+// test saved through the app (that file runs first), and each conformance case under each value
+// set, booted once each and judged on every check. The run prints what it
 // ran and fails on a shortfall against the registry or a count of 0 where cases ran.
 import path from 'node:path'
 import { CATEGORIES, getAllTemplates } from '../../src/renderer/src/lib/generator/templates/index'
-import { corpusCases, templateCases, type CaseVerdict, type MzCase } from './cases'
+import { authoredCases, corpusCases, templateCases, type CaseVerdict, type MzCase } from './cases'
 import { expect, test, type MzHarness } from './fixtures'
 
 interface CaseRun {
@@ -15,7 +16,7 @@ const fileOf = (id: string): string => id.replaceAll(/[^\w.-]/g, '_')
 
 async function runEvery(mz: MzHarness, output: string): Promise<CaseRun[]> {
   const runs: CaseRun[] = []
-  for (const kase of [...templateCases(), ...corpusCases()]) {
+  for (const kase of [...templateCases(), ...authoredCases(), ...corpusCases()]) {
     // One boot at a time: each one resets and installs into the same copy
     const kept = path.join(output, fileOf(kase.id))
     runs.push({ kase, verdict: await mz.run(kase, kept) })
@@ -74,20 +75,21 @@ function printCounts(mz: MzHarness, counts: Record<string, number>, registry: nu
   if ((process.env['MZ_NWJS_EXE'] ?? '') === '') mz.print('nwjs level: not selected')
 }
 
-// No authoring through the app feeds this run's cases
-const ZEROS_ALLOWED = new Set(['categories'])
-
 /**
 Every way the counts fall short: a count of 0, fewer templates than the registry holds, fewer
-reports read than boots started.
+plugins authored than there are categories, fewer reports read than boots started.
 */
 function shortfalls(counts: Record<string, number>, registry: number): string[] {
-  const { templates = 0, launches = 0, reports = 0 } = counts
+  const { templates = 0, categories = 0, launches = 0, reports = 0 } = counts
+  const categoryCount = CATEGORIES.length
   return [
     ...Object.entries(counts)
-      .filter(([name, count]) => count === 0 && !ZEROS_ALLOWED.has(name))
+      .filter(([, count]) => count === 0)
       .map(([name]) => `${name} 0`),
     ...(templates < registry ? [`templates ${String(templates)}/${String(registry)}`] : []),
+    ...(categories < categoryCount
+      ? [`categories ${String(categories)}/${String(categoryCount)}`]
+      : []),
     ...(reports === launches ? [] : [`reports ${String(reports)} launches ${String(launches)}`])
   ]
 }
