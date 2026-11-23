@@ -13,6 +13,7 @@ import { EDITOR_FONT_SIZE_RANGE } from '../../src/renderer/src/stores/settings-s
 import { createEmptyParameter } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { monacoStub } from '../setup/monaco-stub'
+import { resetStoreModules, seed } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const KEY = 'mz-plugin-studio-settings'
@@ -50,7 +51,7 @@ function expectPresetState(count: number, present: string[], absent: string[]): 
 The settings store imported afresh over localStorage, with the report it made while loading.
 */
 async function loadSettings() {
-  vi.resetModules()
+  await resetStoreModules()
   await import('../../src/renderer/src/stores/settings-store')
   const persist = await import('../../src/renderer/src/stores/persist')
   return persist.takeRestoreReport()
@@ -69,7 +70,7 @@ async function openDataTab(): Promise<void> {
 }
 
 function backupSetUp(): void {
-  localStorage.clear()
+  seed({})
   vi.stubGlobal('api', createFakeApi())
 }
 

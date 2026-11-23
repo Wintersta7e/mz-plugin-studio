@@ -9,6 +9,7 @@ import { usePluginStore, useUIStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
+import { storedText } from './support/persisted-state'
 import { resetStores } from './support/reset-stores'
 
 const STEP = 20
@@ -26,7 +27,7 @@ function showPreviewAt(width: number): HTMLElement {
 
 // The preview width the app saved for the next start
 function savedPreviewWidth(): unknown {
-  const saved: unknown = JSON.parse(localStorage.getItem('mz-plugin-studio-ui') ?? 'null')
+  const saved: unknown = JSON.parse(storedText('mz-plugin-studio-ui') ?? 'null')
   if (typeof saved !== 'object' || saved === null || !('state' in saved)) return undefined
   const { state } = saved
   return typeof state === 'object' && state !== null && 'previewWidth' in state

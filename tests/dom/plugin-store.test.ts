@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { flushPersistedState } from '../../src/renderer/src/stores/persist'
 import { usePluginStore } from '../../src/renderer/src/stores/plugin-store'
 import {
   createEmptyPlugin,
@@ -10,7 +11,7 @@ import {
 import { toBaseline } from '../../src/shared/types/plugin'
 import { PluginParser } from '../../src/main/services/plugin-parser'
 import { generateRawMode } from '../../src/renderer/src/lib/generator/index'
-import { recordOf, recordsOf, savedStateOf } from './support/persisted-state'
+import { recordOf, recordsOf, savedStateOf, storedText } from './support/persisted-state'
 
 type PluginState = ReturnType<typeof usePluginStore.getState>
 
@@ -27,8 +28,10 @@ function makeStruct(id: string, name: string): PluginStruct {
 }
 
 function resetPluginStore(): void {
-  localStorage.clear()
   usePluginStore.setState(usePluginStore.getInitialState(), true)
+  // the reset is written before storage is emptied, so it cannot land on a later seed
+  flushPersistedState()
+  localStorage.clear()
 }
 
 function createPlugin(name: string): PluginDefinition {
@@ -581,7 +584,7 @@ describe('pluginStore baseline of an imported plugin', () => {
     const alpha = importedWithCode('Alpha')
     usePluginStore.getState().openPlugin(alpha)
     const { schemaVersion, plugin, openPlugins, baselineByPluginId } = savedStateOf(
-      localStorage.getItem('mz-plugin-studio-plugin'),
+      storedText('mz-plugin-studio-plugin'),
       'the saved plugin store'
     )
     const savedTabs = [

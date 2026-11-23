@@ -13,7 +13,7 @@ import { toBaseline, type PluginDefinition } from '../../src/shared/types/plugin
 import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
-import { seed } from './support/load-persisted'
+import { resetStoreModules, seed } from './support/load-persisted'
 import { envelopeOf, recordOf, savedStateOf } from './support/persisted-state'
 import { previewShown } from './support/preview'
 
@@ -43,7 +43,7 @@ Imports the app afresh over what localStorage holds and shows the imported tab, 
 */
 async function startApp(api: Api, hasProject: boolean): Promise<Stores> {
   vi.stubGlobal('api', api)
-  vi.resetModules()
+  await resetStoreModules()
   const { default: App } = await import('../../src/renderer/src/App')
   const stores = await import('../../src/renderer/src/stores')
   render(createElement(App))
@@ -63,7 +63,7 @@ The stores and reload/save functions of a fresh import, with the fixture project
 */
 async function startStores(api: Api): Promise<{ stores: Stores; rawMode: typeof RawModeModule }> {
   vi.stubGlobal('api', api)
-  vi.resetModules()
+  await resetStoreModules()
   const stores = await import('../../src/renderer/src/stores')
   const rawMode = await import('../../src/renderer/src/lib/raw-mode')
   stores.useProjectStore.setState({

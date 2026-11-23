@@ -1,6 +1,7 @@
 // Persist options shared by every saved store: saved data this build cannot use is backed up and
-// reported instead of silently replaced, every loaded field is type-checked, and a full storage
-// quota is reported instead of thrown out of `set()`.
+// reported instead of silently replaced, every loaded field is type-checked, and changes are
+// written by one writer once edits pause, so no edit waits on serializing and storing its store; a
+// write that fails is reported and retried instead of thrown out of `set()`.
 import log from 'electron-log/renderer'
 import type { PersistOptions, PersistStorage } from 'zustand/middleware'
 import { useToastStore } from './toast-store'
@@ -71,6 +72,8 @@ export interface RestoreReportEntry {
 const pendingReport: RestoreReportEntry[] = []
 // Writes of each store that failed on a full quota since its last successful write
 const quotaFailures = new Map<PersistedKey, number>()
+// Stores whose failed write, other than on a full quota, was shown this session
+const shownFailures = new Set<PersistedKey>()
 // Each loaded store's user words, for its backup and its report entries
 const wordsOf = new Map<string, { area: string; labels: FieldLabels }>()
 
@@ -328,6 +331,155 @@ export function deleteBackup(key: string): void {
   localStorage.removeItem(key)
 }
 
+/**
+A change is written once no other change followed it for this long…
+@internal exported for tests
+*/
+export const FLUSH_QUIET_MS = 500
+/**
+…and at most this long after the first change that is not written yet.
+@internal exported for tests
+*/
+export const FLUSH_MAX_DELAY_MS = 2000
+
+// One write of a flush: the text is built only when the step runs
+interface WriteStep {
+  key: string
+  text: () => string
+}
+
+// Phases run in order; a phase runs only when every step of the phases before it was written
+type WritePlan = readonly (readonly WriteStep[])[]
+
+// The latest state of a store that is not written yet
+interface PendingWrite {
+  value: unknown
+  firstAt: number // when the oldest change it holds was made
+  timer: ReturnType<typeof setTimeout> | undefined
+}
+
+const pendingWrites = new Map<PersistedKey, PendingWrite>()
+
+function errorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function reportFailedWrite(name: PersistedKey, error: unknown): void {
+  const area = (wordsOf.get(name)?.area ?? name).toLowerCase()
+  if (!isQuotaError(error)) {
+    log.error(`${name} could not be saved:`, error)
+    if (shownFailures.has(name)) return
+    shownFailures.add(name)
+    useToastStore.getState().addToast({
+      type: 'error',
+      message: `Recent changes to ${area} could not be saved (${errorText(error)}); saving is tried again at the next change. Nothing was deleted.`,
+      duration: 0
+    })
+    return
+  }
+  const failures = (quotaFailures.get(name) ?? 0) + 1
+  quotaFailures.set(name, failures)
+  // every flush retries, so only the first failure is logged; the rest are counted
+  if (failures > 1) return
+  log.error(`Storage is full; ${name} was not saved:`, error)
+  const backups = backupKeys()
+  const present =
+    backups.length > 0 ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}` : 'none'
+  useToastStore.getState().addToast({
+    type: 'error',
+    message: `Storage is full: recent changes to ${area} were not saved. Backup entries present: ${present}. Nothing was deleted.`,
+    duration: 0
+  })
+}
+
+function didWriteStep(name: PersistedKey, step: WriteStep): boolean {
+  try {
+    localStorage.setItem(step.key, step.text())
+  } catch (error) {
+    reportFailedWrite(name, error)
+    return false
+  }
+  const failed = quotaFailures.get(name)
+  if (failed === undefined) return true
+  quotaFailures.delete(name)
+  if (failed > 1) {
+    log.warn(`${name} could not be saved ${String(failed - 1)} more times while storage was full`)
+  }
+  return true
+}
+
+// Every step of a phase is attempted; true when every step of every phase was written
+function didWritePlan(name: PersistedKey, plan: WritePlan): boolean {
+  for (const phase of plan) {
+    const results = phase.map((step) => didWriteStep(name, step))
+    if (results.includes(false)) return false
+  }
+  return true
+}
+
+// Writes the store's pending state; a write that fails keeps it pending until the next change or
+// the final flush
+function flushKey(name: PersistedKey): void {
+  const write = pendingWrites.get(name)
+  if (write === undefined) return
+  clearTimeout(write.timer)
+  const plan: WritePlan = [[{ key: name, text: () => JSON.stringify(write.value) }]]
+  // a change made while the plan ran is newer than what it wrote, so it stays pending
+  if (didWritePlan(name, plan) && pendingWrites.get(name) === write) pendingWrites.delete(name)
+}
+
+/**
+Writes every pending change now.
+@internal exported for tests
+*/
+export function flushPersistedState(): void {
+  for (const name of pendingWrites.keys()) flushKey(name)
+}
+
+function flushWhenHidden(): void {
+  if (document.visibilityState === 'hidden') flushPersistedState()
+}
+
+const unload: { isListening: boolean } = { isListening: false }
+
+// Registered at the first change rather than on import, so a module that only reads the stores
+// (outside a page) adds nothing to the page
+function listenForUnload(): void {
+  if (unload.isListening) return
+  unload.isListening = true
+  addEventListener('beforeunload', flushPersistedState)
+  addEventListener('pagehide', flushPersistedState)
+  document.addEventListener('visibilitychange', flushWhenHidden)
+}
+
+/**
+Removes the page listeners; the next change adds them again.
+@internal exported for tests
+*/
+export function stopUnloadListeners(): void {
+  unload.isListening = false
+  removeEventListener('beforeunload', flushPersistedState)
+  removeEventListener('pagehide', flushPersistedState)
+  document.removeEventListener('visibilitychange', flushWhenHidden)
+}
+
+function schedule(name: PersistedKey, value: unknown): void {
+  const now = Date.now()
+  const earlier = pendingWrites.get(name)
+  clearTimeout(earlier?.timer)
+  const firstAt = earlier?.firstAt ?? now
+  const due = Math.min(now + FLUSH_QUIET_MS, firstAt + FLUSH_MAX_DELAY_MS)
+  const write: PendingWrite = { value, firstAt, timer: undefined }
+  pendingWrites.set(name, write)
+  write.timer = setTimeout(
+    () => {
+      flushKey(name)
+    },
+    Math.max(0, due - now)
+  )
+  listenForUnload()
+}
+
 // The state read is checked field by field by merge, so the storage claims no type for it
 function guardedStorage(
   name: PersistedKey,
@@ -336,6 +488,8 @@ function guardedStorage(
 ): PersistStorage<unknown> {
   return {
     getItem: (key) => {
+      // storage never answers with older state than memory holds
+      flushKey(name)
       const raw = localStorage.getItem(key)
       if (raw === null) return null
       let value: unknown
@@ -355,37 +509,12 @@ function guardedStorage(
       }
       return value
     },
-    setItem: (key, value) => {
-      try {
-        localStorage.setItem(key, JSON.stringify(value))
-        const failed = quotaFailures.get(name)
-        if (failed === undefined) return
-        quotaFailures.delete(name)
-        if (failed > 1) {
-          log.warn(
-            `${name} could not be saved ${String(failed - 1)} more times while storage was full`
-          )
-        }
-      } catch (error) {
-        if (!isQuotaError(error)) throw error
-        const failures = (quotaFailures.get(name) ?? 0) + 1
-        quotaFailures.set(name, failures)
-        // every change writes, so only the first failure is logged; the rest are counted
-        if (failures > 1) return
-        log.error(`Storage is full; ${name} was not saved:`, error)
-        const backups = backupKeys()
-        const present =
-          backups.length > 0
-            ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}`
-            : 'none'
-        useToastStore.getState().addToast({
-          type: 'error',
-          message: `Storage is full: recent changes to ${area.toLowerCase()} were not saved. Backup entries present: ${present}. Nothing was deleted.`,
-          duration: 0
-        })
-      }
+    setItem: (_key, value) => {
+      schedule(name, value)
     },
     removeItem: (key) => {
+      clearTimeout(pendingWrites.get(name)?.timer)
+      pendingWrites.delete(name)
       localStorage.removeItem(key)
     }
   }

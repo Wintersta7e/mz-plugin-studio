@@ -3,7 +3,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isRecord } from '../../src/renderer/src/stores/persist'
 import { createEmptyPlugin } from '../../src/shared/types/plugin'
-import { flushPrune, seed } from './support/load-persisted'
+import { flushStores, flushPrune, resetStoreModules, seed } from './support/load-persisted'
 
 const UI_KEY = 'mz-plugin-studio-ui'
 
@@ -40,6 +40,7 @@ function uiPayload(rawModeByPluginId: Record<string, boolean>): string {
 }
 
 function storedRawMode(): unknown {
+  flushStores()
   const stored: unknown = JSON.parse(localStorage.getItem(UI_KEY) ?? '{}')
   if (!isRecord(stored)) return undefined
   const { state } = stored
@@ -57,9 +58,7 @@ describe('raw-mode switches of closed tabs on load', () => {
     await flushPrune()
   })
 
-  beforeEach(() => {
-    vi.resetModules()
-  })
+  beforeEach(resetStoreModules)
 
   afterEach(() => {
     vi.restoreAllMocks()
@@ -95,6 +94,7 @@ describe('raw-mode switches of closed tabs on load', () => {
     const setItem = vi.spyOn(Storage.prototype, 'setItem')
     const { useUIStore } = await import('../../src/renderer/src/stores/index')
     await flushPrune()
+    flushStores()
     const uiWrites = setItem.mock.calls.filter(([key]) => key === UI_KEY).length
     process.stdout.write(`-ui writes: ${String(uiWrites)}\n`)
 

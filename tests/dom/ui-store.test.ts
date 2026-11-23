@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useUIStore } from '../../src/renderer/src/stores/ui-store'
-import { savedStateOf } from './support/persisted-state'
+import { savedStateOf, storedText } from './support/persisted-state'
 
 function resetUIStore() {
   localStorage.clear()
@@ -49,7 +49,7 @@ describe('uiStore raw mode state', () => {
     ui().clearRawModeForPlugin('plugin-b')
 
     expect(ui().structuralSaveConfirmedByPluginId).toStrictEqual({})
-    expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('structuralSave')
+    expect(storedText('mz-plugin-studio-ui')).not.toContain('structuralSave')
   })
 
   it('holds one diff request until it is cleared, and shows the preview for it', () => {
@@ -62,7 +62,7 @@ describe('uiStore raw mode state', () => {
     useUIStore.getState().clearDiffRequest()
 
     expect(useUIStore.getState().diffRequestPluginId).toBeNull()
-    expect(localStorage.getItem('mz-plugin-studio-ui')).not.toContain('diffRequest')
+    expect(storedText('mz-plugin-studio-ui')).not.toContain('diffRequest')
   })
 
   it('clamps preview width and persists only the intended ui fields', () => {
@@ -79,7 +79,7 @@ describe('uiStore raw mode state', () => {
 
     expect(useUIStore.getState().previewWidth).toBe(1200)
 
-    const state = savedStateOf(localStorage.getItem('mz-plugin-studio-ui'), 'ui store')
+    const state = savedStateOf(storedText('mz-plugin-studio-ui'), 'ui store')
 
     expect(state).toStrictEqual({
       sidebarWidth: 360,

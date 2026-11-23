@@ -7,6 +7,7 @@ import {
   allowUnload,
   expect,
   field,
+  flushSavedState,
   isRecord,
   type LaunchedApp,
   loadFixtureProject,
@@ -36,6 +37,8 @@ const PREVIEW_GUIDES = '[data-testid="code-preview"] .core-guide'
 Writes the light theme into the persisted settings and reloads the window
 */
 async function useLightTheme({ app, page }: LaunchedApp): Promise<void> {
+  // A change the app still holds would be written over the light theme
+  await flushSavedState(page)
   const stored = await page.evaluate((key) => localStorage.getItem(key), SETTINGS_KEY)
   // A fresh profile has stored no settings yet: the app reads absent fields as their defaults
   const parsed: unknown = stored === null ? { state: {}, version: 0 } : JSON.parse(stored)

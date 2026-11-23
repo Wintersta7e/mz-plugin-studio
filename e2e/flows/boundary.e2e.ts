@@ -12,6 +12,7 @@ import {
   assertDialogsDrained,
   expect,
   field,
+  flushSavedState,
   isList,
   isRecord,
   loadFixtureProject,
@@ -45,6 +46,7 @@ const PLUGIN_KEY: PersistedKey = 'mz-plugin-studio-plugin'
 The active plugin as the app saved it for its next start: what the store holds
 */
 async function savedPlugin(page: Page): Promise<unknown> {
+  await flushSavedState(page)
   const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
   if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
   return field(field(JSON.parse(raw), 'state'), 'plugin')

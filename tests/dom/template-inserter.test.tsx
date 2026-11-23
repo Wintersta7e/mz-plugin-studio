@@ -12,6 +12,7 @@ import {
 } from '../../src/renderer/src/lib/generator/templates'
 import { getClassMethods } from '../../src/renderer/src/lib/generator/class-registry'
 import { useUIStore } from '../../src/renderer/src/stores'
+import { storedText } from './support/persisted-state'
 import { resetStores } from './support/reset-stores'
 
 const HOSTILE_NAME = 'x = 0; globalThis.__pwn = 1; this.y'
@@ -352,7 +353,7 @@ describe('template dialog actions: favorites and recent', () => {
     await user.click(screen.getByRole('button', { name: /^Favorites/ }))
 
     expect(listedTemplate('Sound Effect Player')).toBeInTheDocument()
-    expect(localStorage.getItem('mz-plugin-studio-templates')).toContain(SE_ID)
+    expect(storedText('mz-plugin-studio-templates')).toContain(SE_ID)
 
     unmount()
     renderInserter()

@@ -477,6 +477,22 @@ export async function allowUnload(app: ElectronApplication): Promise<void> {
 }
 
 /**
+Has the app write the state it saves for its next start now: the page reports itself hidden for
+one `visibilitychange`, which the app answers by writing every change it still holds
+*/
+export async function flushSavedState(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const { document } = globalThis
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+    try {
+      document.dispatchEvent(new Event('visibilitychange'))
+    } finally {
+      Reflect.deleteProperty(document, 'visibilityState')
+    }
+  })
+}
+
+/**
 Waits until the renderer has handled every reply main sent before now: replies travel in
 order, so the answer to a later round trip arrives after them. The app drops a save shortcut
 pressed while an earlier save is still running.

@@ -15,7 +15,7 @@ import type { PluginDefinition } from '../../src/shared/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
 import { readV160Payloads } from '../helpers/persist-v160'
-import { seed } from './support/load-persisted'
+import { resetStoreModules, seed } from './support/load-persisted'
 import { createMainApi } from './support/main-api'
 import { previewShown } from './support/preview'
 import { envelopeOf, recordOf } from './support/persisted-state'
@@ -72,7 +72,7 @@ async function startApp(
   projectPath = PROJECT
 ): Promise<{ stores: Stores; unmount: () => void }> {
   vi.stubGlobal('api', api)
-  vi.resetModules()
+  await resetStoreModules()
   const { default: App } = await import('../../src/renderer/src/App')
   const stores = await import('../../src/renderer/src/stores')
   const { unmount } = render(createElement(App))

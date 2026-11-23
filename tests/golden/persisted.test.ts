@@ -1,5 +1,7 @@
 // The exact saved form of each store, empty and populated, pinned before schema versioning
 // changes it.
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterAll, beforeEach, describe, it, expect, vi } from 'vitest'
 import { byCodeUnit, normaliseIds } from './corpus/normalise'
 import { POPULATED, persistedStores } from './corpus/persisted'
@@ -31,13 +33,46 @@ const isStoreHook = (value: unknown): value is StoreHook =>
   'setState' in value &&
   typeof value.setState === 'function'
 
+// The writer every store module saves through; it holds a change until the edits pause.
+const WRITER_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../src/renderer/src/stores/persist.ts'
+)
+
+interface Writer {
+  flushPersistedState(): void
+  stopUnloadListeners(): void
+}
+
+const isWriter = (value: unknown): value is Writer =>
+  typeof value === 'object' &&
+  value !== null &&
+  'flushPersistedState' in value &&
+  typeof value.flushPersistedState === 'function' &&
+  'stopUnloadListeners' in value &&
+  typeof value.stopUnloadListeners === 'function'
+
+// The writer the store `freshStore` returned last saves through
+const loaded: { writer?: Writer } = {}
+
+// Writes what the store `freshStore` returned last still holds.
+function flushStored(): void {
+  loaded.writer?.flushPersistedState()
+}
+
 // The store `exportName` of a fresh copy of `modulePath`, which loads what localStorage holds.
 async function freshStore(modulePath: string, exportName: string): Promise<StoreHook> {
+  // the copy about to be replaced writes what it holds and leaves no page listener behind
+  flushStored()
+  loaded.writer?.stopUnloadListeners()
   vi.resetModules()
   const module: unknown = await import(modulePath)
   const store: unknown =
     typeof module === 'object' && module !== null ? Reflect.get(module, exportName) : undefined
   if (!isStoreHook(store)) throw new Error(`${modulePath} exports no store ${exportName}`)
+  const writer: unknown = await import(WRITER_PATH)
+  if (!isWriter(writer)) throw new Error(`${WRITER_PATH} exports no writer`)
+  loaded.writer = writer
   return store
 }
 
@@ -68,6 +103,7 @@ describe('persisted store goldens', () => {
     localStorage.clear()
     const store = await freshStore(modulePath, exportName)
     store.setState(state === 'default' ? {} : (POPULATED[key] ?? {}))
+    flushStored()
     const raw = localStorage.getItem(key)
 
     expect(raw, `${key} wrote nothing`).not.toBeNull()
@@ -147,6 +183,7 @@ describe('persisted plugin seeds', () => {
     localStorage.clear()
     const store = await freshStore(plugin?.modulePath ?? '', plugin?.exportName ?? '')
     store.setState(state)
+    flushStored()
     const saved = pluginStorage()
     const text = JSON.stringify(saved, undefined, 2)
     lines.push(

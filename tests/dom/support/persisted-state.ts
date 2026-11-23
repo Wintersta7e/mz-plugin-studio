@@ -5,7 +5,7 @@ import type { usePluginStore } from '../../../src/renderer/src/stores/plugin-sto
 import type { useSettingsStore } from '../../../src/renderer/src/stores/settings-store'
 import type { useUIStore } from '../../../src/renderer/src/stores/ui-store'
 import type { PersistedKey } from '../../helpers/persist-v160'
-import type { PersistedHook } from './load-persisted'
+import { flushStores, type PersistedHook } from './load-persisted'
 
 export interface TypedStores {
   plugin: typeof usePluginStore
@@ -22,6 +22,15 @@ export function recordsOf(value: unknown, what: string): Record<string, unknown>
   if (!Array.isArray(value)) throw new TypeError(`${what} is no list`)
   const items: unknown[] = value
   return items.map((item, index) => recordOf(item, `${what}[${String(index)}]`))
+}
+
+/**
+What storage holds for `key` once the stores, imported with the test or by `loadStores`, have
+written every change they hold.
+*/
+export function storedText(key: PersistedKey): string | null {
+  flushStores()
+  return localStorage.getItem(key)
 }
 
 // The envelope persist writes: `{ state, version }`

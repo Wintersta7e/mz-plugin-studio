@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { generatePlugin } from '../../src/renderer/src/lib/generator'
 import type { FieldPath } from '../../src/renderer/src/stores/persist'
 import { createFakeApi } from '../helpers/fake-api'
+import { resetStoreModules } from './support/load-persisted'
 import { savedStateOf } from './support/persisted-state'
 
 const KEY = 'mz-plugin-studio-settings'
@@ -65,7 +66,7 @@ function onlyOf<T>(items: T[]): T {
 
 // The plugin store imported afresh over localStorage.
 async function loadPlugins() {
-  vi.resetModules()
+  await resetStoreModules()
   const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
   const persist = await import('../../src/renderer/src/stores/persist')
   return { usePluginStore, persist }
@@ -83,7 +84,7 @@ function failBackupWrites(): void {
 
 // The settings store imported afresh over localStorage, with the modules it reports through.
 async function loadSettings() {
-  vi.resetModules()
+  await resetStoreModules()
   const { useSettingsStore } = await import('../../src/renderer/src/stores/settings-store')
   const persist = await import('../../src/renderer/src/stores/persist')
   const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
@@ -112,12 +113,21 @@ const fullStorage = (): MockInstance<Storage['setItem']> =>
     throw new DOMException('full', 'QuotaExceededError')
   })
 
+// Makes each change and writes it at once, as a write per change: the writer would merge them
+function writeEach(persist: { flushPersistedState(): void }, ...changes: (() => void)[]): void {
+  for (const change of changes) {
+    change()
+    persist.flushPersistedState()
+  }
+}
+
 function setUp(): void {
   localStorage.clear()
 }
 
-function tearDown(): void {
+async function tearDown(): Promise<void> {
   vi.restoreAllMocks()
+  await resetStoreModules()
 }
 
 describe('damaged saved state: unreadable data', () => {
@@ -138,6 +148,7 @@ describe('damaged saved state: unreadable data', () => {
     ])
 
     useSettingsStore.getState().setTheme('light')
+    persist.flushPersistedState()
     const { theme } = savedStateOf(localStorage.getItem(KEY), KEY)
 
     expect([theme, localStorage.getItem(BACKUP)]).toStrictEqual(['light', '{"state":'])
@@ -330,7 +341,7 @@ describe('damaged saved state: open tabs', () => {
     vi.stubGlobal('api', createFakeApi())
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
     try {
-      vi.resetModules()
+      await resetStoreModules()
       const { default: App } = await import('../../src/renderer/src/App')
       const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
       const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
@@ -462,6 +473,54 @@ describe('damaged saved state: unknown keys', () => {
   })
 })
 
+// Fifty failed writes of the settings, one of the open plugins, then a write that goes through
+// and one more that fails
+async function quotaPerStore(): Promise<void> {
+  const { useSettingsStore, useToastStore, log, persist } = await loadSettings()
+  const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
+  const errors = vi.spyOn(log, 'error')
+  errors.mockClear()
+  const full = fullStorage()
+  for (let size = 0; size < 50; size++) {
+    writeEach(persist, () => {
+      useSettingsStore.getState().setEditorFontSize(10 + size)
+    })
+  }
+
+  expect(errors).toHaveBeenCalledTimes(1)
+
+  writeEach(persist, () => {
+    usePluginStore.getState().setDirty(true)
+  })
+
+  expect(errors).toHaveBeenCalledTimes(2)
+  expect(useToastStore.getState().toasts.map((toast) => toast.message)).toStrictEqual([
+    expect.stringContaining('recent changes to settings were not saved'),
+    expect.stringContaining('recent changes to open plugins were not saved')
+  ])
+
+  full.mockRestore()
+  writeEach(persist, () => {
+    useSettingsStore.getState().setTheme('light')
+  })
+
+  // the loop's 50 writes and the retry of the pending settings when the plugin store was written
+  expect(log.warn).toHaveBeenCalledWith(
+    'mz-plugin-studio-settings could not be saved 50 more times while storage was full'
+  )
+
+  fullStorage()
+  writeEach(persist, () => {
+    useSettingsStore.getState().setTheme('dark')
+  })
+
+  // One call order entry per logged error
+  expect([
+    errors.mock.invocationCallOrder.length,
+    useToastStore.getState().toasts.length
+  ]).toStrictEqual([3, 3])
+}
+
 describe('damaged saved state: presets and full storage', () => {
   beforeEach(setUp)
 
@@ -499,51 +558,27 @@ describe('damaged saved state: presets and full storage', () => {
   it('a full storage quota is logged once per store, counted after that, and each store reports it', async () => {
     expect.hasAssertions()
 
-    const { useSettingsStore, useToastStore, log } = await loadSettings()
-    const { usePluginStore } = await import('../../src/renderer/src/stores/plugin-store')
-    const errors = vi.spyOn(log, 'error')
-    errors.mockClear()
-    const full = fullStorage()
-    for (let size = 0; size < 50; size++) useSettingsStore.getState().setEditorFontSize(10 + size)
-
-    expect(errors).toHaveBeenCalledTimes(1)
-
-    usePluginStore.getState().setDirty(true)
-
-    expect(errors).toHaveBeenCalledTimes(2)
-    expect(useToastStore.getState().toasts.map((toast) => toast.message)).toStrictEqual([
-      expect.stringContaining('recent changes to settings were not saved'),
-      expect.stringContaining('recent changes to open plugins were not saved')
-    ])
-
-    full.mockRestore()
-    useSettingsStore.getState().setTheme('light')
-
-    expect(log.warn).toHaveBeenCalledWith(
-      'mz-plugin-studio-settings could not be saved 49 more times while storage was full'
-    )
-
-    fullStorage()
-    useSettingsStore.getState().setTheme('dark')
-
-    // One call order entry per logged error
-    expect([
-      errors.mock.invocationCallOrder.length,
-      useToastStore.getState().toasts.length
-    ]).toStrictEqual([3, 3])
+    await quotaPerStore()
   })
 
   it('a full storage quota is logged and reported once, and set does not throw', async () => {
     expect.hasAssertions()
 
     localStorage.setItem('mz-plugin-studio-ui.backup', '{"state":')
-    const { useSettingsStore, useToastStore, log } = await loadSettings()
+    const { useSettingsStore, useToastStore, log, persist } = await loadSettings()
     const keysBefore = Object.keys(localStorage).length
     fullStorage()
 
     expect(() => {
-      useSettingsStore.getState().setTheme('light')
-      useSettingsStore.getState().setEditorFontSize(16)
+      writeEach(
+        persist,
+        () => {
+          useSettingsStore.getState().setTheme('light')
+        },
+        () => {
+          useSettingsStore.getState().setEditorFontSize(16)
+        }
+      )
     }).not.toThrow()
     expect(log.error).toHaveBeenCalledWith(
       `Storage is full; ${KEY} was not saved:`,

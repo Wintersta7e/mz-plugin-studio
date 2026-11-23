@@ -7,6 +7,7 @@ import { Sidebar } from '../../src/renderer/src/components/layout/Sidebar'
 import { usePluginStore, useSettingsStore } from '../../src/renderer/src/stores'
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
+import { resetStoreModules } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { resetStores } from './support/reset-stores'
 
@@ -86,7 +87,7 @@ describe('default author of a new plugin', { timeout: 30_000 }, () => {
       'mz-plugin-studio-settings',
       JSON.stringify({ state: { defaultAuthor: AUTHOR, schemaVersion: 1 }, version: 0 })
     )
-    vi.resetModules()
+    await resetStoreModules()
     await import('../../src/renderer/src/App')
     const stores = await import('../../src/renderer/src/stores')
 

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { flushPersistedState } from '../../src/renderer/src/stores/persist'
 import {
   EDITOR_FONT_SIZE_RANGE,
   useSettingsStore
@@ -6,8 +7,10 @@ import {
 import type { PluginParameter } from '../../src/renderer/src/types/plugin'
 
 function resetSettingsStore() {
-  localStorage.clear()
   useSettingsStore.setState(useSettingsStore.getInitialState(), true)
+  // the reset is written before storage is emptied, so it cannot land on a later seed
+  flushPersistedState()
+  localStorage.clear()
 }
 
 function makeParam(overrides: Partial<PluginParameter> = {}): PluginParameter {

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Saved app state (open plugins, settings, layout) is written shortly after your edits pause instead of on every change, so typing in large plugins stays fast. A crash of the app can lose up to the last 2 seconds of edits; files on disk are never affected.
+
 ### Fixed
 
 - The validator reports a struct name with a space, any character other than a letter, digit or underscore, or no name at all as an error: the studio writes such a name but cannot read it back when the plugin is opened again, so the struct was lost. A struct name with an underscore is now a warning, because RPG Maker MZ's editor accepts only letters and digits there.

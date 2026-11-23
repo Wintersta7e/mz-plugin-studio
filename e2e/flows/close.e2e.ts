@@ -7,6 +7,7 @@ import {
   dialogCalls,
   expect,
   field,
+  flushSavedState,
   isRecord,
   loadFixtureProject,
   newPlugin,
@@ -28,6 +29,7 @@ interface PersistedTabs {
 The open tabs as the app saved them for its next start
 */
 async function persistedTabs(page: Page): Promise<PersistedTabs> {
+  await flushSavedState(page)
   const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
   if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
   const parsed: unknown = JSON.parse(raw)
