@@ -20,6 +20,7 @@ import {
 import { createEmptyPlugin } from '../../src/renderer/src/types/plugin'
 import { createFakeApi } from '../helpers/fake-api'
 import { PERSISTED_KEYS, type PersistedKey } from '../helpers/persisted-payloads'
+import { resetStoreModules } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const SETTINGS = 'mz-plugin-studio-settings'
@@ -292,5 +293,140 @@ describe('saved state writer: disk', () => {
     vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
 
     expect(toDisk).not.toHaveBeenCalled()
+  })
+})
+
+// A close whose last write of app state fails is held once per session, so main asks first
+
+const quotaError = (): Error => new DOMException('full', 'QuotaExceededError')
+
+/**
+A fresh copy of the writer and the stores on it: what it held back is kept for the session
+*/
+async function freshSession(): Promise<{
+  settings: typeof useSettingsStore
+  toasts: typeof useToastStore
+}> {
+  await resetStoreModules()
+  const { useSettingsStore: settings } =
+    await import('../../src/renderer/src/stores/settings-store')
+  const { useToastStore: toasts } = await import('../../src/renderer/src/stores/toast-store')
+  return { settings, toasts }
+}
+
+// Asks the page to unload, as a close, quit or reload does; true when the page held it back
+function isCloseHeld(): boolean {
+  const event = new Event('beforeunload', { cancelable: true })
+  dispatchEvent(event)
+  return event.defaultPrevented
+}
+
+async function tearDownSession(): Promise<void> {
+  restoreWrites()
+  // writes what the fresh copy holds and removes its page listeners
+  await resetStoreModules()
+  tearDown()
+  vi.unstubAllGlobals()
+}
+
+describe('saved state writer: a close after a failed write', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDownSession)
+
+  it.each([
+    {
+      kind: 'a full quota',
+      error: quotaError,
+      shown: /^Storage is full: recent changes to settings/
+    },
+    {
+      kind: 'another error',
+      error: (): Error => new Error('disk said no'),
+      shown: /^Recent changes to settings could not be saved \(disk said no\)/
+    }
+  ])(
+    'holds the first close after a write failed on $kind, and lets the next go',
+    async ({ error, shown }) => {
+      expect.assertions(2)
+
+      const { settings, toasts } = await freshSession()
+      failSettingsWrites(error())
+      settings.getState().setTheme('light')
+      vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+
+      const isFirstHeld = isCloseHeld()
+      const messages = toasts.getState().toasts.map(({ message }) => message)
+      settings.getState().setTheme('dark')
+      const isSecondHeld = isCloseHeld()
+
+      expect([isFirstHeld, isSecondHeld]).toStrictEqual([true, false])
+      expect(messages).toStrictEqual([expect.stringMatching(shown)])
+    }
+  )
+
+  it('lets a close go when the last write went through', async () => {
+    expect.assertions(1)
+
+    const { settings } = await freshSession()
+    failSettingsWrites(quotaError())
+    settings.getState().setTheme('light')
+    vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+    restoreWrites()
+
+    expect(isCloseHeld()).toBe(false)
+  })
+
+  it('shows the failure again at the held close once its notice was dismissed', async () => {
+    expect.assertions(2)
+
+    const { settings, toasts } = await freshSession()
+    failSettingsWrites(quotaError())
+    settings.getState().setTheme('light')
+    vi.advanceTimersByTime(FLUSH_MAX_DELAY_MS)
+    const before = toasts.getState().toasts.map(({ message }) => message)
+    toasts.getState().dismissAll()
+
+    expect(isCloseHeld()).toBe(true)
+    expect(toasts.getState().toasts.map(({ message }) => message)).toStrictEqual(before)
+  })
+})
+
+describe('saved state writer: a close after a failed write, in the app', () => {
+  beforeEach(setUp)
+
+  afterEach(tearDownSession)
+
+  it('holds the close when the writer starts listening after the unsaved-tab guard', async () => {
+    expect.assertions(3)
+
+    vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
+    await resetStoreModules()
+    const writer = await import('../../src/renderer/src/stores/persist')
+    const { default: App } = await import('../../src/renderer/src/App')
+    const stores = await import('../../src/renderer/src/stores')
+    const registered = vi.spyOn(globalThis, 'addEventListener')
+    const unloadListeners = (): number =>
+      registered.mock.calls.filter(([type]) => type === 'beforeunload').length
+
+    render(createElement(App))
+    // whatever the start wrote, the writer listens again only from its next change on
+    writer.stopUnloadListeners()
+    const atStart = unloadListeners()
+    registered.mockClear()
+    failSettingsWrites(quotaError())
+    act(() => {
+      stores.useSettingsStore.getState().setTheme('light')
+    })
+    const atChange = unloadListeners()
+    registered.mockRestore()
+    const held = { isClose: false }
+    act(() => {
+      held.isClose = isCloseHeld()
+    })
+
+    expect(Object.values(stores.usePluginStore.getState().dirtyByPluginId)).not.toContain(true)
+    expect([atStart, atChange]).toStrictEqual([1, 1])
+    expect(held.isClose).toBe(true)
   })
 })

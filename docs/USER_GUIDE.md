@@ -1043,7 +1043,7 @@ To make the app forget them, close it and delete that file; each folder then has
 
 When saved settings, layout, recent projects, template favorites or open plugins cannot be read at startup, the app loads what it can, keeps a copy of the saved data as a backup and says so in a startup message. **Saved-state backups** lists each copy with the kind of data it holds and its size. **Export** saves a copy to a file you choose; **Delete** removes it after asking (Cancel is the default). Only one copy of each kind is kept, so a later problem with the same kind of data is not backed up until you delete the earlier copy; export it first if you want to keep it. Backups count against the same storage as everything else the app saves, so deleting them also frees space when storage is full.
 
-The app saves open plugins, settings and layout for the next start shortly after you stop editing, not on every change, so a crash of the app can lose up to the last 2 seconds of edits to open plugins. Files on disk are never affected.
+The app saves open plugins, settings and layout for the next start shortly after you stop editing, not on every change, so a crash of the app can lose up to the last 2 seconds of edits to open plugins. Files on disk are never affected. A normal close, quit or reload keeps everything once saving the app's state succeeds; when it fails, the app says so and does not close the first time.
 
 ---
 

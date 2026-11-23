@@ -367,17 +367,24 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+// The notice each store's failed write showed last, so a held close can show it again
+const failureNotices = new Map<PersistedKey, string>()
+
+function showFailure(name: PersistedKey, message: string): void {
+  failureNotices.set(name, message)
+  useToastStore.getState().addToast({ type: 'error', message, duration: 0 })
+}
+
 function reportFailedWrite(name: PersistedKey, error: unknown): void {
   const area = (wordsOf.get(name)?.area ?? name).toLowerCase()
   if (!isQuotaError(error)) {
     log.error(`${name} could not be saved:`, error)
     if (shownFailures.has(name)) return
     shownFailures.add(name)
-    useToastStore.getState().addToast({
-      type: 'error',
-      message: `Recent changes to ${area} could not be saved (${errorText(error)}); saving is tried again at the next change. Nothing was deleted.`,
-      duration: 0
-    })
+    showFailure(
+      name,
+      `Recent changes to ${area} could not be saved (${errorText(error)}); saving is tried again at the next change. Nothing was deleted.`
+    )
     return
   }
   const failures = (quotaFailures.get(name) ?? 0) + 1
@@ -388,11 +395,10 @@ function reportFailedWrite(name: PersistedKey, error: unknown): void {
   const backups = backupKeys()
   const present =
     backups.length > 0 ? `${backups.join(', ')}; export or delete them in ${BACKUPS_PLACE}` : 'none'
-  useToastStore.getState().addToast({
-    type: 'error',
-    message: `Storage is full: recent changes to ${area} were not saved. Backup entries present: ${present}. Nothing was deleted.`,
-    duration: 0
-  })
+  showFailure(
+    name,
+    `Storage is full: recent changes to ${area} were not saved. Backup entries present: ${present}. Nothing was deleted.`
+  )
 }
 
 function didWriteStep(name: PersistedKey, step: WriteStep): boolean {
@@ -458,6 +464,25 @@ function flushWhenHidden(): void {
   if (document.visibilityState === 'hidden') flushPersistedState()
 }
 
+// Whether a close was already held back this session
+const closeHold: { isUsed: boolean } = { isUsed: false }
+
+// The last write runs as the page unloads. The first time it leaves a change unwritten, the unload
+// is held back, so main asks before the window goes and the failure is on screen; the next close
+// is the user's decision.
+function flushBeforeUnload(event: Event): void {
+  flushPersistedState()
+  // a store whose write failed stays pending
+  if (pendingWrites.size === 0 || closeHold.isUsed) return
+  closeHold.isUsed = true
+  event.preventDefault()
+  const onScreen = new Set(useToastStore.getState().toasts.map(({ message }) => message))
+  for (const name of pendingWrites.keys()) {
+    const message = failureNotices.get(name)
+    if (message !== undefined && !onScreen.has(message)) showFailure(name, message)
+  }
+}
+
 const unload: { isListening: boolean } = { isListening: false }
 
 // Registered at the first change rather than on import, so a module that only reads the stores
@@ -465,7 +490,7 @@ const unload: { isListening: boolean } = { isListening: false }
 function listenForUnload(): void {
   if (unload.isListening) return
   unload.isListening = true
-  addEventListener('beforeunload', flushPersistedState)
+  addEventListener('beforeunload', flushBeforeUnload)
   addEventListener('pagehide', flushPersistedState)
   document.addEventListener('visibilitychange', flushWhenHidden)
 }
@@ -476,7 +501,7 @@ Removes the page listeners; the next change adds them again.
 */
 export function stopUnloadListeners(): void {
   unload.isListening = false
-  removeEventListener('beforeunload', flushPersistedState)
+  removeEventListener('beforeunload', flushBeforeUnload)
   removeEventListener('pagehide', flushPersistedState)
   document.removeEventListener('visibilitychange', flushWhenHidden)
 }

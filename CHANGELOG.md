@@ -26,6 +26,7 @@
 - A plugin name with a space, a hyphen or a leading digit, such as `My Plugin`, `my-plugin` or `2nd`, is no longer refused as an invalid identifier. The generated code passes the name to RPG Maker MZ as a quoted string, so the validator now checks it by the rule a save checks the file name by: a name that cannot be a file name on Linux or Windows, such as one holding `/` or `:` or the device name `CON`, is refused, and the error says why.
 - The generated plugin carries its version as a `@version` line after `@author`, and opening a plugin reads its `@version`. Before, the version was never written, and a plugin opened again showed `1.0.0` whatever its file said. Raw mode writes the line into the plugin block it rewrites only when the file had one or you changed the version, so an opened file without the line gains none from another edit.
 - Saved app state (open plugins, settings, layout) reaches the disk as soon as the app stores it. Before, it reached the disk about 5 seconds later, so killing the app, or a crash of the whole app, in that time lost edits the app had already saved.
+- Closing the app while its state could not be saved, for example because storage is full, no longer closes without a word. The first close, quit or reload is held, the error is shown again if you had dismissed it, and the app asks before it closes; a second close goes ahead. Before, the app showed the error as it closed, and the changes it could not save were lost.
 
 ## [1.9.0] - 2026-11-19
 
