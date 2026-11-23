@@ -3,8 +3,6 @@
 // that tag, each around v1.6.0's initial values of the persisted fields; the pruning callbacks
 // are reshaped to this repository's lint rules, with the same reads and writes. The stores stand
 // in for v1.6.0 reading and writing back what a newer build saved (downgrade checks).
-import { readdirSync, readFileSync } from 'node:fs'
-import path from 'node:path'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
@@ -12,35 +10,15 @@ import {
   type PluginDefinition,
   type PluginParameter
 } from '../../src/shared/types/plugin'
+import { readPayloads, type PersistedKey } from './persisted-payloads'
 
-export type PersistedKey =
-  | 'mz-plugin-studio-project'
-  | 'mz-plugin-studio-templates'
-  | 'mz-plugin-studio-ui'
-  | 'mz-plugin-studio-settings'
-  | 'mz-plugin-studio-plugin'
-
-export const PERSISTED_KEYS: readonly PersistedKey[] = [
-  'mz-plugin-studio-project',
-  'mz-plugin-studio-templates',
-  'mz-plugin-studio-ui',
-  'mz-plugin-studio-settings',
-  'mz-plugin-studio-plugin'
-]
-
-const PAYLOAD_DIR = path.join(process.cwd(), 'tests/fixtures/persisted/v1.6.0')
+export { PERSISTED_KEYS, type PersistedKey } from './persisted-payloads'
 
 /**
 The captured v1.6.0 values found on disk, by key (exact strings).
 */
 export function readV160Payloads(): Partial<Record<PersistedKey, string>> {
-  const payloads: Partial<Record<PersistedKey, string>> = {}
-  for (const file of readdirSync(PAYLOAD_DIR)) {
-    const name = file.replace(/\.json$/, '')
-    const key = PERSISTED_KEYS.find((known) => known === name)
-    if (key !== undefined) payloads[key] = readFileSync(path.join(PAYLOAD_DIR, file), 'utf8')
-  }
-  return payloads
+  return readPayloads('v1.6.0')
 }
 
 /**
