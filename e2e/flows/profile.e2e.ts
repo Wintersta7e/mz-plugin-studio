@@ -14,6 +14,7 @@ import {
   expect,
   field,
   fixtureProjectFor,
+  flushSavedState,
   isList,
   mtimeNs,
   only,
@@ -88,6 +89,8 @@ async function restoreCapturedProfile({ app, page, pageErrors }: LaunchedApp): P
   })
   expect(entries.filter(([, value]) => value.includes(escaped)).length).toBeGreaterThan(0)
 
+  // A change the app still holds would be written over the seed
+  await flushSavedState(page)
   await page.evaluate((pairs) => {
     for (const [key, value] of pairs) localStorage.setItem(key, value)
   }, entries)

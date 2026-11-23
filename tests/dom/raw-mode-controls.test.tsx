@@ -32,6 +32,7 @@ import {
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { afterAllTests } from '../helpers/after-all-tests'
 import { createFakeApi } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const FILE = 'Fixture_HandWritten.js'
@@ -225,7 +226,7 @@ function openOriginal(): void {
 }
 
 function tearDown(): void {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 // A read-only button says why: the notice describes it, and the element around it that is

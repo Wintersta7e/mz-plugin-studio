@@ -97,6 +97,9 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
     log: {
       openFolder: vi.fn<Api['log']['openFolder']>().mockResolvedValue(),
       setLevel: vi.fn<Api['log']['setLevel']>()
+    },
+    storage: {
+      flush: vi.fn<Api['storage']['flush']>()
     }
   }
   return {
@@ -104,6 +107,7 @@ export function createFakeApi(overrides: FakeApiOverrides = {}): Window['api'] {
     plugin: { ...api.plugin, ...overrides.plugin },
     dialog: { ...api.dialog, ...overrides.dialog },
     window: { ...api.window, ...overrides.window },
-    log: { ...api.log, ...overrides.log }
+    log: { ...api.log, ...overrides.log },
+    storage: { ...api.storage, ...overrides.storage }
   }
 }

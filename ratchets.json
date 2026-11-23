@@ -14,7 +14,7 @@
         "branches": 93
       },
       "src/preload": {
-        "lines": 45,
+        "lines": 47,
         "branches": 0
       },
       "src/shared": {
@@ -22,8 +22,8 @@
         "branches": 100
       },
       "src/renderer/src/stores": {
-        "lines": 96,
-        "branches": 89
+        "lines": 97,
+        "branches": 90
       },
       "src/renderer/src/lib": {
         "lines": 96,
@@ -42,7 +42,7 @@
         "branches": 83
       },
       "global": {
-        "lines": 96,
+        "lines": 97,
         "branches": 92
       }
     },

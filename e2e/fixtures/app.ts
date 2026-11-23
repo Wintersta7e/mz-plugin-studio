@@ -477,6 +477,52 @@ export async function allowUnload(app: ElectronApplication): Promise<void> {
 }
 
 /**
+Has the app write the state it saves for its next start now: the page reports itself hidden for
+one `visibilitychange`, which the app answers by writing every change it still holds
+*/
+export async function flushSavedState(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const { document } = globalThis
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+    try {
+      document.dispatchEvent(new Event('visibilitychange'))
+    } finally {
+      Reflect.deleteProperty(document, 'visibilityState')
+    }
+  })
+}
+
+/**
+The open tabs the plugin store saved under `key`: the state of that key, which lists the tabs, and
+each listed tab as the key it is saved under holds it
+*/
+export async function savedTabs(
+  page: Page,
+  key: string
+): Promise<{ state: unknown; tabs: Map<string, unknown> }> {
+  const saved = await page.evaluate((own) => {
+    const tabKeys = Object.keys(localStorage).filter((stored) => stored.startsWith(`${own}.tab.`))
+    return {
+      index: localStorage.getItem(own),
+      tabs: Object.fromEntries(tabKeys.map((stored) => [stored, localStorage.getItem(stored)]))
+    }
+  }, key)
+  if (saved.index === null) throw new Error(`nothing saved under ${key}`)
+  const state = field(JSON.parse(saved.index), 'state')
+  const tabIds = field(state, 'tabIds')
+  if (!isList(tabIds)) throw new TypeError(`no tab list saved under ${key}`)
+  const tabs = new Map<string, unknown>()
+  for (const id of tabIds) {
+    const raw = typeof id === 'string' ? saved.tabs[`${key}.tab.${id}`] : undefined
+    if (typeof id !== 'string' || typeof raw !== 'string') {
+      throw new TypeError(`no saved tab for ${String(id)} under ${key}`)
+    }
+    tabs.set(id, field(JSON.parse(raw), 'tab'))
+  }
+  return { state, tabs }
+}
+
+/**
 Waits until the renderer has handled every reply main sent before now: replies travel in
 order, so the answer to a later round trip arrives after them. The app drops a save shortcut
 pressed while an earlier save is still running.

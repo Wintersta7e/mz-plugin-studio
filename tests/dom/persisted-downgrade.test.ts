@@ -1,9 +1,11 @@
 // Opening saved state in v1.6.0 again: its own persist options read each captured value and
-// write it back unchanged, and what it writes back over this version's state loads again here.
+// write it back unchanged, and over this version's split state it shows no tab and leaves the
+// tab keys as they were.
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PluginParser } from '../../src/main/services/plugin-parser'
-import { isImported } from '../../src/renderer/src/lib/plugin-output'
+import { CONTENT_KEY_PREFIX, TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
+import { byCodeUnit } from '../golden/corpus/normalise'
 import { fixturePath } from '../helpers/fixture-project'
 import {
   PERSISTED_KEYS,
@@ -12,12 +14,17 @@ import {
   type PersistedKey
 } from '../helpers/persist-v160'
 import { flushPrune, loadStores, seed, writeAll } from './support/load-persisted'
-import { recordsOf, savedStateOf, typedStores } from './support/persisted-state'
+import { recordOf, recordsOf, savedStateOf, typedStores } from './support/persisted-state'
 
 const payloads = readV160Payloads()
 const PLUGIN_KEY = 'mz-plugin-studio-plugin'
+const UI_KEY = 'mz-plugin-studio-ui'
+const IMPORTED_UNSHOWN = '00000000-0000-4000-8000-000000000029'
 // The fields this version adds to the plugin store's saved state
 const NEW_FIELDS = ['"rawSource"', '"baselineByPluginId"', '"baseByPluginId"']
+// The same fields as a tab's own keys hold them: its tab key and the content key holding its file
+// text
+const NEW_TAB_FIELDS = ['"rawSource"', '"baseline"', '"base"']
 
 // What localStorage holds under `key`; a missing entry fails by name
 const stored = (key: string): string => {
@@ -25,6 +32,18 @@ const stored = (key: string): string => {
   if (value === null) throw new Error(`nothing stored under ${key}`)
   return value
 }
+
+// Whether `key` is one a single tab is stored under
+const isTabsOwnKey = (key: string): boolean =>
+  key.startsWith(TAB_KEY_PREFIX) || key.startsWith(CONTENT_KEY_PREFIX)
+
+// Every tab and content key storage holds, with its text
+const storedTabKeys = (): Record<string, string> =>
+  Object.fromEntries(
+    Object.keys(localStorage)
+      .filter((key) => isTabsOwnKey(key))
+      .map((key) => [key, stored(key)])
+  )
 
 // The new fields that saved text holds
 const newFieldsIn = (raw: string | undefined): string[] => {
@@ -82,69 +101,76 @@ describe('downgrade to v1.6.0', () => {
     expect(keys).toHaveLength(5)
   })
 
-  it('what v1.6.0 writes back over this version loads again without losing a tab', async () => {
+  it('v1.6.0 reading the split state shows no tab and changes no tab key', async () => {
     expect.hasAssertions()
 
     seed(payloads)
     const current = await loadStores()
     await flushPrune()
     const { plugin } = await typedStores(current)
-    // A tab imported in this version, so the saved state holds its file text, baseline and file.
+    // A tab imported in this version, so its tab key holds its file text, baseline and file.
     const file = 'Fixture_HandWritten.js'
     const text = readFileSync(fixturePath('js', 'plugins', file), 'utf8')
     const opened = { ...PluginParser.parsePlugin(text, file), importedFrom: file }
     plugin.getState().openPlugin(opened, { path: fixturePath('js', 'plugins', file), sha256: 'ab' })
-    const savedPaths = plugin.getState().savedPathsByPluginId
 
-    expect(Object.keys(savedPaths)).toHaveLength(2)
+    expect(Object.keys(plugin.getState().savedPathsByPluginId)).toHaveLength(2)
 
     const before = Object.fromEntries(
       PERSISTED_KEYS.map((key) => [key, JSON.stringify(current[key].getState())])
     )
-    const beforeTabs = plugin.getState().openPlugins
     const written = writeAll(current)
+    const tabKeys = Object.fromEntries(Object.entries(written).filter(([key]) => isTabsOwnKey(key)))
+    // only the opened tab's own keys name its id
+    const openedKeys = Object.entries(tabKeys).flatMap(([key, raw]) =>
+      key.includes(opened.id) ? raw : []
+    )
 
-    expect(newFieldsIn(written[PLUGIN_KEY])).toStrictEqual(NEW_FIELDS)
+    expect([
+      Object.keys(tabKeys)
+        .filter((key) => key.startsWith(TAB_KEY_PREFIX))
+        .toSorted(byCodeUnit),
+      NEW_TAB_FIELDS.filter((field) => openedKeys.some((raw) => raw?.includes(field) === true))
+    ]).toStrictEqual([
+      [...V160_TAB_IDS, opened.id].map((id) => TAB_KEY_PREFIX + String(id)).toSorted(byCodeUnit),
+      NEW_TAB_FIELDS
+    ])
 
     const downgraded = await downgrade(written)
+    const { openPlugins: shown } = savedStateOf(downgraded[PLUGIN_KEY], 'v1.6.0 plugin')
 
-    // v1.6.0 drops the schema number, so the next load runs every step again.
+    // v1.6.0 drops the schema number and knows no tab key: it shows no tab and leaves each key
     expect({
       withSchemaNumber: PERSISTED_KEYS.filter((key) => stored(key).includes('schemaVersion')),
-      newFields: newFieldsIn(downgraded[PLUGIN_KEY])
-    }).toStrictEqual({ withSchemaNumber: [], newFields: [] })
+      newFields: newFieldsIn(downgraded[PLUGIN_KEY]),
+      shown,
+      tabKeys: storedTabKeys()
+    }).toStrictEqual({ withSchemaNumber: [], newFields: [], shown: [], tabKeys })
 
-    seed(downgraded)
+    seed({ ...tabKeys, ...downgraded })
     const again = await loadStores()
     await flushPrune()
     const otherKeys = PERSISTED_KEYS.filter((key) => key !== PLUGIN_KEY)
+    // With no tab open, the layout drops every tab's raw-mode switch and keeps the rest
+    const layout = recordOf(JSON.parse(before[UI_KEY] ?? ''), 'layout')
+    const expected: Record<string, string> = {
+      ...before,
+      [UI_KEY]: JSON.stringify({ ...layout, rawModeByPluginId: {} })
+    }
 
-    expect(
+    expect([
+      layout['rawModeByPluginId'],
       Object.fromEntries(otherKeys.map((key) => [key, JSON.stringify(again[key].getState())]))
-    ).toStrictEqual(Object.fromEntries(otherKeys.map((key) => [key, before[key]])))
+    ]).toStrictEqual([
+      { [IMPORTED_UNSHOWN]: true },
+      Object.fromEntries(otherKeys.map((key) => [key, expected[key]]))
+    ])
 
+    // Back in this version, the tab list v1.6.0 saved lists no tab; the tab keys stay as they were
     const { plugin: loadedAgain } = await typedStores(again)
-    const pluginState = loadedAgain.getState()
-    const tabs = pluginState.openPlugins
+    writeAll(again)
 
-    expect({
-      ids: tabs.map((p) => p.id),
-      importedFrom: tabs.map((p) => p.importedFrom),
-      rawSourceKept: tabs.filter(isImported).map((p) => 'rawSource' in p),
-      baselines: pluginState.baselineByPluginId,
-      // The file each tab last saved comes back from its saved path, contents unknown
-      bases: pluginState.baseByPluginId,
-      savedTabIds: tabs.slice(0, -1).map((p) => p.id)
-    }).toStrictEqual({
-      ids: beforeTabs.map((p) => p.id),
-      importedFrom: beforeTabs.map((p) => p.importedFrom),
-      rawSourceKept: [false, false, false],
-      baselines: {},
-      bases: Object.fromEntries(
-        Object.entries(savedPaths).map(([id, path]) => [id, { path, sha256: null }])
-      ),
-      savedTabIds: V160_TAB_IDS
-    })
+    expect([loadedAgain.getState().openPlugins, storedTabKeys()]).toStrictEqual([[], tabKeys])
 
     printCount(PERSISTED_KEYS.length)
   })

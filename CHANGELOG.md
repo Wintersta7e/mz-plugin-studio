@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Saved app state (open plugins, settings, layout) is written shortly after your edits pause instead of on every change, so typing in large plugins stays fast. A crash of the app can lose up to the last 2 seconds of edits; files on disk are never affected.
+- Each open plugin tab keeps its own undo history, and switching tabs no longer clears it: undo and redo step through the edits of the tab you are working in, and edits in one tab never enter another tab's history. When the tabs together hold a long history, the oldest steps of the tab edited least recently are dropped first. Reloading a tab from its file on disk is its own undo step, so one undo brings back the tab as it was before the reload.
+
 ### Fixed
 
 - The validator reports a struct name with a space, any character other than a letter, digit or underscore, or no name at all as an error: the studio writes such a name but cannot read it back when the plugin is opened again, so the struct was lost. A struct name with an underscore is now a warning, because RPG Maker MZ's editor accepts only letters and digits there.
@@ -9,7 +14,7 @@
 - A parameter, plugin or command name written in letters other than A–Z, such as `速度`, keeps those letters in the generated code and is no longer flagged as an invalid identifier. Before, each such parameter became a constant named `unnamed`, so two of them declared the same constant twice and the plugin failed to load in RPG Maker MZ.
 - A plugin command that your own code already registers is no longer registered a second time when a string or regex before it holds `//` or `/*`, such as `'a//b'`. Before, the generator read the rest of that line, or up to the next `*/`, as a comment, missed the registration and added an empty one of its own, and the validator warned that the command had no implementation.
 - Saving an opened plugin with raw mode off now names, in its confirmation, each translated block the save removes from the file, such as a `/*:ja` block holding parameters or commands, or a struct block in another language. Before, the confirmation said only that code outside the Code tab would go, and the translated parameter and command text was lost without a word. When the file text is not loaded, the confirmation says the translated blocks could not be checked.
-- Closing a tab no longer wipes the undo history of the tab you are working in. Before, closing any tab, even one in the background, emptied undo and redo. Closing the tab you are working in still empties them, so an undo in the tab shown next cannot bring back the closed tab's state.
+- Closing a tab no longer wipes the undo history of the tab you are working in. Before, closing any tab, even one in the background, emptied undo and redo. Closing a tab forgets that tab's history only, so an undo in the tab shown next cannot bring back the closed tab's state.
 - The plugin browser matches each project file to the tab that was read from or saved to that file. Before, it matched by plugin name: a new plugin named like a project file took that file's row, so clicking the row switched to the new plugin instead of opening the file; a renamed tab lost its file's row; and a tab opened from another project's file of the same name showed as this project's file.
 - Save All (Ctrl+Shift+S) with no project open saves each unsaved tab as Ctrl+S would: to the file you picked for it earlier in the session, or through the save dialog, with every question Ctrl+S asks. Cancel skips that tab and Save All goes on, and one report names the tabs saved, the tabs skipped and why, and the tabs with no plugin name. Before, Save All did nothing and said nothing without a project.
 - A folder picked with Open Project that is not an RPG Maker MZ project is no longer trusted as a project folder. Before, any picked folder, even an empty one or a project's `js/plugins` folder, was kept as trusted, so if that folder later held a project, the app opened it without asking, as it asks for a folder it has no record of. Opening such a folder still shows the same error as before.
@@ -21,6 +26,9 @@
 - A saved editor font size outside the sizes Settings offers loads as the nearest size it offers. Before, a hand-edited or damaged saved size, such as 2 or 200, was used as it was, though Settings could not set it.
 - A plugin name with a space, a hyphen or a leading digit, such as `My Plugin`, `my-plugin` or `2nd`, is no longer refused as an invalid identifier. The generated code passes the name to RPG Maker MZ as a quoted string, so the validator now checks it by the rule a save checks the file name by: a name that cannot be a file name on Linux or Windows, such as one holding `/` or `:` or the device name `CON`, is refused, and the error says why.
 - The generated plugin carries its version as a `@version` line after `@author`, and opening a plugin reads its `@version`. Before, the version was never written, and a plugin opened again showed `1.0.0` whatever its file said. Raw mode writes the line into the plugin block it rewrites only when the file had one or you changed the version, so an opened file without the line gains none from another edit.
+- Saved app state (open plugins, settings, layout) reaches the disk as soon as the app stores it. Before, it reached the disk about 5 seconds later, so killing the app, or a crash of the whole app, in that time lost edits the app had already saved.
+- Closing the app while its state could not be saved, for example because storage is full, no longer closes without a word. The first close, quit or reload is held, the error is shown again if you had dismissed it, and the app asks before it closes; a second close goes ahead. Before, the app showed the error as it closed, and the changes it could not save were lost.
+- A tab no longer shows unsaved changes after an edit that changed nothing, such as an edit of a parameter, command or struct the tab no longer holds. Before, such an edit marked the tab unsaved and stored the app state again, though the plugin was unchanged.
 
 ## [1.9.0] - 2026-11-19
 

@@ -273,7 +273,6 @@
         "tests/dom/history-store.test.ts",
         "tests/dom/parameter-builder.test.tsx",
         "tests/dom/persisted-damage.test.ts",
-        "tests/dom/persisted-downgrade.test.ts",
         "tests/dom/persisted-load.test.ts",
         "tests/dom/persisted-restore.test.ts",
         "tests/dom/project-store.test.ts",

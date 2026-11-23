@@ -5,7 +5,7 @@ import type { usePluginStore } from '../../../src/renderer/src/stores/plugin-sto
 import type { useSettingsStore } from '../../../src/renderer/src/stores/settings-store'
 import type { useUIStore } from '../../../src/renderer/src/stores/ui-store'
 import type { PersistedKey } from '../../helpers/persist-v160'
-import type { PersistedHook } from './load-persisted'
+import { flushStores, type PersistedHook } from './load-persisted'
 
 export interface TypedStores {
   plugin: typeof usePluginStore
@@ -24,6 +24,15 @@ export function recordsOf(value: unknown, what: string): Record<string, unknown>
   return items.map((item, index) => recordOf(item, `${what}[${String(index)}]`))
 }
 
+/**
+What storage holds for `key` once the stores, imported with the test or by `loadStores`, have
+written every change they hold.
+*/
+export function storedText(key: PersistedKey): string | null {
+  flushStores()
+  return localStorage.getItem(key)
+}
+
 // The envelope persist writes: `{ state, version }`
 export function envelopeOf(raw: string | null | undefined, what: string): Record<string, unknown> {
   if (raw === null || raw === undefined) throw new TypeError(`${what} holds nothing`)
@@ -37,6 +46,60 @@ export function savedStateOf(
 ): Record<string, unknown> {
   const { state } = envelopeOf(raw, what)
   return recordOf(state, `${what} state`)
+}
+
+const PLUGIN_INDEX: PersistedKey = 'mz-plugin-studio-plugin'
+
+/**
+The plugin store's saved state as one record, put together here from what storage holds once the
+stores have written every change: the index's tab order and active tab, and from the key of each
+tab it lists that tab's definition, unsaved mark, saved path and file, with the file text and
+last-saved copy from the content key the tab names, in maps keyed by tab id as the store holds
+them.
+*/
+export function storedPluginState(): Record<string, unknown> {
+  const index = savedStateOf(storedText(PLUGIN_INDEX), 'the plugin index')
+  const { tabIds } = index
+  if (!Array.isArray(tabIds)) throw new TypeError('the plugin index lists no tabs')
+  const listed: unknown[] = tabIds
+  const tabs = listed.map((id) => {
+    if (typeof id !== 'string') throw new TypeError('the plugin index lists a tab by no id')
+    const saved = localStorage.getItem(`${PLUGIN_INDEX}.tab.${id}`)
+    if (saved === null) throw new TypeError(`tab ${id} has no saved key`)
+    const tab = recordOf(recordOf(JSON.parse(saved), `tab key ${id}`)['tab'], `tab ${id}`)
+    const { content: number } = tab
+    if (number === undefined) return { id, tab }
+    if (typeof number !== 'number') throw new TypeError(`tab ${id} names no file-text key`)
+    const contentKey = `${PLUGIN_INDEX}.src.${id}.${String(number)}`
+    const contentText = localStorage.getItem(contentKey)
+    if (contentText === null) throw new TypeError(`tab ${id} has no saved file text`)
+    const content = recordOf(JSON.parse(contentText), `content key ${id}`)
+    const definition = recordOf(tab['definition'], `tab ${id} definition`)
+    const { rawSource, baseline } = content
+    return {
+      id,
+      tab: {
+        ...tab,
+        definition: rawSource === undefined ? definition : { ...definition, rawSource },
+        baseline
+      }
+    }
+  })
+  const byTab = (field: string): Record<string, unknown> =>
+    Object.fromEntries(
+      tabs.flatMap(({ id, tab }) => (tab[field] === undefined ? [] : [[id, tab[field]]]))
+    )
+  return {
+    schemaVersion: index['schemaVersion'],
+    openPlugins: tabs.map(({ tab }) => tab['definition']),
+    activePluginId: index['activePluginId'],
+    dirtyByPluginId: Object.fromEntries(
+      tabs.filter(({ tab }) => tab['dirty'] === true).map(({ id }) => [id, true])
+    ),
+    savedPathsByPluginId: byTab('savedPath'),
+    baselineByPluginId: byTab('baseline'),
+    baseByPluginId: byTab('base')
+  }
 }
 
 /**

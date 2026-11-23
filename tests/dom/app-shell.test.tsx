@@ -14,6 +14,7 @@ import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src
 import { IPC_CHANNELS, PROJECT_OPEN_CANCELLED, accessDenied } from '../../src/shared/ipc-types'
 import { createFakeApi, sampleProject, type FakeApiOverrides } from '../helpers/fake-api'
 import { fixturePath } from '../helpers/fixture-project'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -38,7 +39,7 @@ const tearDown = (): void => {
   act(() => {
     useToastStore.getState().dismissAll()
   })
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 const validatesAs = (

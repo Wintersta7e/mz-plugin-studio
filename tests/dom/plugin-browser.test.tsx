@@ -8,9 +8,11 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PluginBrowser } from '../../src/renderer/src/components/plugin/PluginBrowser'
 import { usePluginStore, useProjectStore, useToastStore } from '../../src/renderer/src/stores'
+import { flushPersistedState } from '../../src/renderer/src/stores/persist'
 import type { MZProject } from '../../src/renderer/src/types/mz'
 import { createEmptyPlugin, type PluginDefinition } from '../../src/renderer/src/types/plugin'
 import { copyFixtureProject } from '../helpers/fixture-project'
+import { unstubGlobals } from './support/load-persisted'
 import { createMainApi } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
@@ -45,7 +47,7 @@ async function tearDown(): Promise<void> {
   act(() => {
     useToastStore.getState().dismissAll()
   })
-  vi.unstubAllGlobals()
+  unstubGlobals()
   await rm(path.dirname(fixture.project), { recursive: true, force: true })
 }
 
@@ -89,15 +91,24 @@ describe('plugin browser: opening a plugin', () => {
 
     renderBrowser()
     const fileRow = await screen.findByTitle(FILE)
+    flushPersistedState()
     const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    // the writer merges changes into one write, so each change of the store is counted as well
+    let changes = 0
+    const unsubscribe = usePluginStore.subscribe(() => {
+      changes += 1
+    })
     fireEvent.click(fileRow)
     await waitFor(() => {
       expect(usePluginStore.getState().plugin.importedFrom).toBe(FILE)
     })
+    unsubscribe()
+    flushPersistedState()
     const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
     setItem.mockRestore()
 
     expect(writes).toHaveLength(1)
+    expect(changes).toBe(1)
 
     const pluginPath = path.join(fixture.project, 'js', 'plugins', FILE)
     const sha256 = createHash('sha256')

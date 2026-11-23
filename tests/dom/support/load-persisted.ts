@@ -1,6 +1,8 @@
 // Imports every persisted store afresh, so each hydrates from what localStorage holds now.
 import { vi } from 'vitest'
-import { isRecord } from '../../../src/renderer/src/stores/persist'
+import { flushPersistedState, isRecord } from '../../../src/renderer/src/stores/persist'
+import type * as Persist from '../../../src/renderer/src/stores/persist'
+import { CONTENT_KEY_PREFIX, TAB_KEY_PREFIX } from '../../../src/renderer/src/stores/plugin-storage'
 import { PERSISTED_KEYS, type PersistedKey } from '../../helpers/persist-v160'
 
 export interface PersistedHook {
@@ -28,7 +30,42 @@ function persistedHook(value: unknown): PersistedHook {
   throw new TypeError('persisted store hook has no persist API')
 }
 
+// The writer the stores imported after the last `resetStoreModules` write through
+const loaded: { writer?: typeof Persist } = {}
+
+/**
+Writes every change still pending in the stores the test imported and in the ones imported after
+the last `resetStoreModules`.
+*/
+export function flushStores(): void {
+  flushPersistedState()
+  loaded.writer?.flushPersistedState()
+}
+
+/**
+Restores every stubbed global once the stores have written what they hold: a write asks main,
+through the stubbed `api`, to put it on disk, so a write left for later would find no `api`.
+*/
+export function unstubGlobals(): void {
+  flushStores()
+  vi.unstubAllGlobals()
+}
+
+/**
+`vi.resetModules()`, once the store modules imported so far have written what they hold and
+removed their page listeners, so no replaced copy writes into a later test's storage.
+*/
+export async function resetStoreModules(): Promise<void> {
+  flushStores()
+  loaded.writer?.stopUnloadListeners()
+  vi.resetModules()
+  // the store modules imported next share this copy
+  loaded.writer = await import('../../../src/renderer/src/stores/persist')
+}
+
 export function seed(values: Partial<Record<PersistedKey, string>>): void {
+  // a pending write would land on top of the seed
+  flushStores()
   localStorage.clear()
   for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
 }
@@ -37,7 +74,7 @@ export function seed(values: Partial<Record<PersistedKey, string>>): void {
 Imports every persisted store afresh; each hydrates from localStorage on import.
 */
 export async function loadStores(): Promise<Record<PersistedKey, PersistedHook>> {
-  vi.resetModules()
+  await resetStoreModules()
   const plugin = await import('../../../src/renderer/src/stores/plugin-store')
   const ui = await import('../../../src/renderer/src/stores/ui-store')
   const settings = await import('../../../src/renderer/src/stores/settings-store')
@@ -59,11 +96,12 @@ export const flushPrune = async (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
-Has every store write its state and returns what each wrote.
+Has every store write its state and returns what each wrote: its key's text, and the text of each
+tab key the plugin store keeps beside its own.
 */
 export function writeAll(
   stores: Record<PersistedKey, PersistedHook>
-): Record<PersistedKey, string> {
+): Record<PersistedKey, string> & Partial<Record<string, string>> {
   const written: Record<PersistedKey, string> = {
     'mz-plugin-studio-plugin': '',
     'mz-plugin-studio-ui': '',
@@ -73,9 +111,17 @@ export function writeAll(
   }
   for (const key of PERSISTED_KEYS) {
     stores[key].setState({})
+    flushStores()
     const value = localStorage.getItem(key)
     if (value === null) throw new Error(`store ${key} did not persist`)
     written[key] = value
   }
-  return written
+  // each tab's own keys: its tab key and the content key holding its file text
+  const tabKeys = Object.keys(localStorage).filter(
+    (key) => key.startsWith(TAB_KEY_PREFIX) || key.startsWith(CONTENT_KEY_PREFIX)
+  )
+  return {
+    ...written,
+    ...Object.fromEntries(tabKeys.map((key) => [key, localStorage.getItem(key) ?? '']))
+  }
 }

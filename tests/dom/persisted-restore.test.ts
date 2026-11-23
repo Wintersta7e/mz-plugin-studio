@@ -4,6 +4,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Toast } from '../../src/renderer/src/stores/toast-store'
 import { createFakeApi } from '../helpers/fake-api'
+import { resetStoreModules, seed, unstubGlobals } from './support/load-persisted'
 
 function firstToastMessage(toasts: readonly Toast[]): string {
   const toast = toasts.at(0)
@@ -13,7 +14,7 @@ function firstToastMessage(toasts: readonly Toast[]): string {
 
 describe('restore report at startup', () => {
   beforeEach(() => {
-    localStorage.clear()
+    seed({})
     vi.stubGlobal('api', createFakeApi())
     // The build defines this; the status bar shows it.
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test')
@@ -21,7 +22,7 @@ describe('restore report at startup', () => {
 
   afterEach(() => {
     cleanup()
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('one toast names every store that was not loaded as stored, once', async () => {
@@ -32,7 +33,7 @@ describe('restore report at startup', () => {
       'mz-plugin-studio-settings',
       JSON.stringify({ state: { theme: 'purple' }, version: 0 })
     )
-    vi.resetModules()
+    await resetStoreModules()
     const { default: App } = await import('../../src/renderer/src/App')
     const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
 
@@ -83,7 +84,7 @@ describe('restore report at startup', () => {
       'mz-plugin-studio-ui',
       JSON.stringify({ state: { sidebarWidth: 'wide', rawModeByPluginId: { a: 'yes' } } })
     )
-    vi.resetModules()
+    await resetStoreModules()
     const { default: App } = await import('../../src/renderer/src/App')
     const { useToastStore } = await import('../../src/renderer/src/stores/toast-store')
 

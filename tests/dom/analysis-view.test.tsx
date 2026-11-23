@@ -7,6 +7,7 @@ import { AnalysisView } from '../../src/renderer/src/components/analysis/Analysi
 import { useProjectStore } from '../../src/renderer/src/stores'
 import type { ScannedPluginHeader } from '../../src/shared/ipc-types'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { resetStores } from './support/reset-stores'
 
 const header = (name: string, overrides: string[]): ScannedPluginHeader => ({
@@ -38,7 +39,7 @@ describe('analysis view', () => {
   })
 
   afterEach(() => {
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it('with no project open it says so', () => {

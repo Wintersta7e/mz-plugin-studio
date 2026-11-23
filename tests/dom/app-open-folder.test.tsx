@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import App from '../../src/renderer/src/App'
 import { useProjectStore, useToastStore } from '../../src/renderer/src/stores'
 import { createFakeApi } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { resetStores } from './support/reset-stores'
 
@@ -22,7 +23,7 @@ describe('open project', { timeout: 30_000 }, () => {
     act(() => {
       useToastStore.getState().dismissAll()
     })
-    vi.unstubAllGlobals()
+    unstubGlobals()
   })
 
   it.each([

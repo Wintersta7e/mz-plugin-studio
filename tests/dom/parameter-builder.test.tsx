@@ -27,6 +27,7 @@ import type { MZProject } from '../../src/shared/types/mz'
 import { evaluatePlugin } from '../helpers/evaluate-plugin'
 import { createFakeApi, sampleProject } from '../helpers/fake-api'
 import { ALL_PAYLOADS } from '../helpers/hostile'
+import { unstubGlobals } from './support/load-persisted'
 import { viaIpc } from './support/main-api'
 import { recordOf, recordsOf } from './support/persisted-state'
 import { resetStores } from './support/reset-stores'
@@ -79,7 +80,7 @@ function setUp(): void {
 }
 
 const tearDown = (): void => {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 // The arguments of the first call a mock received

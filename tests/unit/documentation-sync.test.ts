@@ -166,6 +166,39 @@ function nonStrictConfigs(configs: string[]): string[] {
   })
 }
 
+// The numeric initializer of the `const` named `name` in a source file, or undefined
+function constNumber(file: string, name: string): number | undefined {
+  const source = ts.createSourceFile(file, read(file), ts.ScriptTarget.Latest, true)
+  let value: number | undefined
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === name &&
+      node.initializer !== undefined &&
+      ts.isNumericLiteral(node.initializer)
+    ) {
+      value = Number(node.initializer.text)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return value
+}
+
+describe('the user guide matches the saved-state writer', () => {
+  it('the user guide states the longest time a crash can lose edits', () => {
+    const delayMs = constNumber('src/renderer/src/stores/persist.ts', 'FLUSH_MAX_DELAY_MS')
+    const stated = /can lose up to the last (\d+) seconds of edits/.exec(read('docs/USER_GUIDE.md'))
+    process.stdout.write(
+      `user guide crash loss: stated ${stated?.at(1) ?? 'nothing'} s, writer ${String(delayMs)} ms\n`
+    )
+
+    expect(delayMs).toBeDefined()
+    expect(Number(stated?.at(1)) * 1000).toBe(delayMs)
+  })
+})
+
 describe('published docs match the code', () => {
   it(`the README parameter-type table lists all ${String(ALL_PARAM_TYPES.size)} types`, () => {
     const listed = tableAfter('### Parameter Types').flatMap((row) =>

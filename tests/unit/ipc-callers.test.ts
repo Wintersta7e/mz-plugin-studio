@@ -124,7 +124,8 @@ const fakeDependencies: MainDependencies = {
   dialog: { showOpenDialog: unused, showSaveDialog: unused, showMessageBox: unused },
   getWindow: unused,
   openLogFolder: unused,
-  setLogLevel: unused
+  setLogLevel: unused,
+  flushStorage: unused
 }
 
 /**

@@ -206,3 +206,17 @@ describe('preload ipc', () => {
     }
   })
 })
+
+describe('preload saved state', () => {
+  it("passes the request to write saved state to disk to Electron's send", async () => {
+    expect.assertions(1)
+
+    const exposed = await loadPreload()
+    const api = exposed.get('api')
+    const storage: unknown =
+      typeof api === 'object' && api !== null ? Reflect.get(api, 'storage') : undefined
+    callMember(storage, 'flush')
+
+    expect(electron.ipcRenderer.send.mock.calls).toStrictEqual([['storage:flush']])
+  })
+})

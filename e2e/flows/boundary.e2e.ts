@@ -12,6 +12,7 @@ import {
   assertDialogsDrained,
   expect,
   field,
+  flushSavedState,
   isList,
   isRecord,
   loadFixtureProject,
@@ -42,12 +43,19 @@ const UNC_PATH =
 const PLUGIN_KEY: PersistedKey = 'mz-plugin-studio-plugin'
 
 /**
-The active plugin as the app saved it for its next start: what the store holds
+The active plugin as the app saved it for its next start: the definition in the key of the tab
+the plugin store's own key names as active
 */
 async function savedPlugin(page: Page): Promise<unknown> {
-  const raw = await page.evaluate((key) => localStorage.getItem(key), PLUGIN_KEY)
-  if (raw === null) throw new Error(`nothing saved under ${PLUGIN_KEY}`)
-  return field(field(JSON.parse(raw), 'state'), 'plugin')
+  await flushSavedState(page)
+  const read = async (key: string): Promise<unknown> => {
+    const raw = await page.evaluate((stored) => localStorage.getItem(stored), key)
+    if (raw === null) throw new Error(`nothing saved under ${key}`)
+    return JSON.parse(raw)
+  }
+  const active = field(field(await read(PLUGIN_KEY), 'state'), 'activePluginId')
+  if (typeof active !== 'string') throw new TypeError(`no active tab saved under ${PLUGIN_KEY}`)
+  return field(field(await read(`${PLUGIN_KEY}.tab.${active}`), 'tab'), 'definition')
 }
 
 /**

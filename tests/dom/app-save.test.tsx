@@ -29,6 +29,8 @@ import {
   useProjectStore,
   useToastStore
 } from '../../src/renderer/src/stores'
+import { flushPersistedState } from '../../src/renderer/src/stores/persist'
+import { TAB_KEY_PREFIX } from '../../src/renderer/src/stores/plugin-storage'
 import {
   createEmptyCommand,
   createEmptyParameter,
@@ -43,6 +45,7 @@ import {
 } from '../../src/shared/ipc-types'
 import { afterAllTests } from '../helpers/after-all-tests'
 import { copyFixtureProject } from '../helpers/fixture-project'
+import { unstubGlobals } from './support/load-persisted'
 import { LOAD_PREVIEW_TIMEOUT_MS, loadPreview } from './support/load-preview'
 import { createMainApi, viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
@@ -86,7 +89,7 @@ function tearDown(): void {
   act(() => {
     useToastStore.getState().dismissAll()
   })
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 async function openProject(project = temporary.root): Promise<void> {
@@ -196,17 +199,32 @@ async function settle(): Promise<void> {
 
 const toasts = (): string[] => useToastStore.getState().toasts.map((t) => `${t.type}: ${t.message}`)
 
-// How many times `run` writes the open plugins to storage.
-async function pluginWrites(run: () => unknown): Promise<number> {
+// How many times `run` writes the open plugins to storage once its changes are written, and how
+// many changes of the plugin store it made: one write can hide two updates the writer merged.
+async function pluginWrites(
+  run: () => unknown
+): Promise<{ writes: number; notifications: number }> {
   const setItem = vi.spyOn(Storage.prototype, 'setItem')
+  let notifications = 0
+  const unsubscribe = usePluginStore.subscribe(() => {
+    notifications += 1
+  })
   try {
     await run()
     await settle()
-    return setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin').length
+    flushPersistedState()
+    // the store keeps an index of its tabs and a key per tab
+    const writes = setItem.mock.calls.filter(
+      ([key]) => key === 'mz-plugin-studio-plugin' || key.startsWith(TAB_KEY_PREFIX)
+    ).length
+    return { writes, notifications }
   } finally {
+    unsubscribe()
     setItem.mockRestore()
   }
 }
+
+const ONCE = { writes: 1, notifications: 1 }
 
 const plugin = (): PluginDefinition => usePluginStore.getState().plugin
 
@@ -221,10 +239,14 @@ const guards = () => saveCalls().map((call) => call[3])
 const messages = (): MessageDialogOptions[] =>
   vi.mocked(globalThis.api.dialog.message).mock.calls.map((call) => call[0])
 
+// The undo history of the tab shown, empty when it has none
+const shownHistory = (): { past: readonly unknown[]; future: readonly unknown[] } =>
+  useHistoryStore.getState().stacks[plugin().id] ?? { past: [], future: [] }
+
 // Waits for the app's delayed history record to hold `count` states of the tab.
 const historyHolds = async (count: number): Promise<void> => {
   await waitFor(() => {
-    expect(useHistoryStore.getState().past).toHaveLength(count)
+    expect(shownHistory().past).toHaveLength(count)
   })
 }
 
@@ -690,14 +712,13 @@ describe('app save: storage writes', APP_TIMEOUT, () => {
     openTab('Alpha')
     render(<App />)
     await settle()
-    const setItem = vi.spyOn(Storage.prototype, 'setItem')
-    pressSave()
-    await toastsShow(['success: Plugin saved'])
-    await settle()
-    const writes = setItem.mock.calls.filter(([key]) => key === 'mz-plugin-studio-plugin')
-    setItem.mockRestore()
+    flushPersistedState()
+    const writes = await pluginWrites(async () => {
+      pressSave()
+      await toastsShow(['success: Plugin saved'])
+    })
 
-    expect(writes).toHaveLength(1)
+    expect(writes).toStrictEqual(ONCE)
   })
 
   it('one undo step and one redo step each write the open plugins to storage once', async () => {
@@ -710,12 +731,13 @@ describe('app save: storage writes', APP_TIMEOUT, () => {
     editMeta({ name: 'Alpha' })
     await historyHolds(2)
     await settle()
+    flushPersistedState()
 
-    await expect(pluginWrites(pressUndo)).resolves.toBe(1)
-    expect(useHistoryStore.getState().future).toHaveLength(1)
+    await expect(pluginWrites(pressUndo)).resolves.toStrictEqual(ONCE)
+    expect(shownHistory().future).toHaveLength(1)
     expect(isDirty(plugin().id)).toBe(true)
-    await expect(pluginWrites(pressRedo)).resolves.toBe(1)
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    await expect(pluginWrites(pressRedo)).resolves.toStrictEqual(ONCE)
+    expect(shownHistory().future).toHaveLength(0)
   })
 
   it('one reload writes the open plugins to storage once', async () => {
@@ -725,13 +747,14 @@ describe('app save: storage writes', APP_TIMEOUT, () => {
     vi.stubGlobal('api', createMainApi())
     await openProject(project)
     const id = await openFromProject(project, FILE)
+    flushPersistedState()
     let isReloaded = false
     const writes = await pluginWrites(async () => {
       isReloaded = await act(async () => didReloadFromProject(id))
     })
 
     expect(isReloaded).toBe(true)
-    expect(writes).toBe(1)
+    expect(writes).toStrictEqual(ONCE)
   })
 })
 
@@ -1188,7 +1211,7 @@ describe('app save: undo and redo around a save', APP_TIMEOUT, () => {
 
     pressUndo()
 
-    expect(useHistoryStore.getState().future).toHaveLength(1)
+    expect(shownHistory().future).toHaveLength(1)
     expect(isDirty(id)).toBe(true)
   })
 
@@ -1209,7 +1232,7 @@ describe('app save: undo and redo around a save', APP_TIMEOUT, () => {
 
     pressRedo()
 
-    expect(useHistoryStore.getState().future).toHaveLength(0)
+    expect(shownHistory().future).toHaveLength(0)
     expect(isDirty(id)).toBe(true)
   })
 

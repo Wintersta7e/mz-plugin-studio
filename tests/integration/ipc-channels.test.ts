@@ -12,13 +12,17 @@ import type { AccessClass } from '../../src/main/file-access'
 import {
   createInvokeHandlers,
   createSendListeners,
-  type MainDependencies,
   type WindowPort
 } from '../../src/main/ipc/handlers'
 import { handleAll, onAll } from '../../src/main/ipc/registration'
 import { INVOKE_CHANNELS, SEND_CHANNELS, type InvokeChannel } from '../../src/shared/ipc-types'
 import { copyFixtureProject } from '../helpers/fixture-project'
-import { createAppPage, createFakeRegistrar, type FakeRegistrar } from '../helpers/fake-ipc'
+import {
+  createAppPage,
+  createFakeRegistrar,
+  fakeMainDependencies,
+  type FakeRegistrar
+} from '../helpers/fake-ipc'
 
 vi.mock<{ ipcMain: object }>(import('electron'), () => ({ ipcMain: {} }))
 
@@ -68,14 +72,8 @@ const win: WindowPort = {
   isMaximized: vi.fn<WindowPort['isMaximized']>().mockReturnValue(false),
   close
 }
-const openLogFolder = vi.fn<MainDependencies['openLogFolder']>().mockResolvedValue()
-const setLogLevel = vi.fn<MainDependencies['setLogLevel']>()
-const dependencies: MainDependencies = {
-  dialog: { showOpenDialog, showSaveDialog, showMessageBox },
-  getWindow: () => win,
-  openLogFolder,
-  setLogLevel
-}
+const dependencies = fakeMainDependencies({ showOpenDialog, showSaveDialog, showMessageBox }, win)
+const { openLogFolder, setLogLevel, flushStorage } = dependencies
 const handlers = createInvokeHandlers(dependencies)
 const runs = new Map(INVOKE_CHANNELS.map((c) => [c, vi.spyOn(handlers[c], 'run')] as const))
 const warn: MockInstance<(...params: unknown[]) => void> = vi.mocked(log.warn)
@@ -226,14 +224,14 @@ describe('ipc channels: valid calls', () => {
       logFolder: await invoke('log:open-folder'),
       logFolderCalls: openLogFolder.mock.calls.length
     }
-    send('window-minimize')
-    send('window-maximize')
-    send('window-close')
+    for (const channel of ['window-minimize', 'window-maximize', 'window-close', 'storage:flush']) {
+      send(channel)
+    }
     send('log:set-level', true)
 
     expect({
       ...answers,
-      sent: [minimize, maximize, close].map((spy) => spy.mock.calls.length),
+      sent: [minimize, maximize, close, flushStorage].map((spy) => spy.mock.calls.length),
       levels: setLogLevel.mock.calls
     }).toStrictEqual({
       saveFile: chosen,
@@ -244,7 +242,7 @@ describe('ipc channels: valid calls', () => {
       isMaximized: false,
       logFolder: undefined,
       logFolderCalls: 1,
-      sent: [1, 1, 1],
+      sent: [1, 1, 1, 1],
       levels: [['debug']]
     })
 

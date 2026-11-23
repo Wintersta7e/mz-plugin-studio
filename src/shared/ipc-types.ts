@@ -45,7 +45,10 @@ export const IPC_CHANNELS = {
 
   // Logging
   LOG_OPEN_FOLDER: 'log:open-folder',
-  LOG_SET_LEVEL: 'log:set-level'
+  LOG_SET_LEVEL: 'log:set-level',
+
+  // Saved state
+  STORAGE_FLUSH: 'storage:flush'
 } as const
 
 /**
@@ -206,6 +209,7 @@ interface SendContract {
   [IPC_CHANNELS.WINDOW_MAXIMIZE]: []
   [IPC_CHANNELS.WINDOW_CLOSE]: []
   [IPC_CHANNELS.LOG_SET_LEVEL]: [debug: boolean]
+  [IPC_CHANNELS.STORAGE_FLUSH]: []
 }
 
 /**
@@ -246,7 +250,8 @@ export const SEND_CHANNELS = [
   IPC_CHANNELS.WINDOW_MINIMIZE,
   IPC_CHANNELS.WINDOW_MAXIMIZE,
   IPC_CHANNELS.WINDOW_CLOSE,
-  IPC_CHANNELS.LOG_SET_LEVEL
+  IPC_CHANNELS.LOG_SET_LEVEL,
+  IPC_CHANNELS.STORAGE_FLUSH
 ] as const satisfies readonly SendChannel[]
 
 /**
@@ -296,6 +301,13 @@ interface LogAPI {
   setLevel: Sender<typeof IPC_CHANNELS.LOG_SET_LEVEL>
 }
 
+interface StorageAPI {
+  /**
+  Has main write the page's saved state to disk now, instead of seconds later
+  */
+  flush: Sender<typeof IPC_CHANNELS.STORAGE_FLUSH>
+}
+
 /**
 What the preload exposes as `window.api`
 */
@@ -305,4 +317,5 @@ export interface API {
   dialog: DialogAPI
   window: WindowAPI
   log: LogAPI
+  storage: StorageAPI
 }

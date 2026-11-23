@@ -10,6 +10,7 @@ import {
   useToastStore,
   useUIStore
 } from '../../../src/renderer/src/stores'
+import { flushPersistedState } from '../../../src/renderer/src/stores/persist'
 
 function resetterOf<T>(store: StoreApi<T>): () => void {
   const initial = store.getInitialState()
@@ -33,5 +34,7 @@ export function resetStores(): void {
   // A toast's countdown outlives setState; left running, it re-renders a later test's toasts.
   useToastStore.getState().dismissAll()
   for (const reset of RESETTERS) reset()
+  // A change still waiting to be written would land in the next test's storage
+  flushPersistedState()
   localStorage.clear()
 }

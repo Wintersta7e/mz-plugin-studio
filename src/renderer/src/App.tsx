@@ -30,6 +30,7 @@ import {
   useToastStore
 } from './stores'
 import { formatRestoreReport, takeRestoreReport } from './stores/persist'
+import { startHistoryRecording } from './stores/history-store'
 import { SettingsDialog } from './components/settings/SettingsDialog'
 import { ShortcutsDialog } from './components/settings/ShortcutsDialog'
 import { ToastContainer } from './components/ui/toast'
@@ -157,25 +158,6 @@ function usePreviewResize(): PreviewResize {
   }
 
   return { previewWidth, startResize, resizeByKey }
-}
-
-// Save plugin state to history on changes (debounced).
-// Skips when the change came from undo/redo to avoid wiping the redo stack.
-function useHistoryRecording(isUndoRedoRef: RefObject<boolean>): void {
-  const plugin = usePluginStore((s) => s.plugin)
-  const pushHistory = useHistoryStore((s) => s.push)
-  useEffect(() => {
-    if (isUndoRedoRef.current) {
-      isUndoRedoRef.current = false
-      return
-    }
-    const timeoutId = setTimeout(() => {
-      pushHistory(plugin)
-    }, 500)
-    return () => {
-      clearTimeout(timeoutId)
-    }
-  }, [plugin, pushHistory, isUndoRedoRef])
 }
 
 // Holding back the unload while any tab is unsaved makes main ask before the window closes,
@@ -310,12 +292,8 @@ function useProjectOpening(): ProjectOpening {
 
 // Puts a plugin from the history in the editor. History strips rawSource to save memory, so
 // the current plugin's is kept.
-function restoreFromHistory(
-  snapshot: Omit<PluginDefinition, 'rawSource'> | null,
-  isUndoRedoRef: RefObject<boolean>
-): void {
+function restoreFromHistory(snapshot: Omit<PluginDefinition, 'rawSource'> | null): void {
   if (snapshot === null) return
-  isUndoRedoRef.current = true
   const restored = { ...snapshot }
   const currentRawSource = currentPlugin().rawSource
   usePluginStore
@@ -341,7 +319,6 @@ function runSave(isSavingRef: RefObject<boolean>, save: () => Promise<void>): vo
 }
 
 interface ShortcutHandlers {
-  isUndoRedoRef: RefObject<boolean>
   isSavingRef: RefObject<boolean>
   openProject: () => Promise<void>
   setPluginBrowserOpen: Dispatch<SetStateAction<boolean>>
@@ -351,18 +328,18 @@ interface ShortcutHandlers {
 
 // What each keyboard shortcut does
 function shortcutActions(handlers: ShortcutHandlers): Map<string, () => void> {
-  const { isUndoRedoRef, isSavingRef } = handlers
+  const { isSavingRef } = handlers
   const actions = new Map<string, () => void>([
     [
       'ctrl+z',
       () => {
-        restoreFromHistory(useHistoryStore.getState().undo(currentPlugin()), isUndoRedoRef)
+        restoreFromHistory(useHistoryStore.getState().undo(currentPlugin()))
       }
     ],
     [
       'ctrl+shift+z',
       () => {
-        restoreFromHistory(useHistoryStore.getState().redo(currentPlugin()), isUndoRedoRef)
+        restoreFromHistory(useHistoryStore.getState().redo(currentPlugin()))
       }
     ],
     [
@@ -433,17 +410,10 @@ function shortcutActions(handlers: ShortcutHandlers): Map<string, () => void> {
 
 // Keyboard shortcuts
 function useShortcuts(handlers: ShortcutHandlers): void {
-  const {
-    isUndoRedoRef,
-    isSavingRef,
-    openProject,
-    setPluginBrowserOpen,
-    setSettingsOpen,
-    setShortcutsOpen
-  } = handlers
+  const { isSavingRef, openProject, setPluginBrowserOpen, setSettingsOpen, setShortcutsOpen } =
+    handlers
   useEffect(() => {
     const actions = shortcutActions({
-      isUndoRedoRef,
       isSavingRef,
       openProject,
       setPluginBrowserOpen,
@@ -462,14 +432,7 @@ function useShortcuts(handlers: ShortcutHandlers): void {
     return () => {
       removeEventListener('keydown', handleKeyDown)
     }
-  }, [
-    isUndoRedoRef,
-    isSavingRef,
-    openProject,
-    setPluginBrowserOpen,
-    setSettingsOpen,
-    setShortcutsOpen
-  ])
+  }, [isSavingRef, openProject, setPluginBrowserOpen, setSettingsOpen, setShortcutsOpen])
 }
 
 function App(): ReactElement {
@@ -478,8 +441,6 @@ function App(): ReactElement {
   useDocumentTheme()
   useRestoreReport()
 
-  // Guard: skip history push when the plugin change originated from undo/redo
-  const isUndoRedoRef = useRef(false)
   // Guard: prevent concurrent save operations (BUG-03)
   const isSavingRef = useRef(false)
 
@@ -489,11 +450,10 @@ function App(): ReactElement {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const resize = usePreviewResize()
 
-  useHistoryRecording(isUndoRedoRef)
+  useEffect(() => startHistoryRecording(usePluginStore), [])
   useUnloadGuard()
   const { openProject, openRecentProject } = useProjectOpening()
   useShortcuts({
-    isUndoRedoRef,
     isSavingRef,
     openProject,
     setPluginBrowserOpen,
@@ -579,9 +539,10 @@ function MainContent({
 }: MainContentProps): ReactElement {
   const project = useProjectStore((s) => s.project)
   const recentProjects = useProjectStore((s) => s.recentProjects)
-  const openPlugins = usePluginStore((s) => s.openPlugins)
+  // Whether any tab is open, not the tabs: every edit replaces the list of tabs
+  const hasNoTabs = usePluginStore((s) => s.openPlugins.length === 0)
 
-  if (!project && openPlugins.length === 0) {
+  if (!project && hasNoTabs) {
     return (
       <WelcomeScreen
         onOpenProject={onOpenProject}
@@ -595,7 +556,7 @@ function MainContent({
       />
     )
   }
-  if (openPlugins.length === 0) return <NoPluginScreen />
+  if (hasNoTabs) return <NoPluginScreen />
   return <PluginWorkspace resize={resize} />
 }
 

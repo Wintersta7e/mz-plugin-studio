@@ -31,6 +31,7 @@ import { ACCESS_DENIED, IPC_CHANNELS } from '../../src/shared/ipc-types'
 import type { PlatformPath } from '../../src/shared/path-safety'
 import { loadFixture } from '../golden/corpus/raw-mode'
 import { createFakeApi } from '../helpers/fake-api'
+import { unstubGlobals } from './support/load-persisted'
 import { viaIpc } from './support/main-api'
 import { resetStores } from './support/reset-stores'
 
@@ -59,7 +60,7 @@ async function setUp(): Promise<() => Promise<void>> {
 }
 
 function tearDown(): void {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 /**

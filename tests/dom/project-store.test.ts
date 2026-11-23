@@ -27,6 +27,7 @@ vi.mock<{ default: RendererLoggerView }>(import('electron-log/renderer'), () => 
 }))
 
 import { useProjectStore } from '../../src/renderer/src/stores/project-store'
+import { unstubGlobals } from './support/load-persisted'
 
 type ScanHeaders = Window['api']['plugin']['scanHeaders']
 
@@ -37,7 +38,7 @@ function setUp(): void {
 }
 
 function tearDown(): void {
-  vi.unstubAllGlobals()
+  unstubGlobals()
 }
 
 // `window.api` with `scanHeaders` as the plugin header scan

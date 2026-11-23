@@ -121,6 +121,10 @@ async function start(): Promise<void> {
     setLogLevel: (level) => {
       log.transports.file.level = level
       log.transports.console.level = level
+    },
+    // The sender check admits only this window's page, so this is the session the request came from
+    flushStorage: () => {
+      windows.main?.webContents.session.flushStorageData()
     }
   }
   // Only the app's own page, in the main window, may call main

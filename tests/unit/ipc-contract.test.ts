@@ -40,7 +40,13 @@ describe('ipc contract', () => {
     expect(INVOKE_CHANNELS).toContain('window-is-maximized')
     expect(INVOKE_CHANNELS).toContain('log:open-folder')
     expect([...SEND_CHANNELS].toSorted(byCodeUnit)).toStrictEqual(
-      ['log:set-level', 'window-close', 'window-maximize', 'window-minimize'].toSorted(byCodeUnit)
+      [
+        'log:set-level',
+        'storage:flush',
+        'window-close',
+        'window-maximize',
+        'window-minimize'
+      ].toSorted(byCodeUnit)
     )
     expect([...EVENT_CHANNELS]).toStrictEqual(['window-maximized-changed'])
   })

@@ -45,6 +45,11 @@ const api: API = {
     setLevel: (debug) => {
       send(IPC_CHANNELS.LOG_SET_LEVEL, debug)
     }
+  },
+  storage: {
+    flush: () => {
+      send(IPC_CHANNELS.STORAGE_FLUSH)
+    }
   }
 }
 

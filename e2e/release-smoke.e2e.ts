@@ -11,6 +11,7 @@ import { readV160Payloads } from '../tests/helpers/persist-v160'
 import {
   expect,
   field,
+  flushSavedState,
   isList,
   isRecord,
   newPlugin,
@@ -418,6 +419,8 @@ async function runScriptedSession(page: Page, projectPath: string): Promise<void
   }
   // A category whose first template inserts with its default values
   const ui = { state: { lastTemplateCategory: 'map-events' }, version: 0 }
+  // A change the app still holds would be written over the seed
+  await flushSavedState(page)
   await page.evaluate(
     ({ project, view }) => {
       localStorage.setItem('mz-plugin-studio-project', project)

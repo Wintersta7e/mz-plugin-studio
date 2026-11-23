@@ -20,6 +20,10 @@ export interface MainDependencies {
   getWindow: () => WindowPort | undefined
   openLogFolder: () => Promise<void>
   setLogLevel: (level: 'debug' | 'info') => void
+  /**
+  Writes the app page's saved state to disk now
+  */
+  flushStorage: () => void
 }
 
 export function createInvokeHandlers(dependencies: MainDependencies): InvokeHandlers {
@@ -71,6 +75,12 @@ export function createSendListeners(dependencies: MainDependencies): SendListene
         const level = debug ? 'debug' : 'info'
         dependencies.setLogLevel(level)
         log.info(`Log level changed to: ${level}`)
+      }
+    },
+    'storage:flush': {
+      check: () => [],
+      run: () => {
+        dependencies.flushStorage()
       }
     }
   }
