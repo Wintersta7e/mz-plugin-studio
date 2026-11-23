@@ -1,8 +1,9 @@
 // The exact saved form of each store, empty and populated, pinned before schema versioning
 // changes it.
-import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { afterAll, beforeEach, describe, it, expect, vi } from 'vitest'
 import { byCodeUnit, normaliseIds } from './corpus/normalise'
 import { POPULATED, persistedStores } from './corpus/persisted'
+import { PERSISTED_SEEDS } from './corpus/persisted-seeds'
 
 interface StoreHook {
   setState(partial: Record<string, unknown>): void
@@ -101,4 +102,60 @@ describe('persisted store goldens', () => {
       )
     }
   )
+})
+
+const PLUGIN_KEY = 'mz-plugin-studio-plugin'
+
+// Every value the plugin store keeps in localStorage, by key in code-unit order, parsed.
+function pluginStorage(): Record<string, unknown> {
+  const keys: string[] = []
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index)
+    if (key !== null && (key === PLUGIN_KEY || key.startsWith(`${PLUGIN_KEY}.`))) keys.push(key)
+  }
+  const values: [string, unknown][] = keys
+    .toSorted(byCodeUnit)
+    .map((key) => [key, JSON.parse(localStorage.getItem(key) ?? '')])
+  return Object.fromEntries(values)
+}
+
+// Plugin definitions (a record with `meta` and `parameters`) anywhere in `value`.
+function definitions(value: unknown): number {
+  if (typeof value !== 'object' || value === null) return 0
+  const own = 'meta' in value && 'parameters' in value ? 1 : 0
+  const children: unknown[] = Object.values(value)
+  return own + children.reduce<number>((sum, child) => sum + definitions(child), 0)
+}
+
+describe('persisted plugin seeds', () => {
+  const lines: string[] = []
+
+  afterAll(() => {
+    process.stdout.write(`${lines.join('\n')}\nseeds ${String(lines.length)}\n`)
+  })
+
+  const plugin = stores.find((store) => store.key === PLUGIN_KEY)
+
+  it('finds the plugin store and every seed', () => {
+    expect(plugin, `no store saves ${PLUGIN_KEY}`).toBeDefined()
+    expect(PERSISTED_SEEDS.length).toBeGreaterThan(0)
+  })
+
+  it.each(PERSISTED_SEEDS)('seed $name', async ({ name, state }) => {
+    expect.assertions(2)
+
+    localStorage.clear()
+    const store = await freshStore(plugin?.modulePath ?? '', plugin?.exportName ?? '')
+    store.setState(state)
+    const saved = pluginStorage()
+    const text = JSON.stringify(saved, undefined, 2)
+    lines.push(
+      `seed ${name}: chars ${String(text.length)}, definitions ${String(definitions(saved))}`
+    )
+
+    expect(Object.keys(saved).length, `${name} wrote nothing`).toBeGreaterThan(0)
+    await expect(normaliseIds(text) + '\n').toMatchFileSnapshot(
+      `__golden__/persisted/seed-${name}.json`
+    )
+  })
 })

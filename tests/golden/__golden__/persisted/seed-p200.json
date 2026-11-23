@@ -1,0 +1,3400 @@
+{
+  "mz-plugin-studio-plugin": {
+    "state": {
+      "plugin": {
+        "id": "p200-1",
+        "meta": {
+          "name": "Synthetic_P200",
+          "version": "1.0.0",
+          "author": "Example Author",
+          "description": "Synthetic plugin Synthetic_P200.",
+          "help": "",
+          "url": "",
+          "target": "MZ",
+          "dependencies": [],
+          "orderAfter": [],
+          "orderBefore": [],
+          "noteParams": [],
+          "localizations": {}
+        },
+        "parameters": [
+          {
+            "id": "p200-1-param-0000",
+            "name": "param0000",
+            "text": "Parameter 0000",
+            "desc": "Synthetic parameter 0000.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0001",
+            "name": "param0001",
+            "text": "Parameter 0001",
+            "desc": "Synthetic parameter 0001.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0002",
+            "name": "param0002",
+            "text": "Parameter 0002",
+            "desc": "Synthetic parameter 0002.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0003",
+            "name": "param0003",
+            "text": "Parameter 0003",
+            "desc": "Synthetic parameter 0003.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0004",
+            "name": "param0004",
+            "text": "Parameter 0004",
+            "desc": "Synthetic parameter 0004.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0005",
+            "name": "param0005",
+            "text": "Parameter 0005",
+            "desc": "Synthetic parameter 0005.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0006",
+            "name": "param0006",
+            "text": "Parameter 0006",
+            "desc": "Synthetic parameter 0006.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0007",
+            "name": "param0007",
+            "text": "Parameter 0007",
+            "desc": "Synthetic parameter 0007.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0008",
+            "name": "param0008",
+            "text": "Parameter 0008",
+            "desc": "Synthetic parameter 0008.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0009",
+            "name": "param0009",
+            "text": "Parameter 0009",
+            "desc": "Synthetic parameter 0009.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0010",
+            "name": "param0010",
+            "text": "Parameter 0010",
+            "desc": "Synthetic parameter 0010.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0011",
+            "name": "param0011",
+            "text": "Parameter 0011",
+            "desc": "Synthetic parameter 0011.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0012",
+            "name": "param0012",
+            "text": "Parameter 0012",
+            "desc": "Synthetic parameter 0012.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0013",
+            "name": "param0013",
+            "text": "Parameter 0013",
+            "desc": "Synthetic parameter 0013.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0014",
+            "name": "param0014",
+            "text": "Parameter 0014",
+            "desc": "Synthetic parameter 0014.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0015",
+            "name": "param0015",
+            "text": "Parameter 0015",
+            "desc": "Synthetic parameter 0015.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0016",
+            "name": "param0016",
+            "text": "Parameter 0016",
+            "desc": "Synthetic parameter 0016.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0017",
+            "name": "param0017",
+            "text": "Parameter 0017",
+            "desc": "Synthetic parameter 0017.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0018",
+            "name": "param0018",
+            "text": "Parameter 0018",
+            "desc": "Synthetic parameter 0018.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0019",
+            "name": "param0019",
+            "text": "Parameter 0019",
+            "desc": "Synthetic parameter 0019.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0020",
+            "name": "param0020",
+            "text": "Parameter 0020",
+            "desc": "Synthetic parameter 0020.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0021",
+            "name": "param0021",
+            "text": "Parameter 0021",
+            "desc": "Synthetic parameter 0021.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0022",
+            "name": "param0022",
+            "text": "Parameter 0022",
+            "desc": "Synthetic parameter 0022.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0023",
+            "name": "param0023",
+            "text": "Parameter 0023",
+            "desc": "Synthetic parameter 0023.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0024",
+            "name": "param0024",
+            "text": "Parameter 0024",
+            "desc": "Synthetic parameter 0024.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0025",
+            "name": "param0025",
+            "text": "Parameter 0025",
+            "desc": "Synthetic parameter 0025.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0026",
+            "name": "param0026",
+            "text": "Parameter 0026",
+            "desc": "Synthetic parameter 0026.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0027",
+            "name": "param0027",
+            "text": "Parameter 0027",
+            "desc": "Synthetic parameter 0027.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0028",
+            "name": "param0028",
+            "text": "Parameter 0028",
+            "desc": "Synthetic parameter 0028.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0029",
+            "name": "param0029",
+            "text": "Parameter 0029",
+            "desc": "Synthetic parameter 0029.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0030",
+            "name": "param0030",
+            "text": "Parameter 0030",
+            "desc": "Synthetic parameter 0030.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0031",
+            "name": "param0031",
+            "text": "Parameter 0031",
+            "desc": "Synthetic parameter 0031.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0032",
+            "name": "param0032",
+            "text": "Parameter 0032",
+            "desc": "Synthetic parameter 0032.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0033",
+            "name": "param0033",
+            "text": "Parameter 0033",
+            "desc": "Synthetic parameter 0033.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0034",
+            "name": "param0034",
+            "text": "Parameter 0034",
+            "desc": "Synthetic parameter 0034.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0035",
+            "name": "param0035",
+            "text": "Parameter 0035",
+            "desc": "Synthetic parameter 0035.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0036",
+            "name": "param0036",
+            "text": "Parameter 0036",
+            "desc": "Synthetic parameter 0036.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0037",
+            "name": "param0037",
+            "text": "Parameter 0037",
+            "desc": "Synthetic parameter 0037.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0038",
+            "name": "param0038",
+            "text": "Parameter 0038",
+            "desc": "Synthetic parameter 0038.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0039",
+            "name": "param0039",
+            "text": "Parameter 0039",
+            "desc": "Synthetic parameter 0039.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0040",
+            "name": "param0040",
+            "text": "Parameter 0040",
+            "desc": "Synthetic parameter 0040.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0041",
+            "name": "param0041",
+            "text": "Parameter 0041",
+            "desc": "Synthetic parameter 0041.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0042",
+            "name": "param0042",
+            "text": "Parameter 0042",
+            "desc": "Synthetic parameter 0042.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0043",
+            "name": "param0043",
+            "text": "Parameter 0043",
+            "desc": "Synthetic parameter 0043.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0044",
+            "name": "param0044",
+            "text": "Parameter 0044",
+            "desc": "Synthetic parameter 0044.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0045",
+            "name": "param0045",
+            "text": "Parameter 0045",
+            "desc": "Synthetic parameter 0045.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0046",
+            "name": "param0046",
+            "text": "Parameter 0046",
+            "desc": "Synthetic parameter 0046.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0047",
+            "name": "param0047",
+            "text": "Parameter 0047",
+            "desc": "Synthetic parameter 0047.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0048",
+            "name": "param0048",
+            "text": "Parameter 0048",
+            "desc": "Synthetic parameter 0048.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0049",
+            "name": "param0049",
+            "text": "Parameter 0049",
+            "desc": "Synthetic parameter 0049.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0050",
+            "name": "param0050",
+            "text": "Parameter 0050",
+            "desc": "Synthetic parameter 0050.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0051",
+            "name": "param0051",
+            "text": "Parameter 0051",
+            "desc": "Synthetic parameter 0051.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0052",
+            "name": "param0052",
+            "text": "Parameter 0052",
+            "desc": "Synthetic parameter 0052.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0053",
+            "name": "param0053",
+            "text": "Parameter 0053",
+            "desc": "Synthetic parameter 0053.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0054",
+            "name": "param0054",
+            "text": "Parameter 0054",
+            "desc": "Synthetic parameter 0054.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0055",
+            "name": "param0055",
+            "text": "Parameter 0055",
+            "desc": "Synthetic parameter 0055.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0056",
+            "name": "param0056",
+            "text": "Parameter 0056",
+            "desc": "Synthetic parameter 0056.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0057",
+            "name": "param0057",
+            "text": "Parameter 0057",
+            "desc": "Synthetic parameter 0057.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0058",
+            "name": "param0058",
+            "text": "Parameter 0058",
+            "desc": "Synthetic parameter 0058.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0059",
+            "name": "param0059",
+            "text": "Parameter 0059",
+            "desc": "Synthetic parameter 0059.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0060",
+            "name": "param0060",
+            "text": "Parameter 0060",
+            "desc": "Synthetic parameter 0060.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0061",
+            "name": "param0061",
+            "text": "Parameter 0061",
+            "desc": "Synthetic parameter 0061.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0062",
+            "name": "param0062",
+            "text": "Parameter 0062",
+            "desc": "Synthetic parameter 0062.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0063",
+            "name": "param0063",
+            "text": "Parameter 0063",
+            "desc": "Synthetic parameter 0063.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0064",
+            "name": "param0064",
+            "text": "Parameter 0064",
+            "desc": "Synthetic parameter 0064.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0065",
+            "name": "param0065",
+            "text": "Parameter 0065",
+            "desc": "Synthetic parameter 0065.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0066",
+            "name": "param0066",
+            "text": "Parameter 0066",
+            "desc": "Synthetic parameter 0066.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0067",
+            "name": "param0067",
+            "text": "Parameter 0067",
+            "desc": "Synthetic parameter 0067.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0068",
+            "name": "param0068",
+            "text": "Parameter 0068",
+            "desc": "Synthetic parameter 0068.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0069",
+            "name": "param0069",
+            "text": "Parameter 0069",
+            "desc": "Synthetic parameter 0069.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0070",
+            "name": "param0070",
+            "text": "Parameter 0070",
+            "desc": "Synthetic parameter 0070.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0071",
+            "name": "param0071",
+            "text": "Parameter 0071",
+            "desc": "Synthetic parameter 0071.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0072",
+            "name": "param0072",
+            "text": "Parameter 0072",
+            "desc": "Synthetic parameter 0072.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0073",
+            "name": "param0073",
+            "text": "Parameter 0073",
+            "desc": "Synthetic parameter 0073.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0074",
+            "name": "param0074",
+            "text": "Parameter 0074",
+            "desc": "Synthetic parameter 0074.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0075",
+            "name": "param0075",
+            "text": "Parameter 0075",
+            "desc": "Synthetic parameter 0075.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0076",
+            "name": "param0076",
+            "text": "Parameter 0076",
+            "desc": "Synthetic parameter 0076.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0077",
+            "name": "param0077",
+            "text": "Parameter 0077",
+            "desc": "Synthetic parameter 0077.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0078",
+            "name": "param0078",
+            "text": "Parameter 0078",
+            "desc": "Synthetic parameter 0078.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0079",
+            "name": "param0079",
+            "text": "Parameter 0079",
+            "desc": "Synthetic parameter 0079.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0080",
+            "name": "param0080",
+            "text": "Parameter 0080",
+            "desc": "Synthetic parameter 0080.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0081",
+            "name": "param0081",
+            "text": "Parameter 0081",
+            "desc": "Synthetic parameter 0081.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0082",
+            "name": "param0082",
+            "text": "Parameter 0082",
+            "desc": "Synthetic parameter 0082.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0083",
+            "name": "param0083",
+            "text": "Parameter 0083",
+            "desc": "Synthetic parameter 0083.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0084",
+            "name": "param0084",
+            "text": "Parameter 0084",
+            "desc": "Synthetic parameter 0084.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0085",
+            "name": "param0085",
+            "text": "Parameter 0085",
+            "desc": "Synthetic parameter 0085.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0086",
+            "name": "param0086",
+            "text": "Parameter 0086",
+            "desc": "Synthetic parameter 0086.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0087",
+            "name": "param0087",
+            "text": "Parameter 0087",
+            "desc": "Synthetic parameter 0087.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0088",
+            "name": "param0088",
+            "text": "Parameter 0088",
+            "desc": "Synthetic parameter 0088.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0089",
+            "name": "param0089",
+            "text": "Parameter 0089",
+            "desc": "Synthetic parameter 0089.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0090",
+            "name": "param0090",
+            "text": "Parameter 0090",
+            "desc": "Synthetic parameter 0090.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0091",
+            "name": "param0091",
+            "text": "Parameter 0091",
+            "desc": "Synthetic parameter 0091.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0092",
+            "name": "param0092",
+            "text": "Parameter 0092",
+            "desc": "Synthetic parameter 0092.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0093",
+            "name": "param0093",
+            "text": "Parameter 0093",
+            "desc": "Synthetic parameter 0093.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0094",
+            "name": "param0094",
+            "text": "Parameter 0094",
+            "desc": "Synthetic parameter 0094.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0095",
+            "name": "param0095",
+            "text": "Parameter 0095",
+            "desc": "Synthetic parameter 0095.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0096",
+            "name": "param0096",
+            "text": "Parameter 0096",
+            "desc": "Synthetic parameter 0096.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0097",
+            "name": "param0097",
+            "text": "Parameter 0097",
+            "desc": "Synthetic parameter 0097.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0098",
+            "name": "param0098",
+            "text": "Parameter 0098",
+            "desc": "Synthetic parameter 0098.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0099",
+            "name": "param0099",
+            "text": "Parameter 0099",
+            "desc": "Synthetic parameter 0099.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0100",
+            "name": "param0100",
+            "text": "Parameter 0100",
+            "desc": "Synthetic parameter 0100.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0101",
+            "name": "param0101",
+            "text": "Parameter 0101",
+            "desc": "Synthetic parameter 0101.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0102",
+            "name": "param0102",
+            "text": "Parameter 0102",
+            "desc": "Synthetic parameter 0102.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0103",
+            "name": "param0103",
+            "text": "Parameter 0103",
+            "desc": "Synthetic parameter 0103.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0104",
+            "name": "param0104",
+            "text": "Parameter 0104",
+            "desc": "Synthetic parameter 0104.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0105",
+            "name": "param0105",
+            "text": "Parameter 0105",
+            "desc": "Synthetic parameter 0105.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0106",
+            "name": "param0106",
+            "text": "Parameter 0106",
+            "desc": "Synthetic parameter 0106.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0107",
+            "name": "param0107",
+            "text": "Parameter 0107",
+            "desc": "Synthetic parameter 0107.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0108",
+            "name": "param0108",
+            "text": "Parameter 0108",
+            "desc": "Synthetic parameter 0108.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0109",
+            "name": "param0109",
+            "text": "Parameter 0109",
+            "desc": "Synthetic parameter 0109.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0110",
+            "name": "param0110",
+            "text": "Parameter 0110",
+            "desc": "Synthetic parameter 0110.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0111",
+            "name": "param0111",
+            "text": "Parameter 0111",
+            "desc": "Synthetic parameter 0111.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0112",
+            "name": "param0112",
+            "text": "Parameter 0112",
+            "desc": "Synthetic parameter 0112.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0113",
+            "name": "param0113",
+            "text": "Parameter 0113",
+            "desc": "Synthetic parameter 0113.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0114",
+            "name": "param0114",
+            "text": "Parameter 0114",
+            "desc": "Synthetic parameter 0114.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0115",
+            "name": "param0115",
+            "text": "Parameter 0115",
+            "desc": "Synthetic parameter 0115.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0116",
+            "name": "param0116",
+            "text": "Parameter 0116",
+            "desc": "Synthetic parameter 0116.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0117",
+            "name": "param0117",
+            "text": "Parameter 0117",
+            "desc": "Synthetic parameter 0117.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0118",
+            "name": "param0118",
+            "text": "Parameter 0118",
+            "desc": "Synthetic parameter 0118.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0119",
+            "name": "param0119",
+            "text": "Parameter 0119",
+            "desc": "Synthetic parameter 0119.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0120",
+            "name": "param0120",
+            "text": "Parameter 0120",
+            "desc": "Synthetic parameter 0120.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0121",
+            "name": "param0121",
+            "text": "Parameter 0121",
+            "desc": "Synthetic parameter 0121.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0122",
+            "name": "param0122",
+            "text": "Parameter 0122",
+            "desc": "Synthetic parameter 0122.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0123",
+            "name": "param0123",
+            "text": "Parameter 0123",
+            "desc": "Synthetic parameter 0123.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0124",
+            "name": "param0124",
+            "text": "Parameter 0124",
+            "desc": "Synthetic parameter 0124.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0125",
+            "name": "param0125",
+            "text": "Parameter 0125",
+            "desc": "Synthetic parameter 0125.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0126",
+            "name": "param0126",
+            "text": "Parameter 0126",
+            "desc": "Synthetic parameter 0126.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0127",
+            "name": "param0127",
+            "text": "Parameter 0127",
+            "desc": "Synthetic parameter 0127.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0128",
+            "name": "param0128",
+            "text": "Parameter 0128",
+            "desc": "Synthetic parameter 0128.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0129",
+            "name": "param0129",
+            "text": "Parameter 0129",
+            "desc": "Synthetic parameter 0129.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0130",
+            "name": "param0130",
+            "text": "Parameter 0130",
+            "desc": "Synthetic parameter 0130.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0131",
+            "name": "param0131",
+            "text": "Parameter 0131",
+            "desc": "Synthetic parameter 0131.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0132",
+            "name": "param0132",
+            "text": "Parameter 0132",
+            "desc": "Synthetic parameter 0132.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0133",
+            "name": "param0133",
+            "text": "Parameter 0133",
+            "desc": "Synthetic parameter 0133.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0134",
+            "name": "param0134",
+            "text": "Parameter 0134",
+            "desc": "Synthetic parameter 0134.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0135",
+            "name": "param0135",
+            "text": "Parameter 0135",
+            "desc": "Synthetic parameter 0135.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0136",
+            "name": "param0136",
+            "text": "Parameter 0136",
+            "desc": "Synthetic parameter 0136.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0137",
+            "name": "param0137",
+            "text": "Parameter 0137",
+            "desc": "Synthetic parameter 0137.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0138",
+            "name": "param0138",
+            "text": "Parameter 0138",
+            "desc": "Synthetic parameter 0138.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0139",
+            "name": "param0139",
+            "text": "Parameter 0139",
+            "desc": "Synthetic parameter 0139.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0140",
+            "name": "param0140",
+            "text": "Parameter 0140",
+            "desc": "Synthetic parameter 0140.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0141",
+            "name": "param0141",
+            "text": "Parameter 0141",
+            "desc": "Synthetic parameter 0141.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0142",
+            "name": "param0142",
+            "text": "Parameter 0142",
+            "desc": "Synthetic parameter 0142.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0143",
+            "name": "param0143",
+            "text": "Parameter 0143",
+            "desc": "Synthetic parameter 0143.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0144",
+            "name": "param0144",
+            "text": "Parameter 0144",
+            "desc": "Synthetic parameter 0144.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0145",
+            "name": "param0145",
+            "text": "Parameter 0145",
+            "desc": "Synthetic parameter 0145.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0146",
+            "name": "param0146",
+            "text": "Parameter 0146",
+            "desc": "Synthetic parameter 0146.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0147",
+            "name": "param0147",
+            "text": "Parameter 0147",
+            "desc": "Synthetic parameter 0147.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0148",
+            "name": "param0148",
+            "text": "Parameter 0148",
+            "desc": "Synthetic parameter 0148.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0149",
+            "name": "param0149",
+            "text": "Parameter 0149",
+            "desc": "Synthetic parameter 0149.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0150",
+            "name": "param0150",
+            "text": "Parameter 0150",
+            "desc": "Synthetic parameter 0150.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0151",
+            "name": "param0151",
+            "text": "Parameter 0151",
+            "desc": "Synthetic parameter 0151.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0152",
+            "name": "param0152",
+            "text": "Parameter 0152",
+            "desc": "Synthetic parameter 0152.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0153",
+            "name": "param0153",
+            "text": "Parameter 0153",
+            "desc": "Synthetic parameter 0153.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0154",
+            "name": "param0154",
+            "text": "Parameter 0154",
+            "desc": "Synthetic parameter 0154.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0155",
+            "name": "param0155",
+            "text": "Parameter 0155",
+            "desc": "Synthetic parameter 0155.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0156",
+            "name": "param0156",
+            "text": "Parameter 0156",
+            "desc": "Synthetic parameter 0156.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0157",
+            "name": "param0157",
+            "text": "Parameter 0157",
+            "desc": "Synthetic parameter 0157.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0158",
+            "name": "param0158",
+            "text": "Parameter 0158",
+            "desc": "Synthetic parameter 0158.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0159",
+            "name": "param0159",
+            "text": "Parameter 0159",
+            "desc": "Synthetic parameter 0159.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0160",
+            "name": "param0160",
+            "text": "Parameter 0160",
+            "desc": "Synthetic parameter 0160.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0161",
+            "name": "param0161",
+            "text": "Parameter 0161",
+            "desc": "Synthetic parameter 0161.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0162",
+            "name": "param0162",
+            "text": "Parameter 0162",
+            "desc": "Synthetic parameter 0162.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0163",
+            "name": "param0163",
+            "text": "Parameter 0163",
+            "desc": "Synthetic parameter 0163.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0164",
+            "name": "param0164",
+            "text": "Parameter 0164",
+            "desc": "Synthetic parameter 0164.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0165",
+            "name": "param0165",
+            "text": "Parameter 0165",
+            "desc": "Synthetic parameter 0165.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0166",
+            "name": "param0166",
+            "text": "Parameter 0166",
+            "desc": "Synthetic parameter 0166.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0167",
+            "name": "param0167",
+            "text": "Parameter 0167",
+            "desc": "Synthetic parameter 0167.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0168",
+            "name": "param0168",
+            "text": "Parameter 0168",
+            "desc": "Synthetic parameter 0168.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0169",
+            "name": "param0169",
+            "text": "Parameter 0169",
+            "desc": "Synthetic parameter 0169.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0170",
+            "name": "param0170",
+            "text": "Parameter 0170",
+            "desc": "Synthetic parameter 0170.",
+            "type": "text",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0171",
+            "name": "param0171",
+            "text": "Parameter 0171",
+            "desc": "Synthetic parameter 0171.",
+            "type": "hidden",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0172",
+            "name": "param0172",
+            "text": "Parameter 0172",
+            "desc": "Synthetic parameter 0172.",
+            "type": "struct",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0173",
+            "name": "param0173",
+            "text": "Parameter 0173",
+            "desc": "Synthetic parameter 0173.",
+            "type": "array",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0174",
+            "name": "param0174",
+            "text": "Parameter 0174",
+            "desc": "Synthetic parameter 0174.",
+            "type": "string",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0175",
+            "name": "param0175",
+            "text": "Parameter 0175",
+            "desc": "Synthetic parameter 0175.",
+            "type": "number",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0176",
+            "name": "param0176",
+            "text": "Parameter 0176",
+            "desc": "Synthetic parameter 0176.",
+            "type": "boolean",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0177",
+            "name": "param0177",
+            "text": "Parameter 0177",
+            "desc": "Synthetic parameter 0177.",
+            "type": "select",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0178",
+            "name": "param0178",
+            "text": "Parameter 0178",
+            "desc": "Synthetic parameter 0178.",
+            "type": "combo",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0179",
+            "name": "param0179",
+            "text": "Parameter 0179",
+            "desc": "Synthetic parameter 0179.",
+            "type": "variable",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0180",
+            "name": "param0180",
+            "text": "Parameter 0180",
+            "desc": "Synthetic parameter 0180.",
+            "type": "switch",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0181",
+            "name": "param0181",
+            "text": "Parameter 0181",
+            "desc": "Synthetic parameter 0181.",
+            "type": "actor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0182",
+            "name": "param0182",
+            "text": "Parameter 0182",
+            "desc": "Synthetic parameter 0182.",
+            "type": "class",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0183",
+            "name": "param0183",
+            "text": "Parameter 0183",
+            "desc": "Synthetic parameter 0183.",
+            "type": "skill",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0184",
+            "name": "param0184",
+            "text": "Parameter 0184",
+            "desc": "Synthetic parameter 0184.",
+            "type": "item",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0185",
+            "name": "param0185",
+            "text": "Parameter 0185",
+            "desc": "Synthetic parameter 0185.",
+            "type": "weapon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0186",
+            "name": "param0186",
+            "text": "Parameter 0186",
+            "desc": "Synthetic parameter 0186.",
+            "type": "armor",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0187",
+            "name": "param0187",
+            "text": "Parameter 0187",
+            "desc": "Synthetic parameter 0187.",
+            "type": "enemy",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0188",
+            "name": "param0188",
+            "text": "Parameter 0188",
+            "desc": "Synthetic parameter 0188.",
+            "type": "troop",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0189",
+            "name": "param0189",
+            "text": "Parameter 0189",
+            "desc": "Synthetic parameter 0189.",
+            "type": "state",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0190",
+            "name": "param0190",
+            "text": "Parameter 0190",
+            "desc": "Synthetic parameter 0190.",
+            "type": "animation",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0191",
+            "name": "param0191",
+            "text": "Parameter 0191",
+            "desc": "Synthetic parameter 0191.",
+            "type": "tileset",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0192",
+            "name": "param0192",
+            "text": "Parameter 0192",
+            "desc": "Synthetic parameter 0192.",
+            "type": "common_event",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0193",
+            "name": "param0193",
+            "text": "Parameter 0193",
+            "desc": "Synthetic parameter 0193.",
+            "type": "file",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0194",
+            "name": "param0194",
+            "text": "Parameter 0194",
+            "desc": "Synthetic parameter 0194.",
+            "type": "icon",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0195",
+            "name": "param0195",
+            "text": "Parameter 0195",
+            "desc": "Synthetic parameter 0195.",
+            "type": "map",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0196",
+            "name": "param0196",
+            "text": "Parameter 0196",
+            "desc": "Synthetic parameter 0196.",
+            "type": "location",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0197",
+            "name": "param0197",
+            "text": "Parameter 0197",
+            "desc": "Synthetic parameter 0197.",
+            "type": "note",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0198",
+            "name": "param0198",
+            "text": "Parameter 0198",
+            "desc": "Synthetic parameter 0198.",
+            "type": "color",
+            "default": ""
+          },
+          {
+            "id": "p200-1-param-0199",
+            "name": "param0199",
+            "text": "Parameter 0199",
+            "desc": "Synthetic parameter 0199.",
+            "type": "text",
+            "default": ""
+          }
+        ],
+        "commands": [
+          {
+            "id": "p200-1-command-0000",
+            "name": "command0000",
+            "text": "Command 0000",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0001",
+            "name": "command0001",
+            "text": "Command 0001",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0002",
+            "name": "command0002",
+            "text": "Command 0002",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0003",
+            "name": "command0003",
+            "text": "Command 0003",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0004",
+            "name": "command0004",
+            "text": "Command 0004",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0005",
+            "name": "command0005",
+            "text": "Command 0005",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0006",
+            "name": "command0006",
+            "text": "Command 0006",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0007",
+            "name": "command0007",
+            "text": "Command 0007",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0008",
+            "name": "command0008",
+            "text": "Command 0008",
+            "desc": "",
+            "args": []
+          },
+          {
+            "id": "p200-1-command-0009",
+            "name": "command0009",
+            "text": "Command 0009",
+            "desc": "",
+            "args": []
+          }
+        ],
+        "structs": []
+      },
+      "openPlugins": [
+        {
+          "id": "p200-1",
+          "meta": {
+            "name": "Synthetic_P200",
+            "version": "1.0.0",
+            "author": "Example Author",
+            "description": "Synthetic plugin Synthetic_P200.",
+            "help": "",
+            "url": "",
+            "target": "MZ",
+            "dependencies": [],
+            "orderAfter": [],
+            "orderBefore": [],
+            "noteParams": [],
+            "localizations": {}
+          },
+          "parameters": [
+            {
+              "id": "p200-1-param-0000",
+              "name": "param0000",
+              "text": "Parameter 0000",
+              "desc": "Synthetic parameter 0000.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0001",
+              "name": "param0001",
+              "text": "Parameter 0001",
+              "desc": "Synthetic parameter 0001.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0002",
+              "name": "param0002",
+              "text": "Parameter 0002",
+              "desc": "Synthetic parameter 0002.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0003",
+              "name": "param0003",
+              "text": "Parameter 0003",
+              "desc": "Synthetic parameter 0003.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0004",
+              "name": "param0004",
+              "text": "Parameter 0004",
+              "desc": "Synthetic parameter 0004.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0005",
+              "name": "param0005",
+              "text": "Parameter 0005",
+              "desc": "Synthetic parameter 0005.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0006",
+              "name": "param0006",
+              "text": "Parameter 0006",
+              "desc": "Synthetic parameter 0006.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0007",
+              "name": "param0007",
+              "text": "Parameter 0007",
+              "desc": "Synthetic parameter 0007.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0008",
+              "name": "param0008",
+              "text": "Parameter 0008",
+              "desc": "Synthetic parameter 0008.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0009",
+              "name": "param0009",
+              "text": "Parameter 0009",
+              "desc": "Synthetic parameter 0009.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0010",
+              "name": "param0010",
+              "text": "Parameter 0010",
+              "desc": "Synthetic parameter 0010.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0011",
+              "name": "param0011",
+              "text": "Parameter 0011",
+              "desc": "Synthetic parameter 0011.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0012",
+              "name": "param0012",
+              "text": "Parameter 0012",
+              "desc": "Synthetic parameter 0012.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0013",
+              "name": "param0013",
+              "text": "Parameter 0013",
+              "desc": "Synthetic parameter 0013.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0014",
+              "name": "param0014",
+              "text": "Parameter 0014",
+              "desc": "Synthetic parameter 0014.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0015",
+              "name": "param0015",
+              "text": "Parameter 0015",
+              "desc": "Synthetic parameter 0015.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0016",
+              "name": "param0016",
+              "text": "Parameter 0016",
+              "desc": "Synthetic parameter 0016.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0017",
+              "name": "param0017",
+              "text": "Parameter 0017",
+              "desc": "Synthetic parameter 0017.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0018",
+              "name": "param0018",
+              "text": "Parameter 0018",
+              "desc": "Synthetic parameter 0018.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0019",
+              "name": "param0019",
+              "text": "Parameter 0019",
+              "desc": "Synthetic parameter 0019.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0020",
+              "name": "param0020",
+              "text": "Parameter 0020",
+              "desc": "Synthetic parameter 0020.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0021",
+              "name": "param0021",
+              "text": "Parameter 0021",
+              "desc": "Synthetic parameter 0021.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0022",
+              "name": "param0022",
+              "text": "Parameter 0022",
+              "desc": "Synthetic parameter 0022.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0023",
+              "name": "param0023",
+              "text": "Parameter 0023",
+              "desc": "Synthetic parameter 0023.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0024",
+              "name": "param0024",
+              "text": "Parameter 0024",
+              "desc": "Synthetic parameter 0024.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0025",
+              "name": "param0025",
+              "text": "Parameter 0025",
+              "desc": "Synthetic parameter 0025.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0026",
+              "name": "param0026",
+              "text": "Parameter 0026",
+              "desc": "Synthetic parameter 0026.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0027",
+              "name": "param0027",
+              "text": "Parameter 0027",
+              "desc": "Synthetic parameter 0027.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0028",
+              "name": "param0028",
+              "text": "Parameter 0028",
+              "desc": "Synthetic parameter 0028.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0029",
+              "name": "param0029",
+              "text": "Parameter 0029",
+              "desc": "Synthetic parameter 0029.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0030",
+              "name": "param0030",
+              "text": "Parameter 0030",
+              "desc": "Synthetic parameter 0030.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0031",
+              "name": "param0031",
+              "text": "Parameter 0031",
+              "desc": "Synthetic parameter 0031.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0032",
+              "name": "param0032",
+              "text": "Parameter 0032",
+              "desc": "Synthetic parameter 0032.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0033",
+              "name": "param0033",
+              "text": "Parameter 0033",
+              "desc": "Synthetic parameter 0033.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0034",
+              "name": "param0034",
+              "text": "Parameter 0034",
+              "desc": "Synthetic parameter 0034.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0035",
+              "name": "param0035",
+              "text": "Parameter 0035",
+              "desc": "Synthetic parameter 0035.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0036",
+              "name": "param0036",
+              "text": "Parameter 0036",
+              "desc": "Synthetic parameter 0036.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0037",
+              "name": "param0037",
+              "text": "Parameter 0037",
+              "desc": "Synthetic parameter 0037.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0038",
+              "name": "param0038",
+              "text": "Parameter 0038",
+              "desc": "Synthetic parameter 0038.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0039",
+              "name": "param0039",
+              "text": "Parameter 0039",
+              "desc": "Synthetic parameter 0039.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0040",
+              "name": "param0040",
+              "text": "Parameter 0040",
+              "desc": "Synthetic parameter 0040.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0041",
+              "name": "param0041",
+              "text": "Parameter 0041",
+              "desc": "Synthetic parameter 0041.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0042",
+              "name": "param0042",
+              "text": "Parameter 0042",
+              "desc": "Synthetic parameter 0042.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0043",
+              "name": "param0043",
+              "text": "Parameter 0043",
+              "desc": "Synthetic parameter 0043.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0044",
+              "name": "param0044",
+              "text": "Parameter 0044",
+              "desc": "Synthetic parameter 0044.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0045",
+              "name": "param0045",
+              "text": "Parameter 0045",
+              "desc": "Synthetic parameter 0045.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0046",
+              "name": "param0046",
+              "text": "Parameter 0046",
+              "desc": "Synthetic parameter 0046.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0047",
+              "name": "param0047",
+              "text": "Parameter 0047",
+              "desc": "Synthetic parameter 0047.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0048",
+              "name": "param0048",
+              "text": "Parameter 0048",
+              "desc": "Synthetic parameter 0048.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0049",
+              "name": "param0049",
+              "text": "Parameter 0049",
+              "desc": "Synthetic parameter 0049.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0050",
+              "name": "param0050",
+              "text": "Parameter 0050",
+              "desc": "Synthetic parameter 0050.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0051",
+              "name": "param0051",
+              "text": "Parameter 0051",
+              "desc": "Synthetic parameter 0051.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0052",
+              "name": "param0052",
+              "text": "Parameter 0052",
+              "desc": "Synthetic parameter 0052.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0053",
+              "name": "param0053",
+              "text": "Parameter 0053",
+              "desc": "Synthetic parameter 0053.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0054",
+              "name": "param0054",
+              "text": "Parameter 0054",
+              "desc": "Synthetic parameter 0054.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0055",
+              "name": "param0055",
+              "text": "Parameter 0055",
+              "desc": "Synthetic parameter 0055.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0056",
+              "name": "param0056",
+              "text": "Parameter 0056",
+              "desc": "Synthetic parameter 0056.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0057",
+              "name": "param0057",
+              "text": "Parameter 0057",
+              "desc": "Synthetic parameter 0057.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0058",
+              "name": "param0058",
+              "text": "Parameter 0058",
+              "desc": "Synthetic parameter 0058.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0059",
+              "name": "param0059",
+              "text": "Parameter 0059",
+              "desc": "Synthetic parameter 0059.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0060",
+              "name": "param0060",
+              "text": "Parameter 0060",
+              "desc": "Synthetic parameter 0060.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0061",
+              "name": "param0061",
+              "text": "Parameter 0061",
+              "desc": "Synthetic parameter 0061.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0062",
+              "name": "param0062",
+              "text": "Parameter 0062",
+              "desc": "Synthetic parameter 0062.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0063",
+              "name": "param0063",
+              "text": "Parameter 0063",
+              "desc": "Synthetic parameter 0063.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0064",
+              "name": "param0064",
+              "text": "Parameter 0064",
+              "desc": "Synthetic parameter 0064.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0065",
+              "name": "param0065",
+              "text": "Parameter 0065",
+              "desc": "Synthetic parameter 0065.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0066",
+              "name": "param0066",
+              "text": "Parameter 0066",
+              "desc": "Synthetic parameter 0066.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0067",
+              "name": "param0067",
+              "text": "Parameter 0067",
+              "desc": "Synthetic parameter 0067.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0068",
+              "name": "param0068",
+              "text": "Parameter 0068",
+              "desc": "Synthetic parameter 0068.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0069",
+              "name": "param0069",
+              "text": "Parameter 0069",
+              "desc": "Synthetic parameter 0069.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0070",
+              "name": "param0070",
+              "text": "Parameter 0070",
+              "desc": "Synthetic parameter 0070.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0071",
+              "name": "param0071",
+              "text": "Parameter 0071",
+              "desc": "Synthetic parameter 0071.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0072",
+              "name": "param0072",
+              "text": "Parameter 0072",
+              "desc": "Synthetic parameter 0072.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0073",
+              "name": "param0073",
+              "text": "Parameter 0073",
+              "desc": "Synthetic parameter 0073.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0074",
+              "name": "param0074",
+              "text": "Parameter 0074",
+              "desc": "Synthetic parameter 0074.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0075",
+              "name": "param0075",
+              "text": "Parameter 0075",
+              "desc": "Synthetic parameter 0075.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0076",
+              "name": "param0076",
+              "text": "Parameter 0076",
+              "desc": "Synthetic parameter 0076.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0077",
+              "name": "param0077",
+              "text": "Parameter 0077",
+              "desc": "Synthetic parameter 0077.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0078",
+              "name": "param0078",
+              "text": "Parameter 0078",
+              "desc": "Synthetic parameter 0078.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0079",
+              "name": "param0079",
+              "text": "Parameter 0079",
+              "desc": "Synthetic parameter 0079.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0080",
+              "name": "param0080",
+              "text": "Parameter 0080",
+              "desc": "Synthetic parameter 0080.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0081",
+              "name": "param0081",
+              "text": "Parameter 0081",
+              "desc": "Synthetic parameter 0081.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0082",
+              "name": "param0082",
+              "text": "Parameter 0082",
+              "desc": "Synthetic parameter 0082.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0083",
+              "name": "param0083",
+              "text": "Parameter 0083",
+              "desc": "Synthetic parameter 0083.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0084",
+              "name": "param0084",
+              "text": "Parameter 0084",
+              "desc": "Synthetic parameter 0084.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0085",
+              "name": "param0085",
+              "text": "Parameter 0085",
+              "desc": "Synthetic parameter 0085.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0086",
+              "name": "param0086",
+              "text": "Parameter 0086",
+              "desc": "Synthetic parameter 0086.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0087",
+              "name": "param0087",
+              "text": "Parameter 0087",
+              "desc": "Synthetic parameter 0087.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0088",
+              "name": "param0088",
+              "text": "Parameter 0088",
+              "desc": "Synthetic parameter 0088.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0089",
+              "name": "param0089",
+              "text": "Parameter 0089",
+              "desc": "Synthetic parameter 0089.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0090",
+              "name": "param0090",
+              "text": "Parameter 0090",
+              "desc": "Synthetic parameter 0090.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0091",
+              "name": "param0091",
+              "text": "Parameter 0091",
+              "desc": "Synthetic parameter 0091.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0092",
+              "name": "param0092",
+              "text": "Parameter 0092",
+              "desc": "Synthetic parameter 0092.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0093",
+              "name": "param0093",
+              "text": "Parameter 0093",
+              "desc": "Synthetic parameter 0093.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0094",
+              "name": "param0094",
+              "text": "Parameter 0094",
+              "desc": "Synthetic parameter 0094.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0095",
+              "name": "param0095",
+              "text": "Parameter 0095",
+              "desc": "Synthetic parameter 0095.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0096",
+              "name": "param0096",
+              "text": "Parameter 0096",
+              "desc": "Synthetic parameter 0096.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0097",
+              "name": "param0097",
+              "text": "Parameter 0097",
+              "desc": "Synthetic parameter 0097.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0098",
+              "name": "param0098",
+              "text": "Parameter 0098",
+              "desc": "Synthetic parameter 0098.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0099",
+              "name": "param0099",
+              "text": "Parameter 0099",
+              "desc": "Synthetic parameter 0099.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0100",
+              "name": "param0100",
+              "text": "Parameter 0100",
+              "desc": "Synthetic parameter 0100.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0101",
+              "name": "param0101",
+              "text": "Parameter 0101",
+              "desc": "Synthetic parameter 0101.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0102",
+              "name": "param0102",
+              "text": "Parameter 0102",
+              "desc": "Synthetic parameter 0102.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0103",
+              "name": "param0103",
+              "text": "Parameter 0103",
+              "desc": "Synthetic parameter 0103.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0104",
+              "name": "param0104",
+              "text": "Parameter 0104",
+              "desc": "Synthetic parameter 0104.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0105",
+              "name": "param0105",
+              "text": "Parameter 0105",
+              "desc": "Synthetic parameter 0105.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0106",
+              "name": "param0106",
+              "text": "Parameter 0106",
+              "desc": "Synthetic parameter 0106.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0107",
+              "name": "param0107",
+              "text": "Parameter 0107",
+              "desc": "Synthetic parameter 0107.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0108",
+              "name": "param0108",
+              "text": "Parameter 0108",
+              "desc": "Synthetic parameter 0108.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0109",
+              "name": "param0109",
+              "text": "Parameter 0109",
+              "desc": "Synthetic parameter 0109.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0110",
+              "name": "param0110",
+              "text": "Parameter 0110",
+              "desc": "Synthetic parameter 0110.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0111",
+              "name": "param0111",
+              "text": "Parameter 0111",
+              "desc": "Synthetic parameter 0111.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0112",
+              "name": "param0112",
+              "text": "Parameter 0112",
+              "desc": "Synthetic parameter 0112.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0113",
+              "name": "param0113",
+              "text": "Parameter 0113",
+              "desc": "Synthetic parameter 0113.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0114",
+              "name": "param0114",
+              "text": "Parameter 0114",
+              "desc": "Synthetic parameter 0114.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0115",
+              "name": "param0115",
+              "text": "Parameter 0115",
+              "desc": "Synthetic parameter 0115.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0116",
+              "name": "param0116",
+              "text": "Parameter 0116",
+              "desc": "Synthetic parameter 0116.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0117",
+              "name": "param0117",
+              "text": "Parameter 0117",
+              "desc": "Synthetic parameter 0117.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0118",
+              "name": "param0118",
+              "text": "Parameter 0118",
+              "desc": "Synthetic parameter 0118.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0119",
+              "name": "param0119",
+              "text": "Parameter 0119",
+              "desc": "Synthetic parameter 0119.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0120",
+              "name": "param0120",
+              "text": "Parameter 0120",
+              "desc": "Synthetic parameter 0120.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0121",
+              "name": "param0121",
+              "text": "Parameter 0121",
+              "desc": "Synthetic parameter 0121.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0122",
+              "name": "param0122",
+              "text": "Parameter 0122",
+              "desc": "Synthetic parameter 0122.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0123",
+              "name": "param0123",
+              "text": "Parameter 0123",
+              "desc": "Synthetic parameter 0123.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0124",
+              "name": "param0124",
+              "text": "Parameter 0124",
+              "desc": "Synthetic parameter 0124.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0125",
+              "name": "param0125",
+              "text": "Parameter 0125",
+              "desc": "Synthetic parameter 0125.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0126",
+              "name": "param0126",
+              "text": "Parameter 0126",
+              "desc": "Synthetic parameter 0126.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0127",
+              "name": "param0127",
+              "text": "Parameter 0127",
+              "desc": "Synthetic parameter 0127.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0128",
+              "name": "param0128",
+              "text": "Parameter 0128",
+              "desc": "Synthetic parameter 0128.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0129",
+              "name": "param0129",
+              "text": "Parameter 0129",
+              "desc": "Synthetic parameter 0129.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0130",
+              "name": "param0130",
+              "text": "Parameter 0130",
+              "desc": "Synthetic parameter 0130.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0131",
+              "name": "param0131",
+              "text": "Parameter 0131",
+              "desc": "Synthetic parameter 0131.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0132",
+              "name": "param0132",
+              "text": "Parameter 0132",
+              "desc": "Synthetic parameter 0132.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0133",
+              "name": "param0133",
+              "text": "Parameter 0133",
+              "desc": "Synthetic parameter 0133.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0134",
+              "name": "param0134",
+              "text": "Parameter 0134",
+              "desc": "Synthetic parameter 0134.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0135",
+              "name": "param0135",
+              "text": "Parameter 0135",
+              "desc": "Synthetic parameter 0135.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0136",
+              "name": "param0136",
+              "text": "Parameter 0136",
+              "desc": "Synthetic parameter 0136.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0137",
+              "name": "param0137",
+              "text": "Parameter 0137",
+              "desc": "Synthetic parameter 0137.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0138",
+              "name": "param0138",
+              "text": "Parameter 0138",
+              "desc": "Synthetic parameter 0138.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0139",
+              "name": "param0139",
+              "text": "Parameter 0139",
+              "desc": "Synthetic parameter 0139.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0140",
+              "name": "param0140",
+              "text": "Parameter 0140",
+              "desc": "Synthetic parameter 0140.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0141",
+              "name": "param0141",
+              "text": "Parameter 0141",
+              "desc": "Synthetic parameter 0141.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0142",
+              "name": "param0142",
+              "text": "Parameter 0142",
+              "desc": "Synthetic parameter 0142.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0143",
+              "name": "param0143",
+              "text": "Parameter 0143",
+              "desc": "Synthetic parameter 0143.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0144",
+              "name": "param0144",
+              "text": "Parameter 0144",
+              "desc": "Synthetic parameter 0144.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0145",
+              "name": "param0145",
+              "text": "Parameter 0145",
+              "desc": "Synthetic parameter 0145.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0146",
+              "name": "param0146",
+              "text": "Parameter 0146",
+              "desc": "Synthetic parameter 0146.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0147",
+              "name": "param0147",
+              "text": "Parameter 0147",
+              "desc": "Synthetic parameter 0147.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0148",
+              "name": "param0148",
+              "text": "Parameter 0148",
+              "desc": "Synthetic parameter 0148.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0149",
+              "name": "param0149",
+              "text": "Parameter 0149",
+              "desc": "Synthetic parameter 0149.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0150",
+              "name": "param0150",
+              "text": "Parameter 0150",
+              "desc": "Synthetic parameter 0150.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0151",
+              "name": "param0151",
+              "text": "Parameter 0151",
+              "desc": "Synthetic parameter 0151.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0152",
+              "name": "param0152",
+              "text": "Parameter 0152",
+              "desc": "Synthetic parameter 0152.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0153",
+              "name": "param0153",
+              "text": "Parameter 0153",
+              "desc": "Synthetic parameter 0153.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0154",
+              "name": "param0154",
+              "text": "Parameter 0154",
+              "desc": "Synthetic parameter 0154.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0155",
+              "name": "param0155",
+              "text": "Parameter 0155",
+              "desc": "Synthetic parameter 0155.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0156",
+              "name": "param0156",
+              "text": "Parameter 0156",
+              "desc": "Synthetic parameter 0156.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0157",
+              "name": "param0157",
+              "text": "Parameter 0157",
+              "desc": "Synthetic parameter 0157.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0158",
+              "name": "param0158",
+              "text": "Parameter 0158",
+              "desc": "Synthetic parameter 0158.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0159",
+              "name": "param0159",
+              "text": "Parameter 0159",
+              "desc": "Synthetic parameter 0159.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0160",
+              "name": "param0160",
+              "text": "Parameter 0160",
+              "desc": "Synthetic parameter 0160.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0161",
+              "name": "param0161",
+              "text": "Parameter 0161",
+              "desc": "Synthetic parameter 0161.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0162",
+              "name": "param0162",
+              "text": "Parameter 0162",
+              "desc": "Synthetic parameter 0162.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0163",
+              "name": "param0163",
+              "text": "Parameter 0163",
+              "desc": "Synthetic parameter 0163.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0164",
+              "name": "param0164",
+              "text": "Parameter 0164",
+              "desc": "Synthetic parameter 0164.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0165",
+              "name": "param0165",
+              "text": "Parameter 0165",
+              "desc": "Synthetic parameter 0165.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0166",
+              "name": "param0166",
+              "text": "Parameter 0166",
+              "desc": "Synthetic parameter 0166.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0167",
+              "name": "param0167",
+              "text": "Parameter 0167",
+              "desc": "Synthetic parameter 0167.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0168",
+              "name": "param0168",
+              "text": "Parameter 0168",
+              "desc": "Synthetic parameter 0168.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0169",
+              "name": "param0169",
+              "text": "Parameter 0169",
+              "desc": "Synthetic parameter 0169.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0170",
+              "name": "param0170",
+              "text": "Parameter 0170",
+              "desc": "Synthetic parameter 0170.",
+              "type": "text",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0171",
+              "name": "param0171",
+              "text": "Parameter 0171",
+              "desc": "Synthetic parameter 0171.",
+              "type": "hidden",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0172",
+              "name": "param0172",
+              "text": "Parameter 0172",
+              "desc": "Synthetic parameter 0172.",
+              "type": "struct",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0173",
+              "name": "param0173",
+              "text": "Parameter 0173",
+              "desc": "Synthetic parameter 0173.",
+              "type": "array",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0174",
+              "name": "param0174",
+              "text": "Parameter 0174",
+              "desc": "Synthetic parameter 0174.",
+              "type": "string",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0175",
+              "name": "param0175",
+              "text": "Parameter 0175",
+              "desc": "Synthetic parameter 0175.",
+              "type": "number",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0176",
+              "name": "param0176",
+              "text": "Parameter 0176",
+              "desc": "Synthetic parameter 0176.",
+              "type": "boolean",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0177",
+              "name": "param0177",
+              "text": "Parameter 0177",
+              "desc": "Synthetic parameter 0177.",
+              "type": "select",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0178",
+              "name": "param0178",
+              "text": "Parameter 0178",
+              "desc": "Synthetic parameter 0178.",
+              "type": "combo",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0179",
+              "name": "param0179",
+              "text": "Parameter 0179",
+              "desc": "Synthetic parameter 0179.",
+              "type": "variable",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0180",
+              "name": "param0180",
+              "text": "Parameter 0180",
+              "desc": "Synthetic parameter 0180.",
+              "type": "switch",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0181",
+              "name": "param0181",
+              "text": "Parameter 0181",
+              "desc": "Synthetic parameter 0181.",
+              "type": "actor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0182",
+              "name": "param0182",
+              "text": "Parameter 0182",
+              "desc": "Synthetic parameter 0182.",
+              "type": "class",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0183",
+              "name": "param0183",
+              "text": "Parameter 0183",
+              "desc": "Synthetic parameter 0183.",
+              "type": "skill",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0184",
+              "name": "param0184",
+              "text": "Parameter 0184",
+              "desc": "Synthetic parameter 0184.",
+              "type": "item",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0185",
+              "name": "param0185",
+              "text": "Parameter 0185",
+              "desc": "Synthetic parameter 0185.",
+              "type": "weapon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0186",
+              "name": "param0186",
+              "text": "Parameter 0186",
+              "desc": "Synthetic parameter 0186.",
+              "type": "armor",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0187",
+              "name": "param0187",
+              "text": "Parameter 0187",
+              "desc": "Synthetic parameter 0187.",
+              "type": "enemy",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0188",
+              "name": "param0188",
+              "text": "Parameter 0188",
+              "desc": "Synthetic parameter 0188.",
+              "type": "troop",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0189",
+              "name": "param0189",
+              "text": "Parameter 0189",
+              "desc": "Synthetic parameter 0189.",
+              "type": "state",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0190",
+              "name": "param0190",
+              "text": "Parameter 0190",
+              "desc": "Synthetic parameter 0190.",
+              "type": "animation",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0191",
+              "name": "param0191",
+              "text": "Parameter 0191",
+              "desc": "Synthetic parameter 0191.",
+              "type": "tileset",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0192",
+              "name": "param0192",
+              "text": "Parameter 0192",
+              "desc": "Synthetic parameter 0192.",
+              "type": "common_event",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0193",
+              "name": "param0193",
+              "text": "Parameter 0193",
+              "desc": "Synthetic parameter 0193.",
+              "type": "file",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0194",
+              "name": "param0194",
+              "text": "Parameter 0194",
+              "desc": "Synthetic parameter 0194.",
+              "type": "icon",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0195",
+              "name": "param0195",
+              "text": "Parameter 0195",
+              "desc": "Synthetic parameter 0195.",
+              "type": "map",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0196",
+              "name": "param0196",
+              "text": "Parameter 0196",
+              "desc": "Synthetic parameter 0196.",
+              "type": "location",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0197",
+              "name": "param0197",
+              "text": "Parameter 0197",
+              "desc": "Synthetic parameter 0197.",
+              "type": "note",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0198",
+              "name": "param0198",
+              "text": "Parameter 0198",
+              "desc": "Synthetic parameter 0198.",
+              "type": "color",
+              "default": ""
+            },
+            {
+              "id": "p200-1-param-0199",
+              "name": "param0199",
+              "text": "Parameter 0199",
+              "desc": "Synthetic parameter 0199.",
+              "type": "text",
+              "default": ""
+            }
+          ],
+          "commands": [
+            {
+              "id": "p200-1-command-0000",
+              "name": "command0000",
+              "text": "Command 0000",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0001",
+              "name": "command0001",
+              "text": "Command 0001",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0002",
+              "name": "command0002",
+              "text": "Command 0002",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0003",
+              "name": "command0003",
+              "text": "Command 0003",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0004",
+              "name": "command0004",
+              "text": "Command 0004",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0005",
+              "name": "command0005",
+              "text": "Command 0005",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0006",
+              "name": "command0006",
+              "text": "Command 0006",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0007",
+              "name": "command0007",
+              "text": "Command 0007",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0008",
+              "name": "command0008",
+              "text": "Command 0008",
+              "desc": "",
+              "args": []
+            },
+            {
+              "id": "p200-1-command-0009",
+              "name": "command0009",
+              "text": "Command 0009",
+              "desc": "",
+              "args": []
+            }
+          ],
+          "structs": []
+        }
+      ],
+      "activePluginId": "p200-1",
+      "isDirty": false,
+      "dirtyByPluginId": {},
+      "savedPathsByPluginId": {},
+      "baselineByPluginId": {},
+      "baseByPluginId": {},
+      "schemaVersion": 3
+    },
+    "version": 0
+  }
+}

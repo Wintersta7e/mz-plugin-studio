@@ -16,6 +16,7 @@ import { V160_FIXTURE } from './corpus/mzparams'
 import { byCodeUnit } from './corpus/normalise'
 import { parserPatternCases } from './corpus/parser-patterns'
 import { persistedStores } from './corpus/persisted'
+import { PERSISTED_SEEDS } from './corpus/persisted-seeds'
 import { EDITS, fixturePlugins } from './corpus/raw-mode'
 import { templateCases, templateIds } from './corpus/templates'
 import { typeViolatingDefaultCases, typeViolatingTemplateCases } from './corpus/type-violating'
@@ -52,6 +53,7 @@ const stem = (file: string): string => file.replace(/\.js$/, '')
 const ids = templateIds()
 const plugins = fixturePlugins()
 const storeKeys = persistedStores().map((s) => s.key)
+const seedGoldens = PERSISTED_SEEDS.map(({ name }) => `persisted/seed-${name}.json`)
 const mzparamsFiles = readdirSync(path.dirname(V160_FIXTURE)).filter((f) =>
   /^v.*\.mzparams$/.test(f)
 )
@@ -82,6 +84,7 @@ function expectedFiles(): string[] {
     ...plugins.map((f) => `parser/${stem(f)}.json`),
     ...patternNames.map((name) => patternGolden(name)),
     ...storeKeys.flatMap((k) => STORE_STATES.map((s) => `persisted/${k}.${s}.json`)),
+    ...seedGoldens,
     ...mzparamsFiles.map((file) => mzparamsGolden(file))
   ]
 }
@@ -153,6 +156,7 @@ interface Inventory {
   parserDone: number
   patternsDone: number
   storesDone: number
+  seedsDone: number
   mzparamsDone: number
   leaves: { holding: number; total: number }
 }
@@ -185,6 +189,7 @@ function takeInventory(): Inventory {
     storesDone: storeKeys.filter((k) =>
       STORE_STATES.every((s) => onDisk.has(`persisted/${k}.${s}.json`))
     ).length,
+    seedsDone: seedGoldens.filter((file) => onDisk.has(file)).length,
     mzparamsDone: mzparamsFiles.filter((f) => onDisk.has(mzparamsGolden(f))).length,
     leaves: hostileLeaves()
   }
@@ -199,6 +204,7 @@ const inventoryLine = (inventory: Inventory): string =>
   `parser ${String(inventory.parserDone)}/${String(plugins.length)} ` +
   `(patterns ${String(inventory.patternsDone)}/${String(patternNames.length)}); ` +
   `persisted keys ${String(inventory.storesDone)}/${String(storeKeys.length)} × ${String(STORE_STATES.length)}; ` +
+  `seeds ${String(inventory.seedsDone)}/${String(seedGoldens.length)}; ` +
   `mzparams ${String(inventory.mzparamsDone)}; ` +
   `hostile leaves ${String(inventory.leaves.holding)}/${String(inventory.leaves.total)}; ` +
   `files ${String(inventory.onDisk.size)}, orphans ${String(inventory.orphans.length)}`
@@ -215,6 +221,7 @@ describe('golden inventory', () => {
       plugins.length,
       patternNames.length,
       storeKeys.length,
+      seedGoldens.length,
       mzparamsFiles.length,
       inventory.leaves.total,
       inventory.onDisk.size
@@ -231,6 +238,7 @@ describe('golden inventory', () => {
       rawMode: inventory.rawMode,
       parserDone: inventory.parserDone,
       storesDone: inventory.storesDone,
+      seedsDone: inventory.seedsDone,
       mzparamsDone: inventory.mzparamsDone,
       holding: inventory.leaves.holding,
       missing: inventory.missing,
@@ -244,6 +252,7 @@ describe('golden inventory', () => {
       rawMode: plugins.length * EDITS.length,
       parserDone: plugins.length,
       storesDone: storeKeys.length,
+      seedsDone: seedGoldens.length,
       mzparamsDone: mzparamsFiles.length,
       holding: inventory.leaves.total,
       missing: [],
