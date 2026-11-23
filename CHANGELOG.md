@@ -22,6 +22,7 @@
 - A plugin name with a space, a hyphen or a leading digit, such as `My Plugin`, `my-plugin` or `2nd`, is no longer refused as an invalid identifier. The generated code passes the name to RPG Maker MZ as a quoted string, so the validator now checks it by the rule a save checks the file name by: a name that cannot be a file name on Linux or Windows, such as one holding `/` or `:` or the device name `CON`, is refused, and the error says why.
 - The generated plugin carries its version as a `@version` line after `@author`, and opening a plugin reads its `@version`. Before, the version was never written, and a plugin opened again showed `1.0.0` whatever its file said. Raw mode writes the line into the plugin block it rewrites only when the file had one or you changed the version, so an opened file without the line gains none from another edit.
 - The Picture Manipulation template's Show, Move, Rotate, Tint and Erase operations put their picture call inside a function, such as `customShowPicture()`, that you call from a plugin command or a scene hook. Before, the call ran as the plugin loaded, when RPG Maker MZ has no game screen yet, so the game stopped at start with "Cannot read properties of null".
+- The BGM Control template's Save and Restore operations put their call inside a function, such as `customBgmControl()`, even with Wrap in Function turned off. Before, the unwrapped call ran as the plugin loaded, when RPG Maker MZ has no game system yet, so the game stopped at start with "Cannot read properties of null".
 
 ## [1.9.0] - 2026-11-19
 

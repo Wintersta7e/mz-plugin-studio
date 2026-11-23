@@ -140,6 +140,14 @@ function crossfadeTypeLabel(crossfadeType: unknown): string {
 }
 
 /**
+Whether a BGM operation calls `$gameSystem`, which is null while the plugins load: its code is in
+a function even with Wrap in Function off, so its function name is checked then too.
+*/
+function doesCallGameSystem(operation: unknown): boolean {
+  return operation === 'save' || operation === 'restore'
+}
+
+/**
 Template 1: BGM Control
 Play, stop, fade, save/restore BGM
 */
@@ -305,9 +313,10 @@ const bgmControlTemplate = defineTemplate({
       }
     }
 
+    const nullAtLoad = doesCallGameSystem(operation) ? '$gameSystem' : undefined
     const heading = [`// BGM Control Function: ${String(operation)}`]
-    return isWrapInFunction
-      ? functionLines(heading, functionName, coreCode).join('\n')
+    return isWrapInFunction || nullAtLoad !== undefined
+      ? functionLines(heading, functionName, coreCode, nullAtLoad).join('\n')
       : coreCode.join('\n')
   },
   validate: (values): ValidationResult => {
@@ -320,7 +329,8 @@ const bgmControlTemplate = defineTemplate({
     }
 
     errors.push(...soundRangeErrors(values))
-    errors.push(...functionNameErrors(values))
+    const isWrapped = Boolean(values.wrapInFunction) || doesCallGameSystem(operation)
+    errors.push(...functionNameErrors({ ...values, wrapInFunction: isWrapped }))
 
     return {
       valid: errors.length === 0,
